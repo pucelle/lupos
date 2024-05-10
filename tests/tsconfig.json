@@ -1,0 +1,24 @@
+{
+	"compilerOptions": {
+		"module": "ESNext",
+		"moduleResolution": "Node",
+		"target": "ES2022",
+		"lib": ["ESNext", "DOM", "DOM.Iterable"],
+		"rootDir": "src",
+		"outDir": "out",
+		"allowJs": true,
+		"esModuleInterop": true, 
+		"declaration": false,
+		"strict": true,
+		"noUnusedParameters": true,
+		"noImplicitReturns": true,
+		"noFallthroughCasesInSwitch": true,
+		"noImplicitAny": true,
+		"noImplicitThis": true,
+		"experimentalDecorators": true,
+		"plugins": [
+			{"transform": "../src/index.ts", "after": true},
+		]
+	},
+	"include": ["./src/**/*.ts"],
+}
