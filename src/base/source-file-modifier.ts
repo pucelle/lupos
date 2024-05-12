@@ -61,6 +61,11 @@ export class SourceFileModifier {
 	output(sourceFile: ts.SourceFile): ts.SourceFile {
 		let factory = this.ts.factory
 
+		// A ts bug here: if insert some named import identifiers,
+		// and update the import statement,
+		// will cause some not used type imports still there.
+		// Current process step is: leave them there and wait for package step to eliminate.
+		
 		for (let [moduleName, names] of this.imports.entries()) {
 			let statements: ReadonlyArray<ts.Statement> = sourceFile.statements
 			let importDecl = this.getNamedImportFromModule(sourceFile, moduleName)

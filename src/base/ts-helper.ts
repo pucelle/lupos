@@ -117,6 +117,36 @@ export class TSHelper {
 		return signature.getReturnType()
 	}
 
+	/** Get the first decorator of a property or method declaration. */
+	getFirstDecorator(node: ts.MethodDeclaration | ts.PropertyDeclaration): ts.Decorator | undefined {
+		return node.modifiers?.find(m => this.ts.isDecorator(m)) as ts.Decorator | undefined
+	}
+
+	/** Get the first decorator name of a decorator. */
+	getDecoratorName(node: ts.Decorator): string | undefined {
+		let exp = node.expression
+
+		let identifier = this.ts.isCallExpression(exp) 
+			? exp.expression
+			: exp
+
+		if (!this.ts.isIdentifier(identifier)) {
+			return undefined
+		}
+
+		let decls = this.resolveDeclarations(identifier)
+		if (!decls) {
+			return undefined
+		}
+
+		let fn = decls.find(decl => this.ts.isFunctionDeclaration(decl)) as ts.FunctionDeclaration | undefined
+		if (!fn) {
+			return undefined
+		}
+
+		return fn.name?.getText()
+	}
+
 
 
 	//// Normal Node

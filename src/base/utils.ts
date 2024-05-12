@@ -12,6 +12,7 @@ export function difference<T extends number | string>(list: T[], ...excludeLists
 }
 
 
+
 /** `K => V[]` Map Struct. */
 export class ListMap<K, V> {
 

@@ -5,6 +5,7 @@ import {SourceFileModifier, TSHelper, defineVisitor} from '../base'
 defineVisitor(
 
 	// Be derived class of `Component`.
+	// May switch to match `render` method?
 	(node: ts.Node, helper: TSHelper) => {
 		if (!helper.ts.isClassDeclaration(node)) {
 			return false
@@ -14,7 +15,7 @@ defineVisitor(
 	},
 	(node: ts.ClassDeclaration, helper: TSHelper, modifier: SourceFileModifier) => {
 
-		// Must not specify `ContentSlotType: ...`
+		// Must not specify `ContentSlotType: ...` itself.
 		let contentSlotProperty = helper.getClassProperty(node, 'ContentSlotType')
 		if (contentSlotProperty) {
 			return node
@@ -35,7 +36,7 @@ defineVisitor(
 		let typeText = helper.getTypeSymbolText(renderType)
 		let slotType: 'TemplateResult' | 'TemplateResultArray' | 'Text' | null = null
 
-		// Add `ContentSlotType` property.
+		// Check Slot Type.
 		if (renderType.isUnion()) {}
 		else if (typeText === 'TemplateResult') {
 			slotType = 'TemplateResult'
@@ -47,6 +48,7 @@ defineVisitor(
 			slotType = 'Text'
 		}
 
+		// Add a property `static ContentSlotType = SlotContentType.xxx`.
 		if (slotType) {
 			modifier.addNamedImport('SlotContentType', '@pucelle/lupos.js')
 

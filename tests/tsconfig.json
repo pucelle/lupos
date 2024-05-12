@@ -17,8 +17,8 @@
 		"noImplicitThis": true,
 		"experimentalDecorators": true,
 		"plugins": [
-			{"transform": "../src/index.ts", "after": true},
+			{"transform": "../src/index.ts"},
 		]
 	},
-	"include": ["./src/**/*.ts"],
+	"include": ["./src/component/*.ts"],
 }
