@@ -160,11 +160,7 @@ export class TSHelper {
 		}
 
 		let decls = this.resolveDeclarations(identifier)
-		if (!decls) {
-			return undefined
-		}
-
-		let fn = decls.find(decl => this.ts.isFunctionDeclaration(decl)) as ts.FunctionDeclaration | undefined
+		let fn = decls?.find(decl => this.ts.isFunctionDeclaration(decl)) as ts.FunctionDeclaration | undefined
 		if (!fn) {
 			return undefined
 		}
@@ -190,6 +186,26 @@ export class TSHelper {
 		}
 
 		return undefined
+	}
+
+	/** Whether has specified modifier. */
+	hasModifier(node: ts.PropertyDeclaration | ts.MethodDeclaration, name: 'readonly' | 'static' | 'protected' | 'private'): boolean {
+		for (let modifier of node.modifiers || []) {
+			if (modifier.kind === this.ts.SyntaxKind.ReadonlyKeyword && name === 'readonly') {
+				return true
+			}
+			else if (modifier.kind === this.ts.SyntaxKind.StaticKeyword && name === 'static') {
+				return true
+			}
+			else if (modifier.kind === this.ts.SyntaxKind.ProtectedKeyword && name === 'protected') {
+				return true
+			}
+			else if (modifier.kind === this.ts.SyntaxKind.PrivateKeyword && name === 'private') {
+				return true
+			}
+		}
+
+		return false
 	}
 
 

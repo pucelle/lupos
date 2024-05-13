@@ -187,7 +187,7 @@ export class SourceFileModifier {
 			let newNames = difference(names, oldNames)
 
 			if (newNames.length === 0) {
-				return this.ts.visitEachChild(node, visit, this.context)
+				return node
 			}
 
 			let newImports = newNames.map(name => this.ts.factory.createImportSpecifier(
@@ -196,8 +196,7 @@ export class SourceFileModifier {
 				this.ts.factory.createIdentifier(name)
 			))
 
-			node = this.ts.factory.updateNamedImports(node, [...oldImports, ...newImports])
-			return this.ts.visitEachChild(node, visit, this.context)
+			return this.ts.factory.updateNamedImports(node, [...oldImports, ...newImports])
 		}
 
 		return this.ts.visitNode(importDecl, visit) as ts.ImportDeclaration
