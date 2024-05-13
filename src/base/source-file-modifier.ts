@@ -1,3 +1,4 @@
+import {TSHelper} from './ts-helper'
 import {ListMap, difference, removeQuotes} from './utils'
 import type * as ts from 'typescript'
 
@@ -5,12 +6,14 @@ import type * as ts from 'typescript'
 /** Help to get properties and info. */
 export class SourceFileModifier {
 	
+	readonly helper: TSHelper
 	readonly ts: typeof ts
 	readonly context: ts.TransformationContext
 	readonly imports: ListMap<string, string> = new ListMap()
 
-	constructor(typescript: typeof ts, ctx: ts.TransformationContext) {
-		this.ts = typescript
+	constructor(helper: TSHelper, ctx: ts.TransformationContext) {
+		this.helper = helper
+		this.ts = helper.ts
 		this.context = ctx
 	}
 
@@ -18,14 +21,14 @@ export class SourceFileModifier {
 	//// Class
 
 	/** Add a member to class. */
-	addClassMember(node: ts.ClassDeclaration, member: ts.ClassElement, insertHead: boolean = false) {
+	addClassMembers(node: ts.ClassDeclaration, members: ts.ClassElement[], insertHead: boolean = false) {
 		let newMembers = [...node.members]
 
 		if (insertHead) {
-			newMembers.unshift(member)
+			newMembers.unshift(...members)
 		}
 		else {
-			newMembers.push(member)
+			newMembers.push(...members)
 		}
 
 		return this.ts.factory.updateClassDeclaration(
@@ -36,6 +39,73 @@ export class SourceFileModifier {
 			node.heritageClauses,
 			newMembers,
 		)
+	}
+
+	/** Add a member to class, if same named members exist, replace it. */
+	replaceClassMembers(node: ts.ClassDeclaration, members: ts.ClassElement[], insertHead: boolean = false) {
+		let newMembers = [...node.members]
+		let replacedMembers: Set<ts.ClassElement> = new Set()
+
+		let memberNameMap = new Map(members.map(m => {
+			return [
+				this.helper.getAnyClassMemberName(m),
+				m,
+			]
+		}))
+
+		newMembers = newMembers.map(m => {
+			let name = this.helper.getAnyClassMemberName(m)
+			if (memberNameMap.has(name)) {
+				let newMember = memberNameMap.get(name)!
+				replacedMembers.add(newMember)
+				return newMember
+			}
+			else {
+				return m
+			}
+		})
+
+		let restMembers = difference(members, replacedMembers)
+		if (restMembers.length > 0) {
+			if (insertHead) {
+				newMembers.unshift(...restMembers)
+			}
+			else {
+				newMembers.push(...restMembers)
+			}
+		}
+
+		return this.ts.factory.updateClassDeclaration(
+			node, 
+			node.modifiers,
+			node.name,
+			node.typeParameters,
+			node.heritageClauses,
+			newMembers,
+		)
+	}
+
+	/** Remove a class decorator by it's name. */
+	removeClassDecorator(node: ts.ClassDeclaration, decoratorName: string): ts.ClassDeclaration {
+		let decorator = node.modifiers?.find(m => {
+			return this.ts.isDecorator(m)
+				&& this.helper.getDecoratorName(m) === decoratorName
+		})
+
+		if (decorator) {
+			let modifiers = node.modifiers!.filter(m => m !== decorator)
+			
+			return this.ts.factory.updateClassDeclaration(
+				node, 
+				modifiers,
+				node.name,
+				node.typeParameters,
+				node.heritageClauses,
+				node.members,
+			)
+		}
+
+		return node
 	}
 
 	

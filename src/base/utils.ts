@@ -1,5 +1,5 @@
 /** Creates a new list from picking items from `list` and excluding items inside any one of `excludeLists`. */
-export function difference<T extends number | string>(list: T[], ...excludeLists: T[][]): T[] {
+export function difference<T>(list: Iterable<T>, ...excludeLists: Iterable<T>[]): T[] {
 	let set: Set<T> = new Set(list)
 
 	for (let difArray of excludeLists) {

@@ -1,5 +1,5 @@
 import type * as ts from 'typescript'
-import {SourceFileModifier, TSHelper, defineVisitor} from '../base'
+import {SourceFileModifier, TSHelper, defineVisitor, isComponent} from '../base'
 
 
 defineVisitor(
@@ -11,7 +11,7 @@ defineVisitor(
 			return false
 		}
 
-		return helper.isDerivedClassOf(node, 'Component')
+		return isComponent()
 	},
 	(node: ts.ClassDeclaration, helper: TSHelper, modifier: SourceFileModifier) => {
 
@@ -65,7 +65,7 @@ defineVisitor(
 				)
 			)
 
-			return modifier.addClassMember(node, property, true)	  
+			return modifier.addClassMembers(node, [property], true)	  
 		}
 
 		return node

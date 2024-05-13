@@ -1,6 +1,6 @@
 import type * as ts from 'typescript'
 import type {TransformerExtras, PluginConfig} from 'ts-patch'
-import {SourceFileModifier, TSHelper, applyVisitors} from './base'
+import {SourceFileModifier, TSHelper, applyVisitors, popObservableState, pushObservableState} from './base'
 import './component'
 
 
@@ -11,19 +11,27 @@ export default function(program: ts.Program, _pluginConfig: PluginConfig, extras
 		let helper = new TSHelper(program, ts)
 
 		return (sourceFile: ts.SourceFile) => {
-			let modifier = new SourceFileModifier(ts, ctx)
+			let modifier = new SourceFileModifier(helper, ctx)
 
 			function visit(node: ts.Node): ts.Node | ts.Node[] {
-				let nodes = applyVisitors(node, helper, modifier)!
+				let beClass = ts.isClassDeclaration(node)
+				if (beClass) {
+					pushObservableState(node as ts.ClassDeclaration, helper)
+				}
 
-				nodes = nodes.map(node => {
-					if (shouldVisitChildren(node, helper)) {
-						return ts.visitEachChild(node, visit, ctx)
+				let nodes = applyVisitors(node, helper, modifier)!
+				nodes = nodes.map(n => {
+					if (shouldVisitChildren(n, helper)) {
+						return ts.visitEachChild(n, visit, ctx)
 					}
 					else {
-						return node
+						return n
 					}
 				})
+
+				if (beClass) {
+					popObservableState()
+				}
 
 				// If only one node and package it to an array, it represents a new node,
 				// and types will not be eliminated even not referenced.

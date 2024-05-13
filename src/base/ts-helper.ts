@@ -15,6 +15,16 @@ export class TSHelper {
 
 	//// Class part
 
+	/** Get name of a class member, even not appended. */
+	getAnyClassMemberName(node: ts.ClassElement): string {
+		if (this.ts.isConstructorDeclaration(node)) {
+			return 'constructor'
+		}
+		else {
+			return (node.name as ts.Identifier).escapedText as string
+		}
+	}
+
 	/** Get specified named of class property declaration. */
 	getClassProperty(node: ts.ClassDeclaration, propertyName: string, followExtend: boolean = false): ts.PropertyDeclaration | undefined {
 		if (followExtend) {
@@ -98,7 +108,7 @@ export class TSHelper {
 	}
 
 	/** Test whether is derived class of a specified named class. */
-	isDerivedClassOf(node: ts.ClassDeclaration, name: string): boolean {
+	isDerivedClassOfNamed(node: ts.ClassDeclaration, name: string): boolean {
 		let superClass = this.getSuperClassOfName(node, name)
 		if (!superClass) {
 			return false
@@ -107,18 +117,33 @@ export class TSHelper {
 		return true
 	}
 
-	/** Get the returned type of a method node. */
-	getClassMethodReturnType(node: ts.MethodDeclaration): ts.Type | undefined {
-		let signature = this.typeChecker.getSignatureFromDeclaration(node)
-		if (!signature) {
-			return undefined
+	/** Get a super class of specified decorated name recursively. */
+	getSuperClassOfDecoratedName(node: ts.ClassDeclaration, decoratorName: string): ts.ClassDeclaration | undefined {
+		let decorator = this.getFirstDecorator(node)
+		if (decorator && this.getDecoratorName(decorator) === decoratorName) {
+			return node
 		}
 
-		return signature.getReturnType()
+		let superClass = this.getSuperClass(node)
+		if (superClass) {
+			return this.getSuperClassOfDecoratedName(superClass, decoratorName)
+		}
+
+		return undefined
 	}
 
-	/** Get the first decorator of a property or method declaration. */
-	getFirstDecorator(node: ts.MethodDeclaration | ts.PropertyDeclaration): ts.Decorator | undefined {
+	/** Test whether is derived class of a class decorated with specified named decorator. */
+	isDerivedClassOfDecorated(node: ts.ClassDeclaration, decoratorName: string): boolean {
+		let superClass = this.getSuperClassOfDecoratedName(node, decoratorName)
+		if (!superClass) {
+			return false
+		}
+
+		return true
+	}
+
+	/** Get the first decorator of a class declaration, a property or method declaration. */
+	getFirstDecorator(node: ts.ClassDeclaration | ts.MethodDeclaration | ts.PropertyDeclaration): ts.Decorator | undefined {
 		return node.modifiers?.find(m => this.ts.isDecorator(m)) as ts.Decorator | undefined
 	}
 
@@ -147,6 +172,26 @@ export class TSHelper {
 		return fn.name?.getText()
 	}
 
+	/** Get constructor. */
+	getConstructor(node: ts.ClassDeclaration): ts.ConstructorDeclaration | undefined {
+		return node.members.find(v => this.ts.isConstructorDeclaration(v)) as ts.ConstructorDeclaration | undefined
+	}
+
+	/** Get constructor parameter list. */
+	getConstructorParameters(node: ts.ClassDeclaration): ts.ParameterDeclaration[] | undefined {
+		let constructor = this.getConstructor(node)
+		if (constructor) {
+			return [...constructor.parameters]
+		}
+		
+		let superClass = this.getSuperClass(node)
+		if (superClass) {
+			return this.getConstructorParameters(superClass)
+		}
+
+		return undefined
+	}
+
 
 
 	//// Normal Node
@@ -168,6 +213,16 @@ export class TSHelper {
 		}
 
 		return symbol.getName()
+	}
+
+	/** Get the returned type of a method node. */
+	getClassMethodReturnType(node: ts.MethodDeclaration): ts.Type | undefined {
+		let signature = this.typeChecker.getSignatureFromDeclaration(node)
+		if (!signature) {
+			return undefined
+		}
+
+		return signature.getReturnType()
 	}
 
 
