@@ -1,40 +1,16 @@
 import type * as ts from 'typescript'
-import {SourceFileModifier, TSHelper, defineVisitor, isComponent} from '../base'
+import {TSHelper, defineVisitor} from '../base'
 
 
 defineVisitor(
 
 	// `static style = ...` or `static style() {...}`
 	(node: ts.Node, helper: TSHelper) => {
-		if (!isComponent()) {
-			return false
-		}
-
-		if (!helper.ts.isPropertyDeclaration(node) && !helper.ts.isMethodDeclaration(node)) {
-			return false
-		}
-
-		if (!helper.hasModifier(node, 'static')) {
-			return false
-		}
-
-		if (node.name.getText() !== 'style') {
-			return false
-		}
-
-		return true
+		return helper.ts.isTaggedTemplateExpression(node)
+			&& helper.getTaggedTemplateName(node) === 'css'
 	},
-	(node: ts.PropertyDeclaration | ts.MethodDeclaration, helper: TSHelper, modifier: SourceFileModifier) => {
-		const visiter = (node: ts.Node) => {
-			if (helper.ts.isTaggedTemplateExpression(node)) {
-				node = parseTaggedTemplate(node, helper)
-			}
-
-			// Visit descendants, may css`...${css`...`}...`
-			return helper.ts.visitEachChild(node, visiter, modifier.context)
-		}
-
-		return helper.ts.visitNode(node, visiter)
+	(node: ts.TaggedTemplateExpression, helper: TSHelper) => {
+		return parseTaggedTemplate(node, helper)
 	},
 )
 

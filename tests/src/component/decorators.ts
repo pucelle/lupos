@@ -1,4 +1,4 @@
-import {computed, effect, watch} from '@pucelle/ff'
+import {computed, effect, observable, watch} from '@pucelle/ff'
 import {Component} from '@pucelle/lupos.js'
 
 
@@ -38,5 +38,16 @@ class C4 extends Component {
 
 	@watch(function(this: C4){return this.prop}) onPropChange(prop: number) {
 		console.log(prop)
+	}
+}
+
+
+@observable
+class C5 {
+
+	prop: number = 1
+
+	@effect onPropChangeEffect() {
+		console.log(this.prop)
 	}
 }

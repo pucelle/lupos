@@ -1,5 +1,5 @@
-import { Component, beginTrack, endTrack, enqueue } from '@pucelle/lupos.js';
-import { computed, effect, watch } from '@pucelle/ff';
+import { Component, beginTrack, endTrack, untrack, enqueue } from '@pucelle/lupos.js';
+import { computed, effect, observable, watch } from '@pucelle/ff';
 class C1 extends Component {
     prop = 1;
     #prop2 = undefined;
@@ -24,6 +24,8 @@ class C1 extends Component {
     }
 }
 class C2 extends Component {
+    onConnected() { super.onConnected(); this.#enqueue_onPropChangeEffect(); }
+    onDisconnected() { super.onDisconnected(); untrack(this.#enqueue_onPropChangeEffect, this); }
     prop = 1;
     #enqueue_onPropChangeEffect() {
         enqueue(this.onPropChangeEffect, this);
@@ -42,6 +44,8 @@ class C2 extends Component {
     }
 }
 class C3 extends Component {
+    onConnected() { super.onConnected(); this.#enqueue_onPropChange(); }
+    onDisconnected() { super.onDisconnected(); untrack(this.#enqueue_onPropChange, this); }
     prop = 1;
     #property_onPropChange = undefined;
     #property_get_onPropChange() {
@@ -69,6 +73,8 @@ class C3 extends Component {
     }
 }
 class C4 extends Component {
+    onConnected() { super.onConnected(); this.#enqueue_onPropChange(); }
+    onDisconnected() { super.onDisconnected(); untrack(this.#enqueue_onPropChange, this); }
     prop = 1;
     #property_onPropChange = undefined;
     #property_get_onPropChange() { return this.prop; }
@@ -90,6 +96,25 @@ class C4 extends Component {
         if (newValue !== this.#property_onPropChange) {
             this.#property_onPropChange = newValue;
             console.log(prop);
+        }
+    }
+}
+class C5 {
+    constructor() { this.#enqueue_onPropChangeEffect(); }
+    prop = 1;
+    #enqueue_onPropChangeEffect() {
+        enqueue(this.onPropChangeEffect, this);
+    }
+    onPropChangeEffect() {
+        beginTrack(this.#enqueue_onPropChangeEffect, this);
+        try {
+            console.log(this.prop);
+        }
+        catch (err) {
+            console.error(err);
+        }
+        finally {
+            endTrack();
         }
     }
 }

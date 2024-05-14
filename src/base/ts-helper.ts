@@ -218,6 +218,16 @@ export class TSHelper {
 	}
 
 
+	//// Tagged Template
+
+	/** Get the name of a tagged template. */
+	getTaggedTemplateName(node: ts.TaggedTemplateExpression): string | undefined {
+		let tagNameDecls = this.resolveDeclarations(node.tag)
+		let tagNameDecl = tagNameDecls?.find(d => this.ts.isFunctionDeclaration(d)) as ts.FunctionDeclaration
+		return tagNameDecl?.name?.getText()
+	}
+
+
 
 	//// Type
 

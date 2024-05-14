@@ -20,14 +20,7 @@ export default function(program: ts.Program, _pluginConfig: PluginConfig, extras
 				}
 
 				let nodes = applyVisitors(node, helper, modifier)!
-				nodes = nodes.map(n => {
-					if (shouldVisitChildren(n, helper)) {
-						return ts.visitEachChild(n, visit, ctx)
-					}
-					else {
-						return n
-					}
-				})
+				nodes = nodes.map(n => ts.visitEachChild(n, visit, ctx))
 
 				if (beClass) {
 					popObservableState()
@@ -46,11 +39,4 @@ export default function(program: ts.Program, _pluginConfig: PluginConfig, extras
 			return ts.visitNode(sourceFile, visitSourceFile)
 		}
 	}
-}
-
-
-/** Whether should visit all children. */
-export function shouldVisitChildren(node: ts.Node, helper: TSHelper) {
-	return helper.ts.isModuleDeclaration(node)
-		|| helper.ts.isClassDeclaration(node)
 }
