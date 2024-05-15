@@ -1,4 +1,5 @@
 import type * as ts from 'typescript'
+import {removeQuotes} from './utils'
 
 
 /** Help to get and check. */
@@ -93,28 +94,38 @@ export class TSHelper {
 		return superClass as ts.ClassDeclaration | undefined
 	}
 
-	/** Get a super class of specified name recursively. */
-	getSuperClassOfName(node: ts.ClassDeclaration, name: string): ts.ClassDeclaration | undefined {
-		if (node.name?.getText() === name) {
-			return node
-		}
+	/** Test whether is derived class of a specified named class, of specified module. */
+	isDerivedClassOfModule(node: ts.ClassDeclaration, name: string, moduleName: string): boolean {
+		let extendHeritageClause = node.heritageClauses?.find(hc => {
+			return hc.token === this.ts.SyntaxKind.ExtendsKeyword
+		})
 
-		let superClass = this.getSuperClass(node)
-		if (superClass) {
-			return this.getSuperClassOfName(superClass, name)
-		}
-
-		return undefined
-	}
-
-	/** Test whether is derived class of a specified named class. */
-	isDerivedClassOfNamed(node: ts.ClassDeclaration, name: string): boolean {
-		let superClass = this.getSuperClassOfName(node, name)
-		if (!superClass) {
+		if (!extendHeritageClause) {
 			return false
 		}
 
-		return true
+		let firstType = extendHeritageClause.types[0]
+		if (!firstType || !this.ts.isExpressionWithTypeArguments(firstType)) {
+			return false
+		}
+
+		let exp = firstType.expression
+
+		let moduleAndName = this.getImportNameAndModule(exp)
+		if (moduleAndName) {
+			if (moduleAndName.module === moduleName && moduleAndName.name === name) {
+				return true
+			}
+		}
+
+		let dls = this.resolveDeclarations(exp)
+		let superClass = dls?.find(d => this.ts.isClassDeclaration(d)) as ts.ClassDeclaration | undefined
+
+		if (superClass) {
+			return this.isDerivedClassOfModule(superClass, name, moduleName)
+		}
+
+		return false
 	}
 
 	/** Get a super class of specified decorated name recursively. */
@@ -157,6 +168,11 @@ export class TSHelper {
 
 		if (!this.ts.isIdentifier(identifier)) {
 			return undefined
+		}
+
+		let moduleAndName = this.getImportNameAndModule(exp)
+		if (moduleAndName) {
+			return moduleAndName.name
 		}
 
 		let decls = this.resolveDeclarations(identifier)
@@ -222,6 +238,11 @@ export class TSHelper {
 
 	/** Get the name of a tagged template. */
 	getTaggedTemplateName(node: ts.TaggedTemplateExpression): string | undefined {
+		let moduleAndName = this.getImportNameAndModule(node.tag)
+		if (moduleAndName) {
+			return moduleAndName.name
+		}
+
 		let tagNameDecls = this.resolveDeclarations(node.tag)
 		let tagNameDecl = tagNameDecls?.find(d => this.ts.isFunctionDeclaration(d)) as ts.FunctionDeclaration
 		return tagNameDecl?.name?.getText()
@@ -255,17 +276,49 @@ export class TSHelper {
 
 	//// Symbol
 
-	/** Get the symbol of a given node. */
-	getNodeSymbol(node: ts.Node): ts.Symbol | null {
-		let symbol = this.typeChecker.getSymbolAtLocation(node) || null
+	/** Get the import name and module. */
+	getImportNameAndModule(node: ts.Node): {name: string, module: string} | undefined {
+		if (this.ts.isPropertyAccessExpression(node)) {
+			let name = node.name.getText()
+			let symbol = this.getSymbol(node.expression)
+			let decls = symbol ? this.resolveSymbolDeclarations(symbol) : undefined
+			let decl = decls?.find(d => this.ts.isNamespaceImport(d)) as ts.NamespaceImport | undefined
 
-		if (!symbol) {
-			let identifier = this.getNodeIdentifier(node)
-			symbol = identifier ? this.typeChecker.getSymbolAtLocation(identifier) || null : null
+			if (decl) {
+				return {
+					name,
+					module: removeQuotes(decl.parent.parent.moduleSpecifier.getText()),
+				}
+			}
+		}
+		else {
+			let symbol = this.getSymbol(node)
+			let decls = symbol ? this.resolveSymbolDeclarations(symbol) : undefined
+			let decl = decls?.find(d => this.ts.isImportSpecifier(d)) as ts.ImportSpecifier | undefined
+
+			if (decl) {
+				return {
+					name: (decl.propertyName || decl.name).getText(),
+					module: removeQuotes(decl.parent.parent.parent.moduleSpecifier.getText()),
+				}
+			}
+		}
+
+		return undefined
+	}
+
+	/** Get the symbol of a given node. */
+	getSymbol(node: ts.Node, resolveAlias: boolean = false): ts.Symbol | undefined {
+		let symbol = this.typeChecker.getSymbolAtLocation(node)
+
+		// Get symbol from identifier.
+		if (!symbol && !this.ts.isIdentifier(node)) {
+			let identifier = this.getIdentifier(node)
+			symbol = identifier ? this.typeChecker.getSymbolAtLocation(identifier) : undefined
 		}
 
 		// Resolve aliased symbols to it's original declared place.
-		if (symbol && this.isAliasSymbol(symbol)) {
+		if (resolveAlias && symbol && this.isAliasSymbol(symbol)) {
 			symbol = this.typeChecker.getAliasedSymbol(symbol)
 		}
 
@@ -273,7 +326,7 @@ export class TSHelper {
 	}
 
 	/** Returns the identifier, like variable or declaration name of a given node if possible. */
-	getNodeIdentifier(node: ts.Node): ts.Identifier | null {
+	getIdentifier(node: ts.Node): ts.Identifier | undefined {
 
 		// Variable.
 		if (this.ts.isIdentifier(node)) {
@@ -294,7 +347,7 @@ export class TSHelper {
 			return node.name
 		}
 
-		return null
+		return undefined
 	}
 
 	/** Returns whether the symbol has `alias` flag. */
@@ -302,9 +355,12 @@ export class TSHelper {
 		return (symbol.flags & this.ts.SymbolFlags.Alias) > 0
 	}
 
-	/** Resolves the declarations of a node. A valueDeclaration is always the first entry in the array. */
+	/** 
+	 * Resolves the declarations of a node.
+	 * A valueDeclaration is always the first entry in the array.
+	 */
 	resolveDeclarations(node: ts.Node): ts.Declaration[] | undefined {
-		let symbol = this.getNodeSymbol(node)
+		let symbol = this.getSymbol(node, true)
 		if (!symbol) {
 			return []
 		}

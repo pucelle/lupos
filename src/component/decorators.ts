@@ -40,19 +40,24 @@ defineVisitor(
 Compile `@computed prop(){...}` to:
 
 #prop: any = undefined
+#need_compute_prop: boolean = true
 
 #compute_prop() {...}
 
 #reset_prop() {this.#prop = undefined}
 
 get prop(): any {
-    if (this.#prop !== undefined) {
+    if (!this.#need_compute_prop) {
         return this.#prop
     }
     
     beginTrack(this.#reset_prop, this)
     try {
-        this.#prop = this.#compute_prop()
+		let newValue = this.#compute_prop()
+		if (newValue !== this.#prop) {
+			this.#prop = newValue
+			onSet(this, 'prop')
+		}
     }
     catch (err) {
         console.error(err)
@@ -60,6 +65,8 @@ get prop(): any {
     finally {
         endTrack()
     }
+
+	this.#need_compute_prop = false
 }
 ```
 */
@@ -73,6 +80,14 @@ function compileComputedDecorator(methodDecl: ts.MethodDeclaration, helper: TSHe
 		undefined,
 		factory.createKeywordTypeNode(helper.ts.SyntaxKind.AnyKeyword),
 		factory.createIdentifier('undefined')
+	)
+
+	let needComputeProperty = factory.createPropertyDeclaration(
+		undefined,
+		factory.createPrivateIdentifier('#need_compute_' + propName),
+		undefined,
+		factory.createKeywordTypeNode(helper.ts.SyntaxKind.BooleanKeyword),
+		factory.createIdentifier('true')
 	)
 	
 	let computeMethod = factory.createMethodDeclaration(
@@ -98,112 +113,157 @@ function compileComputedDecorator(methodDecl: ts.MethodDeclaration, helper: TSHe
 			[factory.createExpressionStatement(factory.createBinaryExpression(
 				factory.createPropertyAccessExpression(
 					factory.createThis(),
-					factory.createPrivateIdentifier('#' + propName)
+					factory.createPrivateIdentifier('#need_compute_' + propName)
 				),
 				factory.createToken(helper.ts.SyntaxKind.EqualsToken),
-				factory.createIdentifier('undefined')
-				)
-			)],
+				factory.createIdentifier('true')
+			))],
 			false
 		)
 	)
-	
+
 	let getter = factory.createGetAccessorDeclaration(
 		undefined,
 		factory.createIdentifier(propName),
 		[],
 		factory.createKeywordTypeNode(helper.ts.SyntaxKind.AnyKeyword),
-		factory.createBlock([
-			factory.createIfStatement(
-				factory.createBinaryExpression(
-					factory.createPropertyAccessExpression(
-						factory.createThis(),
-						factory.createPrivateIdentifier('#' + propName)
-					),
-					factory.createToken(helper.ts.SyntaxKind.ExclamationEqualsEqualsToken),
-					factory.createIdentifier('undefined')
-				),
-				factory.createBlock(
-					[factory.createReturnStatement(factory.createPropertyAccessExpression(
-						factory.createThis(),
-						factory.createPrivateIdentifier('#' + propName)
-					))],
-					true
-				),
-				undefined
-			),
-			factory.createExpressionStatement(factory.createCallExpression(
-				factory.createIdentifier('beginTrack'),
-				undefined,
-				[
-					factory.createPropertyAccessExpression(
-						factory.createThis(),
-						factory.createPrivateIdentifier('#reset_' + propName)
-					),
-					factory.createThis()
-				]
-			)),
-			factory.createTryStatement(
-				factory.createBlock(
-					[
-						factory.createExpressionStatement(factory.createBinaryExpression(
-							factory.createPropertyAccessExpression(
-								factory.createThis(),
-								factory.createPrivateIdentifier('#' + propName)
-							),
-							factory.createToken(helper.ts.SyntaxKind.EqualsToken),
-							factory.createCallExpression(
-								factory.createPropertyAccessExpression(
-									factory.createThis(),
-									factory.createPrivateIdentifier('#compute_' + propName)
-								),
-								undefined,
-								[]
-							)
-						))
-					],
-					true
-				),
-				factory.createCatchClause(
-					factory.createVariableDeclaration(
-						factory.createIdentifier('err'),
-						undefined,
-						undefined,
-						undefined
+		factory.createBlock(
+			[
+				factory.createIfStatement(
+					factory.createPrefixUnaryExpression(
+						helper.ts.SyntaxKind.ExclamationToken,
+						factory.createPropertyAccessExpression(
+							factory.createThis(),
+							factory.createPrivateIdentifier('#need_compute_' + propName)
+						)
 					),
 					factory.createBlock(
+						[factory.createReturnStatement(factory.createPropertyAccessExpression(
+							factory.createThis(),
+							factory.createPrivateIdentifier('#' + propName)
+						))],
+						true
+					),
+					undefined
+				),
+				factory.createExpressionStatement(factory.createCallExpression(
+					factory.createIdentifier('beginTrack'),
+					undefined,
+					[
+						factory.createPropertyAccessExpression(
+							factory.createThis(),
+							factory.createPrivateIdentifier('#reset_' + propName)
+						),
+						factory.createThis()
+					]
+				)),
+				factory.createTryStatement(
+					factory.createBlock(
 						[
-							factory.createExpressionStatement(factory.createCallExpression(
+							factory.createVariableStatement(
+								undefined,
+								factory.createVariableDeclarationList(
+									[factory.createVariableDeclaration(
+										factory.createIdentifier('newValue'),
+										undefined,
+										undefined,
+										factory.createCallExpression(
+											factory.createPropertyAccessExpression(
+												factory.createThis(),
+												factory.createPrivateIdentifier('#compute_' + propName)
+											),
+											undefined,
+											[]
+										)
+									)],
+									helper.ts.NodeFlags.Let
+								)
+							),
+							factory.createIfStatement(
+								factory.createBinaryExpression(
+									factory.createIdentifier('newValue'),
+									factory.createToken(helper.ts.SyntaxKind.ExclamationEqualsEqualsToken),
+									factory.createPropertyAccessExpression(
+										factory.createThis(),
+										factory.createPrivateIdentifier('#' + propName)
+									)
+								),
+								factory.createBlock(
+									[
+										factory.createExpressionStatement(factory.createBinaryExpression(
+											factory.createPropertyAccessExpression(
+												factory.createThis(),
+												factory.createPrivateIdentifier('#' + propName)
+											),
+											factory.createToken(helper.ts.SyntaxKind.EqualsToken),
+											factory.createIdentifier('newValue')
+										)),
+										factory.createExpressionStatement(factory.createCallExpression(
+											factory.createIdentifier('onSet'),
+											undefined,
+											[
+												factory.createThis(),
+												factory.createStringLiteral(propName)
+											]
+										))
+									],
+									true
+								),
+								undefined
+							)
+						],
+						true
+					),
+					factory.createCatchClause(
+						factory.createVariableDeclaration(
+							factory.createIdentifier('err'),
+							undefined,
+							undefined,
+							undefined
+						),
+						factory.createBlock(
+							[factory.createExpressionStatement(factory.createCallExpression(
 								factory.createPropertyAccessExpression(
 									factory.createIdentifier('console'),
 									factory.createIdentifier('error')
 								),
 								undefined,
 								[factory.createIdentifier('err')]
-							))
-						],
-						true
-					)
-				),
-				factory.createBlock(
-					[
-						factory.createExpressionStatement(factory.createCallExpression(
+							))],
+							true
+						)
+					),
+					factory.createBlock(
+						[factory.createExpressionStatement(factory.createCallExpression(
 							factory.createIdentifier('endTrack'),
 							undefined,
 							[]
-						))
-					],
-					true
-				)
-			)],
+						))],
+						true
+					)
+				),
+				factory.createExpressionStatement(factory.createBinaryExpression(
+					factory.createPropertyAccessExpression(
+						factory.createThis(),
+						factory.createPrivateIdentifier('#need_compute_' + propName)
+					),
+					factory.createToken(helper.ts.SyntaxKind.EqualsToken),
+					factory.createFalse()
+				)),
+				factory.createReturnStatement(factory.createPropertyAccessExpression(
+					factory.createThis(),
+					factory.createPrivateIdentifier('#' + propName)
+				))
+			],
 			true
 		)
 	)
 
 	modifier.addNamedImport('beginTrack', '@pucelle/lupos.js')
 	modifier.addNamedImport('endTrack', '@pucelle/lupos.js')
+	modifier.addNamedImport('onSet', '@pucelle/lupos.js')
 
-	return [property, computeMethod, resetMethod, getter]
+	return [property, needComputeProperty, computeMethod, resetMethod, getter]
 }
 
 
@@ -357,9 +417,9 @@ onDisconnected() {
 
 onWatchChange() {
     beginTrack(this.#enqueue_onWatchChange, this)
-	let newValue = undefined
+	let new_value_onWatchChange = undefined
     try {
-        newValue = this.#property_get_onWatchChange()
+        new_value_onWatchChange = this.#property_get_onWatchChange()
     }
     catch (err) {
         console.error(err)
@@ -368,8 +428,8 @@ onWatchChange() {
         endTrack()
     }
 
-	if (newValue !== this.#property_onWatchChange) {
-		this.#property_onWatchChange = newValue
+	if (new_value_onWatchChange !== this.#property_onWatchChange) {
+		this.#property_onWatchChange = new_value_onWatchChange
 		...
 	}
 }
@@ -386,10 +446,10 @@ function compileWatchDecorator(methodDecl: ts.MethodDeclaration, decorator: ts.D
 
 	let property = factory.createPropertyDeclaration(
 		undefined,
-		factory.createPrivateIdentifier("#property_" + methodName),
+		factory.createPrivateIdentifier('#property_' + methodName),
 		undefined,
 		undefined,
-		factory.createIdentifier("undefined")
+		factory.createIdentifier('undefined')
 	)
 	
 
@@ -410,7 +470,7 @@ function compileWatchDecorator(methodDecl: ts.MethodDeclaration, decorator: ts.D
 	}
 	else {
 		propertyGetBlock = factory.createBlock(
-			[factory.createReturnStatement(factory.createIdentifier("undefined"))],
+			[factory.createReturnStatement(factory.createIdentifier('undefined'))],
 			true
 		)
 	}
@@ -418,7 +478,7 @@ function compileWatchDecorator(methodDecl: ts.MethodDeclaration, decorator: ts.D
 	let propertyGet = factory.createMethodDeclaration(
 		undefined,
 		undefined,
-		factory.createPrivateIdentifier("#property_get_" + methodName),
+		factory.createPrivateIdentifier('#property_get_' + methodName),
 		undefined,
 		undefined,
 		[],
@@ -430,14 +490,14 @@ function compileWatchDecorator(methodDecl: ts.MethodDeclaration, decorator: ts.D
 	let enqueueMethod = factory.createMethodDeclaration(
 		undefined,
 		undefined,
-		factory.createPrivateIdentifier("#enqueue_" + methodName),
+		factory.createPrivateIdentifier('#enqueue_' + methodName),
 		undefined,
 		undefined,
 		[],
 		undefined,
 		factory.createBlock(
 			[factory.createExpressionStatement(factory.createCallExpression(
-				factory.createIdentifier("enqueue"),
+				factory.createIdentifier('enqueue'),
 				undefined,
 				[
 					factory.createPropertyAccessExpression(
@@ -463,12 +523,12 @@ function compileWatchDecorator(methodDecl: ts.MethodDeclaration, decorator: ts.D
 		factory.createBlock(
 			[
 				factory.createExpressionStatement(factory.createCallExpression(
-					factory.createIdentifier("beginTrack"),
+					factory.createIdentifier('beginTrack'),
 					undefined,
 					[
 						factory.createPropertyAccessExpression(
 							factory.createThis(),
-							factory.createPrivateIdentifier("#enqueue_" + methodName)
+							factory.createPrivateIdentifier('#enqueue_' + methodName)
 						),
 						factory.createThis()
 					]
@@ -477,10 +537,10 @@ function compileWatchDecorator(methodDecl: ts.MethodDeclaration, decorator: ts.D
 					undefined,
 					factory.createVariableDeclarationList(
 						[factory.createVariableDeclaration(
-							factory.createIdentifier("newValue"),
+							factory.createIdentifier('new_value_' + methodName),
 							undefined,
 							undefined,
-							factory.createIdentifier("undefined")
+							factory.createIdentifier('undefined')
 						)],
 						helper.ts.NodeFlags.Let
 					)
@@ -488,12 +548,12 @@ function compileWatchDecorator(methodDecl: ts.MethodDeclaration, decorator: ts.D
 				factory.createTryStatement(
 					factory.createBlock(
 						[factory.createExpressionStatement(factory.createBinaryExpression(
-							factory.createIdentifier("newValue"),
+							factory.createIdentifier('new_value_' + methodName),
 							factory.createToken(helper.ts.SyntaxKind.EqualsToken),
 							factory.createCallExpression(
 								factory.createPropertyAccessExpression(
 									factory.createThis(),
-									factory.createPrivateIdentifier("#property_get_" + methodName)
+									factory.createPrivateIdentifier('#property_get_' + methodName)
 								),
 								undefined,
 								[]
@@ -503,7 +563,7 @@ function compileWatchDecorator(methodDecl: ts.MethodDeclaration, decorator: ts.D
 					),
 					factory.createCatchClause(
 						factory.createVariableDeclaration(
-							factory.createIdentifier("err"),
+							factory.createIdentifier('err'),
 							undefined,
 							undefined,
 							undefined
@@ -511,18 +571,18 @@ function compileWatchDecorator(methodDecl: ts.MethodDeclaration, decorator: ts.D
 						factory.createBlock(
 							[factory.createExpressionStatement(factory.createCallExpression(
 								factory.createPropertyAccessExpression(
-									factory.createIdentifier("console"),
-									factory.createIdentifier("error")
+									factory.createIdentifier('console'),
+									factory.createIdentifier('error')
 								),
 								undefined,
-								[factory.createIdentifier("err")]
+								[factory.createIdentifier('err')]
 							))],
 							true
 						)
 					),
 					factory.createBlock(
 						[factory.createExpressionStatement(factory.createCallExpression(
-							factory.createIdentifier("endTrack"),
+							factory.createIdentifier('endTrack'),
 							undefined,
 							[]
 						))],
@@ -531,11 +591,11 @@ function compileWatchDecorator(methodDecl: ts.MethodDeclaration, decorator: ts.D
 				),
 				factory.createIfStatement(
 					factory.createBinaryExpression(
-						factory.createIdentifier("newValue"),
+						factory.createIdentifier('new_value_' + methodName),
 						factory.createToken(helper.ts.SyntaxKind.ExclamationEqualsEqualsToken),
 						factory.createPropertyAccessExpression(
 							factory.createThis(),
-							factory.createPrivateIdentifier("#property_" + methodName)
+							factory.createPrivateIdentifier('#property_' + methodName)
 						)
 					),
 					factory.createBlock(
@@ -543,10 +603,10 @@ function compileWatchDecorator(methodDecl: ts.MethodDeclaration, decorator: ts.D
 							factory.createExpressionStatement(factory.createBinaryExpression(
 								factory.createPropertyAccessExpression(
 									factory.createThis(),
-									factory.createPrivateIdentifier("#property_" + methodName)
+									factory.createPrivateIdentifier('#property_' + methodName)
 								),
 								factory.createToken(helper.ts.SyntaxKind.EqualsToken),
-								factory.createIdentifier("newValue")
+								factory.createIdentifier('new_value_' + methodName)
 							)),
 							...methodDecl.body?.statements || [],
 						],
