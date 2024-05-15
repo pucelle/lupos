@@ -15,7 +15,6 @@
 		"noFallthroughCasesInSwitch": true,
 		"noImplicitAny": true,
 		"noImplicitThis": true,
-		"experimentalDecorators": true,
 		"plugins": [
 			{"transform": "../src/index.ts"},
 		]

@@ -1,4 +1,5 @@
-import {Component, TemplateResult, css} from '@pucelle/lupos.js'
+import {observable} from '@pucelle/ff'
+import {Component, addGlobalStyle, css} from '@pucelle/lupos.js'
 
 
 class C1 extends Component {
@@ -41,3 +42,26 @@ class C3 extends Component {
 		`
 	}
 }
+
+
+addGlobalStyle(css`.a{
+	.b{
+		color: red;
+	}
+}`)
+
+
+@observable
+class O {
+	color: string = 'red'
+}
+
+let o = new O()
+
+addGlobalStyle(() => {
+	return css`.a{
+		.b{
+			color: ${o.color};
+		}
+	}`
+})
