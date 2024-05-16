@@ -1,7 +1,7 @@
 import type * as ts from 'typescript'
 import type {TransformerExtras, PluginConfig} from 'ts-patch'
 import {SourceFileModifier, TSHelper, applyVisitors, popObservableState, pushObservableState} from './base'
-import './component'
+import './lupos.js'
 
 
 export default function(program: ts.Program, _pluginConfig: PluginConfig, extras: TransformerExtras) {

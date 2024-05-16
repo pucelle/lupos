@@ -259,9 +259,9 @@ function compileComputedDecorator(methodDecl: ts.MethodDeclaration, helper: TSHe
 		)
 	)
 
-	modifier.addNamedImport('beginTrack', '@pucelle/lupos.js')
-	modifier.addNamedImport('endTrack', '@pucelle/lupos.js')
-	modifier.addNamedImport('onSet', '@pucelle/lupos.js')
+	modifier.addNamedImport('beginTrack', '@pucelle/ff')
+	modifier.addNamedImport('endTrack', '@pucelle/ff')
+	modifier.addNamedImport('onSet', '@pucelle/ff')
 
 	return [property, needComputeProperty, computeMethod, resetMethod, getter]
 }
@@ -383,9 +383,9 @@ function compileEffectDecorator(methodDecl: ts.MethodDeclaration, helper: TSHelp
 		)
 	)
 
-	modifier.addNamedImport('beginTrack', '@pucelle/lupos.js')
-	modifier.addNamedImport('endTrack', '@pucelle/lupos.js')
-	modifier.addNamedImport('enqueue', '@pucelle/lupos.js')
+	modifier.addNamedImport('beginTrack', '@pucelle/ff')
+	modifier.addNamedImport('endTrack', '@pucelle/ff')
+	modifier.addNamedImport('enqueue', '@pucelle/ff')
 
 	return [enqueueMethod, effectMethod]
 }
@@ -620,9 +620,9 @@ function compileWatchDecorator(methodDecl: ts.MethodDeclaration, decorator: ts.D
 	)
 	
 
-	modifier.addNamedImport('beginTrack', '@pucelle/lupos.js')
-	modifier.addNamedImport('endTrack', '@pucelle/lupos.js')
-	modifier.addNamedImport('enqueue', '@pucelle/lupos.js')
+	modifier.addNamedImport('beginTrack', '@pucelle/ff')
+	modifier.addNamedImport('endTrack', '@pucelle/ff')
+	modifier.addNamedImport('enqueue', '@pucelle/ff')
 
 	return [property, propertyGet, enqueueMethod, watchMethod]
 }

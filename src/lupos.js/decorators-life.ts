@@ -61,6 +61,7 @@ defineVisitor(
 		}
 
 		node = modifier.removeClassDecorator(node, 'observable')
+		node = modifier.addClassImplements(node, 'Observed', '@pucelle/lupos.js')
 
 		return node
 	},

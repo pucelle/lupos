@@ -24,10 +24,10 @@ export function isComponent() {
 export function pushObservableState(node: ts.ClassDeclaration, helper: TSHelper) {
 	let state: number = 0
 
-	if (helper.isDerivedClassOfModule(node, 'Component', '@pucelle/lupos.js')) {
+	if (helper.isDerivedClassOf(node, 'Component', '@pucelle/lupos.js')) {
 		state = ObservableType.Observable | ObservableType.Component
 	}
-	else if (helper.isDerivedClassOfDecorated(node, 'observable')) {
+	else if (helper.isClassImplemented(node, 'Observed', '@pucelle/ff')) {
 		state = ObservableType.Observable
 	}
 

@@ -9,6 +9,7 @@ const Visitors: {
 }[] = []
 
 
+/** Define a visitor, and push it to visitor list. */
 export function defineVisitor(
 	match: (node: ts.Node, helper: TSHelper) => boolean,
 	visit: (node: any, helper: TSHelper, modifier: SourceFileModifier) => ts.Node | ts.Node[] | undefined
@@ -17,6 +18,7 @@ export function defineVisitor(
 }
 
 
+/** Apply defined visitors to node. */
 export function applyVisitors(node: ts.Node | undefined, helper: TSHelper, modifier: SourceFileModifier): ts.Node[] | undefined {
 	let nodes = node ? [node] : []
 

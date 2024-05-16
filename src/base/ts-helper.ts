@@ -95,7 +95,7 @@ export class TSHelper {
 	}
 
 	/** Test whether is derived class of a specified named class, of specified module. */
-	isDerivedClassOfModule(node: ts.ClassDeclaration, name: string, moduleName: string): boolean {
+	isDerivedClassOf(node: ts.ClassDeclaration, name: string, moduleName: string): boolean {
 		let extendHeritageClause = node.heritageClauses?.find(hc => {
 			return hc.token === this.ts.SyntaxKind.ExtendsKeyword
 		})
@@ -122,35 +122,35 @@ export class TSHelper {
 		let superClass = dls?.find(d => this.ts.isClassDeclaration(d)) as ts.ClassDeclaration | undefined
 
 		if (superClass) {
-			return this.isDerivedClassOfModule(superClass, name, moduleName)
+			return this.isDerivedClassOf(superClass, name, moduleName)
 		}
 
 		return false
 	}
 
-	/** Get a super class of specified decorated name recursively. */
-	getSuperClassOfDecoratedName(node: ts.ClassDeclaration, decoratorName: string): ts.ClassDeclaration | undefined {
-		let decorator = this.getFirstDecorator(node)
-		if (decorator && this.getDecoratorName(decorator) === decoratorName) {
-			return node
+	/** Test whether current class or super class implements a type located at a module. */
+	isClassImplemented(node: ts.ClassDeclaration, typeName: string, moduleName: string): boolean {
+		let implementClauses = node.heritageClauses?.find(h => {
+			return h.token === this.ts.SyntaxKind.ImplementsKeyword
+		})
+
+		if (implementClauses) {
+			let implementModules = implementClauses.types.find(type => {
+				let nm = this.getImportNameAndModule(type.expression)
+				return nm && nm.name === typeName && nm.module === moduleName
+			})
+
+			if (implementModules) {
+				return true
+			}
 		}
 
 		let superClass = this.getSuperClass(node)
-		if (superClass) {
-			return this.getSuperClassOfDecoratedName(superClass, decoratorName)
-		}
-
-		return undefined
-	}
-
-	/** Test whether is derived class of a class decorated with specified named decorator. */
-	isDerivedClassOfDecorated(node: ts.ClassDeclaration, decoratorName: string): boolean {
-		let superClass = this.getSuperClassOfDecoratedName(node, decoratorName)
 		if (!superClass) {
 			return false
 		}
 
-		return true
+		return this.isClassImplemented(superClass, typeName, moduleName)
 	}
 
 	/** Get the first decorator of a class declaration, a property or method declaration. */
@@ -224,14 +224,6 @@ export class TSHelper {
 		return false
 	}
 
-
-
-	//// Normal Node
-
-	/** Get module name of a node. */
-	getModuleName(node: ts.Node): string | undefined {
-		return node.getSourceFile().moduleName
-	}
 
 
 	//// Tagged Template

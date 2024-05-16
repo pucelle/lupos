@@ -108,6 +108,44 @@ export class SourceFileModifier {
 		return node
 	}
 
+	/** Add a class implement. */
+	addClassImplements(node: ts.ClassDeclaration, implementName: string, moduleName: string): ts.ClassDeclaration {
+		let factory = this.ts.factory
+
+		let implementClauses = node.heritageClauses?.find(h => {
+			return h.token === this.ts.SyntaxKind.ImplementsKeyword
+		})
+
+		let restHeritageClauses = node.heritageClauses?.filter(h => {
+			return h.token !== this.ts.SyntaxKind.ImplementsKeyword
+		}) || []
+
+		let implementTypes = implementClauses ? [...implementClauses.types] : []
+
+		implementTypes.push(
+			factory.createExpressionWithTypeArguments(
+				factory.createIdentifier(implementName),
+				undefined
+			)
+		)
+
+		let newImplementClause = factory.createHeritageClause(
+			this.ts.SyntaxKind.ImplementsKeyword,
+			implementTypes
+		)
+
+		this.addNamedImport(implementName, moduleName)
+
+		return this.ts.factory.updateClassDeclaration(
+			node, 
+			node.modifiers,
+			node.name,
+			node.typeParameters,
+			[...restHeritageClauses, newImplementClause],
+			node.members,
+		)
+	}
+
 	
 
 	// Import & Export
