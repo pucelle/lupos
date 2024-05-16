@@ -1,4 +1,3 @@
-import {observable} from '@pucelle/ff'
 import {Component, addGlobalStyle, css} from '@pucelle/lupos.js'
 
 
@@ -49,19 +48,3 @@ addGlobalStyle(css`.a{
 		color: red;
 	}
 }`)
-
-
-@observable
-class O {
-	color: string = 'red'
-}
-
-let o = new O()
-
-addGlobalStyle(() => {
-	return css`.a{
-		.b{
-			color: ${o.color};
-		}
-	}`
-})

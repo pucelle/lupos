@@ -1,4 +1,4 @@
-import {computed, effect, observable, watch} from '@pucelle/ff'
+import {Observed, computed, effect, watch} from '@pucelle/ff'
 import {Component} from '@pucelle/lupos.js'
 
 
@@ -42,8 +42,7 @@ class C4 extends Component {
 }
 
 
-@observable
-class C5 {
+class C5 implements Observed {
 
 	prop: number = 1
 
