@@ -85,67 +85,6 @@ export class SourceFileModifier {
 		)
 	}
 
-	/** Remove a class decorator by it's name. */
-	removeClassDecorator(node: ts.ClassDeclaration, decoratorName: string): ts.ClassDeclaration {
-		let decorator = node.modifiers?.find(m => {
-			return this.ts.isDecorator(m)
-				&& this.helper.getDecoratorName(m) === decoratorName
-		})
-
-		if (decorator) {
-			let modifiers = node.modifiers!.filter(m => m !== decorator)
-			
-			return this.ts.factory.updateClassDeclaration(
-				node, 
-				modifiers,
-				node.name,
-				node.typeParameters,
-				node.heritageClauses,
-				node.members,
-			)
-		}
-
-		return node
-	}
-
-	/** Add a class implement. */
-	addClassImplements(node: ts.ClassDeclaration, implementName: string, moduleName: string): ts.ClassDeclaration {
-		let factory = this.ts.factory
-
-		let implementClauses = node.heritageClauses?.find(h => {
-			return h.token === this.ts.SyntaxKind.ImplementsKeyword
-		})
-
-		let restHeritageClauses = node.heritageClauses?.filter(h => {
-			return h.token !== this.ts.SyntaxKind.ImplementsKeyword
-		}) || []
-
-		let implementTypes = implementClauses ? [...implementClauses.types] : []
-
-		implementTypes.push(
-			factory.createExpressionWithTypeArguments(
-				factory.createIdentifier(implementName),
-				undefined
-			)
-		)
-
-		let newImplementClause = factory.createHeritageClause(
-			this.ts.SyntaxKind.ImplementsKeyword,
-			implementTypes
-		)
-
-		this.addNamedImport(implementName, moduleName)
-
-		return this.ts.factory.updateClassDeclaration(
-			node, 
-			node.modifiers,
-			node.name,
-			node.typeParameters,
-			[...restHeritageClauses, newImplementClause],
-			node.members,
-		)
-	}
-
 	
 
 	// Import & Export

@@ -88,8 +88,7 @@ export class TSHelper {
 		}
 
 		let exp = firstType.expression
-		let dls = this.resolveDeclarations(exp)
-		let superClass = dls?.find(d => this.ts.isClassDeclaration(d))
+		let superClass = this.resolveOneDeclaration(exp, this.ts.isClassDeclaration)
 
 		return superClass as ts.ClassDeclaration | undefined
 	}
@@ -118,9 +117,7 @@ export class TSHelper {
 			}
 		}
 
-		let dls = this.resolveDeclarations(exp)
-		let superClass = dls?.find(d => this.ts.isClassDeclaration(d)) as ts.ClassDeclaration | undefined
-
+		let superClass = this.resolveOneDeclaration(exp, this.ts.isClassDeclaration)
 		if (superClass) {
 			return this.isDerivedClassOf(superClass, name, moduleName)
 		}
@@ -175,13 +172,12 @@ export class TSHelper {
 			return moduleAndName.name
 		}
 
-		let decls = this.resolveDeclarations(identifier)
-		let fn = decls?.find(decl => this.ts.isFunctionDeclaration(decl)) as ts.FunctionDeclaration | undefined
-		if (!fn) {
+		let decl = this.resolveOneDeclaration(identifier, this.ts.isFunctionDeclaration)
+		if (!decl) {
 			return undefined
 		}
 
-		return fn.name?.getText()
+		return decl.name?.getText()
 	}
 
 	/** Get constructor. */
@@ -235,8 +231,7 @@ export class TSHelper {
 			return moduleAndName.name
 		}
 
-		let tagNameDecls = this.resolveDeclarations(node.tag)
-		let tagNameDecl = tagNameDecls?.find(d => this.ts.isFunctionDeclaration(d)) as ts.FunctionDeclaration
+		let tagNameDecl = this.resolveOneDeclaration(node.tag, this.ts.isFunctionDeclaration)
 		return tagNameDecl?.name?.getText()
 	}
 
@@ -264,6 +259,44 @@ export class TSHelper {
 		return signature.getReturnType()
 	}
 
+	/** Test whether current class or super class implements a type located at a module. */
+	isTypeImportedFrom(node: ts.TypeNode, typeName: string, moduleName: string): boolean {
+		let nm = this.getImportNameAndModule(node)
+		return !!(nm && nm.name === typeName && nm.module === moduleName)
+	}
+
+	/** Test whether type of a node is primitive. */
+	isNodeObjectType(node: ts.Node): boolean {
+		let type = this.typeChecker.getTypeAtLocation(node)
+		return (type.getFlags() & this.ts.TypeFlags.Object) > 0
+	}
+
+	/** Test whether type of a node is readonly. */
+	isNodeReadonlyType(node: ts.Node): boolean {
+		let type = this.typeChecker.getTypeAtLocation(node)
+		let symbol = type.aliasSymbol
+		
+		if (!symbol) {
+			return false
+		}
+
+		let name = symbol.getName()
+		if (name === 'Readonly' || name === 'ReadonlyArray') {
+			return true
+		}
+
+		// `ReadonlyArray` must resolve deeper.
+		let decl = this.resolveOneSymbolDeclaration(symbol, this.ts.isTypeAliasDeclaration)
+		if (decl && this.ts.isTypeReferenceNode(decl.type)) {
+			name = decl.type.typeName.getText()
+			if (name === 'Readonly' || name === 'ReadonlyArray') {
+				return true
+			}
+		}
+
+		return false
+	}
+
 
 
 	//// Symbol
@@ -273,8 +306,7 @@ export class TSHelper {
 		if (this.ts.isPropertyAccessExpression(node)) {
 			let name = node.name.getText()
 			let symbol = this.getSymbol(node.expression)
-			let decls = symbol ? this.resolveSymbolDeclarations(symbol) : undefined
-			let decl = decls?.find(d => this.ts.isNamespaceImport(d)) as ts.NamespaceImport | undefined
+			let decl = symbol ? this.resolveOneSymbolDeclaration(symbol, this.ts.isNamespaceImport) : undefined
 
 			if (decl) {
 				return {
@@ -285,8 +317,7 @@ export class TSHelper {
 		}
 		else {
 			let symbol = this.getSymbol(node)
-			let decls = symbol ? this.resolveSymbolDeclarations(symbol) : undefined
-			let decl = decls?.find(d => this.ts.isImportSpecifier(d)) as ts.ImportSpecifier | undefined
+			let decl = symbol ? this.resolveOneSymbolDeclaration(symbol, this.ts.isImportSpecifier) : undefined
 
 			if (decl) {
 				return {
@@ -347,30 +378,25 @@ export class TSHelper {
 		return (symbol.flags & this.ts.SymbolFlags.Alias) > 0
 	}
 
-	/** 
-	 * Resolves the declarations of a node.
-	 * A valueDeclaration is always the first entry in the array.
-	 */
+	/** Resolves the declarations of a node. */
 	resolveDeclarations(node: ts.Node): ts.Declaration[] | undefined {
 		let symbol = this.getSymbol(node, true)
 		if (!symbol) {
-			return []
+			return undefined
 		}
 
-		return this.resolveSymbolDeclarations(symbol)
+		return symbol.getDeclarations()
 	}
 
-	/** Resolves the declarations of a symbol. A valueDeclaration is always the first entry in the array. */
-	resolveSymbolDeclarations(symbol: ts.Symbol): ts.Declaration[] {
-		let valueDeclaration = symbol.valueDeclaration
-		let declarations = symbol.getDeclarations() || []
+	/** Resolves the first declaration of a node, in kind. */
+	resolveOneDeclaration<T extends ts.Node>(node: ts.Node, test: (node: ts.Node) => node is T): T | undefined {
+		let decls = this.resolveDeclarations(node)
+		return decls?.find(test) as T | undefined
+	}
 
-		if (valueDeclaration && declarations.indexOf(valueDeclaration) === -1) {
-
-			// Make sure that `valueDeclaration` is always the first entry.
-			declarations = [valueDeclaration, ...declarations]
-		}
-
-		return declarations
+	/** Resolves the first declaration of a symbol, in kind. */
+	resolveOneSymbolDeclaration<T extends ts.Node>(symbol: ts.Symbol, test: (node: ts.Node) => node is T): T | undefined {
+		let decls = symbol.getDeclarations()
+		return decls?.find(test) as T | undefined
 	}
 }

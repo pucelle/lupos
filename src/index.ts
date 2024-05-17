@@ -2,6 +2,7 @@ import type * as ts from 'typescript'
 import type {TransformerExtras, PluginConfig} from 'ts-patch'
 import {SourceFileModifier, TSHelper, applyVisitors, popObservableState, pushObservableState} from './base'
 import './lupos.js'
+import {ObservedChecker} from './ff/observed-checker'
 
 
 export default function(program: ts.Program, _pluginConfig: PluginConfig, extras: TransformerExtras) {
@@ -9,6 +10,7 @@ export default function(program: ts.Program, _pluginConfig: PluginConfig, extras
 
 	return (ctx: ts.TransformationContext) => {
 		let helper = new TSHelper(program, ts)
+		let observedChecker = new ObservedChecker(helper)
 
 		return (sourceFile: ts.SourceFile) => {
 			let modifier = new SourceFileModifier(helper, ctx)
@@ -32,7 +34,7 @@ export default function(program: ts.Program, _pluginConfig: PluginConfig, extras
 			}
 
 			function visitSourceFile(node: ts.SourceFile): ts.SourceFile | undefined {
-				node = ts.visitEachChild(node, visit, ctx)
+				node = ts.visitNode(node, visit) as ts.SourceFile
 				return modifier.output(node)
 			}
 

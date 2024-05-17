@@ -1,5 +1,5 @@
 import type * as ts from 'typescript'
-import {SourceFileModifier, TSHelper, defineVisitor, isComponent, isObservable} from '../base'
+import {SourceFileModifier, TSHelper, defineVisitor, isComponent, isObservedClass} from '../base'
 
 
 defineVisitor(
@@ -10,7 +10,7 @@ defineVisitor(
 			return false
 		}
 
-		if (!isObservable()) {
+		if (!isObservedClass()) {
 			return false
 		}
 
@@ -59,9 +59,6 @@ defineVisitor(
 			let newMembers = [connect, disconnect].filter(v => v) as ts.ClassElement[]
 			node = modifier.replaceClassMembers(node, newMembers, true)
 		}
-
-		node = modifier.removeClassDecorator(node, 'observable')
-		node = modifier.addClassImplements(node, 'Observed', '@pucelle/lupos.js')
 
 		return node
 	},

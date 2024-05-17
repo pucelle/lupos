@@ -1,7 +1,7 @@
 import {Component, addGlobalStyle, css} from '@pucelle/lupos.js'
 
 
-class C1 extends Component {
+class TestNormalStyle extends Component {
 
 	static style = css`
 		.a{
@@ -13,7 +13,7 @@ class C1 extends Component {
 }
 
 
-class C2 extends Component {
+class TestDynamicStyle extends Component {
 
 	static style() {
 		return css`
@@ -27,7 +27,7 @@ class C2 extends Component {
 }
 
 
-class C3 extends Component {
+class TestDynamicStyleWithValues extends Component {
 
 	static style() {
 		return css`

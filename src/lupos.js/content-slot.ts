@@ -44,7 +44,7 @@ defineVisitor(
 		else if (typeText === 'Array') {
 			slotType = 'TemplateResultArray'
 		}
-		else if (renderType.getFlags() & (helper.ts.TypeFlags.String | helper.ts.TypeFlags.Number | helper.ts.TypeFlags.Boolean)) {
+		else if (renderType.getFlags() & (helper.ts.TypeFlags.String | helper.ts.TypeFlags.Number)) {
 			slotType = 'Text'
 		}
 

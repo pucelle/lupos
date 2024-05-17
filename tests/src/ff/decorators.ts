@@ -2,7 +2,7 @@ import {Observed, computed, effect, watch} from '@pucelle/ff'
 import {Component} from '@pucelle/lupos.js'
 
 
-class C1 extends Component {
+class TestComputed extends Component {
 
 	prop: number = 1
 
@@ -12,7 +12,7 @@ class C1 extends Component {
 }
 
 
-class C2 extends Component {
+class TestEffect extends Component {
 
 	prop: number = 1
 
@@ -22,7 +22,7 @@ class C2 extends Component {
 }
 
 
-class C3 extends Component {
+class TestWatchProperty extends Component {
 
 	prop: number = 1
 
@@ -32,17 +32,17 @@ class C3 extends Component {
 }
 
 
-class C4 extends Component {
+class TestWatchCallback extends Component {
 
 	prop: number = 1
 
-	@watch(function(this: C4){return this.prop}) onPropChange(prop: number) {
+	@watch(function(this: TestWatchCallback){return this.prop}) onPropChange(prop: number) {
 		console.log(prop)
 	}
 }
 
 
-class C5 implements Observed {
+class TestObservedImplemented implements Observed {
 
 	prop: number = 1
 

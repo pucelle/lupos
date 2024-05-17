@@ -13,11 +13,9 @@ defineVisitor(
 	// Be derived class of `Component`.
 	// May switch to match `render` method?
 	(node: ts.Node, helper: TSHelper) => {
-		if (!helper.ts.isClassDeclaration(node)) {
-			return false
-		}
-
-		return isComponent()
+		return helper.ts.isSourceFile(node)
+			|| helper.ts.isMethodDeclaration(node)
+			|| helper.ts.isFunctionDeclaration(node)
 	},
 	(node: ts.ClassDeclaration, helper: TSHelper, modifier: SourceFileModifier) => {
 		return node
