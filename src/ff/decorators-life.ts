@@ -1,6 +1,6 @@
 import type * as ts from 'typescript'
 import {SourceFileModifier, TSHelper, defineVisitor} from '../base'
-import {isComponent, isObservedClass} from '../observable/class'
+import {isComponent, isObservedClass} from './observable/class'
 
 
 defineVisitor(

@@ -1,5 +1,5 @@
 import type * as ts from 'typescript'
-import {TSHelper} from '../base/ts-helper'
+import {TSHelper} from '../../base/ts-helper'
 import {isObservedClass} from './class'
 import {CanObserveType, ObservedChecker, PropertyAccessingType} from './checker'
 

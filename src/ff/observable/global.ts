@@ -1,5 +1,5 @@
 import type * as ts from 'typescript'
-import {TSHelper} from '../base'
+import {TSHelper} from '../../base'
 import {ContextualNode, ObservedContext} from './context'
 import {ObservedChecker, PropertyAccessingType} from './checker'
 

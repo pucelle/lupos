@@ -1,5 +1,5 @@
 import type * as ts from 'typescript'
-import {TSHelper} from '../base/ts-helper'
+import {TSHelper} from '../../base/ts-helper'
 import {ObservedContext} from './context'
 
 

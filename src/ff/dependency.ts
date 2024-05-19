@@ -1,6 +1,6 @@
 import type * as ts from 'typescript'
 import {SourceFileModifier, TSHelper, defineVisitor} from '../base'
-import {PropertyAccessingType, addGetExpressions, isAccessingObserved} from '../observable'
+import {PropertyAccessingType, addGetExpressions, isAccessingObserved} from './observable'
 
 
 /**

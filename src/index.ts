@@ -1,9 +1,8 @@
 import type * as ts from 'typescript'
 import type {TransformerExtras, PluginConfig} from 'ts-patch'
 import {SourceFileModifier, TSHelper, applyVisitors} from './base'
+import {ObservedChecker, ContextualNode, isContextualNode, popMayObservedClass, popObservedContext, pushMayObservedClass, pushObservedContext} from './ff'
 import './lupos.js'
-import {ObservedChecker} from './observable/checker'
-import {ContextualNode, isContextualNode, popMayObservedClass, popObservedContext, pushMayObservedClass, pushObservedContext} from './ff'
 
 
 export default function(program: ts.Program, _pluginConfig: PluginConfig, extras: TransformerExtras) {
