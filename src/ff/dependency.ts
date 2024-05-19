@@ -1,6 +1,6 @@
 import type * as ts from 'typescript'
 import {SourceFileModifier, TSHelper, defineVisitor} from '../base'
-import {PropertyAccessingType, addGetExpressions, isAccessingObserved} from './observable'
+import {PropertyAccessingType, addGetExpression} from './observable'
 
 
 /**
@@ -14,10 +14,7 @@ defineVisitor(
 			|| helper.ts.isElementAccessExpression(node)
 	},
 	(node: PropertyAccessingType, _helper: TSHelper, _modifier: SourceFileModifier) => {
-		if (isAccessingObserved(node)) {
-			addGetExpressions(node)
-		}
-
+		addGetExpression(node)
 		return node
 	},
 )

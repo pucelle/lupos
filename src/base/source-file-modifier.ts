@@ -178,4 +178,60 @@ export class SourceFileModifier {
 
 		return this.ts.visitNode(importDecl, visit) as ts.ImportDeclaration
 	}
+
+
+
+	//// Expression & Statement
+
+	/** Add statements to an arrow function. */
+	addStatementsBeforeReturning(node: ts.Block, statements: ts.Statement[]): ts.Block {
+		if (statements.length === 0) {
+			return node
+		}
+
+		let oldStatements = node.statements
+		let returnStatementIndex = oldStatements.findLastIndex(stat => this.ts.isReturnStatement(stat))
+		let newStatements: ts.Statement[] = []
+
+		if (returnStatementIndex >= 0) {
+			newStatements = oldStatements.toSpliced(returnStatementIndex, 0, ...statements)
+		}
+		else {
+			newStatements = [...oldStatements, ...statements]
+		}
+
+		return this.ts.factory.createBlock(newStatements)
+	}
+
+	/** Add statements to an arrow function. */
+	addStatementsToArrowFunction(node: ts.ArrowFunction, statements: ts.Statement[]): ts.ArrowFunction {
+		if (statements.length === 0) {
+			return node
+		}
+
+		let block: ts.Block
+		let factory = this.ts.factory
+
+		if (this.ts.isBlock(node.body)) {
+			block = this.addStatementsBeforeReturning(node.body, statements)
+		}
+		else {
+			block = factory.createBlock([
+				...statements,
+				factory.createReturnStatement(node.body),			  
+			])
+		}
+		
+		node = factory.updateArrowFunction(
+			node,
+			node.modifiers,
+			node.typeParameters,
+			node.parameters,
+			node.type,
+			node.equalsGreaterThanToken,
+			block
+		)
+
+		return node
+	}
 }

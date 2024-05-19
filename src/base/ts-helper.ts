@@ -303,6 +303,8 @@ export class TSHelper {
 
 	/** Get the import name and module. */
 	getImportNameAndModule(node: ts.Node): {name: string, module: string} | undefined {
+
+		// `import * as M`, and use it's member like `M.member`.
 		if (this.ts.isPropertyAccessExpression(node)) {
 			let name = node.name.getText()
 			let symbol = this.getSymbol(node.expression)
@@ -368,6 +370,13 @@ export class TSHelper {
 			&& this.ts.isIdentifier(node.name)
 		) {
 			return node.name
+		}
+
+		// Identifier of type expression.
+		if (this.ts.isTypeReferenceNode(node)
+			&& this.ts.isIdentifier(node.typeName)
+		) {
+			return node.typeName
 		}
 
 		return undefined

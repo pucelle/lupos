@@ -170,12 +170,17 @@ export class ObservedChecker {
 
 		// `a.b` or `a['b']`, and `c` is not a readonly property.
 		if (this.ts.isPropertyAccessExpression(exp) || this.ts.isElementAccessExpression(exp)) {
-			expObserved = this.isAccessingObserved(node, context)
+			expObserved = this.isAccessingObserved(exp, context)
 		}
 
 		// `(a as Observed<{b: number}>).b`
 		else if (this.ts.isParenthesizedExpression(exp)) {
 			expObserved = this.isParenthesizedObserved(exp, context)
+		}
+
+		// For `a.b`, `exp` is `a`.
+		else if (this.ts.isIdentifier(exp) || exp.kind === this.ts.SyntaxKind.ThisKeyword) {
+			expObserved = context.isIdentifierObserved(exp as ts.Identifier | ts.ThisExpression)
 		}
 
 		// Readonly properties are always not observed.
@@ -186,7 +191,7 @@ export class ObservedChecker {
 			}
 		}
 
-		return false
+		return expObserved
 	}
 
 	/** Returns whether a parenthesized expression is observed. */

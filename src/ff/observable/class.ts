@@ -10,15 +10,18 @@ enum ObservedClassType{
 const ObservedStack: number[] = []
 let currentObservedType: number = 0
 
+
 /** Whether currently inside of an observed class. */
 export function isObservedClass(): boolean {
 	return (currentObservedType & ObservedClassType.ObservedClass) > 0
 }
 
+
 /** Whether currently inside of a component. */
 export function isComponent() {
 	return (currentObservedType & ObservedClassType.Component) > 0
 }
+
 
 /** Test observed type of a node, and push state always. */
 export function pushMayObservedClass(node: ts.ClassDeclaration, helper: TSHelper) {
@@ -34,6 +37,7 @@ export function pushMayObservedClass(node: ts.ClassDeclaration, helper: TSHelper
 	ObservedStack.push(currentObservedType)
 	currentObservedType = state
 }
+
 
 /** Pop a class, always along after `pushMayObservedClass`. */
 export function popMayObservedClass() {

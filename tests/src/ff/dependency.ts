@@ -2,182 +2,209 @@ import {DeepReadonly, Observed} from '@pucelle/ff'
 import {Component} from '@pucelle/lupos.js'
 
 
-class TestObservedType {
-
-	prop1: Observed<{value: number}> = {value:1}
-	prop2 = {value:1} as Observed<{value: number}>
-	map: Map<number, number> = new Map([[1, 2]])
+class TestObservedVariableType {
 
 	render() {
 		var a = {value:1} as Observed<{value: number}>
-   		var b: Observed<{value: number}[]> = [{value:1}]
-		var c = b[0]
+   		var b: Observed<{value: number}> = {value:1}
 
-		return this.prop1.value
-			+ this.prop2.value
-			+ a.value
-			+ b[0].value
-			+ c.value
-			+ this.map.get(1)!
+		return a.value
+			+ b.value
 	}
 }
 
 
+// class TestObservedParameters {
+
+// 	prop: {value: number} = {value:1}
+
+// 	renderProp1(this: Observed<TestObservedParameters>) {
+// 		return this.prop.value
+// 	}
+
+// 	renderProp2() {
+// 		return (this.prop as Observed<{value: number}>).value
+// 	}
+
+// 	renderProp3(item: Observed<{value: number}>) {
+// 		return item.value
+// 	}
+// }
 
 
-class TestProp extends Component {
+// class TestNormalProp extends Component {
 
-	prop: string =  'Text'
+// 	prop: string =  'Text'
 
-	render() {
-		return this.prop
-	}
-}
-
-
-class TestPropObject extends Component {
-
-	prop = {value: 'Text'}
-
-	render() {
-		return this.prop.value
-	}
-}
+// 	render() {
+// 		return this.prop
+// 	}
+// }
 
 
-class TestPropRenderFn extends Component {
+// class TestObjectProp extends Component {
 
-	prop = {value: 'Text'}
+// 	prop = {value: 'Text'}
 
-	render() {
-		return this.renderProp(this.prop)
-	}
-
-	renderProp(prop: {value: string}) {
-		return prop.value
-	}
-}
+// 	render() {
+// 		return this.prop.value
+// 	}
+// }
 
 
-class TestObservedPropRenderFn extends Component {
+// class TestArrayProp extends Component {
 
-	prop = {value: 'Text'}
+// 	prop: {value: number}[] = [{value:1}]
 
-	render() {
-		return this.renderProp(this.prop)
-	}
-
-	renderProp(prop: Observed<{value: string}>) {
-		return prop.value
-	}
-}
+// 	render() {
+// 		return this.prop[0].value + ''
+// 	}
+// }
 
 
-class TestReadonlyModifierProp extends Component {
+// class TestNonPlainObjectProp extends Component {
 
-	readonly prop: {value: string} = {value: 'Text'}
+// 	prop: Map<number, number> = new Map([[1, 2]])
 
-	render() {
-		return this.prop.value
-	}
-}
-
-
-class TestReadonlyProp extends Component {
-
-	prop: Readonly<{value: string}> = {value: 'Text'}
-
-	render() {
-		return this.prop.value
-	}
-}
+// 	render() {
+// 		return this.prop.get(1)! + ''
+// 	}
+// }
 
 
-class TestDeepReadonlyProp extends Component {
+// class TestPropRenderFn extends Component {
 
-	prop: DeepReadonly<{value: {value: string}}> = {value: {value: 'Text'}}
+// 	prop = {value: 'Text'}
 
-	render() {
-		return this.prop.value.value
-	}
-}
+// 	render() {
+// 		return this.renderProp(this.prop)
+// 	}
 
-
-
-
-class TestArrayProp extends Component {
-
-	prop: {value: string}[] = [
-		{value: 'Text1'},
-		{value: 'Text2'},
-		{value: 'Text3'},
-	]
-
-	render() {
-		return this.prop.map(item => item.value).join(' ')
-	}
-}
+// 	renderProp(prop: {value: string}) {
+// 		return prop.value
+// 	}
+// }
 
 
-class TestArrayPropRenderFn extends Component {
+// class TestObservedPropRenderFn extends Component {
 
-	prop: {value: string}[] = [
-		{value: 'Text1'},
-		{value: 'Text2'},
-		{value: 'Text3'},
-	]
+// 	prop = {value: 'Text'}
 
-	render() {
-		return this.prop.map(item => this.renderItem(item)).join(' ')
-	}
+// 	render() {
+// 		return this.renderProp(this.prop)
+// 	}
 
-	renderItem(item: {value: string}) {
-		return item.value
-	}
-}
+// 	renderProp(prop: Observed<{value: string}>) {
+// 		return prop.value
+// 	}
+// }
 
 
-class TestObservedArrayPropRenderFn extends Component {
+// class TestReadonlyModifierProp extends Component {
 
-	prop: {value: string}[] = [
-		{value: 'Text1'},
-		{value: 'Text2'},
-		{value: 'Text3'},
-	]
+// 	readonly prop: {value: string} = {value: 'Text'}
 
-	render() {
-		return this.prop.map(item => this.renderItem(item)).join(' ')
-	}
-
-	renderItem(item: Observed<{value: string}>) {
-		return item.value
-	}
-}
+// 	render() {
+// 		return this.prop.value
+// 	}
+// }
 
 
-class TestReadonlyArrayProp extends Component {
+// class TestReadonlyProp extends Component {
 
-	prop: ReadonlyArray<{value: string}> = [
-		{value: 'Text1'},
-		{value: 'Text2'},
-		{value: 'Text3'},
-	]
+// 	prop: Readonly<{value: string}> = {value: 'Text'}
 
-	render() {
-		return this.prop.map(item => item.value).join(' ')
-	}
-}
+// 	render() {
+// 		return this.prop.value
+// 	}
+// }
 
 
-class TestDeepReadonlyArrayProp extends Component {
+// class TestDeepReadonlyProp extends Component {
 
-	prop: DeepReadonly<{value: string}[]> = [
-		{value: 'Text1'},
-		{value: 'Text2'},
-		{value: 'Text3'},
-	]
+// 	prop: DeepReadonly<{value: {value: string}}> = {value: {value: 'Text'}}
 
-	render() {
-		return this.prop.map(item => item.value).join(' ')
-	}
-}
+// 	render() {
+// 		return this.prop.value.value
+// 	}
+// }
+
+
+
+
+// class TestArrayProp extends Component {
+
+// 	prop: {value: string}[] = [
+// 		{value: 'Text1'},
+// 		{value: 'Text2'},
+// 		{value: 'Text3'},
+// 	]
+
+// 	render() {
+// 		return this.prop.map(item => item.value).join(' ')
+// 	}
+// }
+
+
+// class TestArrayPropRenderFn extends Component {
+
+// 	prop: {value: string}[] = [
+// 		{value: 'Text1'},
+// 		{value: 'Text2'},
+// 		{value: 'Text3'},
+// 	]
+
+// 	render() {
+// 		return this.prop.map(item => this.renderItem(item)).join(' ')
+// 	}
+
+// 	renderItem(item: {value: string}) {
+// 		return item.value
+// 	}
+// }
+
+
+// class TestObservedArrayPropRenderFn extends Component {
+
+// 	prop: {value: string}[] = [
+// 		{value: 'Text1'},
+// 		{value: 'Text2'},
+// 		{value: 'Text3'},
+// 	]
+
+// 	render() {
+// 		return this.prop.map(item => this.renderItem(item)).join(' ')
+// 	}
+
+// 	renderItem(item: Observed<{value: string}>) {
+// 		return item.value
+// 	}
+// }
+
+
+// class TestReadonlyArrayProp extends Component {
+
+// 	prop: ReadonlyArray<{value: string}> = [
+// 		{value: 'Text1'},
+// 		{value: 'Text2'},
+// 		{value: 'Text3'},
+// 	]
+
+// 	render() {
+// 		return this.prop.map(item => item.value).join(' ')
+// 	}
+// }
+
+
+// class TestDeepReadonlyArrayProp extends Component {
+
+// 	prop: DeepReadonly<{value: string}[]> = [
+// 		{value: 'Text1'},
+// 		{value: 'Text2'},
+// 		{value: 'Text3'},
+// 	]
+
+// 	render() {
+// 		return this.prop.map(item => item.value).join(' ')
+// 	}
+// }

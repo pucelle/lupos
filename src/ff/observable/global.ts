@@ -1,5 +1,5 @@
 import type * as ts from 'typescript'
-import {TSHelper} from '../../base'
+import {SourceFileModifier, TSHelper} from '../../base'
 import {ContextualNode, ObservedContext} from './context'
 import {ObservedChecker, PropertyAccessingType} from './checker'
 
@@ -20,8 +20,8 @@ export function isContextualNode(node: ts.Node, helper: TSHelper): node is Conte
 
 
 /** Create a context from node and push to stack. */
-export function pushObservedContext(node: ContextualNode, checker: ObservedChecker) {
-	let context = new ObservedContext(node, currentContext, checker)
+export function pushObservedContext(node: ContextualNode, checker: ObservedChecker, modifier: SourceFileModifier) {
+	let context = new ObservedContext(node, currentContext, checker, modifier)
 
 	if (currentContext) {
 		ContextStack.push(currentContext)
@@ -37,20 +37,19 @@ export function popObservedContext() {
 }
 
 
-/** Returns whether a property accessing is observed. */
-export function isAccessingObserved(node: PropertyAccessingType) {
+/** Add a get expression. */
+export function addGetExpression(node: PropertyAccessingType) {
 	if (currentContext) {
-		return currentContext.isAccessingObserved(node)
-	}
-	else {
-		return false
+		currentContext.addGetExpression(node)
 	}
 }
 
 
-/** Add a get expression. */
-export function addGetExpressions(node: PropertyAccessingType) {
+/** Output expressions. */
+export function outputExpressionsToNode(node: ts.Node) {
 	if (currentContext) {
-		currentContext.addGetExpressions(node)
+		return currentContext.outputExpressionsToNode(node)
 	}
+
+	return node
 }

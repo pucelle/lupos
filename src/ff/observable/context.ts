@@ -2,16 +2,20 @@ import type * as ts from 'typescript'
 import {TSHelper} from '../../base/ts-helper'
 import {isObservedClass} from './class'
 import {CanObserveType, ObservedChecker, PropertyAccessingType} from './checker'
+import {SourceFileModifier} from '../../base'
 
 
-/** Nodes than will initialize a context. */
+/** 
+ * Nodes than will initialize a context.
+ * Both method and function contain a block, include them because of wanting to examine parameters.
+ */
 export type ContextualNode = ts.SourceFile | ts.MethodDeclaration | ts.FunctionDeclaration
-	| ts.ArrowFunction | ts.ModuleDeclaration | ts.Block
+	| ts.SetAccessorDeclaration | ts.ArrowFunction | ts.ModuleDeclaration | ts.Block
 
 
 /** 
  * A source file, a method, or a namespace, a function, an arrow function
- * create a context, a context will extend from it's parent context.
+ * create a context. a context will extend from it's parent context.
  */
 export class ObservedContext {
 
@@ -19,6 +23,7 @@ export class ObservedContext {
 	readonly parent: ObservedContext | null
 	readonly helper: TSHelper
 	readonly checker: ObservedChecker
+	readonly modifier: SourceFileModifier
 	readonly ts: typeof ts
 
 	/** Whether `this` is observed. */
@@ -33,11 +38,12 @@ export class ObservedContext {
 	/** All get expressions. */
 	private getExpressions: PropertyAccessingType[] = []
 
-	constructor(node: ts.Node, parent: ObservedContext | null, checker: ObservedChecker) {
+	constructor(node: ts.Node, parent: ObservedContext | null, checker: ObservedChecker, modifier: SourceFileModifier) {
 		this.node = node
 		this.parent = parent
 		this.checker = checker
 		this.helper = checker.helper
+		this.modifier = modifier
 		this.ts = checker.ts
 
 		this.checkThisObserved()
@@ -46,7 +52,10 @@ export class ObservedContext {
 
 	/** Analysis for whether `this` is observed. */
 	private checkThisObserved() {
-		if (this.ts.isMethodDeclaration(this.node) || this.ts.isFunctionDeclaration(this.node)) {
+		if (this.ts.isMethodDeclaration(this.node)
+			|| this.ts.isFunctionDeclaration(this.node)
+			|| this.ts.isSetAccessorDeclaration(this.node)
+		) {
 			let thisParameter = this.node.parameters.find(param => param.name.getText() === 'this')
 
 			// If re-declare `this` parameter.
@@ -70,6 +79,7 @@ export class ObservedContext {
 		if (this.ts.isMethodDeclaration(this.node)
 			|| this.ts.isFunctionDeclaration(this.node)
 			|| this.ts.isArrowFunction(this.node)
+			|| this.ts.isSetAccessorDeclaration(this.node)
 		) {
 			let parameters = this.node.parameters
 
@@ -103,14 +113,16 @@ export class ObservedContext {
 		}
 
 		// Check each variable declarations.
-		for (let child of this.node.getChildren()) {
-			if (!this.ts.isVariableStatement(child)) {
-				continue
-			}
+		if (this.ts.isBlock(this.node)) {
+			for (let stat of this.node.statements) {
+				if (!this.ts.isVariableStatement(stat)) {
+					continue
+				}
 
-			for (let item of child.declarationList.declarations) {
-				let observed = this.checker.isVariableDeclarationObserved(item, this)
-				this.variableObserved.set(item.name.getText(), observed)
+				for (let item of stat.declarationList.declarations) {
+					let observed = this.checker.isVariableDeclarationObserved(item, this)
+					this.variableObserved.set(item.name.getText(), observed)
+				}
 			}
 		}
 	}
@@ -129,7 +141,7 @@ export class ObservedContext {
 	 * Node must be the top most property access expression.
 	 * E.g., for `a.b.c`, sub expression `b.c` is not allowed.
 	 */
-	private isIdentifierObserved(node: ts.Identifier | ts.ThisExpression): boolean {
+	isIdentifierObserved(node: ts.Identifier | ts.ThisExpression): boolean {
 		if (node.kind === this.ts.SyntaxKind.ThisKeyword) {
 			return this.thisObserved
 		}
@@ -159,9 +171,59 @@ export class ObservedContext {
 		return this.checker.isAccessingObserved(node, this)
 	}
 
-	/** Add a get expression. */
-	addGetExpressions(exp: PropertyAccessingType) {
-		this.getExpressions.push(exp)
+	/** Add a get expression, not tested observed state yet. */
+	addGetExpression(node: PropertyAccessingType) {
+		if (this.isAccessingObserved(node)) {
+			this.getExpressions.push(node)
+		}
+	}
+
+	/** Output all expressions. */
+	outputExpressionsToNode(node: ts.Node): ts.Node {
+		if (this.getExpressions.length === 0) {
+			return node
+		}
+
+		this.modifier.addNamedImport('onGet', '@pucelle/ff')
+
+		let exps = this.getExpressions.map(exp => this.createOnGetExpression(exp))
+
+		if (this.ts.isBlock(node)) {
+			return this.modifier.addStatementsBeforeReturning(node, exps)
+		}
+		else if (this.ts.isArrowFunction(node)) {
+			return this.modifier.addStatementsToArrowFunction(node, exps)
+		}
+		else {
+			throw new Error(`Node of kind "${node.kind}" cant output expressions!`)
+		}
+	}
+
+	/** Create a output `onGet` statement. */
+	private createOnGetExpression(node: PropertyAccessingType): ts.ExpressionStatement {
+		let factory = this.ts.factory
+		let name: ts.Expression
+
+		if (this.ts.isPropertyAccessExpression(node)) {
+			name = node.name
+
+			// `a.b`, name is 'b'.
+			if (this.ts.isIdentifier(name)) {
+				name = factory.createStringLiteral(name.getText())
+			}
+		}
+		else {
+			name = node.argumentExpression
+		}
+		
+		return factory.createExpressionStatement(factory.createCallExpression(
+			factory.createIdentifier('onGet'),
+			undefined,
+			[
+				node.expression,
+				name,
+			]
+		))
 	}
 }
 
