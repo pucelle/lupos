@@ -2,6 +2,29 @@ import {DeepReadonly, Observed} from '@pucelle/ff'
 import {Component} from '@pucelle/lupos.js'
 
 
+class TestObservedType {
+
+	prop1: Observed<{value: number}> = {value:1}
+	prop2 = {value:1} as Observed<{value: number}>
+	map: Map<number, number> = new Map([[1, 2]])
+
+	render() {
+		var a = {value:1} as Observed<{value: number}>
+   		var b: Observed<{value: number}[]> = [{value:1}]
+		var c = b[0]
+
+		return this.prop1.value
+			+ this.prop2.value
+			+ a.value
+			+ b[0].value
+			+ c.value
+			+ this.map.get(1)!
+	}
+}
+
+
+
+
 class TestProp extends Component {
 
 	prop: string =  'Text'
@@ -46,6 +69,16 @@ class TestObservedPropRenderFn extends Component {
 
 	renderProp(prop: Observed<{value: string}>) {
 		return prop.value
+	}
+}
+
+
+class TestReadonlyModifierProp extends Component {
+
+	readonly prop: {value: string} = {value: 'Text'}
+
+	render() {
+		return this.prop.value
 	}
 }
 

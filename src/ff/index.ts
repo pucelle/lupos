@@ -1,5 +1,2 @@
-export * from './observed-class'
-export * from './observed-checker'
-export * from './observed-context'
 export * from './decorators'
 export * from './decorators-life'
