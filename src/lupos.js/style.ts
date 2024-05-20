@@ -1,5 +1,5 @@
 import type * as ts from 'typescript'
-import {TSHelper, defineVisitor} from '../base'
+import {SourceFileModifier, TSHelper, defineVisitor} from '../base'
 
 
 defineVisitor(
@@ -9,8 +9,8 @@ defineVisitor(
 		return helper.ts.isTaggedTemplateExpression(node)
 			&& helper.getTaggedTemplateName(node) === 'css'
 	},
-	(node: ts.TaggedTemplateExpression, helper: TSHelper) => {
-		return parseTaggedTemplate(node, helper)
+	(node: ts.TaggedTemplateExpression, modifier: SourceFileModifier) => {
+		return parseTaggedTemplate(node, modifier.helper)
 	},
 )
 

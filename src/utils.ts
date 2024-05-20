@@ -141,3 +141,26 @@ export class ListMap<K, V> {
 export function removeQuotes(s: string) {
 	return s.replace(/^\s*(['"])(.+?)\1\s*$/g, '$2')
 }
+
+
+/** 
+ * Create a group map in `K => V[]` format, just like SQL `group by` statement.
+ * @param pairFn get key and value pair by it.
+ */
+export function groupBy<T, K, V>(list: Iterable<T>, pairFn: (value: T) => [K, V]): Map<K, V[]> {
+	let map: Map<K, V[]> = new Map()
+
+	for (let item of list) {
+		let [key, value] = pairFn(item)
+
+		let group = map.get(key)
+		if (!group) {
+			group = []
+			map.set(key, group)
+		}
+
+		group.push(value)
+	}
+
+	return map
+}

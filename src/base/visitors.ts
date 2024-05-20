@@ -5,29 +5,29 @@ import {SourceFileModifier} from './source-file-modifier'
 
 const Visitors: {
 	match: (node: ts.Node, helper: TSHelper) => boolean,
-	visit: (node: ts.Node, helper: TSHelper, modifier: SourceFileModifier) => ts.Node | ts.Node[] | undefined,
+	visit: (node: ts.Node, modifier: SourceFileModifier) => ts.Node | ts.Node[] | undefined,
 }[] = []
 
 
 /** Define a visitor, and push it to visitor list. */
 export function defineVisitor(
 	match: (node: ts.Node, helper: TSHelper) => boolean,
-	visit: (node: any, helper: TSHelper, modifier: SourceFileModifier) => ts.Node | ts.Node[] | undefined
+	visit: (node: any, modifier: SourceFileModifier) => ts.Node | ts.Node[] | undefined
 ) {
 	Visitors.push({match, visit})
 }
 
 
 /** Apply defined visitors to node. */
-export function applyVisitors(node: ts.Node | undefined, helper: TSHelper, modifier: SourceFileModifier): ts.Node[] | undefined {
+export function applyVisitors(node: ts.Node | undefined, modifier: SourceFileModifier): ts.Node[] | undefined {
 	let nodes = node ? [node] : []
 
 	for (let visitor of Visitors) {
 		let newNodes: ts.Node[] = []
 		
 		for (let node of nodes) {
-			if (visitor.match(node, helper)) {
-				let nodeOrArray = visitor.visit(node, helper, modifier)
+			if (visitor.match(node, modifier.helper)) {
+				let nodeOrArray = visitor.visit(node, modifier)
 
 				if (Array.isArray(nodeOrArray)) {
 					newNodes.push(...nodeOrArray)

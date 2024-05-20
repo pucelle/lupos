@@ -1,5 +1,5 @@
 import {TSHelper} from './ts-helper'
-import {ListMap, difference, removeQuotes} from './utils'
+import {ListMap, difference, removeQuotes} from '../utils'
 import type * as ts from 'typescript'
 
 
@@ -89,7 +89,10 @@ export class SourceFileModifier {
 
 	// Import & Export
 
-	/** Add a named import - `import {name} from moduleName` */
+	/** 
+	 * Add a named import - `import {name} from moduleName`.
+	 * Repetitive adding will be eliminated.
+	 */
 	addNamedImport(name: string, moduleName: string) {
 		this.imports.addIf(moduleName, name)
 	}
@@ -200,7 +203,7 @@ export class SourceFileModifier {
 			newStatements = [...oldStatements, ...statements]
 		}
 
-		return this.ts.factory.createBlock(newStatements)
+		return this.ts.factory.createBlock(newStatements, true)
 	}
 
 	/** Add statements to an arrow function. */
@@ -219,7 +222,7 @@ export class SourceFileModifier {
 			block = factory.createBlock([
 				...statements,
 				factory.createReturnStatement(node.body),			  
-			])
+			], true)
 		}
 		
 		node = factory.updateArrowFunction(

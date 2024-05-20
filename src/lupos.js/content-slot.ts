@@ -1,5 +1,6 @@
 import type * as ts from 'typescript'
-import {SourceFileModifier, TSHelper, defineVisitor, isComponent} from '../base'
+import {SourceFileModifier, TSHelper, defineVisitor} from '../base'
+import {isComponent} from '../ff'
 
 
 defineVisitor(
@@ -13,7 +14,8 @@ defineVisitor(
 
 		return isComponent()
 	},
-	(node: ts.ClassDeclaration, helper: TSHelper, modifier: SourceFileModifier) => {
+	(node: ts.ClassDeclaration, modifier: SourceFileModifier) => {
+		let helper = modifier.helper
 
 		// Must not specify `ContentSlotType: ...` itself.
 		let contentSlotProperty = helper.getClassProperty(node, 'ContentSlotType')

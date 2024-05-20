@@ -15,7 +15,8 @@ defineVisitor(
 
 		return !!decName && ['computed', 'effect', 'watch'].includes(decName)
 	},
-	(node: ts.MethodDeclaration, helper: TSHelper, modifier: SourceFileModifier) => {
+	(node: ts.MethodDeclaration, modifier: SourceFileModifier) => {
+		let helper = modifier.helper
 		let decorator = helper.getFirstDecorator(node)!
 		let decName = helper.getDecoratorName(decorator)
 

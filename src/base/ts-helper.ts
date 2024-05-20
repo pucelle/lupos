@@ -1,5 +1,5 @@
 import type * as ts from 'typescript'
-import {removeQuotes} from './utils'
+import {removeQuotes} from '../utils'
 
 
 /** Help to get and check. */
@@ -21,6 +21,8 @@ export class TSHelper {
 		if (this.ts.isConstructorDeclaration(node)) {
 			return 'constructor'
 		}
+
+		// May node is not appended, thus `getText()` is not available.
 		else {
 			return (node.name as ts.Identifier).escapedText as string
 		}
@@ -110,7 +112,7 @@ export class TSHelper {
 
 		let exp = firstType.expression
 
-		let moduleAndName = this.getImportNameAndModule(exp)
+		let moduleAndName = this.resolveImport(exp)
 		if (moduleAndName) {
 			if (moduleAndName.module === moduleName && moduleAndName.name === name) {
 				return true
@@ -133,7 +135,7 @@ export class TSHelper {
 
 		if (implementClauses) {
 			let implementModules = implementClauses.types.find(type => {
-				let nm = this.getImportNameAndModule(type.expression)
+				let nm = this.resolveImport(type.expression)
 				return nm && nm.name === typeName && nm.module === moduleName
 			})
 
@@ -167,7 +169,7 @@ export class TSHelper {
 			return undefined
 		}
 
-		let moduleAndName = this.getImportNameAndModule(exp)
+		let moduleAndName = this.resolveImport(exp)
 		if (moduleAndName) {
 			return moduleAndName.name
 		}
@@ -226,7 +228,7 @@ export class TSHelper {
 
 	/** Get the name of a tagged template. */
 	getTaggedTemplateName(node: ts.TaggedTemplateExpression): string | undefined {
-		let moduleAndName = this.getImportNameAndModule(node.tag)
+		let moduleAndName = this.resolveImport(node.tag)
 		if (moduleAndName) {
 			return moduleAndName.name
 		}
@@ -241,12 +243,13 @@ export class TSHelper {
 
 	/** Get the text of a type. */
 	getTypeSymbolText(type: ts.Type): string | undefined {
-		let symbol = type.getSymbol()
-		if (!symbol) {
-			return undefined
+		let name = type.getSymbol()?.getName()
+
+		if (!name || name.startsWith('__')) {
+			name = type.aliasSymbol?.getName() || name
 		}
 
-		return symbol.getName()
+		return name
 	}
 
 	/** Get the returned type of a method node. */
@@ -261,7 +264,7 @@ export class TSHelper {
 
 	/** Test whether current class or super class implements a type located at a module. */
 	isTypeImportedFrom(node: ts.TypeNode, typeName: string, moduleName: string): boolean {
-		let nm = this.getImportNameAndModule(node)
+		let nm = this.resolveImport(node)
 		return !!(nm && nm.name === typeName && nm.module === moduleName)
 	}
 
@@ -271,27 +274,36 @@ export class TSHelper {
 		return (type.getFlags() & this.ts.TypeFlags.Object) > 0
 	}
 
-	/** Test whether type of a node is readonly. */
-	isNodeReadonlyType(node: ts.Node): boolean {
+	/** Test whether type of a node extends `Array<any>`. */
+	isNodeArrayType(node: ts.Node): boolean {
 		let type = this.typeChecker.getTypeAtLocation(node)
-		let symbol = type.aliasSymbol
-		
-		if (!symbol) {
-			return false
-		}
-
-		let name = symbol.getName()
-		if (name === 'Readonly' || name === 'ReadonlyArray') {
+		let name = this.getTypeSymbolText(type)
+		if (name === 'Array' || name === 'ReadonlyArray') {
 			return true
 		}
 
-		// `ReadonlyArray` must resolve deeper.
-		let decl = this.resolveOneSymbolDeclaration(symbol, this.ts.isTypeAliasDeclaration)
-		if (decl && this.ts.isTypeReferenceNode(decl.type)) {
-			name = decl.type.typeName.getText()
-			if (name === 'Readonly' || name === 'ReadonlyArray') {
-				return true
-			}
+		return false
+	}
+
+	/** Analysis whether a property access expression is readonly. */
+	isPropertyReadonly(node: ts.PropertyAccessExpression | ts.ElementAccessExpression): boolean {
+
+		// `class A{readonly p}` -> `this.p` and `this['p']` are readonly.
+		// `interface A{readonly p}` -> `this.p` and `this['p']` are readonly.
+		let nameDecl = this.resolveProperty(node)
+		if (nameDecl && nameDecl.modifiers?.find(m => m.kind === this.ts.SyntaxKind.ReadonlyKeyword)) {
+			return true
+		}
+
+		// `b: Readonly<{p: 1}>` -> `b.p` is readonly, not observed.
+		// `c: ReadonlyArray<...>` -> `c.?` is readonly, not observed.
+		// `d: DeepReadonly<...>` -> `d.?` and `d.?.?` are readonly, not observed.
+		let exp = node.expression
+		let type = this.typeChecker.getTypeAtLocation(exp)
+		let name = this.getTypeSymbolText(type)
+		
+		if (name === 'Readonly' || name === 'ReadonlyArray') {
+			return true
 		}
 
 		return false
@@ -299,15 +311,15 @@ export class TSHelper {
 
 
 
-	//// Symbol
+	//// Symbol & Resolving
 
-	/** Get the import name and module. */
-	getImportNameAndModule(node: ts.Node): {name: string, module: string} | undefined {
+	/** Resolve the import name and module. */
+	resolveImport(node: ts.Node): {name: string, module: string} | undefined {
 
 		// `import * as M`, and use it's member like `M.member`.
 		if (this.ts.isPropertyAccessExpression(node)) {
 			let name = node.name.getText()
-			let symbol = this.getSymbol(node.expression)
+			let symbol = this.resolveSymbol(node.expression)
 			let decl = symbol ? this.resolveOneSymbolDeclaration(symbol, this.ts.isNamespaceImport) : undefined
 
 			if (decl) {
@@ -318,7 +330,7 @@ export class TSHelper {
 			}
 		}
 		else {
-			let symbol = this.getSymbol(node)
+			let symbol = this.resolveSymbol(node)
 			let decl = symbol ? this.resolveOneSymbolDeclaration(symbol, this.ts.isImportSpecifier) : undefined
 
 			if (decl) {
@@ -333,7 +345,7 @@ export class TSHelper {
 	}
 
 	/** Get the symbol of a given node. */
-	getSymbol(node: ts.Node, resolveAlias: boolean = false): ts.Symbol | undefined {
+	resolveSymbol(node: ts.Node, resolveAlias: boolean = false): ts.Symbol | undefined {
 		let symbol = this.typeChecker.getSymbolAtLocation(node)
 
 		// Get symbol from identifier.
@@ -343,7 +355,7 @@ export class TSHelper {
 		}
 
 		// Resolve aliased symbols to it's original declared place.
-		if (resolveAlias && symbol && this.isAliasSymbol(symbol)) {
+		if (resolveAlias && symbol && (symbol.flags & this.ts.SymbolFlags.Alias) > 0) {
 			symbol = this.typeChecker.getAliasedSymbol(symbol)
 		}
 
@@ -382,19 +394,19 @@ export class TSHelper {
 		return undefined
 	}
 
-	/** Returns whether the symbol has `alias` flag. */
-	isAliasSymbol(symbol: ts.Symbol): boolean {
-		return (symbol.flags & this.ts.SymbolFlags.Alias) > 0
-	}
-
 	/** Resolves the declarations of a node. */
-	resolveDeclarations(node: ts.Node): ts.Declaration[] | undefined {
-		let symbol = this.getSymbol(node, true)
+	resolveDeclarations<T extends ts.Declaration>(node: ts.Node, test?: (node: ts.Node) => node is T): T[] | undefined {
+		let symbol = this.resolveSymbol(node, true)
 		if (!symbol) {
 			return undefined
 		}
 
-		return symbol.getDeclarations()
+		let decls = symbol.getDeclarations()
+		if (test && decls) {
+			decls = decls.filter(decl => test(decl))
+		}
+
+		return decls as T[]
 	}
 
 	/** Resolves the first declaration of a node, in kind. */
@@ -407,5 +419,25 @@ export class TSHelper {
 	resolveOneSymbolDeclaration<T extends ts.Node>(symbol: ts.Symbol, test: (node: ts.Node) => node is T): T | undefined {
 		let decls = symbol.getDeclarations()
 		return decls?.find(test) as T | undefined
+	}
+
+	/** Resolve a property declaration or signature. */
+	resolveProperty(node: ts.PropertyAccessExpression | ts.ElementAccessExpression): ts.PropertySignature | ts.PropertyDeclaration | undefined {
+		let name = this.ts.isPropertyAccessExpression(node) ? node.name : node.argumentExpression
+
+		let testFn = ((node: ts.Node) => this.ts.isPropertySignature(node) || this.ts.isPropertyDeclaration(node)) as
+			((node: ts.Node) => node is ts.PropertySignature | ts.PropertyDeclaration)
+
+		return this.resolveOneDeclaration(name, testFn)
+	}
+
+	/** Resolve a method declaration or signature. */
+	resolveMethod(node: ts.PropertyAccessExpression | ts.ElementAccessExpression): ts.MethodSignature | ts.MethodDeclaration | undefined {
+		let name = this.ts.isPropertyAccessExpression(node) ? node.name : node.argumentExpression
+
+		let testFn = ((node: ts.Node) => this.ts.isMethodSignature(node) || this.ts.isMethodDeclaration(node)) as
+			((node: ts.Node) => node is ts.MethodSignature | ts.MethodDeclaration)
+
+		return this.resolveOneDeclaration(name, testFn)
 	}
 }

@@ -17,7 +17,8 @@ defineVisitor(
 
 		return true
 	},
-	(node: ts.ClassDeclaration, helper: TSHelper, modifier: SourceFileModifier) => {
+	(node: ts.ClassDeclaration, modifier: SourceFileModifier) => {
+		let helper = modifier.helper
 		let members = node.members
 		let hasMembers = hasEffectOrWatchDecorator(node, helper)
 

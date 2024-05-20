@@ -1,7 +1,7 @@
 import type * as ts from 'typescript'
 import type {TransformerExtras, PluginConfig} from 'ts-patch'
 import {SourceFileModifier, TSHelper, applyVisitors} from './base'
-import {ObservedChecker, ContextualNode, isContextualNode, popMayObservedClass, popObservedContext, pushMayObservedClass, pushObservedContext, outputExpressionsToNode} from './ff'
+import {ContextualNode, isContextualNode, popMayObservedClass, popObservedContext, pushMayObservedClass, pushObservedContext, outputExpressionsToNode} from './ff'
 import './lupos.js'
 
 
@@ -10,7 +10,6 @@ export default function(program: ts.Program, _pluginConfig: PluginConfig, extras
 
 	return (ctx: ts.TransformationContext) => {
 		let helper = new TSHelper(program, ts)
-		let observedChecker = new ObservedChecker(helper)
 
 		return (sourceFile: ts.SourceFile) => {
 			let modifier = new SourceFileModifier(helper, ctx)
@@ -26,10 +25,10 @@ export default function(program: ts.Program, _pluginConfig: PluginConfig, extras
 				// Check contextual state, must after observable state pushing.
 				let beContextualNode = isContextualNode(node, helper)
 				if (beContextualNode) {
-					pushObservedContext(node as ContextualNode, observedChecker, modifier)
+					pushObservedContext(node as ContextualNode, modifier)
 				}
 
-				let nodes = applyVisitors(node, helper, modifier)!
+				let nodes = applyVisitors(node, modifier)!
 				nodes = nodes.map(n => ts.visitEachChild(n, visit, ctx))
 
 				if (beContextualNode) {

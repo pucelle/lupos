@@ -1,7 +1,7 @@
 import type * as ts from 'typescript'
 import {SourceFileModifier, TSHelper} from '../../base'
 import {ContextualNode, ObservedContext} from './context'
-import {ObservedChecker, PropertyAccessingType} from './checker'
+import {PropertyAccessingNode} from './checker'
 
 
 const ContextStack: ObservedContext[] = []
@@ -13,6 +13,9 @@ export function isContextualNode(node: ts.Node, helper: TSHelper): node is Conte
 	return helper.ts.isSourceFile(node)
 		|| helper.ts.isMethodDeclaration(node)
 		|| helper.ts.isFunctionDeclaration(node)
+		|| helper.ts.isFunctionExpression(node)
+		|| helper.ts.isGetAccessorDeclaration(node)
+		|| helper.ts.isSetAccessorDeclaration(node)
 		|| helper.ts.isArrowFunction(node)
 		|| helper.ts.isModuleDeclaration(node)
 		|| helper.ts.isBlock(node)
@@ -20,8 +23,8 @@ export function isContextualNode(node: ts.Node, helper: TSHelper): node is Conte
 
 
 /** Create a context from node and push to stack. */
-export function pushObservedContext(node: ContextualNode, checker: ObservedChecker, modifier: SourceFileModifier) {
-	let context = new ObservedContext(node, currentContext, checker, modifier)
+export function pushObservedContext(node: ContextualNode, modifier: SourceFileModifier) {
+	let context = new ObservedContext(node, currentContext, modifier)
 
 	if (currentContext) {
 		ContextStack.push(currentContext)
@@ -38,8 +41,8 @@ export function popObservedContext() {
 
 
 /** Add a get expression. */
-export function addGetExpression(node: PropertyAccessingType) {
-	if (currentContext) {
+export function addGetExpression(node: PropertyAccessingNode) {
+	if (currentContext && currentContext.isAccessingObserved(node)) {
 		currentContext.addGetExpression(node)
 	}
 }
