@@ -29,6 +29,12 @@ export class ObservedContext {
 	thisObserved: boolean = false
 
 	/** 
+	 * Whether function has nothing returned.
+	 * If a method returns nothing, it should not observe get expressions.
+	 */
+	nothingReturned: boolean = false
+
+	/** 
 	 * All local variable names, and whether observed.
 	 * Also knows in which context special variable exist.
 	 */
@@ -45,6 +51,7 @@ export class ObservedContext {
 		this.modifier = modifier
 
 		this.checkThisObserved()
+		this.checkFunctionReturned()
 		this.checkObservedVariables()
 	}
 
@@ -69,6 +76,24 @@ export class ObservedContext {
 		}
 		else if (this.parent) {
 			this.thisObserved = this.parent.thisObserved
+		}
+	}
+
+	/** Check whether function has something returned. */
+	private checkFunctionReturned() {
+		if (this.helper.ts.isMethodDeclaration(this.node)
+			|| this.helper.ts.isFunctionDeclaration(this.node)
+			|| this.helper.ts.isFunctionExpression(this.node)
+			|| this.helper.ts.isArrowFunction(this.node)
+		) {
+			let type = this.helper.getReturnType(this.node)
+			this.nothingReturned = !!(type && (type.getFlags() & this.helper.ts.TypeFlags.Void))
+		}
+		else if (this.helper.ts.isSetAccessorDeclaration(this.node)) {
+			this.nothingReturned = true
+		}
+		else if (this.parent) {
+			this.nothingReturned = this.parent.nothingReturned
 		}
 	}
 
@@ -130,6 +155,10 @@ export class ObservedContext {
 				}
 
 				for (let item of stat.declarationList.declarations) {
+					if (item.pos === -1) {
+						continue
+					}
+
 					let observed = ObservedChecker.isVariableDeclarationObserved(item, this)
 					this.variableObserved.set(item.name.getText(), observed)
 				}
@@ -171,19 +200,22 @@ export class ObservedContext {
 		}
 	}
 
+	/** Returns whether a property accessing is observed. */
+	isAccessingObserved(node: PropertyAccessingNode): boolean {
+		return ObservedChecker.isAccessingObserved(node, this)
+	}
+
 	/** Returns whether an identifier, this, or a property accessing is observed. */
 	isAnyObserved(node: CanObserveNode): boolean {
 		if (this.helper.ts.isPropertyAccessExpression(node) || this.helper.ts.isElementAccessExpression(node)) {
 			return this.isAccessingObserved(node)
 		}
+		else if (this.helper.ts.isCallExpression(node)) {
+			return ObservedChecker.isCallObserved(node, this.helper)
+		}
 		else {
 			return this.isIdentifierObserved(node)
 		}
-	}
-
-	/** Returns whether a property accessing is observed. */
-	isAccessingObserved(node: PropertyAccessingNode) {
-		return ObservedChecker.isAccessingObserved(node, this)
 	}
 
 	/** Add a get expression, already tested and knows should observe it. */
@@ -237,6 +269,10 @@ export class ObservedContext {
 	/** Output all expressions. */
 	outputExpressionsToNode(node: ts.Node): ts.Node {
 		if (this.getExpressions.length === 0) {
+			return node
+		}
+
+		if (this.nothingReturned) {
 			return node
 		}
 

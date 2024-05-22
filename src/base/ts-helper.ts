@@ -1,5 +1,4 @@
 import type * as ts from 'typescript'
-import {removeQuotes} from '../utils'
 
 
 /** Help to get and check. */
@@ -46,7 +45,7 @@ export class TSHelper {
 		else {
 			return node.members.find(m => {
 				return this.ts.isPropertyDeclaration(m)
-					&& m.name?.getText() === propertyName
+					&& this.getAnyClassMemberName(m) === propertyName
 			}) as ts.PropertyDeclaration | undefined
 		}
 	}
@@ -69,7 +68,7 @@ export class TSHelper {
 		else {
 			return node.members.find(m => {
 				return this.ts.isMethodDeclaration(m)
-					&& m.name?.getText() === methodName
+					&& this.getAnyClassMemberName(m) === methodName
 			}) as ts.MethodDeclaration | undefined
 		}
 	}
@@ -152,7 +151,7 @@ export class TSHelper {
 		return this.isClassImplemented(superClass, typeName, moduleName)
 	}
 
-	/** Get the first decorator of a class declaration, a property or method declaration. */
+	/** Get the first decorator from a class declaration, a property or method declaration. */
 	getFirstDecorator(node: ts.ClassDeclaration | ts.MethodDeclaration | ts.PropertyDeclaration): ts.Decorator | undefined {
 		return node.modifiers?.find(m => this.ts.isDecorator(m)) as ts.Decorator | undefined
 	}
@@ -180,6 +179,14 @@ export class TSHelper {
 		}
 
 		return decl.name?.getText()
+	}
+
+	/** Get the first decorator from a class declaration, a property or method declaration. */
+	getFirstDecoratorName(node: ts.ClassDeclaration | ts.MethodDeclaration | ts.PropertyDeclaration): string | undefined {
+		let decorator = this.getFirstDecorator(node)
+		let decoName = decorator ? this.getDecoratorName(decorator) : undefined
+
+		return decoName
 	}
 
 	/** Get constructor. */
@@ -241,31 +248,34 @@ export class TSHelper {
 
 	//// Type
 
-	/** Get the text of a type. */
-	getTypeSymbolText(type: ts.Type): string | undefined {
-		let name = type.getSymbol()?.getName()
-
-		if (!name || name.startsWith('__')) {
-			name = type.aliasSymbol?.getName() || name
-		}
-
-		return name
+	/** Get full text of a type, all type parameters are included. */
+	getTypeFullText(type: ts.Type): string {
+		return this.typeChecker.typeToString(type)
 	}
 
-	/** Get the returned type of a method node. */
-	getClassMethodReturnType(node: ts.MethodDeclaration): ts.Type | undefined {
+	/** Get the name of a type, all type parameters are excluded. */
+	getTypeName(type: ts.Type): string | undefined {
+		let node = this.typeChecker.typeToTypeNode(type, undefined, undefined)
+		if (!node || !this.ts.isTypeReferenceNode(node)) {
+			return undefined
+		}
+
+		let typeName = node.typeName
+		if (!this.ts.isIdentifier(typeName)) {
+			return undefined
+		}
+
+		return typeName.text
+	}
+
+	/** Get the returned type of a method / function declaration. */
+	getReturnType(node: ts.SignatureDeclaration): ts.Type | undefined {
 		let signature = this.typeChecker.getSignatureFromDeclaration(node)
 		if (!signature) {
 			return undefined
 		}
 
 		return signature.getReturnType()
-	}
-
-	/** Test whether current class or super class implements a type located at a module. */
-	isTypeImportedFrom(node: ts.TypeNode, typeName: string, moduleName: string): boolean {
-		let nm = this.resolveImport(node)
-		return !!(nm && nm.name === typeName && nm.module === moduleName)
 	}
 
 	/** Test whether type of a node is primitive. */
@@ -277,12 +287,7 @@ export class TSHelper {
 	/** Test whether type of a node extends `Array<any>`. */
 	isNodeArrayType(node: ts.Node): boolean {
 		let type = this.typeChecker.getTypeAtLocation(node)
-		let name = this.getTypeSymbolText(type)
-		if (name === 'Array' || name === 'ReadonlyArray') {
-			return true
-		}
-
-		return false
+		return this.typeChecker.isArrayType(type)
 	}
 
 	/** Analysis whether a property access expression is readonly. */
@@ -300,8 +305,8 @@ export class TSHelper {
 		// `d: DeepReadonly<...>` -> `d.?` and `d.?.?` are readonly, not observed.
 		let exp = node.expression
 		let type = this.typeChecker.getTypeAtLocation(exp)
-		let name = this.getTypeSymbolText(type)
-		
+		let name = this.getTypeName(type)
+
 		if (name === 'Readonly' || name === 'ReadonlyArray') {
 			return true
 		}
@@ -313,30 +318,42 @@ export class TSHelper {
 
 	//// Symbol & Resolving
 
+	/** Test whether current class or super class implements a type located at a module. */
+	isNodeImportedFrom(node: ts.TypeNode, typeName: string, moduleName: string): boolean {
+		let nm = this.resolveImport(node)
+		return !!(nm && nm.name === typeName && nm.module === moduleName)
+	}
+
 	/** Resolve the import name and module. */
 	resolveImport(node: ts.Node): {name: string, module: string} | undefined {
 
 		// `import * as M`, and use it's member like `M.member`.
 		if (this.ts.isPropertyAccessExpression(node)) {
 			let name = node.name.getText()
-			let symbol = this.resolveSymbol(node.expression)
+			let symbol = this.resolveNodeSymbol(node.expression)
 			let decl = symbol ? this.resolveOneSymbolDeclaration(symbol, this.ts.isNamespaceImport) : undefined
 
 			if (decl) {
+				let moduleNameNode = decl.parent.parent.moduleSpecifier
+				let moduleName = this.ts.isStringLiteral(moduleNameNode) ? moduleNameNode.text : ''
+
 				return {
 					name,
-					module: removeQuotes(decl.parent.parent.moduleSpecifier.getText()),
+					module: moduleName,
 				}
 			}
 		}
 		else {
-			let symbol = this.resolveSymbol(node)
+			let symbol = this.resolveNodeSymbol(node)
 			let decl = symbol ? this.resolveOneSymbolDeclaration(symbol, this.ts.isImportSpecifier) : undefined
 
 			if (decl) {
+				let moduleNameNode = decl.parent.parent.parent.moduleSpecifier
+				let moduleName = this.ts.isStringLiteral(moduleNameNode) ? moduleNameNode.text : ''
+
 				return {
 					name: (decl.propertyName || decl.name).getText(),
-					module: removeQuotes(decl.parent.parent.parent.moduleSpecifier.getText()),
+					module: moduleName,
 				}
 			}
 		}
@@ -345,7 +362,7 @@ export class TSHelper {
 	}
 
 	/** Get the symbol of a given node. */
-	resolveSymbol(node: ts.Node, resolveAlias: boolean = false): ts.Symbol | undefined {
+	resolveNodeSymbol(node: ts.Node, resolveAlias: boolean = false): ts.Symbol | undefined {
 		let symbol = this.typeChecker.getSymbolAtLocation(node)
 
 		// Get symbol from identifier.
@@ -370,13 +387,15 @@ export class TSHelper {
 			return node
 		}
 
-		// Class or interface, property, method, function name.
+		// Declaration of a class or interface, property, method, function name, get or set name.
 		if ((this.ts.isClassLike(node)
 			|| this.ts.isInterfaceDeclaration(node)
 			|| this.ts.isVariableDeclaration(node)
 			|| this.ts.isMethodDeclaration(node)
 			|| this.ts.isPropertyDeclaration(node)
 			|| this.ts.isFunctionDeclaration(node)
+			|| this.ts.isGetAccessorDeclaration(node)
+			|| this.ts.isSetAccessorDeclaration(node)
 			)
 			&& node.name
 			&& this.ts.isIdentifier(node.name)
@@ -396,7 +415,7 @@ export class TSHelper {
 
 	/** Resolves the declarations of a node. */
 	resolveDeclarations<T extends ts.Declaration>(node: ts.Node, test?: (node: ts.Node) => node is T): T[] | undefined {
-		let symbol = this.resolveSymbol(node, true)
+		let symbol = this.resolveNodeSymbol(node, true)
 		if (!symbol) {
 			return undefined
 		}
@@ -422,11 +441,28 @@ export class TSHelper {
 	}
 
 	/** Resolve a property declaration or signature. */
-	resolveProperty(node: ts.PropertyAccessExpression | ts.ElementAccessExpression): ts.PropertySignature | ts.PropertyDeclaration | undefined {
+	resolveProperty(node: ts.PropertyAccessExpression | ts.ElementAccessExpression):
+		ts.PropertySignature | ts.PropertyDeclaration | undefined
+	{
 		let name = this.ts.isPropertyAccessExpression(node) ? node.name : node.argumentExpression
 
 		let testFn = ((node: ts.Node) => this.ts.isPropertySignature(node) || this.ts.isPropertyDeclaration(node)) as
 			((node: ts.Node) => node is ts.PropertySignature | ts.PropertyDeclaration)
+
+		return this.resolveOneDeclaration(name, testFn)
+	}
+
+	/** Resolve a property or get accessor declaration or signature. */
+	resolvePropertyOrGetAccessor(node: ts.PropertyAccessExpression | ts.ElementAccessExpression):
+		ts.PropertySignature | ts.PropertyDeclaration | ts.GetAccessorDeclaration | undefined
+	{
+		let name = this.ts.isPropertyAccessExpression(node) ? node.name : node.argumentExpression
+
+		let testFn = ((node: ts.Node) => {
+			return this.ts.isPropertySignature(node)
+				|| this.ts.isPropertyDeclaration(node)
+				|| this.ts.isPropertyDeclaration(node)
+		}) as ((node: ts.Node) => node is ts.PropertySignature | ts.PropertyDeclaration | ts.GetAccessorDeclaration)
 
 		return this.resolveOneDeclaration(name, testFn)
 	}
@@ -439,5 +475,19 @@ export class TSHelper {
 			((node: ts.Node) => node is ts.MethodSignature | ts.MethodDeclaration)
 
 		return this.resolveOneDeclaration(name, testFn)
+	}
+
+	/** Resolve a method or function declaration or a signature. */
+	resolveCallDeclaration(node: ts.CallExpression):
+		ts.MethodSignature | ts.MethodDeclaration | ts.FunctionDeclaration | ts.ArrowFunction | undefined
+	{
+		let testFn = (<T extends ts.Node>(node: T) => {
+			return this.ts.isMethodDeclaration(node)
+				|| this.ts.isMethodSignature(node)
+				|| this.ts.isFunctionDeclaration(node)
+				|| this.ts.isArrowFunction(node)
+		}) as ((node: ts.Node) => node is ts.MethodSignature | ts.MethodDeclaration | ts.FunctionDeclaration | ts.ArrowFunction)
+
+		return this.resolveOneDeclaration(node.expression, testFn)
 	}
 }

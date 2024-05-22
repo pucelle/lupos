@@ -137,12 +137,6 @@ export class ListMap<K, V> {
 }
 
 
-/** Remove quote characters from a string. */
-export function removeQuotes(s: string) {
-	return s.replace(/^\s*(['"])(.+?)\1\s*$/g, '$2')
-}
-
-
 /** 
  * Create a group map in `K => V[]` format, just like SQL `group by` statement.
  * @param pairFn get key and value pair by it.

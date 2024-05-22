@@ -1,5 +1,5 @@
 import {TSHelper} from './ts-helper'
-import {ListMap, difference, removeQuotes} from '../utils'
+import {ListMap, difference} from '../utils'
 import type * as ts from 'typescript'
 
 
@@ -101,7 +101,8 @@ export class SourceFileModifier {
 	getNamedImportFromModule(sourceFile: ts.SourceFile, moduleName: string): ts.ImportDeclaration | undefined {
 		return sourceFile.statements.find(st => {
 			return this.ts.isImportDeclaration(st)
-				&& removeQuotes(st.moduleSpecifier.getText()) === moduleName
+				&& this.helper.ts.isStringLiteral(st.moduleSpecifier)
+				&& st.moduleSpecifier.text === moduleName
 				&& st.importClause?.namedBindings
 				&& this.ts.isNamedImports(st.importClause?.namedBindings)
 		}) as ts.ImportDeclaration | undefined
@@ -146,7 +147,7 @@ export class SourceFileModifier {
 					undefined
 				)
 
-				statements = [...statements, importDecl]
+				statements = [importDecl, ...statements]
 			}
 			
 			sourceFile = factory.updateSourceFile(sourceFile, statements)

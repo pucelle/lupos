@@ -29,13 +29,13 @@ defineVisitor(
 			return node
 		}
 
-		let renderType = helper.getClassMethodReturnType(renderMethod)
+		let renderType = helper.getReturnType(renderMethod)
 		if (!renderType) {
 			return node
 		}
 
 		let factory = helper.ts.factory
-		let typeText = helper.getTypeSymbolText(renderType)
+		let typeText = helper.getTypeFullText(renderType)
 		let slotType: 'TemplateResult' | 'TemplateResultArray' | 'Text' | null = null
 
 		// Check Slot Type.
@@ -43,10 +43,10 @@ defineVisitor(
 		else if (typeText === 'TemplateResult') {
 			slotType = 'TemplateResult'
 		}
-		else if (typeText === 'Array') {
+		else if (typeText === 'TemplateResult[]') {
 			slotType = 'TemplateResultArray'
 		}
-		else if (renderType.getFlags() & (helper.ts.TypeFlags.String | helper.ts.TypeFlags.Number)) {
+		else if (typeText === 'string' || typeText === 'number') {
 			slotType = 'Text'
 		}
 

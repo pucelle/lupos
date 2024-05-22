@@ -25,7 +25,7 @@ export namespace GetExpressionsBuilder {
 	function groupGetExpressions(getExpressions: PropertyAccessingNode[]): PropertyAccessingNode[][] {
 		let group = groupBy(getExpressions, (node: PropertyAccessingNode) => {
 			let exp = node.expression
-			let key = exp.pos >= 0 ? exp.getFullText() : ''
+			let key = exp.pos >= 0 ? exp.getFullText().trim() : ''
 
 			if (node.questionDotToken) {
 				key += '?.'

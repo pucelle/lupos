@@ -10,23 +10,21 @@ defineVisitor(
 			return false
 		}
 
-		let decorator = helper.getFirstDecorator(node)
-		let decName = decorator ? helper.getDecoratorName(decorator) : undefined
-
-		return !!decName && ['computed', 'effect', 'watch'].includes(decName)
+		let decoName = helper.getFirstDecoratorName(node)
+		return !!decoName && ['computed', 'effect', 'watch'].includes(decoName)
 	},
 	(node: ts.MethodDeclaration, modifier: SourceFileModifier) => {
 		let helper = modifier.helper
 		let decorator = helper.getFirstDecorator(node)!
-		let decName = helper.getDecoratorName(decorator)
+		let decoName = helper.getDecoratorName(decorator)
 
-		if (decName === 'computed') {
+		if (decoName === 'computed') {
 			return compileComputedDecorator(node, helper, modifier)
 		}
-		else if (decName === 'effect') {
+		else if (decoName === 'effect') {
 			return compileEffectDecorator(node, helper, modifier)
 		}
-		else if (decName === 'watch') {
+		else if (decoName === 'watch') {
 			return compileWatchDecorator(node, decorator, helper, modifier)
 		}
 
@@ -459,10 +457,24 @@ function compileWatchDecorator(methodDecl: ts.MethodDeclaration, decorator: ts.D
 
 	if (helper.ts.isStringLiteral(propertyGetArg)) {
 		propertyGetBlock = factory.createBlock(
-			[factory.createReturnStatement(factory.createPropertyAccessExpression(
-				factory.createThis(),
-				factory.createIdentifier(propertyGetArg.text)
-			))],
+			[
+				factory.createExpressionStatement(factory.createCallExpression(
+					factory.createIdentifier('onGetGrouped'),
+					undefined,
+					[factory.createArrayLiteralExpression(
+						[
+							factory.createThis(),
+							factory.createArrayLiteralExpression([
+								factory.createStringLiteral(propertyGetArg.text)
+							])
+						]
+					)]
+				)),
+				factory.createReturnStatement(factory.createPropertyAccessExpression(
+					factory.createThis(),
+					factory.createIdentifier(propertyGetArg.text)
+				))
+			],
 			true
 		)
 	}
@@ -620,6 +632,9 @@ function compileWatchDecorator(methodDecl: ts.MethodDeclaration, decorator: ts.D
 		)
 	)
 	
+	if (helper.ts.isStringLiteral(propertyGetArg)) {
+		modifier.addNamedImport('onGetGrouped', '@pucelle/ff')
+	}
 
 	modifier.addNamedImport('beginTrack', '@pucelle/ff')
 	modifier.addNamedImport('endTrack', '@pucelle/ff')

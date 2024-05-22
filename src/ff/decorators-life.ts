@@ -49,9 +49,8 @@ defineVisitor(
 					continue
 				}
 
-				let decorator = helper.getFirstDecorator(member)
-				let decName = decorator ? helper.getDecoratorName(decorator) : undefined
-				if (!decName || !['effect', 'watch'].includes(decName)) {
+				let decoName = helper.getFirstDecoratorName(member)
+				if (!decoName || !['effect', 'watch'].includes(decoName)) {
 					continue
 				}
 
@@ -73,10 +72,8 @@ function hasEffectOrWatchDecorator(node: ts.ClassDeclaration, helper: TSHelper) 
 			return false
 		}
 
-		let decorator = helper.getFirstDecorator(member)
-		let decName = decorator ? helper.getDecoratorName(decorator) : undefined
-
-		if (decName && ['effect', 'watch'].includes(decName)) {
+		let decoName = helper.getFirstDecoratorName(member)
+		if (decoName && ['effect', 'watch'].includes(decoName)) {
 			return true
 		}
 
