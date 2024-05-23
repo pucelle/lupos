@@ -16,14 +16,14 @@ export class TSHelper {
 	//// Class part
 
 	/** Get name of a class member, even not appended. */
-	getAnyClassMemberName(node: ts.ClassElement): string {
+	getClassMemberName(node: ts.ClassElement): string {
 		if (this.ts.isConstructorDeclaration(node)) {
 			return 'constructor'
 		}
 
 		// May node is not appended, thus `getText()` is not available.
 		else {
-			return (node.name as ts.Identifier).escapedText as string
+			return (node.name as ts.Identifier).text
 		}
 	}
 
@@ -45,7 +45,7 @@ export class TSHelper {
 		else {
 			return node.members.find(m => {
 				return this.ts.isPropertyDeclaration(m)
-					&& this.getAnyClassMemberName(m) === propertyName
+					&& this.getClassMemberName(m) === propertyName
 			}) as ts.PropertyDeclaration | undefined
 		}
 	}
@@ -68,7 +68,7 @@ export class TSHelper {
 		else {
 			return node.members.find(m => {
 				return this.ts.isMethodDeclaration(m)
-					&& this.getAnyClassMemberName(m) === methodName
+					&& this.getClassMemberName(m) === methodName
 			}) as ts.MethodDeclaration | undefined
 		}
 	}
@@ -178,7 +178,7 @@ export class TSHelper {
 			return undefined
 		}
 
-		return decl.name?.getText()
+		return decl.name?.text
 	}
 
 	/** Get the first decorator from a class declaration, a property or method declaration. */
@@ -241,12 +241,12 @@ export class TSHelper {
 		}
 
 		let tagNameDecl = this.resolveOneDeclaration(node.tag, this.ts.isFunctionDeclaration)
-		return tagNameDecl?.name?.getText()
+		return tagNameDecl?.name?.text
 	}
 
 
 
-	//// Type
+	//// Types
 
 	/** Get full text of a type, all type parameters are included. */
 	getTypeFullText(type: ts.Type): string {
@@ -352,7 +352,7 @@ export class TSHelper {
 				let moduleName = this.ts.isStringLiteral(moduleNameNode) ? moduleNameNode.text : ''
 
 				return {
-					name: (decl.propertyName || decl.name).getText(),
+					name: (decl.propertyName || decl.name).text,
 					module: moduleName,
 				}
 			}
@@ -474,6 +474,10 @@ export class TSHelper {
 		let testFn = ((node: ts.Node) => this.ts.isMethodSignature(node) || this.ts.isMethodDeclaration(node)) as
 			((node: ts.Node) => node is ts.MethodSignature | ts.MethodDeclaration)
 
+			if ((name as ts.Identifier).text === 'onPropChange') {
+				console.log(this.resolveOneDeclaration(name, ((_node: ts.Node) => true) as any))
+			}
+	
 		return this.resolveOneDeclaration(name, testFn)
 	}
 

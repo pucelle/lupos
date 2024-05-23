@@ -2,26 +2,20 @@ import type * as ts from 'typescript'
 import {isObservedClass} from './class'
 import {CanObserveNode, ObservedChecker, PropertyAccessingNode} from './checker'
 import {TSHelper, SourceFileModifier} from '../../base'
-import {GetExpressionsBuilder} from './get-builder'
-
-
-/** 
- * Nodes than will initialize a context.
- * Both method and function contain a block, include them because of wanting to examine parameters.
- */
-export type ContextualNode = ts.SourceFile | ts.MethodDeclaration | ts.FunctionDeclaration | ts.FunctionExpression
-	| ts.GetAccessorDeclaration| ts.SetAccessorDeclaration | ts.ArrowFunction | ts.ModuleDeclaration | ts.Block
+import {GetExpressionsBuilder} from './builder-get'
 
 
 /** 
  * A source file, a method, or a namespace, a function, an arrow function
- * create a context. a context will extend from it's parent context.
+ * create a context.
+ * Otherwise, a logic or flow statement will also create a context.
  */
-export class ObservedContext {
+export class ObservableContext {
 
 	readonly depth: number
 	readonly node: ts.Node
-	readonly parent: ObservedContext | null
+	readonly parent: ObservableContext | null
+	readonly children: ObservableContext[] = []
 	readonly helper: TSHelper
 	readonly modifier: SourceFileModifier
 
@@ -43,7 +37,7 @@ export class ObservedContext {
 	/** All get expressions. */
 	private getExpressions: PropertyAccessingNode[] = []
 
-	constructor(node: ts.Node, parent: ObservedContext | null, modifier: SourceFileModifier) {
+	constructor(node: ts.Node, parent: ObservableContext | null, modifier: SourceFileModifier) {
 		this.depth = parent ? parent.depth + 1 : 0
 		this.node = node
 		this.parent = parent
@@ -63,12 +57,26 @@ export class ObservedContext {
 			|| this.helper.ts.isGetAccessorDeclaration(this.node)
 			|| this.helper.ts.isSetAccessorDeclaration(this.node)
 		) {
-			let thisParameter = this.node.parameters.find(param => param.name.getText() === 'this')
+			let thisParameter = this.node.parameters.find(param => {
+				return this.helper.ts.isIdentifier(param.name) && param.name.text === 'this'
+			})
 
 			// If re-declare `this` parameter.
 			if (thisParameter && thisParameter.type) {
-				let type = thisParameter.type
-				this.thisObserved = ObservedChecker.isTypeNodeObserved(type, this.helper)
+
+				// Directly declare as `Observed<>`.
+				let typeNode = thisParameter.type
+				if (ObservedChecker.isTypeNodeObserved(typeNode, this.helper)) {
+					this.thisObserved = true
+				}
+
+				// Type of a class implements `Observed<>`.
+				else if (this.helper.ts.isTypeReferenceNode(typeNode)) {
+					let clsDecl = this.helper.resolveOneDeclaration(typeNode.typeName, this.helper.ts.isClassDeclaration)
+					if (clsDecl && this.helper.isClassImplemented(clsDecl, 'Observed', '@pucelle/ff')) {
+						this.thisObserved = true
+					}
+				}
 			}
 			else if (isObservedClass()) {
 				this.thisObserved = true
@@ -114,11 +122,11 @@ export class ObservedContext {
 
 			// If re-declare `this` parameter.
 			for (let param of parameters) {
-				let type = param.type
+				let typeNode = param.type
 				let observed = false
 
-				if (type) {
-					observed = ObservedChecker.isTypeNodeObserved(type, this.helper)
+				if (typeNode) {
+					observed = ObservedChecker.isTypeNodeObserved(typeNode, this.helper)
 				}
 
 				this.variableObserved.set(param.name.getText(), observed)
@@ -155,12 +163,11 @@ export class ObservedContext {
 				}
 
 				for (let item of stat.declarationList.declarations) {
-					if (item.pos === -1) {
-						continue
-					}
-
 					let observed = ObservedChecker.isVariableDeclarationObserved(item, this)
-					this.variableObserved.set(item.name.getText(), observed)
+					let name = this.helper.ts.isIdentifier(item.name) ? item.name.text : undefined
+					if (name) {
+						this.variableObserved.set(name, observed)
+					}
 				}
 			}
 		}
@@ -181,16 +188,13 @@ export class ObservedContext {
 	 * E.g., for `a.b.c`, sub expression `b.c` is not allowed.
 	 */
 	isIdentifierObserved(node: ts.Identifier | ts.ThisExpression): boolean {
-
-		// Newly appended node, not observe always.
-		if (node.pos === -1) {
-			return false
-		}
-		else if (node.kind === this.helper.ts.SyntaxKind.ThisKeyword) {
+		if (node.kind === this.helper.ts.SyntaxKind.ThisKeyword) {
 			return this.thisObserved
 		}
-		else if (this.variableObserved.has(node.getText())) {
-			return this.variableObserved.get(node.getText())!
+
+		let name = (node as ts.Identifier).text
+		if (this.variableObserved.has(name)) {
+			return this.variableObserved.get(name)!
 		}
 		else if (this.parent) {
 			return this.parent.isIdentifierObserved(node)
@@ -202,6 +206,12 @@ export class ObservedContext {
 
 	/** Returns whether a property accessing is observed. */
 	isAccessingObserved(node: PropertyAccessingNode): boolean {
+
+		// Will never observe private identifier like `a.#b`.
+		if (this.helper.ts.isPropertyAccessExpression(node) && this.helper.ts.isPrivateIdentifier(node.name)) {
+			return false
+		}
+
 		return ObservedChecker.isAccessingObserved(node, this)
 	}
 

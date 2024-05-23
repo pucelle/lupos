@@ -1,17 +1,11 @@
 import type * as ts from 'typescript'
 import {SourceFileModifier, TSHelper, defineVisitor} from '../base'
-import {isComponent, isObservedClass} from './observable/class'
-
 
 defineVisitor(
 
 	// Add some decorator compiled part to `constructor` or `onConnected` and `onDisconnected`.
 	(node: ts.Node, helper: TSHelper) => {
 		if (!helper.ts.isClassDeclaration(node)) {
-			return false
-		}
-
-		if (!isObservedClass()) {
 			return false
 		}
 
@@ -26,7 +20,8 @@ defineVisitor(
 			let connect: ts.MethodDeclaration | ts.ConstructorDeclaration | undefined = undefined
 			let disconnect: ts.MethodDeclaration | undefined = undefined
 
-			if (isComponent()) {
+			// Be a component.
+			if (helper.isDerivedClassOf(node, 'Component', '@pucelle/lupos.js')) {
 				connect = helper.getClassMethod(node, 'onConnected')
 				if (!connect) {
 					connect = createCallSuperMethod('onConnected', helper)
@@ -146,7 +141,7 @@ function compileEffectOrWatchDecorator(
 		))
 		
 		disconnect = addToMethodDeclaration(disconnect, [disconnectStatement], helper)
-		modifier.addNamedImport('untrack', '@pucelle/lupos.js')
+		modifier.addNamedImport('untrack', '@pucelle/ff')
 	}
 
 	return [connect, disconnect]
@@ -226,7 +221,7 @@ function addToMethodDeclaration<T extends ts.MethodDeclaration | ts.ConstructorD
 			factory.createBlock([
 				...(method.body?.statements || []),
 				...statements,
-			])
+			], true)
 		) as T
 	}
 	else {
@@ -237,7 +232,7 @@ function addToMethodDeclaration<T extends ts.MethodDeclaration | ts.ConstructorD
 			factory.createBlock([
 				...(method.body?.statements || []),
 				...statements,
-			])
+			], true)
 		) as T
 	}
 }

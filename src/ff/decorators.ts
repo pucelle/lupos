@@ -550,7 +550,7 @@ function compileWatchDecorator(methodDecl: ts.MethodDeclaration, decorator: ts.D
 					undefined,
 					factory.createVariableDeclarationList(
 						[factory.createVariableDeclaration(
-							factory.createIdentifier('new_value_' + methodName),
+							factory.createIdentifier('new_value'),
 							undefined,
 							undefined,
 							factory.createIdentifier('undefined')
@@ -561,7 +561,7 @@ function compileWatchDecorator(methodDecl: ts.MethodDeclaration, decorator: ts.D
 				factory.createTryStatement(
 					factory.createBlock(
 						[factory.createExpressionStatement(factory.createBinaryExpression(
-							factory.createIdentifier('new_value_' + methodName),
+							factory.createIdentifier('new_value'),
 							factory.createToken(helper.ts.SyntaxKind.EqualsToken),
 							factory.createCallExpression(
 								factory.createPropertyAccessExpression(
@@ -604,7 +604,7 @@ function compileWatchDecorator(methodDecl: ts.MethodDeclaration, decorator: ts.D
 				),
 				factory.createIfStatement(
 					factory.createBinaryExpression(
-						factory.createIdentifier('new_value_' + methodName),
+						factory.createIdentifier('new_value'),
 						factory.createToken(helper.ts.SyntaxKind.ExclamationEqualsEqualsToken),
 						factory.createPropertyAccessExpression(
 							factory.createThis(),
@@ -619,7 +619,7 @@ function compileWatchDecorator(methodDecl: ts.MethodDeclaration, decorator: ts.D
 									factory.createPrivateIdentifier('#property_' + methodName)
 								),
 								factory.createToken(helper.ts.SyntaxKind.EqualsToken),
-								factory.createIdentifier('new_value_' + methodName)
+								factory.createIdentifier('new_value')
 							)),
 							...methodDecl.body?.statements || [],
 						],
@@ -632,10 +632,6 @@ function compileWatchDecorator(methodDecl: ts.MethodDeclaration, decorator: ts.D
 		)
 	)
 	
-	if (helper.ts.isStringLiteral(propertyGetArg)) {
-		modifier.addNamedImport('onGetGrouped', '@pucelle/ff')
-	}
-
 	modifier.addNamedImport('beginTrack', '@pucelle/ff')
 	modifier.addNamedImport('endTrack', '@pucelle/ff')
 	modifier.addNamedImport('enqueue', '@pucelle/ff')

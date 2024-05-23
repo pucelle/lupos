@@ -1,6 +1,5 @@
 import type * as ts from 'typescript'
 import {SourceFileModifier, TSHelper, defineVisitor} from '../base'
-import {isComponent} from '../ff'
 
 
 defineVisitor(
@@ -12,7 +11,8 @@ defineVisitor(
 			return false
 		}
 
-		return isComponent()
+		// Be a component.
+		return helper.isDerivedClassOf(node, 'Component', '@pucelle/lupos.js')
 	},
 	(node: ts.ClassDeclaration, modifier: SourceFileModifier) => {
 		let helper = modifier.helper

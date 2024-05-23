@@ -1,30 +1,17 @@
 import type * as ts from 'typescript'
-import {SourceFileModifier, TSHelper} from '../../base'
-import {ContextualNode, ObservedContext} from './context'
-import {PropertyAccessingNode} from './checker'
+import {SourceFileModifier} from '../../base'
+import {ObservableContext} from './context'
+import {ContextualNode, PropertyAccessingNode} from './checker'
 
 
-const ContextStack: ObservedContext[] = []
-let currentContext: ObservedContext | null = null
+const ContextStack: ObservableContext[] = []
+let currentContext: ObservableContext | null = null
 
-
-/** Whether node represents a context. */
-export function isContextualNode(node: ts.Node, helper: TSHelper): node is ContextualNode {
-	return helper.ts.isSourceFile(node)
-		|| helper.ts.isMethodDeclaration(node)
-		|| helper.ts.isFunctionDeclaration(node)
-		|| helper.ts.isFunctionExpression(node)
-		|| helper.ts.isGetAccessorDeclaration(node)
-		|| helper.ts.isSetAccessorDeclaration(node)
-		|| helper.ts.isArrowFunction(node)
-		|| helper.ts.isModuleDeclaration(node)
-		|| helper.ts.isBlock(node)
-}
 
 
 /** Create a context from node and push to stack. */
 export function pushObservedContext(node: ContextualNode, modifier: SourceFileModifier) {
-	let context = new ObservedContext(node, currentContext, modifier)
+	let context = new ObservableContext(node, currentContext, modifier)
 
 	if (currentContext) {
 		ContextStack.push(currentContext)

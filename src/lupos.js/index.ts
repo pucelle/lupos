@@ -1,2 +1,2 @@
-export * from './content-slot'
-export * from './style'
+import './content-slot'
+import './style'

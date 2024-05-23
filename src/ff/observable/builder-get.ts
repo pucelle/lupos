@@ -111,7 +111,7 @@ export namespace GetExpressionsBuilder {
 			return ''
 		}
 		else if (helper.ts.isPropertyAccessExpression(node)) {
-			return `"${node.name.getText()}"`
+			return `"${(node.name as ts.Identifier).text}"`
 		}
 		else {
 			if (helper.ts.isStringLiteral(node.argumentExpression)) {
@@ -124,20 +124,22 @@ export namespace GetExpressionsBuilder {
 	}
 
 
-	/** Get name property expression. */
+	/** Get name of property expression. */
 	function getAccessingNodeNameProperty(node: PropertyAccessingNode, helper: TSHelper): ts.Expression {
 		let factory = helper.ts.factory
 		let name: ts.Expression
 
 		if (helper.isNodeArrayType(node.expression)) {
-			return factory.createStringLiteral('')
+			name = factory.createStringLiteral('')
 		}
 		else if (helper.ts.isPropertyAccessExpression(node)) {
-			name = node.name
 
 			// `a.b`, name is 'b'.
-			if (helper.ts.isIdentifier(name)) {
-				name = factory.createStringLiteral(name.getText())
+			if (helper.ts.isIdentifier(node.name)) {
+				name = factory.createStringLiteral((node.name as ts.Identifier).text)
+			}
+			else {
+				name = factory.createStringLiteral((node.name as ts.PrivateIdentifier).escapedText as string)
 			}
 		}
 		else {

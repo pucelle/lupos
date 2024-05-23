@@ -18,7 +18,7 @@ defineVisitor(
 /** Parse an css expression, return a new one. */
 function parseTaggedTemplate(tem: ts.TaggedTemplateExpression, helper: TSHelper): ts.TaggedTemplateExpression {
 	let tagNameDecl = helper.resolveOneDeclaration(tem.tag, helper.ts.isFunctionDeclaration)
-	if (!tagNameDecl || tagNameDecl.name?.getText() === 'css') {
+	if (!tagNameDecl || tagNameDecl.name?.text === 'css') {
 		return tem
 	}
 

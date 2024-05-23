@@ -48,13 +48,13 @@ export class SourceFileModifier {
 
 		let memberNameMap = new Map(members.map(m => {
 			return [
-				this.helper.getAnyClassMemberName(m),
+				this.helper.getClassMemberName(m),
 				m,
 			]
 		}))
 
 		newMembers = newMembers.map(m => {
-			let name = this.helper.getAnyClassMemberName(m)
+			let name = this.helper.getClassMemberName(m)
 			if (memberNameMap.has(name)) {
 				let newMember = memberNameMap.get(name)!
 				replacedMembers.add(newMember)
@@ -87,7 +87,7 @@ export class SourceFileModifier {
 
 	
 
-	// Import & Export
+	//// Import & Export
 
 	/** 
 	 * Add a named import - `import {name} from moduleName`.
@@ -164,7 +164,7 @@ export class SourceFileModifier {
 			}
 
 			let oldImports = node.elements
-			let oldNames = oldImports.map(im => im.name.getText()) || []
+			let oldNames = oldImports.map(im => im.name.text) || []
 			let newNames = difference(names, oldNames)
 
 			if (newNames.length === 0) {

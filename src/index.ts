@@ -1,7 +1,8 @@
 import type * as ts from 'typescript'
 import type {TransformerExtras, PluginConfig} from 'ts-patch'
 import {SourceFileModifier, TSHelper, applyVisitors} from './base'
-import {ContextualNode, isContextualNode, popMayObservedClass, popObservedContext, pushMayObservedClass, pushObservedContext, outputExpressionsToNode} from './ff'
+import {} from './ff'
+import './ff'
 import './lupos.js'
 
 
@@ -15,30 +16,8 @@ export default function(program: ts.Program, _pluginConfig: PluginConfig, extras
 			let modifier = new SourceFileModifier(helper, ctx)
 
 			function visit(node: ts.Node): ts.Node | ts.Node[] {
-
-				// Check whether in the range of an observed class.
-				let beClass = ts.isClassDeclaration(node)
-				if (beClass) {
-					pushMayObservedClass(node as ts.ClassDeclaration, helper)
-				}
-
-				// Check contextual state, must after observable state pushing.
-				let beContextualNode = isContextualNode(node, helper)
-				if (beContextualNode) {
-					pushObservedContext(node as ContextualNode, modifier)
-				}
-
 				let nodes = applyVisitors(node, modifier)!
-				nodes = nodes.map(n => ts.visitEachChild(n, visit, ctx))
-
-				if (beContextualNode) {
-					nodes = nodes.map(node => outputExpressionsToNode(node as ContextualNode))
-					popObservedContext()
-				}
-
-				if (beClass) {
-					popMayObservedClass()
-				}
+				nodes = nodes.map(node => ts.visitEachChild(node, visit, ctx))
 
 				// If only one node and package it to an array, it represents a new node,
 				// and types will not be eliminated even not referenced.

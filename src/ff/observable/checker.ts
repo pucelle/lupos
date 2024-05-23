@@ -1,6 +1,6 @@
 import type * as ts from 'typescript'
 import {TSHelper} from '../../base/ts-helper'
-import {ObservedContext} from './context'
+import {ObservableContext} from './context'
 
 
 /** Types than can be observed. */
@@ -11,9 +11,30 @@ export type CanObserveNode = ts.PropertyAccessExpression | ts.ElementAccessExpre
 /** Property accessing types. */
 export type PropertyAccessingNode = ts.PropertyAccessExpression | ts.ElementAccessExpression
 
+/** 
+ * Nodes than will initialize a context.
+ * Both method and function contain a block, include them because of wanting to examine parameters.
+ */
+export type ContextualNode = ts.SourceFile | ts.MethodDeclaration | ts.FunctionDeclaration | ts.FunctionExpression
+	| ts.GetAccessorDeclaration| ts.SetAccessorDeclaration | ts.ArrowFunction | ts.ModuleDeclaration | ts.Block
+
 
 /** Help to check observed state. */
 export namespace ObservedChecker {
+
+	/** Whether node represents a context. */
+	export function isContextualNode(node: ts.Node, helper: TSHelper): node is ContextualNode {
+		return helper.ts.isSourceFile(node)
+			|| helper.ts.isMethodDeclaration(node)
+			|| helper.ts.isFunctionDeclaration(node)
+			|| helper.ts.isFunctionExpression(node)
+			|| helper.ts.isGetAccessorDeclaration(node)
+			|| helper.ts.isSetAccessorDeclaration(node)
+			|| helper.ts.isArrowFunction(node)
+			|| helper.ts.isModuleDeclaration(node)
+			|| helper.ts.isBlock(node)
+	}
+
 
 	/** Whether type node is an observed type. */
 	export function isTypeNodeObserved(node: ts.TypeNode, helper: TSHelper): boolean {
@@ -46,7 +67,7 @@ export namespace ObservedChecker {
 
 
 	/** Whether type node is an observed type. */
-	export function isVariableDeclarationObserved(node: ts.VariableDeclaration, context: ObservedContext): boolean {
+	export function isVariableDeclarationObserved(node: ts.VariableDeclaration, context: ObservableContext): boolean {
 		let helper = context.helper
 
 		// `var a = {b:1} as Observed<{b: number}>`, observed.
@@ -107,7 +128,7 @@ export namespace ObservedChecker {
 
 
 	/** Returns whether a property accessing is observed. */
-	export function isAccessingObserved(node: PropertyAccessingNode, context: ObservedContext): boolean {
+	export function isAccessingObserved(node: PropertyAccessingNode, context: ObservableContext): boolean {
 		let helper = context.helper
 
 		// Property declaration is as observed.
@@ -157,7 +178,7 @@ export namespace ObservedChecker {
 
 
 	/** Returns whether a parenthesized expression is observed. */
-	function isParenthesizedObserved(node: ts.ParenthesizedExpression, context: ObservedContext): boolean {
+	function isParenthesizedObserved(node: ts.ParenthesizedExpression, context: ObservableContext): boolean {
 		let helper = context.helper
 		let exp = node.expression
 
