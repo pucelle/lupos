@@ -1,7 +1,7 @@
-import type * as ts from 'typescript'
+import type ts from 'typescript'
 import type {TransformerExtras, PluginConfig} from 'ts-patch'
 import {SourceFileModifier, TSHelper, applyVisitors} from './base'
-import {} from './ff'
+import {observableVisitor} from './ff'
 import './ff'
 import './lupos.js'
 
@@ -25,6 +25,7 @@ export default function(program: ts.Program, _pluginConfig: PluginConfig, extras
 			}
 
 			function visitSourceFile(node: ts.SourceFile): ts.SourceFile | undefined {
+				node = observableVisitor(node, modifier)
 				node = ts.visitNode(node, visit) as ts.SourceFile
 				return modifier.output(node)
 			}

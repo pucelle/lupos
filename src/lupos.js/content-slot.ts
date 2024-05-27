@@ -1,4 +1,4 @@
-import type * as ts from 'typescript'
+import type ts from 'typescript'
 import {SourceFileModifier, TSHelper, defineVisitor} from '../base'
 
 
@@ -29,7 +29,7 @@ defineVisitor(
 			return node
 		}
 
-		let renderType = helper.getReturnType(renderMethod)
+		let renderType = helper.getNodeReturnType(renderMethod)
 		if (!renderType) {
 			return node
 		}

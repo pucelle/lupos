@@ -1,9 +1,9 @@
-import type * as ts from 'typescript'
+import type ts from 'typescript'
 import {TSHelper} from '../../base/ts-helper'
-import {ObservableContext} from './context'
+import {Context} from './context'
 
 
-/** Types than can be observed. */
+/** Types than can be observed, normally accessing, property, or call expression returned. */
 export type CanObserveNode = ts.PropertyAccessExpression | ts.ElementAccessExpression
 	| ts.Identifier | ts.ThisExpression
 	| ts.CallExpression
@@ -11,28 +11,40 @@ export type CanObserveNode = ts.PropertyAccessExpression | ts.ElementAccessExpre
 /** Property accessing types. */
 export type PropertyAccessingNode = ts.PropertyAccessExpression | ts.ElementAccessExpression
 
-/** 
- * Nodes than will initialize a context.
- * Both method and function contain a block, include them because of wanting to examine parameters.
- */
-export type ContextualNode = ts.SourceFile | ts.MethodDeclaration | ts.FunctionDeclaration | ts.FunctionExpression
-	| ts.GetAccessorDeclaration| ts.SetAccessorDeclaration | ts.ArrowFunction | ts.ModuleDeclaration | ts.Block
-
 
 /** Help to check observed state. */
 export namespace ObservedChecker {
 
-	/** Whether node represents a context. */
-	export function isContextualNode(node: ts.Node, helper: TSHelper): node is ContextualNode {
-		return helper.ts.isSourceFile(node)
-			|| helper.ts.isMethodDeclaration(node)
-			|| helper.ts.isFunctionDeclaration(node)
-			|| helper.ts.isFunctionExpression(node)
-			|| helper.ts.isGetAccessorDeclaration(node)
-			|| helper.ts.isSetAccessorDeclaration(node)
-			|| helper.ts.isArrowFunction(node)
-			|| helper.ts.isModuleDeclaration(node)
-			|| helper.ts.isBlock(node)
+	/** Check whether a parameter is observed. */
+	export function isParameterObserved(node: ts.ParameterDeclaration, context: Context): boolean {
+		let helper = context.helper
+
+		// Defines parameter type as `Observed<>`.
+		let typeNode = node.type
+		if (typeNode) {
+			if (isTypeNodeObserved(typeNode, helper)) {
+				return true
+			}
+		}
+
+		// Broadcast observed from parent calling to all parameters.
+		// `a.b.map((item) => {return item.value})`
+		// `a.b.map(item => item.value)`
+		// `a.b.map(function(item){return item.value})`
+		let fn = node.parent
+		if (helper.ts.isCallExpression(fn.parent)) {
+			let exp = fn.parent.expression
+			if (helper.ts.isPropertyAccessExpression(exp) || helper.ts.isElementAccessExpression(exp)) {
+
+				// Check whether `a.b` is observed.
+				let callFrom = exp.expression
+				if (canObserve(callFrom, helper) && context.isAnyObserved(callFrom)) {
+					return true
+				}
+			}
+		}
+
+		return false
 	}
 
 
@@ -67,7 +79,7 @@ export namespace ObservedChecker {
 
 
 	/** Whether type node is an observed type. */
-	export function isVariableDeclarationObserved(node: ts.VariableDeclaration, context: ObservableContext): boolean {
+	export function isVariableDeclarationObserved(node: ts.VariableDeclaration, context: Context): boolean {
 		let helper = context.helper
 
 		// `var a = {b:1} as Observed<{b: number}>`, observed.
@@ -128,17 +140,22 @@ export namespace ObservedChecker {
 
 
 	/** Returns whether a property accessing is observed. */
-	export function isAccessingObserved(node: PropertyAccessingNode, context: ObservableContext): boolean {
+	export function isAccessingObserved(node: PropertyAccessingNode, context: Context): boolean {
 		let helper = context.helper
 
-		// Property declaration is as observed.
+		// Will never observe private identifier like `a.#b`.
+		if (helper.ts.isPropertyAccessExpression(node) && helper.ts.isPrivateIdentifier(node.name)) {
+			return false
+		}
+
+		// Property declaration has specified observed type.
 		if (checkPropertyOrGetAccessorObserved(node, helper)) {
 			return true
 		}
 
 		// Method declaration is always not observed.
 		if (helper.resolveMethod(node)) {
-			return false
+			return isMapOrSetGetHas(node, helper)
 		}
 
 		// Take `node = a.b.c` as example, exp is `a.b`.
@@ -178,7 +195,7 @@ export namespace ObservedChecker {
 
 
 	/** Returns whether a parenthesized expression is observed. */
-	function isParenthesizedObserved(node: ts.ParenthesizedExpression, context: ObservableContext): boolean {
+	function isParenthesizedObserved(node: ts.ParenthesizedExpression, context: Context): boolean {
 		let helper = context.helper
 		let exp = node.expression
 
@@ -202,6 +219,26 @@ export namespace ObservedChecker {
 		}
 	}
 
+
+	/** Test whether calls `Map.has`, `Map.get` or `Set.has` */
+	export function isMapOrSetGetHas(node: PropertyAccessingNode, helper: TSHelper) {
+		let objName = helper.getNodeTypeName(node.expression)
+
+		let propName = helper.ts.isPropertyAccessExpression(node)
+			? node.name.getText()
+			: node.argumentExpression.getText()
+
+		if (objName === 'Map') {
+			return propName === 'has' || propName === 'get'
+		}
+		else if (objName === 'Set') {
+			return propName === 'has'
+		}
+		else {
+			return false
+		}
+	}
+
 	
 	/** Returns whether a call expression returned result is observed. */
 	export function isCallObserved(node: ts.CallExpression, helper: TSHelper): boolean {
@@ -211,7 +248,7 @@ export namespace ObservedChecker {
 		}
 
 		// Directly return an observed object, which implemented `Observed<>`.
-		let returnType = helper.getReturnType(decl)
+		let returnType = helper.getNodeReturnType(decl)
 		if (returnType) {
 			let symbol = returnType.getSymbol()
 			if (symbol) {

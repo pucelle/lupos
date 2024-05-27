@@ -1,4 +1,4 @@
-import type * as ts from 'typescript'
+import type ts from 'typescript'
 
 
 /** Help to get and check. */
@@ -268,8 +268,18 @@ export class TSHelper {
 		return typeName.text
 	}
 
+	/** Get full text of the type of a node, all type parameters are included. */
+	getNodeTypeFullText(node: ts.Node): string {
+		return this.getTypeFullText(this.typeChecker.getTypeAtLocation(node))
+	}
+
+	/** Get the name of the type of a node, all type parameters are excluded. */
+	getNodeTypeName(node: ts.Node): string | undefined {
+		return this.getTypeName(this.typeChecker.getTypeAtLocation(node))
+	}
+
 	/** Get the returned type of a method / function declaration. */
-	getReturnType(node: ts.SignatureDeclaration): ts.Type | undefined {
+	getNodeReturnType(node: ts.SignatureDeclaration): ts.Type | undefined {
 		let signature = this.typeChecker.getSignatureFromDeclaration(node)
 		if (!signature) {
 			return undefined

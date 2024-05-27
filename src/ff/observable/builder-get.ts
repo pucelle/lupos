@@ -1,5 +1,5 @@
 import * as ts from 'typescript'
-import {PropertyAccessingNode} from './checker'
+import {ObservedChecker, PropertyAccessingNode} from './checker'
 import {groupBy} from '../../utils'
 import {TSHelper} from '../../base'
 
@@ -107,11 +107,11 @@ export namespace GetExpressionsBuilder {
 
 	/** Get a name expression key. */
 	function getNameKey(node: PropertyAccessingNode, helper: TSHelper): string {
-		if (helper.isNodeArrayType(node.expression)) {
+		if (helper.isNodeArrayType(node.expression) || ObservedChecker.isMapOrSetGetHas(node, helper)) {
 			return ''
 		}
 		else if (helper.ts.isPropertyAccessExpression(node)) {
-			return `"${(node.name as ts.Identifier).text}"`
+			return `"${node.name.getText()}"`
 		}
 		else {
 			if (helper.ts.isStringLiteral(node.argumentExpression)) {
@@ -129,18 +129,13 @@ export namespace GetExpressionsBuilder {
 		let factory = helper.ts.factory
 		let name: ts.Expression
 
-		if (helper.isNodeArrayType(node.expression)) {
+		if (helper.isNodeArrayType(node.expression) || ObservedChecker.isMapOrSetGetHas(node, helper)) {
 			name = factory.createStringLiteral('')
 		}
 		else if (helper.ts.isPropertyAccessExpression(node)) {
 
 			// `a.b`, name is 'b'.
-			if (helper.ts.isIdentifier(node.name)) {
-				name = factory.createStringLiteral((node.name as ts.Identifier).text)
-			}
-			else {
-				name = factory.createStringLiteral((node.name as ts.PrivateIdentifier).escapedText as string)
-			}
+			name = factory.createStringLiteral(node.name.getText())
 		}
 		else {
 			name = node.argumentExpression

@@ -1,8 +1,9 @@
-import type * as ts from 'typescript'
-import {isObservedClass} from './class'
+import type ts from 'typescript'
 import {CanObserveNode, ObservedChecker, PropertyAccessingNode} from './checker'
 import {TSHelper, SourceFileModifier} from '../../base'
 import {GetExpressionsBuilder} from './builder-get'
+import {ContextState} from './context-state'
+import {ContextType} from './context-range'
 
 
 /** 
@@ -10,23 +11,15 @@ import {GetExpressionsBuilder} from './builder-get'
  * create a context.
  * Otherwise, a logic or flow statement will also create a context.
  */
-export class ObservableContext {
+export class Context {
 
 	readonly depth: number
 	readonly node: ts.Node
-	readonly parent: ObservableContext | null
-	readonly children: ObservableContext[] = []
+	readonly parent: Context | null
+	readonly children: Context[] = []
 	readonly helper: TSHelper
 	readonly modifier: SourceFileModifier
-
-	/** Whether `this` is observed. */
-	thisObserved: boolean = false
-
-	/** 
-	 * Whether function has nothing returned.
-	 * If a method returns nothing, it should not observe get expressions.
-	 */
-	nothingReturned: boolean = false
+	readonly state: ContextState
 
 	/** 
 	 * All local variable names, and whether observed.
@@ -37,72 +30,24 @@ export class ObservableContext {
 	/** All get expressions. */
 	private getExpressions: PropertyAccessingNode[] = []
 
-	constructor(node: ts.Node, parent: ObservableContext | null, modifier: SourceFileModifier) {
+	constructor(type: ContextType, node: ts.Node, parent: Context | null, modifier: SourceFileModifier) {
 		this.depth = parent ? parent.depth + 1 : 0
 		this.node = node
 		this.parent = parent
 		this.helper = modifier.helper
 		this.modifier = modifier
 
-		this.checkThisObserved()
-		this.checkFunctionReturned()
+		if (this.parent) {
+			this.parent.children.push(this)
+		}
+
+		this.state = new ContextState(type, this)
 		this.checkObservedVariables()
 	}
 
-	/** Analysis for whether `this` is observed. */
-	private checkThisObserved() {
-		if (this.helper.ts.isMethodDeclaration(this.node)
-			|| this.helper.ts.isFunctionDeclaration(this.node)
-			|| this.helper.ts.isFunctionExpression(this.node)
-			|| this.helper.ts.isGetAccessorDeclaration(this.node)
-			|| this.helper.ts.isSetAccessorDeclaration(this.node)
-		) {
-			let thisParameter = this.node.parameters.find(param => {
-				return this.helper.ts.isIdentifier(param.name) && param.name.text === 'this'
-			})
-
-			// If re-declare `this` parameter.
-			if (thisParameter && thisParameter.type) {
-
-				// Directly declare as `Observed<>`.
-				let typeNode = thisParameter.type
-				if (ObservedChecker.isTypeNodeObserved(typeNode, this.helper)) {
-					this.thisObserved = true
-				}
-
-				// Type of a class implements `Observed<>`.
-				else if (this.helper.ts.isTypeReferenceNode(typeNode)) {
-					let clsDecl = this.helper.resolveOneDeclaration(typeNode.typeName, this.helper.ts.isClassDeclaration)
-					if (clsDecl && this.helper.isClassImplemented(clsDecl, 'Observed', '@pucelle/ff')) {
-						this.thisObserved = true
-					}
-				}
-			}
-			else if (isObservedClass()) {
-				this.thisObserved = true
-			}
-		}
-		else if (this.parent) {
-			this.thisObserved = this.parent.thisObserved
-		}
-	}
-
-	/** Check whether function has something returned. */
-	private checkFunctionReturned() {
-		if (this.helper.ts.isMethodDeclaration(this.node)
-			|| this.helper.ts.isFunctionDeclaration(this.node)
-			|| this.helper.ts.isFunctionExpression(this.node)
-			|| this.helper.ts.isArrowFunction(this.node)
-		) {
-			let type = this.helper.getReturnType(this.node)
-			this.nothingReturned = !!(type && (type.getFlags() & this.helper.ts.TypeFlags.Void))
-		}
-		else if (this.helper.ts.isSetAccessorDeclaration(this.node)) {
-			this.nothingReturned = true
-		}
-		else if (this.parent) {
-			this.nothingReturned = this.parent.nothingReturned
-		}
+	/** Initialize after children ready. */
+	postInit() {
+		this.state.postInit()
 	}
 
 	private checkObservedVariables() {
@@ -189,10 +134,10 @@ export class ObservableContext {
 	 */
 	isIdentifierObserved(node: ts.Identifier | ts.ThisExpression): boolean {
 		if (node.kind === this.helper.ts.SyntaxKind.ThisKeyword) {
-			return this.thisObserved
+			return this.state.thisObserved
 		}
 
-		let name = (node as ts.Identifier).text
+		let name = node.text
 		if (this.variableObserved.has(name)) {
 			return this.variableObserved.get(name)!
 		}
@@ -206,12 +151,6 @@ export class ObservableContext {
 
 	/** Returns whether a property accessing is observed. */
 	isAccessingObserved(node: PropertyAccessingNode): boolean {
-
-		// Will never observe private identifier like `a.#b`.
-		if (this.helper.ts.isPropertyAccessExpression(node) && this.helper.ts.isPrivateIdentifier(node.name)) {
-			return false
-		}
-
 		return ObservedChecker.isAccessingObserved(node, this)
 	}
 
@@ -230,13 +169,6 @@ export class ObservableContext {
 
 	/** Add a get expression, already tested and knows should observe it. */
 	addGetExpression(node: PropertyAccessingNode) {
-		let context = //this.getLiftedContext(node) || 
-		this
-		context.addGetExpressionToSelf(node)
-	}
-
-	/** Add a get expression to current get expression list. */
-	addGetExpressionToSelf(node: PropertyAccessingNode) {
 		this.getExpressions.push(node)
 	}
 
@@ -276,13 +208,13 @@ export class ObservableContext {
 	// 	}
 	// }
 
-	/** Output all expressions. */
-	outputExpressionsToNode(node: ts.Node): ts.Node {
+	/** Output all expressions to append to a node. */
+	outputExpressions(node: ts.Node): ts.Node | ts.Node[] {
 		if (this.getExpressions.length === 0) {
 			return node
 		}
 
-		if (this.nothingReturned) {
+		if (this.state.nothingReturned) {
 			return node
 		}
 
@@ -296,7 +228,12 @@ export class ObservableContext {
 			return this.modifier.addStatementsToArrowFunction(node, onGetStats)
 		}
 		else {
-			throw new Error(`Node of kind "${node.kind}" cant output expressions!`)
+			throw new Error(`Node of kind "${node.kind}" cant output expressions!\n` + node.getFullText())
 		}
+	}
+
+	/** Do optimize. */
+	optimize() {
+
 	}
 }

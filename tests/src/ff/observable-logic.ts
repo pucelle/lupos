@@ -16,6 +16,17 @@ class TestAndOrOperators extends Component {
 }
 
 
+class TestDoubleQuestionOperator extends Component {
+
+	prop1: {value: string} | undefined = undefined
+	prop2: {value: string}
+
+	render() {
+		return (this.prop1 ?? this.prop2).value
+	}
+}
+
+
 class TestTernaryConditionalOperator extends Component {
 
 	prop1: {value: string} | undefined = undefined

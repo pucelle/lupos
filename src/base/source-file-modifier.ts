@@ -1,6 +1,6 @@
 import {TSHelper} from './ts-helper'
 import {ListMap, difference} from '../utils'
-import type * as ts from 'typescript'
+import type ts from 'typescript'
 
 
 /** Help to get properties and info. */
