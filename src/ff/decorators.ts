@@ -1,31 +1,30 @@
-import type ts from 'typescript'
-import {SourceFileModifier, TSHelper, defineVisitor} from '../base'
+import type TS from 'typescript'
+import {helper, ts, defineVisitor, modifier} from '../base'
 
 
 defineVisitor(
 
 	// Method and decorated, and may need to check whether class is observable.
-	(node: ts.Node, helper: TSHelper) => {
-		if (!helper.ts.isMethodDeclaration(node)) {
+	(node: TS.Node) => {
+		if (!ts.isMethodDeclaration(node)) {
 			return false
 		}
 
 		let decoName = helper.getFirstDecoratorName(node)
 		return !!decoName && ['computed', 'effect', 'watch'].includes(decoName)
 	},
-	(node: ts.MethodDeclaration, modifier: SourceFileModifier) => {
-		let helper = modifier.helper
+	(node: TS.MethodDeclaration) => {
 		let decorator = helper.getFirstDecorator(node)!
 		let decoName = helper.getDecoratorName(decorator)
 
 		if (decoName === 'computed') {
-			return compileComputedDecorator(node, helper, modifier)
+			return compileComputedDecorator(node)
 		}
 		else if (decoName === 'effect') {
-			return compileEffectDecorator(node, helper, modifier)
+			return compileEffectDecorator(node)
 		}
 		else if (decoName === 'watch') {
-			return compileWatchDecorator(node, decorator, helper, modifier)
+			return compileWatchDecorator(node, decorator)
 		}
 
 		return node
@@ -69,15 +68,15 @@ get prop(): any {
 }
 ```
 */
-function compileComputedDecorator(methodDecl: ts.MethodDeclaration, helper: TSHelper, modifier: SourceFileModifier): ts.Node[] {
-	let factory = helper.ts.factory
+function compileComputedDecorator(methodDecl: TS.MethodDeclaration): TS.Node[] {
+	let factory = ts.factory
 	let propName = methodDecl.name.getText()
 
 	let property = factory.createPropertyDeclaration(
 		undefined,
 		factory.createPrivateIdentifier('#' + propName),
 		undefined,
-		factory.createKeywordTypeNode(helper.ts.SyntaxKind.AnyKeyword),
+		factory.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword),
 		factory.createIdentifier('undefined')
 	)
 
@@ -85,7 +84,7 @@ function compileComputedDecorator(methodDecl: ts.MethodDeclaration, helper: TSHe
 		undefined,
 		factory.createPrivateIdentifier('#need_compute_' + propName),
 		undefined,
-		factory.createKeywordTypeNode(helper.ts.SyntaxKind.BooleanKeyword),
+		factory.createKeywordTypeNode(ts.SyntaxKind.BooleanKeyword),
 		factory.createIdentifier('true')
 	)
 	
@@ -114,7 +113,7 @@ function compileComputedDecorator(methodDecl: ts.MethodDeclaration, helper: TSHe
 					factory.createThis(),
 					factory.createPrivateIdentifier('#need_compute_' + propName)
 				),
-				factory.createToken(helper.ts.SyntaxKind.EqualsToken),
+				factory.createToken(ts.SyntaxKind.EqualsToken),
 				factory.createIdentifier('true')
 			))],
 			false
@@ -125,12 +124,12 @@ function compileComputedDecorator(methodDecl: ts.MethodDeclaration, helper: TSHe
 		undefined,
 		factory.createIdentifier(propName),
 		[],
-		factory.createKeywordTypeNode(helper.ts.SyntaxKind.AnyKeyword),
+		factory.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword),
 		factory.createBlock(
 			[
 				factory.createIfStatement(
 					factory.createPrefixUnaryExpression(
-						helper.ts.SyntaxKind.ExclamationToken,
+						ts.SyntaxKind.ExclamationToken,
 						factory.createPropertyAccessExpression(
 							factory.createThis(),
 							factory.createPrivateIdentifier('#need_compute_' + propName)
@@ -175,13 +174,13 @@ function compileComputedDecorator(methodDecl: ts.MethodDeclaration, helper: TSHe
 											[]
 										)
 									)],
-									helper.ts.NodeFlags.Let
+									ts.NodeFlags.Let
 								)
 							),
 							factory.createIfStatement(
 								factory.createBinaryExpression(
 									factory.createIdentifier('newValue'),
-									factory.createToken(helper.ts.SyntaxKind.ExclamationEqualsEqualsToken),
+									factory.createToken(ts.SyntaxKind.ExclamationEqualsEqualsToken),
 									factory.createPropertyAccessExpression(
 										factory.createThis(),
 										factory.createPrivateIdentifier('#' + propName)
@@ -194,7 +193,7 @@ function compileComputedDecorator(methodDecl: ts.MethodDeclaration, helper: TSHe
 												factory.createThis(),
 												factory.createPrivateIdentifier('#' + propName)
 											),
-											factory.createToken(helper.ts.SyntaxKind.EqualsToken),
+											factory.createToken(ts.SyntaxKind.EqualsToken),
 											factory.createIdentifier('newValue')
 										)),
 										factory.createExpressionStatement(factory.createCallExpression(
@@ -246,7 +245,7 @@ function compileComputedDecorator(methodDecl: ts.MethodDeclaration, helper: TSHe
 						factory.createThis(),
 						factory.createPrivateIdentifier('#need_compute_' + propName)
 					),
-					factory.createToken(helper.ts.SyntaxKind.EqualsToken),
+					factory.createToken(ts.SyntaxKind.EqualsToken),
 					factory.createFalse()
 				)),
 				factory.createReturnStatement(factory.createPropertyAccessExpression(
@@ -296,8 +295,8 @@ effectFn() {
 }
 ```
 */
-function compileEffectDecorator(methodDecl: ts.MethodDeclaration, helper: TSHelper, modifier: SourceFileModifier): ts.Node[] {
-	let factory = helper.ts.factory
+function compileEffectDecorator(methodDecl: TS.MethodDeclaration): TS.Node[] {
+	let factory = ts.factory
 	let methodName = methodDecl.name.getText()
 
 	let enqueueMethod = factory.createMethodDeclaration(
@@ -434,11 +433,11 @@ onWatchChange() {
 }
 ```
 */
-function compileWatchDecorator(methodDecl: ts.MethodDeclaration, decorator: ts.Decorator, helper: TSHelper, modifier: SourceFileModifier): ts.Node[] {
-	let factory = helper.ts.factory
+function compileWatchDecorator(methodDecl: TS.MethodDeclaration, decorator: TS.Decorator): TS.Node[] {
+	let factory = ts.factory
 	let methodName = methodDecl.name.getText()
 
-	if (!helper.ts.isCallExpression(decorator.expression)) {
+	if (!ts.isCallExpression(decorator.expression)) {
 		return []
 	}
 
@@ -453,9 +452,9 @@ function compileWatchDecorator(methodDecl: ts.MethodDeclaration, decorator: ts.D
 	
 
 	let propertyGetArg = decorator.expression.arguments[0]
-	let propertyGetBlock: ts.Block
+	let propertyGetBlock: TS.Block
 
-	if (helper.ts.isStringLiteral(propertyGetArg)) {
+	if (ts.isStringLiteral(propertyGetArg)) {
 		propertyGetBlock = factory.createBlock(
 			[
 				factory.createExpressionStatement(factory.createCallExpression(
@@ -478,7 +477,7 @@ function compileWatchDecorator(methodDecl: ts.MethodDeclaration, decorator: ts.D
 			true
 		)
 	}
-	else if (helper.ts.isFunctionExpression(propertyGetArg)) {
+	else if (ts.isFunctionExpression(propertyGetArg)) {
 		propertyGetBlock = propertyGetArg.body
 	}
 	else {
@@ -555,14 +554,14 @@ function compileWatchDecorator(methodDecl: ts.MethodDeclaration, decorator: ts.D
 							undefined,
 							factory.createIdentifier('undefined')
 						)],
-						helper.ts.NodeFlags.Let
+						ts.NodeFlags.Let
 					)
 				),
 				factory.createTryStatement(
 					factory.createBlock(
 						[factory.createExpressionStatement(factory.createBinaryExpression(
 							factory.createIdentifier('new_value'),
-							factory.createToken(helper.ts.SyntaxKind.EqualsToken),
+							factory.createToken(ts.SyntaxKind.EqualsToken),
 							factory.createCallExpression(
 								factory.createPropertyAccessExpression(
 									factory.createThis(),
@@ -605,7 +604,7 @@ function compileWatchDecorator(methodDecl: ts.MethodDeclaration, decorator: ts.D
 				factory.createIfStatement(
 					factory.createBinaryExpression(
 						factory.createIdentifier('new_value'),
-						factory.createToken(helper.ts.SyntaxKind.ExclamationEqualsEqualsToken),
+						factory.createToken(ts.SyntaxKind.ExclamationEqualsEqualsToken),
 						factory.createPropertyAccessExpression(
 							factory.createThis(),
 							factory.createPrivateIdentifier('#property_' + methodName)
@@ -618,7 +617,7 @@ function compileWatchDecorator(methodDecl: ts.MethodDeclaration, decorator: ts.D
 									factory.createThis(),
 									factory.createPrivateIdentifier('#property_' + methodName)
 								),
-								factory.createToken(helper.ts.SyntaxKind.EqualsToken),
+								factory.createToken(ts.SyntaxKind.EqualsToken),
 								factory.createIdentifier('new_value')
 							)),
 							...methodDecl.body?.statements || [],

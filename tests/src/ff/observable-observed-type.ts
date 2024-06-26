@@ -64,3 +64,43 @@ class TestArrayMapFn {
 		return this.prop.map(function(v: Observed<{value: number}>){return v.value}).join('')
 	}
 }
+
+
+class TestMethodReturnedType extends Component {
+
+	prop: {value: string} = {value: 'Text'}
+
+	render1() {
+		var item = this.getItem() as Observed<{value: string}>
+		return item.value
+	}
+
+	render2() {
+		return (this.getItem() as Observed<{value: string}>).value
+	}
+
+	getItem(): {value: string} {
+		return this.prop
+	}
+
+	render3() {
+		var item = this.getObservedItem()
+		return item.value
+	}
+
+	render4() {
+		return this.getObservedItem().value
+	}
+
+	getObservedItem(): Observed<{value: string}> {
+		return this.prop
+	}
+
+	render5() {
+		return this.getInstance().prop.value
+	}
+
+	getInstance(): TestMethodReturnedType {
+		return this
+	}
+}

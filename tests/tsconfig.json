@@ -19,5 +19,5 @@
 			{"transform": "../src/index.ts"},
 		]
 	},
-	"include": ["src/ff/observable-get-map-set.ts"],
+	"include": ["src/ff/observable-logic.ts"],
 }

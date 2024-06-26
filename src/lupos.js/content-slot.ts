@@ -1,21 +1,20 @@
-import type ts from 'typescript'
-import {SourceFileModifier, TSHelper, defineVisitor} from '../base'
+import type TS from 'typescript'
+import {helper, defineVisitor, ts, modifier} from '../base'
 
 
 defineVisitor(
 
 	// Be derived class of `Component`.
 	// May switch to match `render` method?
-	(node: ts.Node, helper: TSHelper) => {
-		if (!helper.ts.isClassDeclaration(node)) {
+	(node: TS.Node) => {
+		if (!ts.isClassDeclaration(node)) {
 			return false
 		}
 
 		// Be a component.
 		return helper.isDerivedClassOf(node, 'Component', '@pucelle/lupos.js')
 	},
-	(node: ts.ClassDeclaration, modifier: SourceFileModifier) => {
-		let helper = modifier.helper
+	(node: TS.ClassDeclaration) => {
 
 		// Must not specify `ContentSlotType: ...` itself.
 		let contentSlotProperty = helper.getClassProperty(node, 'ContentSlotType')
@@ -34,7 +33,7 @@ defineVisitor(
 			return node
 		}
 
-		let factory = helper.ts.factory
+		let factory = ts.factory
 		let typeText = helper.getTypeFullText(renderType)
 		let slotType: 'TemplateResult' | 'TemplateResultArray' | 'Text' | null = null
 
@@ -56,7 +55,7 @@ defineVisitor(
 
 			let property = factory.createPropertyDeclaration(
 				[
-					factory.createToken(helper.ts.SyntaxKind.StaticKeyword)
+					factory.createToken(ts.SyntaxKind.StaticKeyword)
 				],
 				factory.createIdentifier('ContentSlotType'),
 				undefined,

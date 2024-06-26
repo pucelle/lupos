@@ -70,30 +70,3 @@ class TestQuestionDotPropMerge extends Component {
 			+ this.prop?.['value']
 	}
 }
-
-
-class TestMethodReturnedProp extends Component {
-
-	prop: {value: string} = {value: 'Text'}
-
-	render1() {
-		var item = this.getItem()
-		return item.value
-	}
-
-	render2() {
-		return this.getItem().value
-	}
-
-	getItem(): Observed<{value: string}> {
-		return this.prop
-	}
-
-	render3() {
-		return this.getInstance().prop.value
-	}
-
-	getInstance(): TestMethodReturnedProp {
-		return this
-	}
-}

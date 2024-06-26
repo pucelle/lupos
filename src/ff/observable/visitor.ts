@@ -1,38 +1,38 @@
-import type ts from 'typescript'
-import {SourceFileModifier} from '../../base'
+import type TS from 'typescript'
+import {transformContext, ts} from '../../base'
 import {Context} from './context'
 import {ClassRange} from './class-range'
-import {ContextRange, ContextType} from './context-range'
+import {ContextTree, ContextType} from './context-tree'
+import {VisitingTree} from './visiting-tree'
+import {ReferenceTree} from './reference-tree'
 
 
 /** 
  * It add observable codes to source file.
  * Cant mix with other visitors because it requires full type references to work.
  */
-export function observableVisitor(node: ts.SourceFile, modifier: SourceFileModifier): ts.SourceFile {
-	let helper = modifier.helper
-	let ts = helper.ts
-
-	function visitNode(node: ts.Node): () => ts.Node | ts.Node[] {
+export function observableVisitor(node: TS.SourceFile): TS.SourceFile {
+	function visitNode(node: TS.Node): () => TS.Node | TS.Node[] {
+		VisitingTree.toNext()
 
 		// Check whether in the range of an observed class.
 		let beClass = ts.isClassDeclaration(node)
 		if (beClass) {
-			ClassRange.pushMayObserved(node as ts.ClassDeclaration, helper)
+			ClassRange.pushMayObserved(node as TS.ClassDeclaration)
 		}
 
 		// Check contextual state, must after observable state pushing.
-		let type = ContextRange.checkContextType(node, helper)
+		let type = ContextTree.checkContextType(node)
 		let context: Context | null = null
 
 		if (type !== null) {
-			context = ContextRange.createdContextToPush(type, node, modifier)
+			context = ContextTree.createContextAndPush(type, node)
 		}
 
 		let outputCallbacks = visitChildren(node)
 
 		if (type !== null) {
-			ContextRange.pop()
+			ContextTree.pop()
 		}
 
 		// Quit class range.
@@ -45,7 +45,7 @@ export function observableVisitor(node: ts.SourceFile, modifier: SourceFileModif
 			let index = 0
 
 			// replace children by callback outputted.
-			let newNode = ts.visitEachChild(node, () => output[index++], modifier.context)
+			let newNode = ts.visitEachChild(node, () => output[index++], transformContext)
 			
 			// Output by context.
 			if (context) {
@@ -59,49 +59,55 @@ export function observableVisitor(node: ts.SourceFile, modifier: SourceFileModif
 
 
 	/** Visit all children of specified node. */
-	function visitChildren(node: ts.Node): (() => ts.Node | ts.Node[])[] {
+	function visitChildren(node: TS.Node): (() => TS.Node | TS.Node[])[] {
+		VisitingTree.toChild()
 
-		// Add get expressions.
-		if (helper.ts.isPropertyAccessExpression(node)
-			|| helper.ts.isElementAccessExpression(node)
-		) {
-			ContextRange.addGetExpression(node)
-		}
+		// Visit each child node.
+		ContextTree.visitChildNode(node)
 
 		// Visit children recursively, but not output immediately.
-		let outputCallbacks: (() => ts.Node | ts.Node[])[] = []
+		let outputCallbacks: (() => TS.Node | TS.Node[])[] = []
 
-		// Create a conditional context context and visit it's expressions.
+		// Create a conditional context and visit `case` expressions.
+		// This context cant be outputted directly by output callback,
+		// should implement a special `case` type of output at parent context.
 		if (ts.isCaseOrDefaultClause(node)) {
 			if (ts.isCaseClause(node)) {
 				outputCallbacks.push(visitNode(node.expression))
 			}
 
-			ContextRange.createdContextToPush(ContextType.ConditionalContent, node, modifier)
+			ContextTree.createContextAndPush(ContextType.CaseContent, node)
 
 			for (let child of node.statements) {
 				outputCallbacks.push(visitNode(child))
 			}
 
-			ClassRange.pop()
+			ContextTree.pop()
 		}
 		else {
+
+			// Note looping `getChildren()` is not working.
 			ts.visitEachChild(node, child => {
 				outputCallbacks.push(visitNode(child))
 				return child
-			}, modifier.context)
+			}, transformContext)
 		}
+
+		VisitingTree.toParent()
 	
 		return outputCallbacks
 	}
 
 
-	let rootContext = new Context(ContextType.BlockLike, node, null, modifier)
+	VisitingTree.initialize()
+	ReferenceTree.initialize()
+
+	let rootContext = new Context(ContextType.BlockLike, node, null)
 	let callback = visitNode(node)
 
 	// Do optimize before final output.
 	rootContext.optimize()
 
-	let newSourceFile = callback() as ts.SourceFile
+	let newSourceFile = callback() as TS.SourceFile
 	return newSourceFile
 }

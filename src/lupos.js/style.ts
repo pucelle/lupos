@@ -1,34 +1,34 @@
-import type ts from 'typescript'
-import {SourceFileModifier, TSHelper, defineVisitor} from '../base'
+import type TS from 'typescript'
+import {helper, defineVisitor, ts} from '../base'
 
 
 defineVisitor(
 
 	// `static style = ...` or `static style() {...}`
-	(node: ts.Node, helper: TSHelper) => {
-		return helper.ts.isTaggedTemplateExpression(node)
+	(node: TS.Node) => {
+		return ts.isTaggedTemplateExpression(node)
 			&& helper.getTaggedTemplateName(node) === 'css'
 	},
-	(node: ts.TaggedTemplateExpression, modifier: SourceFileModifier) => {
-		return parseTaggedTemplate(node, modifier.helper)
+	(node: TS.TaggedTemplateExpression) => {
+		return parseTaggedTemplate(node)
 	},
 )
 
 
 /** Parse an css expression, return a new one. */
-function parseTaggedTemplate(tem: ts.TaggedTemplateExpression, helper: TSHelper): ts.TaggedTemplateExpression {
-	let tagNameDecl = helper.resolveOneDeclaration(tem.tag, helper.ts.isFunctionDeclaration)
+function parseTaggedTemplate(tem: TS.TaggedTemplateExpression): TS.TaggedTemplateExpression {
+	let tagNameDecl = helper.resolveOneDeclaration(tem.tag, ts.isFunctionDeclaration)
 	if (!tagNameDecl || tagNameDecl.name?.text === 'css') {
 		return tem
 	}
 
-	let string = joinTaggedTemplateString(tem, helper)
+	let string = joinTaggedTemplateString(tem)
 	let parsed = minifyCSSString(parseStyleString(string))
 	let parts = parsed.split(/\$SLOT_INDEX_\d+\$/g)
-	let factory = helper.ts.factory
+	let factory = ts.factory
 	let template = tem.template
 
-	if (helper.ts.isNoSubstitutionTemplateLiteral(template)) {
+	if (ts.isNoSubstitutionTemplateLiteral(template)) {
 		return factory.createTaggedTemplateExpression(
 			tem.tag,
 			undefined,
@@ -38,7 +38,7 @@ function parseTaggedTemplate(tem: ts.TaggedTemplateExpression, helper: TSHelper)
 			)
 		)
 	}
-	else if (helper.ts.isTemplateExpression(template)) {
+	else if (ts.isTemplateExpression(template)) {
 		let oldSpans = template.templateSpans
 
 		let newSpans = oldSpans.map((span, index) => {
@@ -81,12 +81,12 @@ function parseTaggedTemplate(tem: ts.TaggedTemplateExpression, helper: TSHelper)
  * Get whole string part of a tagged template.
  * Template slots have been replaced to ${SLOT_INDEX_x}
  */
-function joinTaggedTemplateString(tem: ts.TaggedTemplateExpression, helper: TSHelper): string {
+function joinTaggedTemplateString(tem: TS.TaggedTemplateExpression): string {
 	let template = tem.template
-	if (helper.ts.isNoSubstitutionTemplateLiteral(template)) {
+	if (ts.isNoSubstitutionTemplateLiteral(template)) {
 		return template.text
 	}
-	else if (helper.ts.isTemplateExpression(template)) {
+	else if (ts.isTemplateExpression(template)) {
 		let string = template.head.text
 		let index = 0
 		

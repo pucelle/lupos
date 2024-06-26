@@ -1,8 +1,9 @@
-import type ts from 'typescript'
+import type TS from 'typescript'
 import {Context} from './context'
-import {ObservedChecker} from './checker'
+import {checker} from './checker'
 import {ClassRange} from './class-range'
-import {ContextType} from './context-range'
+import {ContextType} from './context-tree'
+import {helper, ts} from '../../base'
 
 
 export class ContextState {
@@ -49,15 +50,14 @@ export class ContextState {
 
 	private checkThisObserved(): boolean {
 		let node = this.context.node
-		let helper = this.context.modifier.helper
-		
+
 		// Inherit from parent context.
 		if (this.type !== ContextType.FunctionLike) {
 			return this.context.parent?.state.thisObserved ?? false
 		}
 
-		let thisParameter = (node as ts.FunctionLikeDeclaration).parameters.find(param => {
-			return helper.ts.isIdentifier(param.name) && param.name.text === 'this'
+		let thisParameter = (node as TS.FunctionLikeDeclaration).parameters.find(param => {
+			return ts.isIdentifier(param.name) && param.name.text === 'this'
 		})
 
 		// If declared `this` parameter.
@@ -65,13 +65,13 @@ export class ContextState {
 
 			// Directly declare type as `Observed<>`.
 			let typeNode = thisParameter.type
-			if (ObservedChecker.isTypeNodeObserved(typeNode, helper)) {
+			if (checker.isTypeNodeObserved(typeNode)) {
 				return true
 			}
 
 			// Class type resolved implements `Observed<>`.
-			else if (helper.ts.isTypeReferenceNode(typeNode)) {
-				let clsDecl = helper.resolveOneDeclaration(typeNode.typeName, helper.ts.isClassDeclaration)
+			else if (ts.isTypeReferenceNode(typeNode)) {
+				let clsDecl = helper.resolveOneDeclaration(typeNode.typeName, ts.isClassDeclaration)
 				if (clsDecl && helper.isClassImplemented(clsDecl, 'Observed', '@pucelle/ff')) {
 					return true
 				}
@@ -88,15 +88,14 @@ export class ContextState {
 
 	private checkNothingReturned(): boolean {
 		let node = this.context.node
-		let helper = this.context.modifier.helper
 
 		// Inherit from parent context.
 		if (this.type !== ContextType.FunctionLike) {
 			return this.context.parent?.state.nothingReturned ?? false
 		}
 
-		let type = helper.getNodeReturnType(node as ts.FunctionLikeDeclaration)
-		return !!(type && (type.getFlags() & helper.ts.TypeFlags.Void))
+		let type = helper.getNodeReturnType(node as TS.FunctionLikeDeclaration)
+		return !!(type && (type.getFlags() & ts.TypeFlags.Void))
 	}
 
 	/** Initialize after all children contexts created. */
@@ -106,13 +105,11 @@ export class ContextState {
 	}
 
 	private checkBreakInside() {
-		let helper = this.context.helper
-
 		return this.context.children.some(child => {
 			if (child.state.type === ContextType.Iteration || child.state.type === ContextType.CaseContent) {
 				return false
 			}
-			else if (helper.ts.isBreakStatement(child.node) || helper.ts.isContinueStatement(child.node)) {
+			else if (ts.isBreakStatement(child.node) || ts.isContinueStatement(child.node)) {
 				return true
 			}
 			else {
@@ -122,13 +119,11 @@ export class ContextState {
 	}
 
 	private checkReturnInside() {
-		let helper = this.context.helper
-
 		return this.context.children.some(child => {
 			if (child.state.type === ContextType.FunctionLike) {
 				return false
 			}
-			else if (helper.ts.isReturnStatement(child.node)) {
+			else if (ts.isReturnStatement(child.node)) {
 				return true
 			}
 			else {

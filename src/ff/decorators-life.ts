@@ -1,46 +1,46 @@
-import type ts from 'typescript'
-import {SourceFileModifier, TSHelper, defineVisitor} from '../base'
+import type TS from 'typescript'
+import {ts, defineVisitor, modifier, helper} from '../base'
+
 
 defineVisitor(
 
 	// Add some decorator compiled part to `constructor` or `onConnected` and `onDisconnected`.
-	(node: ts.Node, helper: TSHelper) => {
-		if (!helper.ts.isClassDeclaration(node)) {
+	(node: TS.Node) => {
+		if (!ts.isClassDeclaration(node)) {
 			return false
 		}
 
 		return true
 	},
-	(node: ts.ClassDeclaration, modifier: SourceFileModifier) => {
-		let helper = modifier.helper
+	(node: TS.ClassDeclaration) => {
 		let members = node.members
-		let hasMembers = hasEffectOrWatchDecorator(node, helper)
+		let hasMembers = hasEffectOrWatchDecorator(node)
 
 		if (hasMembers) {
-			let connect: ts.MethodDeclaration | ts.ConstructorDeclaration | undefined = undefined
-			let disconnect: ts.MethodDeclaration | undefined = undefined
+			let connect: TS.MethodDeclaration | TS.ConstructorDeclaration | undefined = undefined
+			let disconnect: TS.MethodDeclaration | undefined = undefined
 
 			// Be a component.
 			if (helper.isDerivedClassOf(node, 'Component', '@pucelle/lupos.js')) {
 				connect = helper.getClassMethod(node, 'onConnected')
 				if (!connect) {
-					connect = createCallSuperMethod('onConnected', helper)
+					connect = createCallSuperMethod('onConnected')
 				}
 
 				disconnect = helper.getClassMethod(node, 'onDisconnected')
 				if (!disconnect) {
-					disconnect = createCallSuperMethod('onDisconnected', helper)
+					disconnect = createCallSuperMethod('onDisconnected')
 				}
 			}
 			else {
 				connect = helper.getConstructor(node)
 				if (!connect) {
-					connect = createConstructor(node, helper)
+					connect = createConstructor(node)
 				}
 			}
 
 			for (let member of members) {
-				if (!helper.ts.isMethodDeclaration(member)) {
+				if (!ts.isMethodDeclaration(member)) {
 					continue
 				}
 
@@ -49,10 +49,10 @@ defineVisitor(
 					continue
 				}
 
-				[connect, disconnect] = compileEffectOrWatchDecorator(member, connect, disconnect, helper, modifier)
+				[connect, disconnect] = compileEffectOrWatchDecorator(member, connect, disconnect)
 			}
 
-			let newMembers = [connect, disconnect].filter(v => v) as ts.ClassElement[]
+			let newMembers = [connect, disconnect].filter(v => v) as TS.ClassElement[]
 			node = modifier.replaceClassMembers(node, newMembers, true)
 		}
 
@@ -61,9 +61,9 @@ defineVisitor(
 )
 
 
-function hasEffectOrWatchDecorator(node: ts.ClassDeclaration, helper: TSHelper) {
+function hasEffectOrWatchDecorator(node: TS.ClassDeclaration) {
 	return node.members.some(member => {
-		if (!helper.ts.isMethodDeclaration(member)) {
+		if (!ts.isMethodDeclaration(member)) {
 			return false
 		}
 
@@ -106,12 +106,11 @@ onDisconnected() {
 ```
 */
 function compileEffectOrWatchDecorator(
-	methodDecl: ts.MethodDeclaration,
-	connect: ts.MethodDeclaration | ts.ConstructorDeclaration,
-	disconnect: ts.MethodDeclaration | undefined,
-	helper: TSHelper, modifier: SourceFileModifier
-): [ts.MethodDeclaration | ts.ConstructorDeclaration, ts.MethodDeclaration | undefined] {
-	let factory = helper.ts.factory
+	methodDecl: TS.MethodDeclaration,
+	connect: TS.MethodDeclaration | TS.ConstructorDeclaration,
+	disconnect: TS.MethodDeclaration | undefined
+): [TS.MethodDeclaration | TS.ConstructorDeclaration, TS.MethodDeclaration | undefined] {
+	let factory = ts.factory
 	let methodName = methodDecl.name.getText()
 
 	if (connect) {
@@ -124,7 +123,7 @@ function compileEffectOrWatchDecorator(
 			[]
 		))
 
-		connect = addToMethodDeclaration(connect, [connectStatement], helper)
+		connect = addToMethodDeclaration(connect, [connectStatement])
 	}
 	
 	if (disconnect) {
@@ -140,7 +139,7 @@ function compileEffectOrWatchDecorator(
 			]
 		))
 		
-		disconnect = addToMethodDeclaration(disconnect, [disconnectStatement], helper)
+		disconnect = addToMethodDeclaration(disconnect, [disconnectStatement])
 		modifier.addNamedImport('untrack', '@pucelle/ff')
 	}
 
@@ -149,8 +148,8 @@ function compileEffectOrWatchDecorator(
 
 
 /** Create a method, which will call super method without parameters. */
-function createCallSuperMethod(name: string, helper: TSHelper): ts.MethodDeclaration {
-	let factory = helper.ts.factory
+function createCallSuperMethod(name: string): TS.MethodDeclaration {
+	let factory = ts.factory
 
 	return factory.createMethodDeclaration(
 		undefined,
@@ -178,16 +177,16 @@ function createCallSuperMethod(name: string, helper: TSHelper): ts.MethodDeclara
 
 
 /** Create a constructor function. */
-function createConstructor(node: ts.ClassDeclaration, helper: TSHelper): ts.ConstructorDeclaration {
-	let factory = helper.ts.factory
+function createConstructor(node: TS.ClassDeclaration): TS.ConstructorDeclaration {
+	let factory = ts.factory
 	let parameters = helper.getConstructorParameters(node)
-	let statements: ts.Statement[] = []
+	let statements: TS.Statement[] = []
 
 	if (parameters) {
 		let callSuper = factory.createExpressionStatement(factory.createCallExpression(
 			factory.createSuper(),
 			undefined,
-			parameters.map(p => p.name as ts.Identifier)
+			parameters.map(p => p.name as TS.Identifier)
 		))
 
 		statements = [callSuper]
@@ -205,10 +204,10 @@ function createConstructor(node: ts.ClassDeclaration, helper: TSHelper): ts.Cons
 
 
 /** Add a list of statements to a method content end. */
-function addToMethodDeclaration<T extends ts.MethodDeclaration | ts.ConstructorDeclaration>(method: T, statements: ts.Statement[], helper: TSHelper): T {
-	let factory = helper.ts.factory
+function addToMethodDeclaration<T extends TS.MethodDeclaration | TS.ConstructorDeclaration>(method: T, statements: TS.Statement[]): T {
+	let factory = ts.factory
 	
-	if (helper.ts.isMethodDeclaration(method)) {
+	if (ts.isMethodDeclaration(method)) {
 		return factory.updateMethodDeclaration(
 			method,
 			method.modifiers,

@@ -1,5 +1,5 @@
 import type ts from 'typescript'
-import {TSHelper} from '../../base/ts-helper'
+import {helper} from '../../base/helper'
 
 
 enum ObservedClassType{
@@ -10,23 +10,23 @@ enum ObservedClassType{
 export namespace ClassRange {
 
 	const ObservedStack: number[] = []
-	let currentObservedType: number = 0
+	let currentlyObservedType: number = 0
 	
 	
 	/** Whether currently inside of an observed class. */
 	export function isObserved(): boolean {
-		return (currentObservedType & ObservedClassType.ObservedClass) > 0
+		return (currentlyObservedType & ObservedClassType.ObservedClass) > 0
 	}
 
 
 	/** Whether currently inside of a component. */
 	export function isComponent() {
-		return (currentObservedType & ObservedClassType.Component) > 0
+		return (currentlyObservedType & ObservedClassType.Component) > 0
 	}
 
 
 	/** Test observed type of a node, and push state always. */
-	export function pushMayObserved(node: ts.ClassDeclaration, helper: TSHelper) {
+	export function pushMayObserved(node: ts.ClassDeclaration) {
 		let state: number = 0
 
 		if (helper.isDerivedClassOf(node, 'Component', '@pucelle/lupos.js')) {
@@ -36,13 +36,13 @@ export namespace ClassRange {
 			state = ObservedClassType.ObservedClass
 		}
 
-		ObservedStack.push(currentObservedType)
-		currentObservedType = state
+		ObservedStack.push(currentlyObservedType)
+		currentlyObservedType = state
 	}
 
 
 	/** Pop a class, always along after `pushMayObservedClass`. */
 	export function pop() {
-		currentObservedType = ObservedStack.pop()!
+		currentlyObservedType = ObservedStack.pop()!
 	}
 }

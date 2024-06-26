@@ -1,6 +1,6 @@
 import type ts from 'typescript'
 import type {TransformerExtras, PluginConfig} from 'ts-patch'
-import {SourceFileModifier, TSHelper, applyVisitors} from './base'
+import {applyVisitors, setGlobal, setTransform, setSourceFile, modifier} from './base'
 import {observableVisitor} from './ff'
 import './ff'
 import './lupos.js'
@@ -8,15 +8,16 @@ import './lupos.js'
 
 export default function(program: ts.Program, _pluginConfig: PluginConfig, extras: TransformerExtras) {
 	let {ts} = extras
+	setGlobal(program, extras)
 
 	return (ctx: ts.TransformationContext) => {
-		let helper = new TSHelper(program, ts)
+		setTransform(ctx)
 
 		return (sourceFile: ts.SourceFile) => {
-			let modifier = new SourceFileModifier(helper, ctx)
+			setSourceFile(sourceFile)
 
 			function visit(node: ts.Node): ts.Node | ts.Node[] {
-				let nodes = applyVisitors(node, modifier)!
+				let nodes = applyVisitors(node)!
 				nodes = nodes.map(node => ts.visitEachChild(node, visit, ctx))
 
 				// If only one node and package it to an array, it represents a new node,
@@ -25,7 +26,7 @@ export default function(program: ts.Program, _pluginConfig: PluginConfig, extras
 			}
 
 			function visitSourceFile(node: ts.SourceFile): ts.SourceFile | undefined {
-				node = observableVisitor(node, modifier)
+				node = observableVisitor(node)
 				node = ts.visitNode(node, visit) as ts.SourceFile
 				return modifier.output(node)
 			}

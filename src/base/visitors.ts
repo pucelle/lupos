@@ -1,11 +1,9 @@
-import type ts from 'typescript'
-import {TSHelper} from './ts-helper'
-import {SourceFileModifier} from './source-file-modifier'
+import type TS from 'typescript'
 
 
 const Visitors: {
-	match: (node: ts.Node, helper: TSHelper) => boolean,
-	visit: (node: ts.Node, modifier: SourceFileModifier) => ts.Node | ts.Node[] | undefined,
+	match: (node: TS.Node) => boolean,
+	visit: (node: TS.Node) => TS.Node | TS.Node[] | undefined,
 }[] = []
 
 
@@ -15,8 +13,8 @@ const Visitors: {
  * so you don't need to visit child nodes in each defined visitor.
  */
 export function defineVisitor(
-	match: (node: ts.Node, helper: TSHelper) => boolean,
-	visit: (node: any, modifier: SourceFileModifier) => ts.Node | ts.Node[] | undefined
+	match: (node: TS.Node) => boolean,
+	visit: (node: any) => TS.Node | TS.Node[] | undefined
 ) {
 	Visitors.push({match, visit})
 }
@@ -26,15 +24,15 @@ export function defineVisitor(
  * Apply defined visitors to a node.
  * Returns old node, or a replaced node, a replaced nodes.
  */
-export function applyVisitors(node: ts.Node | undefined, modifier: SourceFileModifier): ts.Node[] | undefined {
+export function applyVisitors(node: TS.Node | undefined): TS.Node[] | undefined {
 	let nodes = node ? [node] : []
 
 	for (let visitor of Visitors) {
-		let newNodes: ts.Node[] = []
+		let newNodes: TS.Node[] = []
 		
 		for (let node of nodes) {
-			if (visitor.match(node, modifier.helper)) {
-				let nodeOrArray = visitor.visit(node, modifier)
+			if (visitor.match(node)) {
+				let nodeOrArray = visitor.visit(node)
 
 				if (Array.isArray(nodeOrArray)) {
 					newNodes.push(...nodeOrArray)
