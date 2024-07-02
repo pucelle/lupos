@@ -86,6 +86,26 @@ export class ListMap<K, V> {
 	}
 
 	/** 
+	 * Add a key and several values.
+	 * Note it will not validate whether value exist,
+	 * and will add value repeatedly although it exists.
+	 */
+	addSeveral(k: K, vs: V[]) {
+		if (vs.length === 0) {
+			return
+		}
+
+		let values = this.map.get(k)
+		if (!values) {
+			values = [...vs]
+			this.map.set(k, values)
+		}
+		else {
+			values.push(...vs)
+		}
+	}
+
+	/** 
 	 * Add a key and a value.
 	 * Note it will validate whether value exist, and ignore if value exists.
 	 */
@@ -97,6 +117,28 @@ export class ListMap<K, V> {
 		}
 		else if (!values.includes(v)) {
 			values.push(v)
+		}
+	}
+
+	/** 
+	 * Add a key and a value.
+	 * Note it will validate whether value exist, and ignore if value exists.
+	 */
+	addSeveralIf(k: K, vs: V[]) {
+		if (vs.length === 0) {
+			return
+		}
+
+		let values = this.map.get(k)
+		if (!values) {
+			values = []
+			this.map.set(k, values)
+		}
+
+		for (let v of vs) {
+			if (!values.includes(v)) {
+				values.push(v)
+			}
 		}
 	}
 

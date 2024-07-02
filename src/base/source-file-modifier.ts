@@ -179,7 +179,7 @@ export class SourceFileModifier {
 
 	//// Expression & Statement
 
-	/** Add expressions to an arrow function. */
+	/** Add expressions to the end of a block. */
 	addExpressionsToBlock<T extends TS.Block | TS.SourceFile>(node: T, exps: TS.Expression[]): T {
 		if (exps.length === 0) {
 			return node
@@ -187,15 +187,7 @@ export class SourceFileModifier {
 
 		let factory = ts.factory
 		let oldStatements = node.statements
-		let returnStatementIndex = oldStatements.findLastIndex(stat => ts.isReturnStatement(stat))
-		let stats: TS.Statement[] = []
-
-		if (returnStatementIndex >= 0) {
-			stats = oldStatements.toSpliced(returnStatementIndex, 0)
-		}
-		else {
-			stats = [...oldStatements]
-		}
+		let stats = [...oldStatements]
 
 		stats.push(...exps.map(exp => factory.createExpressionStatement(exp)))
 
@@ -207,7 +199,7 @@ export class SourceFileModifier {
 		}
 	}
 
-	/** Add expressions to an arrow function. */
+	/** Add expressions to the end of an arrow function. */
 	addExpressionsToArrowFunction(node: TS.ArrowFunction, exps: TS.Expression[]): TS.ArrowFunction {
 		if (exps.length === 0) {
 			return node

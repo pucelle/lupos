@@ -63,7 +63,7 @@ class TestGroupedProp extends Component {
 
 class TestQuestionDotPropMerge extends Component {
 
-	prop: {value: 'Text'} | undefined = undefined
+	prop: {value: string} | undefined = undefined
 
 	render() {
 		return '' + this.prop?.value

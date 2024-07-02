@@ -4,31 +4,42 @@ import {Context} from './context'
 
 
 export enum ContextType {
+
+	/** Block or a source file. */
 	BlockLike,
 
 	/** 
-	 * Process parameters only, inner contents give to block body.
-	 * For ArrowFunction, may no block body exist, so note about the output.
+	 * Normally help to process parameters.
+	 * or for ArrowFunction and no block body exist.
 	 */
 	FunctionLike,
 
-	/** `If`, `case`, all binary expressions. */
-	Conditional,
-	
-	/** May run or not run. */
+	/** 
+	 * May run or not run.
+	 * Normally the conditional content of `if`, `else`...
+	 * Content itself may be a block, or a normal expression.
+	 */
 	ConditionalContent,
 
 	/** 
-	 * Case expressions.
-	 * Context uses the `CaseClause` node as it's node,
-	 * so note about the output.
+	 * For `case` or `default`.
+	 * It uses the `case` or `default` node as context node.
 	 */
 	CaseContent,
+
+	/** 
+	 * true and false part of `a ? b : c`,
+	 * or right part of `a && b`, `a || b`, `a ?? b`.
+	 */
+	LogicContent,
 
 	/** Process For iteration initializer, condition, incrementor. */
 	Iteration,
 
-	/** May run for none, 1 time, multiple times. */
+	/** 
+	 * `for () {...}`, May run for none, 1 time, multiple times.
+	 * Content itself can be a block, or a normal expression.
+	 */
 	IterationContent,
 }
 
@@ -49,16 +60,33 @@ export namespace ContextTree {
 		// `case` and `default` will be handled outside.
 		let parent = node.parent
 		if (parent) {
+
+			// `if () ...`
 			if (ts.isIfStatement(parent)) {
 				if (node === parent.thenStatement) {
 					return ContextType.ConditionalContent
 				}
 			}
+
+			// `a ? b : c`
 			else if (ts.isConditionalExpression(parent)) {
 				if (node === parent.whenTrue || node === parent.whenFalse) {
-					return ContextType.ConditionalContent
+					return ContextType.LogicContent
 				}
 			}
+
+			// `a && b`, `a || b`, `a ?? b`.
+			else if (ts.isBinaryExpression(parent)) {
+				if ((parent.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken
+					|| parent.operatorToken.kind === ts.SyntaxKind.BarBarToken
+					|| parent.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken)
+					&& node === parent.right
+				) {
+					return ContextType.LogicContent
+				}
+			}
+
+			// `for... of`, `for ... in`, `while ...`, `do ...`
 			else if (ts.isForOfStatement(parent)
 				|| ts.isForInStatement(parent)
 				|| ts.isWhileStatement(parent)
@@ -68,13 +96,14 @@ export namespace ContextTree {
 					return ContextType.IterationContent
 				}
 			}
+
+			// `for (let...; ;) ...`
 			else if (ts.isForStatement(parent)) {
 				if (node === parent.statement) {
 					return ContextType.IterationContent
 				}
 			}
 		}
-
 
 		// Block like, module contains a block inside.
 		if (ts.isSourceFile(node)
@@ -92,23 +121,6 @@ export namespace ContextTree {
 			|| ts.isArrowFunction(node)
 		) {
 			return ContextType.FunctionLike
-		}
-
-		// Conditional
-		else if (ts.isIfStatement(node)
-			|| ts.isConditionalExpression(node)
-
-			//  a && b, a || b, a ?? b
-			|| ts.isBinaryExpression(node) && (
-				node.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken
-				|| node.operatorToken.kind === ts.SyntaxKind.BarBarToken
-				|| node.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken
-			)
-
-			|| ts.isCaseClause(node)
-			|| ts.isDefaultClause(node)
-		) {
-			return ContextType.Conditional
 		}
 
 		// Iteration
@@ -131,7 +143,6 @@ export namespace ContextTree {
 
 		if (current) {
 			ContextStack.push(current)
-			current.addChildContext(context)
 		}
 
 		return current = context
@@ -140,18 +151,15 @@ export namespace ContextTree {
 
 	/** Pop context. */
 	export function pop() {
-		if (current) {
-			current.postInit()
-		}
-
+		current!.beforeExit()
 		current = ContextStack.pop()!
 	}
 
 
 	/** Visit each child node. */
-	export function visitChildNode(node: TS.Node) {
+	export function visitNode(node: TS.Node) {
 		if (current) {
-			current.visitChildNode(node)
+			current.visitNode(node)
 		}
 	}
 }

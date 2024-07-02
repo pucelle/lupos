@@ -24,8 +24,41 @@ export type CanObserveNode = PropertyAccessingNode
 /** Help to check observed state. */
 export namespace checker {
 	
+	/** Check at which context the variable declared, or this attached. */
+	export function getIdentifierDeclaredContext(node: TS.Identifier | TS.ThisExpression, context = ContextTree.current!): Context | null {
+		if (node.kind === ts.SyntaxKind.ThisKeyword) {
+			if (ts.isMethodDeclaration(context.node)
+				|| ts.isFunctionDeclaration(context.node)
+				|| ts.isFunctionExpression(context.node)
+				|| ts.isSetAccessorDeclaration(context.node)
+				|| ts.isGetAccessorDeclaration(context.node)
+			) {
+				return context
+			}
+			else if (context.parent) {
+				return getIdentifierDeclaredContext(node, context.parent)
+			}
+			else {
+				return null
+			}
+		}
+		else {
+			let name = node.text
+			if (context.variables.hasLocalVariable(name)) {
+				return context
+			}
+			else if (context.parent) {
+				return getIdentifierDeclaredContext(node, context.parent!)
+			}
+			else {
+				return null
+			}
+		}
+	}
+
+
 	/** Broadcast observed from parent calling expression to all parameters. */
-	export function isParameterObservedFromCallingBroadcasted(node: TS.ParameterDeclaration): boolean {
+	export function isParameterObservedByCallingBroadcasted(node: TS.ParameterDeclaration): boolean {
 
 		// `a.b.map((item) => {return item.value})`
 		// `a.b.map(item => item.value)`
@@ -51,7 +84,7 @@ export namespace checker {
 
 		// `a.b`
 		let callFrom = exp.expression
-		return canObserve(callFrom) && isObserved(callFrom)
+		return isObserved(callFrom)
 	}
 
 
@@ -75,71 +108,6 @@ export namespace checker {
 	}
 
 
-	/** Returns whether be an identifier, this, or a property accessing. */
-	export function canObserve(node: TS.Node): node is CanObserveNode {
-
-		// `a.b`, `this.b`, `(a ? b : c).d`
-		return helper.isPropertyAccessing(node)
-
-			// `this`
-			|| node.kind === ts.SyntaxKind.ThisKeyword
-
-			// variable `b`, bot not property of `a.b`.
-			|| ts.isIdentifier(node) && (
-				!helper.isPropertyAccessing(node.parent)
-				|| helper.getPropertyAccessingNameNode(node.parent) !== node
-			)
-
-			// `a.b()`
-			|| ts.isCallExpression(node)
-
-			// `(...)`
-			|| ts.isParenthesizedExpression(node)
-				&& canObserve(node.expression)
-
-			// `a && b`, `a || b`, `a ?? b`, can observe only if both a & b can observe.
-			|| ts.isBinaryExpression(node)
-				&& (node.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken
-				|| node.operatorToken.kind === ts.SyntaxKind.BarBarToken
-				|| node.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken)
-				&& canObserve(node.left)
-				&& canObserve(node.right)
-			
-			// `a ? b : c`, can observe only if both b & c can observe.
-			|| ts.isConditionalExpression(node)
-				&& canObserve(node.whenTrue)
-				&& canObserve(node.whenFalse)
-	}
-
-
-	/** Returns whether an identifier, this, or a property accessing is observed. */
-	export function isObserved(node: CanObserveNode): boolean {
-		if (helper.isPropertyAccessing(node)) {
-			return isAccessingObserved(node)
-		}
-		else if (node.kind === ts.SyntaxKind.ThisKeyword || ts.isIdentifier(node)) {
-			return isIdentifierObserved(node)
-		}
-		else if (ts.isCallExpression(node)) {
-			return isCallObserved(node)
-		}
-		else if (ts.isParenthesizedExpression(node)) {
-			return isObserved(node.expression as CanObserveNode)
-		}
-		else if (ts.isBinaryExpression(node)) {
-			return isObserved(node.left as CanObserveNode)
-				&& isObserved(node.right as CanObserveNode)
-		}
-		else if (ts.isConditionalExpression(node)) {
-			return isObserved(node.whenTrue as CanObserveNode)
-				&& isObserved(node.whenFalse as CanObserveNode)
-		}
-		else {
-			return false
-		}
-	}
-
-
 	/** Whether type node is an observed type. */
 	export function isVariableDeclarationObserved(node: TS.VariableDeclaration): boolean {
 
@@ -157,7 +125,7 @@ export namespace checker {
 		}
 
 		// `var a = b.c`.
-		if (node.initializer && canObserve(node.initializer)) {
+		if (node.initializer) {
 			return isObserved(node.initializer)
 		}
 
@@ -168,6 +136,152 @@ export namespace checker {
 	/** Test whether a type node is `Observed`, and import from `ff`. */
 	function isImportedObservedTypeNode(node: TS.TypeNode): boolean {
 		return helper.isNodeImportedFrom(node, 'Observed', '@pucelle/ff')
+	}
+
+
+	/** Returns whether an identifier, this, or a property accessing is observed. */
+	export function isObserved(node: TS.Node): node is CanObserveNode {
+
+		// `a.b`
+		// `(a ? b : c).d`
+		// `(a ?? b).b`
+		if (helper.isPropertyAccessing(node)) {
+			return isAccessingObserved(node)
+		}
+
+		// `this`
+		// `a`
+		else if (node.kind === ts.SyntaxKind.ThisKeyword
+			|| ts.isIdentifier(node)
+
+			// variable `b`, bot not property part of `a.b`.
+			&& (!helper.isPropertyAccessing(node.parent)
+				|| helper.getPropertyAccessingNameNode(node.parent) !== node
+			)
+		) {
+			return isIdentifierObserved(node as TS.Identifier | TS.ThisExpression)
+		}
+
+		// `a && b`, `a || b`, `a ?? b`, can observe only if both a & b can observe.
+		else if (ts.isBinaryExpression(node)) {
+			return (node.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken
+				|| node.operatorToken.kind === ts.SyntaxKind.BarBarToken
+				|| node.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken)
+				&& isObserved(node.left)
+				&& isObserved(node.right)
+		}
+
+		// `(...)`
+		else if (ts.isParenthesizedExpression(node)) {
+			return isObserved(node.expression)
+		}
+
+		// `(a as Observed<{b: number}>).b`
+		else if (ts.isAsExpression(node)) {
+			let type = node.type
+			return type && helper.isNodeImportedFrom(type, 'Observed', '@pucelle/ff')
+		}
+
+		// `a ? b : c`, can observe only if both b & c can observe.
+		else if (ts.isConditionalExpression(node)) {
+			return isObserved(node.whenTrue)
+				&& isObserved(node.whenFalse)
+		}
+
+		// `a.b()`
+		else if (ts.isCallExpression(node)) {
+			return isCallObserved(node)
+		}
+
+		else {
+			return false
+		}
+	}
+
+
+	/** 
+	 * Check whether an identifier or `this` is observed.
+	 * Node must be the top most property access expression.
+	 * E.g., for `a.b.c`, sub identifier `b` or `c` is not allowed.
+	 */
+	export function isIdentifierObserved(node: TS.Identifier | TS.ThisExpression, context = ContextTree.current!): boolean {
+		if (node.kind === ts.SyntaxKind.ThisKeyword) {
+			return context.variables.thisObserved
+		}
+
+		let name = node.text
+		return context.variables.isVariableObserved(name)
+	}
+
+
+	/** Returns whether a property accessing is observed. */
+	export function isAccessingObserved(node: PropertyAccessingNode): boolean {
+
+		// Will never observe private identifier like `a.#b`.
+		if (ts.isPropertyAccessExpression(node) && ts.isPrivateIdentifier(node.name)) {
+			return false
+		}
+
+		// Property declaration has specified observed type.
+		if (checkPropertyOrGetAccessorObserved(node)) {
+			return true
+		}
+
+		// Method declaration is always not observed.
+		if (helper.resolveMethod(node)) {
+			return isMapOrSetReading(node)
+		}
+
+		// Take `node = a.b.c` as example, exp is `a.b`.
+		let exp = node.expression
+		let expObserved = isObserved(exp)
+
+		// Readonly properties are always not been observed.
+		if (expObserved) {
+			let readonly = helper.isPropertyReadonly(node)
+			if (readonly) {
+				return false
+			}
+		}
+
+		return expObserved
+	}
+
+
+	/** 
+	 * Whether a complex expression, and should be reference.
+	 * `a().b` -> `var c; ... (c = a()).b; ...`
+	 */
+	export function shouldReference(node: TS.Expression): boolean {
+
+		// `a && b`, `a || b`, `a ?? b`, can observe only if both a & b can observe.
+		if (ts.isBinaryExpression(node)) {
+			return true
+		}
+
+		// `(...)`
+		else if (ts.isParenthesizedExpression(node)) {
+			return shouldReference(node.expression)
+		}
+
+		// `(a as Observed<{b: number}>).b`
+		else if (ts.isAsExpression(node)) {
+			return shouldReference(node.expression)
+		}
+
+		// `a ? b : c`, can observe only if both b & c can observe.
+		else if (ts.isConditionalExpression(node)) {
+			return true
+		}
+
+		// `a.b()`
+		else if (ts.isCallExpression(node)) {
+			return true
+		}
+
+		else {
+			return false
+		}
 	}
 
 
@@ -200,141 +314,6 @@ export namespace checker {
 	}
 
 
-	/** 
-	 * Check whether an identifier or `this` is observed.
-	 * Node must be the top most property access expression.
-	 * E.g., for `a.b.c`, sub expression `b.c` is not allowed.
-	 */
-	export function isIdentifierObserved(node: TS.Identifier | TS.ThisExpression, context = ContextTree.current!): boolean {
-		if (node.kind === ts.SyntaxKind.ThisKeyword) {
-			return context.state.thisObserved
-		}
-
-		let name = node.text
-		if (context.hasDeclaredVariable(name)) {
-			return context.getVariableObserved(name)
-		}
-		else if (context.parent) {
-			return isIdentifierObserved(node, context.parent)
-		}
-		else {
-			return false
-		}
-	}
-
-
-	/** Check at which context the variable declared, or this attached. */
-	export function getIdentifierDeclaredContext(node: TS.Identifier | TS.ThisExpression, context = ContextTree.current!): Context | null {
-		if (node.kind === ts.SyntaxKind.ThisKeyword) {
-			if (ts.isMethodDeclaration(context.node)
-				|| ts.isFunctionDeclaration(context.node)
-				|| ts.isFunctionExpression(context.node)
-				|| ts.isSetAccessorDeclaration(context.node)
-				|| ts.isGetAccessorDeclaration(context.node)
-			) {
-				return context
-			}
-			else if (context.parent) {
-				return getIdentifierDeclaredContext(node, context.parent)
-			}
-			else {
-				return null
-			}
-		}
-		else {
-			let name = node.text
-			if (context.hasDeclaredVariable(name)) {
-				return context
-			}
-			else if (context.parent) {
-				return getIdentifierDeclaredContext(node, context.parent!)
-			}
-			else {
-				return null
-			}
-		}
-	}
-
-
-	/** Returns whether a property accessing is observed. */
-	export function isAccessingObserved(node: PropertyAccessingNode): boolean {
-
-		// Will never observe private identifier like `a.#b`.
-		if (ts.isPropertyAccessExpression(node) && ts.isPrivateIdentifier(node.name)) {
-			return false
-		}
-
-		// Property declaration has specified observed type.
-		if (checkPropertyOrGetAccessorObserved(node)) {
-			return true
-		}
-
-		// Method declaration is always not observed.
-		if (helper.resolveMethod(node)) {
-			return isMapOrSetReading(node)
-		}
-
-		// Take `node = a.b.c` as example, exp is `a.b`.
-		let exp = node.expression
-		let expObserved = false
-
-		// `a.b` or `a['b']`, and `c` is not a readonly property.
-		if (helper.isPropertyAccessing(exp)) {
-			expObserved = isAccessingObserved(exp)
-		}
-
-		// `a.b()`.
-		else if (ts.isCallExpression(exp)) {
-			return isCallObserved(exp)
-		}
-
-		// `(a as Observed<{b: number}>).b`
-		else if (ts.isParenthesizedExpression(exp)) {
-			expObserved = isParenthesizedObserved(exp)
-		}
-
-		// For `a.b`, `exp` is `a`.
-		else if (ts.isIdentifier(exp) || exp.kind === ts.SyntaxKind.ThisKeyword) {
-			expObserved = isIdentifierObserved(exp as TS.Identifier | TS.ThisExpression)
-		}
-
-		// Readonly properties are always not observed.
-		if (expObserved) {
-			let readonly = helper.isPropertyReadonly(node)
-			if (readonly) {
-				return false
-			}
-		}
-
-		return expObserved
-	}
-
-
-	/** Returns whether a parenthesized expression is observed. */
-	function isParenthesizedObserved(node: TS.ParenthesizedExpression): boolean {
-		let exp = node.expression
-
-		// `((a as Observed<{b: number}>)).b`
-		if (ts.isParenthesizedExpression(exp)) {
-			return isParenthesizedObserved(exp)
-		}
-
-		// `(a as Observed<{b: number}>).b`
-		else if (ts.isAsExpression(exp)) {
-			let type = exp.type
-			return type && helper.isNodeImportedFrom(type, 'Observed', '@pucelle/ff')
-		}
-
-		// `(a).b`
-		else if (canObserve(exp)) {
-			return isObserved(exp)
-		}
-		else {
-			return false
-		}
-	}
-
-
 	/** Test whether calls `Map.has`, `Map.get` or `Set.has` */
 	export function isMapOrSetReading(node: PropertyAccessingNode) {
 		let objName = helper.getNodeTypeName(node.expression)
@@ -353,20 +332,20 @@ export namespace checker {
 
 
 	/** Test whether calls `Map.set`, or `Set.set` */
-	export function isMapOrSetWriting(node: PropertyAccessingNode) {
-		let objName = helper.getNodeTypeName(node.expression)
-		let propName = helper.getPropertyAccessingName(node)
+	// export function isMapOrSetWriting(node: PropertyAccessingNode) {
+	// 	let objName = helper.getNodeTypeName(node.expression)
+	// 	let propName = helper.getPropertyAccessingName(node)
 
-		if (objName === 'Map') {
-			return propName === 'set'
-		}
-		else if (objName === 'Set') {
-			return propName === 'set'
-		}
-		else {
-			return false
-		}
-	}
+	// 	if (objName === 'Map') {
+	// 		return propName === 'set'
+	// 	}
+	// 	else if (objName === 'Set') {
+	// 		return propName === 'set'
+	// 	}
+	// 	else {
+	// 		return false
+	// 	}
+	// }
 
 	
 	/** Returns whether a call expression returned result is observed. */

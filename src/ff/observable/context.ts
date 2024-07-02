@@ -1,9 +1,11 @@
 import type TS from 'typescript'
 import {checker} from './checker'
-import {helper, modifier, PropertyAccessingNode, ts} from '../../base'
-import {ContextState} from './context-state'
+import {helper, PropertyAccessingNode, ts} from '../../base'
+import {ContextFlowState} from './context-flow-state'
 import {ContextType} from './context-tree'
 import {VisitingTree} from './visiting-tree'
+import {ContextInterpolator} from './context-interpolator'
+import {ContextVariables} from './context-variables'
 
 
 /** 
@@ -13,195 +15,117 @@ import {VisitingTree} from './visiting-tree'
  */
 export class Context {
 
-	readonly nodeDepth: number
-	readonly nodeIndex: number
+	readonly type: ContextType
+	readonly visitingIndex: number
 	readonly node: TS.Node
 	readonly parent: Context | null
 	readonly children: Context[] = []
-	readonly state: ContextState
-
-	/** 
-	 * All local variable names, and whether each one was observed.
-	 * It can also help to query in which context special variable exists.
-	 */
-	private variableObserved: Map<string, boolean> = new Map()
-
-	/** All get expressions. */
-	private getExpressions: PropertyAccessingNode[] = []
+	readonly flowState: ContextFlowState
+	readonly variables: ContextVariables
+	readonly interpolator: ContextInterpolator
 
 	constructor(type: ContextType, node: TS.Node, parent: Context | null) {
-		this.nodeDepth = VisitingTree.current.depth
-		this.nodeIndex = VisitingTree.current.index
+		this.type = type
+		this.visitingIndex = VisitingTree.current.index
 		this.node = node
 		this.parent = parent
-		this.state = new ContextState(type, this)
+		this.flowState = new ContextFlowState(this)
+		this.variables = new ContextVariables(this)
+		this.interpolator = new ContextInterpolator(this)
 
-		if (this.state.type === ContextType.FunctionLike) {
-			this.checkObservedParameters()
+		if (parent) {
+			parent.enterChild(this)
 		}
 	}
 
-	/** Whether has declared a variable by name. */
-	hasDeclaredVariable(name: string): boolean {
-		return this.variableObserved.has(name)
-	}
+	/** 
+	 * Initialize after children contexts are ready,
+	 * and current context will exit.
+	 */
+	beforeExit() {
+		this.optimize()
+		this.addRest()
 
-	/** Get whether has observed a declared variable by name. */
-	getVariableObserved(name: string): boolean {
-		return this.variableObserved.get(name)!
-	}
-
-	private checkObservedParameters() {
-
-		// Examine this parameter.
-		// Assume `this` is observed.
-		// `var a = this.a` -> observed.
-		// `var b = a.b` -> observed.
-		if (ts.isMethodDeclaration(this.node)
-			|| ts.isFunctionDeclaration(this.node)
-			|| ts.isFunctionExpression(this.node)
-			|| ts.isArrowFunction(this.node)
-			|| ts.isSetAccessorDeclaration(this.node)
-		) {
-			let parameters = this.node.parameters
-
-			// If re-declare `this` parameter.
-			for (let param of parameters) {
-				let typeNode = param.type
-				let observed = false
-
-				if (typeNode) {
-					observed = checker.isTypeNodeObserved(typeNode)
-				}
-
-				this.variableObserved.set(param.name.getText(), observed)
-			}
-		}
-
-		// Broadcast observed from parent calling to all parameters.
-		// `a.b.map((item) => {return item.value})`
-		// `a.b.map(item => item.value)`
-		// `a.b.map(function(item){return item.value})`
-		if (ts.isFunctionDeclaration(this.node)
-			|| ts.isFunctionExpression(this.node)
-			|| ts.isArrowFunction(this.node)
-		) {
-			if (ts.isCallExpression(this.node.parent)) {
-				let exp = this.node.parent.expression
-				if (helper.isPropertyAccessing(exp)) {
-
-					// `a.b`
-					let callFrom = exp.expression
-					if (checker.canObserve(callFrom) && checker.isObserved(callFrom)) {
-						let parameters = this.node.parameters
-						this.makeParametersObserved(parameters)
-					}
-				}
-			}
+		if (this.parent) {
+			this.parent.leaveChild(this)
 		}
 	}
 
-	private makeParametersObserved(parameters: TS.NodeArray<TS.ParameterDeclaration>) {
-		for (let param of parameters) {
-			let beObject = helper.isNodeObjectType(param)
-			if (beObject) {
-				this.variableObserved.set(param.name.getText(), true)
-			}
-		}
-	}
-
-	/** Add a child context. */
-	addChildContext(child: Context) {
+	/** Enter a child context. */
+	enterChild(child: Context) {
 		this.children.push(child)
 	}
 
-	/** Initialize after children ready. */
-	postInit() {
-		this.state.postInit()
+	/** Leave a child context. */
+	leaveChild(child: Context) {
+		if (this.flowState.visitChildContext(child)) {
+			this.addSplit()
+		}
 	}
 
-	/** Visit each child node recursively. */
-	visitChildNode(node: TS.Node) {
+	/** Visit each descendant node inside current context. */
+	visitNode(node: TS.Node) {
 		
 		// Add parameters.
 		if (ts.isParameter(node)) {
-			this.addParameter(node)
+			this.variables.markParameter(node)
 		}
 
 		// Check each variable declarations.
 		else if (ts.isVariableDeclaration(node)) {
-			this.addVariableDeclaration(node)
+			this.variables.markVariable(node)
 		}
 
 		// Add property declaration.
 		else if (helper.isPropertyAccessing(node)) {
-			this.addGetExpression(node)
+			this.addGet(node)
 		}
 
-		// Check return statement.
-		else if (ts.isReturnStatement(node)) {
-			this.addGetExpressionSplit(node)
+		// Check return and break statement.
+		else if (this.flowState.visitNode(node)) {
+			this.addSplit()
 		}
-	}
-
-	private addParameter(node: TS.ParameterDeclaration) {
-		let typeNode = node.type
-		let observed = false
-
-		if (typeNode) {
-			observed = checker.isTypeNodeObserved(typeNode)
-		}
-
-		if (!observed) {
-			observed = checker.isParameterObservedFromCallingBroadcasted(node)
-		}
-
-		this.variableObserved.set(node.name.getText(), observed)
-	}
-
-	private addVariableDeclaration(node: TS.VariableDeclaration) {
-		let observed = checker.isVariableDeclarationObserved(node)
-		let name = node.name.getText()
-		this.variableObserved.set(name, observed)
 	}
 
 	/** Add a get expression, already tested and knows should observe it. */
-	private addGetExpression(node: PropertyAccessingNode) {
-		if (checker.isAccessingObserved(node)) {
-			this.getExpressions.push(node)
+	private addGet(node: PropertyAccessingNode) {
+		if (!checker.isAccessingObserved(node)) {
+			return
+		}
+
+		// Use a reference variable to replace expression.
+		if (checker.shouldReference(node.expression)) {
+			let index = VisitingTree.current.index
+			this.interpolator.referenceExpAndCapture(node, index)
+		}
+		else {
+			this.interpolator.capture(node, false)
 		}
 	}
 
 	/** 
 	 * Add a split for get expressions.
-	 * Then get expressions will be splitted and output before it.
+	 * Then get expressions will be splitted and output before current position.
 	 */
-	private addGetExpressionSplit(node: TS.Node) {
-
-		// Index of current children.
-		let index = VisitingTree.getIndexOfDepth(this.nodeDepth + 1)
-
-
+	private addSplit() {
+		this.interpolator.insertCaptured()
 	}
 
-
-	/** Output all expressions to append to a node. */
-	outputExpressions(node: TS.Node): TS.Node | TS.Node[] {
-		if (this.getExpressions.length === 0) {
-			return node
-		}
-
-		if (this.state.nothingReturned) {
-			return node
-		}
-
-		modifier.addNamedImport('onGetGrouped', '@pucelle/ff')
+	/** Add rest get expressions. */
+	private addRest() {
+		this.interpolator.insertRestCaptured()
 	}
 
-	/** Do optimize. */
-	optimize() {
+	/** 
+	 * Do optimize, after all descendant nodes are ready.
+	 * Normally it will hoist captured dependencies higher.
+	 */
+	private optimize() {
+		
+	}
 
+	/** For a child or descendant node, output all expressions and append them before, or replace it. */
+	output(node: TS.Node,index: number): TS.Node | TS.Node[] {
+		return this.interpolator.output(node, index)
 	}
 }
-
-

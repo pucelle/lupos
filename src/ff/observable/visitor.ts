@@ -4,7 +4,6 @@ import {Context} from './context'
 import {ClassRange} from './class-range'
 import {ContextTree, ContextType} from './context-tree'
 import {VisitingTree} from './visiting-tree'
-import {ReferenceTree} from './reference-tree'
 
 
 /** 
@@ -23,10 +22,9 @@ export function observableVisitor(node: TS.SourceFile): TS.SourceFile {
 
 		// Check contextual state, must after observable state pushing.
 		let type = ContextTree.checkContextType(node)
-		let context: Context | null = null
 
 		if (type !== null) {
-			context = ContextTree.createContextAndPush(type, node)
+			ContextTree.createContextAndPush(type, node)
 		}
 
 		let outputCallbacks = visitChildren(node)
@@ -40,20 +38,36 @@ export function observableVisitor(node: TS.SourceFile): TS.SourceFile {
 			ClassRange.pop()
 		}
 
+		let currentContext = ContextTree.current!
+		let currentIndex = VisitingTree.current.index
+
 		return () => {
 			let output = outputCallbacks.map(c => c())
-			let index = 0
+			let i = -1
 
 			// replace children by callback outputted.
-			let newNode = ts.visitEachChild(node, () => output[index++], transformContext)
+			let newNode = ts.visitEachChild(node, () => {
+				let childIndex = VisitingTree.getChildIndexBySiblingIndex(currentIndex, ++i)
+				let newChild = output[i]
+
+				// If previous visitor returns a node list, choose last element and pass it to next step.
+				if (Array.isArray(newChild)) {
+					let outputNode = currentContext.output(newChild.pop()!, childIndex)
+					if (Array.isArray(outputNode)) {
+						newChild.push(...outputNode)
+					}
+					else {
+						newChild.push(outputNode)
+					}
+
+					return newChild
+				}
+				else {
+					return currentContext.output(newChild, childIndex)
+				}
+			}, transformContext)
 			
-			// Output by context.
-			if (context) {
-				return context.outputExpressions(newNode)
-			}
-			else {
-				return newNode
-			}
+			return newNode
 		}
 	}
 
@@ -63,7 +77,7 @@ export function observableVisitor(node: TS.SourceFile): TS.SourceFile {
 		VisitingTree.toChild()
 
 		// Visit each child node.
-		ContextTree.visitChildNode(node)
+		ContextTree.visitNode(node)
 
 		// Visit children recursively, but not output immediately.
 		let outputCallbacks: (() => TS.Node | TS.Node[])[] = []
@@ -76,7 +90,7 @@ export function observableVisitor(node: TS.SourceFile): TS.SourceFile {
 				outputCallbacks.push(visitNode(node.expression))
 			}
 
-			ContextTree.createContextAndPush(ContextType.CaseContent, node)
+			ContextTree.createContextAndPush(ContextType.ConditionalContent, node)
 
 			for (let child of node.statements) {
 				outputCallbacks.push(visitNode(child))
@@ -100,13 +114,9 @@ export function observableVisitor(node: TS.SourceFile): TS.SourceFile {
 
 
 	VisitingTree.initialize()
-	ReferenceTree.initialize()
 
-	let rootContext = new Context(ContextType.BlockLike, node, null)
+	new Context(ContextType.BlockLike, node, null)
 	let callback = visitNode(node)
-
-	// Do optimize before final output.
-	rootContext.optimize()
 
 	let newSourceFile = callback() as TS.SourceFile
 	return newSourceFile

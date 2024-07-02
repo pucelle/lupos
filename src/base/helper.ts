@@ -13,6 +13,17 @@ export type AssigningNode = TS.BinaryExpression | TS.PostfixUnaryExpression | TS
 export namespace helper {
 
 
+	//// Basic types
+
+	/** Whether node can have statements. */
+	export function isStatementsExist(node: TS.Node): node is TS.Block | TS.SourceFile | TS.CaseOrDefaultClause {
+		return ts.isBlock(node)
+			|| ts.isSourceFile(node)
+			|| ts.isCaseOrDefaultClause(node)
+	}
+
+
+
 	//// Class part
 
 	/** Get name of a class member, even newly appended. */
