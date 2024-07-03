@@ -28,6 +28,8 @@ export function observableVisitor(node: TS.SourceFile): TS.SourceFile {
 		}
 
 		let outputCallbacks = visitChildren(node)
+		let currentContext = ContextTree.current!
+		let currentIndex = VisitingTree.current.index
 
 		if (type !== null) {
 			ContextTree.pop()
@@ -37,9 +39,6 @@ export function observableVisitor(node: TS.SourceFile): TS.SourceFile {
 		if (beClass) {
 			ClassRange.pop()
 		}
-
-		let currentContext = ContextTree.current!
-		let currentIndex = VisitingTree.current.index
 
 		return () => {
 			let output = outputCallbacks.map(c => c())

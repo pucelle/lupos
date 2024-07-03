@@ -96,7 +96,7 @@ export class Context {
 		// Use a reference variable to replace expression.
 		if (checker.shouldReference(node.expression)) {
 			let index = VisitingTree.current.index
-			this.interpolator.referenceExpAndCapture(node, index)
+			this.interpolator.refExpAndCapture(node, index)
 		}
 		else {
 			this.interpolator.capture(node, false)
@@ -121,7 +121,7 @@ export class Context {
 	 * Normally it will hoist captured dependencies higher.
 	 */
 	private optimize() {
-		
+
 	}
 
 	/** For a child or descendant node, output all expressions and append them before, or replace it. */

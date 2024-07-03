@@ -19,5 +19,5 @@
 			{"transform": "../src/index.ts"},
 		]
 	},
-	"include": ["src/ff/observable-logic.ts"],
+	"include": ["src/ff/decorators.ts"],
 }

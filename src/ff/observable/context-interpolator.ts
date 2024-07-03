@@ -124,7 +124,7 @@ export class ContextInterpolator {
 	}
 
 	/** Will replace like `a().b` to a reference assignment `(c = a()).b`. */
-	referenceExpAndCapture(node: PropertyAccessingNode, index: number) {
+	refExpAndCapture(node: PropertyAccessingNode, index: number) {
 		let refName = this.makeRefVariable()
 
 		this.interpolated.add(index, {
@@ -239,6 +239,22 @@ export class ContextInterpolator {
 			this.insertExpsAndBlockIt((node as TS.ArrowFunction).body, bodyIndex, exps, haveRef)
 		}
 
+		// Replace arrow function body, condition part of `if`, `case`, `a && b`, `a || b`, `a ?? b`.
+		else if (type === ContextType.Conditional) {
+			if (ts.isIfStatement(node) || ts.isCaseClause(node)) {
+				let ifExpIndex = VisitingTree.getChildIndexBySiblingIndex(index, 1)
+				this.insertExpsAndBlockIt(node.expression, ifExpIndex, exps, haveRef)
+			}
+			else if (ts.isConditionalExpression(node)) {
+				let condIndex = VisitingTree.getChildIndexBySiblingIndex(index, 1)
+				this.insertExpsAndBlockIt(node.condition, condIndex, exps, haveRef)
+			}
+			else if (ts.isBinaryExpression(node)) {
+				let condIndex = VisitingTree.getChildIndexBySiblingIndex(index, 1)
+				this.insertExpsAndBlockIt(node.left, condIndex, exps, haveRef)
+			}
+		}
+
 		// Other contents.
 		else {
 			this.insertExpsAndBlockIt(node, index, exps, haveRef)
@@ -339,8 +355,8 @@ export class ContextInterpolator {
 			}
 		}
 		
-		// `a ? b : c`, `a && b`, `a || b`, `a ?? b`.
-		else if (type === ContextType.LogicContent) {
+		// `if (...)`, `a ? b : c`, `a && b`, `a || b`, `a ?? b`.
+		else if (type === ContextType.Conditional || type === ContextType.LogicContent) {
 			if (haveRef) {
 				let refName = this.makeRefVariable()
 	
@@ -412,7 +428,7 @@ export class ContextInterpolator {
 			}
 		}
 
-		// `if (...)...`
+		// `if ()...`
 		else {
 			this.interpolated.add(index, {
 				exps,

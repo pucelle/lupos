@@ -35,8 +35,10 @@ export namespace VisitingTree {
 	export function toNext() {
 		current.index = ++indexSeed
 
-		let parent = stack[stack.length - 1]
-		childMap.add(parent.index, current.index)
+		if (stack.length > 0) {
+			let parent = stack[stack.length - 1]
+			childMap.add(parent.index, current.index)
+		}
 	}
 
 	/** To first child. */

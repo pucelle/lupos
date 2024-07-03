@@ -14,6 +14,9 @@ export enum ContextType {
 	 */
 	FunctionLike,
 
+	/** `If`, `case`, `default`, or binary expressions like `a && b`, `a || b`, `a ?? b`. */
+	Conditional,
+
 	/** 
 	 * May run or not run.
 	 * Normally the conditional content of `if`, `else`...
@@ -121,6 +124,23 @@ export namespace ContextTree {
 			|| ts.isArrowFunction(node)
 		) {
 			return ContextType.FunctionLike
+		}
+
+		// Conditional
+		else if (ts.isIfStatement(node)
+			|| ts.isConditionalExpression(node)
+
+			//  `a && b`, `a || b`, `a ?? b`
+			|| ts.isBinaryExpression(node) && (
+				node.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken
+				|| node.operatorToken.kind === ts.SyntaxKind.BarBarToken
+				|| node.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken
+			)
+
+			|| ts.isCaseClause(node)
+			|| ts.isDefaultClause(node)
+		) {
+			return ContextType.Conditional
 		}
 
 		// Iteration
