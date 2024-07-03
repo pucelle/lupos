@@ -60,8 +60,7 @@ export class Context {
 	leaveChild(child: Context) {
 		this.flowState.mergeChildContext(child)
 
-		// For `Conditional`, always leave to rest step.
-		if (child.type === ContextType.BreakLike && this.type !== ContextType.Conditional) {
+		if (child.flowState.isBreakLikeInside()) {
 			this.addBreak(child.visitingIndex)
 		}
 	}
@@ -83,6 +82,12 @@ export class Context {
 		else if (helper.isPropertyAccessing(node)) {
 			this.addGet(node)
 		}
+
+		// `break` or `continue`.
+		else if (ts.isReturnStatement(node) || ts.isBreakOrContinueStatement(node)) {
+			this.flowState.applyBreak(true)
+			this.addBreak(VisitingTree.current.index)
+		}
 	}
 
 	/** Add a get expression, already tested and knows should observe it. */
@@ -94,7 +99,7 @@ export class Context {
 		// Use a reference variable to replace expression.
 		if (checker.shouldReference(node.expression)) {
 			let index = VisitingTree.current.index
-			this.interpolator.refExpAndCapture(node, index)
+			this.interpolator.refAndCapture(node, index)
 		}
 		else {
 			this.interpolator.capture(node, false)

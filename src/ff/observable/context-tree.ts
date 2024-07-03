@@ -14,12 +14,21 @@ export enum ContextType {
 	 */
 	FunctionLike,
 
-	/** `If`, `case`, `default`, or binary expressions like `a && b`, `a || b`, `a ?? b`. */
+	/** 
+	 * `if`, `case`, `default`,
+	 * or binary expressions like `a && b`, `a || b`, `a ?? b`.
+	 */
 	Conditional,
 
 	/** 
-	 * May run or not run.
+	 * `if (...)`, `case ...`,
+	 * or left part of binary expressions like `a && b`, `a || b`, `a ?? b`.
+	 */
+	ConditionalCondition,
+
+	/** 
 	 * Normally the conditional content of `if`, `else`...
+	 * or right part of binary expressions like `a && b`, `a || b`, `a ?? b`.
 	 * Content itself may be a block, or a normal expression.
 	 */
 	ConditionalContent,
@@ -30,14 +39,11 @@ export enum ContextType {
 	 */
 	CaseContent,
 
-	/** 
-	 * true and false part of `a ? b : c`,
-	 * or right part of `a && b`, `a || b`, `a ?? b`.
-	 */
-	LogicContent,
-
 	/** Process For iteration initializer, condition, incrementor. */
 	Iteration,
+
+	/** `while (...)`, `for (...)` */
+	IterationCondition,
 
 	/** 
 	 * `for () {...}`, May run for none, 1 time, multiple times.
@@ -116,8 +122,9 @@ export namespace ContextTree {
 		}
 
 		// BreakLike
-		else if (ts.isReturnStatement(node)
-			|| ts.isBreakOrContinueStatement(node)
+		// `break` and `continue` contains no expressions, so should not be a context type.
+		else if (ts.isReturnStatement(node) && node.expression
+			//|| ts.isBreakOrContinueStatement(node)
 			|| ts.isAwaitExpression(node)
 			|| ts.isYieldExpression(node)
 		) {
@@ -131,18 +138,25 @@ export namespace ContextTree {
 
 			// `if () ...`
 			if (ts.isIfStatement(parent)) {
-				if (node === parent.thenStatement
+				if (node === parent.expression) {
+					return ContextType.ConditionalCondition
+				}
+				else if (node === parent.thenStatement
 
 					// For `if ... else if...`, the second if statement belongs to `Conditional`.
-					|| node === parent.elseStatement) {
+					|| node === parent.elseStatement
+				) {
 					return ContextType.ConditionalContent
 				}
 			}
 
 			// `a ? b : c`
 			else if (ts.isConditionalExpression(parent)) {
-				if (node === parent.whenTrue || node === parent.whenFalse) {
-					return ContextType.LogicContent
+				if (node === parent.condition) {
+					return ContextType.ConditionalCondition
+				}
+				else if (node === parent.whenTrue || node === parent.whenFalse) {
+					return ContextType.ConditionalContent
 				}
 			}
 
@@ -151,26 +165,39 @@ export namespace ContextTree {
 				if ((parent.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken
 					|| parent.operatorToken.kind === ts.SyntaxKind.BarBarToken
 					|| parent.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken)
-					&& node === parent.right
 				) {
-					return ContextType.LogicContent
+					if (node === parent.left) {
+						return ContextType.ConditionalCondition
+					}
+					else if (node === parent.right) {
+						return ContextType.ConditionalContent
+					}
 				}
 			}
 
-			// `for... of`, `for ... in`, `while ...`, `do ...`
+			// `for (;;) ...`
+			else if (ts.isForStatement(parent)) {
+				if (node === parent.initializer
+					|| node === parent.condition
+					|| node === parent.incrementor
+				) {
+					return ContextType.IterationCondition
+				}
+				else if (node === parent.statement) {
+					return ContextType.IterationContent
+				}
+			}
+
+			// `for ... in`, `for ... of`, `while ...`, `do ...`
 			else if (ts.isForOfStatement(parent)
 				|| ts.isForInStatement(parent)
 				|| ts.isWhileStatement(parent)
 				|| ts.isDoStatement(parent)
 			) {
-				if (node === parent.statement) {
-					return ContextType.IterationContent
+				if (node === parent.expression) {
+					return ContextType.IterationCondition
 				}
-			}
-
-			// `for (let...; ;) ...`
-			else if (ts.isForStatement(parent)) {
-				if (node === parent.statement) {
+				else if (node === parent.statement) {
 					return ContextType.IterationContent
 				}
 			}

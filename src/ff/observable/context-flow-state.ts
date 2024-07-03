@@ -52,33 +52,43 @@ export class ContextFlowState {
 		return !!(type && (type.getFlags() & ts.TypeFlags.Void))
 	}
 
+	/** Apply `returnInside` value. */
+	applyReturn(value: boolean) {
+		this.returnInside ||= value
+	}
+
+	/** Apply `yieldInside` value. */
+	applyYield(value: boolean) {
+		this.yieldInside ||= value
+	}
+
+	/** Apply `breakInside` value. */
+	applyBreak(value: boolean) {
+		this.breakInside ||= value
+	}
+
 	/** 
 	 * After a child context is visiting completed, visit it.
 	 * returns whether break or return or yield.
 	 */
-	mergeChildContext(child: Context): boolean {
+	mergeChildContext(child: Context) {
+
+		// Never broadcast out of function.
 		if (child.type === ContextType.FunctionLike) {
-			return false
+			return
 		}
 
-		// Return would not broadcast out of function.
-		if (child.flowState.returnInside) {
-			return this.returnInside = true
-		}
-
-		// Yield would not broadcast out of function.
-		if (child.flowState.yieldInside) {
-			return this.yieldInside = true
-		}
+		this.applyReturn(child.flowState.returnInside)
+		this.applyYield(child.flowState.yieldInside)
 
 		// Break would not broadcast out of iteration and case default.
-		if (child.flowState.breakInside
+		this.applyBreak(child.flowState.breakInside
 			&& child.type !== ContextType.Iteration
-			&& child.type !== ContextType.CaseContent
-		) {
-			return this.breakInside = true
-		}
-		
-		return false
+			&& child.type !== ContextType.CaseContent)
+	}
+
+	/** Whether break like, or return, or yield like inside. */
+	isBreakLikeInside(): boolean {
+		return this.returnInside || this.yieldInside || this.breakInside
 	}
 }

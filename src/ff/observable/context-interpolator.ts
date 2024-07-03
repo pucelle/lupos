@@ -5,6 +5,7 @@ import {Context} from './context'
 import {ContextType} from './context-tree'
 import {VisitingTree} from './visiting-tree'
 import {ContextExpMaker} from './context-exp-maker'
+import {isBreakLikeOrImplicitReturning, refBreakLikeOrImplicitReturning, refPropertyAccessing, replaceRefedBreakLikeOrImplicitReturning, replaceRefedPropertyAccessing, returnBreakLikeOrImplicitReturning} from './helpers/ref'
 
 
 interface InterpolationItem {
@@ -26,7 +27,6 @@ export class ContextInterpolator {
 	private referenceVariableNames: string[] = []
 	private captured: PropertyAccessingNode[] = []
 	private capturedHaveRef: boolean = false
-	private latestBreakIndex: number = -1
 
 	/** Interpolated expressions. */
 	private interpolated: ListMap<number, InterpolationItem> = new ListMap()
@@ -74,8 +74,6 @@ export class ContextInterpolator {
 
 	/** Insert captured expressions to currently visiting position. */
 	breakCaptured(index: number) {
-		this.latestBreakIndex = index
-
 		let exps = this.captured
 		if (exps.length === 0) {
 			return
@@ -124,68 +122,25 @@ export class ContextInterpolator {
 		return name
 	}
 
-	/** Will replace like `a().b` to a reference assignment `(c = a()).b`. */
-	refExpAndCapture(node: PropertyAccessingNode, index: number) {
+	/** 
+	 * Replace like `a().b` to a reference assignment `(c = a()).b`,
+	 * and capture replaced expression.
+	 */
+	refAndCapture(node: PropertyAccessingNode, index: number) {
 		let refName = this.makeRefVariable()
 
 		this.interpolated.add(index, {
 			exps: null,
 			replace: (node: TS.Node) => {
-				return this.refPropertyAccessingExp(node as PropertyAccessingNode, refName)
+				return refPropertyAccessing(node as PropertyAccessingNode, refName)
 			},
 		})
 		
 		// `a.b().c` -> `_ref_.c`
-		let referenceAccessing = this.replaceRefedPropertyAccessingExp(node, refName)
+		let referenceAccessing = replaceRefedPropertyAccessing(node, refName)
 		this.capture(referenceAccessing, true)
 	}
 
-	/** 
-	 * replace property accessing expression.
-	 * `a.b().c -> (_ref_1 = a.b().c).c`
-	 */
-	private refPropertyAccessingExp(node: PropertyAccessingNode, refName: string): PropertyAccessingNode {
-		let exp = factory.createParenthesizedExpression(
-			factory.createBinaryExpression(
-				factory.createIdentifier(refName),
-				factory.createToken(ts.SyntaxKind.EqualsToken),
-				node as TS.Expression
-			)
-		)
-
-		if (ts.isPropertyAccessExpression(node)) {
-			return factory.createPropertyAccessExpression(
-				exp,
-				node.name
-			)
-		}
-		else {
-			return factory.createElementAccessExpression(
-				exp,
-				node.argumentExpression
-			)
-		}
-	}
-
-	/** 
-	 * replace property accessing expression.
-	 * `a.b().c -> _ref_1.c`
-	 */
-	private replaceRefedPropertyAccessingExp(node: PropertyAccessingNode, refName: string): PropertyAccessingNode {
-		let exp = factory.createIdentifier(refName)
-		if (ts.isPropertyAccessExpression(node)) {
-			return factory.createPropertyAccessExpression(
-				exp,
-				node.name
-			)
-		}
-		else {
-			return factory.createElementAccessExpression(
-				exp,
-				node.argumentExpression
-			)
-		}
-	}
 
 	/** 
 	 * Add rest captured expressions before end position of context, or before a return statement.
@@ -207,29 +162,11 @@ export class ContextInterpolator {
 		let node = this.context.node
 		let index = this.context.visitingIndex
 
-		// Insert to statements.
+		// Insert to the end of statements.
 		// For block, source file, case or default.
 		if (helper.isStatementsExist(node)) {
-
-			// If has a return like statement.
-			if (this.latestBreakIndex !== -1) {
-
-				// Has reference variable exist, make a new reference from returned content.
-				if (haveRef) {
-					this.insertExpsBeforeReturning(this.latestBreakIndex, exps)
-				}
-
-				// Add before latest return statement.
-				else {
-					this.insertExpsBefore(this.latestBreakIndex, exps)
-				}
-			}
-
-			// Add to the end of context.
-			else {
-				let endIndex = VisitingTree.getLastChildIndex(index)
-				this.insertExpsAfter(endIndex, exps)
-			}
+			let endIndex = VisitingTree.getLastChildIndex(index)
+			this.insertExpsAfter(endIndex, exps)
 		}
 
 		// Replace arrow function body.
@@ -238,60 +175,10 @@ export class ContextInterpolator {
 			this.insertExpsAndBlockIt((node as TS.ArrowFunction).body, bodyIndex, exps, haveRef)
 		}
 
-		// Replace arrow function body, condition part of `if`, `case`, `a && b`, `a || b`, `a ?? b`.
-		else if (type === ContextType.Conditional) {
-			let condIndex = VisitingTree.getChildIndexBySiblingIndex(index, 0)
-
-			if (ts.isIfStatement(node) || ts.isSwitchStatement(node) || ts.isCaseClause(node)) {
-				this.insertExpsAndBlockIt(node.expression, condIndex, exps, haveRef)
-			}
-			else if (ts.isConditionalExpression(node)) {
-				this.insertExpsAndBlockIt(node.condition, condIndex, exps, haveRef)
-			}
-			else if (ts.isBinaryExpression(node)) {
-				this.insertExpsAndBlockIt(node.left, condIndex, exps, haveRef)
-			}
-			else {
-				throw new Error(`Should not capture any expressions for "${this.context.node.getText()}"`)
-			}
-		}
-
 		// Other contents.
 		else {
 			this.insertExpsAndBlockIt(node, index, exps, haveRef)
 		}
-	}
-
-	/** `return this.a().b` -> `_ref = ...; return _ref;` */
-	private insertExpsBeforeReturning(index: number, exps: PropertyAccessingNode[]) {
-		let refName = this.makeRefVariable()
-
-		this.interpolated.add(index, {
-			exps,
-			replace: (n: TS.Node, exps: TS.Expression[]) => {
-				return [
-
-					// `_ref = ...`
-					factory.createExpressionStatement(
-						factory.createParenthesizedExpression(
-							factory.createBinaryExpression(
-								factory.createIdentifier(refName),
-								factory.createToken(ts.SyntaxKind.EqualsToken),
-								(n as TS.ReturnStatement).expression!
-							)
-						)
-					),
-
-					// Insert expressions here.
-					...exps.map(exp => factory.createExpressionStatement(exp)),
-
-					// `return _ref`
-					factory.createReturnStatement(
-						factory.createIdentifier(refName)
-					)
-				]
-			},
-		})
 	}
 
 	/** 
@@ -302,11 +189,9 @@ export class ContextInterpolator {
 		node: TS.Node, index: number, exps: PropertyAccessingNode[], haveRef: boolean
 	) {
 		let type = this.context.type
-		let isReturnStatement = ts.isReturnStatement(node)
-		let likeReturnStatement = isReturnStatement || ts.isArrowFunction(node.parent)
 
-		// `return ...` or `() => ...`
-		if (likeReturnStatement) {
+		// `return ...`, `await ...`, `yield ...` or `() => ...`
+		if (isBreakLikeOrImplicitReturning(node)) {
 			if (haveRef) {
 				let refName = this.makeRefVariable()
 	
@@ -317,22 +202,14 @@ export class ContextInterpolator {
 		
 							// `_ref = ...`
 							factory.createExpressionStatement(
-								factory.createParenthesizedExpression(
-									factory.createBinaryExpression(
-										factory.createIdentifier(refName),
-										factory.createToken(ts.SyntaxKind.EqualsToken),
-										isReturnStatement ? (n as TS.ReturnStatement).expression! : n as TS.Expression
-									)
-								)
+								refBreakLikeOrImplicitReturning(n as TS.Expression, refName)
 							),
 	
 							// Insert expressions here.
 							...exps.map(exp => factory.createExpressionStatement(exp)),
 	
-							// `return _ref`
-							factory.createReturnStatement(
-								factory.createIdentifier(refName)
-							),
+							// `return _ref`.
+							replaceRefedBreakLikeOrImplicitReturning(n as TS.Expression, refName),
 						])
 					},
 				})
@@ -347,17 +224,15 @@ export class ContextInterpolator {
 							...exps.map(exp => factory.createExpressionStatement(exp)),
 	
 							// return original returning, or a new returning.
-							isReturnStatement
-								? n as TS.ReturnStatement
-								: factory.createReturnStatement(n as TS.Expression),
+							returnBreakLikeOrImplicitReturning(n as TS.Expression),
 						])
 					},
 				})
 			}
 		}
 		
-		// `if (...)`, `a ? b : c`, `a && b`, `a || b`, `a ?? b`.
-		else if (type === ContextType.Conditional || type === ContextType.LogicContent) {
+		// `if (...)`, `... ? b : c`, `... && b`, `... || b`, `... ?? b`, `for (...)`, `while (...)`.
+		else if (type === ContextType.ConditionalCondition || type === ContextType.IterationCondition) {
 			if (haveRef) {
 				let refName = this.makeRefVariable()
 	
