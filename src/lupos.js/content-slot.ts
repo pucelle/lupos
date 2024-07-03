@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {helper, defineVisitor, ts, modifier} from '../base'
+import {helper, defineVisitor, ts, modifier, factory} from '../base'
 
 
 defineVisitor(
@@ -33,7 +33,6 @@ defineVisitor(
 			return node
 		}
 
-		let factory = ts.factory
 		let typeText = helper.getTypeFullText(renderType)
 		let slotType: 'TemplateResult' | 'TemplateResultArray' | 'Text' | null = null
 

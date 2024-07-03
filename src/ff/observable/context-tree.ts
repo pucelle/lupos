@@ -44,13 +44,23 @@ export enum ContextType {
 	 * Content itself can be a block, or a normal expression.
 	 */
 	IterationContent,
+
+	/** `return`, `break`, `continue`, `yield`, `await`. */
+	BreakLike,
 }
 
 
 export namespace ContextTree {
 
-	const ContextStack: Context[] = []
+	let contextStack: Context[] = []
 	export let current: Context | null = null
+
+
+	/** Initialize before visiting a new source file. */
+	export function initialize() {
+		contextStack = []
+		current = null
+	}
 
 
 	/** 
@@ -58,6 +68,61 @@ export namespace ContextTree {
 	 * No content type, includes `ConditionalContent` & `IterationContent` checked.
 	 */
 	export function checkContextType(node: TS.Node): ContextType | null {
+
+		// Block like, module contains a block inside.
+		if (ts.isSourceFile(node)
+			|| ts.isBlock(node)
+		) {
+			return ContextType.BlockLike
+		}
+
+		// Function like
+		else if (ts.isMethodDeclaration(node)
+			|| ts.isFunctionDeclaration(node)
+			|| ts.isFunctionExpression(node)
+			|| ts.isGetAccessorDeclaration(node)
+			|| ts.isSetAccessorDeclaration(node)
+			|| ts.isArrowFunction(node)
+		) {
+			return ContextType.FunctionLike
+		}
+
+		// Conditional
+		else if (ts.isIfStatement(node)
+			|| ts.isSwitchStatement(node)
+			|| ts.isConditionalExpression(node)
+
+			//  `a && b`, `a || b`, `a ?? b`
+			|| ts.isBinaryExpression(node) && (
+				node.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken
+				|| node.operatorToken.kind === ts.SyntaxKind.BarBarToken
+				|| node.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken
+			)
+
+			|| ts.isCaseClause(node)
+			|| ts.isDefaultClause(node)
+		) {
+			return ContextType.Conditional
+		}
+
+		// Iteration
+		else if (ts.isForOfStatement(node)
+			|| ts.isForInStatement(node)
+			|| ts.isForStatement(node)
+			|| ts.isWhileStatement(node)
+			|| ts.isDoStatement(node)
+		) {
+			return ContextType.Iteration
+		}
+
+		// BreakLike
+		else if (ts.isReturnStatement(node)
+			|| ts.isBreakOrContinueStatement(node)
+			|| ts.isAwaitExpression(node)
+			|| ts.isYieldExpression(node)
+		) {
+			return ContextType.BreakLike
+		}
 		
 		// ConditionalContent, must before Block-like.
 		// `case` and `default` will be handled outside.
@@ -66,7 +131,10 @@ export namespace ContextTree {
 
 			// `if () ...`
 			if (ts.isIfStatement(parent)) {
-				if (node === parent.thenStatement) {
+				if (node === parent.thenStatement
+
+					// For `if ... else if...`, the second if statement belongs to `Conditional`.
+					|| node === parent.elseStatement) {
 					return ContextType.ConditionalContent
 				}
 			}
@@ -95,7 +163,7 @@ export namespace ContextTree {
 				|| ts.isWhileStatement(parent)
 				|| ts.isDoStatement(parent)
 			) {
-				if (node === parent.expression) {
+				if (node === parent.statement) {
 					return ContextType.IterationContent
 				}
 			}
@@ -108,61 +176,16 @@ export namespace ContextTree {
 			}
 		}
 
-		// Block like, module contains a block inside.
-		if (ts.isSourceFile(node)
-			|| ts.isBlock(node)
-		) {
-			return ContextType.BlockLike
-		}
-
-		// Function like
-		else if (ts.isMethodDeclaration(node)
-			|| ts.isFunctionDeclaration(node)
-			|| ts.isFunctionExpression(node)
-			|| ts.isGetAccessorDeclaration(node)
-			|| ts.isSetAccessorDeclaration(node)
-			|| ts.isArrowFunction(node)
-		) {
-			return ContextType.FunctionLike
-		}
-
-		// Conditional
-		else if (ts.isIfStatement(node)
-			|| ts.isConditionalExpression(node)
-
-			//  `a && b`, `a || b`, `a ?? b`
-			|| ts.isBinaryExpression(node) && (
-				node.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken
-				|| node.operatorToken.kind === ts.SyntaxKind.BarBarToken
-				|| node.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken
-			)
-
-			|| ts.isCaseClause(node)
-			|| ts.isDefaultClause(node)
-		) {
-			return ContextType.Conditional
-		}
-
-		// Iteration
-		else if (ts.isForOfStatement(node)
-			|| ts.isForInStatement(node)
-			|| ts.isForStatement(node)
-			|| ts.isWhileStatement(node)
-			|| ts.isDoStatement(node)
-		) {
-			return ContextType.Iteration
-		}
-
 		return null
 	}
 
 	
 	/** Create a context from node and push to stack. */
-	export function createContextAndPush(type: ContextType, node: TS.Node): Context {
+	export function createContext(type: ContextType, node: TS.Node): Context {
 		let context = new Context(type, node, current)
 
 		if (current) {
-			ContextStack.push(current)
+			contextStack.push(current)
 		}
 
 		return current = context
@@ -172,11 +195,11 @@ export namespace ContextTree {
 	/** Pop context. */
 	export function pop() {
 		current!.beforeExit()
-		current = ContextStack.pop()!
+		current = contextStack.pop()!
 	}
 
 
-	/** Visit each child node. */
+	/** Visit context node and each descendant node. */
 	export function visitNode(node: TS.Node) {
 		if (current) {
 			current.visitNode(node)

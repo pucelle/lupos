@@ -24,11 +24,16 @@ export class ContextFlowState {
 	breakInside: boolean = false
 
 	/** 
-	 * Whether inner codes has return statement to return before execution to end.
-	 * Broadcast it to parent until closest function like context.
-	 * `yield`, `await` are treated as `return`.
+	 * Whether inner codes has `return` statement to return before execution to end.
+	 * Broadcast it to parent until function.
 	 */
 	returnInside: boolean = false
+
+	/** 
+	 * Whether has `await` or `yield` statement.
+	 * Broadcast it to parent until function.
+	 */
+	yieldInside: boolean = false
 
 	constructor(context: Context) {
 		this.context = context
@@ -40,50 +45,37 @@ export class ContextFlowState {
 
 		// Inherit from parent context.
 		if (this.context.type !== ContextType.FunctionLike) {
-			return this.context.parent?.flowState.nothingReturned ?? false
+			return this.context.parent?.flowState.nothingReturned ?? true
 		}
 
 		let type = helper.getNodeReturnType(node as TS.FunctionLikeDeclaration)
 		return !!(type && (type.getFlags() & ts.TypeFlags.Void))
 	}
 
-	/** Visit each descendant node, returns whether break or return. */
-	visitNode(node: TS.Node): boolean {
-
-		// Handle return like.
-		if (ts.isReturnStatement(node)
-			|| ts.isAwaitExpression(node)
-			||ts.isYieldExpression(node)
-		) {
-			return this.returnInside = true
-		}
-
-		// Handle break like.
-		else if (ts.isBreakStatement(node)
-			|| ts.isContinueStatement(node)
-		) {
-			return this.breakInside = true
-		}
-
-		return false
-	}
-
 	/** 
 	 * After a child context is visiting completed, visit it.
-	 * returns whether break or return.
+	 * returns whether break or return or yield.
 	 */
-	visitChildContext(child: Context) {
+	mergeChildContext(child: Context): boolean {
+		if (child.type === ContextType.FunctionLike) {
+			return false
+		}
 
 		// Return would not broadcast out of function.
-		if (child.flowState.returnInside
-			&& child.type !== ContextType.FunctionLike) {
+		if (child.flowState.returnInside) {
 			return this.returnInside = true
+		}
+
+		// Yield would not broadcast out of function.
+		if (child.flowState.yieldInside) {
+			return this.yieldInside = true
 		}
 
 		// Break would not broadcast out of iteration and case default.
 		if (child.flowState.breakInside
 			&& child.type !== ContextType.Iteration
-			&& child.type !== ContextType.CaseContent) {
+			&& child.type !== ContextType.CaseContent
+		) {
 			return this.breakInside = true
 		}
 		

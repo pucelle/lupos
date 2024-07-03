@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {PropertyAccessingNode, helper, ts} from '../../base'
+import {PropertyAccessingNode, factory, helper, modifier, ts} from '../../base'
 import {groupBy} from '../../utils'
 import {checker} from './checker'
 
@@ -9,14 +9,11 @@ export namespace ContextExpMaker {
 	/** Group expressions to lately insert a position. */
 	export function makeExpressions(nonZeroExps: PropertyAccessingNode[]): TS.Expression[] {
 		let grouped = groupGetExpressions(nonZeroExps)
-		let [normal, questionDotted] = splitGetExpressions(grouped)
-		let normalExp = createGroupedGetExpression(normal)
-		let questionDottedExps = questionDotted.map(item => createGroupedGetExpression([item]))
+		let exps = grouped.map(item => createGroupedGetExpression(item))
 
-		return [
-			normalExp,
-			...questionDottedExps,
-		]
+		modifier.addNamedImport('trackGet', '@pucelle/ff')
+
+		return exps
 	}
 
 	
@@ -43,65 +40,41 @@ export namespace ContextExpMaker {
 	}
 
 
-	/** Split get expressions to normal, and each having question dot token. */
-	function splitGetExpressions(group: PropertyAccessingNode[][]): PropertyAccessingNode[][][] {
-		let normal: PropertyAccessingNode[][] = []
-		let questionDotted: PropertyAccessingNode[][] = []
-
-		for (let item of group) {
-			if (item[0].questionDotToken) {
-				questionDotted.push(item)
-			}
-			else {
-				normal.push(item)
-			}
-		}
-
-		return [normal, questionDotted]
-	}
-
-
-	/** Create a `onGetGrouped` statement. */
-	function createGroupedGetExpression(group: PropertyAccessingNode[][]): TS.Expression {
-		let factory = ts.factory
-		let node = group[0][0]
-		let parameterExps = group.map(nodes => createOnGetParameter(nodes))
+	/** Create a `trackGet` statement. */
+	function createGroupedGetExpression(nodes: PropertyAccessingNode[]): TS.Expression {
+		let node = nodes[0]
+		let parameters = createtrackGetNameParameter(nodes)
 		
-		let onGet = factory.createCallExpression(
-			factory.createIdentifier('onGetGrouped'),
+		let trackGet = factory.createCallExpression(
+			factory.createIdentifier('trackGet'),
 			undefined,
-			parameterExps
+			parameters
 		)
 
-		// `a?.b` -> `a && onGet(a, 'b')`
+		// `a?.b` -> `a && trackGet(a, 'b')`
 		if (node.questionDotToken) {
 			return factory.createBinaryExpression(
 				node.expression,
 				factory.createToken(ts.SyntaxKind.AmpersandAmpersandToken),
-				onGet
+				trackGet
 			)
 		}
 		else {
-			return onGet
+			return trackGet
 		}
 	}
 
 
-	/** Create a parameter for `onGetGrouped` by a group of nodes. */
-	function createOnGetParameter(nodes: PropertyAccessingNode[]): TS.Expression {
-		let factory = ts.factory
+	/** Create a parameter for `trackGet` by a group of nodes. */
+	function createtrackGetNameParameter(nodes: PropertyAccessingNode[]): TS.Expression[] {
 		let node = nodes[0]
 		let group = groupNameExpressionKeys(nodes)
 		let nameExps = [...group.values()].map(nodes => getAccessingNodeNameProperty(nodes[0]))
 
-		return factory.createArrayLiteralExpression(
-			[
-				node.expression,
-				factory.createArrayLiteralExpression(
-					nameExps,
-				)
-			]
-		)
+		return [
+			node.expression,
+			...nameExps,
+		]
 	}
 
 
@@ -132,7 +105,6 @@ export namespace ContextExpMaker {
 
 	/** Get name of property expression. */
 	function getAccessingNodeNameProperty(node: PropertyAccessingNode): TS.Expression {
-		let factory = ts.factory
 		let name: TS.Expression
 
 		if (helper.isNodeArrayType(node.expression) || checker.isMapOrSetReading(node)) {

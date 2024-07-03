@@ -1,6 +1,6 @@
 import {ListMap, difference} from '../utils'
 import type TS from 'typescript'
-import {transformContext, ts} from './global'
+import {factory, transformContext, ts} from './global'
 import {helper} from './helper'
 
 
@@ -23,7 +23,7 @@ export class SourceFileModifier {
 			newMembers.push(...members)
 		}
 
-		return ts.factory.updateClassDeclaration(
+		return factory.updateClassDeclaration(
 			node, 
 			node.modifiers,
 			node.name,
@@ -67,7 +67,7 @@ export class SourceFileModifier {
 			}
 		}
 
-		return ts.factory.updateClassDeclaration(
+		return factory.updateClassDeclaration(
 			node, 
 			node.modifiers,
 			node.name,
@@ -102,7 +102,6 @@ export class SourceFileModifier {
 
 	/** Apply imports to source file, returns a new. */
 	output(sourceFile: TS.SourceFile): TS.SourceFile {
-		let factory = ts.factory
 
 		// A ts bug here: if insert some named import identifiers,
 		// and update the import statement,
@@ -163,13 +162,13 @@ export class SourceFileModifier {
 				return node
 			}
 
-			let newImports = newNames.map(name => ts.factory.createImportSpecifier(
+			let newImports = newNames.map(name => factory.createImportSpecifier(
 				false,
 				undefined,
-				ts.factory.createIdentifier(name)
+				factory.createIdentifier(name)
 			))
 
-			return ts.factory.updateNamedImports(node, [...oldImports, ...newImports])
+			return factory.updateNamedImports(node, [...oldImports, ...newImports])
 		}
 
 		return ts.visitNode(importDecl, visit) as TS.ImportDeclaration
@@ -185,17 +184,16 @@ export class SourceFileModifier {
 			return node
 		}
 
-		let factory = ts.factory
 		let oldStatements = node.statements
 		let stats = [...oldStatements]
 
 		stats.push(...exps.map(exp => factory.createExpressionStatement(exp)))
 
 		if (ts.isBlock(node)) {
-			return ts.factory.updateBlock(node, stats) as T
+			return factory.updateBlock(node, stats) as T
 		}
 		else {
-			return ts.factory.updateSourceFile(node, stats) as T
+			return factory.updateSourceFile(node, stats) as T
 		}
 	}
 
@@ -205,7 +203,6 @@ export class SourceFileModifier {
 			return node
 		}
 
-		let factory = ts.factory
 		let block: TS.Block
 
 		if (ts.isBlock(node.body)) {
@@ -237,7 +234,6 @@ export class SourceFileModifier {
 			return node
 		}
 
-		let factory = ts.factory
 		let newExp: TS.Expression = node
 
 		for (let i = exps.length - 1; i >= 0; i--) {

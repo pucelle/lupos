@@ -5,6 +5,7 @@ import {SourceFileModifier} from './source-file-modifier'
 
 export let typeChecker: TS.TypeChecker
 export let ts: typeof TS
+export let factory: TS.NodeFactory
 export let transformContext: TS.TransformationContext
 export let modifier: SourceFileModifier
 
@@ -12,6 +13,7 @@ export let modifier: SourceFileModifier
 export function setGlobal(program: TS.Program, extras: TransformerExtras) {
 	typeChecker = program.getTypeChecker()
 	ts = extras.ts
+	factory = ts.factory
 }
 
 

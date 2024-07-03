@@ -58,12 +58,15 @@ export class Context {
 
 	/** Leave a child context. */
 	leaveChild(child: Context) {
-		if (this.flowState.visitChildContext(child)) {
-			this.addSplit()
+		this.flowState.mergeChildContext(child)
+
+		// For `Conditional`, always leave to rest step.
+		if (child.type === ContextType.BreakLike && this.type !== ContextType.Conditional) {
+			this.addBreak(child.visitingIndex)
 		}
 	}
 
-	/** Visit each descendant node inside current context. */
+	/** Visit context node and each descendant node inside current context. */
 	visitNode(node: TS.Node) {
 		
 		// Add parameters.
@@ -79,11 +82,6 @@ export class Context {
 		// Add property declaration.
 		else if (helper.isPropertyAccessing(node)) {
 			this.addGet(node)
-		}
-
-		// Check return and break statement.
-		else if (this.flowState.visitNode(node)) {
-			this.addSplit()
 		}
 	}
 
@@ -104,11 +102,11 @@ export class Context {
 	}
 
 	/** 
-	 * Add a split for get expressions.
+	 * Add a split and output get expressions before specified position.
 	 * Then get expressions will be splitted and output before current position.
 	 */
-	private addSplit() {
-		this.interpolator.insertCaptured()
+	private addBreak(index: number) {
+		this.interpolator.breakCaptured(index)
 	}
 
 	/** Add rest get expressions. */

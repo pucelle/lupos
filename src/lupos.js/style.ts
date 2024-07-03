@@ -25,7 +25,7 @@ function parseTaggedTemplate(tem: TS.TaggedTemplateExpression): TS.TaggedTemplat
 	let string = joinTaggedTemplateString(tem)
 	let parsed = minifyCSSString(parseStyleString(string))
 	let parts = parsed.split(/\$SLOT_INDEX_\d+\$/g)
-	let factory = ts.factory
+	let factory = factory
 	let template = tem.template
 
 	if (ts.isNoSubstitutionTemplateLiteral(template)) {

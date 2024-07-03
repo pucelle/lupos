@@ -16,19 +16,43 @@ class TestObservedVariableType {
 }
 
 
+class TestObservedParameter {
+
+	method1(a = {value:1} as Observed<{value: number}>) {
+		return a.value
+	}
+
+	method2(a: Observed<{value: number}>) {
+		return a.value
+	}
+}
+
+
 class TestObservedParameters {
 
 	prop: {value: number} = {value:1}
 
-	renderProp1(this: Observed<TestObservedParameters>) {
+	renderProp1(a = {value:1} as Observed<{value: number}>) {
+		return a.value
+	}
+
+	renderProp2(a = this.prop) {
+		return a.value
+	}
+
+	renderProp3(a = this.prop.value) {
+		return a
+	}
+
+	renderProp4(this: Observed<TestObservedParameters>) {
 		return this.prop.value
 	}
 
-	renderProp2() {
+	renderProp5() {
 		return (this.prop as Observed<{value: number}>).value
 	}
 
-	renderProp3(item: Observed<{value: number}>) {
+	renderProp6(item: Observed<{value: number}>) {
 		return item.value
 	}
 }

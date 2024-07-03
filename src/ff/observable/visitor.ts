@@ -1,6 +1,5 @@
 import type TS from 'typescript'
 import {transformContext, ts} from '../../base'
-import {Context} from './context'
 import {ClassRange} from './class-range'
 import {ContextTree, ContextType} from './context-tree'
 import {VisitingTree} from './visiting-tree'
@@ -24,12 +23,15 @@ export function observableVisitor(node: TS.SourceFile): TS.SourceFile {
 		let type = ContextTree.checkContextType(node)
 
 		if (type !== null) {
-			ContextTree.createContextAndPush(type, node)
+			ContextTree.createContext(type, node)
 		}
 
 		let outputCallbacks = visitChildren(node)
 		let currentContext = ContextTree.current!
 		let currentIndex = VisitingTree.current.index
+
+		// Visit context node and each descendant node.
+		ContextTree.visitNode(node)
 
 		if (type !== null) {
 			ContextTree.pop()
@@ -41,32 +43,19 @@ export function observableVisitor(node: TS.SourceFile): TS.SourceFile {
 		}
 
 		return () => {
-			let output = outputCallbacks.map(c => c())
-			let i = -1
+			let outputs = outputCallbacks.map(c => c())
+			let index = 0
 
 			// replace children by callback outputted.
 			let newNode = ts.visitEachChild(node, () => {
-				let childIndex = VisitingTree.getChildIndexBySiblingIndex(currentIndex, ++i)
-				let newChild = output[i]
-
-				// If previous visitor returns a node list, choose last element and pass it to next step.
-				if (Array.isArray(newChild)) {
-					let outputNode = currentContext.output(newChild.pop()!, childIndex)
-					if (Array.isArray(outputNode)) {
-						newChild.push(...outputNode)
-					}
-					else {
-						newChild.push(outputNode)
-					}
-
-					return newChild
-				}
-				else {
-					return currentContext.output(newChild, childIndex)
-				}
+				let output = outputs[index++]
+				return Array.isArray(output) && output.length === 1 ? output[0] : output
 			}, transformContext)
-			
-			return newNode
+
+			// If previous visitor returns a node list, choose last element to pass it to next step.
+			let output = currentContext.output(newNode, currentIndex)
+
+			return Array.isArray(output) && output.length === 1 ? output[0] : output
 		}
 	}
 
@@ -75,13 +64,10 @@ export function observableVisitor(node: TS.SourceFile): TS.SourceFile {
 	function visitChildren(node: TS.Node): (() => TS.Node | TS.Node[])[] {
 		VisitingTree.toChild()
 
-		// Visit each child node.
-		ContextTree.visitNode(node)
-
 		// Visit children recursively, but not output immediately.
 		let outputCallbacks: (() => TS.Node | TS.Node[])[] = []
 
-		// Create a conditional context and visit `case` expressions.
+		// Create a case context and visit `case` expressions.
 		// This context cant be outputted directly by output callback,
 		// should implement a special `case` type of output at parent context.
 		if (ts.isCaseOrDefaultClause(node)) {
@@ -89,7 +75,7 @@ export function observableVisitor(node: TS.SourceFile): TS.SourceFile {
 				outputCallbacks.push(visitNode(node.expression))
 			}
 
-			ContextTree.createContextAndPush(ContextType.ConditionalContent, node)
+			ContextTree.createContext(ContextType.CaseContent, node)
 
 			for (let child of node.statements) {
 				outputCallbacks.push(visitNode(child))
@@ -113,8 +99,9 @@ export function observableVisitor(node: TS.SourceFile): TS.SourceFile {
 
 
 	VisitingTree.initialize()
+	ContextTree.initialize()
 
-	new Context(ContextType.BlockLike, node, null)
+	ContextTree.createContext(ContextType.BlockLike, node)
 	let callback = visitNode(node)
 
 	let newSourceFile = callback() as TS.SourceFile

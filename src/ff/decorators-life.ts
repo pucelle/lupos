@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {ts, defineVisitor, modifier, helper} from '../base'
+import {ts, defineVisitor, modifier, helper, factory} from '../base'
 
 
 defineVisitor(
@@ -110,7 +110,6 @@ function compileEffectOrWatchDecorator(
 	connect: TS.MethodDeclaration | TS.ConstructorDeclaration,
 	disconnect: TS.MethodDeclaration | undefined
 ): [TS.MethodDeclaration | TS.ConstructorDeclaration, TS.MethodDeclaration | undefined] {
-	let factory = ts.factory
 	let methodName = methodDecl.name.getText()
 
 	if (connect) {
@@ -149,8 +148,6 @@ function compileEffectOrWatchDecorator(
 
 /** Create a method, which will call super method without parameters. */
 function createCallSuperMethod(name: string): TS.MethodDeclaration {
-	let factory = ts.factory
-
 	return factory.createMethodDeclaration(
 		undefined,
 		undefined,
@@ -178,7 +175,6 @@ function createCallSuperMethod(name: string): TS.MethodDeclaration {
 
 /** Create a constructor function. */
 function createConstructor(node: TS.ClassDeclaration): TS.ConstructorDeclaration {
-	let factory = ts.factory
 	let parameters = helper.getConstructorParameters(node)
 	let statements: TS.Statement[] = []
 
@@ -205,8 +201,6 @@ function createConstructor(node: TS.ClassDeclaration): TS.ConstructorDeclaration
 
 /** Add a list of statements to a method content end. */
 function addToMethodDeclaration<T extends TS.MethodDeclaration | TS.ConstructorDeclaration>(method: T, statements: TS.Statement[]): T {
-	let factory = ts.factory
-	
 	if (ts.isMethodDeclaration(method)) {
 		return factory.updateMethodDeclaration(
 			method,

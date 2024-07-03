@@ -1,6 +1,6 @@
 import type TS from 'typescript'
 import {ListMap} from '../../utils'
-import {PropertyAccessingNode, helper, modifier, ts} from '../../base'
+import {PropertyAccessingNode, factory, helper, ts} from '../../base'
 import {Context} from './context'
 import {ContextType} from './context-tree'
 import {VisitingTree} from './visiting-tree'
@@ -26,6 +26,7 @@ export class ContextInterpolator {
 	private referenceVariableNames: string[] = []
 	private captured: PropertyAccessingNode[] = []
 	private capturedHaveRef: boolean = false
+	private latestBreakIndex: number = -1
 
 	/** Interpolated expressions. */
 	private interpolated: ListMap<number, InterpolationItem> = new ListMap()
@@ -72,7 +73,9 @@ export class ContextInterpolator {
 	}
 
 	/** Insert captured expressions to currently visiting position. */
-	insertCaptured() {
+	breakCaptured(index: number) {
+		this.latestBreakIndex = index
+
 		let exps = this.captured
 		if (exps.length === 0) {
 			return
@@ -80,8 +83,6 @@ export class ContextInterpolator {
 
 		this.captured = []
 		this.capturedHaveRef = false
-
-		let index = VisitingTree.current.index
 		this.insertExpsBefore(index, exps)
 	}
 
@@ -91,7 +92,7 @@ export class ContextInterpolator {
 			exps,
 			replace: (node: TS.Node, exps: TS.Expression[]) => {
 				return [
-					...exps.map(exp => ts.factory.createExpressionStatement(exp)),
+					...exps.map(exp => factory.createExpressionStatement(exp)),
 					node,
 				]
 			},
@@ -105,7 +106,7 @@ export class ContextInterpolator {
 			replace: (node: TS.Node, exps: TS.Expression[]) => {
 				return [
 					node,
-					...exps.map(exp => ts.factory.createExpressionStatement(exp)),
+					...exps.map(exp => factory.createExpressionStatement(exp)),
 				]
 			},
 		})
@@ -144,22 +145,22 @@ export class ContextInterpolator {
 	 * `a.b().c -> (_ref_1 = a.b().c).c`
 	 */
 	private refPropertyAccessingExp(node: PropertyAccessingNode, refName: string): PropertyAccessingNode {
-		let exp = ts.factory.createParenthesizedExpression(
-			ts.factory.createBinaryExpression(
-				ts.factory.createIdentifier(refName),
-				ts.factory.createToken(ts.SyntaxKind.EqualsToken),
+		let exp = factory.createParenthesizedExpression(
+			factory.createBinaryExpression(
+				factory.createIdentifier(refName),
+				factory.createToken(ts.SyntaxKind.EqualsToken),
 				node as TS.Expression
 			)
 		)
 
 		if (ts.isPropertyAccessExpression(node)) {
-			return ts.factory.createPropertyAccessExpression(
+			return factory.createPropertyAccessExpression(
 				exp,
 				node.name
 			)
 		}
 		else {
-			return ts.factory.createElementAccessExpression(
+			return factory.createElementAccessExpression(
 				exp,
 				node.argumentExpression
 			)
@@ -171,15 +172,15 @@ export class ContextInterpolator {
 	 * `a.b().c -> _ref_1.c`
 	 */
 	private replaceRefedPropertyAccessingExp(node: PropertyAccessingNode, refName: string): PropertyAccessingNode {
-		let exp = ts.factory.createIdentifier(refName)
+		let exp = factory.createIdentifier(refName)
 		if (ts.isPropertyAccessExpression(node)) {
-			return ts.factory.createPropertyAccessExpression(
+			return factory.createPropertyAccessExpression(
 				exp,
 				node.name
 			)
 		}
 		else {
-			return ts.factory.createElementAccessExpression(
+			return factory.createElementAccessExpression(
 				exp,
 				node.argumentExpression
 			)
@@ -205,24 +206,22 @@ export class ContextInterpolator {
 		let type = this.context.type
 		let node = this.context.node
 		let index = this.context.visitingIndex
-		
+
 		// Insert to statements.
 		// For block, source file, case or default.
 		if (helper.isStatementsExist(node)) {
-			let returnIndex = node.statements.findLastIndex(v => ts.isReturnStatement(v))
 
-			// If has a return statement.
-			if (returnIndex > -1) {
-				let statIndex = VisitingTree.getChildIndexBySiblingIndex(index, returnIndex)
+			// If has a return like statement.
+			if (this.latestBreakIndex !== -1) {
 
 				// Has reference variable exist, make a new reference from returned content.
 				if (haveRef) {
-					this.insertExpsBeforeReturning(statIndex, exps)
+					this.insertExpsBeforeReturning(this.latestBreakIndex, exps)
 				}
 
 				// Add before latest return statement.
 				else {
-					this.insertExpsBefore(statIndex, exps)
+					this.insertExpsBefore(this.latestBreakIndex, exps)
 				}
 			}
 
@@ -241,17 +240,19 @@ export class ContextInterpolator {
 
 		// Replace arrow function body, condition part of `if`, `case`, `a && b`, `a || b`, `a ?? b`.
 		else if (type === ContextType.Conditional) {
-			if (ts.isIfStatement(node) || ts.isCaseClause(node)) {
-				let ifExpIndex = VisitingTree.getChildIndexBySiblingIndex(index, 1)
-				this.insertExpsAndBlockIt(node.expression, ifExpIndex, exps, haveRef)
+			let condIndex = VisitingTree.getChildIndexBySiblingIndex(index, 0)
+
+			if (ts.isIfStatement(node) || ts.isSwitchStatement(node) || ts.isCaseClause(node)) {
+				this.insertExpsAndBlockIt(node.expression, condIndex, exps, haveRef)
 			}
 			else if (ts.isConditionalExpression(node)) {
-				let condIndex = VisitingTree.getChildIndexBySiblingIndex(index, 1)
 				this.insertExpsAndBlockIt(node.condition, condIndex, exps, haveRef)
 			}
 			else if (ts.isBinaryExpression(node)) {
-				let condIndex = VisitingTree.getChildIndexBySiblingIndex(index, 1)
 				this.insertExpsAndBlockIt(node.left, condIndex, exps, haveRef)
+			}
+			else {
+				throw new Error(`Should not capture any expressions for "${this.context.node.getText()}"`)
 			}
 		}
 
@@ -271,22 +272,22 @@ export class ContextInterpolator {
 				return [
 
 					// `_ref = ...`
-					ts.factory.createExpressionStatement(
-						ts.factory.createParenthesizedExpression(
-							ts.factory.createBinaryExpression(
-								ts.factory.createIdentifier(refName),
-								ts.factory.createToken(ts.SyntaxKind.EqualsToken),
+					factory.createExpressionStatement(
+						factory.createParenthesizedExpression(
+							factory.createBinaryExpression(
+								factory.createIdentifier(refName),
+								factory.createToken(ts.SyntaxKind.EqualsToken),
 								(n as TS.ReturnStatement).expression!
 							)
 						)
 					),
 
 					// Insert expressions here.
-					...exps.map(exp => ts.factory.createExpressionStatement(exp)),
+					...exps.map(exp => factory.createExpressionStatement(exp)),
 
 					// `return _ref`
-					ts.factory.createReturnStatement(
-						ts.factory.createIdentifier(refName)
+					factory.createReturnStatement(
+						factory.createIdentifier(refName)
 					)
 				]
 			},
@@ -312,25 +313,25 @@ export class ContextInterpolator {
 				this.interpolated.add(index, {
 					exps,
 					replace: (n: TS.Node, exps: TS.Expression[]) => {
-						return ts.factory.createBlock([
+						return factory.createBlock([
 		
 							// `_ref = ...`
-							ts.factory.createExpressionStatement(
-								ts.factory.createParenthesizedExpression(
-									ts.factory.createBinaryExpression(
-										ts.factory.createIdentifier(refName),
-										ts.factory.createToken(ts.SyntaxKind.EqualsToken),
+							factory.createExpressionStatement(
+								factory.createParenthesizedExpression(
+									factory.createBinaryExpression(
+										factory.createIdentifier(refName),
+										factory.createToken(ts.SyntaxKind.EqualsToken),
 										isReturnStatement ? (n as TS.ReturnStatement).expression! : n as TS.Expression
 									)
 								)
 							),
 	
 							// Insert expressions here.
-							...exps.map(exp => ts.factory.createExpressionStatement(exp)),
+							...exps.map(exp => factory.createExpressionStatement(exp)),
 	
 							// `return _ref`
-							ts.factory.createReturnStatement(
-								ts.factory.createIdentifier(refName)
+							factory.createReturnStatement(
+								factory.createIdentifier(refName)
 							),
 						])
 					},
@@ -340,15 +341,15 @@ export class ContextInterpolator {
 				this.interpolated.add(index, {
 					exps,
 					replace: (n: TS.Node, exps: TS.Expression[]) => {
-						return ts.factory.createBlock([
+						return factory.createBlock([
 		
 							// Insert expressions here.
-							...exps.map(exp => ts.factory.createExpressionStatement(exp)),
+							...exps.map(exp => factory.createExpressionStatement(exp)),
 	
 							// return original returning, or a new returning.
 							isReturnStatement
 								? n as TS.ReturnStatement
-								: ts.factory.createReturnStatement(n as TS.Expression),
+								: factory.createReturnStatement(n as TS.Expression),
 						])
 					},
 				})
@@ -367,34 +368,34 @@ export class ContextInterpolator {
 
 						// `a, b, c...`
 						for (let i = 1; i < exps.length; i++) {
-							exp = ts.factory.createBinaryExpression(
+							exp = factory.createBinaryExpression(
 								exp,
-								ts.factory.createToken(ts.SyntaxKind.CommaToken),
+								factory.createToken(ts.SyntaxKind.CommaToken),
 								exps[i]
 							)
 						}
 
 						// `_ref = ..., a, b, c, ...`
-						exp = ts.factory.createBinaryExpression(
+						exp = factory.createBinaryExpression(
 
-							ts.factory.createBinaryExpression(
-								ts.factory.createIdentifier(refName),
-								ts.factory.createToken(ts.SyntaxKind.EqualsToken),
+							factory.createBinaryExpression(
+								factory.createIdentifier(refName),
+								factory.createToken(ts.SyntaxKind.EqualsToken),
 								n as TS.Expression
 							),
 
-							ts.factory.createToken(ts.SyntaxKind.CommaToken),
+							factory.createToken(ts.SyntaxKind.CommaToken),
 	
 							// Insert expressions here.
 							exp
 						)
 
 						// `(..., _ref)`
-						return ts.factory.createParenthesizedExpression(
-							ts.factory.createBinaryExpression(
+						return factory.createParenthesizedExpression(
+							factory.createBinaryExpression(
 								exp,
-								ts.factory.createToken(ts.SyntaxKind.CommaToken),
-								ts.factory.createIdentifier(refName)
+								factory.createToken(ts.SyntaxKind.CommaToken),
+								factory.createIdentifier(refName)
 							)
 						)
 					},
@@ -408,18 +409,18 @@ export class ContextInterpolator {
 
 						// `a, b, c...`
 						for (let i = 1; i < exps.length; i++) {
-							exp = ts.factory.createBinaryExpression(
+							exp = factory.createBinaryExpression(
 								exp,
-								ts.factory.createToken(ts.SyntaxKind.CommaToken),
+								factory.createToken(ts.SyntaxKind.CommaToken),
 								exps[i]
 							)
 						}
 
 						// `(..., node)`
-						return ts.factory.createParenthesizedExpression(
-							ts.factory.createBinaryExpression(
+						return factory.createParenthesizedExpression(
+							factory.createBinaryExpression(
 								exp,
-								ts.factory.createToken(ts.SyntaxKind.CommaToken),
+								factory.createToken(ts.SyntaxKind.CommaToken),
 								n as TS.Expression
 							)
 						)
@@ -433,9 +434,9 @@ export class ContextInterpolator {
 			this.interpolated.add(index, {
 				exps,
 				replace: (node: TS.Node, exps: TS.Expression[]) => {
-					return ts.factory.createBlock([
-						...exps.map(exp => ts.factory.createExpressionStatement(exp)),
-						ts.factory.createExpressionStatement(node as TS.Expression),
+					return factory.createBlock([
+						...exps.map(exp => factory.createExpressionStatement(exp)),
+						node as TS.ExpressionStatement,
 					])
 				},
 			})
@@ -450,7 +451,6 @@ export class ContextInterpolator {
 		}
 
 		let nodes = [node]
-		let replaced = false
 
 		for (let item of items) {
 			let exps = item.exps
@@ -470,12 +470,6 @@ export class ContextInterpolator {
 			else {
 				nodes.push(replacedExps)
 			}
-
-			replaced = true
-		}
-
-		if (replaced) {
-			modifier.addNamedImport('onGetGrouped', '@pucelle/ff')
 		}
 
 		return nodes.length === 1 ? nodes[0] : nodes

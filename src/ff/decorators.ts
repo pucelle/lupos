@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {helper, ts, defineVisitor, modifier} from '../base'
+import {helper, ts, defineVisitor, modifier, factory} from '../base'
 
 
 defineVisitor(
@@ -54,7 +54,7 @@ get prop(): any {
 		let newValue = this.#compute_prop()
 		if (newValue !== this.#prop) {
 			this.#prop = newValue
-			onSet(this, 'prop')
+			trackSet(this, 'prop')
 		}
     }
     catch (err) {
@@ -69,7 +69,6 @@ get prop(): any {
 ```
 */
 function compileComputedDecorator(methodDecl: TS.MethodDeclaration): TS.Node[] {
-	let factory = ts.factory
 	let propName = methodDecl.name.getText()
 
 	let property = factory.createPropertyDeclaration(
@@ -197,7 +196,7 @@ function compileComputedDecorator(methodDecl: TS.MethodDeclaration): TS.Node[] {
 											factory.createIdentifier('newValue')
 										)),
 										factory.createExpressionStatement(factory.createCallExpression(
-											factory.createIdentifier('onSet'),
+											factory.createIdentifier('trackSet'),
 											undefined,
 											[
 												factory.createThis(),
@@ -259,7 +258,7 @@ function compileComputedDecorator(methodDecl: TS.MethodDeclaration): TS.Node[] {
 
 	modifier.addNamedImport('beginTrack', '@pucelle/ff')
 	modifier.addNamedImport('endTrack', '@pucelle/ff')
-	modifier.addNamedImport('onSet', '@pucelle/ff')
+	modifier.addNamedImport('trackSet', '@pucelle/ff')
 
 	return [property, needComputeProperty, computeMethod, resetMethod, getter]
 }
@@ -296,7 +295,6 @@ effectFn() {
 ```
 */
 function compileEffectDecorator(methodDecl: TS.MethodDeclaration): TS.Node[] {
-	let factory = ts.factory
 	let methodName = methodDecl.name.getText()
 
 	let enqueueMethod = factory.createMethodDeclaration(
@@ -434,7 +432,6 @@ onWatchChange() {
 ```
 */
 function compileWatchDecorator(methodDecl: TS.MethodDeclaration, decorator: TS.Decorator): TS.Node[] {
-	let factory = ts.factory
 	let methodName = methodDecl.name.getText()
 
 	if (!ts.isCallExpression(decorator.expression)) {
@@ -458,16 +455,12 @@ function compileWatchDecorator(methodDecl: TS.MethodDeclaration, decorator: TS.D
 		propertyGetBlock = factory.createBlock(
 			[
 				factory.createExpressionStatement(factory.createCallExpression(
-					factory.createIdentifier('onGetGrouped'),
+					factory.createIdentifier('trackGet'),
 					undefined,
-					[factory.createArrayLiteralExpression(
-						[
-							factory.createThis(),
-							factory.createArrayLiteralExpression([
-								factory.createStringLiteral(propertyGetArg.text)
-							])
-						]
-					)]
+					[
+						factory.createThis(),
+						factory.createStringLiteral(propertyGetArg.text)
+					]
 				)),
 				factory.createReturnStatement(factory.createPropertyAccessExpression(
 					factory.createThis(),
@@ -476,6 +469,8 @@ function compileWatchDecorator(methodDecl: TS.MethodDeclaration, decorator: TS.D
 			],
 			true
 		)
+
+		modifier.addNamedImport('trackGet', '@pucelle/ff')
 	}
 	else if (ts.isFunctionExpression(propertyGetArg)) {
 		propertyGetBlock = propertyGetArg.body
