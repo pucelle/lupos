@@ -11,7 +11,7 @@ import {VisitingTree} from './visiting-tree'
  */
 export function observableVisitor(node: TS.SourceFile): TS.SourceFile {
 	function visitNode(node: TS.Node): () => TS.Node | TS.Node[] {
-		VisitingTree.toNext()
+		VisitingTree.toNext(node)
 
 		// Check whether in the range of an observed class.
 		let beClass = ts.isClassDeclaration(node)
@@ -44,18 +44,15 @@ export function observableVisitor(node: TS.SourceFile): TS.SourceFile {
 
 		return () => {
 			let outputs = outputCallbacks.map(c => c())
-			let index = 0
+			let index = -1
 
 			// replace children by callback outputted.
 			let newNode = ts.visitEachChild(node, () => {
-				let output = outputs[index++]
+				let output = outputs[++index]
 				return Array.isArray(output) && output.length === 1 ? output[0] : output
 			}, transformContext)
 
-			// If previous visitor returns a node list, choose last element to pass it to next step.
-			let output = currentContext.output(newNode, currentIndex)
-
-			return Array.isArray(output) && output.length === 1 ? output[0] : output
+			return currentContext.output(newNode, currentIndex)
 		}
 	}
 

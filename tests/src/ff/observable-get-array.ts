@@ -5,8 +5,13 @@ class TestArrayProp extends Component {
 
 	prop: {value: number}[] = [{value:1}]
 
-	render() {
+	fixedIndex() {
 		return this.prop[0].value + ''
+	}
+
+	dynamicIndex() {
+		let i = 0
+		return this.prop[i].value + ''
 	}
 }
 
@@ -18,7 +23,7 @@ class TestAliasArrayTypeOfProp extends Component {
 
 	prop: ArrayPropAlias = [{value:1}]
 
-	render() {
+	arrayAliasType() {
 		return this.prop[0].value + ''
 	}
 }
@@ -28,15 +33,15 @@ class TestArrayBroadcastingObservedToMapFn extends Component {
 
 	prop: {value: number}[] = [{value:1}]
 
-	render1() {
+	mapArrowFnNoBlocking() {
 		return this.prop.map(v => v.value).join('')
 	}
 
-	render2() {
+	mapArrowFn() {
 		return this.prop.map(v => {return v.value}).join('')
 	}
 
-	render3() {
+	mapFn() {
 		return this.prop.map(function(v){return v.value}).join('')
 	}
 }

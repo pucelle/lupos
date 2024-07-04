@@ -30,7 +30,7 @@ export namespace ContextExpMaker {
 	/** Make a key by a property accessing node. */
 	function getExpKey(node: PropertyAccessingNode) {
 		let exp = node.expression
-		let key = exp.pos >= 0 ? exp.getFullText().trim() : ''
+		let key = exp.pos >= 0 ? exp.getText().trim() : ''
 
 		if (node.questionDotToken) {
 			key += '?.'
@@ -43,7 +43,7 @@ export namespace ContextExpMaker {
 	/** Create a `trackGet` statement. */
 	function createGroupedGetExpression(nodes: PropertyAccessingNode[]): TS.Expression {
 		let node = nodes[0]
-		let parameters = createtrackGetNameParameter(nodes)
+		let parameters = createGetNameParameter(nodes)
 		
 		let trackGet = factory.createCallExpression(
 			factory.createIdentifier('trackGet'),
@@ -54,7 +54,7 @@ export namespace ContextExpMaker {
 		// `a?.b` -> `a && trackGet(a, 'b')`
 		if (node.questionDotToken) {
 			return factory.createBinaryExpression(
-				node.expression,
+				modifier.removePropertyAccessingComments(node.expression),
 				factory.createToken(ts.SyntaxKind.AmpersandAmpersandToken),
 				trackGet
 			)
@@ -66,13 +66,13 @@ export namespace ContextExpMaker {
 
 
 	/** Create a parameter for `trackGet` by a group of nodes. */
-	function createtrackGetNameParameter(nodes: PropertyAccessingNode[]): TS.Expression[] {
+	function createGetNameParameter(nodes: PropertyAccessingNode[]): TS.Expression[] {
 		let node = nodes[0]
 		let group = groupNameExpressionKeys(nodes)
 		let nameExps = [...group.values()].map(nodes => getAccessingNodeNameProperty(nodes[0]))
 
 		return [
-			node.expression,
+			modifier.removePropertyAccessingComments(node.expression),
 			...nameExps,
 		]
 	}
@@ -111,12 +111,10 @@ export namespace ContextExpMaker {
 			name = factory.createStringLiteral('')
 		}
 		else if (ts.isPropertyAccessExpression(node)) {
-
-			// `a.b`, name is 'b'.
 			name = factory.createStringLiteral(node.name.getText())
 		}
 		else {
-			name = node.argumentExpression
+			name = modifier.removePropertyAccessingComments(node.argumentExpression)
 		}
 
 		return name

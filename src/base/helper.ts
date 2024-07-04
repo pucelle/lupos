@@ -570,10 +570,6 @@ export namespace helper {
 		let testFn = ((node: TS.Node) => ts.isMethodSignature(node) || ts.isMethodDeclaration(node)) as
 			((node: TS.Node) => node is TS.MethodSignature | TS.MethodDeclaration)
 
-			if ((name as TS.Identifier).text === 'onPropChange') {
-				console.log(resolveOneDeclaration(name, ((_node: TS.Node) => true) as any))
-			}
-	
 		return resolveOneDeclaration(name, testFn)
 	}
 

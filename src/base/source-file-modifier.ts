@@ -246,4 +246,29 @@ export class SourceFileModifier {
 
 		return factory.createParenthesizedExpression(newExp)
 	}
+
+	/** Remove commands of a property accessing node. */
+	removePropertyAccessingComments<T extends TS.Node>(node: T): T {
+		if (ts.isPropertyAccessExpression(node)) {
+			return factory.createPropertyAccessExpression(
+				this.removePropertyAccessingComments(node.expression),
+				node.name
+			) as TS.Node as T
+		}
+		else if (ts.isElementAccessExpression(node)) {
+			return factory.createElementAccessExpression(
+				this.removePropertyAccessingComments(node.expression),
+				node.argumentExpression
+			) as TS.Node as T
+		}
+		else if (ts.isIdentifier(node)) {
+			return factory.createIdentifier(node.getText()) as TS.Node as T
+		}
+		else if (node.kind === ts.SyntaxKind.ThisKeyword) {
+			return factory.createThis() as TS.Node as T
+		}
+		else {
+			return node
+		}
+	}
 }

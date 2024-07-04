@@ -1,5 +1,3 @@
 node_modules
 /out
-/tests/out/**/*.js
-/tests/webpack.config.cjs
 .VSCodeCounter

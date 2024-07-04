@@ -38,6 +38,10 @@ export class ContextFlowState {
 	constructor(context: Context) {
 		this.context = context
 		this.nothingReturned = this.checkNothingReturned()
+
+		this.applyReturn(ts.isReturnStatement(this.context.node))
+		this.applyYield(ts.isAwaitExpression(this.context.node) || ts.isYieldExpression(this.context.node))
+		this.applyBreak(ts.isBreakOrContinueStatement(this.context.node))
 	}
 
 	private checkNothingReturned(): boolean {
@@ -54,16 +58,28 @@ export class ContextFlowState {
 
 	/** Apply `returnInside` value. */
 	applyReturn(value: boolean) {
+		if (this.context.type === ContextType.FunctionLike) {
+			return 
+		}
+
 		this.returnInside ||= value
 	}
 
 	/** Apply `yieldInside` value. */
 	applyYield(value: boolean) {
+		if (this.context.type === ContextType.FunctionLike) {
+			return 
+		}
+
 		this.yieldInside ||= value
 	}
 
 	/** Apply `breakInside` value. */
 	applyBreak(value: boolean) {
+		if (this.context.type === ContextType.FunctionLike) {
+			return 
+		}
+
 		this.breakInside ||= value
 	}
 

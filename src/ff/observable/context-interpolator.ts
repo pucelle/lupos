@@ -10,10 +10,19 @@ import {isBreakLikeOrImplicitReturning, refBreakLikeOrImplicitReturning, refProp
 
 interface InterpolationItem {
 
-	// If is a list and becomes empty, no need to replace.
-	exps: PropertyAccessingNode[] | null
+	type: InterpolationType
 
-	replace: (node: TS.Node, exps: TS.Expression[]) => TS.Node | TS.Node[]
+	/** If is a list and becomes empty, no need to replace. */
+	exps?: PropertyAccessingNode[]
+
+	/** Must exist for `Replace` interpolation type. */
+	replace?: ((node: TS.Node, exps: TS.Expression[]) => TS.Node | TS.Node[])
+}
+
+enum InterpolationType {
+	Replace,
+	InsertBefore,
+	InsertAfter,
 }
 
 
@@ -72,7 +81,7 @@ export class ContextInterpolator {
 		this.capturedHaveRef ||= hasRef
 	}
 
-	/** Insert captured expressions to currently visiting position. */
+	/** Insert captured expressions to specified position. */
 	breakCaptured(index: number) {
 		let exps = this.captured
 		if (exps.length === 0) {
@@ -87,26 +96,16 @@ export class ContextInterpolator {
 	/** Insert expressions to before specified position. */
 	private insertExpsBefore(index: number, exps: PropertyAccessingNode[]) {
 		this.interpolated.add(index, {
+			type: InterpolationType.InsertBefore,
 			exps,
-			replace: (node: TS.Node, exps: TS.Expression[]) => {
-				return [
-					...exps.map(exp => factory.createExpressionStatement(exp)),
-					node,
-				]
-			},
 		})
 	}
 
 	/** Insert expressions to after specified position. */
 	private insertExpsAfter(index: number, exps: PropertyAccessingNode[]) {
 		this.interpolated.add(index, {
+			type: InterpolationType.InsertAfter,
 			exps,
-			replace: (node: TS.Node, exps: TS.Expression[]) => {
-				return [
-					node,
-					...exps.map(exp => factory.createExpressionStatement(exp)),
-				]
-			},
 		})
 	}
 
@@ -130,7 +129,7 @@ export class ContextInterpolator {
 		let refName = this.makeRefVariable()
 
 		this.interpolated.add(index, {
-			exps: null,
+			type: InterpolationType.Replace,
 			replace: (node: TS.Node) => {
 				return refPropertyAccessing(node as PropertyAccessingNode, refName)
 			},
@@ -196,6 +195,7 @@ export class ContextInterpolator {
 				let refName = this.makeRefVariable()
 	
 				this.interpolated.add(index, {
+					type: InterpolationType.Replace,
 					exps,
 					replace: (n: TS.Node, exps: TS.Expression[]) => {
 						return factory.createBlock([
@@ -216,6 +216,7 @@ export class ContextInterpolator {
 			}
 			else {
 				this.interpolated.add(index, {
+					type: InterpolationType.Replace,
 					exps,
 					replace: (n: TS.Node, exps: TS.Expression[]) => {
 						return factory.createBlock([
@@ -237,6 +238,7 @@ export class ContextInterpolator {
 				let refName = this.makeRefVariable()
 	
 				this.interpolated.add(index, {
+					type: InterpolationType.Replace,
 					exps,
 					replace: (n: TS.Node, exps: TS.Expression[]) => {
 						let exp = exps[0]
@@ -278,6 +280,7 @@ export class ContextInterpolator {
 			}
 			else {
 				this.interpolated.add(index, {
+					type: InterpolationType.Replace,
 					exps,
 					replace: (n: TS.Node, exps: TS.Expression[]) => {
 						let exp = exps[0]
@@ -307,6 +310,7 @@ export class ContextInterpolator {
 		// `if ()...`
 		else {
 			this.interpolated.add(index, {
+				type: InterpolationType.Replace,
 				exps,
 				replace: (node: TS.Node, exps: TS.Expression[]) => {
 					return factory.createBlock([
@@ -318,35 +322,42 @@ export class ContextInterpolator {
 		}
 	}
 
-	/** Output get expressions to insert before specified index. */
-	output(node: TS.Node, index: number): TS.Node | TS.Node[] {
+	/** Output expressions to insert before specified index. */
+	output(node: TS.Node | TS.Node[], index: number): TS.Node | TS.Node[] {
 		let items = this.interpolated.get(index)
 		if (!items) {
 			return node
 		}
 
-		let nodes = [node]
-
 		for (let item of items) {
+			let type = item.type
 			let exps = item.exps
 
-			// Exps get clear after optimizing.
+			// Exps may get clear after optimizing.
 			if (exps && exps.length === 0) {
 				continue
 			}
 
 			let madeExps = exps ? ContextExpMaker.makeExpressions(exps) : []
-			let lastNode = nodes.pop()!
-			let replacedExps = item.replace(lastNode, madeExps)
+			
+			if (type === InterpolationType.Replace) {
+				if (Array.isArray(node)) {
+					throw new Error(`"Replace" type of interpolation must be the first!`)
+				}
 
-			if (Array.isArray(replacedExps)) {
-				nodes.push(...replacedExps)
+				node = item.replace!(node, madeExps)
+				continue
+			}
+
+			let madeStatements = madeExps.map(exp => factory.createExpressionStatement(exp))
+			if (type === InterpolationType.InsertBefore) {
+				node = [madeStatements, node].flat()
 			}
 			else {
-				nodes.push(replacedExps)
+				node = [node, madeStatements].flat()
 			}
 		}
 
-		return nodes.length === 1 ? nodes[0] : nodes
+		return Array.isArray(node) && node.length === 1 ? node[0] : node
 	}
 }

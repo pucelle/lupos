@@ -44,7 +44,7 @@ export class Context {
 	 */
 	beforeExit() {
 		this.optimize()
-		this.addRest()
+		this.interpolator.insertRestCaptured()
 
 		if (this.parent) {
 			this.parent.leaveChild(this)
@@ -106,17 +106,17 @@ export class Context {
 		}
 	}
 
-	/** 
-	 * Add a split and output get expressions before specified position.
-	 * Then get expressions will be splitted and output before current position.
-	 */
+	/** Add a break and output expressions before specified position. */
 	private addBreak(index: number) {
-		this.interpolator.breakCaptured(index)
-	}
+		let parentIndex = VisitingTree.getParentIndex(index)
+		let parentNode = VisitingTree.getNode(parentIndex)
 
-	/** Add rest get expressions. */
-	private addRest() {
-		this.interpolator.insertRestCaptured()
+		// Insert before expression statement.
+		if (ts.isExpressionStatement(parentNode)) {
+			index = parentIndex
+		}
+
+		this.interpolator.breakCaptured(index)
 	}
 
 	/** 
@@ -124,11 +124,18 @@ export class Context {
 	 * Normally it will hoist captured dependencies higher.
 	 */
 	private optimize() {
-
+		
 	}
 
-	/** For a child or descendant node, output all expressions and append them before, or replace it. */
-	output(node: TS.Node,index: number): TS.Node | TS.Node[] {
-		return this.interpolator.output(node, index)
+	/** For itself or descendant node, output all expressions and append them before, or replace it. */
+	output(node: TS.Node | TS.Node[], index: number): TS.Node | TS.Node[] {
+		let output = this.interpolator.output(node, index)
+
+		// Parent context may output before or after current context node.
+		if (node === this.node && this.parent) {
+			output = this.parent.interpolator.output(output, index)
+		}
+		
+		return output
 	}
 }
