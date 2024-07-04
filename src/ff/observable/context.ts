@@ -83,7 +83,7 @@ export class Context {
 			this.addGet(node)
 		}
 
-		// `break` or `continue`.
+		// `break` or `continue`, or empty `return`.
 		else if (ts.isReturnStatement(node) || ts.isBreakOrContinueStatement(node)) {
 			this.flowState.applyBreak(true)
 			this.addBreak(VisitingTree.current.index)
@@ -92,6 +92,10 @@ export class Context {
 
 	/** Add a get expression, already tested and knows should observe it. */
 	private addGet(node: PropertyAccessingNode) {
+		if (this.flowState.nothingReturned) {
+			return
+		}
+
 		if (!checker.isAccessingObserved(node)) {
 			return
 		}

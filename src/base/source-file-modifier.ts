@@ -262,13 +262,14 @@ export class SourceFileModifier {
 			) as TS.Node as T
 		}
 		else if (ts.isIdentifier(node)) {
-			return factory.createIdentifier(node.getText()) as TS.Node as T
+			if (node.pos > -1) {
+				return factory.createIdentifier(node.getText()) as TS.Node as T
+			}
 		}
 		else if (node.kind === ts.SyntaxKind.ThisKeyword) {
 			return factory.createThis() as TS.Node as T
 		}
-		else {
-			return node
-		}
+
+		return node
 	}
 }

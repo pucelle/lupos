@@ -69,10 +69,12 @@ export function observableVisitor(node: TS.SourceFile): TS.SourceFile {
 		// should implement a special `case` type of output at parent context.
 		if (ts.isCaseOrDefaultClause(node)) {
 			if (ts.isCaseClause(node)) {
+				ContextTree.createContext(ContextType.ConditionalCondition, node)
 				outputCallbacks.push(visitNode(node.expression))
+				ContextTree.pop()
 			}
 
-			ContextTree.createContext(ContextType.CaseContent, node)
+			ContextTree.createContext(ContextType.ConditionalCaseContent, node)
 
 			for (let child of node.statements) {
 				outputCallbacks.push(visitNode(child))

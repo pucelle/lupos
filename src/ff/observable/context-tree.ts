@@ -26,18 +26,20 @@ export enum ContextType {
 	 */
 	ConditionalCondition,
 
+	/** Right part of binary expressions like `a && b`, `a || b`, `a ?? b`. */
+	ConditionalExpContent,
+
 	/** 
-	 * Normally the conditional content of `if`, `else`...
-	 * or right part of binary expressions like `a && b`, `a || b`, `a ?? b`.
-	 * Content itself may be a block, or a normal expression.
+	 * For `if`, `else`.
+	 * Content itself can be extended to a block.
 	 */
-	ConditionalContent,
+	ConditionalIfElseContent,
 
 	/** 
 	 * For `case` or `default`.
 	 * It uses the `case` or `default` node as context node.
 	 */
-	CaseContent,
+	ConditionalCaseContent,
 
 	/** Process For iteration initializer, condition, incrementor. */
 	Iteration,
@@ -69,10 +71,7 @@ export namespace ContextTree {
 	}
 
 
-	/** 
-	 * Check Context type of a node.
-	 * No content type, includes `ConditionalContent` & `IterationContent` checked.
-	 */
+	/** Check Context type of a node. */
 	export function checkContextType(node: TS.Node): ContextType | null {
 
 		// Block like, module contains a block inside.
@@ -130,9 +129,9 @@ export namespace ContextTree {
 		) {
 			return ContextType.BreakLike
 		}
-		
-		// ConditionalContent, must before Block-like.
-		// `case` and `default` will be handled outside.
+
+		//// Note `case` and `default` will be handled outside.
+
 		let parent = node.parent
 		if (parent) {
 
@@ -146,7 +145,7 @@ export namespace ContextTree {
 					// For `if ... else if...`, the second if statement belongs to `Conditional`.
 					|| node === parent.elseStatement
 				) {
-					return ContextType.ConditionalContent
+					return ContextType.ConditionalIfElseContent
 				}
 			}
 
@@ -156,7 +155,7 @@ export namespace ContextTree {
 					return ContextType.ConditionalCondition
 				}
 				else if (node === parent.whenTrue || node === parent.whenFalse) {
-					return ContextType.ConditionalContent
+					return ContextType.ConditionalExpContent
 				}
 			}
 
@@ -170,7 +169,7 @@ export namespace ContextTree {
 						return ContextType.ConditionalCondition
 					}
 					else if (node === parent.right) {
-						return ContextType.ConditionalContent
+						return ContextType.ConditionalExpContent
 					}
 				}
 			}

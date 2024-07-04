@@ -122,6 +122,7 @@ class TestAwaitStatement extends Component {
 		this.prop1
 		await Promise.resolve()
 		this.prop2
+		return ''
 	}
 }
 

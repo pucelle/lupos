@@ -232,8 +232,14 @@ export class ContextInterpolator {
 			}
 		}
 		
-		// `if (...)`, `... ? b : c`, `... && b`, `... || b`, `... ?? b`, `for (...)`, `while (...)`.
-		else if (type === ContextType.ConditionalCondition || type === ContextType.IterationCondition) {
+		// `if (...)`,
+		// `... ? b : c`, `... && b`, `... || b`, `... ?? b`,
+		// `for (...)`, `while (...)`,
+		// `a && ...`, `a || ...`, `a ?? ...`.
+		else if (type === ContextType.ConditionalCondition
+			|| type === ContextType.IterationCondition
+			|| type === ContextType.ConditionalExpContent
+		) {
 			if (haveRef) {
 				let refName = this.makeRefVariable()
 	
@@ -307,7 +313,7 @@ export class ContextInterpolator {
 			}
 		}
 
-		// `if ()...`
+		// `if ()...`, `else ...`
 		else {
 			this.interpolated.add(index, {
 				type: InterpolationType.Replace,

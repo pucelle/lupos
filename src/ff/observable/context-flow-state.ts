@@ -10,9 +10,8 @@ export class ContextFlowState {
 
 	/** 
 	 * Whether function has nothing returned.
-	 * If a method returns nothing, and changes no outer variable or parameters,
-	 * we mark it has no side effects, and stop tracking it.
-	 * Only available for function-like type of context.
+	 * If a method returns nothing, we stop tracking it's property getting.
+	 * Initialize from a function-like type of context, and broadcast to descendants.
 	 */
 	readonly nothingReturned: boolean
 
@@ -49,7 +48,7 @@ export class ContextFlowState {
 
 		// Inherit from parent context.
 		if (this.context.type !== ContextType.FunctionLike) {
-			return this.context.parent?.flowState.nothingReturned ?? true
+			return this.context.parent?.flowState.nothingReturned ?? false
 		}
 
 		let type = helper.getNodeReturnType(node as TS.FunctionLikeDeclaration)
@@ -80,6 +79,13 @@ export class ContextFlowState {
 			return 
 		}
 
+		// Break would not broadcast out of `iteration` and `case`.
+		if (this.context.type === ContextType.IterationContent
+			|| this.context.type === ContextType.ConditionalCaseContent
+		) {
+			return 
+		}
+
 		this.breakInside ||= value
 	}
 
@@ -96,11 +102,7 @@ export class ContextFlowState {
 
 		this.applyReturn(child.flowState.returnInside)
 		this.applyYield(child.flowState.yieldInside)
-
-		// Break would not broadcast out of iteration and case default.
-		this.applyBreak(child.flowState.breakInside
-			&& child.type !== ContextType.Iteration
-			&& child.type !== ContextType.CaseContent)
+		this.applyBreak(child.flowState.breakInside)
 	}
 
 	/** Whether break like, or return, or yield like inside. */

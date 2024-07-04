@@ -110,6 +110,7 @@ class TestAwaitStatement extends Component {
         await Promise.resolve();
         this.prop2;
         trackGet(this, "prop2");
+        return '';
     }
 }
 class TestYieldStatement extends Component {

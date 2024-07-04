@@ -33,6 +33,5 @@ class TestIgnoringNothingReturnedMethod extends Component {
     prop = 1;
     nothingReturnedMethod() {
         this.prop;
-        trackGet(this, "prop");
     }
 }

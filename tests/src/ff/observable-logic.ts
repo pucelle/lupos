@@ -6,20 +6,28 @@ class TestAndOrOperators extends Component {
 	prop1: {value: string} = {value: '1'}
 	prop2: {value: string} = {value: '2'}
 
-	render1() {
-		return this.prop1.value || this.prop2.value
-	}
-
-	render2() {
+	and() {
 		return this.prop1.value && this.prop2.value
 	}
 
-	render3() {
+	or() {
+		return this.prop1.value || this.prop2.value
+	}
+
+	qq() {
+		return this.prop1.value ?? this.prop2.value
+	}
+
+	orProp() {
 		return (this.prop1 || this.prop2).value
 	}
 
-	render4() {
+	andProp() {
 		return (this.prop1 && this.prop2).value
+	}
+
+	qqProp() {
+		return (this.prop1 ?? this.prop2).value
 	}
 }
 
