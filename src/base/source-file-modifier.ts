@@ -1,7 +1,7 @@
 import {ListMap, difference} from '../utils'
 import type TS from 'typescript'
 import {factory, transformContext, ts} from './global'
-import {helper} from './helper'
+import {PropertyAccessingNode, helper} from './helper'
 
 
 /** Help to get properties and info. */
@@ -178,73 +178,20 @@ export class SourceFileModifier {
 
 	//// Expression & Statement
 
-	/** Add expressions to the end of a block. */
-	addExpressionsToBlock<T extends TS.Block | TS.SourceFile>(node: T, exps: TS.Expression[]): T {
-		if (exps.length === 0) {
-			return node
-		}
+	/** Bundle expressions to a parenthesized expression. */
+	parenthesizeExpressions(exps: TS.Expression[]): TS.Expression {
+		let exp = exps[0]
 
-		let oldStatements = node.statements
-		let stats = [...oldStatements]
-
-		stats.push(...exps.map(exp => factory.createExpressionStatement(exp)))
-
-		if (ts.isBlock(node)) {
-			return factory.updateBlock(node, stats) as T
-		}
-		else {
-			return factory.updateSourceFile(node, stats) as T
-		}
-	}
-
-	/** Add expressions to the end of an arrow function. */
-	addExpressionsToArrowFunction(node: TS.ArrowFunction, exps: TS.Expression[]): TS.ArrowFunction {
-		if (exps.length === 0) {
-			return node
-		}
-
-		let block: TS.Block
-
-		if (ts.isBlock(node.body)) {
-			block = this.addExpressionsToBlock(node.body, exps)
-		}
-		else {
-			block = factory.createBlock([
-				...exps.map(exp => factory.createExpressionStatement(exp)),
-				factory.createReturnStatement(node.body),			  
-			], true)
-		}
-		
-		node = factory.updateArrowFunction(
-			node,
-			node.modifiers,
-			node.typeParameters,
-			node.parameters,
-			node.type,
-			node.equalsGreaterThanToken,
-			block
-		)
-
-		return node
-	}
-
-	/** Add expressions to a conditional expression. */
-	addExpressionsToSingleExpression(node: TS.Expression, exps: TS.Expression[]): TS.Expression {
-		if (exps.length === 0) {
-			return node
-		}
-
-		let newExp: TS.Expression = node
-
-		for (let i = exps.length - 1; i >= 0; i--) {
-			newExp = factory.createBinaryExpression(
-				exps[i],
+		// `a, b, c...`
+		for (let i = 1; i < exps.length; i++) {
+			exp = factory.createBinaryExpression(
+				exp,
 				factory.createToken(ts.SyntaxKind.CommaToken),
-				newExp
+				exps[i]
 			)
 		}
 
-		return factory.createParenthesizedExpression(newExp)
+		return factory.createParenthesizedExpression(exp)
 	}
 
 	/** Remove commands of a property accessing node. */
@@ -271,5 +218,25 @@ export class SourceFileModifier {
 		}
 
 		return node
+	}
+
+	/** 
+	 * Replace property accessing expression to a reference.
+	 * `a.b().c -> _ref_1.c`
+	 */
+	replaceReferencedPropertyAccessingExpression(node: PropertyAccessingNode, refName: string): PropertyAccessingNode {
+		let exp = factory.createIdentifier(refName)
+		if (ts.isPropertyAccessExpression(node)) {
+			return factory.createPropertyAccessExpression(
+				exp,
+				node.name
+			)
+		}
+		else {
+			return factory.createElementAccessExpression(
+				exp,
+				node.argumentExpression
+			)
+		}
 	}
 }

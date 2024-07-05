@@ -4,7 +4,7 @@ import {ContextType} from './context-tree'
 import {helper, ts} from '../../base'
 
 
-export class ContextFlowState {
+export class ContextState {
 
 	readonly context: Context
 
@@ -48,7 +48,7 @@ export class ContextFlowState {
 
 		// Inherit from parent context.
 		if (this.context.type !== ContextType.FunctionLike) {
-			return this.context.parent?.flowState.nothingReturned ?? false
+			return this.context.parent?.state.nothingReturned ?? false
 		}
 
 		let type = helper.getNodeReturnType(node as TS.FunctionLikeDeclaration)
@@ -100,9 +100,9 @@ export class ContextFlowState {
 			return
 		}
 
-		this.applyReturn(child.flowState.returnInside)
-		this.applyYield(child.flowState.yieldInside)
-		this.applyBreak(child.flowState.breakInside)
+		this.applyReturn(child.state.returnInside)
+		this.applyYield(child.state.yieldInside)
+		this.applyBreak(child.state.breakInside)
 	}
 
 	/** Whether break like, or return, or yield like inside. */

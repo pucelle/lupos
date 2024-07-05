@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {ts} from '../../base'
+import {helper, ts} from '../../base'
 import {Context} from './context'
 
 
@@ -10,7 +10,7 @@ export enum ContextType {
 
 	/** 
 	 * Normally help to process parameters.
-	 * or for ArrowFunction and no block body exist.
+	 * or for ArrowFunction has no block-type body exist.
 	 */
 	FunctionLike,
 
@@ -26,20 +26,13 @@ export enum ContextType {
 	 */
 	ConditionalCondition,
 
-	/** Right part of binary expressions like `a && b`, `a || b`, `a ?? b`. */
-	ConditionalExpContent,
-
 	/** 
-	 * For `if`, `else`.
-	 * Content itself can be extended to a block.
+	 * Content of `if`, `else`;
+	 * Content of `case`, `default`.
+	 * Right part of binary expressions like `a && b`, `a || b`, `a ?? b`.
+	 * 
 	 */
-	ConditionalIfElseContent,
-
-	/** 
-	 * For `case` or `default`.
-	 * It uses the `case` or `default` node as context node.
-	 */
-	ConditionalCaseContent,
+	ConditionalContent,
 
 	/** Process For iteration initializer, condition, incrementor. */
 	Iteration,
@@ -82,17 +75,11 @@ export namespace ContextTree {
 		}
 
 		// Function like
-		else if (ts.isMethodDeclaration(node)
-			|| ts.isFunctionDeclaration(node)
-			|| ts.isFunctionExpression(node)
-			|| ts.isGetAccessorDeclaration(node)
-			|| ts.isSetAccessorDeclaration(node)
-			|| ts.isArrowFunction(node)
-		) {
+		else if (helper.isFunctionLike(node)) {
 			return ContextType.FunctionLike
 		}
 
-		// Conditional
+		// Conditional.
 		else if (ts.isIfStatement(node)
 			|| ts.isSwitchStatement(node)
 			|| ts.isConditionalExpression(node)
@@ -123,7 +110,6 @@ export namespace ContextTree {
 		// BreakLike
 		// `break` and `continue` contains no expressions, so should not be a context type.
 		else if (ts.isReturnStatement(node) && node.expression
-			//|| ts.isBreakOrContinueStatement(node)
 			|| ts.isAwaitExpression(node)
 			|| ts.isYieldExpression(node)
 		) {
@@ -133,72 +119,75 @@ export namespace ContextTree {
 		//// Note `case` and `default` will be handled outside.
 
 		let parent = node.parent
-		if (parent) {
+		if (!parent) {
+			return null
+		}
 
-			// `if () ...`
-			if (ts.isIfStatement(parent)) {
-				if (node === parent.expression) {
-					return ContextType.ConditionalCondition
-				}
-				else if (node === parent.thenStatement
-
-					// For `if ... else if...`, the second if statement belongs to `Conditional`.
-					|| node === parent.elseStatement
-				) {
-					return ContextType.ConditionalIfElseContent
-				}
+		// `if () ...`
+		if (ts.isIfStatement(parent)) {
+			if (node === parent.expression) {
+				return ContextType.ConditionalCondition
 			}
+			else if (node === parent.thenStatement
 
-			// `a ? b : c`
-			else if (ts.isConditionalExpression(parent)) {
-				if (node === parent.condition) {
-					return ContextType.ConditionalCondition
-				}
-				else if (node === parent.whenTrue || node === parent.whenFalse) {
-					return ContextType.ConditionalExpContent
-				}
-			}
-
-			// `a && b`, `a || b`, `a ?? b`.
-			else if (ts.isBinaryExpression(parent)) {
-				if ((parent.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken
-					|| parent.operatorToken.kind === ts.SyntaxKind.BarBarToken
-					|| parent.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken)
-				) {
-					if (node === parent.left) {
-						return ContextType.ConditionalCondition
-					}
-					else if (node === parent.right) {
-						return ContextType.ConditionalExpContent
-					}
-				}
-			}
-
-			// `for (;;) ...`
-			else if (ts.isForStatement(parent)) {
-				if (node === parent.initializer
-					|| node === parent.condition
-					|| node === parent.incrementor
-				) {
-					return ContextType.IterationCondition
-				}
-				else if (node === parent.statement) {
-					return ContextType.IterationContent
-				}
-			}
-
-			// `for ... in`, `for ... of`, `while ...`, `do ...`
-			else if (ts.isForOfStatement(parent)
-				|| ts.isForInStatement(parent)
-				|| ts.isWhileStatement(parent)
-				|| ts.isDoStatement(parent)
+				// For `if ... else if...`, the second if statement belongs to `Conditional`.
+				|| node === parent.elseStatement
 			) {
-				if (node === parent.expression) {
-					return ContextType.IterationCondition
+				return ContextType.ConditionalContent
+			}
+		}
+
+		// `a ? b : c`
+		else if (ts.isConditionalExpression(parent)) {
+			if (node === parent.condition) {
+				return ContextType.ConditionalCondition
+			}
+			else if (node === parent.whenTrue || node === parent.whenFalse) {
+				return ContextType.ConditionalContent
+			}
+		}
+
+		// `a && b`, `a || b`, `a ?? b`.
+		else if (ts.isBinaryExpression(parent)) {
+			if ((parent.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken
+				|| parent.operatorToken.kind === ts.SyntaxKind.BarBarToken
+				|| parent.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken)
+			) {
+				if (node === parent.left) {
+					return ContextType.ConditionalCondition
 				}
-				else if (node === parent.statement) {
-					return ContextType.IterationContent
+				else if (node === parent.right) {
+					return ContextType.ConditionalContent
 				}
+			}
+		}
+
+		// `for (;;) ...`
+		else if (ts.isForStatement(parent)) {
+
+			// initializer is not a standard expression, can be a variable statement.
+			if (node === parent.initializer
+				|| node === parent.condition
+				|| node === parent.incrementor
+			) {
+				return ContextType.IterationCondition
+			}
+			else if (node === parent.statement) {
+				return ContextType.IterationContent
+			}
+		}
+
+		// `for ... in`, `for ... of`, `while ...`, `do ...`
+		else if (ts.isForOfStatement(parent)
+			|| ts.isForInStatement(parent)
+			|| ts.isWhileStatement(parent)
+			|| ts.isDoStatement(parent)
+		) {
+			if (node === parent.expression) {
+				return ContextType.IterationCondition
+			}
+			else if (node === parent.statement) {
+				return ContextType.IterationContent
 			}
 		}
 
@@ -229,6 +218,36 @@ export namespace ContextTree {
 	export function visitNode(node: TS.Node) {
 		if (current) {
 			current.visitNode(node)
+		}
+	}
+
+	
+	/** Find an ancestral context, which can insert variable to. */
+	export function findClosestContextToAddVariable(node: TS.Node, from: Context): Context | null {
+
+		// Can't add variables before parameter.
+		if (helper.isContainedByParameter(node)) {
+			return null
+		}
+
+		let context = from
+		while (context) {
+			if (helper.canPutStatementsMayExtend(context.node)) {
+				return context
+			}
+		}
+
+		return null
+	}
+
+	/** Find a ancestral context, which can insert statements to it. */
+	export function findClosestPositionToAddStatements(node: TS.Node): Context | null {
+
+		// Where can put reference expression.
+		if (from.type === ContextType.BlockLike
+			|| from.type === ContextType.FunctionLike
+		) {
+
 		}
 	}
 }

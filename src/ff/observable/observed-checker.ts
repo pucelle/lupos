@@ -22,7 +22,7 @@ export type CanObserveNode = PropertyAccessingNode
 
 	
 /** Help to check observed state. */
-export namespace checker {
+export namespace observedChecker {
 	
 	/** Check at which context the variable declared, or this attached. */
 	export function getIdentifierDeclaredContext(node: TS.Identifier | TS.ThisExpression, context = ContextTree.current!): Context | null {

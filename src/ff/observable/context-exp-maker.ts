@@ -1,7 +1,7 @@
 import type TS from 'typescript'
 import {PropertyAccessingNode, factory, helper, modifier, ts} from '../../base'
 import {groupBy} from '../../utils'
-import {checker} from './checker'
+import {observedChecker} from './observed-checker'
 
 
 export namespace ContextExpMaker {
@@ -86,7 +86,7 @@ export namespace ContextExpMaker {
 
 	/** Get a name expression key. */
 	function getNameKey(node: PropertyAccessingNode): string {
-		if (helper.isNodeArrayType(node.expression) || checker.isMapOrSetReading(node)) {
+		if (helper.isNodeArrayType(node.expression) || observedChecker.isMapOrSetReading(node)) {
 			return ''
 		}
 		else if (ts.isPropertyAccessExpression(node)) {
@@ -107,7 +107,7 @@ export namespace ContextExpMaker {
 	function getAccessingNodeNameProperty(node: PropertyAccessingNode): TS.Expression {
 		let name: TS.Expression
 
-		if (helper.isNodeArrayType(node.expression) || checker.isMapOrSetReading(node)) {
+		if (helper.isNodeArrayType(node.expression) || observedChecker.isMapOrSetReading(node)) {
 			name = factory.createStringLiteral('')
 		}
 		else if (ts.isPropertyAccessExpression(node)) {

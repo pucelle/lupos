@@ -1,7 +1,7 @@
 import type TS from 'typescript'
-import {checker} from './checker'
+import {observedChecker} from './observed-checker'
 import {helper, PropertyAccessingNode, ts} from '../../base'
-import {ContextFlowState} from './context-flow-state'
+import {ContextState} from './context-state'
 import {ContextType} from './context-tree'
 import {VisitingTree} from './visiting-tree'
 import {ContextInterpolator} from './context-interpolator'
@@ -20,7 +20,7 @@ export class Context {
 	readonly node: TS.Node
 	readonly parent: Context | null
 	readonly children: Context[] = []
-	readonly flowState: ContextFlowState
+	readonly state: ContextState
 	readonly variables: ContextVariables
 	readonly interpolator: ContextInterpolator
 
@@ -29,7 +29,7 @@ export class Context {
 		this.visitingIndex = VisitingTree.current.index
 		this.node = node
 		this.parent = parent
-		this.flowState = new ContextFlowState(this)
+		this.state = new ContextState(this)
 		this.variables = new ContextVariables(this)
 		this.interpolator = new ContextInterpolator(this)
 
@@ -58,9 +58,9 @@ export class Context {
 
 	/** Leave a child context. */
 	leaveChild(child: Context) {
-		this.flowState.mergeChildContext(child)
+		this.state.mergeChildContext(child)
 
-		if (child.flowState.isBreakLikeInside()) {
+		if (child.state.isBreakLikeInside()) {
 			this.addBreak(child.visitingIndex)
 		}
 	}
@@ -70,12 +70,12 @@ export class Context {
 		
 		// Add parameters.
 		if (ts.isParameter(node)) {
-			this.variables.markParameter(node)
+			this.variables.visitParameter(node)
 		}
 
 		// Check each variable declarations.
 		else if (ts.isVariableDeclaration(node)) {
-			this.variables.markVariable(node)
+			this.variables.visitVariable(node)
 		}
 
 		// Add property declaration.
@@ -84,26 +84,26 @@ export class Context {
 		}
 
 		// `break` or `continue`, or empty `return`.
-		else if (ts.isReturnStatement(node) || ts.isBreakOrContinueStatement(node)) {
-			this.flowState.applyBreak(true)
+		else if (ts.isReturnStatement(node) && !node.expression || ts.isBreakOrContinueStatement(node)) {
+			this.state.applyBreak(true)
 			this.addBreak(VisitingTree.current.index)
 		}
 	}
 
 	/** Add a get expression, already tested and knows should observe it. */
 	private addGet(node: PropertyAccessingNode) {
-		if (this.flowState.nothingReturned) {
+		if (this.state.nothingReturned) {
 			return
 		}
 
-		if (!checker.isAccessingObserved(node)) {
+		if (!observedChecker.isAccessingObserved(node)) {
 			return
 		}
 
 		// Use a reference variable to replace expression.
-		if (checker.shouldReference(node.expression)) {
+		if (observedChecker.shouldReference(node.expression)) {
 			let index = VisitingTree.current.index
-			this.interpolator.refAndCapture(node, index)
+			this.interpolator.referenceAndCapture(node, index)
 		}
 		else {
 			this.interpolator.capture(node, false)

@@ -24,6 +24,9 @@ export namespace VisitingTree {
 	/** Node visiting index -> Node. */
 	const NodeMap: Map<number, TS.Node> = new Map()
 
+	/** Node visiting index -> Node sibling index. */
+	const SiblingIndexMap: Map<number, number> = new Map()
+
 	export let current: VisitingItem = {
 		index: -1,
 	}
@@ -34,6 +37,7 @@ export namespace VisitingTree {
 		ChildMap.clear()
 		ParentMap.clear()
 		NodeMap.clear()
+		SiblingIndexMap.clear()
 
 		current = {
 			index: -1,
@@ -48,6 +52,7 @@ export namespace VisitingTree {
 			let parent = stack[stack.length - 1]
 			ChildMap.add(parent.index, current.index)
 			ParentMap.set(current.index, parent.index)
+			SiblingIndexMap.set(current.index, ChildMap.get(parent.index)!.length - 1)
 		}
 
 		NodeMap.set(current.index, node)
@@ -81,6 +86,11 @@ export namespace VisitingTree {
 	/** Get count of child items. */
 	export function getChildCount(parentIndex: number): number {
 		return ChildMap.get(parentIndex)!.length
+	}
+
+	/** Get sibling index among it's sibling nodes by visiting index. */
+	export function getSiblingIndex(index: number): number {
+		return SiblingIndexMap.get(index)!
 	}
 
 	/** Get parent visiting index by child visiting index. */

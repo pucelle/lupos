@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {checker} from './checker'
+import {observedChecker} from './observed-checker'
 import {helper, ts} from '../../base'
 import {Context} from './context'
 import {ContextType} from './context-tree'
@@ -49,7 +49,7 @@ export class ContextVariables {
 
 			// Directly declare type as `Observed<>`.
 			let typeNode = thisParameter.type
-			if (checker.isTypeNodeObserved(typeNode)) {
+			if (observedChecker.isTypeNodeObserved(typeNode)) {
 				return true
 			}
 
@@ -93,8 +93,11 @@ export class ContextVariables {
 		return false
 	}
 
-	/** Add a non-repetitive variable. */
-	makeVariable(prefix: string): string {
+	/** 
+	 * Get a non-repetitive variable name.
+	 * Current context must be a found context that can contain variables.
+	 */
+	makeUniqueVariable(prefix: string): string {
 		let seed = 0
 		let name = prefix + seed++
 
@@ -103,6 +106,7 @@ export class ContextVariables {
 		}
 
 		this.variableObserved.set(name, false)
+
 		return name
 	}
 
@@ -140,7 +144,7 @@ export class ContextVariables {
 				let observed = false
 
 				if (typeNode) {
-					observed = checker.isTypeNodeObserved(typeNode)
+					observed = observedChecker.isTypeNodeObserved(typeNode)
 				}
 
 				this.variableObserved.set(param.name.getText(), observed)
@@ -161,7 +165,7 @@ export class ContextVariables {
 
 					// `a.b`
 					let callFrom = exp.expression
-					if (checker.isObserved(callFrom)) {
+					if (observedChecker.isObserved(callFrom)) {
 						let parameters = node.parameters
 						this.makeParametersObserved(parameters)
 					}
@@ -180,25 +184,25 @@ export class ContextVariables {
 		}
 	}
 
-	/** Mark a parameter. */
-	markParameter(node: TS.ParameterDeclaration) {
+	/** Visit a parameter. */
+	visitParameter(node: TS.ParameterDeclaration) {
 		let typeNode = node.type
 		let observed = false
 
 		if (typeNode) {
-			observed = checker.isTypeNodeObserved(typeNode)
+			observed = observedChecker.isTypeNodeObserved(typeNode)
 		}
 
 		if (!observed) {
-			observed = checker.isParameterObservedByCallingBroadcasted(node)
+			observed = observedChecker.isParameterObservedByCallingBroadcasted(node)
 		}
 
 		this.variableObserved.set(node.name.getText(), observed)
 	}
 
-	/** Mark a variable. */
-	markVariable(node: TS.VariableDeclaration) {
-		let observed = checker.isVariableDeclarationObserved(node)
+	/** Visit a variable. */
+	visitVariable(node: TS.VariableDeclaration) {
+		let observed = observedChecker.isVariableDeclarationObserved(node)
 		let name = node.name.getText()
 		this.variableObserved.set(name, observed)
 	}

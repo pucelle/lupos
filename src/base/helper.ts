@@ -242,6 +242,170 @@ export namespace helper {
 
 
 
+	//// Function
+
+	/** Whether be function, method, or other function like. */
+	export function isFunctionLike(node: TS.Node): boolean {
+		return ts.isMethodDeclaration(node)
+			|| ts.isFunctionDeclaration(node)
+			|| ts.isFunctionExpression(node)
+			|| ts.isGetAccessorDeclaration(node)
+			|| ts.isSetAccessorDeclaration(node)
+			|| ts.isArrowFunction(node)
+	}
+
+	/** Whether has a parameter type parent. */
+	export function isContainedByParameter(node: TS.Node): boolean {
+		let n = node
+
+		while (n && !helper.isFunctionLike(n)) {
+			if (ts.isParameter(n)) {
+				return true
+			}
+
+			n = n.parent
+		}
+
+		return false
+	}
+
+	/** Whether be a block or a source file. */
+	export function canBlock(node: TS.Node): node is TS.SourceFile | TS.Block {
+		return ts.isSourceFile(node)
+			|| ts.isBlock(node)
+	}
+
+	/** Not a block, but can be extended to a block. */
+	export function canExtendToBlock(node: TS.Node): boolean {
+		let parent = node.parent
+
+		if (ts.isBlock(node)) {
+			return false
+		}
+
+		if (ts.isArrowFunction(parent)
+			&& node === parent.body
+		) {
+			return true
+		}
+
+		if (ts.isIfStatement(parent)
+			&& (node === parent.thenStatement
+				|| node === parent.elseStatement
+			)
+		) {
+			return true	
+		}
+
+		if ((ts.isForStatement(parent)
+				|| ts.isForOfStatement(parent)
+				|| ts.isForInStatement(parent)
+				|| ts.isWhileStatement(parent)
+				|| ts.isDoStatement(parent)
+			)
+			&& node === parent.statement
+		) {
+			return true
+		}
+
+		return false
+	}
+
+	/** Whether be a block like, or can be extended to a block. */
+	export function canBlockMayExtend(node: TS.Node): boolean {
+		return canBlock(node)
+			|| canExtendToBlock(node)
+	}
+
+	/** Whether can put statements. */
+	export function canPutStatements(node: TS.Node): boolean {
+		let parent = node.parent
+
+		return canBlock(node)
+			|| ts.isCaseOrDefaultClause(node)
+			|| ts.isForStatement(parent) && node === parent.initializer
+	}
+
+	/** Whether can be extended to a block to put statements. */
+	export function canExtendToPutStatements(node: TS.Node): boolean {
+		return canExtendToBlock(node)
+	}
+
+	/** Whether can put statements, or can be extended to a block to put statements. */
+	export function canPutStatementsMayExtend(node: TS.Node): boolean {
+		return canPutStatements(node)
+			|| canExtendToPutStatements(node)
+	}
+
+	/** Whether can put only expression here. */
+	export function canPutExpression(node: TS.Node): boolean {
+		let parent = node.parent
+		if (!parent) {
+			return false
+		}
+		
+		// BreakLike
+		if (ts.isReturnStatement(parent)
+			|| ts.isAwaitExpression(parent)
+			|| ts.isYieldExpression(parent)
+		) {
+			if (parent.expression === node) {
+				return true
+			}
+		}
+
+		// `a ? b : c`
+		else if (ts.isConditionalExpression(parent)) {
+			if (node === parent.condition
+				|| node === parent.whenTrue
+				|| node === parent.whenFalse
+			) {
+				return true
+			}
+		}
+
+		// `a && b`, `a || b`, `a ?? b`.
+		else if (ts.isBinaryExpression(parent)) {
+			if ((parent.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken
+				|| parent.operatorToken.kind === ts.SyntaxKind.BarBarToken
+				|| parent.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken)
+			) {
+				if (node === parent.left
+					|| node === parent.right
+				) {
+					return true
+				}
+			}
+		}
+
+		// `for (;;) ...`
+		else if (ts.isForStatement(parent)) {
+
+			// initializer is not a standard expression, can be a variable statement.
+			if (node === parent.initializer
+				|| node === parent.condition
+				|| node === parent.incrementor
+			) {
+				return true
+			}
+		}
+
+		// `for ... in`, `for ... of`, `while ...`, `do ...`
+		else if (ts.isForOfStatement(parent)
+			|| ts.isForInStatement(parent)
+			|| ts.isWhileStatement(parent)
+			|| ts.isDoStatement(parent)
+		) {
+			if (node === parent.expression) {
+				return true
+			}
+		}
+
+		return false
+	}
+
+
+
 	//// Tagged Template
 
 	/** Get the name of a tagged template. */

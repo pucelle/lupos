@@ -2,27 +2,36 @@ import type TS from 'typescript'
 import {ListMap} from '../../utils'
 import {PropertyAccessingNode, factory, helper, ts} from '../../base'
 import {Context} from './context'
-import {ContextType} from './context-tree'
+import {ContextTree, ContextType} from './context-tree'
 import {VisitingTree} from './visiting-tree'
 import {ContextExpMaker} from './context-exp-maker'
-import {isBreakLikeOrImplicitReturning, refBreakLikeOrImplicitReturning, refPropertyAccessing, replaceRefedBreakLikeOrImplicitReturning, replaceRefedPropertyAccessing, returnBreakLikeOrImplicitReturning} from './helpers/ref'
 
 
 interface InterpolationItem {
 
-	type: InterpolationType
+	/** Where to interpolate. */
+	position: InterpolationPosition
 
-	/** If is a list and becomes empty, no need to replace. */
-	exps?: PropertyAccessingNode[]
+	/** Interpolate content type. */
+	contentType: InterpolationContentType
+
+	/** If is a list and becomes empty, no need to interpolate. */
+	expressions?: PropertyAccessingNode[] | TS.BinaryExpression[]
 
 	/** Must exist for `Replace` interpolation type. */
 	replace?: ((node: TS.Node, exps: TS.Expression[]) => TS.Node | TS.Node[])
 }
 
-enum InterpolationType {
+enum InterpolationPosition {
 	Replace,
 	InsertBefore,
 	InsertAfter,
+}
+
+enum InterpolationContentType {
+	Get,
+	Set,
+	Reference,
 }
 
 
@@ -34,6 +43,7 @@ export class ContextInterpolator {
 
 	readonly context: Context
 	private referenceVariableNames: string[] = []
+
 	private captured: PropertyAccessingNode[] = []
 	private capturedHaveRef: boolean = false
 
@@ -90,62 +100,96 @@ export class ContextInterpolator {
 
 		this.captured = []
 		this.capturedHaveRef = false
-		this.insertExpsBefore(index, exps)
+		this.insertExpressionsBefore(index, exps)
 	}
 
 	/** Insert expressions to before specified position. */
-	private insertExpsBefore(index: number, exps: PropertyAccessingNode[]) {
+	private insertExpressionsBefore(index: number, exps: PropertyAccessingNode[]) {
 		this.interpolated.add(index, {
-			type: InterpolationType.InsertBefore,
-			exps,
+			position: InterpolationPosition.InsertBefore,
+			contentType: InterpolationContentType.Get,
+			expressions: exps,
 		})
 	}
 
 	/** Insert expressions to after specified position. */
-	private insertExpsAfter(index: number, exps: PropertyAccessingNode[]) {
+	private insertExpressionsAfter(index: number, exps: PropertyAccessingNode[]) {
 		this.interpolated.add(index, {
-			type: InterpolationType.InsertAfter,
-			exps,
+			position: InterpolationPosition.InsertAfter,
+			contentType: InterpolationContentType.Get,
+			expressions: exps,
 		})
 	}
 
 	/** 
 	 * Make a reference variable to reference a computed expression.
 	 * `a.b().c` -> `var t; ... (t = a.b()).c`.
-	 * Returns variable name.
+	 * Returns variable name, or `null` if cant make reference.
 	 */
-	private makeRefVariable(): string {
-		let name = this.context.variables.makeVariable('ref_')
-		this.referenceVariableNames.push(name)
+	private makeReference(node: TS.Node): string | null {
+		let context = ContextTree.findClosestContextToAddVariable(node, this.context)
+		if (!context) {
+			return null
+		}
+
+		let name = context.variables.makeUniqueVariable('ref_')
+		context.interpolator.addUniqueVariable(name)
 
 		return name
 	}
 
 	/** 
-	 * Replace like `a().b` to a reference assignment `(c = a()).b`,
-	 * and capture replaced expression.
+	 * Add a unique variable by variable name.
+	 * Current context must be a found context than can be added.
 	 */
-	refAndCapture(node: PropertyAccessingNode, index: number) {
-		let refName = this.makeRefVariable()
-
-		this.interpolated.add(index, {
-			type: InterpolationType.Replace,
-			replace: (node: TS.Node) => {
-				return refPropertyAccessing(node as PropertyAccessingNode, refName)
-			},
-		})
-		
-		// `a.b().c` -> `_ref_.c`
-		let referenceAccessing = replaceRefedPropertyAccessing(node, refName)
-		this.capture(referenceAccessing, true)
+	addUniqueVariable(variableName: string) {
+		this.referenceVariableNames.push(variableName)
 	}
 
+	/** 
+	 * Replace like `a().b` to a reference assignment `_ref = a(); _ref.b`,
+	 * and capture replaced expression.
+	 */
+	referenceAndCapture(node: PropertyAccessingNode, index: number) {
+		let refName = this.makeReference(node)
+
+		// Can't add reference, normally in the range of a parameter.
+		// Directly capture whole expression.
+		if (refName === null) {
+			this.capture(node, true)
+			return
+		}
+
+		let {context, index} = ContextTree.findClosestPositionToAddStatements(this.context)
+
+		// `a.b().c`, insert `ref = a.b()` to a previous position.
+		this.interpolated.add(index, {
+			position: InterpolationPosition.Replace,
+			contentType: InterpolationContentType.Reference,
+			expressions: [
+				factory.createBinaryExpression(
+					factory.createIdentifier(refName),
+					factory.createToken(ts.SyntaxKind.EqualsToken),
+					node.expression
+				)
+			],
+		})
+		
+		// `a.b().c` -> `ref_.c`
+		let refAccessing = replaceReferencedPropertyAccessing(node, refName)
+		this.capture(refAccessing, true)
+	}
+
+	/** Insert a reference to  */
+	insertReference(index: number) {
+
+	}
 
 	/** 
 	 * Add rest captured expressions before end position of context, or before a return statement.
 	 * But:
 	 *  - For like `return this.a`, will move `this.a` ahead.
-	 *  - For like `return (_ref=a()).b`, will reference returned content and move it ahead.
+	 *  - For like `return (ref_=a()).b`, will reference returned content and move it ahead.
 	 */
 	insertRestCaptured() {
 		let exps = this.captured
@@ -165,68 +209,87 @@ export class ContextInterpolator {
 		// For block, source file, case or default.
 		if (helper.isStatementsExist(node)) {
 			let endIndex = VisitingTree.getLastChildIndex(index)
-			this.insertExpsAfter(endIndex, exps)
+			this.insertExpressionsAfter(endIndex, exps)
 		}
 
 		// Replace arrow function body.
 		else if (type === ContextType.FunctionLike) {
 			let bodyIndex = VisitingTree.getChildIndexBySiblingIndex(index, 1)
-			this.insertExpsAndBlockIt((node as TS.ArrowFunction).body, bodyIndex, exps, haveRef)
+			this.insertExpressionsNormally((node as TS.ArrowFunction).body, bodyIndex, exps, haveRef)
 		}
 
-		// Other contents.
+		// Others.
 		else {
-			this.insertExpsAndBlockIt(node, index, exps, haveRef)
+			this.insertExpressionsNormally(node, index, exps, haveRef)
 		}
 	}
 
 	/** 
 	 * `() => ...` -> `() => {...; return ...}`
 	 * `if (...) ...` -> `if (...) {...; ...}`
+	 * `... &&` -> `(...; ...) &&`
 	 */
-	private insertExpsAndBlockIt(
+	private insertExpressionsNormally(
 		node: TS.Node, index: number, exps: PropertyAccessingNode[], haveRef: boolean
 	) {
 		let type = this.context.type
 
 		// `return ...`, `await ...`, `yield ...` or `() => ...`
-		if (isBreakLikeOrImplicitReturning(node)) {
+		if (this.context.state.isBreakLikeOrImplicitReturning(node)) {
+			let beFunctionBody = ts.isArrowFunction(node.parent) && !ts.isBlock(node)
+
 			if (haveRef) {
-				let refName = this.makeRefVariable()
-	
+				let refName = this.makeReference()
+
 				this.interpolated.add(index, {
-					type: InterpolationType.Replace,
-					exps,
+					position: InterpolationPosition.Replace,
+					contentType: InterpolationContentType.Get,
+					expressions: exps,
 					replace: (n: TS.Node, exps: TS.Expression[]) => {
-						return factory.createBlock([
+						let nodes = [
 		
-							// `_ref = ...`
+							// `ref = ...`
 							factory.createExpressionStatement(
-								refBreakLikeOrImplicitReturning(n as TS.Expression, refName)
+								referenceBreakLikeOrImplicitReturning(n as TS.Expression, refName)
 							),
 	
 							// Insert expressions here.
 							...exps.map(exp => factory.createExpressionStatement(exp)),
 	
-							// `return _ref`.
-							replaceRefedBreakLikeOrImplicitReturning(n as TS.Expression, refName),
-						])
+							// `return ref`.
+							replaceReferencedBreakLikeOrImplicitReturning(n as TS.Expression, refName),
+						]
+
+						if (beFunctionBody) {
+							return factory.createBlock(nodes)
+						}
+						else {
+							return nodes
+						}
 					},
 				})
 			}
 			else {
 				this.interpolated.add(index, {
-					type: InterpolationType.Replace,
-					exps,
+					position: InterpolationPosition.Replace,
+					contentType: InterpolationContentType.Get,
+					expressions: exps,
 					replace: (n: TS.Node, exps: TS.Expression[]) => {
-						return factory.createBlock([
+						let nodes = [
 		
 							// Insert expressions here.
 							...exps.map(exp => factory.createExpressionStatement(exp)),
 	
 							// return original returning, or a new returning.
 							returnBreakLikeOrImplicitReturning(n as TS.Expression),
-						])
+						]
+
+						if (beFunctionBody) {
+							return factory.createBlock(nodes)
+						}
+						else {
+							return nodes
+						}
 					},
 				})
 			}
@@ -238,14 +301,15 @@ export class ContextInterpolator {
 		// `a && ...`, `a || ...`, `a ?? ...`.
 		else if (type === ContextType.ConditionalCondition
 			|| type === ContextType.IterationCondition
-			|| type === ContextType.ConditionalExpContent
+			|| type === ContextType.ConditionalExpressionContent
 		) {
 			if (haveRef) {
-				let refName = this.makeRefVariable()
+				let refName = this.makeReference()
 	
 				this.interpolated.add(index, {
-					type: InterpolationType.Replace,
-					exps,
+					position: InterpolationPosition.Replace,
+					contentType: InterpolationContentType.Get,
+					expressions: exps,
 					replace: (n: TS.Node, exps: TS.Expression[]) => {
 						let exp = exps[0]
 
@@ -258,7 +322,7 @@ export class ContextInterpolator {
 							)
 						}
 
-						// `_ref = ..., a, b, c, ...`
+						// `ref = ..., a, b, c, ...`
 						exp = factory.createBinaryExpression(
 
 							factory.createBinaryExpression(
@@ -273,7 +337,7 @@ export class ContextInterpolator {
 							exp
 						)
 
-						// `(..., _ref)`
+						// `(..., ref)`
 						return factory.createParenthesizedExpression(
 							factory.createBinaryExpression(
 								exp,
@@ -286,8 +350,9 @@ export class ContextInterpolator {
 			}
 			else {
 				this.interpolated.add(index, {
-					type: InterpolationType.Replace,
-					exps,
+					position: InterpolationPosition.Replace,
+					contentType: InterpolationContentType.Get,
+					expressions: exps,
 					replace: (n: TS.Node, exps: TS.Expression[]) => {
 						let exp = exps[0]
 
@@ -316,8 +381,9 @@ export class ContextInterpolator {
 		// `if ()...`, `else ...`
 		else {
 			this.interpolated.add(index, {
-				type: InterpolationType.Replace,
-				exps,
+				position: InterpolationPosition.Replace,
+				contentType: InterpolationContentType.Get,
+				expressions: exps,
 				replace: (node: TS.Node, exps: TS.Expression[]) => {
 					return factory.createBlock([
 						...exps.map(exp => factory.createExpressionStatement(exp)),
@@ -330,23 +396,36 @@ export class ContextInterpolator {
 
 	/** Output expressions to insert before specified index. */
 	output(node: TS.Node | TS.Node[], index: number): TS.Node | TS.Node[] {
+		
+		if (node === this.context.node && VisitingTree.getSiblingIndex(index) === 0) {
+
+		}
+
 		let items = this.interpolated.get(index)
 		if (!items) {
 			return node
 		}
 
 		for (let item of items) {
-			let type = item.type
-			let exps = item.exps
+			let type = item.position
+			let contentType = item.contentType
+			let exps = item.expressions
 
 			// Exps may get clear after optimizing.
 			if (exps && exps.length === 0) {
 				continue
 			}
 
-			let madeExps = exps ? ContextExpMaker.makeExpressions(exps) : []
-			
-			if (type === InterpolationType.Replace) {
+			let madeExps: TS.Expression[]
+
+			if (contentType === InterpolationContentType.Reference) {
+				madeExps = exps as TS.BinaryExpression[]
+			}
+			else {
+				madeExps = exps ? ContextExpMaker.makeExpressions(exps as PropertyAccessingNode[]) : []
+			}
+
+			if (type === InterpolationPosition.Replace) {
 				if (Array.isArray(node)) {
 					throw new Error(`"Replace" type of interpolation must be the first!`)
 				}
@@ -356,7 +435,7 @@ export class ContextInterpolator {
 			}
 
 			let madeStatements = madeExps.map(exp => factory.createExpressionStatement(exp))
-			if (type === InterpolationType.InsertBefore) {
+			if (type === InterpolationPosition.InsertBefore) {
 				node = [madeStatements, node].flat()
 			}
 			else {
@@ -365,5 +444,20 @@ export class ContextInterpolator {
 		}
 
 		return Array.isArray(node) && node.length === 1 ? node[0] : node
+	}
+
+	private outputReferenceVariables(node: TS.Node, index: number): TS.VariableStatement | null {
+		if (this.referenceVariableNames.length === 0) {
+			return null
+		}
+
+		// Must be the first child.
+		if (this.context.state.isStatementsCanPut()) {
+			if (node.parent !== this.context.node
+				|| VisitingTree.getSiblingIndex(index) !== 0
+			) {
+				return null
+			}
+		}
 	}
 }
