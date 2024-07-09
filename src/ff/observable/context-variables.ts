@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {observedChecker} from './observed-checker'
+import {ObservedChecker} from './observed-checker'
 import {helper, ts} from '../../base'
 import {Context} from './context'
 import {ContextType} from './context-tree'
@@ -49,7 +49,7 @@ export class ContextVariables {
 
 			// Directly declare type as `Observed<>`.
 			let typeNode = thisParameter.type
-			if (observedChecker.isTypeNodeObserved(typeNode)) {
+			if (ObservedChecker.isTypeNodeObserved(typeNode)) {
 				return true
 			}
 
@@ -144,10 +144,10 @@ export class ContextVariables {
 				let observed = false
 
 				if (typeNode) {
-					observed = observedChecker.isTypeNodeObserved(typeNode)
+					observed = ObservedChecker.isTypeNodeObserved(typeNode)
 				}
 
-				this.variableObserved.set(param.name.getText(), observed)
+				this.variableObserved.set(helper.getText(param.name), observed)
 			}
 		}
 
@@ -165,7 +165,7 @@ export class ContextVariables {
 
 					// `a.b`
 					let callFrom = exp.expression
-					if (observedChecker.isObserved(callFrom)) {
+					if (ObservedChecker.isObserved(callFrom)) {
 						let parameters = node.parameters
 						this.makeParametersObserved(parameters)
 					}
@@ -179,7 +179,7 @@ export class ContextVariables {
 		for (let param of parameters) {
 			let beObject = helper.isNodeObjectType(param)
 			if (beObject) {
-				this.variableObserved.set(param.name.getText(), true)
+				this.variableObserved.set(helper.getText(param.name), true)
 			}
 		}
 	}
@@ -190,20 +190,20 @@ export class ContextVariables {
 		let observed = false
 
 		if (typeNode) {
-			observed = observedChecker.isTypeNodeObserved(typeNode)
+			observed = ObservedChecker.isTypeNodeObserved(typeNode)
 		}
 
 		if (!observed) {
-			observed = observedChecker.isParameterObservedByCallingBroadcasted(node)
+			observed = ObservedChecker.isParameterObservedByCallingBroadcasted(node)
 		}
 
-		this.variableObserved.set(node.name.getText(), observed)
+		this.variableObserved.set(helper.getText(node.name), observed)
 	}
 
 	/** Visit a variable. */
 	visitVariable(node: TS.VariableDeclaration) {
-		let observed = observedChecker.isVariableDeclarationObserved(node)
-		let name = node.name.getText()
+		let observed = ObservedChecker.isVariableDeclarationObserved(node)
+		let name = helper.getText(node.name)
 		this.variableObserved.set(name, observed)
 	}
 }

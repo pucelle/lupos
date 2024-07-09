@@ -81,7 +81,8 @@ export class ContextState {
 
 		// Break would not broadcast out of `iteration` and `case`.
 		if (this.context.type === ContextType.IterationContent
-			|| this.context.type === ContextType.ConditionalCaseContent
+			|| this.context.type === ContextType.ConditionalContent
+				&& ts.isCaseOrDefaultClause(this.context.node)
 		) {
 			return 
 		}

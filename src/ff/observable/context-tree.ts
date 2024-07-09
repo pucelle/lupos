@@ -1,6 +1,7 @@
 import type TS from 'typescript'
 import {helper, ts} from '../../base'
 import {Context} from './context'
+import {VisitingTree} from './visiting-tree'
 
 
 export enum ContextType {
@@ -41,7 +42,7 @@ export enum ContextType {
 	IterationCondition,
 
 	/** 
-	 * `for () {...}`, May run for none, 1 time, multiple times.
+	 * `while () ...`, `for () ...`, May run for none, 1 time, multiple times.
 	 * Content itself can be a block, or a normal expression.
 	 */
 	IterationContent,
@@ -63,7 +64,6 @@ export namespace ContextTree {
 		current = null
 	}
 
-
 	/** Check Context type of a node. */
 	export function checkContextType(node: TS.Node): ContextType | null {
 
@@ -80,6 +80,7 @@ export namespace ContextTree {
 		}
 
 		// Conditional.
+		// For `if...else if...`, the second if will be identified as `Conditional`.
 		else if (ts.isIfStatement(node)
 			|| ts.isSwitchStatement(node)
 			|| ts.isConditionalExpression(node)
@@ -193,7 +194,6 @@ export namespace ContextTree {
 
 		return null
 	}
-
 	
 	/** Create a context from node and push to stack. */
 	export function createContext(type: ContextType, node: TS.Node): Context {
@@ -206,15 +206,16 @@ export namespace ContextTree {
 		return current = context
 	}
 
-
 	/** Pop context. */
 	export function pop() {
 		current!.beforeExit()
 		current = contextStack.pop()!
 	}
 
-
-	/** Visit context node and each descendant node. */
+	/** 
+	 * Visit context node and each descendant node within current context.
+	 * Recently all child contexts have been visited.
+	 */
 	export function visitNode(node: TS.Node) {
 		if (current) {
 			current.visitNode(node)
@@ -223,31 +224,75 @@ export namespace ContextTree {
 
 	
 	/** Find an ancestral context, which can insert variable to. */
-	export function findClosestContextToAddVariable(node: TS.Node, from: Context): Context | null {
+	export function findClosestContextToAddVariable(from: Context): Context {
+		let context = from
+		while (context) {
+			let node = context.node
 
-		// Can't add variables before parameter.
-		if (helper.isContainedByParameter(node)) {
+			// Not extend from `if()...` to `if(){...}`.
+			if (helper.canPutStatements(node)) {
+				return context
+			}
+
+			// `for(let ...; ...)`
+			if (ts.isForStatement(node.parent)
+				&& node === node.parent.initializer
+				&& ts.isVariableDeclarationList(node)
+			) {
+				return context
+			}
+
+			context = context.parent!
+		}
+
+		throw new Error(`Can't find context to put variable, there must be a mistake!`)
+	}
+
+	/** 
+	 * Find a ancestral context, which can move statements to it.
+	 * Must before current position, and must not cross any conditional or iteration context.
+	 */
+	export function findClosestPositionToMoveStatements(index: number, from: Context):
+		{context: Context, index: number} | null
+	{
+		let context: Context | null = from
+
+		while (context) {
+
+			// Can extend from `if()...` to `if(){...}`.
+			if (helper.canMayExtendToPutStatements(context.node)) {
+				break
+			}
+
+			if (context.type === ContextType.ConditionalContent
+				|| context.type  === ContextType.IterationContent
+			) {
+				context = null
+				break
+			}
+
+			index = context.visitingIndex
+			context = context.parent!
+		}
+
+		if (!context) {
 			return null
 		}
 
-		let context = from
-		while (context) {
-			if (helper.canPutStatementsMayExtend(context.node)) {
-				return context
+		if (helper.canPutStatements(context.node)) {
+
+			// Look up until parent is context node.
+			while (VisitingTree.getParentIndex(index) !== context.visitingIndex) {
+				index = VisitingTree.getParentIndex(index)
 			}
 		}
+		else {
+			index = context.visitingIndex
+		}
 
-		return null
-	}
-
-	/** Find a ancestral context, which can insert statements to it. */
-	export function findClosestPositionToAddStatements(node: TS.Node): Context | null {
-
-		// Where can put reference expression.
-		if (from.type === ContextType.BlockLike
-			|| from.type === ContextType.FunctionLike
-		) {
-
+		return {
+			context,
+			index,
 		}
 	}
 }

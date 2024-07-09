@@ -179,7 +179,7 @@ export class SourceFileModifier {
 	//// Expression & Statement
 
 	/** Bundle expressions to a parenthesized expression. */
-	parenthesizeExpressions(exps: TS.Expression[]): TS.Expression {
+	parenthesizeExpressions(...exps: TS.Expression[]): TS.Expression {
 		let exp = exps[0]
 
 		// `a, b, c...`
@@ -209,9 +209,7 @@ export class SourceFileModifier {
 			) as TS.Node as T
 		}
 		else if (ts.isIdentifier(node)) {
-			if (node.pos > -1) {
-				return factory.createIdentifier(node.getText()) as TS.Node as T
-			}
+			return factory.createIdentifier(helper.getText(node)) as TS.Node as T
 		}
 		else if (node.kind === ts.SyntaxKind.ThisKeyword) {
 			return factory.createThis() as TS.Node as T
@@ -222,10 +220,9 @@ export class SourceFileModifier {
 
 	/** 
 	 * Replace property accessing expression to a reference.
-	 * `a.b().c -> _ref_1.c`
+	 * `a.b().c -> _ref_.c`
 	 */
-	replaceReferencedPropertyAccessingExpression(node: PropertyAccessingNode, refName: string): PropertyAccessingNode {
-		let exp = factory.createIdentifier(refName)
+	replaceReferencedAccessingExpression(node: PropertyAccessingNode, exp: TS.Expression): PropertyAccessingNode {
 		if (ts.isPropertyAccessExpression(node)) {
 			return factory.createPropertyAccessExpression(
 				exp,

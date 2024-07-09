@@ -1,17 +1,19 @@
 import type TS from 'typescript'
 import {PropertyAccessingNode, factory, helper, modifier, ts} from '../../base'
 import {groupBy} from '../../utils'
-import {observedChecker} from './observed-checker'
+import {ObservedChecker} from './observed-checker'
 
 
-export namespace ContextExpMaker {
+export namespace ContextAccessingGrouper {
 	
 	/** Group expressions to lately insert a position. */
-	export function makeExpressions(nonZeroExps: PropertyAccessingNode[]): TS.Expression[] {
-		let grouped = groupGetExpressions(nonZeroExps)
+	export function makeGetExpressions(getExps: PropertyAccessingNode[]): TS.Expression[] {
+		let grouped = groupGetExpressions(getExps)
 		let exps = grouped.map(item => createGroupedGetExpression(item))
 
-		modifier.addNamedImport('trackGet', '@pucelle/ff')
+		if (exps.length > 0) {
+			modifier.addNamedImport('trackGet', '@pucelle/ff')
+		}
 
 		return exps
 	}
@@ -30,7 +32,7 @@ export namespace ContextExpMaker {
 	/** Make a key by a property accessing node. */
 	function getExpKey(node: PropertyAccessingNode) {
 		let exp = node.expression
-		let key = exp.pos >= 0 ? exp.getText().trim() : ''
+		let key = helper.getText(exp).trim()
 
 		if (node.questionDotToken) {
 			key += '?.'
@@ -86,18 +88,18 @@ export namespace ContextExpMaker {
 
 	/** Get a name expression key. */
 	function getNameKey(node: PropertyAccessingNode): string {
-		if (helper.isNodeArrayType(node.expression) || observedChecker.isMapOrSetReading(node)) {
+		if (helper.isNodeArrayType(node.expression) || ObservedChecker.isMapOrSetReading(node)) {
 			return ''
 		}
 		else if (ts.isPropertyAccessExpression(node)) {
-			return `"${node.name.getText()}"`
+			return `"${helper.getText(node.name)}"`
 		}
 		else {
 			if (ts.isStringLiteral(node.argumentExpression)) {
 				return `"${node.argumentExpression.text}"`
 			}
 			else {
-				return node.argumentExpression.getText()
+				return helper.getText(node.argumentExpression)
 			}
 		}
 	}
@@ -107,11 +109,11 @@ export namespace ContextExpMaker {
 	function getAccessingNodeNameProperty(node: PropertyAccessingNode): TS.Expression {
 		let name: TS.Expression
 
-		if (helper.isNodeArrayType(node.expression) || observedChecker.isMapOrSetReading(node)) {
+		if (helper.isNodeArrayType(node.expression) || ObservedChecker.isMapOrSetReading(node)) {
 			name = factory.createStringLiteral('')
 		}
 		else if (ts.isPropertyAccessExpression(node)) {
-			name = factory.createStringLiteral(node.name.getText())
+			name = factory.createStringLiteral(helper.getText(node.name))
 		}
 		else {
 			name = modifier.removePropertyAccessingComments(node.argumentExpression)

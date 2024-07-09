@@ -22,7 +22,7 @@ export type CanObserveNode = PropertyAccessingNode
 
 	
 /** Help to check observed state. */
-export namespace observedChecker {
+export namespace ObservedChecker {
 	
 	/** Check at which context the variable declared, or this attached. */
 	export function getIdentifierDeclaredContext(node: TS.Identifier | TS.ThisExpression, context = ContextTree.current!): Context | null {
@@ -156,7 +156,7 @@ export namespace observedChecker {
 
 			// variable `b`, bot not property part of `a.b`.
 			&& (!helper.isPropertyAccessing(node.parent)
-				|| helper.getPropertyAccessingNameNode(node.parent) !== node
+				|| helper.getPropertyAccessingName(node.parent) !== node
 			)
 		) {
 			return isIdentifierObserved(node as TS.Identifier | TS.ThisExpression)
@@ -249,13 +249,19 @@ export namespace observedChecker {
 
 
 	/** 
-	 * Whether a complex expression, and should be reference.
-	 * `a().b` -> `var c; ... (c = a()).b; ...`
+	 * Whether be a complex expression, and should be reference.
+	 * `a().b` -> `var _ref_; ...; _ref_ = a(); _ref_.b`
+	 * or `a[i++]` -> `var _ref; ... ; _ref_ = i++; a[_ref]`
 	 */
 	export function shouldReference(node: TS.Expression): boolean {
 
-		// `a && b`, `a || b`, `a ?? b`, can observe only if both a & b can observe.
+		// `a && b`, `a || b`, `a ?? b`.
 		if (ts.isBinaryExpression(node)) {
+			return true
+		}
+
+		// `a++`, `++a`.
+		if (ts.isPostfixUnaryExpression(node) || ts.isPrefixUnaryExpression(node)) {
 			return true
 		}
 
@@ -269,7 +275,7 @@ export namespace observedChecker {
 			return shouldReference(node.expression)
 		}
 
-		// `a ? b : c`, can observe only if both b & c can observe.
+		// `a ? b : c`
 		else if (ts.isConditionalExpression(node)) {
 			return true
 		}
@@ -317,7 +323,7 @@ export namespace observedChecker {
 	/** Test whether calls `Map.has`, `Map.get` or `Set.has` */
 	export function isMapOrSetReading(node: PropertyAccessingNode) {
 		let objName = helper.getNodeTypeName(node.expression)
-		let propName = helper.getPropertyAccessingName(node)
+		let propName = helper.getPropertyAccessingNameText(node)
 
 		if (objName === 'Map') {
 			return propName === 'has' || propName === 'get'

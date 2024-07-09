@@ -69,7 +69,7 @@ get prop(): any {
 ```
 */
 function compileComputedDecorator(methodDecl: TS.MethodDeclaration): TS.Node[] {
-	let propName = methodDecl.name.getText()
+	let propName = helper.getText(methodDecl.name)
 
 	let property = factory.createPropertyDeclaration(
 		undefined,
@@ -295,7 +295,7 @@ effectFn() {
 ```
 */
 function compileEffectDecorator(methodDecl: TS.MethodDeclaration): TS.Node[] {
-	let methodName = methodDecl.name.getText()
+	let methodName = helper.getText(methodDecl.name)
 
 	let enqueueMethod = factory.createMethodDeclaration(
 		undefined,
@@ -432,7 +432,7 @@ onWatchChange() {
 ```
 */
 function compileWatchDecorator(methodDecl: TS.MethodDeclaration, decorator: TS.Decorator): TS.Node[] {
-	let methodName = methodDecl.name.getText()
+	let methodName = helper.getText(methodDecl.name)
 
 	if (!ts.isCallExpression(decorator.expression)) {
 		return []

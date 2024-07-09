@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {ts, typeChecker} from './global'
+import {printer, sourceFile, ts, typeChecker} from './global'
 
 
 /** Property accessing types. */
@@ -13,13 +13,16 @@ export type AssigningNode = TS.BinaryExpression | TS.PostfixUnaryExpression | TS
 export namespace helper {
 
 
-	//// Basic types
+	//// Global
 
-	/** Whether node can have statements. */
-	export function isStatementsExist(node: TS.Node): node is TS.Block | TS.SourceFile | TS.CaseOrDefaultClause {
-		return ts.isBlock(node)
-			|| ts.isSourceFile(node)
-			|| ts.isCaseOrDefaultClause(node)
+	/** Get node text, can output from a newly created node. */
+	export function getText(node: TS.Node) {
+		if (node.pos >= 0) {
+			return node.getText()
+		}
+		else {
+			return printer.printNode(ts.EmitHint.Unspecified, node, sourceFile)
+		}
 	}
 
 
@@ -31,10 +34,8 @@ export namespace helper {
 		if (ts.isConstructorDeclaration(node)) {
 			return 'constructor'
 		}
-
-		// May node is not appended, thus `getText()` is not available.
 		else {
-			return (node.name as TS.Identifier).text
+			return getText(node.name!)
 		}
 	}
 
@@ -242,7 +243,10 @@ export namespace helper {
 
 
 
-	//// Function
+	//// Function, Statements, Expression and Flow.
+
+
+	//// Basic types
 
 	/** Whether be function, method, or other function like. */
 	export function isFunctionLike(node: TS.Node): boolean {
@@ -252,21 +256,6 @@ export namespace helper {
 			|| ts.isGetAccessorDeclaration(node)
 			|| ts.isSetAccessorDeclaration(node)
 			|| ts.isArrowFunction(node)
-	}
-
-	/** Whether has a parameter type parent. */
-	export function isContainedByParameter(node: TS.Node): boolean {
-		let n = node
-
-		while (n && !helper.isFunctionLike(n)) {
-			if (ts.isParameter(n)) {
-				return true
-			}
-
-			n = n.parent
-		}
-
-		return false
 	}
 
 	/** Whether be a block or a source file. */
@@ -312,18 +301,15 @@ export namespace helper {
 	}
 
 	/** Whether be a block like, or can be extended to a block. */
-	export function canBlockMayExtend(node: TS.Node): boolean {
+	export function canMayExtendToBlock(node: TS.Node): boolean {
 		return canBlock(node)
 			|| canExtendToBlock(node)
 	}
 
 	/** Whether can put statements. */
 	export function canPutStatements(node: TS.Node): boolean {
-		let parent = node.parent
-
 		return canBlock(node)
 			|| ts.isCaseOrDefaultClause(node)
-			|| ts.isForStatement(parent) && node === parent.initializer
 	}
 
 	/** Whether can be extended to a block to put statements. */
@@ -332,12 +318,12 @@ export namespace helper {
 	}
 
 	/** Whether can put statements, or can be extended to a block to put statements. */
-	export function canPutStatementsMayExtend(node: TS.Node): boolean {
+	export function canMayExtendToPutStatements(node: TS.Node): boolean {
 		return canPutStatements(node)
 			|| canExtendToPutStatements(node)
 	}
 
-	/** Whether can put only expression here. */
+	/** Whether can put only expression here, not block-extendable. */
 	export function canPutExpression(node: TS.Node): boolean {
 		let parent = node.parent
 		if (!parent) {
@@ -404,6 +390,16 @@ export namespace helper {
 		return false
 	}
 
+	/** Try extract final expressions from a parenthesized expression. */
+	export function extractFinalFromParenthesizeExpression(pe: TS.ParenthesizedExpression): TS.Expression {
+		let exp = pe.expression
+		if (ts.isBinaryExpression(exp) && exp.operatorToken.kind === ts.SyntaxKind.CommaToken) {
+			return exp.right
+		}
+
+		return exp
+	}
+
 
 
 	//// Tagged Template
@@ -429,17 +425,15 @@ export namespace helper {
 	}
 
 	/** get property accessing name node. */
-	export function getPropertyAccessingNameNode(node: PropertyAccessingNode): TS.Expression {
+	export function getPropertyAccessingName(node: PropertyAccessingNode): TS.Expression {
 		return ts.isPropertyAccessExpression(node)
 			? node.name
 			: node.argumentExpression
 	}
 
 	/** get property accessing name. */
-	export function getPropertyAccessingName(node: PropertyAccessingNode): string{
-		return ts.isPropertyAccessExpression(node)
-			? node.name.getText()
-			: node.argumentExpression.getText()
+	export function getPropertyAccessingNameText(node: PropertyAccessingNode): string{
+		return getText(getPropertyAccessingName(node))
 	}
 
 	/** Whether be property assigning like `a = x`. */
@@ -589,7 +583,7 @@ export namespace helper {
 
 		// `import * as M`, and use it's member like `M.member`.
 		if (ts.isPropertyAccessExpression(node)) {
-			let name = node.name.getText()
+			let name = getText(node.name)
 			let symbol = resolveNodeSymbol(node.expression)
 			let decl = symbol ? resolveOneSymbolDeclaration(symbol, ts.isNamespaceImport) : undefined
 

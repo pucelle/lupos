@@ -1,11 +1,12 @@
 import type TS from 'typescript'
-import {observedChecker} from './observed-checker'
+import {ObservedChecker} from './observed-checker'
 import {helper, PropertyAccessingNode, ts} from '../../base'
 import {ContextState} from './context-state'
 import {ContextType} from './context-tree'
 import {VisitingTree} from './visiting-tree'
-import {ContextInterpolator} from './context-interpolator'
 import {ContextVariables} from './context-variables'
+import {ContextCapturer} from './context-capturer'
+import {Interpolator} from './interpolator'
 
 
 /** 
@@ -22,7 +23,7 @@ export class Context {
 	readonly children: Context[] = []
 	readonly state: ContextState
 	readonly variables: ContextVariables
-	readonly interpolator: ContextInterpolator
+	readonly capturer: ContextCapturer
 
 	constructor(type: ContextType, node: TS.Node, parent: Context | null) {
 		this.type = type
@@ -31,7 +32,7 @@ export class Context {
 		this.parent = parent
 		this.state = new ContextState(this)
 		this.variables = new ContextVariables(this)
-		this.interpolator = new ContextInterpolator(this)
+		this.capturer = new ContextCapturer(this)
 
 		if (parent) {
 			parent.enterChild(this)
@@ -39,12 +40,12 @@ export class Context {
 	}
 
 	/** 
-	 * Initialize after children contexts are ready,
+	 * Call after children contexts are ready,
 	 * and current context will exit.
 	 */
 	beforeExit() {
 		this.optimize()
-		this.interpolator.insertRestCaptured()
+		this.capturer.beforeExit()
 
 		if (this.parent) {
 			this.parent.leaveChild(this)
@@ -96,18 +97,25 @@ export class Context {
 			return
 		}
 
-		if (!observedChecker.isAccessingObserved(node)) {
+		if (!ObservedChecker.isAccessingObserved(node)) {
 			return
 		}
 
+		let index = VisitingTree.current.index
+
 		// Use a reference variable to replace expression.
-		if (observedChecker.shouldReference(node.expression)) {
-			let index = VisitingTree.current.index
-			this.interpolator.referenceAndCapture(node, index)
+		if (ObservedChecker.shouldReference(node.expression)) {
+			let expIndex = VisitingTree.getFirstChildIndex(index)
+			this.capturer.reference(expIndex)
 		}
-		else {
-			this.interpolator.capture(node, false)
+
+		// Use a reference variable to replace expression.
+		if (ObservedChecker.shouldReference(helper.getPropertyAccessingName(node))) {
+			let nameIndex = VisitingTree.getLastChildIndex(index)
+			this.capturer.reference(nameIndex)
 		}
+
+		this.capturer.capture(index)
 	}
 
 	/** Add a break and output expressions before specified position. */
@@ -120,7 +128,7 @@ export class Context {
 			index = parentIndex
 		}
 
-		this.interpolator.breakCaptured(index)
+		this.capturer.breakCaptured(index)
 	}
 
 	/** 
@@ -131,15 +139,11 @@ export class Context {
 		
 	}
 
-	/** For itself or descendant node, output all expressions and append them before, or replace it. */
-	output(node: TS.Node | TS.Node[], index: number): TS.Node | TS.Node[] {
-		let output = this.interpolator.output(node, index)
-
-		// Parent context may output before or after current context node.
-		if (node === this.node && this.parent) {
-			output = this.parent.interpolator.output(output, index)
-		}
-		
-		return output
+	/** 
+	 * For itself or descendant node,
+	 * output all expressions and append them before, after, or replace it.
+	 */
+	output(index: number): TS.Node | TS.Node[] {
+		return Interpolator.output(index)
 	}
 }

@@ -110,7 +110,7 @@ function compileEffectOrWatchDecorator(
 	connect: TS.MethodDeclaration | TS.ConstructorDeclaration,
 	disconnect: TS.MethodDeclaration | undefined
 ): [TS.MethodDeclaration | TS.ConstructorDeclaration, TS.MethodDeclaration | undefined] {
-	let methodName = methodDecl.name.getText()
+	let methodName = helper.getText(methodDecl.name)
 
 	if (connect) {
 		let connectStatement = factory.createExpressionStatement(factory.createCallExpression(

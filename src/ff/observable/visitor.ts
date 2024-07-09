@@ -3,6 +3,7 @@ import {transformContext, ts} from '../../base'
 import {ClassRange} from './class-range'
 import {ContextTree, ContextType} from './context-tree'
 import {VisitingTree} from './visiting-tree'
+import {Interpolator} from './interpolator'
 
 
 /** 
@@ -30,7 +31,7 @@ export function observableVisitor(node: TS.SourceFile): TS.SourceFile {
 		let currentContext = ContextTree.current!
 		let currentIndex = VisitingTree.current.index
 
-		// Visit context node and each descendant node.
+		// Must after visiting children.
 		ContextTree.visitNode(node)
 
 		if (type !== null) {
@@ -74,7 +75,7 @@ export function observableVisitor(node: TS.SourceFile): TS.SourceFile {
 				ContextTree.pop()
 			}
 
-			ContextTree.createContext(ContextType.ConditionalCaseContent, node)
+			ContextTree.createContext(ContextType.ConditionalContent, node)
 
 			for (let child of node.statements) {
 				outputCallbacks.push(visitNode(child))
@@ -99,6 +100,7 @@ export function observableVisitor(node: TS.SourceFile): TS.SourceFile {
 
 	VisitingTree.initialize()
 	ContextTree.initialize()
+	Interpolator.initialize()
 
 	ContextTree.createContext(ContextType.BlockLike, node)
 	let callback = visitNode(node)

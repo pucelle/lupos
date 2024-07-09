@@ -73,8 +73,14 @@ export namespace VisitingTree {
 	}
 
 	/** Get child visiting index, by parent index and child sibling index. */
-	export function getChildIndexBySiblingIndex(parentIndex: number, siblingIndex: number): number {
+	export function getChildIndex(parentIndex: number, siblingIndex: number): number {
 		return ChildMap.get(parentIndex)![siblingIndex]
+	}
+
+	/** Get first child visiting index, by parent index. */
+	export function getFirstChildIndex(parentIndex: number): number {
+		let list = ChildMap.get(parentIndex)!
+		return list[0]
 	}
 
 	/** Get last child visiting index, by parent index. */
