@@ -48,7 +48,14 @@ export enum ContextType {
 	IterationContent,
 
 	/** `return`, `break`, `continue`, `yield`, `await`. */
-	BreakLike,
+	FlowInterruptWithContent,
+}
+
+/** Content and a visiting index position inside it. */
+export interface ContextPosition{
+	context: Context
+	index: number
+	breakOnThePath: boolean
 }
 
 
@@ -108,13 +115,10 @@ export namespace ContextTree {
 			return ContextType.Iteration
 		}
 
-		// BreakLike
+		// Flow stop, and has content.
 		// `break` and `continue` contains no expressions, so should not be a context type.
-		else if (ts.isReturnStatement(node) && node.expression
-			|| ts.isAwaitExpression(node)
-			|| ts.isYieldExpression(node)
-		) {
-			return ContextType.BreakLike
+		else if (helper.isFlowInterruptWithContent(node)) {
+			return ContextType.FlowInterruptWithContent
 		}
 
 		//// Note `case` and `default` will be handled outside.
@@ -252,10 +256,9 @@ export namespace ContextTree {
 	 * Find a ancestral context, which can move statements to it.
 	 * Must before current position, and must not cross any conditional or iteration context.
 	 */
-	export function findClosestPositionToMoveStatements(index: number, from: Context):
-		{context: Context, index: number} | null
-	{
+	export function findClosestPositionToMoveStatements(index: number, from: Context): ContextPosition | null {
 		let context: Context | null = from
+		let breakOnThePath = false
 
 		while (context) {
 
@@ -272,6 +275,7 @@ export namespace ContextTree {
 			}
 
 			index = context.visitingIndex
+			breakOnThePath ||= context.state.isSelfFlowStop()
 			context = context.parent!
 		}
 
@@ -293,6 +297,7 @@ export namespace ContextTree {
 		return {
 			context,
 			index,
+			breakOnThePath,
 		}
 	}
 }

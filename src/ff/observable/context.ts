@@ -2,7 +2,7 @@ import type TS from 'typescript'
 import {ObservedChecker} from './observed-checker'
 import {helper, PropertyAccessingNode, ts} from '../../base'
 import {ContextState} from './context-state'
-import {ContextType} from './context-tree'
+import {ContextPosition, ContextType} from './context-tree'
 import {VisitingTree} from './visiting-tree'
 import {ContextVariables} from './context-variables'
 import {ContextCapturer} from './context-capturer'
@@ -61,7 +61,7 @@ export class Context {
 	leaveChild(child: Context) {
 		this.state.mergeChildContext(child)
 
-		if (child.state.isBreakLikeInside()) {
+		if (child.state.isInnerFlowStop()) {
 			this.addBreak(child.visitingIndex)
 		}
 	}
@@ -84,9 +84,11 @@ export class Context {
 			this.addGet(node)
 		}
 
-		// `break` or `continue`, or empty `return`.
-		else if (ts.isReturnStatement(node) && !node.expression || ts.isBreakOrContinueStatement(node)) {
-			this.state.applyBreak(true)
+		// `break` or `continue`, or empty `return`, or body of arrow function.
+		else if (ts.isReturnStatement(node) && !node.expression
+			|| ts.isBreakOrContinueStatement(node)
+		) {
+			this.state.applyInnerBreakLike(true)
 			this.addBreak(VisitingTree.current.index)
 		}
 	}
@@ -102,20 +104,31 @@ export class Context {
 		}
 
 		let index = VisitingTree.current.index
+		let position: ContextPosition | null = null
 
 		// Use a reference variable to replace expression.
 		if (ObservedChecker.shouldReference(node.expression)) {
 			let expIndex = VisitingTree.getFirstChildIndex(index)
-			this.capturer.reference(expIndex)
+			position = this.capturer.reference(expIndex)
 		}
 
 		// Use a reference variable to replace expression.
 		if (ObservedChecker.shouldReference(helper.getPropertyAccessingName(node))) {
 			let nameIndex = VisitingTree.getLastChildIndex(index)
-			this.capturer.reference(nameIndex)
+			position = this.capturer.reference(nameIndex) || position
 		}
 
-		this.capturer.capture(index)
+		if (position) {
+			if (position.breakOnThePath) {
+				position.context.capturer.addCapturedIndices(position.index, [index])
+			}
+			else {
+				position.context.capturer.capture(index)
+			}
+		}
+		else {
+			this.capturer.capture(index)
+		}
 	}
 
 	/** Add a break and output expressions before specified position. */

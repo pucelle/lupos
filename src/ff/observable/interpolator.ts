@@ -1,9 +1,7 @@
 import type TS from 'typescript'
 import {ListMap} from '../../utils'
-import {PropertyAccessingNode, factory, helper, modifier, ts} from '../../base'
-import {ContextTree, ContextType} from './context-tree'
+import {factory, helper, modifier, transformContext, ts} from '../../base'
 import {VisitingTree} from './visiting-tree'
-import {ContextAccessingGrouper} from './context-accessing-grouper'
 
 
 export interface InterpolationItem {
@@ -15,7 +13,7 @@ export interface InterpolationItem {
 	 * Must exist for `InsertBefore` or `InsertAfter` interpolation positions.
 	 * If is a list and becomes empty, no need to interpolate.
 	 */
-	expressions?: () => TS.Expression | TS.Expression[] | TS.Statement | TS.Statement[]
+	expressions?: () => TS.Node | TS.Node[]
 
 	/** Must exist for `Replace` interpolation type. */
 	replace?: () => TS.Node
@@ -100,7 +98,7 @@ export namespace Interpolator {
 	}
 
 	/** Insert expressions to before specified position. */
-	export function addBefore(index: number, exps: () => TS.Expression | TS.Expression[] | TS.Statement | TS.Statement[]) {
+	export function addBefore(index: number, exps: () => TS.Node | TS.Node[]) {
 		interpolations.add(index, {
 			position: InterpolationPosition.InsertBefore,
 			expressions: exps,
@@ -108,7 +106,7 @@ export namespace Interpolator {
 	}
 
 	/** Insert expressions to after specified position. */
-	export function addAfter(index: number, exps: () => TS.Expression | TS.Expression[] | TS.Statement | TS.Statement[]) {
+	export function addAfter(index: number, exps: () => TS.Node | TS.Node[]) {
 		interpolations.add(index, {
 			position: InterpolationPosition.InsertAfter,
 			expressions: exps,
@@ -118,447 +116,149 @@ export namespace Interpolator {
 	/** Add variables as declaration statements. */
 	export function addVariables(index: number, names: string[]) {
 		let node = VisitingTree.getNode(index)
-
-		let stats = factory.createVariableStatement(
-			undefined,
-			factory.createVariableDeclarationList(
-				names.map(name => 
-					factory.createVariableDeclaration(
-						factory.createIdentifier(name),
-						undefined,
-						undefined,
-						undefined
-					)
-				),
-				ts.NodeFlags.None
-			)
-		)
 		
-		if (helper.canBlock(node)) {
-			let insertIndex = VisitingTree.getFirstChildIndex(index)
-			Interpolator.addBefore(insertIndex, () => stats)
-		}
-		else if (ts.isCaseOrDefaultClause(node)) {
-			let insertIndex = VisitingTree.getChildIndex(index, 1)
-			Interpolator.addBefore(insertIndex, () => stats)
-		}
-		else if (ts.isVariableDeclarationList(node)) {
-			let insertIndex = VisitingTree.getChildIndex(index, 1)
-			Interpolator.addBefore(insertIndex, () => stats)
-		}
-	}
-
-	/** 
-	 * Reference a complex expression to become a reference variable,
-	 * and capture replaced expression.
-	 * e.g.: `a.b().c`-> `_ref = a.b(); ... _ref`.
-	 */
-	function referenceAndCapture(node: PropertyAccessingNode, index: number) {
-		let refName = this.makeReference()
-		let position = ContextTree.findClosestPositionToMoveStatements(index, this.context)
-
-		// Can move statements.
-		// Still have risk: `(a = b, a.c().d)`
-		if (position) {
-
-			// insert `_ref_ = a.b()` to found position.
-			position.context.capturer.insertReferenceExpression(
-				position.index, refName, node.expression
-			)
-
-			// `a.b().c` -> `_ref_.c`.
-			let refAccessing = modifier.replaceReferencedAccessingExpression(
-				node, factory.createIdentifier(refName)
-			)
-
-			// Replace original `a.b().c` to `_ref_.c`.
-			interpolations.add(index, {
-				position: InterpolationPosition.Replace,
-				contentType: InterpolationContentType.Reference,
-				expressions: [
-					refAccessing
-				],
-			})
-
-			// Capture `_ref_.c`.
-			this.capture(refAccessing)
-		}
-		else {
-
-			// `a.b().c`, replace it to `(_ref_ = a.b(), trackGet(_ref_, 'c'), _ref_).c`.
-			interpolations.add(index, {
-				position: InterpolationPosition.Replace,
-				contentType: InterpolationContentType.Reference,
-				replace: (n: TS.Node) => {
-					let exp = modifier.parenthesizeExpressions(
-						factory.createBinaryExpression(
-							factory.createIdentifier(refName),
-							factory.createToken(ts.SyntaxKind.EqualsToken),
-							node.expression
-						),
-						factory.createCallExpression(
-							factory.createIdentifier('trackGet'),
+		if (helper.canBlock(node) || ts.isCaseOrDefaultClause(node)) {
+			let insertIndex
+			
+			let stats = factory.createVariableStatement(
+				undefined,
+				factory.createVariableDeclarationList(
+					names.map(name => 
+						factory.createVariableDeclaration(
+							factory.createIdentifier(name),
 							undefined,
-							[
-								factory.createIdentifier(refName),
-								helper.getPropertyAccessingName(n as PropertyAccessingNode)
-							]
-						),
-						factory.createIdentifier(refName)
-					)
-
-					return modifier.replaceReferencedAccessingExpression(n as PropertyAccessingNode, exp)
-				}
-			})
-
-			modifier.addNamedImport('trackGet', '@pucelle/ff')
-		}
-	}
-
-	/** Insert a reference expression to specified index. */
-	function insertReferenceExpression(index: number, refName: string, exp: TS.Expression) {
-		interpolations.add(index, {
-			position: InterpolationPosition.InsertBefore,
-			contentType: InterpolationContentType.Reference,
-			expressions: [
-				factory.createBinaryExpression(
-					factory.createIdentifier(refName),
-					factory.createToken(ts.SyntaxKind.EqualsToken),
-					exp
+							undefined,
+							undefined
+						)
+					),
+					ts.NodeFlags.None
 				)
-			],
-		})
-	}
+			)
 
-	/** 
-	 * Add rest captured expressions before end position of context, or before a return statement.
-	 * But:
-	 *  - For like `return this.a`, will move `this.a` ahead.
-	 *  - For like `return (ref_=a()).b`, will reference returned content and move it ahead.
-	 */
-	function insertRestCaptured() {
-		let exps = this.captured
-		if (exps.length === 0) {
-			return
-		}
-
-		this.captured = []
-
-		let type = this.context.type
-		let node = this.context.node
-		let index = this.context.visitingIndex
-
-		// Can put statements, insert to the end of statements.
-		if (helper.canPutStatements(node)) {
-			let endIndex = VisitingTree.getLastChildIndex(index)
-			this.insertExpressionsAfter(endIndex, exps)
-		}
-
-		// Context doesn't make a context for non-blocked arrow function body.
-		// So here need to replace arrow function body.
-		else if (type === ContextType.FunctionLike && !ts.isBlock((node as TS.ArrowFunction).body)) {
-			let bodyIndex = VisitingTree.getChildIndex(index, 1)
-			this.insertExpressionsNormally((node as TS.ArrowFunction).body, bodyIndex, exps)
-		}
-
-		// Others.
-		else {
-			this.insertExpressionsNormally(node, index, exps)
-		}
-	}
-
-	/** 
-	 * `() => ...` -> `() => {...; return ...}`
-	 * `if (...) ...` -> `if (...) {...; ...}`
-	 * `... &&` -> `(...; ...) &&`
-	 */
-	function insertExpressionsNormally(node: TS.Node, index: number, exps: PropertyAccessingNode[]) {
-		let type = this.context.type
-
-		// `return ...`, `await ...`, `yield ...` or `() => ...`
-		if (this.context.state.isBreakLikeOrImplicitReturning(node)) {
-			let beFunctionBody = ts.isArrowFunction(node.parent) && !ts.isBlock(node)
-
-			if (haveRef) {
-				let refName = this.makeReference()
-
-				interpolations.add(index, {
-					position: InterpolationPosition.Replace,
-					contentType: InterpolationContentType.Get,
-					expressions: exps,
-					replace: (n: TS.Node, exps: TS.Expression[]) => {
-						let nodes = [
-		
-							// `ref = ...`
-							factory.createExpressionStatement(
-								referenceBreakLikeOrImplicitReturning(n as TS.Expression, refName)
-							),
-	
-							// Insert expressions here.
-							...exps.map(exp => factory.createExpressionStatement(exp)),
-	
-							// `return ref`.
-							replaceReferencedBreakLikeOrImplicitReturning(n as TS.Expression, refName),
-						]
-
-						if (beFunctionBody) {
-							return factory.createBlock(nodes)
-						}
-						else {
-							return nodes
-						}
-					},
-				})
+			if (helper.canBlock(node)) {
+				insertIndex = VisitingTree.getFirstChildIndex(index)
 			}
 			else {
-				interpolations.add(index, {
-					position: InterpolationPosition.Replace,
-					contentType: InterpolationContentType.Get,
-					expressions: exps,
-					replace: (n: TS.Node, exps: TS.Expression[]) => {
-						let nodes = [
-		
-							// Insert expressions here.
-							...exps.map(exp => factory.createExpressionStatement(exp)),
-	
-							// return original returning, or a new returning.
-							returnBreakLikeOrImplicitReturning(n as TS.Expression),
-						]
-
-						if (beFunctionBody) {
-							return factory.createBlock(nodes)
-						}
-						else {
-							return nodes
-						}
-					},
-				})
+				insertIndex = VisitingTree.getChildIndex(index, 1)
 			}
-		}
-		
-		// `if (...)`,
-		// `... ? b : c`, `... && b`, `... || b`, `... ?? b`,
-		// `for (...)`, `while (...)`,
-		// `a && ...`, `a || ...`, `a ?? ...`.
-		else if (type === ContextType.ConditionalCondition
-			|| type === ContextType.IterationCondition
-			|| type === ContextType.ConditionalExpressionContent
-		) {
-			if (haveRef) {
-				let refName = this.makeReference()
-	
-				interpolations.add(index, {
-					position: InterpolationPosition.Replace,
-					contentType: InterpolationContentType.Get,
-					expressions: exps,
-					replace: (n: TS.Node, exps: TS.Expression[]) => {
-						let exp = exps[0]
 
-						// `a, b, c...`
-						for (let i = 1; i < exps.length; i++) {
-							exp = factory.createBinaryExpression(
-								exp,
-								factory.createToken(ts.SyntaxKind.CommaToken),
-								exps[i]
-							)
-						}
-
-						// `ref = ..., a, b, c, ...`
-						exp = factory.createBinaryExpression(
-
-							factory.createBinaryExpression(
-								factory.createIdentifier(refName),
-								factory.createToken(ts.SyntaxKind.EqualsToken),
-								n as TS.Expression
-							),
-
-							factory.createToken(ts.SyntaxKind.CommaToken),
-	
-							// Insert expressions here.
-							exp
-						)
-
-						// `(..., ref)`
-						return factory.createParenthesizedExpression(
-							factory.createBinaryExpression(
-								exp,
-								factory.createToken(ts.SyntaxKind.CommaToken),
-								factory.createIdentifier(refName)
-							)
-						)
-					},
-				})
-			}
-			else {
-				interpolations.add(index, {
-					position: InterpolationPosition.Replace,
-					contentType: InterpolationContentType.Get,
-					expressions: exps,
-					replace: (n: TS.Node, exps: TS.Expression[]) => {
-						let exp = exps[0]
-
-						// `a, b, c...`
-						for (let i = 1; i < exps.length; i++) {
-							exp = factory.createBinaryExpression(
-								exp,
-								factory.createToken(ts.SyntaxKind.CommaToken),
-								exps[i]
-							)
-						}
-
-						// `(..., node)`
-						return factory.createParenthesizedExpression(
-							factory.createBinaryExpression(
-								exp,
-								factory.createToken(ts.SyntaxKind.CommaToken),
-								n as TS.Expression
-							)
-						)
-					},
-				})
-			}
+			Interpolator.addBefore(insertIndex, () => stats)
 		}
 
-		// `if ()...`, `else ...`
-		else {
-			interpolations.add(index, {
-				position: InterpolationPosition.Replace,
-				contentType: InterpolationContentType.Get,
-				expressions: exps,
-				replace: (node: TS.Node, exps: TS.Expression[]) => {
-					return factory.createBlock([
-						...exps.map(exp => factory.createExpressionStatement(exp)),
-						node as TS.ExpressionStatement,
-					])
-				},
-			})
+		// `for (let i = 0; ...) ...`
+		else if (ts.isVariableStatement(node)) {
+
+			// First of list
+			let insertIndex = VisitingTree.getFirstChildIndex(VisitingTree.getFirstChildIndex(index))
+
+			let decls = names.map(name => 
+				factory.createVariableDeclaration(
+					factory.createIdentifier(name),
+					undefined,
+					undefined,
+					undefined
+				)
+			)
+	
+			Interpolator.addBefore(insertIndex, () => decls)
 		}
 	}
 
+	
 	/** 
 	 * Output node at index.
 	 * It overwrites all descendant nodes,
 	 * and replace self and inserts all neighbor nodes.
 	 */
 	export function output(index: number): TS.Node | TS.Node[] {
-		
-		if (node === this.context.node && VisitingTree.getSiblingIndex(index) === 0) {
-
-		}
-
 		let items = interpolations.get(index)
 		if (!items) {
-			return node
+			return outputChildren(index)
 		}
 
-		for (let item of items) {
-			let type = item.position
-			let contentType = item.contentType
-			let exps = item.expressions
+		let beforeNodes = items.filter(item => item.position === InterpolationPosition.InsertBefore)
+			.map(item => item.expressions!()).flat()
 
-			// Exps may get clear after optimizing.
-			if (exps && exps.length === 0) {
-				continue
-			}
+		let afterNodes = items.filter(item => item.position === InterpolationPosition.InsertAfter)
+			.map(item => item.expressions!()).flat()
 
-			let madeExps: TS.Expression[]
+		let replace = items.find(item => item.position === InterpolationPosition.Replace)?.replace
+		let node: TS.Node | TS.Node[]
 
-			if (contentType === InterpolationContentType.Reference) {
-				madeExps = exps as TS.BinaryExpression[]
-			}
-			else {
-				madeExps = exps ? ContextAccessingGrouper.makeGetExpressions(exps as PropertyAccessingNode[]) : []
-			}
+		if (replace) {
+			node = replace()
+		}
+		else {
+			node = outputChildren(index)
+		}
 
-			if (type === InterpolationPosition.Replace) {
-				if (Array.isArray(node)) {
-					throw new Error(`"Replace" type of interpolation must be the first!`)
-				}
-
-				node = item.replace!(node, madeExps)
-				continue
-			}
-
-			let madeStatements = madeExps.map(exp => factory.createExpressionStatement(exp))
-			if (type === InterpolationPosition.InsertBefore) {
-				node = [madeStatements, node].flat()
-			}
-			else {
-				node = [node, madeStatements].flat()
-			}
+		if (beforeNodes.length > 0 || afterNodes.length > 0) {
+			node = replaceToAddNeighborNodes(index, node, beforeNodes, afterNodes)
 		}
 
 		return Array.isArray(node) && node.length === 1 ? node[0] : node
+	}
+
+	/** Try to replace node to make it can contain neighbor nodes. */
+	function replaceToAddNeighborNodes(index: number, node: TS.Node, beforeNodes: TS.Node[], afterNodes: TS.Node[]): TS.Node | TS.Node[] {
+		let parent = VisitingTree.getNode(VisitingTree.getParentIndex(index))
+
+		// Leave it
+		if (ts.isVariableDeclarationList(parent)) {
+			return [...beforeNodes, node, ...afterNodes]
+		}
+
+		// Parenthesize it, move after nodes forward.
+		// Normally will move inserting contents ahead at optimizing step.
+		else if (helper.isFlowInterruptWithContent(node) && afterNodes.length > 0) {
+			return modifier.parenthesizeExpressions(
+				...[...beforeNodes,
+					...afterNodes,
+					node,
+				] as TS.Expression[]
+			)
+		}
+
+		// Insert statements
+		else if (helper.canPutStatements(parent)) {
+			return [...beforeNodes, node, ...afterNodes].map(n => modifier.toStatement(n as TS.Expression))
+		}
+
+		// Extend to block and insert statements
+		else if (helper.canExtendToPutStatements(node)) {
+			return factory.createBlock(
+				[...beforeNodes, node, ...afterNodes].map(n => modifier.toStatement(n as TS.Expression))
+			)
+		}
+
+		// Otherwise, Parenthesize to a expression.
+		else {
+			return modifier.parenthesizeExpressions(
+				...[...beforeNodes,
+					node,
+					...afterNodes,
+				] as TS.Expression[]
+			)
+		}
 	}
 
 	/** 
 	 * Output node at index.
 	 * It overwrites all descendant nodes,
-	 * bot not replace self and inserts neighbor nodes.
+	 * bot not replace self or inserts neighbor nodes.
 	 */
 	export function outputChildren(index: number): TS.Node {
-		
-		if (node === this.context.node && VisitingTree.getSiblingIndex(index) === 0) {
+		let node = VisitingTree.getNode(index)
+		let childIndices = VisitingTree.getChildIndices(index)
 
-		}
-
-		let items = interpolations.get(index)
-		if (!items) {
+		if (!childIndices) {
 			return node
 		}
 
-		for (let item of items) {
-			let type = item.position
-			let contentType = item.contentType
-			let exps = item.expressions
+		let i = 0
 
-			// Exps may get clear after optimizing.
-			if (exps && exps.length === 0) {
-				continue
-			}
-
-			let madeExps: TS.Expression[]
-
-			if (contentType === InterpolationContentType.Reference) {
-				madeExps = exps as TS.BinaryExpression[]
-			}
-			else {
-				madeExps = exps ? ContextAccessingGrouper.makeGetExpressions(exps as PropertyAccessingNode[]) : []
-			}
-
-			if (type === InterpolationPosition.Replace) {
-				if (Array.isArray(node)) {
-					throw new Error(`"Replace" type of interpolation must be the first!`)
-				}
-
-				node = item.replace!(node, madeExps)
-				continue
-			}
-
-			let madeStatements = madeExps.map(exp => factory.createExpressionStatement(exp))
-			if (type === InterpolationPosition.InsertBefore) {
-				node = [madeStatements, node].flat()
-			}
-			else {
-				node = [node, madeStatements].flat()
-			}
-		}
-
-		return Array.isArray(node) && node.length === 1 ? node[0] : node
-	}
-
-	function outputReferenceVariables(node: TS.Node, index: number): TS.VariableStatement | null {
-		if (this.referenceVariableNames.length === 0) {
-			return null
-		}
-
-		// Must be the first child.
-		if (this.context.state.isStatementsCanPut()) {
-			if (node.parent !== this.context.node
-				|| VisitingTree.getSiblingIndex(index) !== 0
-			) {
-				return null
-			}
-		}
+		return ts.visitEachChild(node, () => {
+			return output(childIndices[i++])
+		}, transformContext)
 	}
 }

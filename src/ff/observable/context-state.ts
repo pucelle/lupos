@@ -4,6 +4,13 @@ import {ContextType} from './context-tree'
 import {helper, ts} from '../../base'
 
 
+enum FlowStopType {
+	Return = 1,
+	BreakLike = 2,
+	YieldLike = 4,
+}
+
+
 export class ContextState {
 
 	readonly context: Context
@@ -16,31 +23,36 @@ export class ContextState {
 	readonly nothingReturned: boolean
 
 	/** 
-	 * Whether inner codes has `break`, or `continue` to stop current execution flow.
-	 * If would break inside, end collected tracking expressions before it.
-	 * Broadcast it to parent until closest iteration or switch context.
+	 * Whether be `break`, `return`, or `continue` to stop current execution flow,
+	 * or be `await` or `yield` statement.
 	 */
-	breakInside: boolean = false
+	readonly selfFlowStop: number = 0
 
 	/** 
-	 * Whether inner codes has `return` statement to return before execution to end.
-	 * Broadcast it to parent until function.
+	 * Whether inner codes has `break`, `return`, or `continue` to stop current execution flow,
+	 * or inner codes has `await` or `yield` statement.
 	 */
-	returnInside: boolean = false
-
-	/** 
-	 * Whether has `await` or `yield` statement.
-	 * Broadcast it to parent until function.
-	 */
-	yieldInside: boolean = false
+	innerFlowStop: number = 0
 
 	constructor(context: Context) {
 		this.context = context
 		this.nothingReturned = this.checkNothingReturned()
 
-		this.applyReturn(ts.isReturnStatement(this.context.node))
-		this.applyYield(ts.isAwaitExpression(this.context.node) || ts.isYieldExpression(this.context.node))
-		this.applyBreak(ts.isBreakOrContinueStatement(this.context.node))
+		if (ts.isReturnStatement(this.context.node)
+			|| context.type === ContextType.NonBlockFunctionBody
+		) {
+			this.selfFlowStop |= FlowStopType.Return
+		}
+		
+		if (ts.isBreakOrContinueStatement(this.context.node)) {
+			this.selfFlowStop |= FlowStopType.BreakLike
+		}
+		
+		if (ts.isAwaitExpression(this.context.node) || ts.isYieldExpression(this.context.node)) {
+			this.selfFlowStop |= FlowStopType.YieldLike
+		}
+
+		this.innerFlowStop = this.selfFlowStop
 	}
 
 	private checkNothingReturned(): boolean {
@@ -55,26 +67,15 @@ export class ContextState {
 		return !!(type && (type.getFlags() & ts.TypeFlags.Void))
 	}
 
-	/** Apply `returnInside` value. */
-	applyReturn(value: boolean) {
+	applyInnerReturn(value: boolean) {
 		if (this.context.type === ContextType.FunctionLike) {
 			return 
 		}
 
-		this.returnInside ||= value
+		this.innerFlowStop |= value ? FlowStopType.Return : 0
 	}
 
-	/** Apply `yieldInside` value. */
-	applyYield(value: boolean) {
-		if (this.context.type === ContextType.FunctionLike) {
-			return 
-		}
-
-		this.yieldInside ||= value
-	}
-
-	/** Apply `breakInside` value. */
-	applyBreak(value: boolean) {
+	applyInnerBreakLike(value: boolean) {
 		if (this.context.type === ContextType.FunctionLike) {
 			return 
 		}
@@ -87,7 +88,15 @@ export class ContextState {
 			return 
 		}
 
-		this.breakInside ||= value
+		this.innerFlowStop |= value ? FlowStopType.BreakLike : 0
+	}
+
+	applyInnerYieldLike(value: boolean) {
+		if (this.context.type === ContextType.FunctionLike) {
+			return 
+		}
+
+		this.innerFlowStop |= value ? FlowStopType.YieldLike : 0
 	}
 
 	/** 
@@ -101,13 +110,18 @@ export class ContextState {
 			return
 		}
 
-		this.applyReturn(child.state.returnInside)
-		this.applyYield(child.state.yieldInside)
-		this.applyBreak(child.state.breakInside)
+		this.applyInnerReturn(Boolean(child.state.innerFlowStop & FlowStopType.YieldLike))
+		this.applyInnerYieldLike(Boolean(child.state.innerFlowStop & FlowStopType.YieldLike))
+		this.applyInnerBreakLike(Boolean(child.state.innerFlowStop & FlowStopType.YieldLike))
 	}
 
 	/** Whether break like, or return, or yield like inside. */
-	isBreakLikeInside(): boolean {
-		return this.returnInside || this.yieldInside || this.breakInside
+	isInnerFlowStop(): boolean {
+		return this.innerFlowStop > 0
+	}
+
+	/** Whether break like, or return, or yield like itself. */
+	isSelfFlowStop(): boolean {
+		return this.selfFlowStop > 0
 	}
 }

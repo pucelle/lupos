@@ -258,6 +258,19 @@ export namespace helper {
 			|| ts.isArrowFunction(node)
 	}
 
+	/** Whether be `return` with content, `yield`, `await`. */
+	export function isFlowInterruptWithContent(node: TS.Node): boolean {
+		let parent = node.parent
+
+		return ts.isReturnStatement(node) && !!node.expression
+			|| ts.isAwaitExpression(node)
+			|| ts.isYieldExpression(node)
+
+			// Arrow function without block body.
+			|| ts.isArrowFunction(parent)
+				&& node === parent.body && !ts.isBlock(node)
+	}
+
 	/** Whether be a block or a source file. */
 	export function canBlock(node: TS.Node): node is TS.SourceFile | TS.Block {
 		return ts.isSourceFile(node)

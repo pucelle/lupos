@@ -236,4 +236,13 @@ export class SourceFileModifier {
 			)
 		}
 	}
+
+	/** Wrap by a statement if not yet. */
+	toStatement(node: TS.Expression): TS.Statement {
+		if (ts.isStatement(node)) {
+			return node
+		}
+
+		return factory.createExpressionStatement(node)
+	}
 }

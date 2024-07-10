@@ -91,7 +91,12 @@ export namespace VisitingTree {
 
 	/** Get count of child items. */
 	export function getChildCount(parentIndex: number): number {
-		return ChildMap.get(parentIndex)!.length
+		return ChildMap.get(parentIndex)?.length || 0
+	}
+
+	/** Get all child visiting indices. */
+	export function getChildIndices(parentIndex: number): number[] | undefined {
+		return ChildMap.get(parentIndex)!
 	}
 
 	/** Get sibling index among it's sibling nodes by visiting index. */

@@ -1,9 +1,9 @@
 import type TS from 'typescript'
 import {PropertyAccessingNode, factory, helper, ts} from '../../base'
 import {Context} from './context'
-import {ContextTree, ContextType} from './context-tree'
+import {ContextPosition, ContextTree, ContextType} from './context-tree'
 import {VisitingTree} from './visiting-tree'
-import {Interpolator, InterpolationPosition} from './interpolator'
+import {Interpolator} from './interpolator'
 import {ContextAccessingGrouper} from './context-accessing-grouper'
 
 
@@ -37,7 +37,7 @@ export class ContextCapturer {
 		}
 	}
 
-	/** Transfer captured expressions to child. */
+	/** Transfer captured indices to child. */
 	transferToChild() {
 		let captured = this.captured
 		this.captured = []
@@ -45,24 +45,28 @@ export class ContextCapturer {
 		return captured
 	}
 
-	/** Capture an expression at specified position. */
+	/** Capture an index at specified position. */
 	capture(index: number) {
 		this.captured.push(index)
 	}
 
-	/** Insert captured expressions to specified position. */
-	breakCaptured(index: number) {
+	/** Insert captured indices to specified position. */
+	breakCaptured(atIndex: number) {
 		let captured = this.captured
 		if (captured.length === 0) {
 			return
 		}
 
 		this.captured = []
-
-		Interpolator.addBefore(index, () => this.transferCaptured(captured))
+		this.addCapturedIndices(atIndex, captured)
 	}
 
-	/** Transfer captured indices to expressions. */
+	/** Insert specified captured indices to specified position. */
+	addCapturedIndices(atIndex: number, captured: number[]) {
+		Interpolator.addBefore(atIndex, () => this.transferCaptured(captured))
+	}
+
+	/** Transfer specified indices to specified position. */
 	private transferCaptured(captured: number[]): TS.Expression[] {
 		let exps = captured.map(i => {
 			let node = Interpolator.outputChildren(i) as PropertyAccessingNode
@@ -102,8 +106,10 @@ export class ContextCapturer {
 	 * e.g.:
 	 * 	   `a.b().c`-> `_ref_ = a.b(); ... _ref_`
 	 *     `a[b++]` -> `_ref_ = b++; ... a[_ref_]`
+	 * 
+	 * Return reference position.
 	 */
-	reference(index: number) {
+	reference(index: number): ContextPosition | null {
 		let refName = this.makeReferenceName()
 		let position = ContextTree.findClosestPositionToMoveStatements(index, this.context)
 
@@ -124,6 +130,8 @@ export class ContextCapturer {
 		else {
 			Interpolator.addParenthesizedReference(index, refName)
 		}
+
+		return position
 	}
 
 	/** 
@@ -157,6 +165,7 @@ export class ContextCapturer {
 	private addReferenceVariables() {
 		if (this.referenceVariableNames.length > 0) {
 			Interpolator.addVariables(this.context.visitingIndex, this.referenceVariableNames)
+			this.referenceVariableNames = []
 		}
 	}
 
@@ -167,202 +176,25 @@ export class ContextCapturer {
 	 *  - For like `return (ref_=a()).b`, will reference returned content and move it ahead.
 	 */
 	private addRestCaptured() {
-		let exps = this.captured
-		if (exps.length === 0) {
+		let captured = this.captured
+		if (captured.length === 0) {
 			return
 		}
 
 		this.captured = []
 
-		let type = this.context.type
 		let node = this.context.node
 		let index = this.context.visitingIndex
 
 		// Can put statements, insert to the end of statements.
 		if (helper.canPutStatements(node)) {
 			let endIndex = VisitingTree.getLastChildIndex(index)
-			this.insertExpressionsAfter(endIndex, exps)
+			Interpolator.addAfter(endIndex, () => this.transferCaptured(captured))
 		}
 
-		// Context doesn't make a context for non-blocked arrow function body.
-		// So here need to replace arrow function body.
-		else if (type === ContextType.FunctionLike && !ts.isBlock((node as TS.ArrowFunction).body)) {
-			let bodyIndex = VisitingTree.getChildIndex(index, 1)
-			this.insertExpressionsNormally((node as TS.ArrowFunction).body, bodyIndex, exps)
-		}
-
-		// Others.
+		// insert after current index, and process later.
 		else {
-			this.insertExpressionsNormally(node, index, exps)
+			Interpolator.addAfter(index, () => this.transferCaptured(captured))
 		}
 	}
-
-	/** 
-	 * `() => ...` -> `() => {...; return ...}`
-	 * `if (...) ...` -> `if (...) {...; ...}`
-	 * `... &&` -> `(...; ...) &&`
-	 */
-	private insertExpressionsNormally(node: TS.Node, index: number, exps: PropertyAccessingNode[]) {
-		let type = this.context.type
-
-		// `return ...`, `await ...`, `yield ...` or `() => ...`
-		if (this.context.state.isBreakLikeOrImplicitReturning(node)) {
-			let beFunctionBody = ts.isArrowFunction(node.parent) && !ts.isBlock(node)
-
-			if (haveRef) {
-				let refName = this.makeReferenceName()
-
-				this.addInterpolationItem(index, {
-					position: InterpolationPosition.Replace,
-					contentType: InterpolationContentType.Get,
-					expressions: exps,
-					replace: (n: TS.Node, exps: TS.Expression[]) => {
-						let nodes = [
-		
-							// `ref = ...`
-							factory.createExpressionStatement(
-								referenceBreakLikeOrImplicitReturning(n as TS.Expression, refName)
-							),
-	
-							// Insert expressions here.
-							...exps.map(exp => factory.createExpressionStatement(exp)),
-	
-							// `return ref`.
-							replaceReferencedBreakLikeOrImplicitReturning(n as TS.Expression, refName),
-						]
-
-						if (beFunctionBody) {
-							return factory.createBlock(nodes)
-						}
-						else {
-							return nodes
-						}
-					},
-				})
-			}
-			else {
-				this.addInterpolationItem(index, {
-					position: InterpolationPosition.Replace,
-					contentType: InterpolationContentType.Get,
-					expressions: exps,
-					replace: (n: TS.Node, exps: TS.Expression[]) => {
-						let nodes = [
-		
-							// Insert expressions here.
-							...exps.map(exp => factory.createExpressionStatement(exp)),
-	
-							// return original returning, or a new returning.
-							returnBreakLikeOrImplicitReturning(n as TS.Expression),
-						]
-
-						if (beFunctionBody) {
-							return factory.createBlock(nodes)
-						}
-						else {
-							return nodes
-						}
-					},
-				})
-			}
-		}
-		
-		// `if (...)`,
-		// `... ? b : c`, `... && b`, `... || b`, `... ?? b`,
-		// `for (...)`, `while (...)`,
-		// `a && ...`, `a || ...`, `a ?? ...`.
-		else if (type === ContextType.ConditionalCondition
-			|| type === ContextType.IterationCondition
-			|| type === ContextType.ConditionalExpressionContent
-		) {
-			if (haveRef) {
-				let refName = this.makeReferenceName()
-	
-				this.addInterpolationItem(index, {
-					position: InterpolationPosition.Replace,
-					contentType: InterpolationContentType.Get,
-					expressions: exps,
-					replace: (n: TS.Node, exps: TS.Expression[]) => {
-						let exp = exps[0]
-
-						// `a, b, c...`
-						for (let i = 1; i < exps.length; i++) {
-							exp = factory.createBinaryExpression(
-								exp,
-								factory.createToken(ts.SyntaxKind.CommaToken),
-								exps[i]
-							)
-						}
-
-						// `ref = ..., a, b, c, ...`
-						exp = factory.createBinaryExpression(
-
-							factory.createBinaryExpression(
-								factory.createIdentifier(refName),
-								factory.createToken(ts.SyntaxKind.EqualsToken),
-								n as TS.Expression
-							),
-
-							factory.createToken(ts.SyntaxKind.CommaToken),
-	
-							// Insert expressions here.
-							exp
-						)
-
-						// `(..., ref)`
-						return factory.createParenthesizedExpression(
-							factory.createBinaryExpression(
-								exp,
-								factory.createToken(ts.SyntaxKind.CommaToken),
-								factory.createIdentifier(refName)
-							)
-						)
-					},
-				})
-			}
-			else {
-				this.addInterpolationItem(index, {
-					position: InterpolationPosition.Replace,
-					contentType: InterpolationContentType.Get,
-					expressions: exps,
-					replace: (n: TS.Node, exps: TS.Expression[]) => {
-						let exp = exps[0]
-
-						// `a, b, c...`
-						for (let i = 1; i < exps.length; i++) {
-							exp = factory.createBinaryExpression(
-								exp,
-								factory.createToken(ts.SyntaxKind.CommaToken),
-								exps[i]
-							)
-						}
-
-						// `(..., node)`
-						return factory.createParenthesizedExpression(
-							factory.createBinaryExpression(
-								exp,
-								factory.createToken(ts.SyntaxKind.CommaToken),
-								n as TS.Expression
-							)
-						)
-					},
-				})
-			}
-		}
-
-		// `if ()...`, `else ...`
-		else {
-			this.addInterpolationItem(index, {
-				position: InterpolationPosition.Replace,
-				contentType: InterpolationContentType.Get,
-				expressions: exps,
-				replace: (node: TS.Node, exps: TS.Expression[]) => {
-					return factory.createBlock([
-						...exps.map(exp => factory.createExpressionStatement(exp)),
-						node as TS.ExpressionStatement,
-					])
-				},
-			})
-		}
-	}
-
 }
