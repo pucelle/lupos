@@ -16,7 +16,7 @@ class TestRef extends Component {
 
 	doubleVariableDeclarationRef() {
 		let i = this.prop.value, j = this.getNextProp(i).value;
-		return ''
+		return j
 	}
 
 	normalRef() {

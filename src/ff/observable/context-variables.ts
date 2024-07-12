@@ -194,7 +194,10 @@ export class ContextVariables {
 	/** Visit a variable. */
 	visitVariable(node: TS.VariableDeclaration) {
 		let observed = ObservedChecker.isVariableDeclarationObserved(node)
-		let name = helper.getText(node.name)
-		this.variableObserved.set(name, observed)
+		let names = ObservedChecker.getVariableDeclarationNames(node)
+
+		for (let name of names) {
+			this.variableObserved.set(name, observed)
+		}
 	}
 }

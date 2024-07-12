@@ -12,6 +12,18 @@ class TestObservedVariableType {
             + b.value
             + c.value;
     }
+    VariableObjectDeconstructedAssignment() {
+        var o = { prop: { value: 1 } };
+        var { prop } = o;
+        trackGet(prop, "value");
+        return prop.value;
+    }
+    variableArrayDeconstructedAssignment() {
+        var a = [{ value: 1 }];
+        var [item] = a;
+        trackGet(item, "value");
+        return item.value;
+    }
 }
 class TestObservedParameter {
     prop = { value: 1 };

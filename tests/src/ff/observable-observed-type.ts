@@ -13,6 +13,20 @@ class TestObservedVariableType {
 			+ b.value
 			+ c.value
 	}
+
+	VariableObjectDeconstructedAssignment() {
+		var o = {prop:{value:1}} as Observed<{prop:{value: number}}>
+   		var {prop} = o
+
+		return prop.value
+	}
+
+	variableArrayDeconstructedAssignment() {
+		var a = [{value:1}] as Observed<{value: number}[]>
+   		var [item] = a
+
+		return item.value
+	}
 }
 
 
