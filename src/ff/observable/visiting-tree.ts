@@ -34,6 +34,7 @@ export namespace VisitingTree {
 	/** Initialize before start a new source file. */
 	export function initialize() {
 		stack = []
+		indexSeed = -1
 		ChildMap.clear()
 		ParentMap.clear()
 		NodeMap.clear()
@@ -105,12 +106,29 @@ export namespace VisitingTree {
 	}
 
 	/** Get parent visiting index by child visiting index. */
-	export function getParentIndex(childIndex: number): number {
+	export function getParentIndex(childIndex: number): number | undefined {
 		return ParentMap.get(childIndex)!
 	}
 
 	/** Get node bu visiting index. */
 	export function getNode(index: number): TS.Node {
 		return NodeMap.get(index)!
+	}
+
+	/** Look upward for a visiting index, and the node at which match test fn. */
+	export function findUpward(fromIndex: number, until: number | null, test: (node: TS.Node) => boolean) : number | null {
+		let index: number | undefined = fromIndex
+
+		// Look upward for a variable declaration.
+		while (index !== undefined && index !== until) {
+			let node = VisitingTree.getNode(index)
+			if (test(node)) {
+				return index
+			}
+
+			index = VisitingTree.getParentIndex(index)
+		}
+
+		return null
 	}
 }

@@ -22,7 +22,6 @@ export function observableVisitor(node: TS.SourceFile): TS.SourceFile {
 
 		// Check contextual state, must after observable state pushing.
 		let type = ContextTree.checkContextType(node)
-
 		if (type !== null) {
 			ContextTree.createContext(type, node)
 		}
@@ -82,8 +81,7 @@ export function observableVisitor(node: TS.SourceFile): TS.SourceFile {
 	ContextTree.initialize()
 	Interpolator.initialize()
 
-	let rootContext = ContextTree.createContext(ContextType.BlockLike, node)
 	visitNode(node)
 
-	return rootContext.output(rootContext.visitingIndex) as TS.SourceFile
+	return Interpolator.output(0) as TS.SourceFile
 }

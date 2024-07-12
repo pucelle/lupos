@@ -1,4 +1,3 @@
-import {Observed} from '@pucelle/ff'
 import {Component} from '@pucelle/lupos.js'
 
 

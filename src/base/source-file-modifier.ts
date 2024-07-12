@@ -1,7 +1,7 @@
 import {ListMap, difference} from '../utils'
 import type TS from 'typescript'
 import {factory, transformContext, ts} from './global'
-import {PropertyAccessingNode, helper} from './helper'
+import {helper} from './helper'
 
 
 /** Help to get properties and info. */
@@ -172,77 +172,5 @@ export class SourceFileModifier {
 		}
 
 		return ts.visitNode(importDecl, visit) as TS.ImportDeclaration
-	}
-
-
-
-	//// Expression & Statement
-
-	/** Bundle expressions to a parenthesized expression. */
-	parenthesizeExpressions(...exps: TS.Expression[]): TS.Expression {
-		let exp = exps[0]
-
-		// `a, b, c...`
-		for (let i = 1; i < exps.length; i++) {
-			exp = factory.createBinaryExpression(
-				exp,
-				factory.createToken(ts.SyntaxKind.CommaToken),
-				exps[i]
-			)
-		}
-
-		return factory.createParenthesizedExpression(exp)
-	}
-
-	/** Remove commands of a property accessing node. */
-	removePropertyAccessingComments<T extends TS.Node>(node: T): T {
-		if (ts.isPropertyAccessExpression(node)) {
-			return factory.createPropertyAccessExpression(
-				this.removePropertyAccessingComments(node.expression),
-				node.name
-			) as TS.Node as T
-		}
-		else if (ts.isElementAccessExpression(node)) {
-			return factory.createElementAccessExpression(
-				this.removePropertyAccessingComments(node.expression),
-				node.argumentExpression
-			) as TS.Node as T
-		}
-		else if (ts.isIdentifier(node)) {
-			return factory.createIdentifier(helper.getText(node)) as TS.Node as T
-		}
-		else if (node.kind === ts.SyntaxKind.ThisKeyword) {
-			return factory.createThis() as TS.Node as T
-		}
-
-		return node
-	}
-
-	/** 
-	 * Replace property accessing expression to a reference.
-	 * `a.b().c -> _ref_.c`
-	 */
-	replaceReferencedAccessingExpression(node: PropertyAccessingNode, exp: TS.Expression): PropertyAccessingNode {
-		if (ts.isPropertyAccessExpression(node)) {
-			return factory.createPropertyAccessExpression(
-				exp,
-				node.name
-			)
-		}
-		else {
-			return factory.createElementAccessExpression(
-				exp,
-				node.argumentExpression
-			)
-		}
-	}
-
-	/** Wrap by a statement if not yet. */
-	toStatement(node: TS.Expression): TS.Statement {
-		if (ts.isStatement(node)) {
-			return node
-		}
-
-		return factory.createExpressionStatement(node)
 	}
 }

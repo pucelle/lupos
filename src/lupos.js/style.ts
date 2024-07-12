@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {helper, defineVisitor, ts} from '../base'
+import {helper, defineVisitor, ts, factory} from '../base'
 
 
 defineVisitor(
@@ -25,7 +25,6 @@ function parseTaggedTemplate(tem: TS.TaggedTemplateExpression): TS.TaggedTemplat
 	let string = joinTaggedTemplateString(tem)
 	let parsed = minifyCSSString(parseStyleString(string))
 	let parts = parsed.split(/\$SLOT_INDEX_\d+\$/g)
-	let factory = factory
 	let template = tem.template
 
 	if (ts.isNoSubstitutionTemplateLiteral(template)) {

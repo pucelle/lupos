@@ -35,8 +35,17 @@ export enum ContextType {
 	 */
 	ConditionalContent,
 
+	/** 
+	 * For `if` of the `else if`.
+	 * It acts as both `Conditional` and `ConditionalContent`.
+	 */
+	ConditionalAndContent,
+
 	/** Process For iteration initializer, condition, incrementor. */
 	Iteration,
+
+	/** `for (let...)` */
+	IterationInitializer,
 
 	/** `while (...)`, `for (...)` */
 	IterationCondition,
@@ -51,11 +60,16 @@ export enum ContextType {
 	FlowInterruptWithContent,
 }
 
-/** Content and a visiting index position inside it. */
-export interface ContextPosition{
+/** Content and a visiting index position. */
+export interface ContextTargetPosition{
 	context: Context
 	index: number
-	breakOnThePath: boolean
+
+	/** 
+	 * Indicates whether meet interrupt statement on the path,
+	 * from current position to target position.
+	 */
+	interruptOnPath: boolean
 }
 
 
@@ -73,6 +87,7 @@ export namespace ContextTree {
 
 	/** Check Context type of a node. */
 	export function checkContextType(node: TS.Node): ContextType | null {
+		let parent = node.parent
 
 		// Block like, module contains a block inside.
 		if (ts.isSourceFile(node)
@@ -86,19 +101,40 @@ export namespace ContextTree {
 			return ContextType.FunctionLike
 		}
 
-		// Conditional.
-		// For `if...else if...`, the second if will be identified as `Conditional`.
-		else if (ts.isIfStatement(node)
-			|| ts.isSwitchStatement(node)
-			|| ts.isConditionalExpression(node)
+		// For `if...else if...`, the second if will be identified as `ConditionalAndContent`.
+		else if (ts.isIfStatement(node)) {
+			if (ts.isIfStatement(parent) && node === parent.elseStatement) {
+				return ContextType.ConditionalAndContent
+			}
+			else {
+				return ContextType.Conditional
+			}
+		}
 
+		// `a ? b : c`
+		else if (ts.isConditionalExpression(node)) {
+			if (ts.isConditionalExpression(parent) && (
+				node === parent.whenTrue || node === parent.whenFalse
+			)) {
+				return ContextType.ConditionalAndContent
+			}
+			else {
+				return ContextType.Conditional
+			}
+		}
+
+		// Conditional.
+		else if (
+			
 			//  `a && b`, `a || b`, `a ?? b`
-			|| ts.isBinaryExpression(node) && (
+			ts.isBinaryExpression(node) && (
 				node.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken
 				|| node.operatorToken.kind === ts.SyntaxKind.BarBarToken
 				|| node.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken
 			)
 
+			// `switch(...) {...}`, `case(...): ...`, `default: ...`
+			|| ts.isSwitchStatement(node)
 			|| ts.isCaseClause(node)
 			|| ts.isDefaultClause(node)
 		) {
@@ -121,14 +157,13 @@ export namespace ContextTree {
 			return ContextType.FlowInterruptWithContent
 		}
 
+		
 		//// Note `case` and `default` will be handled outside.
-
-		let parent = node.parent
 		if (!parent) {
 			return null
 		}
 
-		// `if () ...`
+		// `if (...) ...`
 		if (ts.isIfStatement(parent)) {
 			if (node === parent.expression) {
 				return ContextType.ConditionalCondition
@@ -141,6 +176,15 @@ export namespace ContextTree {
 				return ContextType.ConditionalContent
 			}
 		}
+
+		// `switch (...)`
+		if (ts.isSwitchStatement(parent)) {
+			if (node === parent.expression) {
+				return ContextType.ConditionalCondition
+			}
+		}
+
+		// Content of `case` and `default` will be processed in `visitor.ts`.
 
 		// `a ? b : c`
 		else if (ts.isConditionalExpression(parent)) {
@@ -169,10 +213,10 @@ export namespace ContextTree {
 
 		// `for (;;) ...`
 		else if (ts.isForStatement(parent)) {
-
-			// initializer is not a standard expression, can be a variable statement.
-			if (node === parent.initializer
-				|| node === parent.condition
+			if (node === parent.initializer) {
+				return ContextType.IterationInitializer
+			}
+			else if (node === parent.condition
 				|| node === parent.incrementor
 			) {
 				return ContextType.IterationCondition
@@ -225,40 +269,57 @@ export namespace ContextTree {
 			current.visitNode(node)
 		}
 	}
-
 	
 	/** Find an ancestral context, which can insert variable to. */
-	export function findClosestContextToAddVariable(from: Context): Context {
+	export function findClosestPositionToAddVariable(index: number, from: Context): ContextTargetPosition {
 		let context = from
+		let variableDeclarationIndex = VisitingTree.findUpward(index, from.visitingIndex, ts.isVariableDeclaration)
+		let interruptOnPath = false
+
+		// Look upward for a variable declaration.
+		if (variableDeclarationIndex !== null) {
+			return {
+				context,
+				index: variableDeclarationIndex,
+				interruptOnPath: false,
+			}
+		}
+
 		while (context) {
 			let node = context.node
 
 			// Not extend from `if()...` to `if(){...}`.
 			if (helper.canPutStatements(node)) {
-				return context
-			}
-
-			// `for(let ...; ...)`
-			if (ts.isForStatement(node.parent)
-				&& node === node.parent.initializer
-				&& ts.isVariableDeclarationList(node)
-			) {
-				return context
+				break
 			}
 
 			context = context.parent!
+			interruptOnPath ||= context.state.isSelfFlowStop()
 		}
 
-		throw new Error(`Can't find context to put variable, there must be a mistake!`)
+		return {
+			context,
+			index: VisitingTree.getFirstChildIndex(context.visitingIndex),
+			interruptOnPath,
+		}
 	}
 
 	/** 
 	 * Find a ancestral context, which can move statements to it.
 	 * Must before current position, and must not cross any conditional or iteration context.
 	 */
-	export function findClosestPositionToMoveStatements(index: number, from: Context): ContextPosition | null {
+	export function findClosestPositionToAddStatement(index: number, from: Context): ContextTargetPosition {
 		let context: Context | null = from
-		let breakOnThePath = false
+		let interruptOnPath = false
+
+		// Parameter initializer, no place to insert statements, returns position itself.
+		if (context.type === ContextType.FunctionLike) {
+			return {
+				context,
+				index,
+				interruptOnPath,
+			}
+		}
 
 		while (context) {
 
@@ -267,27 +328,33 @@ export namespace ContextTree {
 				break
 			}
 
-			if (context.type === ContextType.ConditionalContent
-				|| context.type  === ContextType.IterationContent
+			// Now index can be located to context visiting index for easier looking upward.
+			index = context.visitingIndex
+
+			interruptOnPath ||= context.state.isSelfFlowStop()
+
+			// Can't cross these types of context.
+
+			// `if condition` can be referenced forward, but `else if condition` can't.
+			// Same as `a ? b : c ? d : e`.
+			if (context.type === ContextType.ConditionalCondition
+					&& context.parent!.type === ContextType.ConditionalAndContent
+
+				|| context.type === ContextType.ConditionalContent
+				|| context.type === ContextType.IterationCondition
+				|| context.type === ContextType.IterationContent
 			) {
-				context = null
 				break
 			}
 
-			index = context.visitingIndex
-			breakOnThePath ||= context.state.isSelfFlowStop()
 			context = context.parent!
-		}
-
-		if (!context) {
-			return null
 		}
 
 		if (helper.canPutStatements(context.node)) {
 
 			// Look up until parent is context node.
 			while (VisitingTree.getParentIndex(index) !== context.visitingIndex) {
-				index = VisitingTree.getParentIndex(index)
+				index = VisitingTree.getParentIndex(index)!
 			}
 		}
 		else {
@@ -297,7 +364,7 @@ export namespace ContextTree {
 		return {
 			context,
 			index,
-			breakOnThePath,
+			interruptOnPath,
 		}
 	}
 }

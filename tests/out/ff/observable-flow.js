@@ -32,7 +32,7 @@ class TestSwitchBlock extends Component {
         return '';
     }
     variableCond() {
-        switch (this.cond) {
+        switch ((trackGet(this, "cond"), this.cond)) {
             case '1':
                 trackGet(this, "prop");
                 return this.prop;
@@ -47,8 +47,30 @@ class TestForBlock extends Component {
     prop = 1;
     testFor() {
         for (let i = 0; i < 10; i++) {
-            trackGet(this, "prop");
             this.prop;
+            trackGet(this, "prop");
+        }
+        return '';
+    }
+    testForInitializer() {
+        let i = this.prop;
+        for (trackGet(this, "prop"); i < 1; i++) {
+            this.prop;
+            trackGet(this, "prop");
+        }
+        return '';
+    }
+    testForCondition() {
+        for (let i = 0; (trackGet(this, "prop"), i < this.prop); i++) {
+            this.prop;
+            trackGet(this, "prop");
+        }
+        return '';
+    }
+    testForIncreasement() {
+        for (let i = 0; (trackGet(this, "prop"), i < this.prop); i++) {
+            this.prop;
+            trackGet(this, "prop");
         }
         return '';
     }
@@ -58,8 +80,8 @@ class TestWhileBlock extends Component {
     testWhile() {
         let i = 0;
         while (i < 10) {
-            trackGet(this, "prop");
             this.prop;
+            trackGet(this, "prop");
         }
         return '';
     }

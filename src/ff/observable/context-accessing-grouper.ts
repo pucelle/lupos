@@ -8,6 +8,8 @@ export namespace ContextAccessingGrouper {
 	
 	/** Group expressions to lately insert a position. */
 	export function makeGetExpressions(getExps: PropertyAccessingNode[]): TS.Expression[] {
+		getExps = getExps.map(exp => helper.cleanExpression(exp))
+
 		let grouped = groupGetExpressions(getExps)
 		let exps = grouped.map(item => createGroupedGetExpression(item))
 
@@ -56,7 +58,7 @@ export namespace ContextAccessingGrouper {
 		// `a?.b` -> `a && trackGet(a, 'b')`
 		if (node.questionDotToken) {
 			return factory.createBinaryExpression(
-				modifier.removePropertyAccessingComments(node.expression),
+				helper.removePropertyAccessingComments(node.expression),
 				factory.createToken(ts.SyntaxKind.AmpersandAmpersandToken),
 				trackGet
 			)
@@ -74,7 +76,7 @@ export namespace ContextAccessingGrouper {
 		let nameExps = [...group.values()].map(nodes => getAccessingNodeNameProperty(nodes[0]))
 
 		return [
-			modifier.removePropertyAccessingComments(node.expression),
+			helper.removePropertyAccessingComments(node.expression),
 			...nameExps,
 		]
 	}
@@ -116,7 +118,7 @@ export namespace ContextAccessingGrouper {
 			name = factory.createStringLiteral(helper.getText(node.name))
 		}
 		else {
-			name = modifier.removePropertyAccessingComments(node.argumentExpression)
+			name = helper.removePropertyAccessingComments(node.argumentExpression)
 		}
 
 		return name

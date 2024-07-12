@@ -4,7 +4,7 @@ import {Component} from '@pucelle/lupos.js'
 
 class TestObservedVariableType {
 
-	render() {
+	variables() {
 		var a = {value:1} as Observed<{value: number}>
    		var b: Observed<{value: number}> = {value:1}
 		var c = b
@@ -18,73 +18,68 @@ class TestObservedVariableType {
 
 class TestObservedParameter {
 
-	method1(a = {value:1} as Observed<{value: number}>) {
+	prop: {value: number} = {value: 1}
+
+	parameterAs(a = {value:1} as Observed<{value: number}>) {
 		return a.value
 	}
 
-	method2(a: Observed<{value: number}>) {
+	parameterType(a: Observed<{value: number}>) {
 		return a.value
+	}
+
+	parameterThis(this: Observed<TestObservedParameter>) {
+		return this.prop.value
 	}
 }
 
 
-class TestObservedParameters {
+class TestObservedPropertyAtUnobserved {
 
-	prop: {value: number} = {value:1}
+	prop: Observed<{value: number}> = {value: 1}
+	unObservedProp: {value: number} = {value: 1}
 
-	renderProp1(a = {value:1} as Observed<{value: number}>) {
-		return a.value
-	}
-
-	renderProp2(a = this.prop) {
-		return a.value
-	}
-
-	renderProp3(a = this.prop.value) {
-		return a
-	}
-
-	renderProp4(this: Observed<TestObservedParameters>) {
+	getPropValue() {
 		return this.prop.value
 	}
 
-	renderProp5() {
-		return (this.prop as Observed<{value: number}>).value
-	}
-
-	renderProp6(item: Observed<{value: number}>) {
-		return item.value
+	getAsProp() {
+		return (this.unObservedProp as Observed<{value: number}>).value
 	}
 }
 
 
-class TestObservedPropRenderFn extends Component {
+class TestObservedProperty extends Component {
 
-	prop = {value: 'Text'}
+	prop = {value: 1}
 
-	render() {
-		return this.renderProp(this.prop)
+	getPropValueUseMethod() {
+		return this.getPropValue(this.prop)
 	}
 
-	renderProp(prop: Observed<{value: string}>) {
+	getPropValue(prop: Observed<{value: number}>) {
 		return prop.value
 	}
+
+	expressionDistinct() {
+		return this.prop.value + (this.prop as Observed<{value: number}>).value
+	}
 }
 
 
-class TestArrayMapFn {
+class TestArrayMapObservedParameter {
 
 	prop: {value: number}[] = [{value:1}]
 
-	render1() {
+	arrowFnImplicitReturn() {
 		return this.prop.map((v: Observed<{value: number}>) => v.value).join('')
 	}
 
-	render2() {
+	arrowFnBlockBody() {
 		return this.prop.map((v: Observed<{value: number}>) => {return v.value}).join('')
 	}
 
-	render3() {
+	normalFn() {
 		return this.prop.map(function(v: Observed<{value: number}>){return v.value}).join('')
 	}
 }
@@ -94,25 +89,25 @@ class TestMethodReturnedType extends Component {
 
 	prop: {value: string} = {value: 'Text'}
 
-	render1() {
-		var item = this.getItem() as Observed<{value: string}>
+	getValueUseMethod() {
+		var item = this.getNormalItem() as Observed<{value: string}>
 		return item.value
 	}
 
-	render2() {
-		return (this.getItem() as Observed<{value: string}>).value
+	getValueUseMethodSingleExp() {
+		return (this.getNormalItem() as Observed<{value: string}>).value
 	}
 
-	getItem(): {value: string} {
+	getNormalItem(): {value: string} {
 		return this.prop
 	}
 
-	render3() {
+	getValueUseObservedMethod() {
 		var item = this.getObservedItem()
 		return item.value
 	}
 
-	render4() {
+	getValueUseObservedMethodSingleExp() {
 		return this.getObservedItem().value
 	}
 
@@ -120,7 +115,7 @@ class TestMethodReturnedType extends Component {
 		return this.prop
 	}
 
-	render5() {
+	getValueUseObservedInstance() {
 		return this.getInstance().prop.value
 	}
 

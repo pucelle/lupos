@@ -50,9 +50,35 @@ class TestForBlock extends Component {
 	testFor() {
 		for (let i = 0; i < 10; i++)
 			this.prop
+
+		return ''
+	}
+
+	testForInitializer() {
+		for (let i = this.prop; i < 1; i++) {
+			this.prop
+		}
+
+		return ''
+	}
+
+	testForCondition() {
+		for (let i = 0; i < this.prop; i++) {
+			this.prop
+		}
+
+		return ''
+	}
+
+	testForIncreasement() {
+		for (let i = 0; i < this.prop; i++) {
+			this.prop
+		}
+
 		return ''
 	}
 }
+
 
 
 class TestWhileBlock extends Component {
@@ -125,7 +151,6 @@ class TestAwaitStatement extends Component {
 		return ''
 	}
 }
-
 
 
 class TestYieldStatement extends Component {

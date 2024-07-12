@@ -57,8 +57,72 @@ export namespace ObservedChecker {
 	}
 
 
+	/** Whether type node is an observed type. */
+	export function isTypeNodeObserved(node: TS.TypeNode): boolean {
+
+		// `Observed<>`, must use it directly, type extending is now working.
+		if (helper.isNodeImportedFrom(node, 'Observed', '@pucelle/ff')) {
+			return true
+		}
+
+		// `Component` like.
+		else {
+			let clsDecl = helper.resolveOneDeclaration(node, ts.isClassDeclaration)
+			if (clsDecl && helper.isClassImplemented(clsDecl, 'Observed', '@pucelle/ff')) {
+				return true 
+			}
+		}
+
+		return false
+	}
+
+
+	/** Whether variable declaration is observed. */
+	export function isVariableDeclarationObserved(node: TS.VariableDeclaration): boolean {
+
+		// `var a = {b:1} as Observed<{b: number}>`, observed.
+		// `var a: Observed<{b: number}> = {b:1}`, observed.
+		// Note here: `Observed` must appear directly, reference or alias is not working.
+
+		let typeNode = node.type 
+		let observed = false
+
+		if (typeNode) {
+			observed = isImportedObservedTypeNode(typeNode)
+		}
+
+		// `var a = b.c`.
+		if (!observed && node.initializer) {
+			observed = isObserved(node.initializer)
+		}
+
+		return observed
+	}
+
+
+	/** Whether parameter declaration is observed. */
+	export function isParameterObserved(node: TS.ParameterDeclaration): boolean {
+		let typeNode = node.type
+		let observed = false
+
+		if (typeNode) {
+			observed = ObservedChecker.isTypeNodeObserved(typeNode)
+		}
+
+		if (!observed) {
+			observed = isParameterObservedByCallingBroadcasted(node)
+		}
+
+		if (!observed && node.initializer) {
+			observed = ObservedChecker.isObserved(node.initializer)
+		}
+
+		return observed
+	}
+
+	
 	/** Broadcast observed from parent calling expression to all parameters. */
-	export function isParameterObservedByCallingBroadcasted(node: TS.ParameterDeclaration): boolean {
+	function isParameterObservedByCallingBroadcasted(node: TS.ParameterDeclaration): boolean {
 
 		// `a.b.map((item) => {return item.value})`
 		// `a.b.map(item => item.value)`
@@ -85,51 +149,6 @@ export namespace ObservedChecker {
 		// `a.b`
 		let callFrom = exp.expression
 		return isObserved(callFrom)
-	}
-
-
-	/** Whether type node is an observed type. */
-	export function isTypeNodeObserved(node: TS.TypeNode): boolean {
-
-		// `Observed<>`, must use it directly, type extending is now working.
-		if (helper.isNodeImportedFrom(node, 'Observed', '@pucelle/ff')) {
-			return true
-		}
-
-		// `Component` like.
-		else {
-			let clsDecl = helper.resolveOneDeclaration(node, ts.isClassDeclaration)
-			if (clsDecl && helper.isClassImplemented(clsDecl, 'Observed', '@pucelle/ff')) {
-				return true 
-			}
-		}
-
-		return false
-	}
-
-
-	/** Whether type node is an observed type. */
-	export function isVariableDeclarationObserved(node: TS.VariableDeclaration): boolean {
-
-		// `var a = {b:1} as Observed<{b: number}>`, observed.
-		// `var a: Observed<{b: number}> = {b:1}`, observed.
-		// Note here: `Observed` must appear directly, reference or alias is not working.
-
-		let type = node.type 
-		if (!type && node.initializer && ts.isAsExpression(node.initializer)) {
-			type = node.initializer.type
-		}
-
-		if (type && isImportedObservedTypeNode(type)) {
-			return true
-		}
-
-		// `var a = b.c`.
-		if (node.initializer) {
-			return isObserved(node.initializer)
-		}
-
-		return false
 	}
 
 

@@ -32,6 +32,7 @@ export class ContextVariables {
 		}
 	}
 
+	/** Check whether `this` should be observed. */
 	private checkThisObserved(): boolean {
 		let node = this.context.node
 
@@ -186,17 +187,7 @@ export class ContextVariables {
 
 	/** Visit a parameter. */
 	visitParameter(node: TS.ParameterDeclaration) {
-		let typeNode = node.type
-		let observed = false
-
-		if (typeNode) {
-			observed = ObservedChecker.isTypeNodeObserved(typeNode)
-		}
-
-		if (!observed) {
-			observed = ObservedChecker.isParameterObservedByCallingBroadcasted(node)
-		}
-
+		let observed = ObservedChecker.isParameterObserved(node)
 		this.variableObserved.set(helper.getText(node.name), observed)
 	}
 

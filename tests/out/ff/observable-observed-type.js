@@ -1,61 +1,113 @@
-import { Component, SlotContentType } from '@pucelle/lupos.js';
-import { Observed, onGetGrouped } from '@pucelle/ff';
+import { Observed, trackGet } from '@pucelle/ff';
+import { Component } from '@pucelle/lupos.js';
 class TestObservedVariableType {
-    render() {
+    variables() {
         var a = { value: 1 };
         var b = { value: 1 };
         var c = b;
-        onGetGrouped([a, ["value"]], [b, ["value"]], [c, ["value"]]);
+        trackGet(a, "value");
         return a.value
             + b.value
             + c.value;
     }
 }
-class TestObservedParameters {
+class TestObservedParameter {
     prop = { value: 1 };
-    renderProp1() {
-        onGetGrouped([this.prop, ["value"]], [this, ["prop"]]);
-        return this.prop.value;
+    parameterAs(a = { value: 1 }) {
+        trackGet(a, "value");
+        return a.value;
     }
-    renderProp2() {
-        onGetGrouped([this.prop, ["value"]]);
-        return this.prop.value;
+    parameterType(a) {
+        trackGet(a, "value");
+        return a.value;
     }
-    renderProp3(item) {
-        onGetGrouped([item, ["value"]]);
-        return item.value;
+    parameterThis() {
+        trackGet(this, "prop");
+        trackGet(this.prop, "value");
+        return this.prop.value;
     }
 }
-class TestObservedPropRenderFn extends Component {
-    static ContentSlotType = SlotContentType.Text;
-    prop = { value: 'Text' };
-    render() {
-        onGetGrouped([this, ["prop"]]);
-        return this.renderProp(this.prop);
+class TestObservedPropertyAtUnobserved {
+    prop = { value: 1 };
+    unObservedProp = { value: 1 };
+    getPropValue() {
+        trackGet(this, "prop");
+        trackGet(this.prop, "value");
+        return this.prop.value;
     }
-    renderProp(prop) {
-        onGetGrouped([prop, ["value"]]);
+    getAsProp() {
+        trackGet(this.unObservedProp, "value");
+        return this.unObservedProp.value;
+    }
+}
+class TestObservedProperty extends Component {
+    prop = { value: 1 };
+    getPropValueUseMethod() {
+        trackGet(this, "prop");
+        return this.getPropValue(this.prop);
+    }
+    getPropValue(prop) {
+        trackGet(prop, "value");
         return prop.value;
     }
+    expressionDistinct() {
+        trackGet(this, "prop");
+        trackGet(this.prop, "value");
+        return this.prop.value + this.prop.value;
+    }
 }
-class TestArrayMapFn {
+class TestArrayMapObservedParameter {
     prop = [{ value: 1 }];
-    render1() {
-        return this.prop.map((v) => {
-            onGetGrouped([v, ["value"]]);
-            return v.value;
-        }).join('');
+    arrowFnImplicitReturn() {
+        return this.prop.map((v) => { trackGet(v, "value"); return v.value; }).join('');
     }
-    render2() {
-        return this.prop.map((v) => {
-            onGetGrouped([v, ["value"]]);
-            return v.value;
-        }).join('');
+    arrowFnBlockBody() {
+        return this.prop.map((v) => { trackGet(v, "value"); return v.value; }).join('');
     }
-    render3() {
-        return this.prop.map(function (v) {
-            onGetGrouped([v, ["value"]]);
-            return v.value;
-        }).join('');
+    normalFn() {
+        return this.prop.map(function (v) { trackGet(v, "value"); return v.value; }).join('');
+    }
+}
+class TestMethodReturnedType extends Component {
+    prop = { value: 'Text' };
+    getValueUseMethod() {
+        var item = this.getNormalItem();
+        trackGet(item, "value");
+        return item.value;
+    }
+    getValueUseMethodSingleExp() {
+        var ref_0;
+        ref_0 = this.getNormalItem();
+        trackGet(ref_0, "value");
+        return ref_0.value;
+    }
+    getNormalItem() {
+        trackGet(this, "prop");
+        return this.prop;
+    }
+    getValueUseObservedMethod() {
+        var item = this.getObservedItem();
+        trackGet(item, "value");
+        return item.value;
+    }
+    getValueUseObservedMethodSingleExp() {
+        var ref_0;
+        ref_0 = this.getObservedItem();
+        trackGet(ref_0, "value");
+        return ref_0.value;
+    }
+    getObservedItem() {
+        trackGet(this, "prop");
+        return this.prop;
+    }
+    getValueUseObservedInstance() {
+        var ref_0;
+        ref_0 = this.getInstance();
+        trackGet(ref_0, "prop");
+        trackGet(ref_0.prop, "value");
+        return ref_0.prop.value;
+    }
+    getInstance() {
+        return this;
     }
 }

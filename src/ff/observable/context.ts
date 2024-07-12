@@ -2,7 +2,7 @@ import type TS from 'typescript'
 import {ObservedChecker} from './observed-checker'
 import {helper, PropertyAccessingNode, ts} from '../../base'
 import {ContextState} from './context-state'
-import {ContextPosition, ContextType} from './context-tree'
+import {ContextTargetPosition, ContextTree, ContextType} from './context-tree'
 import {VisitingTree} from './visiting-tree'
 import {ContextVariables} from './context-variables'
 import {ContextCapturer} from './context-capturer'
@@ -104,7 +104,7 @@ export class Context {
 		}
 
 		let index = VisitingTree.current.index
-		let position: ContextPosition | null = null
+		let position: ContextTargetPosition | null = null
 
 		// Use a reference variable to replace expression.
 		if (ObservedChecker.shouldReference(node.expression)) {
@@ -112,16 +112,20 @@ export class Context {
 			position = this.capturer.reference(expIndex)
 		}
 
-		// Use a reference variable to replace expression.
+		// Use a reference variable to replace name.
 		if (ObservedChecker.shouldReference(helper.getPropertyAccessingName(node))) {
 			let nameIndex = VisitingTree.getLastChildIndex(index)
 			position = this.capturer.reference(nameIndex) || position
 		}
 
 		if (position) {
-			if (position.breakOnThePath) {
-				position.context.capturer.addCapturedIndices(position.index, [index])
+
+			// Capture immediately and insert it into position.
+			if (position.interruptOnPath) {
+				position.context.capturer.addCapturedIndices([index], position.index)
 			}
+
+			// Capture by target context.
 			else {
 				position.context.capturer.capture(index)
 			}
@@ -129,11 +133,21 @@ export class Context {
 		else {
 			this.capturer.capture(index)
 		}
+
+		// Move variable declaration list forward.
+		// Should move codes to optimize step later.
+		if (this.type === ContextType.IterationInitializer) {
+			let toPosition = ContextTree.findClosestPositionToAddStatement(
+				this.visitingIndex, this
+			)
+
+			Interpolator.moveOnce(this.visitingIndex, toPosition.index)
+		}	
 	}
 
 	/** Add a break and output expressions before specified position. */
 	private addBreak(index: number) {
-		let parentIndex = VisitingTree.getParentIndex(index)
+		let parentIndex = VisitingTree.getParentIndex(index)!
 		let parentNode = VisitingTree.getNode(parentIndex)
 
 		// Insert before expression statement.
@@ -150,13 +164,5 @@ export class Context {
 	 */
 	private optimize() {
 		
-	}
-
-	/** 
-	 * For itself or descendant node,
-	 * output all expressions and append them before, after, or replace it.
-	 */
-	output(index: number): TS.Node | TS.Node[] {
-		return Interpolator.output(index)
 	}
 }

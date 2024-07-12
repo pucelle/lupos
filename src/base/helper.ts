@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {printer, sourceFile, ts, typeChecker} from './global'
+import {factory, printer, sourceFile, transformContext, ts, typeChecker} from './global'
 
 
 /** Property accessing types. */
@@ -18,7 +18,12 @@ export namespace helper {
 	/** Get node text, can output from a newly created node. */
 	export function getText(node: TS.Node) {
 		if (node.pos >= 0) {
-			return node.getText()
+			try {
+				return node.getText()
+			}
+			catch (err) {
+				return printer.printNode(ts.EmitHint.Unspecified, node, sourceFile)
+			}
 		}
 		else {
 			return printer.printNode(ts.EmitHint.Unspecified, node, sourceFile)
@@ -259,9 +264,9 @@ export namespace helper {
 	}
 
 	/** Whether be `return` with content, `yield`, `await`. */
-	export function isFlowInterruptWithContent(node: TS.Node): boolean {
+	export function isFlowInterruptWithContent(node: TS.Node): node is TS.ReturnStatement | TS.Expression {
 		let parent = node.parent
-
+		
 		return ts.isReturnStatement(node) && !!node.expression
 			|| ts.isAwaitExpression(node)
 			|| ts.isYieldExpression(node)
@@ -293,7 +298,10 @@ export namespace helper {
 
 		if (ts.isIfStatement(parent)
 			&& (node === parent.thenStatement
+
+				// `else if ...` if part cant be expanded.
 				|| node === parent.elseStatement
+					&& !ts.isIfStatement(node)
 			)
 		) {
 			return true	
@@ -336,19 +344,23 @@ export namespace helper {
 			|| canExtendToPutStatements(node)
 	}
 
-	/** Whether can put only expression here, not block-extendable. */
-	export function canPutExpression(node: TS.Node): boolean {
+	/** Whether should be an expression and return it. */
+	export function shouldBeExpression(node: TS.Node): boolean {
 		let parent = node.parent
-		if (!parent) {
-			return false
-		}
-		
-		// BreakLike
+
+		// Content of flow interrupt
 		if (ts.isReturnStatement(parent)
 			|| ts.isAwaitExpression(parent)
 			|| ts.isYieldExpression(parent)
 		) {
 			if (parent.expression === node) {
+				return true
+			}
+		}
+
+		// `if () ...`
+		if (ts.isIfStatement(parent) || ts.isSwitchStatement(parent)) {
+			if (node === parent.expression) {
 				return true
 			}
 		}
@@ -379,10 +391,7 @@ export namespace helper {
 
 		// `for (;;) ...`
 		else if (ts.isForStatement(parent)) {
-
-			// initializer is not a standard expression, can be a variable statement.
-			if (node === parent.initializer
-				|| node === parent.condition
+			if (node === parent.condition
 				|| node === parent.incrementor
 			) {
 				return true
@@ -403,6 +412,112 @@ export namespace helper {
 		return false
 	}
 
+	
+	//// Expression & Statement
+
+	/** Bundle expressions to a parenthesized expression. */
+	export function parenthesizeExpressions(...exps: TS.Expression[]): TS.Expression {
+
+		// Only one expression, returns it.
+		if (exps.length === 1) {
+			return exps[0]
+		}
+
+		let exp = exps[0]
+
+		// `a, b, c...`
+		for (let i = 1; i < exps.length; i++) {
+			exp = factory.createBinaryExpression(
+				exp,
+				factory.createToken(ts.SyntaxKind.CommaToken),
+				exps[i]
+			)
+		}
+
+		return factory.createParenthesizedExpression(exp)
+	}
+
+	/** Remove commands of a property accessing node. */
+	export function removePropertyAccessingComments<T extends TS.Node>(node: T): T {
+		if (ts.isPropertyAccessExpression(node)) {
+			return factory.createPropertyAccessExpression(
+				removePropertyAccessingComments(node.expression),
+				node.name
+			) as TS.Node as T
+		}
+		else if (ts.isElementAccessExpression(node)) {
+			return factory.createElementAccessExpression(
+				removePropertyAccessingComments(node.expression),
+				node.argumentExpression
+			) as TS.Node as T
+		}
+		else if (ts.isIdentifier(node)) {
+			return factory.createIdentifier(helper.getText(node)) as TS.Node as T
+		}
+		else if (node.kind === ts.SyntaxKind.ThisKeyword) {
+			return factory.createThis() as TS.Node as T
+		}
+
+		return node
+	}
+
+	/** 
+	 * Replace property accessing expression to a reference.
+	 * `a.b().c -> _ref_.c`
+	 */
+	export function replaceReferencedAccessingExpression(node: PropertyAccessingNode, exp: TS.Expression): PropertyAccessingNode {
+		if (ts.isPropertyAccessExpression(node)) {
+			return factory.createPropertyAccessExpression(
+				exp,
+				node.name
+			)
+		}
+		else {
+			return factory.createElementAccessExpression(
+				exp,
+				node.argumentExpression
+			)
+		}
+	}
+
+	/** Wrap by a statement if not yet. */
+	export function toStatement(node: TS.Node): TS.Statement {
+		if (ts.isStatement(node)) {
+			return node
+		}
+		else if (ts.isVariableDeclarationList(node)) {
+			return factory.createVariableStatement(undefined, node)
+		}
+		else {
+			return factory.createExpressionStatement(node as TS.Expression)
+		}
+	}
+
+	/** Wrap by a statement if not yet. */
+	export function restoreFlowInterruptByContent(node: TS.Expression, rawNode: TS.ReturnStatement | TS.Expression): TS.Expression | TS.Statement {
+		if (ts.isReturnStatement(rawNode)) {
+			return factory.createReturnStatement(node)
+		}
+		else if (ts.isYieldExpression(rawNode)) {
+			return factory.createYieldExpression(rawNode.asteriskToken!, node)
+		}
+		else if (ts.isAwaitExpression(node)) {
+			return factory.createAwaitExpression(node)
+		}
+
+		return node
+	}
+
+	/** Try to clean types nodes, and parenthesized nodes inside an expression. */
+	export function cleanExpression<T extends TS.Node>(node: T): T {
+		if (ts.isAsExpression(node) || ts.isParenthesizedExpression(node)) {
+			return ts.visitNode(node.expression, cleanExpression) as T
+		}
+		else {
+			return ts.visitEachChild(node, cleanExpression, transformContext) as T
+		}
+	}
+
 	/** Try extract final expressions from a parenthesized expression. */
 	export function extractFinalFromParenthesizeExpression(pe: TS.ParenthesizedExpression): TS.Expression {
 		let exp = pe.expression
@@ -413,6 +528,29 @@ export namespace helper {
 		return exp
 	}
 
+	/** Try eliminate useless parenthesize. */
+	export function mayEliminateUniqueParenthesize(exp: TS.Node): TS.Node {
+		if (ts.isParenthesizedExpression(exp)) {
+			return exp.expression
+		}
+
+		return exp
+	}
+	
+	/** 
+	 * Get content of `return`, `await`, `or yield`,
+	 * or return itself if is implicit return content of arrow function.
+	 */
+	export function getMayFlowInterruptContent(node: TS.Expression): TS.Expression {
+		if (ts.isReturnStatement(node)
+			|| ts.isYieldExpression(node)
+			|| ts.isAwaitExpression(node)
+		) {
+			return node.expression!
+		}
+
+		return node
+	}
 
 
 	//// Tagged Template

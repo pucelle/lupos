@@ -48,7 +48,6 @@ class TestEffect extends Component {
         beginTrack(this.#enqueue_onPropChangeEffect, this);
         try {
             console.log(this.prop);
-            trackGet(this, "prop");
         }
         catch (err) {
             console.error(err);
@@ -139,7 +138,6 @@ class TestObservedImplemented {
         beginTrack(this.#enqueue_onPropChangeEffect, this);
         try {
             console.log(this.prop);
-            trackGet(this, "prop");
         }
         catch (err) {
             console.error(err);

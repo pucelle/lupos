@@ -1,7 +1,7 @@
 import type TS from 'typescript'
 import {PropertyAccessingNode, factory, helper, ts} from '../../base'
 import {Context} from './context'
-import {ContextPosition, ContextTree, ContextType} from './context-tree'
+import {ContextTargetPosition, ContextTree, ContextType} from './context-tree'
 import {VisitingTree} from './visiting-tree'
 import {Interpolator} from './interpolator'
 import {ContextAccessingGrouper} from './context-accessing-grouper'
@@ -58,11 +58,11 @@ export class ContextCapturer {
 		}
 
 		this.captured = []
-		this.addCapturedIndices(atIndex, captured)
+		this.addCapturedIndices(captured, atIndex)
 	}
 
 	/** Insert specified captured indices to specified position. */
-	addCapturedIndices(atIndex: number, captured: number[]) {
+	addCapturedIndices(captured: number[], atIndex: number, ) {
 		Interpolator.addBefore(atIndex, () => this.transferCaptured(captured))
 	}
 
@@ -109,42 +109,36 @@ export class ContextCapturer {
 	 * 
 	 * Return reference position.
 	 */
-	reference(index: number): ContextPosition | null {
-		let refName = this.makeReferenceName()
-		let position = ContextTree.findClosestPositionToMoveStatements(index, this.context)
+	reference(index: number): ContextTargetPosition {
+		let varPosition = ContextTree.findClosestPositionToAddVariable(index, this.context)
+		let refName = varPosition.context.variables.makeUniqueVariable('_ref_')
 
-		// Can move statements.
-		// Still have risk for exps like: `(a = b, a.c().d)`
-		if (position) {
-
-			// insert `_ref_ = a.b()` or `_ref_ = b++` to found position.
-			let expIndex = VisitingTree.getFirstChildIndex(index)
-			Interpolator.addStatementReference(position.index, expIndex, refName)
+		// Insert one: `var ... _ref_ = ...`
+		if (ts.isVariableDeclaration(VisitingTree.getNode(varPosition.index))) {
+			
+			// insert `var _ref_ = a.b()` to found position.
+			Interpolator.addVariableAssignment(index, varPosition.index, refName)
 
 			// replace `a.b()` -> `_ref_`.
-			Interpolator.addReplace(expIndex, () => factory.createIdentifier(refName))
+			Interpolator.addReferenceReplace(index, () => factory.createIdentifier(refName))
+
+			return varPosition
 		}
 
-		// replace `a.b()` to `(_ref_ = a.b(), _ref_)`.
-		// Later when inserting captured expressions, must remove the parenthesized.
+		// Insert two: `var _ref_`, and `_ref_ = ...`
 		else {
-			Interpolator.addParenthesizedReference(index, refName)
+			varPosition.context.capturer.addUniqueVariable(refName)
+
+			let refPosition = ContextTree.findClosestPositionToAddStatement(index, this.context)
+
+			// insert `_ref_ = a.b()` to found position.
+			Interpolator.addReferenceAssignment(index, refPosition.index, refName)
+
+			// replace `a.b()` -> `_ref_`.
+			Interpolator.addReferenceReplace(index, () => factory.createIdentifier(refName))
+
+			return refPosition
 		}
-
-		return position
-	}
-
-	/** 
-	 * Make a reference variable to reference a complex expression.
-	 * `a.b().c` -> `var _ref_; ... _ref_ = a.b(); _ref_.c`.
-	 * Returns variable name, or `null` if cant make reference.
-	 */
-	private makeReferenceName(): string {
-		let context = ContextTree.findClosestContextToAddVariable(this.context)
-		let name = context.variables.makeUniqueVariable('ref_')
-		context.capturer.addUniqueVariable(name)
-
-		return name
 	}
 
 	/** 
@@ -173,7 +167,7 @@ export class ContextCapturer {
 	 * Add rest captured expressions before end position of context, or before a return statement.
 	 * But:
 	 *  - For like `return this.a`, will move `this.a` ahead.
-	 *  - For like `return (ref_=a()).b`, will reference returned content and move it ahead.
+	 *  - For like `return (_ref_=a()).b`, will reference returned content and move it ahead.
 	 */
 	private addRestCaptured() {
 		let captured = this.captured

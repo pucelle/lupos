@@ -4,14 +4,19 @@ import {Component} from '@pucelle/lupos.js'
 
 class TestRef extends Component {
 
-	prop: {value: string} = {value: '1'}
+	prop: {value: number} = {value: 1}
 
-	getProp(): Observed<{value: string}> {
+	getProp(): Observed<{value: number}> {
 		return this.prop
 	}
 
-	getNextProp(_value: string): Observed<{value: string}> {
+	getNextProp(_value: number): Observed<{value: number}> {
 		return this.prop
+	}
+
+	doubleVariableDeclarationRef() {
+		let i = this.prop.value, j = this.getNextProp(i).value;
+		return ''
 	}
 
 	normalRef() {
@@ -26,6 +31,7 @@ class TestRef extends Component {
 		if (this.getProp().value) {
 			return true
 		}
+		return false
 	}
 
 	elseIfRef() {
@@ -35,6 +41,21 @@ class TestRef extends Component {
 		else if (this.getProp().value) {
 			return true
 		}
+		return false
+	}
+
+	multipleConditionalRef() {
+		return this.getProp().value
+			? this.getNextProp(0).value
+				? 1
+				: 2
+			: this.getNextProp(1).value
+				? 3
+				: 4
+	}
+
+	multipleBinaryRef() {
+		return this.getProp().value || this.getNextProp(0).value || this.getNextProp(1).value
 	}
 
 	deepRef() {
@@ -45,28 +66,50 @@ class TestRef extends Component {
 		return value
 	}
 
-	forVariableTypeInitializerRef() {
-		for (let i = this.getProp().value; i; i = '') {
-			break
-		}
+	indexRef() {
+		let a: Observed<{value:number}[]> = [this.prop]
+		let i = 0
+		return a[i++].value
 	}
 
-	forExpressionTypeInitializerRef() {
-		let i: any
-		for (i = this.getProp().value; i; i = '') {
+	forVariableInitializerRef() {
+		for (let i = this.getProp().value; i < 1; i++) {
 			break
 		}
+
+		return ''
+	}
+
+	forDoubleVariableInitializerRef() {
+		for (let i = this.prop.value, j = this.getNextProp(i).value; j < 1; j++) {
+			break
+		}
+
+		return ''
+	}
+
+	forExpressionInitializerRef() {
+		let i: any
+		for (i = this.getProp().value; i < 1; i++) {
+			break
+		}
+
+		return ''
 	}
 
 	forConditionRef() {
-		for (let i = ''; i === this.getProp().value; i = '') {
+		for (let i = 0; i < this.getProp().value; i++) {
 			break
 		}
+
+		return ''
 	}
 
 	forIncreasementRef() {
-		for (let i = ''; i === ''; i += this.getProp().value) {
+		for (let i = 0; i < 1; i += this.getProp().value) {
 			break
 		}
+
+		return ''
 	}
 }
