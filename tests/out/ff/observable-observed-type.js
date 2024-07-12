@@ -6,6 +6,8 @@ class TestObservedVariableType {
         var b = { value: 1 };
         var c = b;
         trackGet(a, "value");
+        trackGet(b, "value");
+        trackGet(c, "value");
         return a.value
             + b.value
             + c.value;
@@ -76,10 +78,10 @@ class TestMethodReturnedType extends Component {
         return item.value;
     }
     getValueUseMethodSingleExp() {
-        var ref_0;
-        ref_0 = this.getNormalItem();
-        trackGet(ref_0, "value");
-        return ref_0.value;
+        var _ref_0;
+        _ref_0 = this.getNormalItem();
+        trackGet(_ref_0, "value");
+        return _ref_0.value;
     }
     getNormalItem() {
         trackGet(this, "prop");
@@ -91,21 +93,21 @@ class TestMethodReturnedType extends Component {
         return item.value;
     }
     getValueUseObservedMethodSingleExp() {
-        var ref_0;
-        ref_0 = this.getObservedItem();
-        trackGet(ref_0, "value");
-        return ref_0.value;
+        var _ref_0;
+        _ref_0 = this.getObservedItem();
+        trackGet(_ref_0, "value");
+        return _ref_0.value;
     }
     getObservedItem() {
         trackGet(this, "prop");
         return this.prop;
     }
     getValueUseObservedInstance() {
-        var ref_0;
-        ref_0 = this.getInstance();
-        trackGet(ref_0, "prop");
-        trackGet(ref_0.prop, "value");
-        return ref_0.prop.value;
+        var _ref_0;
+        _ref_0 = this.getInstance();
+        trackGet(_ref_0, "prop");
+        trackGet(_ref_0.prop, "value");
+        return _ref_0.prop.value;
     }
     getInstance() {
         return this;

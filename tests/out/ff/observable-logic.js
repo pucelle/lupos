@@ -13,22 +13,22 @@ class TestAndOrDoubleQuestionOperators extends Component {
         return (trackGet(this, "prop1"), trackGet(this.prop1, "value"), this.prop1.value) ?? (trackGet(this, "prop2"), trackGet(this.prop2, "value"), this.prop2.value);
     }
     orProp() {
-        var ref_0;
-        ref_0 = (trackGet(this, "prop1"), this.prop1) || (trackGet(this, "prop2"), this.prop2);
-        trackGet(ref_0, "value");
-        return ref_0.value;
+        var _ref_0;
+        _ref_0 = (trackGet(this, "prop1"), this.prop1) || (trackGet(this, "prop2"), this.prop2);
+        trackGet(_ref_0, "value");
+        return _ref_0.value;
     }
     andProp() {
-        var ref_0;
-        ref_0 = (trackGet(this, "prop1"), this.prop1) && (trackGet(this, "prop2"), this.prop2);
-        trackGet(ref_0, "value");
-        return ref_0.value;
+        var _ref_0;
+        _ref_0 = (trackGet(this, "prop1"), this.prop1) && (trackGet(this, "prop2"), this.prop2);
+        trackGet(_ref_0, "value");
+        return _ref_0.value;
     }
     qqProp() {
-        var ref_0;
-        ref_0 = (trackGet(this, "prop1"), this.prop1) ?? (trackGet(this, "prop2"), this.prop2);
-        trackGet(ref_0, "value");
-        return ref_0.value;
+        var _ref_0;
+        _ref_0 = (trackGet(this, "prop1"), this.prop1) ?? (trackGet(this, "prop2"), this.prop2);
+        trackGet(_ref_0, "value");
+        return _ref_0.value;
     }
 }
 class TestTernaryConditionalOperator extends Component {
