@@ -2,7 +2,7 @@ import type TS from 'typescript'
 import {helper, defineVisitor, ts, modifier, factory} from '../base'
 
 
-defineVisitor((node: TS.Node) => {
+defineVisitor((node: TS.Node, index: number) => {
 	if (!ts.isClassDeclaration(node)) {
 		return
 	}
@@ -13,23 +13,23 @@ defineVisitor((node: TS.Node) => {
 	}
 
 	// Must not specify `ContentSlotType: ...` itself.
-	let contentSlotProperty = helper.getClassProperty(node, 'ContentSlotType')
+	let contentSlotProperty = helper.cls.getProperty(node, 'ContentSlotType')
 	if (contentSlotProperty) {
-		return node
+		return
 	}
 
 	// Must specify `render(): ...`
-	let renderMethod = helper.getClassMethod(node, 'render')
+	let renderMethod = helper.cls.getMethod(node, 'render')
 	if (!renderMethod) {
-		return node
+		return
 	}
 
-	let renderType = helper.getNodeReturnType(renderMethod)
+	let renderType = helper.types.getReturnType(renderMethod)
 	if (!renderType) {
-		return node
+		return
 	}
 
-	let typeText = helper.getTypeFullText(renderType)
+	let typeText = helper.types.getTypeFullText(renderType)
 	let slotType: 'TemplateResult' | 'TemplateResultArray' | 'Text' | null = null
 
 	// Check Slot Type.
@@ -61,6 +61,6 @@ defineVisitor((node: TS.Node) => {
 			)
 		)
 
-		return modifier.addClassMember(node, [property], true)	  
+		modifier.addClassMember(index, property, true)
 	}
 })

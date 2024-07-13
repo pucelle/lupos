@@ -34,7 +34,7 @@ export namespace modifier {
 
 
 	/** Add a member to a class declaration. */
-	export function addClassMember(index: number, member: TS.ClassElement, insertHead: boolean = false) {
+	export function addClassMember(index: number, member: TS.ClassElement, preferInsertToHead: boolean = false) {
 		let node = visiting.getNode(index) as TS.ClassDeclaration
 		let name = helper.cls.getMemberName(member)
 		let existing = node.members.find(m => helper.cls.getMemberName(m) === name)
@@ -43,7 +43,7 @@ export namespace modifier {
 			let toIndex = visiting.getIndex(existing)
 			interpolator.addReplace(toIndex, () => member)
 		}
-		else if (insertHead) {
+		else if (preferInsertToHead) {
 			let toIndex = visiting.getFirstChildIndex(index)!
 			interpolator.addBefore(toIndex, () => member)
 		}

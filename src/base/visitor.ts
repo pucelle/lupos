@@ -11,7 +11,7 @@ import {modifier} from './modifier'
  * can either return a function, which will be called after visited all children,
  * or return void to do nothing more.
  */
-type VisitFunction = (node: TS.Node) => (() => void) | void
+type VisitFunction = (node: TS.Node, index: number) => (() => void) | void
 
 
 /** All defined visitors. */
@@ -32,11 +32,11 @@ export function defineVisitor(visitor: VisitFunction) {
  * Apply defined visitors to a node.
  * Returns a function, which will be called after visited all children.
  */
-export function applyVisitors(node: TS.Node): () => void {
+export function applyVisitors(node: TS.Node, index: number): () => void {
 	let doMoreAfterVisitedChildren: Function[] = []
 
 	for (let visitor of Visitors) {
-		let more = visitor(node)
+		let more = visitor(node, index)
 		if (more) {
 			doMoreAfterVisitedChildren.push(more)
 		}
@@ -64,7 +64,7 @@ export function transformer(program: TS.Program, extras: TransformerExtras) {
 			function visit(node: TS.Node): TS.Node {
 				visiting.toNext(node)
 
-				let doMoreAfterVisitedChildren = applyVisitors(node)
+				let doMoreAfterVisitedChildren = applyVisitors(node, visiting.current.index)
 
 				visiting.toChild()
 				ts.visitEachChild(node, visit, ctx)
@@ -78,7 +78,7 @@ export function transformer(program: TS.Program, extras: TransformerExtras) {
 
 			function visitSourceFile(node: TS.SourceFile): TS.SourceFile | undefined {
 				node = ts.visitNode(node, visit) as TS.SourceFile
-				
+
 				modifier.apply()
 				return interpolator.output(0) as TS.SourceFile
 			}
