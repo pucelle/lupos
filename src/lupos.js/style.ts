@@ -1,35 +1,33 @@
 import type TS from 'typescript'
-import {helper, defineVisitor, ts, factory} from '../base'
+import {helper, defineVisitor, ts, factory, interpolator} from '../base'
 
 
-defineVisitor(
+defineVisitor((node: TS.Node, index: number) => {
 
 	// `static style = ...` or `static style() {...}`
-	(node: TS.Node) => {
-		return ts.isTaggedTemplateExpression(node)
-			&& helper.getTaggedTemplateName(node) === 'css'
-	},
-	(node: TS.TaggedTemplateExpression) => {
-		return parseTaggedTemplate(node)
-	},
-)
+	if (!ts.isTaggedTemplateExpression(node)) {
+		return
+	}
+	
+	if (!helper.symbol.isImportedFrom(node.tag, 'css', '@pucelle/lupos.js')) {
+		return
+	}
+
+	parseTaggedTemplate(node, index)
+})
 
 
 /** Parse an css expression, return a new one. */
-function parseTaggedTemplate(tem: TS.TaggedTemplateExpression): TS.TaggedTemplateExpression {
-	let tagNameDecl = helper.resolveOneDeclaration(tem.tag, ts.isFunctionDeclaration)
-	if (!tagNameDecl || tagNameDecl.name?.text === 'css') {
-		return tem
-	}
-
-	let string = joinTaggedTemplateString(tem)
+function parseTaggedTemplate(node: TS.TaggedTemplateExpression, index: number) {
+	let string = joinTaggedTemplateString(node)
 	let parsed = minifyCSSString(parseStyleString(string))
 	let parts = parsed.split(/\$SLOT_INDEX_\d+\$/g)
-	let template = tem.template
+	let template = node.template
+	let replaced: TS.TaggedTemplateExpression | null = null
 
 	if (ts.isNoSubstitutionTemplateLiteral(template)) {
-		return factory.createTaggedTemplateExpression(
-			tem.tag,
+		replaced = factory.createTaggedTemplateExpression(
+			node.tag,
 			undefined,
 			factory.createNoSubstitutionTemplateLiteral(
 				parts[0],
@@ -58,8 +56,8 @@ function parseTaggedTemplate(tem: TS.TaggedTemplateExpression): TS.TaggedTemplat
 			)
 		})
 
-		return factory.createTaggedTemplateExpression(
-			tem.tag,
+		replaced = factory.createTaggedTemplateExpression(
+			node.tag,
 			undefined,
 			factory.createTemplateExpression(
 				factory.createTemplateHead(
@@ -70,8 +68,9 @@ function parseTaggedTemplate(tem: TS.TaggedTemplateExpression): TS.TaggedTemplat
 			)
 		)	
 	}
-	else {
-		return tem
+	
+	if (replaced) {
+		interpolator.addReplace(index, () => replaced!)
 	}
 }
 

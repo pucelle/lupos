@@ -460,11 +460,11 @@ export namespace helper {
 	/** Symbol & Resolving */
 	export namespace symbol {
 
-		/** Test whether a type node has a declaration name and located at a module. */
-		export function isTypeImportedFrom(node: TS.TypeNode, declName: string, moduleName: string): boolean {
+		/** Test whether a node has an import name and located at a module. */
+		export function isImportedFrom(node: TS.Node, memberName: string, moduleName: string): boolean {
 			let nm = resolveImport(node)
 
-			if (nm && nm.memberName === declName && nm.moduleName === moduleName) {
+			if (nm && nm.memberName === memberName && nm.moduleName === moduleName) {
 				return true
 			}
 			else {
