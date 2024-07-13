@@ -1,6 +1,6 @@
 import type TS from 'typescript'
 import {ObservedChecker} from './observed-checker'
-import {helper, PropertyAccessingNode, ts} from '../../base'
+import {helper, PropertyAccessNode, ts} from '../../base'
 import {ContextState} from './context-state'
 import {ContextTargetPosition, ContextTree, ContextType} from './context-tree'
 import {VisitingTree} from './visiting-tree'
@@ -94,7 +94,7 @@ export class Context {
 	}
 
 	/** Add a get expression, already tested and knows should observe it. */
-	private addGet(node: PropertyAccessingNode) {
+	private addGet(node: PropertyAccessNode) {
 		if (this.state.nothingReturned) {
 			return
 		}

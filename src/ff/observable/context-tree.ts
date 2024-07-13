@@ -153,7 +153,7 @@ export namespace ContextTree {
 
 		// Flow stop, and has content.
 		// `break` and `continue` contains no expressions, so should not be a context type.
-		else if (helper.isFlowInterruptWithContent(node)) {
+		else if (helper.isFlowInterruption(node)) {
 			return ContextType.FlowInterruptWithContent
 		}
 

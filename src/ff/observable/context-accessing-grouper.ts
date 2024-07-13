@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {PropertyAccessingNode, factory, helper, modifier, ts} from '../../base'
+import {PropertyAccessNode, factory, helper, modifier, ts} from '../../base'
 import {groupBy} from '../../utils'
 import {ObservedChecker} from './observed-checker'
 
@@ -7,14 +7,14 @@ import {ObservedChecker} from './observed-checker'
 export namespace ContextAccessingGrouper {
 	
 	/** Group expressions to lately insert a position. */
-	export function makeGetExpressions(getExps: PropertyAccessingNode[]): TS.Expression[] {
+	export function makeGetExpressions(getExps: PropertyAccessNode[]): TS.Expression[] {
 		getExps = getExps.map(exp => helper.cleanExpression(exp))
 
 		let grouped = groupGetExpressions(getExps)
 		let exps = grouped.map(item => createGroupedGetExpression(item))
 
 		if (exps.length > 0) {
-			modifier.addNamedImport('trackGet', '@pucelle/ff')
+			modifier.addImport('trackGet', '@pucelle/ff')
 		}
 
 		return exps
@@ -22,8 +22,8 @@ export namespace ContextAccessingGrouper {
 
 	
 	/** Group get expressions by property belonged to object. */
-	function groupGetExpressions(exps: PropertyAccessingNode[]): PropertyAccessingNode[][] {
-		let group = groupBy(exps, (node: PropertyAccessingNode) => {
+	function groupGetExpressions(exps: PropertyAccessNode[]): PropertyAccessNode[][] {
+		let group = groupBy(exps, (node: PropertyAccessNode) => {
 			return [getExpKey(node), node]
 		})
 
@@ -32,7 +32,7 @@ export namespace ContextAccessingGrouper {
 
 
 	/** Make a key by a property accessing node. */
-	function getExpKey(node: PropertyAccessingNode) {
+	function getExpKey(node: PropertyAccessNode) {
 		let exp = node.expression
 		let key = helper.getText(exp).trim()
 
@@ -45,7 +45,7 @@ export namespace ContextAccessingGrouper {
 
 
 	/** Create a `trackGet` statement. */
-	function createGroupedGetExpression(nodes: PropertyAccessingNode[]): TS.Expression {
+	function createGroupedGetExpression(nodes: PropertyAccessNode[]): TS.Expression {
 		let node = nodes[0]
 		let parameters = createGetNameParameter(nodes)
 		
@@ -70,7 +70,7 @@ export namespace ContextAccessingGrouper {
 
 
 	/** Create a parameter for `trackGet` by a group of nodes. */
-	function createGetNameParameter(nodes: PropertyAccessingNode[]): TS.Expression[] {
+	function createGetNameParameter(nodes: PropertyAccessNode[]): TS.Expression[] {
 		let node = nodes[0]
 		let group = groupNameExpressionKeys(nodes)
 		let nameExps = [...group.values()].map(nodes => getAccessingNodeNameProperty(nodes[0]))
@@ -83,13 +83,13 @@ export namespace ContextAccessingGrouper {
 
 
 	/** Get all expression keys, repetitive keys are excluded. */
-	function groupNameExpressionKeys(nodes: PropertyAccessingNode[]): Map<string, PropertyAccessingNode[]> {
+	function groupNameExpressionKeys(nodes: PropertyAccessNode[]): Map<string, PropertyAccessNode[]> {
 		return groupBy(nodes, node => [getNameKey(node), node])
 	}
 
 
 	/** Get a name expression key. */
-	function getNameKey(node: PropertyAccessingNode): string {
+	function getNameKey(node: PropertyAccessNode): string {
 		if (helper.isNodeArrayType(node.expression) || ObservedChecker.isMapOrSetReading(node)) {
 			return ''
 		}
@@ -108,7 +108,7 @@ export namespace ContextAccessingGrouper {
 
 
 	/** Get name of property expression. */
-	function getAccessingNodeNameProperty(node: PropertyAccessingNode): TS.Expression {
+	function getAccessingNodeNameProperty(node: PropertyAccessNode): TS.Expression {
 		let name: TS.Expression
 
 		if (helper.isNodeArrayType(node.expression) || ObservedChecker.isMapOrSetReading(node)) {

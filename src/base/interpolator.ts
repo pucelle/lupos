@@ -1,7 +1,9 @@
 import type TS from 'typescript'
-import {ListMap} from '../../utils'
-import {factory, helper, transformContext, ts} from '../../base'
-import {VisitingTree} from './visiting-tree'
+import {ListMap} from '../utils'
+import {factory, transformContext, ts} from './global'
+import {visiting} from './visiting'
+import {helper} from './helper'
+import {VisitingTree} from '../ff/observable/visiting-tree'
 
 
 export interface InterpolationItem {
@@ -13,12 +15,12 @@ export interface InterpolationItem {
 	contentType: InterpolationContentType
 
 	/** 
-	 * Must exist for `InsertBefore` or `InsertAfter` interpolation positions.
+	 * Must exist for `InsertBefore` or `InsertAfter` positions.
 	 * If is a list and becomes empty, no need to interpolate.
 	 */
 	expressions?: () => TS.Node | TS.Node[]
 
-	/** Must exist for `Replace` interpolation type. */
+	/** Must exist for `Replace` position. */
 	replace?: () => TS.Node | undefined
 }
 
@@ -32,76 +34,54 @@ export enum InterpolationContentType {
 	VariableDeclaration,
 	Reference,
 	Normal,
-	GetTracking,
-	SetTracking,
+	Tracking,
 }
 
 
 /** 
  * It attaches to each context.
  * Remember where to interpolate expressions, and interpolate there some contents.
- * 
- * Why interpolator is a global class:
- * Some expressions may have been moved to another position,
- * before inserting them, we still want want them to be replaced.
- * e.g.: `a.b(c.d().e)`, `c.d()` will be referenced.
- * So the whole expression should be replaced and then do inserting.
  */
-export namespace Interpolator {
+export namespace interpolator {
 
 	/** Interpolated expressions, and where to interpolate. */
 	const interpolations: ListMap<number, InterpolationItem> = new ListMap()
 
-	/** The visiting indices the node at where will be moved. */
-	const movedIndices: Set<number> = new Set()
-
-
 	/** Initialize after enter a new source file */
 	export function initialize() {
 		interpolations.clear()
-		movedIndices.clear()
 	}
 
 
-	/** Move node to another position, only move for once. */
-	export function moveOnce(fromIndex: number, toIndex: number) {
-		if (movedIndices.has(fromIndex)) {
-			return
-		}
-
+	/** Move node to another position. */
+	export function move(fromIndex: number, toIndex: number) {
 		interpolations.add(toIndex, {
 			position: InterpolationPosition.InsertBefore,
 			contentType: InterpolationContentType.Normal,
-			expressions: () => {
-				return helper.toStatement(outputChildren(fromIndex) as TS.Node)
-			},
+			expressions: () => outputChildren(fromIndex),
 		})
 
 		interpolations.add(fromIndex, {
 			position: InterpolationPosition.Replace,
 			contentType: InterpolationContentType.Normal,
-			replace: () => {
-				return undefined
-			},
+			replace: () => undefined,
 		})
-
-		movedIndices.add(fromIndex)
 	}
 
 
 	/** 
-	 * Insert a variable assignment to specified index.
+	 * Insert a variable assignment from a position to another position.
 	 * `a.b()` -> `var _ref_ = a.b()`, and move it.
 	 */
 	export function addVariableAssignment(fromIndex: number, toIndex: number, varName: string) {
 		interpolations.add(toIndex, {
 			position: InterpolationPosition.InsertBefore,
-			contentType: InterpolationContentType.Reference,
+			contentType: InterpolationContentType.VariableDeclaration,
 			expressions: () => {
 				let node = outputChildren(fromIndex) as TS.Expression
 
 				// `(a) -> a`
-				node = helper.mayEliminateUniqueParenthesize(node) as TS.Expression
+				node = helper.pack.simplifyShallow(node) as TS.Expression
 
 				return factory.createVariableDeclaration(
 					factory.createIdentifier(varName),
@@ -114,7 +94,7 @@ export namespace Interpolator {
 	}
 
 	/** 
-	 * Insert a reference expression to specified index.
+	 * Insert a reference expression from a position to another position.
 	 * `a.b()` -> `_ref_ = a.b()`, and move it.
 	 */
 	export function addReferenceAssignment(fromIndex: number, toIndex: number, refName: string) {
@@ -125,7 +105,7 @@ export namespace Interpolator {
 				let node = outputChildren(fromIndex) as TS.Expression
 
 				// `(a) -> a`
-				node = helper.mayEliminateUniqueParenthesize(node) as TS.Expression
+				node = helper.pack.simplifyShallow(node) as TS.Expression
 
 				return factory.createBinaryExpression(
 					factory.createIdentifier(refName),
@@ -149,16 +129,7 @@ export namespace Interpolator {
 	export function addBefore(index: number, exps: () => TS.Node | TS.Node[]) {
 		interpolations.add(index, {
 			position: InterpolationPosition.InsertBefore,
-			contentType: InterpolationContentType.GetTracking,
-			expressions: exps,
-		})
-	}
-
-	/** Insert expressions to before specified position. */
-	export function addVariableDeclarationBefore(index: number, exps: () => TS.Node | TS.Node[]) {
-		interpolations.add(index, {
-			position: InterpolationPosition.InsertBefore,
-			contentType: InterpolationContentType.VariableDeclaration,
+			contentType: InterpolationContentType.Tracking,
 			expressions: exps,
 		})
 	}
@@ -167,50 +138,57 @@ export namespace Interpolator {
 	export function addAfter(index: number, exps: () => TS.Node | TS.Node[]) {
 		interpolations.add(index, {
 			position: InterpolationPosition.InsertAfter,
-			contentType: InterpolationContentType.GetTracking,
+			contentType: InterpolationContentType.Tracking,
 			expressions: exps,
+		})
+	}
+
+	/** Replace node to another node normally. */
+	export function addReplace(index: number, replace: () => TS.Node) {
+		interpolations.add(index, {
+			position: InterpolationPosition.Replace,
+			contentType: InterpolationContentType.Normal,
+			replace,
 		})
 	}
 
 	/** Add variables as declaration statements. */
 	export function addVariables(index: number, names: string[]) {
-		let node = VisitingTree.getNode(index)
+		let rawNode = visiting.getNode(index)
+		let exps: TS.VariableDeclarationList | TS.VariableDeclaration[]
+		let toIndex: number
 		
-		if (helper.canBlock(node) || ts.isCaseOrDefaultClause(node)) {
-			let insertIndex
-			
-			let stats = factory.createVariableStatement(
-				undefined,
-				factory.createVariableDeclarationList(
-					names.map(name => 
-						factory.createVariableDeclaration(
-							factory.createIdentifier(name),
-							undefined,
-							undefined,
-							undefined
-						)
-					),
-					ts.NodeFlags.None
-				)
+		if (helper.pack.canPutStatements(rawNode)) {
+			exps = factory.createVariableDeclarationList(
+				names.map(name => 
+					factory.createVariableDeclaration(
+						factory.createIdentifier(name),
+						undefined,
+						undefined,
+						undefined
+					)
+				),
+				ts.NodeFlags.None
 			)
 
-			if (helper.canBlock(node)) {
-				insertIndex = VisitingTree.getFirstChildIndex(index)
-			}
-			else {
-				insertIndex = VisitingTree.getChildIndex(index, 1)
+			// Insert the first of block.
+			if (helper.pack.canBlock(rawNode)) {
+				toIndex = visiting.getFirstChildIndex(index)!
 			}
 
-			Interpolator.addVariableDeclarationBefore(insertIndex, () => stats)
+			// Insert the statements of `case` of `default`.
+			else {
+				toIndex = visiting.getChildIndex(index, 1)
+			}
 		}
 
 		// `for (let i = 0; ...) ...`
-		else if (ts.isVariableStatement(node)) {
+		else if (ts.isVariableStatement(rawNode)) {
 
-			// First of list
-			let insertIndex = VisitingTree.getFirstChildIndex(VisitingTree.getFirstChildIndex(index))
+			// First of variable list.
+			toIndex = visiting.getFirstChildIndex(visiting.getFirstChildIndex(index)!)!
 
-			let decls = names.map(name => 
+			exps = names.map(name => 
 				factory.createVariableDeclaration(
 					factory.createIdentifier(name),
 					undefined,
@@ -218,9 +196,17 @@ export namespace Interpolator {
 					undefined
 				)
 			)
-	
-			Interpolator.addVariableDeclarationBefore(insertIndex, () => decls)
 		}
+
+		else {
+			throw new Error(`Cant add variables to "${helper.getText(VisitingTree.getNode(index))}"!`)
+		}
+
+		interpolations.add(toIndex, {
+			position: InterpolationPosition.InsertBefore,
+			contentType: InterpolationContentType.VariableDeclaration,
+			expressions: () => exps,
+		})
 	}
 
 
@@ -246,7 +232,7 @@ export namespace Interpolator {
 
 		let replace = items.filter(item => item.position === InterpolationPosition.Replace)
 		if (replace.length > 1) {
-			throw new Error(`Only one replace is allowed for position "${helper.getText(VisitingTree.getNode(index))}"!`)
+			throw new Error(`Only one replace is allowed for position "${helper.getText(visiting.getNode(index))}"!`)
 		}
 
 		let node: TS.Node | TS.Node[] | undefined
@@ -267,9 +253,9 @@ export namespace Interpolator {
 
 	/** Try to replace node to make it can contain neighbor nodes. */
 	function replaceToAddNeighborNodes(index: number, node: TS.Node | undefined, beforeNodes: TS.Node[], afterNodes: TS.Node[]): TS.Node | TS.Node[] {
-		let rawNode = VisitingTree.getNode(index)
-		let rawParent = VisitingTree.getNode(VisitingTree.getParentIndex(index)!)
-		let isFlowInterrupt = helper.isFlowInterruption(rawNode)
+		let rawNode = visiting.getNode(index)
+		let rawParent = visiting.getNode(visiting.getParentIndex(index)!)
+		let isFlowInterrupted = helper.pack.isFlowInterruption(rawNode)
 
 		// Add more variable declaration.
 		if (ts.isVariableDeclaration(rawNode)) {
@@ -277,43 +263,42 @@ export namespace Interpolator {
 		}
 
 		// Insert statements.
-		else if (helper.canPutStatements(rawParent)) {
-			let list = arrangeNeighborNodes(node, beforeNodes, afterNodes, isFlowInterrupt)
-			return list.map(n => helper.toStatement(n))
+		else if (helper.pack.canPutStatements(rawParent)) {
+			let list = arrangeNeighborNodes(node, beforeNodes, afterNodes, isFlowInterrupted)
+			return list.map(n => helper.pack.toStatement(n))
 		}
 
 		// Extend to block and insert statements.
-		else if (helper.canExtendToPutStatements(rawNode)) {
+		else if (helper.pack.canExtendToPutStatements(rawNode)) {
 			if (ts.isArrowFunction(rawParent)) {
 				node = factory.createReturnStatement(node as TS.Expression)
 			}
-			let list = arrangeNeighborNodes(node, beforeNodes, afterNodes, isFlowInterrupt)
+			let list = arrangeNeighborNodes(node, beforeNodes, afterNodes, isFlowInterrupted)
 
 			return factory.createBlock(
-				list.map(n => helper.toStatement(n))
+				list.map(n => helper.pack.toStatement(n))
 			)
 		}
 
-		// Parenthesize it, move after nodes forward.
-		// Normally will move inserting contents ahead at optimizing step.
-		else if (isFlowInterrupt) {
-			let exp = helper.getMayFlowInterruptionContent(node as TS.Expression)
-			let list = arrangeNeighborNodes(exp, beforeNodes, afterNodes, isFlowInterrupt)
-			let parenthesized = helper.parenthesizeExpressions(...list)
+		// Unpack return statement, parenthesize it, move returned node to the end, and re-pack.
+		else if (isFlowInterrupted) {
+			let exp = helper.pack.getMayFlowInterruptionContent(node as TS.Expression)
+			let list = arrangeNeighborNodes(exp, beforeNodes, afterNodes, isFlowInterrupted)
+			let parenthesized = helper.pack.parenthesizeExpressions(...list)
 
-			return helper.restoreFlowInterruptByContent(parenthesized, node as TS.ReturnStatement | TS.Expression)
+			return helper.pack.restoreFlowInterruption(parenthesized, node as TS.ReturnStatement | TS.Expression)
 		}
 
-		// Must return original expression.
-		else if (helper.shouldBeExpression(rawNode)) {
+		// Parenthesize it, move returned node to the end.
+		else if (helper.pack.shouldBeExpression(rawNode)) {
 			let list = arrangeNeighborNodes(node, beforeNodes, afterNodes, true)
-			return helper.parenthesizeExpressions(...list)
+			return helper.pack.parenthesizeExpressions(...list)
 		}
 
 		// Otherwise, Parenthesize and no need to return original.
 		else {
 			let list = arrangeNeighborNodes(node, beforeNodes, afterNodes, false)
-			return helper.parenthesizeExpressions(...list)
+			return helper.pack.parenthesizeExpressions(...list)
 		}
 	}
 
@@ -348,8 +333,8 @@ export namespace Interpolator {
 	 * bot not replace self or inserts neighbor nodes.
 	 */
 	export function outputChildren(index: number): TS.Node {
-		let node = VisitingTree.getNode(index)
-		let childIndices = VisitingTree.getChildIndices(index)
+		let node = visiting.getNode(index)
+		let childIndices = visiting.getChildIndices(index)
 
 		if (!childIndices) {
 			return node

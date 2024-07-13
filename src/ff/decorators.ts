@@ -256,9 +256,9 @@ function compileComputedDecorator(methodDecl: TS.MethodDeclaration): TS.Node[] {
 		)
 	)
 
-	modifier.addNamedImport('beginTrack', '@pucelle/ff')
-	modifier.addNamedImport('endTrack', '@pucelle/ff')
-	modifier.addNamedImport('trackSet', '@pucelle/ff')
+	modifier.addImport('beginTrack', '@pucelle/ff')
+	modifier.addImport('endTrack', '@pucelle/ff')
+	modifier.addImport('trackSet', '@pucelle/ff')
 
 	return [property, needComputeProperty, computeMethod, resetMethod, getter]
 }
@@ -379,9 +379,9 @@ function compileEffectDecorator(methodDecl: TS.MethodDeclaration): TS.Node[] {
 		)
 	)
 
-	modifier.addNamedImport('beginTrack', '@pucelle/ff')
-	modifier.addNamedImport('endTrack', '@pucelle/ff')
-	modifier.addNamedImport('enqueue', '@pucelle/ff')
+	modifier.addImport('beginTrack', '@pucelle/ff')
+	modifier.addImport('endTrack', '@pucelle/ff')
+	modifier.addImport('enqueue', '@pucelle/ff')
 
 	return [enqueueMethod, effectMethod]
 }
@@ -470,7 +470,7 @@ function compileWatchDecorator(methodDecl: TS.MethodDeclaration, decorator: TS.D
 			true
 		)
 
-		modifier.addNamedImport('trackGet', '@pucelle/ff')
+		modifier.addImport('trackGet', '@pucelle/ff')
 	}
 	else if (ts.isFunctionExpression(propertyGetArg)) {
 		propertyGetBlock = propertyGetArg.body
@@ -626,9 +626,9 @@ function compileWatchDecorator(methodDecl: TS.MethodDeclaration, decorator: TS.D
 		)
 	)
 	
-	modifier.addNamedImport('beginTrack', '@pucelle/ff')
-	modifier.addNamedImport('endTrack', '@pucelle/ff')
-	modifier.addNamedImport('enqueue', '@pucelle/ff')
+	modifier.addImport('beginTrack', '@pucelle/ff')
+	modifier.addImport('endTrack', '@pucelle/ff')
+	modifier.addImport('enqueue', '@pucelle/ff')
 
 	return [property, propertyGet, enqueueMethod, watchMethod]
 }

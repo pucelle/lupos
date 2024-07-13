@@ -1,6 +1,8 @@
 import {TransformerExtras} from 'ts-patch'
 import type TS from 'typescript'
-import {SourceFileModifier} from './source-file-modifier'
+import {modifier} from './modifier'
+import {interpolator} from './interpolator'
+import {visiting} from './visiting'
 
 
 export let typeChecker: TS.TypeChecker
@@ -9,7 +11,6 @@ export let printer: TS.Printer
 export let factory: TS.NodeFactory
 export let transformContext: TS.TransformationContext
 export let sourceFile: TS.SourceFile
-export let modifier: SourceFileModifier
 
 
 export function setGlobal(program: TS.Program, extras: TransformerExtras) {
@@ -20,12 +21,14 @@ export function setGlobal(program: TS.Program, extras: TransformerExtras) {
 }
 
 
-export function setTransform(ctx: TS.TransformationContext) {
+export function setTransformContext(ctx: TS.TransformationContext) {
 	transformContext = ctx
 }
 
 
 export function setSourceFile(file: TS.SourceFile) {
 	sourceFile = file
-	modifier = new SourceFileModifier()
+	visiting.initialize()
+	interpolator.initialize()
+	modifier.initialize()
 }

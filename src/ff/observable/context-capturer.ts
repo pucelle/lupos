@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {PropertyAccessingNode, factory, helper, ts} from '../../base'
+import {PropertyAccessNode, factory, helper, ts} from '../../base'
 import {Context} from './context'
 import {ContextTargetPosition, ContextTree, ContextType} from './context-tree'
 import {VisitingTree} from './visiting-tree'
@@ -69,7 +69,7 @@ export class ContextCapturer {
 	/** Transfer specified indices to specified position. */
 	private transferCaptured(captured: number[]): TS.Expression[] {
 		let exps = captured.map(i => {
-			let node = Interpolator.outputChildren(i) as PropertyAccessingNode
+			let node = Interpolator.outputChildren(i) as PropertyAccessNode
 			let exp = node.expression
 			let name = helper.getPropertyAccessingName(node)
 			let changed = false

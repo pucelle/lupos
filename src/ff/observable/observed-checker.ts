@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {PropertyAccessingNode} from '../../base/helper'
+import {PropertyAccessNode} from '../../base/helper'
 import {ts, helper} from '../../base'
 import {ContextTree} from './context-tree'
 import {Context} from './context'
@@ -15,7 +15,7 @@ import {Context} from './context'
  * `var a = [observed]; var b = a[0]`
  * `[observed][0]`
  */
-export type CanObserveNode = PropertyAccessingNode
+export type CanObserveNode = PropertyAccessNode
 	| TS.Identifier | TS.ThisExpression
 	| TS.CallExpression | TS.ParenthesizedExpression
 	| TS.BinaryExpression | TS.ConditionalExpression
@@ -272,7 +272,7 @@ export namespace ObservedChecker {
 
 
 	/** Returns whether a property accessing is observed. */
-	export function isAccessingObserved(node: PropertyAccessingNode): boolean {
+	export function isAccessingObserved(node: PropertyAccessNode): boolean {
 
 		// Will never observe private identifier like `a.#b`.
 		if (ts.isPropertyAccessExpression(node) && ts.isPrivateIdentifier(node.name)) {
@@ -349,7 +349,7 @@ export namespace ObservedChecker {
 
 
 	/** Check whether a property or get accessor declaration, or a property declaration is observed. */
-	function checkPropertyOrGetAccessorObserved(node: PropertyAccessingNode): boolean {
+	function checkPropertyOrGetAccessorObserved(node: PropertyAccessNode): boolean {
 
 		// `class A{p: Observed}` -> `this.p` and `this['p']` is observed.
 		// `interface A{p: Observed}` -> `this.p` and `this['p']` is observed.
@@ -378,7 +378,7 @@ export namespace ObservedChecker {
 
 
 	/** Test whether calls `Map.has`, `Map.get` or `Set.has` */
-	export function isMapOrSetReading(node: PropertyAccessingNode) {
+	export function isMapOrSetReading(node: PropertyAccessNode) {
 		let objName = helper.getNodeTypeName(node.expression)
 		let propName = helper.getPropertyAccessingNameText(node)
 

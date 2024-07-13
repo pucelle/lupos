@@ -139,7 +139,7 @@ function compileEffectOrWatchDecorator(
 		))
 		
 		disconnect = addToMethodDeclaration(disconnect, [disconnectStatement])
-		modifier.addNamedImport('untrack', '@pucelle/ff')
+		modifier.addImport('untrack', '@pucelle/ff')
 	}
 
 	return [connect, disconnect]
