@@ -61,7 +61,7 @@ export class ContextState {
 			return this.context.parent?.state.nothingReturned ?? false
 		}
 
-		let type = helper.getNodeReturnType(node as TS.FunctionLikeDeclaration)
+		let type = helper.types.getReturnType(node as TS.FunctionLikeDeclaration)
 		return !!(type && (type.getFlags() & ts.TypeFlags.Void))
 	}
 

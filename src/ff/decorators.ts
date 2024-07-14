@@ -1,35 +1,37 @@
 import type TS from 'typescript'
-import {helper, ts, defineVisitor, modifier, factory} from '../base'
+import {helper, ts, defineVisitor, modifier, factory, interpolator, InterpolationContentType} from '../base'
 
 
-defineVisitor(
-
+defineVisitor((node: TS.Node, index: number) => {
+		
 	// Method and decorated, and may need to check whether class is observable.
-	(node: TS.Node) => {
-		if (!ts.isMethodDeclaration(node)) {
-			return false
-		}
+	if (!ts.isMethodDeclaration(node)) {
+		return
+	}
 
-		let decoName = helper.getFirstDecoratorName(node)
-		return !!decoName && ['computed', 'effect', 'watch'].includes(decoName)
-	},
-	(node: TS.MethodDeclaration) => {
-		let decorator = helper.getFirstDecorator(node)!
-		let decoName = helper.getDecoratorName(decorator)
+	let decorator = helper.deco.getFirst(node)!
+	let decoName = helper.deco.getName(decorator)
 
-		if (decoName === 'computed') {
-			return compileComputedDecorator(node)
-		}
-		else if (decoName === 'effect') {
-			return compileEffectDecorator(node)
-		}
-		else if (decoName === 'watch') {
-			return compileWatchDecorator(node, decorator)
-		}
+	if (!decoName || !['computed', 'effect', 'watch'].includes(decoName)) {
+		return
+	}
 
-		return node
-	},
-)
+	let replaced: TS.Node[] | null = null
+
+	if (decoName === 'computed') {
+		replaced = compileComputedDecorator(node)
+	}
+	else if (decoName === 'effect') {
+		replaced = compileEffectDecorator(node)
+	}
+	else if (decoName === 'watch') {
+		replaced = compileWatchDecorator(node, decorator)
+	}
+
+	if (replaced) {
+		interpolator.replace(index, InterpolationContentType.Normal, () => replaced!)
+	}
+})
 
 
 

@@ -1,7 +1,6 @@
 import type TS from 'typescript'
-import {helper, ts} from '../../base'
+import {helper, ts, visiting} from '../../base'
 import {Context} from './context'
-import {VisitingTree} from './visiting-tree'
 
 
 export enum ContextType {
@@ -97,7 +96,7 @@ export namespace ContextTree {
 		}
 
 		// Function like
-		else if (helper.isFunctionLike(node)) {
+		else if (helper.pack.isFunctionLike(node)) {
 			return ContextType.FunctionLike
 		}
 
@@ -153,7 +152,7 @@ export namespace ContextTree {
 
 		// Flow stop, and has content.
 		// `break` and `continue` contains no expressions, so should not be a context type.
-		else if (helper.isFlowInterruption(node)) {
+		else if (helper.pack.isFlowInterruption(node)) {
 			return ContextType.FlowInterruptWithContent
 		}
 
@@ -273,7 +272,7 @@ export namespace ContextTree {
 	/** Find an ancestral context, which can insert variable to. */
 	export function findClosestPositionToAddVariable(index: number, from: Context): ContextTargetPosition {
 		let context = from
-		let variableDeclarationIndex = VisitingTree.findUpward(index, from.visitingIndex, ts.isVariableDeclaration)
+		let variableDeclarationIndex = visiting.findUpward(index, from.visitingIndex, ts.isVariableDeclaration)
 		let interruptOnPath = false
 
 		// Look upward for a variable declaration.
@@ -289,7 +288,7 @@ export namespace ContextTree {
 			let node = context.node
 
 			// Not extend from `if()...` to `if(){...}`.
-			if (helper.canPutStatements(node)) {
+			if (helper.pack.canPutStatements(node)) {
 				break
 			}
 
@@ -299,7 +298,7 @@ export namespace ContextTree {
 
 		return {
 			context,
-			index: VisitingTree.getFirstChildIndex(context.visitingIndex),
+			index: visiting.getFirstChildIndex(context.visitingIndex)!,
 			interruptOnPath,
 		}
 	}
@@ -324,7 +323,7 @@ export namespace ContextTree {
 		while (context) {
 
 			// Can extend from `if()...` to `if(){...}`.
-			if (helper.canMayExtendToPutStatements(context.node)) {
+			if (helper.pack.canMayExtendToPutStatements(context.node)) {
 				break
 			}
 
@@ -350,11 +349,11 @@ export namespace ContextTree {
 			context = context.parent!
 		}
 
-		if (helper.canPutStatements(context.node)) {
+		if (helper.pack.canPutStatements(context.node)) {
 
 			// Look up until parent is context node.
-			while (VisitingTree.getParentIndex(index) !== context.visitingIndex) {
-				index = VisitingTree.getParentIndex(index)!
+			while (visiting.getParentIndex(index) !== context.visitingIndex) {
+				index = visiting.getParentIndex(index)!
 			}
 		}
 		else {

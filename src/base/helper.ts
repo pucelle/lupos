@@ -42,12 +42,12 @@ export namespace helper {
 	export namespace deco {
 
 		/** Get the first decorator from a class declaration, a property or method declaration. */
-		export function getFirstDecorator(node: TS.ClassDeclaration | TS.MethodDeclaration | TS.PropertyDeclaration): TS.Decorator | undefined {
+		export function getFirst(node: TS.ClassDeclaration | TS.MethodDeclaration | TS.PropertyDeclaration): TS.Decorator | undefined {
 			return node.modifiers?.find(m => ts.isDecorator(m)) as TS.Decorator | undefined
 		}
 
 		/** Get the first decorator name of a decorator. */
-		export function getDecoratorName(node: TS.Decorator): string | undefined {
+		export function getName(node: TS.Decorator): string | undefined {
 			let exp = node.expression
 
 			let identifier = ts.isCallExpression(exp) 
@@ -72,9 +72,9 @@ export namespace helper {
 		}
 
 		/** Get the first decorator from a class declaration, a property or method declaration. */
-		export function getFirstDecoratorName(node: TS.ClassDeclaration | TS.MethodDeclaration | TS.PropertyDeclaration): string | undefined {
-			let decorator = getFirstDecorator(node)
-			let decoName = decorator ? getDecoratorName(decorator) : undefined
+		export function getFirstName(node: TS.ClassDeclaration | TS.MethodDeclaration | TS.PropertyDeclaration): string | undefined {
+			let decorator = getFirst(node)
+			let decoName = decorator ? getName(decorator) : undefined
 
 			return decoName
 		}
@@ -234,7 +234,7 @@ export namespace helper {
 		}
 
 		/** Get constructor parameter list, even from super class. */
-		export function getConstructorParameters(node: TS.ClassDeclaration): TS.ParameterDeclaration[] | undefined {
+		export function getConstructorParameters(node: TS.ClassDeclaration): TS.ParameterDeclaration[] {
 			let constructor = getConstructor(node)
 			if (constructor) {
 				return [...constructor.parameters]
@@ -245,7 +245,7 @@ export namespace helper {
 				return getConstructorParameters(superClass)
 			}
 
-			return undefined
+			return []
 		}
 
 		/** Whether property or method has specified modifier. */
@@ -271,33 +271,16 @@ export namespace helper {
 
 
 
-	/** Tagged Template part. */
-	export namespace template {
-
-		/** Get the name of a tagged template. */
-		export function getName(node: TS.TaggedTemplateExpression): string | undefined {
-			let resolved = symbol.resolveImport(node.tag)
-			if (resolved) {
-				return resolved.memberName
-			}
-
-			let tagNameDecl = symbol.findDeclaration(node.tag, ts.isFunctionDeclaration)
-			return tagNameDecl?.name?.text
-		}
-	}
-
-
-
-	/** Property Accessing. */
+	/** Property Access. */
 	export namespace access {
 
 		/** Whether be accessing like `a.b` or `a[b]`. */
-		export function is(node: TS.Node): node is PropertyAccessNode {
+		export function isAccess(node: TS.Node): node is PropertyAccessNode {
 			return ts.isPropertyAccessExpression(node) || ts.isElementAccessExpression(node)
 		}
 
 		/** get accessing name node. */
-		export function getName(node: PropertyAccessNode): TS.Expression {
+		export function getNameNode(node: PropertyAccessNode): TS.Expression {
 			return ts.isPropertyAccessExpression(node)
 				? node.name
 				: node.argumentExpression
@@ -305,7 +288,7 @@ export namespace helper {
 
 		/** get property accessing name. */
 		export function getNameText(node: PropertyAccessNode): string{
-			return getText(getName(node))
+			return getText(getNameNode(node))
 		}
 
 		/** Analysis whether a property access expression is readonly. */
@@ -428,7 +411,7 @@ export namespace helper {
 		}
 
 		/** Get the name of the type of a node, type parameters are excluded. */
-		export function getOnlyName(node: TS.Node): string | undefined {
+		export function getName(node: TS.Node): string | undefined {
 			return getTypeOnlyName(typeChecker.getTypeAtLocation(node))
 		}
 
@@ -939,20 +922,20 @@ export namespace helper {
 
 		/** 
 		 * Try to clean a node to remove all not-necessary nodes deeply,
-		 * like remove as type, or unpack parenthesized.
+		 * like remove as expression, or unpack parenthesized.
 		 */
-		export function simplify<T extends TS.Node>(node: T): T {
+		export function simplifyDeeply<T extends TS.Node>(node: T): T {
 			if (ts.isAsExpression(node) || ts.isParenthesizedExpression(node)) {
-				return ts.visitNode(node.expression, simplify) as T
+				return ts.visitNode(node.expression, simplifyDeeply) as T
 			}
 			else {
-				return ts.visitEachChild(node, simplify, transformContext) as T
+				return ts.visitEachChild(node, simplifyDeeply, transformContext) as T
 			}
 		}
 
 		/** 
 		 * Try to clean a node to remove all not-necessary nodes shallow,
-		 * like remove as type, or unpack parenthesized.
+		 * like remove as expression, or unpack parenthesized.
 		 */
 		export function simplifyShallow(node: TS.Node): TS.Node {
 			if (ts.isAsExpression(node) || ts.isParenthesizedExpression(node)) {
@@ -964,7 +947,7 @@ export namespace helper {
 		}
 
 		/** Try extract final expressions from a parenthesized expression. */
-		export function extractFinalParenthesizedExpression(pe: TS.ParenthesizedExpression): TS.Expression {
+		export function extractFinalParenthesized(pe: TS.ParenthesizedExpression): TS.Expression {
 			let exp = pe.expression
 			if (ts.isBinaryExpression(exp) && exp.operatorToken.kind === ts.SyntaxKind.CommaToken) {
 				return exp.right

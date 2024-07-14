@@ -1,10 +1,8 @@
 import type TS from 'typescript'
-import {PropertyAccessNode, factory, helper, ts} from '../../base'
+import {InterpolationContentType, PropertyAccessNode, factory, helper, interpolator, modifier, ts, visiting} from '../../base'
 import {Context} from './context'
 import {ContextTargetPosition, ContextTree, ContextType} from './context-tree'
-import {VisitingTree} from './visiting-tree'
-import {Interpolator} from './interpolator'
-import {ContextAccessingGrouper} from './context-accessing-grouper'
+import {AccessGrouper} from './access-grouper'
 
 
 /** 
@@ -58,30 +56,30 @@ export class ContextCapturer {
 		}
 
 		this.captured = []
-		this.addCapturedIndices(captured, atIndex)
+		this.addCapturedTo(captured, atIndex)
 	}
 
 	/** Insert specified captured indices to specified position. */
-	addCapturedIndices(captured: number[], atIndex: number, ) {
-		Interpolator.addBefore(atIndex, () => this.transferCaptured(captured))
+	addCapturedTo(captured: number[], atIndex: number) {
+		interpolator.before(atIndex, InterpolationContentType.Tracking, () => this.transferCaptured(captured))
 	}
 
 	/** Transfer specified indices to specified position. */
 	private transferCaptured(captured: number[]): TS.Expression[] {
 		let exps = captured.map(i => {
-			let node = Interpolator.outputChildren(i) as PropertyAccessNode
+			let node = interpolator.outputChildren(i) as PropertyAccessNode
 			let exp = node.expression
-			let name = helper.getPropertyAccessingName(node)
+			let name = helper.access.getNameNode(node)
 			let changed = false
 
-			// Normally for `a().b` -> `(_ref_ = a(), _ref_).b`
+			// Normally for `a().b` -> `(_ref_ = a(), _ref_).b`, extract `_ref_.b`.
 			if (ts.isParenthesizedExpression(exp)) {
-				exp = helper.extractFinalFromParenthesizeExpression(exp) as TS.LeftHandSideExpression
+				exp = helper.pack.extractFinalParenthesized(exp) as TS.LeftHandSideExpression
 				changed = true
 			}
 
 			if (ts.isParenthesizedExpression(name)) {
-				name = helper.extractFinalFromParenthesizeExpression(name)
+				name = helper.pack.extractFinalParenthesized(name)
 				changed = true
 			}
 
@@ -97,7 +95,7 @@ export class ContextCapturer {
 			}
 		})
 
-		return ContextAccessingGrouper.makeGetExpressions(exps)
+		return AccessGrouper.makeGetExpressions(exps)
 	}
 
 	/** 
@@ -114,13 +112,13 @@ export class ContextCapturer {
 		let refName = varPosition.context.variables.makeUniqueVariable('_ref_')
 
 		// Insert one: `var ... _ref_ = ...`
-		if (ts.isVariableDeclaration(VisitingTree.getNode(varPosition.index))) {
+		if (ts.isVariableDeclaration(visiting.getNode(varPosition.index))) {
 			
 			// insert `var _ref_ = a.b()` to found position.
-			Interpolator.addVariableAssignment(index, varPosition.index, refName)
+			modifier.addVariableAssignmentToList(index, varPosition.index, refName)
 
 			// replace `a.b()` -> `_ref_`.
-			Interpolator.addReferenceReplace(index, () => factory.createIdentifier(refName))
+			interpolator.replace(index, InterpolationContentType.Reference, () => factory.createIdentifier(refName))
 
 			return varPosition
 		}
@@ -132,10 +130,10 @@ export class ContextCapturer {
 			let refPosition = ContextTree.findClosestPositionToAddStatement(index, this.context)
 
 			// insert `_ref_ = a.b()` to found position.
-			Interpolator.addReferenceAssignment(index, refPosition.index, refName)
+			modifier.addReferenceAssignment(index, refPosition.index, refName)
 
 			// replace `a.b()` -> `_ref_`.
-			Interpolator.addReferenceReplace(index, () => factory.createIdentifier(refName))
+			interpolator.replace(index, InterpolationContentType.Reference, () => factory.createIdentifier(refName))
 
 			return refPosition
 		}
@@ -158,7 +156,7 @@ export class ContextCapturer {
 	/** Add reference variables as declaration statements. */
 	private addReferenceVariables() {
 		if (this.referenceVariableNames.length > 0) {
-			Interpolator.addVariables(this.context.visitingIndex, this.referenceVariableNames)
+			modifier.addVariables(this.context.visitingIndex, this.referenceVariableNames)
 			this.referenceVariableNames = []
 		}
 	}
@@ -181,14 +179,13 @@ export class ContextCapturer {
 		let index = this.context.visitingIndex
 
 		// Can put statements, insert to the end of statements.
-		if (helper.canPutStatements(node)) {
-			let endIndex = VisitingTree.getLastChildIndex(index)
-			Interpolator.addAfter(endIndex, () => this.transferCaptured(captured))
+		if (helper.pack.canPutStatements(node)) {
+			interpolator.append(index, InterpolationContentType.Tracking, () => this.transferCaptured(captured))
 		}
 
 		// insert after current index, and process later.
 		else {
-			Interpolator.addAfter(index, () => this.transferCaptured(captured))
+			interpolator.after(index, InterpolationContentType.Tracking, () => this.transferCaptured(captured))
 		}
 	}
 }

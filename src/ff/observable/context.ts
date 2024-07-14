@@ -1,12 +1,10 @@
 import type TS from 'typescript'
 import {ObservedChecker} from './observed-checker'
-import {helper, PropertyAccessNode, ts} from '../../base'
+import {helper, modifier, PropertyAccessNode, ts, visiting} from '../../base'
 import {ContextState} from './context-state'
 import {ContextTargetPosition, ContextTree, ContextType} from './context-tree'
-import {VisitingTree} from './visiting-tree'
 import {ContextVariables} from './context-variables'
 import {ContextCapturer} from './context-capturer'
-import {Interpolator} from './interpolator'
 
 
 /** 
@@ -27,7 +25,7 @@ export class Context {
 
 	constructor(type: ContextType, node: TS.Node, parent: Context | null) {
 		this.type = type
-		this.visitingIndex = VisitingTree.current.index
+		this.visitingIndex = visiting.current.index
 		this.node = node
 		this.parent = parent
 		this.state = new ContextState(this)
@@ -80,7 +78,7 @@ export class Context {
 		}
 
 		// Add property declaration.
-		else if (helper.isPropertyAccessing(node)) {
+		else if (helper.access.isAccess(node)) {
 			this.addGet(node)
 		}
 
@@ -89,7 +87,7 @@ export class Context {
 			|| ts.isBreakOrContinueStatement(node)
 		) {
 			this.state.applyInnerBreakLike(true)
-			this.addBreak(VisitingTree.current.index)
+			this.addBreak(visiting.current.index)
 		}
 	}
 
@@ -103,18 +101,18 @@ export class Context {
 			return
 		}
 
-		let index = VisitingTree.current.index
+		let index = visiting.current.index
 		let position: ContextTargetPosition | null = null
 
 		// Use a reference variable to replace expression.
 		if (ObservedChecker.shouldReference(node.expression)) {
-			let expIndex = VisitingTree.getFirstChildIndex(index)
+			let expIndex = visiting.getFirstChildIndex(index)!
 			position = this.capturer.reference(expIndex)
 		}
 
 		// Use a reference variable to replace name.
-		if (ObservedChecker.shouldReference(helper.getPropertyAccessingName(node))) {
-			let nameIndex = VisitingTree.getLastChildIndex(index)
+		if (ObservedChecker.shouldReference(helper.access.getNameNode(node))) {
+			let nameIndex = visiting.getLastChildIndex(index)!
 			position = this.capturer.reference(nameIndex) || position
 		}
 
@@ -122,7 +120,7 @@ export class Context {
 
 			// Capture immediately and insert it into position.
 			if (position.interruptOnPath) {
-				position.context.capturer.addCapturedIndices([index], position.index)
+				position.context.capturer.addCapturedTo([index], position.index)
 			}
 
 			// Capture by target context.
@@ -141,14 +139,14 @@ export class Context {
 				this.visitingIndex, this
 			)
 
-			Interpolator.moveOnce(this.visitingIndex, toPosition.index)
+			modifier.moveOnce(this.visitingIndex, toPosition.index)
 		}	
 	}
 
 	/** Add a break and output expressions before specified position. */
 	private addBreak(index: number) {
-		let parentIndex = VisitingTree.getParentIndex(index)!
-		let parentNode = VisitingTree.getNode(parentIndex)
+		let parentIndex = visiting.getParentIndex(index)!
+		let parentNode = visiting.getNode(parentIndex)
 
 		// Insert before expression statement.
 		if (ts.isExpressionStatement(parentNode)) {

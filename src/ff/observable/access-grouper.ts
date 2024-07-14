@@ -4,11 +4,11 @@ import {groupBy} from '../../utils'
 import {ObservedChecker} from './observed-checker'
 
 
-export namespace ContextAccessingGrouper {
+export namespace AccessGrouper {
 	
 	/** Group expressions to lately insert a position. */
 	export function makeGetExpressions(getExps: PropertyAccessNode[]): TS.Expression[] {
-		getExps = getExps.map(exp => helper.cleanExpression(exp))
+		getExps = getExps.map(exp => helper.pack.simplifyDeeply(exp))
 
 		let grouped = groupGetExpressions(getExps)
 		let exps = grouped.map(item => createGroupedGetExpression(item))
@@ -58,7 +58,7 @@ export namespace ContextAccessingGrouper {
 		// `a?.b` -> `a && trackGet(a, 'b')`
 		if (node.questionDotToken) {
 			return factory.createBinaryExpression(
-				helper.removePropertyAccessingComments(node.expression),
+				helper.pack.removeComments(node.expression),
 				factory.createToken(ts.SyntaxKind.AmpersandAmpersandToken),
 				trackGet
 			)
@@ -76,7 +76,7 @@ export namespace ContextAccessingGrouper {
 		let nameExps = [...group.values()].map(nodes => getAccessingNodeNameProperty(nodes[0]))
 
 		return [
-			helper.removePropertyAccessingComments(node.expression),
+			helper.pack.removeComments(node.expression),
 			...nameExps,
 		]
 	}
@@ -90,7 +90,7 @@ export namespace ContextAccessingGrouper {
 
 	/** Get a name expression key. */
 	function getNameKey(node: PropertyAccessNode): string {
-		if (helper.isNodeArrayType(node.expression) || ObservedChecker.isMapOrSetReading(node)) {
+		if (helper.types.isArray(node.expression) || ObservedChecker.isMapOrSetReading(node)) {
 			return ''
 		}
 		else if (ts.isPropertyAccessExpression(node)) {
@@ -111,14 +111,14 @@ export namespace ContextAccessingGrouper {
 	function getAccessingNodeNameProperty(node: PropertyAccessNode): TS.Expression {
 		let name: TS.Expression
 
-		if (helper.isNodeArrayType(node.expression) || ObservedChecker.isMapOrSetReading(node)) {
+		if (helper.types.isArray(node.expression) || ObservedChecker.isMapOrSetReading(node)) {
 			name = factory.createStringLiteral('')
 		}
 		else if (ts.isPropertyAccessExpression(node)) {
 			name = factory.createStringLiteral(helper.getText(node.name))
 		}
 		else {
-			name = helper.removePropertyAccessingComments(node.argumentExpression)
+			name = helper.pack.removeComments(node.argumentExpression)
 		}
 
 		return name

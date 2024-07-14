@@ -2,7 +2,7 @@ import {ListMap} from '../utils'
 import type TS from 'typescript'
 import {factory, sourceFile, ts} from './global'
 import {helper} from './helper'
-import {interpolator} from './interpolator'
+import {InterpolationContentType, interpolator} from './interpolator'
 import {visiting} from './visiting'
 
 
@@ -41,15 +41,13 @@ export namespace modifier {
 
 		if (existing) {
 			let toIndex = visiting.getIndex(existing)
-			interpolator.addReplace(toIndex, () => member)
+			interpolator.replace(toIndex, InterpolationContentType.Normal, () => member)
 		}
 		else if (preferInsertToHead) {
-			let toIndex = visiting.getFirstChildIndex(classIndex)!
-			interpolator.addBefore(toIndex, () => member)
+			interpolator.prepend(classIndex, InterpolationContentType.Normal, () => member)
 		}
 		else {
-			let toIndex = visiting.getLastChildIndex(classIndex)!
-			interpolator.addAfter(toIndex, () => member)
+			interpolator.append(classIndex, InterpolationContentType.Normal, () => member)
 		}
 	}
 	
@@ -61,6 +59,94 @@ export namespace modifier {
 	export function addImport(memberName: string, moduleName: string) {
 		imports.addIf(moduleName, memberName)
 	}
+
+	
+	/** 
+	 * Insert a variable assignment from a position to an existing variable list.
+	 * `a.b()` -> `var ..., _ref_ = a.b()`, and move it.
+	 */
+	export function addVariableAssignmentToList(fromIndex: number, toIndex: number, varName: string) {
+		interpolator.before(toIndex, InterpolationContentType.VariableDeclaration, () => {
+			let node = interpolator.outputChildren(fromIndex) as TS.Expression
+
+			return factory.createVariableDeclaration(
+				factory.createIdentifier(varName),
+				undefined,
+				undefined,
+				node
+			)
+		})
+	}
+
+	/** 
+	 * Insert a reference expression from a position to another position.
+	 * `a.b()` -> `_ref_ = a.b()`, and move it.
+	 */
+	export function addReferenceAssignment(fromIndex: number, toIndex: number, refName: string) {
+		interpolator.before(toIndex, InterpolationContentType.Reference, () => {
+			let node = interpolator.outputChildren(fromIndex) as TS.Expression
+
+			return factory.createBinaryExpression(
+				factory.createIdentifier(refName),
+				factory.createToken(ts.SyntaxKind.EqualsToken),
+				node
+			)
+		})
+	}
+
+	/** Add variables as declaration statements. */
+	export function addVariables(index: number, names: string[]) {
+		let rawNode = visiting.getNode(index)
+		let exps: TS.VariableDeclarationList | TS.VariableDeclaration[]
+		let toIndex: number
+		
+		if (helper.pack.canPutStatements(rawNode)) {
+			exps = factory.createVariableDeclarationList(
+				names.map(name => 
+					factory.createVariableDeclaration(
+						factory.createIdentifier(name),
+						undefined,
+						undefined,
+						undefined
+					)
+				),
+				ts.NodeFlags.None
+			)
+
+			// Insert the first of block.
+			if (helper.pack.canBlock(rawNode)) {
+				toIndex = visiting.getFirstChildIndex(index)!
+			}
+
+			// Insert the statements of `case` of `default`.
+			else {
+				toIndex = visiting.getChildIndex(index, 1)
+			}
+		}
+
+		// `for (let i = 0; ...) ...`
+		else if (ts.isVariableStatement(rawNode)) {
+
+			// First of variable list.
+			toIndex = visiting.getFirstChildIndex(visiting.getFirstChildIndex(index)!)!
+
+			exps = names.map(name => 
+				factory.createVariableDeclaration(
+					factory.createIdentifier(name),
+					undefined,
+					undefined,
+					undefined
+				)
+			)
+		}
+
+		else {
+			throw new Error(`Cant add variables to "${helper.getText(visiting.getNode(index))}"!`)
+		}
+
+		interpolator.before(toIndex, InterpolationContentType.VariableDeclaration, () => exps)
+	}
+
 
 	/** Apply imports to do interpolation. */
 	export function apply() {
@@ -82,23 +168,7 @@ export namespace modifier {
 			// Add more imports.
 			if (importDecl) {
 				let namedImportsIndex = visiting.getIndex(importDecl.importClause!.namedBindings!)
-				let toIndex = visiting.getLastChildIndex(namedImportsIndex)
-
-				// Add names.
-				if (toIndex !== undefined) {
-					interpolator.addAfter(toIndex, () => namedImports)
-				}
-
-				// Replace whole `{}` to `{...}`.
-				else {
-					let clause = factory.createImportClause(
-						false,
-						undefined,
-						factory.createNamedImports(namedImports)
-					)
-
-					interpolator.addReplace(namedImportsIndex, () => clause)
-				}
+				interpolator.append(namedImportsIndex, InterpolationContentType.Normal, () => namedImports)
 			}
 
 			// Add an import statement.
@@ -116,7 +186,7 @@ export namespace modifier {
 
 				let beforeNode = sourceFile.statements.find(st => !ts.isImportDeclaration(st))!
 				let toIndex = visiting.getIndex(beforeNode)
-				interpolator.addBefore(toIndex, () => importDecl!)
+				interpolator.before(toIndex, InterpolationContentType.Normal, () => importDecl!)
 			}
 		}
 	}

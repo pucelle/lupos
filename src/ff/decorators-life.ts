@@ -2,63 +2,60 @@ import type TS from 'typescript'
 import {ts, defineVisitor, modifier, helper, factory} from '../base'
 
 
-defineVisitor(
+// Add some decorator compiled part to `constructor` or `onConnected` and `onDisconnected`.
+defineVisitor((node: TS.Node, index: number) => {
+	if (!ts.isClassDeclaration(node)) {
+		return
+	}
 
-	// Add some decorator compiled part to `constructor` or `onConnected` and `onDisconnected`.
-	(node: TS.Node) => {
-		if (!ts.isClassDeclaration(node)) {
-			return false
+	let hasNeedToCompileMembers = hasEffectOrWatchDecorator(node)
+	if (!hasNeedToCompileMembers) {
+		return
+	}
+
+	let connect: TS.MethodDeclaration | TS.ConstructorDeclaration | undefined = undefined
+	let disconnect: TS.MethodDeclaration | undefined = undefined
+
+	// Be a component.
+	if (helper.cls.isDerivedOf(node, 'Component', '@pucelle/lupos.js')) {
+		connect = helper.cls.getMethod(node, 'onConnected')
+		if (!connect) {
+			connect = createCallSuperMethod('onConnected')
 		}
 
-		return true
-	},
-	(node: TS.ClassDeclaration) => {
-		let members = node.members
-		let hasMembers = hasEffectOrWatchDecorator(node)
+		disconnect = helper.cls.getMethod(node, 'onDisconnected')
+		if (!disconnect) {
+			disconnect = createCallSuperMethod('onDisconnected')
+		}
+	}
+	else {
+		connect = helper.cls.getConstructor(node)
+		if (!connect) {
+			connect = createConstructor(node)
+		}
+	}
 
-		if (hasMembers) {
-			let connect: TS.MethodDeclaration | TS.ConstructorDeclaration | undefined = undefined
-			let disconnect: TS.MethodDeclaration | undefined = undefined
-
-			// Be a component.
-			if (helper.isDerivedClassOf(node, 'Component', '@pucelle/lupos.js')) {
-				connect = helper.getClassMethod(node, 'onConnected')
-				if (!connect) {
-					connect = createCallSuperMethod('onConnected')
-				}
-
-				disconnect = helper.getClassMethod(node, 'onDisconnected')
-				if (!disconnect) {
-					disconnect = createCallSuperMethod('onDisconnected')
-				}
-			}
-			else {
-				connect = helper.getConstructor(node)
-				if (!connect) {
-					connect = createConstructor(node)
-				}
-			}
-
-			for (let member of members) {
-				if (!ts.isMethodDeclaration(member)) {
-					continue
-				}
-
-				let decoName = helper.getFirstDecoratorName(member)
-				if (!decoName || !['effect', 'watch'].includes(decoName)) {
-					continue
-				}
-
-				[connect, disconnect] = compileEffectOrWatchDecorator(member, connect, disconnect)
-			}
-
-			let newMembers = [connect, disconnect].filter(v => v) as TS.ClassElement[]
-			node = modifier.replaceClassMembers(node, newMembers, true)
+	for (let member of node.members) {
+		if (!ts.isMethodDeclaration(member)) {
+			continue
 		}
 
-		return node
-	},
-)
+		let decoName = helper.deco.getFirstName(member)
+		if (!decoName || !['effect', 'watch'].includes(decoName)) {
+			continue
+		}
+
+		[connect, disconnect] = compileEffectOrWatchDecorator(member, connect, disconnect)
+	}
+
+	for (let member of [connect, disconnect]) {
+		if (!member) {
+			continue
+		}
+
+		modifier.addClassMember(index, member, false)
+	}
+})
 
 
 function hasEffectOrWatchDecorator(node: TS.ClassDeclaration) {
@@ -67,7 +64,7 @@ function hasEffectOrWatchDecorator(node: TS.ClassDeclaration) {
 			return false
 		}
 
-		let decoName = helper.getFirstDecoratorName(member)
+		let decoName = helper.deco.getFirstName(member)
 		if (decoName && ['effect', 'watch'].includes(decoName)) {
 			return true
 		}
@@ -175,10 +172,11 @@ function createCallSuperMethod(name: string): TS.MethodDeclaration {
 
 /** Create a constructor function. */
 function createConstructor(node: TS.ClassDeclaration): TS.ConstructorDeclaration {
-	let parameters = helper.getConstructorParameters(node)
+	let parameters = helper.cls.getConstructorParameters(node)
 	let statements: TS.Statement[] = []
+	let superCls = helper.cls.getSuper(node)
 
-	if (parameters) {
+	if (superCls) {
 		let callSuper = factory.createExpressionStatement(factory.createCallExpression(
 			factory.createSuper(),
 			undefined,

@@ -3,7 +3,6 @@ import {ObservedChecker} from './observed-checker'
 import {helper, ts} from '../../base'
 import {Context} from './context'
 import {ContextType} from './context-tree'
-import {ClassRange} from './class-range'
 
 
 /** Mark all variables with a context. */
@@ -56,15 +55,17 @@ export class ContextVariables {
 
 			// Class type resolved implements `Observed<>`.
 			else if (ts.isTypeReferenceNode(typeNode)) {
-				let clsDecl = helper.resolveOneDeclaration(typeNode.typeName, ts.isClassDeclaration)
-				if (clsDecl && helper.isClassImplemented(clsDecl, 'Observed', '@pucelle/ff')) {
+				let clsDecl = helper.symbol.findDeclaration(typeNode.typeName, ts.isClassDeclaration)
+				if (clsDecl && helper.cls.isImplemented(clsDecl, 'Observed', '@pucelle/ff')) {
 					return true
 				}
 			}
 		}
 
-		// In the range of an observed class.
-		else if (ClassRange.isObserved()) {
+		// Method of an observed class.
+		else if (ts.isClassDeclaration(node.parent)
+			&& helper.cls.isImplemented(node.parent, 'Observed', '@pucelle/ff')
+		) {
 			return true
 		}
 
@@ -162,7 +163,7 @@ export class ContextVariables {
 		) {
 			if (ts.isCallExpression(node.parent)) {
 				let exp = node.parent.expression
-				if (helper.isPropertyAccessing(exp)) {
+				if (helper.access.isAccess(exp)) {
 
 					// `a.b`
 					let callFrom = exp.expression
@@ -178,7 +179,7 @@ export class ContextVariables {
 	/** Remember observed parameters. */
 	private makeParametersObserved(parameters: TS.NodeArray<TS.ParameterDeclaration>) {
 		for (let param of parameters) {
-			let beObject = helper.isNodeObjectType(param)
+			let beObject = helper.types.isPrimitiveObject(param)
 			if (beObject) {
 				this.variableObserved.set(helper.getText(param.name), true)
 			}

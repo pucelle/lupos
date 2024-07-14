@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {helper, defineVisitor, ts, factory, interpolator} from '../base'
+import {helper, defineVisitor, ts, factory, interpolator, InterpolationContentType} from '../base'
 
 
 defineVisitor((node: TS.Node, index: number) => {
@@ -70,7 +70,7 @@ function parseTaggedTemplate(node: TS.TaggedTemplateExpression, index: number) {
 	}
 	
 	if (replaced) {
-		interpolator.addReplace(index, () => replaced!)
+		interpolator.replace(index, InterpolationContentType.Normal, () => replaced!)
 	}
 }
 
