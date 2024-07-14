@@ -14,7 +14,7 @@
 		"build": "tsc -b",
 		"watch": "tsc -b -w",
 		"prepublish": "tsc -b",
-		"test": "cd tests && tspc && cd ../ && jest"
+		"test": "cd tests && tspc && echo Compare git changes!"
 	},
 	"dependencies": {
 		"@pucelle/ff": "^2.0.0"

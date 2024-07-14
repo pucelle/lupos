@@ -10,8 +10,11 @@ defineVisitor(function(node: TS.Node, index: number) {
 	}
 
 	let decorator = helper.deco.getFirst(node)!
-	let decoName = helper.deco.getName(decorator)
+	if (!decorator) {
+		return
+	}
 
+	let decoName = helper.deco.getName(decorator)
 	if (!decoName || !['computed', 'effect', 'watch'].includes(decoName)) {
 		return
 	}

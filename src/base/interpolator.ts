@@ -268,13 +268,8 @@ export namespace interpolator {
 		let rawParent = visiting.getNode(visiting.getParentIndex(index)!)
 		let isFlowInterrupted = helper.pack.isFlowInterruption(rawNode)
 
-		// Add more variable declaration.
-		if (ts.isVariableDeclaration(rawNode)) {
-			return arrangeNeighborNodes(node, beforeNodes, afterNodes, false)
-		}
-
 		// Insert statements.
-		else if (helper.pack.canPutStatements(rawParent)) {
+		if (helper.pack.canPutStatements(rawParent)) {
 			let list = arrangeNeighborNodes(node, beforeNodes, afterNodes, isFlowInterrupted)
 			return list.map(n => helper.pack.toStatement(n))
 		}
@@ -306,10 +301,10 @@ export namespace interpolator {
 			return helper.pack.parenthesizeExpressions(...list)
 		}
 
-		// Otherwise, Parenthesize and no need to return original.
+		// Otherwise, return list directly.
 		else {
 			let list = arrangeNeighborNodes(node, beforeNodes, afterNodes, false)
-			return helper.pack.parenthesizeExpressions(...list)
+			return list
 		}
 	}
 

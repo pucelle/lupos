@@ -19,5 +19,5 @@
 			{"transform": "../src/index.ts"},
 		]
 	},
-	"include": ["src/**/observable-observed-type.ts"],
+	"include": ["src/**/content-slot.ts"],
 }

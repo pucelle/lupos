@@ -10,7 +10,7 @@ import {ContextTree, ContextType} from './context-tree'
 defineVisitor(function(node: TS.Node) {
 
 	// Create `case` / `default` content context.
-	if (ts.isCaseOrDefaultClause(node.parent) && node === node.parent.statements[0]) {
+	if (node.parent && ts.isCaseOrDefaultClause(node.parent) && node === node.parent.statements[0]) {
 		ContextTree.createContext(ContextType.ConditionalContent, node)
 	}
 
@@ -29,7 +29,9 @@ defineVisitor(function(node: TS.Node) {
 		}
 
 		// Pop `case`/`default` content context.
-		if (ts.isCaseOrDefaultClause(node.parent) && node === node.parent.statements[node.parent.statements.length - 1]) {
+		if (node.parent && ts.isCaseOrDefaultClause(node.parent)
+			&& node === node.parent.statements[node.parent.statements.length - 1]
+		) {
 			ContextTree.pop()
 		}
 	}
