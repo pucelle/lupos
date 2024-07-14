@@ -2,7 +2,7 @@ import type TS from 'typescript'
 import {helper, defineVisitor, ts, factory, interpolator, InterpolationContentType} from '../base'
 
 
-defineVisitor((node: TS.Node, index: number) => {
+defineVisitor(function(node: TS.Node, index: number) {
 
 	// `static style = ...` or `static style() {...}`
 	if (!ts.isTaggedTemplateExpression(node)) {

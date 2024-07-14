@@ -2,7 +2,7 @@ import type TS from 'typescript'
 import {helper, ts, defineVisitor, modifier, factory, interpolator, InterpolationContentType} from '../base'
 
 
-defineVisitor((node: TS.Node, index: number) => {
+defineVisitor(function(node: TS.Node, index: number) {
 		
 	// Method and decorated, and may need to check whether class is observable.
 	if (!ts.isMethodDeclaration(node)) {

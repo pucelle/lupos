@@ -2,7 +2,7 @@ import type TS from 'typescript'
 import {helper, defineVisitor, ts, modifier, factory} from '../base'
 
 
-defineVisitor((node: TS.Node, index: number) => {
+defineVisitor(function(node: TS.Node, index: number) {
 	if (!ts.isClassDeclaration(node)) {
 		return
 	}

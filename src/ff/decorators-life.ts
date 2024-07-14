@@ -3,7 +3,7 @@ import {ts, defineVisitor, modifier, helper, factory} from '../base'
 
 
 // Add some decorator compiled part to `constructor` or `onConnected` and `onDisconnected`.
-defineVisitor((node: TS.Node, index: number) => {
+defineVisitor(function(node: TS.Node, index: number) {
 	if (!ts.isClassDeclaration(node)) {
 		return
 	}

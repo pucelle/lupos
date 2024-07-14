@@ -176,8 +176,8 @@ export namespace ContextTree {
 			}
 		}
 
-		// `switch (...)`
-		if (ts.isSwitchStatement(parent)) {
+		// `switch (...)`, `case (...)`
+		if (ts.isSwitchStatement(parent) || ts.isCaseClause(parent)) {
 			if (node === parent.expression) {
 				return ContextType.ConditionalCondition
 			}
