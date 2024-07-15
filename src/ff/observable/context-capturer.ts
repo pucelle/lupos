@@ -19,26 +19,32 @@ export class ContextCapturer {
 
 	constructor(context: Context) {
 		this.context = context
-		this.mayTransferFromParent()
+		this.transferCapturingFromParent()
 	}
 
-	/** Transfer from function parameters to function body. */
-	private mayTransferFromParent() {
+	/** Transfer from some captured properties to child. */
+	private transferCapturingFromParent() {
 		let parent = this.context.parent
 		if (!parent) {
 			return
 		}
 
+		// Transfer from function parameters to function body.
 		if (parent.type === ContextType.FunctionLike
 			&& this.context.type === ContextType.BlockLike
 		) {
-			let captured = parent.capturer.transferToChild()
+			let captured = parent.capturer.transferCapturedToChild()
 			this.latestCaptured = captured
+		}
+
+		// Broadcast down capture type within a function-like context.
+		if (parent.type !== ContextType.FunctionLike) {
+			this.captureType = parent.capturer.captureType
 		}
 	}
 
 	/** Transfer captured indices to child. */
-	transferToChild() {
+	transferCapturedToChild() {
 		let captured = this.latestCaptured
 		this.latestCaptured = []
 
@@ -57,17 +63,52 @@ export class ContextCapturer {
 
 	/** Capture an index at specified position. */
 	capture(index: number, type: 'get' | 'set') {
-		this.checkCaptureType(type)
+		this.addCaptureType(type)
 		this.latestCaptured.push(index)
 	}
 
 	/** Every time capture a new index, check type and may toggle capture type. */
-	private checkCaptureType(type: 'get' | 'set') {
+	private addCaptureType(type: 'get' | 'set') {
 		if (type === 'set' && this.captureType === 'get') {
-			this.captureType = 'set'
-			this.captured = new Map()
-			this.latestCaptured = []
+			this.broadcastSetCaptureType()
 		}
+	}
+
+	/** Broadcast to closest ancestral function-like capturer. */
+	private broadcastSetCaptureType() {
+		let closestFunctionLikeOrSelf = this.findClosestFunctionLike() || this
+		closestFunctionLikeOrSelf.broadcastDownSetCaptureType()
+	}
+
+	/** Find closest ancestral function-like capturer. */
+	private findClosestFunctionLike(): ContextCapturer | null {
+		let context: Context | null = this.context
+		
+		while (context && context.type !== ContextType.FunctionLike) {
+			context = context.parent
+		}
+
+		return context ? context.capturer : null
+	}
+
+	/** Broadcast down to all child capturers and apply set capture type. */
+	private broadcastDownSetCaptureType() {
+		if (this.captureType === 'set') {
+			return
+		}
+	
+		this.applySetCaptureType()
+
+		for (let child of this.context.children) {
+			child.capturer.broadcastDownSetCaptureType()
+		}
+	}
+
+	/** Apply self capture type to `set`. */
+	private applySetCaptureType() {
+		this.captureType = 'set'
+		this.captured = new Map()
+		this.latestCaptured = []
 	}
 
 	/** Insert captured indices to specified position. */
@@ -83,7 +124,7 @@ export class ContextCapturer {
 
 	/** Insert specified captured indices to specified position. */
 	manuallyAddCaptured(captured: number[], atIndex: number, type: 'get' | 'set') {
-		this.checkCaptureType(type)
+		this.addCaptureType(type)
 
 		if (this.captured.has(atIndex)) {
 			this.captured.get(atIndex)!.push(...captured)
@@ -179,8 +220,27 @@ export class ContextCapturer {
 	/** Before context will exit. */
 	beforeExit() {
 		this.addReferenceVariables()
-		this.addCaptured()
-		this.addRestCaptured()
+
+		// Add captured to interpolator after known capture type of closest ancestral function-like.
+		if (this.context.type === ContextType.FunctionLike) {
+			for (let descent of this.walkSelfAndNonFunctionLikeDescendants()) {
+				descent.addCaptured()
+				descent.addRestCaptured()
+			}
+		}
+	}
+
+	/** Walk self and descendant capturers, and exclude function like capturers. */
+	private *walkSelfAndNonFunctionLikeDescendants(): Iterable<ContextCapturer> {
+		yield this
+
+		for (let child of this.context.children) {
+			if (child.type === ContextType.FunctionLike) {
+				continue
+			}
+
+			child.capturer.walkSelfAndNonFunctionLikeDescendants()
+		}
 	}
 
 	/** Add reference variables as declaration statements. */
