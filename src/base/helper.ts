@@ -322,7 +322,7 @@ export namespace helper {
 	export namespace assignment {
 
 		/** Whether be property assignment like `a = x`. */
-		export function is(node: TS.Node): node is AssignmentNode {
+		export function isAssignment(node: TS.Node): node is AssignmentNode {
 			if (ts.isBinaryExpression(node)) {
 				return node.operatorToken.kind === ts.SyntaxKind.EqualsToken
 					|| node.operatorToken.kind === ts.SyntaxKind.PlusEqualsToken

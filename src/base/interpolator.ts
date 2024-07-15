@@ -40,10 +40,16 @@ export enum InterpolationPosition {
 	/** Insert after. */
 	After,
 
-	/** Prepend before the first of child. */
+	/** 
+	 * Prepend before the first of child list.
+	 * Supports only a few types which have child list.
+	 */
 	Prepend,
 
-	/** Append after the last of child. */
+	/** 
+	 * Append after the last of child list.
+	 * Supports only a few types which have child list.
+	 */
 	Append,
 
 	/** Replace to some other nodes. */
@@ -177,7 +183,7 @@ export namespace interpolator {
 		let i = -1
 
 		return ts.visitEachChild(node, () => {
-			return output(childIndices[++i])
+			return output(childIndices![++i])
 		}, transformContext)
 	}
 
@@ -209,7 +215,7 @@ export namespace interpolator {
 
 		let replace = items.filter(item => item.position === InterpolationPosition.Replace)
 		if (replace.length > 1) {
-			throw new Error(`Only one replace is allowed for position "${helper.getText(visiting.getNode(index))}"!`)
+			throw new Error(`Only one replace is allowed, happened at position "${helper.getText(visiting.getNode(index))}"!`)
 		}
 
 		let node: TS.Node | TS.Node[] | undefined
@@ -218,15 +224,15 @@ export namespace interpolator {
 		if (replace.length > 0) {
 			node = replace[0].replace!()
 
-			if (childNodes.length > 0) {
+			if (prependNodes.length > 0 || appendNodes.length > 0) {
 				console.warn(`Child nodes "${childNodes.map(n => helper.getText(n)).join(', ')}" have been dropped!`)
 			}
 		}
 		else {
 			node = outputChildren(index)
 
-			if (childNodes.length > 0) {
-				node = updateChildNodes(node, childNodes)
+			if (prependNodes.length > 0 || appendNodes.length > 0) {
+				node = updateChildNodes(node, prependNodes, appendNodes)
 			}
 		}
 
@@ -238,12 +244,20 @@ export namespace interpolator {
 	}
 
 	/** Update child nodes. */
-	function updateChildNodes(node: TS.Node, childNodes: TS.Node[]): TS.Node {
+	function updateChildNodes(node: TS.Node, prependNodes: TS.Node[], appendNodes: TS.Node[]): TS.Node {
 		if (ts.isNamedImports(node)) {
-			return factory.updateNamedImports(node, childNodes as TS.ImportSpecifier[])
+			return factory.updateNamedImports(node, [
+				...prependNodes as TS.ImportSpecifier[],
+				...node.elements,
+				...appendNodes as TS.ImportSpecifier[],
+			])
 		}
 		else if (ts.isVariableDeclarationList(node)) {
-			return factory.updateVariableDeclarationList(node, childNodes as TS.VariableDeclaration[])
+			return factory.updateVariableDeclarationList(node, [
+				...prependNodes as TS.VariableDeclaration[],
+				...node.declarations,
+				...appendNodes as TS.VariableDeclaration[],
+			])
 		}
 		else if (ts.isClassDeclaration(node)) {
 			return factory.updateClassDeclaration(
@@ -252,7 +266,11 @@ export namespace interpolator {
 				node.name,
 				node.typeParameters,
 				node.heritageClauses,
-				childNodes as TS.ClassElement[],
+				[
+					...prependNodes as TS.ClassElement[],
+					...node.members,
+					...appendNodes as TS.ClassElement[],
+				]
 			)
 		}
 		else {

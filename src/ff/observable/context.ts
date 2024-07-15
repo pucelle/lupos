@@ -64,7 +64,10 @@ export class Context {
 		}
 	}
 
-	/** Visit context node and each descendant node inside current context. */
+	/** 
+	 * Visit context node and each descendant node inside current context.
+	 * When visiting a node, child nodes of this node have visited.
+	 */
 	visitNode(node: TS.Node) {
 		
 		// Add parameters.
@@ -77,9 +80,17 @@ export class Context {
 			this.variables.visitVariable(node)
 		}
 
-		// Add property declaration.
+		// Add property access nodes.
 		else if (helper.access.isAccess(node)) {
-			this.addGet(node)
+			this.addGetTracking(node)
+		}
+
+		// Add property assignment nodes.
+		else if (helper.assignment.isAssignment(node)) {
+			let assignTo = helper.assignment.getTo(node)
+			if (helper.access.isAccess(assignTo)) {
+				this.addSetTracking(assignTo)
+			}
 		}
 
 		// `break` or `continue`, or empty `return`, or body of arrow function.
@@ -91,9 +102,13 @@ export class Context {
 		}
 	}
 
-	/** Add a get expression, already tested and knows should observe it. */
-	private addGet(node: PropertyAccessNode) {
+	/** Add a property access expression. */
+	private addGetTracking(node: PropertyAccessNode) {
 		if (this.state.nothingReturned) {
+			return
+		}
+
+		if (!this.capturer.shouldCapture('get')) {
 			return
 		}
 
@@ -101,7 +116,25 @@ export class Context {
 			return
 		}
 
-		let index = visiting.current.index
+		this.addAnyTracking(node, 'get')
+	}
+
+	/** Add a property assignment expression. */
+	private addSetTracking(node: PropertyAccessNode) {
+		if (!ObservedChecker.isAccessingObserved(node)) {
+			return
+		}
+
+		if (!this.capturer.shouldCapture('set')) {
+			return
+		}
+
+		this.addAnyTracking(node, 'set')
+	}
+
+	/** Add get or set tracking after testing. */
+	private addAnyTracking(node: PropertyAccessNode, type: 'get' | 'set') {
+		let index = visiting.getIndex(node)
 		let position: ContextTargetPosition | null = null
 
 		// Use a reference variable to replace expression.
@@ -120,16 +153,16 @@ export class Context {
 
 			// Capture immediately and insert it into position.
 			if (position.interruptOnPath) {
-				position.context.capturer.addCapturedTo([index], position.index)
+				position.context.capturer.manuallyAddCaptured([index], position.index, type)
 			}
 
 			// Capture by target context.
 			else {
-				position.context.capturer.capture(index)
+				position.context.capturer.capture(index, type)
 			}
 		}
 		else {
-			this.capturer.capture(index)
+			this.capturer.capture(index, type)
 		}
 
 		// Move variable declaration list forward.

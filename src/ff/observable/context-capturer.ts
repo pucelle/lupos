@@ -13,7 +13,9 @@ export class ContextCapturer {
 
 	readonly context: Context
 	private referenceVariableNames: string[] = []
-	private captured: number[] = []
+	private captured: Map<number, number[]> = new Map()
+	private latestCaptured: number[] = []
+	private captureType: 'get' | 'set' = 'get'
 
 	constructor(context: Context) {
 		this.context = context
@@ -31,37 +33,64 @@ export class ContextCapturer {
 			&& this.context.type === ContextType.BlockLike
 		) {
 			let captured = parent.capturer.transferToChild()
-			this.captured = captured
+			this.latestCaptured = captured
 		}
 	}
 
 	/** Transfer captured indices to child. */
 	transferToChild() {
-		let captured = this.captured
-		this.captured = []
+		let captured = this.latestCaptured
+		this.latestCaptured = []
 
 		return captured
 	}
 
+	/** Whether should capture indices in specified type. */
+	shouldCapture(type: 'get' | 'set'): boolean {
+		if (this.captureType === 'set' && type === 'get') {
+			return false
+		}
+		else {
+			return true
+		}
+	}
+
 	/** Capture an index at specified position. */
-	capture(index: number) {
-		this.captured.push(index)
+	capture(index: number, type: 'get' | 'set') {
+		this.checkCaptureType(type)
+		this.latestCaptured.push(index)
+	}
+
+	/** Every time capture a new index, check type and may toggle capture type. */
+	private checkCaptureType(type: 'get' | 'set') {
+		if (type === 'set' && this.captureType === 'get') {
+			this.captureType = 'set'
+			this.captured = new Map()
+			this.latestCaptured = []
+		}
 	}
 
 	/** Insert captured indices to specified position. */
 	breakCaptured(atIndex: number) {
-		let captured = this.captured
+		let captured = this.latestCaptured
 		if (captured.length === 0) {
 			return
 		}
 
-		this.captured = []
-		this.addCapturedTo(captured, atIndex)
+		this.latestCaptured = []
+		this.captured.set(atIndex, captured)
 	}
 
 	/** Insert specified captured indices to specified position. */
-	addCapturedTo(captured: number[], atIndex: number) {
-		interpolator.before(atIndex, InterpolationContentType.Tracking, () => this.transferCaptured(captured))
+	manuallyAddCaptured(captured: number[], atIndex: number, type: 'get' | 'set') {
+		this.checkCaptureType(type)
+
+		if (this.captured.has(atIndex)) {
+			this.captured.get(atIndex)!.push(...captured)
+		}
+		else {
+			this.captured.set(atIndex, captured)
+		}
 	}
 
 	/** Transfer specified indices to specified position. */
@@ -150,6 +179,7 @@ export class ContextCapturer {
 	/** Before context will exit. */
 	beforeExit() {
 		this.addReferenceVariables()
+		this.addCaptured()
 		this.addRestCaptured()
 	}
 
@@ -161,6 +191,13 @@ export class ContextCapturer {
 		}
 	}
 
+	/** Add `captured` as interpolation items. */
+	private addCaptured() {
+		for (let [atIndex, captured] of this.captured.entries()) {
+			interpolator.before(atIndex, InterpolationContentType.Tracking, () => this.transferCaptured(captured))
+		}
+	}
+
 	/** 
 	 * Add rest captured expressions before end position of context, or before a return statement.
 	 * But:
@@ -168,12 +205,12 @@ export class ContextCapturer {
 	 *  - For like `return (_ref_=a()).b`, will reference returned content and move it ahead.
 	 */
 	private addRestCaptured() {
-		let captured = this.captured
+		let captured = this.latestCaptured
 		if (captured.length === 0) {
 			return
 		}
 
-		this.captured = []
+		this.latestCaptured = []
 
 		let node = this.context.node
 		let index = this.context.visitingIndex
