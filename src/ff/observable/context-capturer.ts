@@ -77,7 +77,12 @@ export class ContextCapturer {
 	/** Broadcast to closest ancestral function-like capturer. */
 	private broadcastSetCaptureType() {
 		let closestFunctionLikeOrSelf = this.findClosestFunctionLike() || this
-		closestFunctionLikeOrSelf.broadcastDownSetCaptureType()
+		
+		for (let descent of closestFunctionLikeOrSelf.walkSelfAndNonSetCaptureType()) {
+			descent.captureType = 'set'
+			descent.captured = new Map()
+			descent.latestCaptured = []
+		}
 	}
 
 	/** Find closest ancestral function-like capturer. */
@@ -91,24 +96,17 @@ export class ContextCapturer {
 		return context ? context.capturer : null
 	}
 
-	/** Broadcast down to all child capturers and apply set capture type. */
-	private broadcastDownSetCaptureType() {
-		if (this.captureType === 'set') {
-			return
-		}
-	
-		this.applySetCaptureType()
+	/** Walk self and descendant capturers, and exclude set type capturers. */
+	private *walkSelfAndNonSetCaptureType(): Iterable<ContextCapturer> {
+		yield this
 
 		for (let child of this.context.children) {
-			child.capturer.broadcastDownSetCaptureType()
-		}
-	}
+			if (child.capturer.captureType === 'set') {
+				continue
+			}
 
-	/** Apply self capture type to `set`. */
-	private applySetCaptureType() {
-		this.captureType = 'set'
-		this.captured = new Map()
-		this.latestCaptured = []
+			yield *child.capturer.walkSelfAndNonSetCaptureType()
+		}
 	}
 
 	/** Insert captured indices to specified position. */
@@ -222,7 +220,10 @@ export class ContextCapturer {
 		this.addReferenceVariables()
 
 		// Add captured to interpolator after known capture type of closest ancestral function-like.
-		if (this.context.type === ContextType.FunctionLike) {
+		// For source file should also add captured when for not contained by function-like context.
+		if (this.context.type === ContextType.FunctionLike
+			|| ts.isSourceFile(this.context.node)
+		) {
 			for (let descent of this.walkSelfAndNonFunctionLikeDescendants()) {
 				descent.addCaptured()
 				descent.addRestCaptured()
@@ -239,7 +240,7 @@ export class ContextCapturer {
 				continue
 			}
 
-			child.capturer.walkSelfAndNonFunctionLikeDescendants()
+			yield *child.capturer.walkSelfAndNonFunctionLikeDescendants()
 		}
 	}
 
@@ -256,6 +257,8 @@ export class ContextCapturer {
 		for (let [atIndex, captured] of this.captured.entries()) {
 			interpolator.before(atIndex, InterpolationContentType.Tracking, () => this.transferCaptured(captured))
 		}
+
+		this.addRestCaptured()
 	}
 
 	/** 
