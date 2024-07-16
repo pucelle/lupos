@@ -1,4 +1,12 @@
-	/** Lift node to outer context. */
+/**
+ * 0. Should find a way to hash access expression.
+ * 1. If parent context has a tracking, child contexts should remove it.
+ * 2. If all conditional contexts have same tracking, move it higher.
+ * 3. Try to move tracking from iteration context higher.
+ * 4. If previous captured includes a tracking, should remove it from following captured.
+ */
+
+/** Lift node to outer context. */
 	// private getLiftedContext(node: CanObserveNode): ObservedContext | null {
 	// 	if (this.helper.isPropertyAccessing(node)) {
 	// 		let exp = node.expression

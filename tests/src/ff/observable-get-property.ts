@@ -4,7 +4,7 @@ import {Component} from '@pucelle/lupos.js'
 
 class TestNormalProp extends Component {
 
-	prop: string =  'Text'
+	prop: number =  1
 
 	getProp() {
 		return this.prop
@@ -14,7 +14,7 @@ class TestNormalProp extends Component {
 
 class TestElementProp extends Component {
 
-	prop: string =  'Text'
+	prop: number =  1
 
 	getProp() {
 		let prop = 'prop' as 'prop'
@@ -27,7 +27,7 @@ class TestElementProp extends Component {
 
 class TestObjectProp extends Component {
 
-	prop = {value: 'Text'}
+	prop = {value: 1}
 
 	getProp() {
 		return this.prop.value
@@ -37,7 +37,7 @@ class TestObjectProp extends Component {
 
 class TestRepetitiveProp extends Component {
 
-	prop = {value: 'Text'}
+	prop = {value: 1}
 
 	getProp() {
 		return this.prop.value
@@ -50,8 +50,8 @@ class TestRepetitiveProp extends Component {
 
 class TestGroupedProp extends Component {
 
-	prop1 = {value1: 'Text', value2: 'Text'}
-	prop2 = {value: 'Text'}
+	prop1 = {value1: 1, value2: 2}
+	prop2 = {value: 1}
 
 	getProp() {
 		return this.prop1.value1
@@ -63,7 +63,7 @@ class TestGroupedProp extends Component {
 
 class TestQuestionDotPropMerge extends Component {
 
-	prop: {value: string} | undefined = undefined
+	prop: {value: number} | undefined = undefined
 
 	getProp() {
 		return '' + this.prop?.value

@@ -6,12 +6,12 @@ class TestArrayProp extends Component {
 	prop: {value: number}[] = [{value:1}]
 
 	fixedIndex() {
-		return this.prop[0].value
+		this.prop[0].value += 1
 	}
 
 	dynamicIndex() {
 		let i = 0
-		return this.prop[i].value
+		this.prop[i].value += 1
 	}
 }
 
@@ -24,25 +24,25 @@ class TestAliasArrayTypeOfProp extends Component {
 	prop: ArrayPropAlias = [{value:1}]
 
 	arrayAliasType() {
-		return this.prop[0].value
+		this.prop[0].value += 1
 	}
 }
 
 
-class TestArrayBroadcastingObservedToMapFn extends Component {
+class TestArrayBroadcastingObservedToEachFn extends Component {
 
 	prop: {value: number}[] = [{value:1}]
 
-	mapArrowFnNoBlocking() {
-		return this.prop.map(v => v.value).join('')
+	eachArrowFnNoBlocking() {
+		this.prop.forEach(v => v.value += 1)
 	}
 
-	mapArrowFn() {
-		return this.prop.map(v => {return v.value}).join('')
+	eachArrowFn() {
+		this.prop.forEach(v => {v.value += 1})
 	}
 
-	mapFn() {
-		return this.prop.map(function(v){return v.value}).join('')
+	eachFn() {
+		this.prop.forEach(function(v){v.value += 1})
 	}
 }
 

@@ -142,13 +142,19 @@ export class ContextCapturer {
 
 			// Normally for `a().b` -> `(_ref_ = a(), _ref_).b`, extract `_ref_.b`.
 			if (ts.isParenthesizedExpression(exp)) {
-				exp = helper.pack.extractFinalParenthesized(exp) as TS.LeftHandSideExpression
-				changed = true
+				let extracted = helper.pack.extractFinalParenthesized(exp)
+				if (extracted !== exp) {
+					exp = extracted as TS.LeftHandSideExpression
+					changed = true
+				}
 			}
 
 			if (ts.isParenthesizedExpression(name)) {
-				name = helper.pack.extractFinalParenthesized(name)
-				changed = true
+				let extracted = helper.pack.extractFinalParenthesized(name)
+				if (extracted !== name) {
+					name = extracted
+					changed = true
+				}
 			}
 
 			if (!changed) {
@@ -163,7 +169,7 @@ export class ContextCapturer {
 			}
 		})
 
-		return AccessGrouper.makeGetExpressions(exps)
+		return AccessGrouper.makeExpressions(exps, this.captureType)
 	}
 
 	/** 

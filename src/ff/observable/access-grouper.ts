@@ -7,17 +7,17 @@ import {ObservedChecker} from './observed-checker'
 export namespace AccessGrouper {
 	
 	/** Group expressions to lately insert a position. */
-	export function makeGetExpressions(getExps: PropertyAccessNode[]): TS.Expression[] {
-		getExps = getExps.map(exp => helper.pack.simplifyDeeply(exp))
+	export function makeExpressions(exps: PropertyAccessNode[], type: 'get' | 'set'): TS.Expression[] {
+		exps = exps.map(exp => helper.pack.simplifyDeeply(exp))
 
-		let grouped = groupGetExpressions(getExps)
-		let exps = grouped.map(item => createGroupedGetExpression(item))
+		let grouped = groupGetExpressions(exps)
+		let made = grouped.map(item => createGroupedGetExpression(item, type))
 
-		if (exps.length > 0) {
-			modifier.addImport('trackGet', '@pucelle/ff')
+		if (made.length > 0) {
+			modifier.addImport(type === 'get' ? 'trackGet' : 'trackSet', '@pucelle/ff')
 		}
 
-		return exps
+		return made
 	}
 
 	
@@ -45,12 +45,12 @@ export namespace AccessGrouper {
 
 
 	/** Create a `trackGet` statement. */
-	function createGroupedGetExpression(nodes: PropertyAccessNode[]): TS.Expression {
+	function createGroupedGetExpression(nodes: PropertyAccessNode[], type: 'get' | 'set'): TS.Expression {
 		let node = nodes[0]
 		let parameters = createGetNameParameter(nodes)
 		
 		let trackGet = factory.createCallExpression(
-			factory.createIdentifier('trackGet'),
+			factory.createIdentifier(type === 'get' ? 'trackGet' : 'trackSet'),
 			undefined,
 			parameters
 		)

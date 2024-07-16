@@ -335,9 +335,9 @@ export namespace helper {
 					|| node.operatorToken.kind === ts.SyntaxKind.GreaterThanGreaterThanEqualsToken
 					|| node.operatorToken.kind === ts.SyntaxKind.GreaterThanGreaterThanGreaterThanEqualsToken
 					|| node.operatorToken.kind === ts.SyntaxKind.AmpersandEqualsToken
+					|| node.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandEqualsToken
 					|| node.operatorToken.kind === ts.SyntaxKind.BarEqualsToken
 					|| node.operatorToken.kind === ts.SyntaxKind.BarBarEqualsToken
-					|| node.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandEqualsToken
 					|| node.operatorToken.kind === ts.SyntaxKind.QuestionQuestionEqualsToken
 					|| node.operatorToken.kind === ts.SyntaxKind.CaretEqualsToken
 			}

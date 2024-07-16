@@ -101,7 +101,7 @@ export class Context {
 			this.addBreak(visiting.current.index)
 		}
 	}
-	
+
 	/** Add a property access expression. */
 	private addGetTracking(node: PropertyAccessNode) {
 		if (this.state.nothingReturned) {
@@ -190,7 +190,7 @@ export class Context {
 	}
 
 	/** 
-	 * Do optimize, after all descendant nodes are ready.
+	 * Do optimize, after all descendant contexts are ready.
 	 * Normally it will hoist captured dependencies higher.
 	 */
 	private optimize() {
