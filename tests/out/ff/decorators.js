@@ -1,11 +1,10 @@
-import { Observed, computed, effect, watch, trackGet, beginTrack, endTrack, trackSet, untrack, enqueue } from '@pucelle/ff';
+import { Observed, computed, effect, watch, beginTrack, endTrack, trackSet, untrack, enqueue, trackGet } from '@pucelle/ff';
 import { Component } from '@pucelle/lupos.js';
 class TestComputed extends Component {
     prop = 1;
     #prop2 = undefined;
     #need_compute_prop2 = true;
     #compute_prop2() {
-        trackGet(this, "prop");
         return this.prop + 1;
     }
     #reset_prop2() { this.#need_compute_prop2 = true; }
@@ -104,7 +103,7 @@ class TestWatchCallback extends Component {
     }
     prop = 1;
     #property_onPropChange = undefined;
-    #property_get_onPropChange() { trackGet(this, "prop"); return this.prop; }
+    #property_get_onPropChange() { return this.prop; }
     #enqueue_onPropChange() {
         enqueue(this.onPropChange, this);
     }

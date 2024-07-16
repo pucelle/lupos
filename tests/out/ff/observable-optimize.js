@@ -1,5 +1,5 @@
-import { Component, SlotContentType } from '@pucelle/lupos.js';
 import { Observed, trackGet } from '@pucelle/ff';
+import { Component, SlotContentType } from '@pucelle/lupos.js';
 class TestHoistIndexStatement extends Component {
     prop = [{ value: 'Text' }, { value: 'Text' }];
     render1() {

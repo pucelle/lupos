@@ -133,7 +133,7 @@ export class ContextCapturer {
 	}
 
 	/** Transfer specified indices to specified position. */
-	private transferCaptured(captured: number[]): TS.Expression[] {
+	private outputCaptured(captured: number[]): TS.Expression[] {
 		let exps = captured.map(i => {
 			let node = interpolator.outputChildren(i) as PropertyAccessNode
 			let exp = node.expression
@@ -224,16 +224,35 @@ export class ContextCapturer {
 	/** Before context will exit. */
 	beforeExit() {
 		this.addReferenceVariables()
+		this.addCapturedDeeply()
+	}
 
-		// Add captured to interpolator after known capture type of closest ancestral function-like.
+	/** Add reference variables as declaration statements. */
+	private addReferenceVariables() {
+		if (this.referenceVariableNames.length === 0) {
+			return
+		}
+
+		modifier.addVariables(this.context.visitingIndex, this.referenceVariableNames)
+		this.referenceVariableNames = []
+	}
+
+	/** Add captured to interpolator after known capture type of closest ancestral function-like. */
+	private addCapturedDeeply() {
+
 		// For source file should also add captured when for not contained by function-like context.
-		if (this.context.type === ContextType.FunctionLike
-			|| ts.isSourceFile(this.context.node)
+		if (this.context.type !== ContextType.FunctionLike
+			&& !ts.isSourceFile(this.context.node)
 		) {
-			for (let descent of this.walkSelfAndNonFunctionLikeDescendants()) {
-				descent.addCaptured()
-				descent.addRestCaptured()
-			}
+			return
+		}
+
+		for (let descent of this.walkSelfAndNonFunctionLikeDescendants()) {
+			descent.addCaptured()
+			descent.addRestCaptured()
+
+			// Can't do this in output step, imports have been outputted.
+			AccessGrouper.addImport(descent.captureType)
 		}
 	}
 
@@ -250,18 +269,10 @@ export class ContextCapturer {
 		}
 	}
 
-	/** Add reference variables as declaration statements. */
-	private addReferenceVariables() {
-		if (this.referenceVariableNames.length > 0) {
-			modifier.addVariables(this.context.visitingIndex, this.referenceVariableNames)
-			this.referenceVariableNames = []
-		}
-	}
-
 	/** Add `captured` as interpolation items. */
 	private addCaptured() {
 		for (let [atIndex, captured] of this.captured.entries()) {
-			interpolator.before(atIndex, InterpolationContentType.Tracking, () => this.transferCaptured(captured))
+			interpolator.before(atIndex, InterpolationContentType.Tracking, () => this.outputCaptured(captured))
 		}
 
 		this.addRestCaptured()
@@ -286,12 +297,12 @@ export class ContextCapturer {
 
 		// Can put statements, insert to the end of statements.
 		if (helper.pack.canPutStatements(node)) {
-			interpolator.append(index, InterpolationContentType.Tracking, () => this.transferCaptured(captured))
+			interpolator.append(index, InterpolationContentType.Tracking, () => this.outputCaptured(captured))
 		}
 
 		// insert after current index, and process later.
 		else {
-			interpolator.after(index, InterpolationContentType.Tracking, () => this.transferCaptured(captured))
+			interpolator.after(index, InterpolationContentType.Tracking, () => this.outputCaptured(captured))
 		}
 	}
 }

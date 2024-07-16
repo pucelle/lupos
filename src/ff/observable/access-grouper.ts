@@ -5,7 +5,13 @@ import {ObservedChecker} from './observed-checker'
 
 
 export namespace AccessGrouper {
+
+	/** Add get or set tracking imports. */
+	export function addImport(type: 'get' | 'set') {
+		modifier.addImport(type === 'get' ? 'trackGet' : 'trackSet', '@pucelle/ff')
+	}
 	
+
 	/** Group expressions to lately insert a position. */
 	export function makeExpressions(exps: PropertyAccessNode[], type: 'get' | 'set'): TS.Expression[] {
 		exps = exps.map(exp => helper.pack.simplifyDeeply(exp))

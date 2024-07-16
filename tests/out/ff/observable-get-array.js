@@ -1,4 +1,3 @@
-import { trackGet } from "@pucelle/ff";
 import { Component } from '@pucelle/lupos.js';
 class TestArrayProp extends Component {
     prop = [{ value: 1 }];
@@ -6,14 +5,14 @@ class TestArrayProp extends Component {
         trackGet(this, "prop");
         trackGet(this.prop, "");
         trackGet(this.prop[0], "value");
-        return this.prop[0].value + '';
+        return this.prop[0].value;
     }
     dynamicIndex() {
         let i = 0;
         trackGet(this, "prop");
         trackGet(this.prop, "");
         trackGet(this.prop[i], "value");
-        return this.prop[i].value + '';
+        return this.prop[i].value;
     }
 }
 class TestAliasArrayTypeOfProp extends Component {
@@ -22,7 +21,7 @@ class TestAliasArrayTypeOfProp extends Component {
         trackGet(this, "prop");
         trackGet(this.prop, "");
         trackGet(this.prop[0], "value");
-        return this.prop[0].value + '';
+        return this.prop[0].value;
     }
 }
 class TestArrayBroadcastingObservedToMapFn extends Component {

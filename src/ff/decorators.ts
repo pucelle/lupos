@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {helper, ts, defineVisitor, modifier, factory, interpolator, InterpolationContentType} from '../base'
+import {helper, ts, defineVisitor, modifier, factory, interpolator, InterpolationContentType, visiting} from '../base'
 
 
 defineVisitor(function(node: TS.Node, index: number) {
@@ -19,20 +19,22 @@ defineVisitor(function(node: TS.Node, index: number) {
 		return
 	}
 
-	let replaced: TS.Node[] | null = null
+	return () => {
+		let replaced: TS.Node[] | null = null
 
-	if (decoName === 'computed') {
-		replaced = compileComputedDecorator(node)
-	}
-	else if (decoName === 'effect') {
-		replaced = compileEffectDecorator(node)
-	}
-	else if (decoName === 'watch') {
-		replaced = compileWatchDecorator(node, decorator)
-	}
+		if (decoName === 'computed') {
+			replaced = compileComputedDecorator(node)
+		}
+		else if (decoName === 'effect') {
+			replaced = compileEffectDecorator(node)
+		}
+		else if (decoName === 'watch') {
+			replaced = compileWatchDecorator(node, decorator)
+		}
 
-	if (replaced) {
-		interpolator.replace(index, InterpolationContentType.Normal, () => replaced!)
+		if (replaced) {
+			interpolator.replace(index, InterpolationContentType.Normal, () => replaced!)
+		}
 	}
 })
 
@@ -75,6 +77,7 @@ get prop(): any {
 */
 function compileComputedDecorator(methodDecl: TS.MethodDeclaration): TS.Node[] {
 	let propName = helper.getText(methodDecl.name)
+	let methodBodyIndex = visiting.getIndex(methodDecl.body!)
 
 	let property = factory.createPropertyDeclaration(
 		undefined,
@@ -100,7 +103,7 @@ function compileComputedDecorator(methodDecl: TS.MethodDeclaration): TS.Node[] {
 		undefined,
 		[],
 		undefined,
-		methodDecl.body
+		interpolator.outputChildren(methodBodyIndex) as TS.Block
 	)
 	
 	let resetMethod = factory.createMethodDeclaration(

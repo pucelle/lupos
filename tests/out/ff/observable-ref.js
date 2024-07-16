@@ -1,6 +1,6 @@
 import { Observed, trackGet } from '@pucelle/ff';
-var _ref_0;
 import { Component } from '@pucelle/lupos.js';
+var _ref_0;
 class TestRef extends Component {
     prop = { value: 1 };
     getProp() {
@@ -16,7 +16,7 @@ class TestRef extends Component {
         trackGet(this, "prop");
         trackGet(this.prop, "value");
         trackGet(_ref_0, "value");
-        return '';
+        return j;
     }
     normalRef() {
         var _ref_0;
@@ -82,7 +82,6 @@ class TestRef extends Component {
         let a = [this.prop];
         let i = 0;
         _ref_1 = i++;
-        trackGet(a, "");
         trackGet(this, "prop");
         trackGet(a[_ref_1], "value");
         return a[_ref_1].value;

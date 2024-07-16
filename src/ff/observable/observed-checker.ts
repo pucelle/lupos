@@ -141,7 +141,7 @@ export namespace ObservedChecker {
 
 
 	/** Whether parameter declaration is observed. */
-	export function isParameterObserved(node: TS.ParameterDeclaration): boolean {
+	export function isParameterObserved(node: TS.ParameterDeclaration, context: Context = ContextTree.current!): boolean {
 		let typeNode = node.type
 		let observed = false
 
@@ -150,11 +150,11 @@ export namespace ObservedChecker {
 		}
 
 		if (!observed) {
-			observed = isParameterObservedByCallingBroadcasted(node)
+			observed = isParameterObservedByCallingBroadcasted(node, context)
 		}
 
 		if (!observed && node.initializer) {
-			observed = ObservedChecker.isObserved(node.initializer)
+			observed = ObservedChecker.isObserved(node.initializer, context)
 		}
 
 		return observed
@@ -162,20 +162,20 @@ export namespace ObservedChecker {
 
 	
 	/** Broadcast observed from parent calling expression to all parameters. */
-	function isParameterObservedByCallingBroadcasted(node: TS.ParameterDeclaration): boolean {
+	function isParameterObservedByCallingBroadcasted(node: TS.ParameterDeclaration, context: Context = ContextTree.current!): boolean {
 
 		// `a.b.map((item) => {return item.value})`
 		// `a.b.map(item => item.value)`
 		// `a.b.map(function(item){return item.value})`
 		
 		let fn = node.parent
-		if (!(ts.isFunctionDeclaration(fn)
-			|| ts.isFunctionExpression(fn)
+		if (!(ts.isFunctionExpression(fn)
 			|| ts.isArrowFunction(fn)
 		)) {
 			return false
 		}
 
+		// Now enters parent context.
 		let calling = fn.parent
 		if (!ts.isCallExpression(calling)) {
 			return false
@@ -188,18 +188,20 @@ export namespace ObservedChecker {
 
 		// `a.b`
 		let callFrom = exp.expression
-		return isObserved(callFrom)
+
+		// Must use parent context.
+		return isObserved(callFrom, context.parent!)
 	}
 
 
 	/** Returns whether an identifier, this, or a property accessing is observed. */
-	export function isObserved(node: TS.Node): node is CanObserveNode {
+	export function isObserved(node: TS.Node, context: Context = ContextTree.current!): node is CanObserveNode {
 
 		// `a.b`
 		// `(a ? b : c).d`
 		// `(a ?? b).b`
 		if (helper.access.isAccess(node)) {
-			return isAccessingObserved(node)
+			return isAccessingObserved(node, context)
 		}
 
 		// `this`
@@ -212,7 +214,7 @@ export namespace ObservedChecker {
 				|| helper.access.getNameNode(node.parent) !== node
 			)
 		) {
-			return isIdentifierObserved(node as TS.Identifier | TS.ThisExpression)
+			return isIdentifierObserved(node as TS.Identifier | TS.ThisExpression, context)
 		}
 
 		// `a && b`, `a || b`, `a ?? b`, can observe only if both a & b can observe.
@@ -268,7 +270,7 @@ export namespace ObservedChecker {
 
 
 	/** Returns whether a property accessing is observed. */
-	export function isAccessingObserved(node: PropertyAccessNode): boolean {
+	export function isAccessingObserved(node: PropertyAccessNode, context: Context = ContextTree.current!): boolean {
 
 		// Will never observe private identifier like `a.#b`.
 		if (ts.isPropertyAccessExpression(node) && ts.isPrivateIdentifier(node.name)) {
@@ -287,7 +289,7 @@ export namespace ObservedChecker {
 
 		// Take `node = a.b.c` as example, exp is `a.b`.
 		let exp = node.expression
-		let expObserved = isObserved(exp)
+		let expObserved = isObserved(exp, context)
 
 		// Readonly properties are always not been observed.
 		if (expObserved) {

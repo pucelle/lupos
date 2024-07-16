@@ -74,7 +74,7 @@ export interface ContextTargetPosition{
 
 export namespace ContextTree {
 
-	let contextStack: Context[] = []
+	let contextStack: (Context | null)[] = []
 	export let current: Context | null = null
 
 
@@ -245,10 +245,7 @@ export namespace ContextTree {
 	/** Create a context from node and push to stack. */
 	export function createContext(type: ContextType, node: TS.Node): Context {
 		let context = new Context(type, node, current)
-
-		if (current) {
-			contextStack.push(current)
-		}
+		contextStack.push(current)
 
 		return current = context
 	}

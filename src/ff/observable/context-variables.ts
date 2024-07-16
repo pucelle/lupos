@@ -35,8 +35,10 @@ export class ContextVariables {
 	private checkThisObserved(): boolean {
 		let node = this.context.node
 
-		// Inherit from parent context.
-		if (this.context.type !== ContextType.FunctionLike) {
+		// Inherit from parent context, except arrow function.
+		if (this.context.type !== ContextType.FunctionLike
+			|| ts.isArrowFunction(node)
+		) {
 			return this.context.parent?.variables.thisObserved ?? false
 		}
 

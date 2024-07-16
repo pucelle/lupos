@@ -76,14 +76,9 @@ export function transformer(program: TS.Program, extras: TransformerExtras) {
 				return node
 			}
 
-			function visitSourceFile(node: TS.SourceFile): TS.SourceFile | undefined {
-				node = ts.visitNode(node, visit) as TS.SourceFile
-
-				modifier.apply()
-				return interpolator.output(0) as TS.SourceFile
-			}
-
-			return ts.visitNode(sourceFile, visitSourceFile)
+			ts.visitNode(sourceFile, visit)
+			modifier.apply()
+			return interpolator.output(0) as TS.SourceFile
 		}
 	}
 }

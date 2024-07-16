@@ -1,5 +1,5 @@
-import { trackGet } from "@pucelle/ff";
 import { Component } from '@pucelle/lupos.js';
+import { trackGet } from "@pucelle/ff";
 class TestIfStatement extends Component {
     prop1 = '';
     prop2 = '';

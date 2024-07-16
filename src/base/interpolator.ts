@@ -314,7 +314,7 @@ export namespace interpolator {
 		}
 
 		// Parenthesize it, move returned node to the end.
-		else if (helper.pack.shouldBeExpression(rawNode)) {
+		else if (helper.pack.canBeParenthesized(rawNode)) {
 			let list = arrangeNeighborNodes(node, beforeNodes, afterNodes, true)
 			return helper.pack.parenthesizeExpressions(...list)
 		}

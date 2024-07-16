@@ -53,7 +53,7 @@ defineVisitor(function(node: TS.Node, index: number) {
 			continue
 		}
 
-		modifier.addClassMember(index, member, false)
+		modifier.addClassMember(index, member, true)
 	}
 })
 

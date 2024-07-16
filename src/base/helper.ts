@@ -753,8 +753,12 @@ export namespace helper {
 				|| canExtendToPutStatements(node)
 		}
 
-		/** Whether should be an expression and return it. */
-		export function shouldBeExpression(node: TS.Node): node is TS.Expression {
+		/** 
+		 * Whether the node it returns a single value for outer,
+		 * or should be just one unique expression, can't be replaced to two.
+		 * so that it can be parenthesized.
+		 */
+		export function canBeParenthesized(node: TS.Node): node is TS.Expression {
 			let parent = node.parent
 
 			// Content of flow interrupt
@@ -800,7 +804,8 @@ export namespace helper {
 
 			// `for (;;) ...`
 			else if (ts.isForStatement(parent)) {
-				if (node === parent.condition
+				if (node === parent.initializer
+					|| node === parent.condition
 					|| node === parent.incrementor
 				) {
 					return true
@@ -816,6 +821,12 @@ export namespace helper {
 				if (node === parent.expression) {
 					return true
 				}
+			}
+
+			// `a.b`, both `a` and `b` should be an expression.
+			else if (ts.isPropertyAccessExpression(parent)
+				|| ts.isElementAccessExpression(parent)) {
+				return true
 			}
 
 			return false

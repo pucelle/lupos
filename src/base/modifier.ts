@@ -68,7 +68,8 @@ export namespace modifier {
 	export function addVariableAssignmentToList(fromIndex: number, toIndex: number, varName: string) {
 		interpolator.before(toIndex, InterpolationContentType.VariableDeclaration, () => {
 			let node = interpolator.outputChildren(fromIndex) as TS.Expression
-
+			node = helper.pack.simplifyShallow(node) as TS.Expression
+			
 			return factory.createVariableDeclaration(
 				factory.createIdentifier(varName),
 				undefined,
@@ -85,6 +86,7 @@ export namespace modifier {
 	export function addReferenceAssignment(fromIndex: number, toIndex: number, refName: string) {
 		interpolator.before(toIndex, InterpolationContentType.Reference, () => {
 			let node = interpolator.outputChildren(fromIndex) as TS.Expression
+			node = helper.pack.simplifyShallow(node) as TS.Expression
 
 			return factory.createBinaryExpression(
 				factory.createIdentifier(refName),
@@ -94,7 +96,7 @@ export namespace modifier {
 		})
 	}
 
-	/** Add variables as declaration statements. */
+	/** Add variables to target index as declaration statements or variable items. */
 	export function addVariables(index: number, names: string[]) {
 		let rawNode = visiting.getNode(index)
 		let exps: TS.VariableDeclarationList | TS.VariableDeclaration[]
@@ -113,8 +115,19 @@ export namespace modifier {
 				ts.NodeFlags.None
 			)
 
-			// Insert the first of block.
-			if (helper.pack.canBlock(rawNode)) {
+			// Insert after import statements.
+			if (ts.isSourceFile(rawNode)) {
+				let beforeNode = rawNode.statements.find(n => !ts.isImportDeclaration(n))
+				if (beforeNode) {
+					toIndex = visiting.getIndex(beforeNode)
+				}
+				else {
+					toIndex = visiting.getFirstChildIndex(index)!
+				}
+			}
+
+			// Insert the first inner position of block.
+			else if (helper.pack.canBlock(rawNode)) {
 				toIndex = visiting.getFirstChildIndex(index)!
 			}
 
@@ -150,12 +163,11 @@ export namespace modifier {
 
 	/** Apply imports to do interpolation. */
 	export function apply() {
-
 		// A ts bug here: if insert some named import identifiers,
 		// and update the import statement,
 		// will cause some not used type imports still there.
 		// Current process step is: leave them there and wait for package step to eliminate.
-		
+
 		for (let [moduleName, names] of imports.entries()) {
 			let importDecl = helper.imports.getImportFromModule(moduleName)
 
