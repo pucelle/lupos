@@ -6,7 +6,10 @@ import {ObservedChecker} from './observed-checker'
 
 export namespace AccessGrouper {
 
-	/** Add get or set tracking imports. */
+	/** 
+	 * Add get or set tracking imports.
+	 * Not add when making expressions because
+	 */
 	export function addImport(type: 'get' | 'set') {
 		modifier.addImport(type === 'get' ? 'trackGet' : 'trackSet', '@pucelle/ff')
 	}
@@ -18,10 +21,6 @@ export namespace AccessGrouper {
 
 		let grouped = groupGetExpressions(exps)
 		let made = grouped.map(item => createGroupedGetExpression(item, type))
-
-		if (made.length > 0) {
-			modifier.addImport(type === 'get' ? 'trackGet' : 'trackSet', '@pucelle/ff')
-		}
 
 		return made
 	}
@@ -53,7 +52,7 @@ export namespace AccessGrouper {
 	/** Create a `trackGet` statement. */
 	function createGroupedGetExpression(nodes: PropertyAccessNode[], type: 'get' | 'set'): TS.Expression {
 		let node = nodes[0]
-		let parameters = createGetNameParameter(nodes)
+		let parameters = createGetNameParameter(nodes, type)
 		
 		let trackGet = factory.createCallExpression(
 			factory.createIdentifier(type === 'get' ? 'trackGet' : 'trackSet'),
@@ -76,10 +75,10 @@ export namespace AccessGrouper {
 
 
 	/** Create a parameter for `trackGet` by a group of nodes. */
-	function createGetNameParameter(nodes: PropertyAccessNode[]): TS.Expression[] {
+	function createGetNameParameter(nodes: PropertyAccessNode[], type: 'get' | 'set'): TS.Expression[] {
 		let node = nodes[0]
-		let group = groupNameExpressionKeys(nodes)
-		let nameExps = [...group.values()].map(nodes => getAccessingNodeNameProperty(nodes[0]))
+		let group = groupNameExpressionKeys(nodes, type)
+		let nameExps = [...group.values()].map(nodes => getAccessNodeNameProperty(nodes[0], type))
 
 		return [
 			helper.pack.removeComments(node.expression),
@@ -89,38 +88,24 @@ export namespace AccessGrouper {
 
 
 	/** Get all expression keys, repetitive keys are excluded. */
-	function groupNameExpressionKeys(nodes: PropertyAccessNode[]): Map<string, PropertyAccessNode[]> {
-		return groupBy(nodes, node => [getNameKey(node), node])
+	function groupNameExpressionKeys(nodes: PropertyAccessNode[], type: 'get' | 'set'): Map<string, PropertyAccessNode[]> {
+		return groupBy(nodes, node => [getNameKey(node, type), node])
 	}
 
 
 	/** Get a name expression key. */
-	function getNameKey(node: PropertyAccessNode): string {
-		if (helper.types.isArray(helper.types.getType(node.expression))
-			|| ObservedChecker.isMapOrSetReading(node)
-		) {
-			return ''
-		}
-		else if (ts.isPropertyAccessExpression(node)) {
-			return `"${helper.getText(node.name)}"`
-		}
-		else {
-			if (ts.isStringLiteral(node.argumentExpression)) {
-				return `"${node.argumentExpression.text}"`
-			}
-			else {
-				return helper.getText(node.argumentExpression)
-			}
-		}
+	function getNameKey(node: PropertyAccessNode, type: 'get' | 'set'): string {
+		return helper.getText(getAccessNodeNameProperty(node, type))
 	}
 
 
 	/** Get name of property expression. */
-	function getAccessingNodeNameProperty(node: PropertyAccessNode): TS.Expression {
+	function getAccessNodeNameProperty(node: PropertyAccessNode, type: 'get' | 'set'): TS.Expression {
 		let name: TS.Expression
 
 		if (helper.types.isArray(helper.types.getType(node.expression)) 
-			|| ObservedChecker.isMapOrSetReading(node)
+			|| type === 'get' && ObservedChecker.isMapOrSetReading(node)
+			|| type === 'set' && ObservedChecker.isMapOrSetWriting(node)
 		) {
 			name = factory.createStringLiteral('')
 		}
