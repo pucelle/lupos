@@ -59,7 +59,7 @@ export namespace ObservedChecker {
 	}
 
 
-	/** Whether type node is an observed type. */
+	/** Whether should observe node by it's type node. */
 	export function isTypeNodeObserved(node: TS.TypeNode): boolean {
 
 		// `Observed<>`, must use it directly, type extending is now working.
@@ -143,21 +143,19 @@ export namespace ObservedChecker {
 	/** Whether parameter declaration is observed. */
 	export function isParameterObserved(node: TS.ParameterDeclaration, context: Context = ContextTree.current!): boolean {
 		let typeNode = node.type
-		let observed = false
-
-		if (typeNode) {
-			observed = ObservedChecker.isTypeNodeObserved(typeNode)
+		if (typeNode && isTypeNodeObserved(typeNode)) {
+			return true
 		}
 
-		if (!observed) {
-			observed = isParameterObservedByCallingBroadcasted(node, context)
+		if (isParameterObservedByCallingBroadcasted(node, context)) {
+			return true
 		}
 
-		if (!observed && node.initializer) {
-			observed = ObservedChecker.isObserved(node.initializer, context)
+		if (node.initializer && isObserved(node.initializer, context)) {
+			return true
 		}
 
-		return observed
+		return false
 	}
 
 	
@@ -233,8 +231,8 @@ export namespace ObservedChecker {
 
 		// `(a as Observed<{b: number}>).b`
 		else if (ts.isAsExpression(node)) {
-			let type = node.type
-			return type && helper.symbol.isImportedFrom(type, 'Observed', '@pucelle/ff')
+			let typeNode = node.type
+			return typeNode && helper.symbol.isImportedFrom(typeNode, 'Observed', '@pucelle/ff')
 		}
 
 		// `a ? b : c`, can observe only if both b & c can observe.
@@ -374,22 +372,23 @@ export namespace ObservedChecker {
 			return false
 		}
 
-		let type = nameDecl.type
-		let observed = false
+		let typeNode = nameDecl.type
 
 		// `class A{p: Observed<...>}`
-		if (type) {
-			observed = isTypeNodeObserved(type)
+		if (typeNode && isTypeNodeObserved(typeNode)) {
+			return true
 		}
 
 		// `class A{p = {} as Observed}`, must not specified property type.
-		else if (ts.isPropertyDeclaration(nameDecl)
+		if (!typeNode
+			&& ts.isPropertyDeclaration(nameDecl)
 			&& nameDecl.initializer
+			&& isObserved(nameDecl.initializer)
 		) {
-			observed = isObserved(nameDecl.initializer)
+			return true
 		}
 
-		return observed
+		return false
 	}
 
 
