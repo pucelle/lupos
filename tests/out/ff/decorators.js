@@ -1,4 +1,4 @@
-import { Observed, computed, effect, watch, beginTrack, endTrack, trackSet, untrack, enqueue, trackGet } from '@pucelle/ff';
+import { Observed, computed, effect, watch, beginTrack, endTrack, trackSet, trackGet, untrack, enqueue } from '@pucelle/ff';
 import { Component } from '@pucelle/lupos.js';
 class TestComputed extends Component {
     prop = 1;

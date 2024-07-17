@@ -19,5 +19,5 @@
 			{"transform": "../src/index.ts"},
 		]
 	},
-	"include": ["src/**/observable-set-map-set.ts"],
+	"include": ["src/**/*.ts"],
 }

@@ -1,5 +1,5 @@
 import { Component } from '@pucelle/lupos.js';
-import { trackSet, trackGet } from "@pucelle/ff";
+import { trackSet } from "@pucelle/ff";
 class TestArrayProp extends Component {
     prop = [{ value: 1 }];
     fixedIndex() {

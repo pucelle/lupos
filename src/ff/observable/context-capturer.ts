@@ -250,9 +250,6 @@ export class ContextCapturer {
 		for (let descent of this.walkSelfAndNonFunctionLikeInward()) {
 			descent.addCaptured()
 			descent.addRestCaptured()
-
-			// Can't do this in output step, imports have been outputted.
-			AccessGrouper.addImport(descent.captureType)
 		}
 	}
 
@@ -273,6 +270,7 @@ export class ContextCapturer {
 	private addCaptured() {
 		for (let [atIndex, captured] of this.captured.entries()) {
 			interpolator.before(atIndex, InterpolationContentType.Tracking, () => this.outputCaptured(captured))
+			AccessGrouper.addImport(this.captureType)
 		}
 
 		this.addRestCaptured()
@@ -304,5 +302,7 @@ export class ContextCapturer {
 		else {
 			interpolator.after(index, InterpolationContentType.Tracking, () => this.outputCaptured(captured))
 		}
+
+		AccessGrouper.addImport(this.captureType)
 	}
 }

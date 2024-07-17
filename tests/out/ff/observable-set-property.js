@@ -1,4 +1,4 @@
-import { Observed, trackSet, trackGet } from '@pucelle/ff';
+import { Observed, trackSet } from '@pucelle/ff';
 import { Component } from '@pucelle/lupos.js';
 class TestNormalProp extends Component {
     prop = 1;
