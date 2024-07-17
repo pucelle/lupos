@@ -1,5 +1,22 @@
 import { Component } from '@pucelle/lupos.js';
 import { trackGet } from "@pucelle/ff";
+class TestIgnoringStringIndex extends Component {
+    prop = '1';
+    ignoreStringIndex() {
+        trackGet(this, "prop");
+        return this.prop[0];
+    }
+}
+class TestIgnoringInstance extends Component {
+    notObservedInstance = new NotObservedClass();
+    ignoreNonObservedInstance() {
+        trackGet(this, "notObservedInstance");
+        return this.notObservedInstance.value;
+    }
+}
+class NotObservedClass {
+    value = 1;
+}
 class TestIgnoringMethod extends Component {
     ignoreMethod() {
         return this.anyMethod();
@@ -24,7 +41,6 @@ class TestIgnoringInternalMethods extends Component {
     prop2 = new Map([[1, 2]]);
     ignoreArrayMethods() {
         trackGet(this, "prop1", "prop2");
-        trackGet(this.prop2, "");
         return this.prop1.join('')
             + this.prop2.get(1);
     }

@@ -1,4 +1,5 @@
 import { Component } from '@pucelle/lupos.js';
+import { trackGet } from "@pucelle/ff";
 class TestArrayProp extends Component {
     prop = [{ value: 1 }];
     fixedIndex() {
@@ -28,14 +29,17 @@ class TestArrayBroadcastingObservedToMapFn extends Component {
     prop = [{ value: 1 }];
     mapArrowFnNoBlocking() {
         trackGet(this, "prop");
+        trackGet(this.prop, "");
         return this.prop.map(v => { trackGet(v, "value"); return v.value; }).join('');
     }
     mapArrowFn() {
         trackGet(this, "prop");
+        trackGet(this.prop, "");
         return this.prop.map(v => { trackGet(v, "value"); return v.value; }).join('');
     }
     mapFn() {
         trackGet(this, "prop");
+        trackGet(this.prop, "");
         return this.prop.map(function (v) { trackGet(v, "value"); return v.value; }).join('');
     }
 }

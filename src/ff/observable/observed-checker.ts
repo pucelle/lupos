@@ -1,6 +1,6 @@
 import type TS from 'typescript'
 import {PropertyAccessNode} from '../../base/helper'
-import {ts, helper} from '../../base'
+import {ts, helper, typeChecker} from '../../base'
 import {ContextTree} from './context-tree'
 import {Context} from './context'
 
@@ -69,7 +69,7 @@ export namespace ObservedChecker {
 
 		// `Component` like.
 		else {
-			let clsDecl = helper.symbol.findDeclaration(node, ts.isClassDeclaration)
+			let clsDecl = helper.symbol.resolveDeclaration(node, ts.isClassDeclaration)
 			if (clsDecl && helper.cls.isImplemented(clsDecl, 'Observed', '@pucelle/ff')) {
 				return true 
 			}
@@ -277,29 +277,43 @@ export namespace ObservedChecker {
 			return false
 		}
 
-		// Property declaration has specified observed type.
+		// Property declaration has specified as observed type or observed initializer.
 		if (checkPropertyOrGetAccessorObserved(node)) {
 			return true
 		}
 
-		// Method declaration is always not observed.
+		// Method declarations will always not been observed, except few,
+		// like map or set, which will be processed by outer logic.
 		if (helper.symbol.resolveMethod(node)) {
-			return isMapOrSetReading(node)
+			return false
+		}
+
+		// Readonly properties are always not been observed.
+		let readonly = helper.access.isReadonly(node)
+		if (readonly) {
+			return false
 		}
 
 		// Take `node = a.b.c` as example, exp is `a.b`.
 		let exp = node.expression
-		let expObserved = isObserved(exp, context)
+		let type = typeChecker.getTypeAtLocation(exp)
 
-		// Readonly properties are always not been observed.
-		if (expObserved) {
-			let readonly = helper.access.isReadonly(node)
-			if (readonly) {
-				return false
-			}
+		// Visiting like string index will not get observed.
+		if (helper.types.isValue(type)) {
+			return false
 		}
 
-		return expObserved
+		// Resolve by type, try to get a class declaration.
+		// If class is not implemented from `Observed`, should not observe.
+		// Note here it can't recognize class like type declarations:
+		// `interface A`
+		// `interface AConstructor{new(): A}`
+		let clsDecl = helper.symbol.resolveDeclarationByType(type, ts.isClassDeclaration)
+		if (clsDecl && !helper.cls.isImplemented(clsDecl, 'Observed', '@pucelle/ff')) {
+			return false
+		}
+
+		return isObserved(exp, context)
 	}
 
 
@@ -357,34 +371,35 @@ export namespace ObservedChecker {
 		}
 
 		let type = nameDecl.type
+		let observed = false
 
-		// `class A{p = {} as Observed}`
-		if (!type
-			&& ts.isPropertyDeclaration(nameDecl)
-			&& nameDecl.initializer 
-			&& ts.isAsExpression(nameDecl.initializer)
-		) {
-			type = nameDecl.initializer.type
-		}
-
+		// `class A{p: Observed<...>}`
 		if (type) {
-			return isTypeNodeObserved(type)
+			observed = isTypeNodeObserved(type)
 		}
 
-		return false
+		// `class A{p = {} as Observed}`, must not specified property type.
+		else if (ts.isPropertyDeclaration(nameDecl)
+			&& nameDecl.initializer
+		) {
+			observed = isObserved(nameDecl.initializer)
+		}
+
+		return observed
 	}
 
 
 	/** Test whether calls `Map.has`, `Map.get` or `Set.has` */
 	export function isMapOrSetReading(node: PropertyAccessNode) {
-		let objName = helper.types.getName(node.expression)
+		let expType = helper.types.getType(node.expression)
+		let objName = helper.types.getName(expType)
 		let propName = helper.access.getNameText(node)
 
 		if (objName === 'Map') {
-			return propName === 'has' || propName === 'get'
+			return propName === 'has' || propName === 'get' || propName === 'size'
 		}
 		else if (objName === 'Set') {
-			return propName === 'has'
+			return propName === 'has' || propName === 'size'
 		}
 		else {
 			return false
@@ -394,14 +409,15 @@ export namespace ObservedChecker {
 
 	/** Test whether calls `Map.set`, or `Set.set`. */
 	export function isMapOrSetWriting(node: PropertyAccessNode) {
-		let objName = helper.types.getName(node.expression)
+		let expType = helper.types.getType(node.expression)
+		let objName = helper.types.getName(expType)
 		let propName = helper.access.getNameText(node)
 
 		if (objName === 'Map') {
 			return propName === 'set'
 		}
 		else if (objName === 'Set') {
-			return propName === 'set'
+			return propName === 'add'
 		}
 		else {
 			return false
@@ -417,14 +433,11 @@ export namespace ObservedChecker {
 		}
 
 		// Directly return an observed object, which implemented `Observed<>`.
-		let returnType = helper.types.getReturnType(decl)
+		let returnType = helper.types.getNodeReturnType(decl)
 		if (returnType) {
-			let symbol = returnType.getSymbol()
-			if (symbol) {
-				let clsDecl = helper.symbol.findDeclarationBySymbol(symbol, ts.isClassDeclaration)
-				if (clsDecl && helper.cls.isImplemented(clsDecl, 'Observed', '@pucelle/ff')) {
-					return true
-				}
+			let clsDecl = helper.symbol.resolveDeclarationByType(returnType, ts.isClassDeclaration)
+			if (clsDecl && helper.cls.isImplemented(clsDecl, 'Observed', '@pucelle/ff')) {
+				return true
 			}
 		}
 

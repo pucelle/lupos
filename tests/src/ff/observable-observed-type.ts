@@ -50,11 +50,16 @@ class TestObservedParameter {
 
 class TestObservedPropertyAtUnobserved {
 
-	prop: Observed<{value: number}> = {value: 1}
+	observedTypeProp: Observed<{value: number}> = {value: 1}
+	observedInitProp = {value: 1} as Observed<{value: number}>
 	unObservedProp: {value: number} = {value: 1}
 
-	getPropValue() {
-		return this.prop.value
+	getObservedTypePropValue() {
+		return this.observedTypeProp.value
+	}
+
+	getObservedInitPropValue() {
+		return this.observedInitProp.value
 	}
 
 	getAsProp() {

@@ -1,6 +1,29 @@
 import {Component} from '@pucelle/lupos.js'
 
 
+class TestIgnoringStringIndex extends Component {
+
+	prop: string = '1'
+
+	ignoreStringIndex() {
+		return this.prop[0]
+	}
+}
+
+
+class TestIgnoringInstance extends Component {
+
+	notObservedInstance = new NotObservedClass()
+
+	ignoreNonObservedInstance() {
+		return this.notObservedInstance.value
+	}
+}
+
+class NotObservedClass {
+	value: number = 1
+}
+
 class TestIgnoringMethod extends Component {
 
 	ignoreMethod() {

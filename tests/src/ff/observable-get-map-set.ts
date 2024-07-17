@@ -12,6 +12,10 @@ class TestMap extends Component {
 	get() {
 		return this.map.get(0)
 	}
+
+	size() {
+		return this.map.size
+	}
 }
 
 
@@ -21,5 +25,9 @@ class TestSet extends Component {
 
 	has() {
 		return this.set.has(0)
+	}
+
+	size() {
+		return this.set.size
 	}
 }

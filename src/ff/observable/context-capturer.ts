@@ -78,7 +78,7 @@ export class ContextCapturer {
 	private broadcastSetCaptureType() {
 		let closestFunctionLikeOrSelf = this.findClosestFunctionLike() || this
 		
-		for (let descent of closestFunctionLikeOrSelf.walkSelfAndNonSetCaptureType()) {
+		for (let descent of closestFunctionLikeOrSelf.walkNonSetCaptureTypeInward()) {
 			descent.captureType = 'set'
 			descent.captured = new Map()
 			descent.latestCaptured = []
@@ -97,7 +97,7 @@ export class ContextCapturer {
 	}
 
 	/** Walk self and descendant capturers, and exclude set type capturers. */
-	private *walkSelfAndNonSetCaptureType(): Iterable<ContextCapturer> {
+	private *walkNonSetCaptureTypeInward(): Iterable<ContextCapturer> {
 		yield this
 
 		for (let child of this.context.children) {
@@ -105,7 +105,7 @@ export class ContextCapturer {
 				continue
 			}
 
-			yield *child.capturer.walkSelfAndNonSetCaptureType()
+			yield *child.capturer.walkNonSetCaptureTypeInward()
 		}
 	}
 
@@ -224,7 +224,7 @@ export class ContextCapturer {
 	/** Before context will exit. */
 	beforeExit() {
 		this.addReferenceVariables()
-		this.addCapturedDeeply()
+		this.addCapturedInward()
 	}
 
 	/** Add reference variables as declaration statements. */
@@ -238,7 +238,7 @@ export class ContextCapturer {
 	}
 
 	/** Add captured to interpolator after known capture type of closest ancestral function-like. */
-	private addCapturedDeeply() {
+	private addCapturedInward() {
 
 		// For source file should also add captured when for not contained by function-like context.
 		if (this.context.type !== ContextType.FunctionLike
@@ -247,7 +247,7 @@ export class ContextCapturer {
 			return
 		}
 
-		for (let descent of this.walkSelfAndNonFunctionLikeDescendants()) {
+		for (let descent of this.walkSelfAndNonFunctionLikeInward()) {
 			descent.addCaptured()
 			descent.addRestCaptured()
 
@@ -257,7 +257,7 @@ export class ContextCapturer {
 	}
 
 	/** Walk self and descendant capturers, and exclude function like capturers. */
-	private *walkSelfAndNonFunctionLikeDescendants(): Iterable<ContextCapturer> {
+	private *walkSelfAndNonFunctionLikeInward(): Iterable<ContextCapturer> {
 		yield this
 
 		for (let child of this.context.children) {
@@ -265,7 +265,7 @@ export class ContextCapturer {
 				continue
 			}
 
-			yield *child.capturer.walkSelfAndNonFunctionLikeDescendants()
+			yield *child.capturer.walkSelfAndNonFunctionLikeInward()
 		}
 	}
 

@@ -82,14 +82,19 @@ export class Context {
 
 		// Add property access nodes.
 		else if (helper.access.isAccess(node)) {
-			this.addGetTracking(node)
+			if (ObservedChecker.isMapOrSetWriting(node)) {
+				this.mayAddSetTracking(node)
+			}
+			else {
+				this.mayAddGetTracking(node)
+			}
 		}
 
 		// Add property assignment nodes.
 		else if (helper.assignment.isAssignment(node)) {
 			let assignTo = helper.assignment.getTo(node)
 			if (helper.access.isAccess(assignTo)) {
-				this.addSetTracking(assignTo)
+				this.mayAddSetTracking(assignTo)
 			}
 		}
 
@@ -103,7 +108,7 @@ export class Context {
 	}
 
 	/** Add a property access expression. */
-	private addGetTracking(node: PropertyAccessNode) {
+	private mayAddGetTracking(node: PropertyAccessNode) {
 		if (this.state.nothingReturned) {
 			return
 		}
@@ -112,28 +117,32 @@ export class Context {
 			return
 		}
 
-		if (!ObservedChecker.isAccessingObserved(node)) {
+		if (!ObservedChecker.isAccessingObserved(node)
+			&& !ObservedChecker.isMapOrSetReading(node)
+		) {
 			return
 		}
 
-		this.addAnyTracking(node, 'get')
+		this.addTracking(node, 'get')
 	}
 
 	/** Add a property assignment expression. */
-	private addSetTracking(node: PropertyAccessNode) {
-		if (!ObservedChecker.isAccessingObserved(node)) {
-			return
-		}
-
+	private mayAddSetTracking(node: PropertyAccessNode) {
 		if (!this.capturer.shouldCapture('set')) {
 			return
 		}
 
-		this.addAnyTracking(node, 'set')
+		if (!ObservedChecker.isAccessingObserved(node)
+			&& !ObservedChecker.isMapOrSetWriting(node)
+		) {
+			return
+		}
+
+		this.addTracking(node, 'set')
 	}
 
 	/** Add get or set tracking after testing. */
-	private addAnyTracking(node: PropertyAccessNode, type: 'get' | 'set') {
+	private addTracking(node: PropertyAccessNode, type: 'get' | 'set') {
 		let index = visiting.getIndex(node)
 		let position: ContextTargetPosition | null = null
 

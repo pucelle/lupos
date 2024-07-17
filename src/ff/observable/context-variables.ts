@@ -57,7 +57,7 @@ export class ContextVariables {
 
 			// Class type resolved implements `Observed<>`.
 			else if (ts.isTypeReferenceNode(typeNode)) {
-				let clsDecl = helper.symbol.findDeclaration(typeNode.typeName, ts.isClassDeclaration)
+				let clsDecl = helper.symbol.resolveDeclaration(typeNode.typeName, ts.isClassDeclaration)
 				if (clsDecl && helper.cls.isImplemented(clsDecl, 'Observed', '@pucelle/ff')) {
 					return true
 				}
@@ -181,7 +181,7 @@ export class ContextVariables {
 	/** Remember observed parameters. */
 	private makeParametersObserved(parameters: TS.NodeArray<TS.ParameterDeclaration>) {
 		for (let param of parameters) {
-			let beObject = helper.types.isPrimitiveObject(param)
+			let beObject = helper.types.isObject(helper.types.getType(param))
 			if (beObject) {
 				this.variableObserved.set(helper.getText(param.name), true)
 			}

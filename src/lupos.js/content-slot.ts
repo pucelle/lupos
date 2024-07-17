@@ -24,12 +24,12 @@ defineVisitor(function(node: TS.Node, index: number) {
 		return
 	}
 
-	let renderType = helper.types.getReturnType(renderMethod)
+	let renderType = helper.types.getNodeReturnType(renderMethod)
 	if (!renderType) {
 		return
 	}
 
-	let typeText = helper.types.getTypeFullText(renderType)
+	let typeText = helper.types.getFullText(renderType)
 	let slotType: 'TemplateResult' | 'TemplateResultArray' | 'Text' | null = null
 
 	// Check Slot Type.

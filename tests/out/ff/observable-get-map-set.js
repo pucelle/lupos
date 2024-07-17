@@ -12,6 +12,11 @@ class TestMap extends Component {
         trackGet(this.map, "");
         return this.map.get(0);
     }
+    size() {
+        trackGet(this, "map");
+        trackGet(this.map, "");
+        return this.map.size;
+    }
 }
 class TestSet extends Component {
     set = new Set();
@@ -19,5 +24,10 @@ class TestSet extends Component {
         trackGet(this, "set");
         trackGet(this.set, "");
         return this.set.has(0);
+    }
+    size() {
+        trackGet(this, "set");
+        trackGet(this.set, "");
+        return this.set.size;
     }
 }

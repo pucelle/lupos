@@ -63,7 +63,7 @@ export namespace helper {
 				return resolved.memberName
 			}
 
-			let decl = symbol.findDeclaration(identifier, ts.isFunctionDeclaration)
+			let decl = symbol.resolveDeclaration(identifier, ts.isFunctionDeclaration)
 			if (!decl) {
 				return undefined
 			}
@@ -166,7 +166,7 @@ export namespace helper {
 			}
 
 			let exp = firstType.expression
-			let superClass = symbol.findDeclaration(exp, ts.isClassDeclaration)
+			let superClass = symbol.resolveDeclaration(exp, ts.isClassDeclaration)
 
 			return superClass as TS.ClassDeclaration | undefined
 		}
@@ -195,7 +195,7 @@ export namespace helper {
 				}
 			}
 
-			let superClass = symbol.findDeclaration(exp, ts.isClassDeclaration)
+			let superClass = symbol.resolveDeclaration(exp, ts.isClassDeclaration)
 			if (superClass) {
 				return isDerivedOf(superClass, declName, moduleName)
 			}
@@ -306,7 +306,7 @@ export namespace helper {
 			// `d: DeepReadonly<...>` -> `d.?` and `d.?.?` are readonly, not observed.
 			let exp = node.expression
 			let type = typeChecker.getTypeAtLocation(exp)
-			let name = types.getTypeOnlyName(type)
+			let name = types.getName(type)
 
 			if (name === 'Readonly' || name === 'ReadonlyArray') {
 				return true
@@ -385,13 +385,18 @@ export namespace helper {
 	/** Type part */
 	export namespace types {
 
+		/** Get type of a node. */
+		export function getType(node: TS.Node): TS.Type {
+			return typeChecker.getTypeAtLocation(node)
+		}
+
 		/** Get full text of a type, all type parameters are included. */
-		export function getTypeFullText(type: TS.Type): string {
+		export function getFullText(type: TS.Type): string {
 			return typeChecker.typeToString(type)
 		}
 
 		/** Get the name of a type, type parameters are excluded. */
-		export function getTypeOnlyName(type: TS.Type): string | undefined {
+		export function getName(type: TS.Type): string | undefined {
 			let node = typeChecker.typeToTypeNode(type, undefined, undefined)
 			if (!node || !ts.isTypeReferenceNode(node)) {
 				return undefined
@@ -405,18 +410,8 @@ export namespace helper {
 			return typeName.text
 		}
 
-		/** Get full text of the type of a node, all type parameters are included. */
-		export function getFullText(node: TS.Node): string {
-			return getTypeFullText(typeChecker.getTypeAtLocation(node))
-		}
-
-		/** Get the name of the type of a node, type parameters are excluded. */
-		export function getName(node: TS.Node): string | undefined {
-			return getTypeOnlyName(typeChecker.getTypeAtLocation(node))
-		}
-
 		/** Get the returned type of a method / function declaration. */
-		export function getReturnType(node: TS.SignatureDeclaration): TS.Type | undefined {
+		export function getNodeReturnType(node: TS.SignatureDeclaration): TS.Type | undefined {
 			let signature = typeChecker.getSignatureFromDeclaration(node)
 			if (!signature) {
 				return undefined
@@ -425,15 +420,34 @@ export namespace helper {
 			return signature.getReturnType()
 		}
 
-		/** Test whether type of a node is primitive. */
-		export function isPrimitiveObject(node: TS.Node): boolean {
-			let type = typeChecker.getTypeAtLocation(node)
+		/** Test whether type is object. */
+		export function isObject(type: TS.Type): boolean {
+			if (type.isUnionOrIntersection()) {
+				return type.types.every(t => isObject(t))
+			}
+
 			return (type.getFlags() & ts.TypeFlags.Object) > 0
 		}
 
+		/** Test whether type represents a value. */
+		export function isValue(type: TS.Type): boolean {
+			if (type.isUnionOrIntersection()) {
+				return type.types.every(t => isValue(t))
+			}
+
+			return (type.getFlags() & (
+				ts.TypeFlags.StringLike
+					| ts.TypeFlags.NumberLike
+					| ts.TypeFlags.BigIntLike
+					| ts.TypeFlags.BooleanLike
+					| ts.TypeFlags.ESSymbolLike
+					| ts.TypeFlags.Undefined
+					| ts.TypeFlags.Null
+			)) > 0
+		}
+
 		/** Test whether type of a node extends `Array<any>`. */
-		export function isArray(node: TS.Node): boolean {
-			let type = typeChecker.getTypeAtLocation(node)
+		export function isArray(type: TS.Type): boolean {
 			return typeChecker.isArrayType(type)
 		}
 	}
@@ -462,7 +476,7 @@ export namespace helper {
 			if (ts.isPropertyAccessExpression(node)) {
 				let declName = getText(node.name)
 				let symbol = resolveSymbol(node.expression, false)
-				let decl = symbol ? findDeclarationBySymbol(symbol, ts.isNamespaceImport) : undefined
+				let decl = symbol ? resolveDeclarationBySymbol(symbol, ts.isNamespaceImport) : undefined
 
 				if (decl) {
 					let moduleNameNode = decl.parent.parent.moduleSpecifier
@@ -476,7 +490,7 @@ export namespace helper {
 			}
 			else {
 				let symbol = resolveSymbol(node, false)
-				let decl = symbol ? findDeclarationBySymbol(symbol, ts.isImportSpecifier) : undefined
+				let decl = symbol ? resolveDeclarationBySymbol(symbol, ts.isImportSpecifier) : undefined
 
 				if (decl) {
 					let moduleNameNode = decl.parent.parent.parent.moduleSpecifier
@@ -568,13 +582,19 @@ export namespace helper {
 		}
 
 		/** Resolves the first declaration from a node. */
-		export function findDeclaration<T extends TS.Node>(node: TS.Node, test: (node: TS.Node) => node is T): T | undefined {
+		export function resolveDeclaration<T extends TS.Node>(node: TS.Node, test: (node: TS.Node) => node is T): T | undefined {
 			let decls = resolveDeclarations(node)
 			return decls?.find(test) as T | undefined
 		}
 
+		/** Resolves the first declaration from specified type. */
+		export function resolveDeclarationByType<T extends TS.Node>(type: TS.Type, test: (node: TS.Node) => node is T): T | undefined {
+			let symbol = type.getSymbol()
+			return symbol ? resolveDeclarationBySymbol(symbol, test) : undefined
+		}
+
 		/** Resolves the first declaration from a symbol. */
-		export function findDeclarationBySymbol<T extends TS.Node>(symbol: TS.Symbol, test: (node: TS.Node) => node is T): T | undefined {
+		export function resolveDeclarationBySymbol<T extends TS.Node>(symbol: TS.Symbol, test: (node: TS.Node) => node is T): T | undefined {
 			let decls = symbol.getDeclarations()
 			return decls?.find(test) as T | undefined
 		}
@@ -586,7 +606,7 @@ export namespace helper {
 			let testFn = ((node: TS.Node) => ts.isPropertySignature(node) || ts.isPropertyDeclaration(node)) as
 				((node: TS.Node) => node is TS.PropertySignature | TS.PropertyDeclaration)
 
-			return findDeclaration(name, testFn)
+			return resolveDeclaration(name, testFn)
 		}
 
 		/** Resolve get accessor declaration or signature. */
@@ -601,7 +621,7 @@ export namespace helper {
 					|| ts.isGetAccessorDeclaration(node)
 			}) as ((node: TS.Node) => node is TS.PropertySignature | TS.PropertyDeclaration | TS.GetAccessorDeclaration)
 
-			return findDeclaration(name, testFn)
+			return resolveDeclaration(name, testFn)
 		}
 
 		/** Resolve a method declaration or signature. */
@@ -611,7 +631,7 @@ export namespace helper {
 			let testFn = ((node: TS.Node) => ts.isMethodSignature(node) || ts.isMethodDeclaration(node)) as
 				((node: TS.Node) => node is TS.MethodSignature | TS.MethodDeclaration)
 
-			return findDeclaration(name, testFn)
+			return resolveDeclaration(name, testFn)
 		}
 
 		/** Resolve a method or function declaration or a signature from a calling. */
@@ -625,7 +645,7 @@ export namespace helper {
 					|| ts.isArrowFunction(node)
 			}) as ((node: TS.Node) => node is TS.MethodSignature | TS.MethodDeclaration | TS.FunctionDeclaration | TS.ArrowFunction)
 
-			return findDeclaration(node.expression, testFn)
+			return resolveDeclaration(node.expression, testFn)
 		}
 	}
 
@@ -758,7 +778,7 @@ export namespace helper {
 		 * or should be just one unique expression, can't be replaced to two.
 		 * so that it can be parenthesized.
 		 */
-		export function canBeParenthesized(node: TS.Node): node is TS.Expression {
+		export function shouldBeUnique(node: TS.Node): node is TS.Expression {
 			let parent = node.parent
 
 			// Content of flow interrupt
