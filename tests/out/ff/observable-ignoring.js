@@ -7,16 +7,16 @@ class TestIgnoringStringIndex extends Component {
         return this.prop[0];
     }
 }
-class TestIgnoringInstance extends Component {
-    notObservedInstance = new NotObservedClass();
-    ignoreNonObservedInstance() {
-        trackGet(this, "notObservedInstance");
-        return this.notObservedInstance.value;
-    }
-}
-class NotObservedClass {
-    value = 1;
-}
+// This feature is not implemented.
+// class TestIgnoringNotObservedInstanceAsProperty extends Component {
+// 	notObservedInstance = new NotObservedClass()
+// 	ignoreNonObservedInstance() {
+// 		return this.notObservedInstance.value
+// 	}
+// }
+// class NotObservedClass {
+// 	value: number = 1
+// }
 class TestIgnoringMethod extends Component {
     ignoreMethod() {
         return this.anyMethod();
