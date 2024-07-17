@@ -42,12 +42,18 @@ class TestObservedParameter {
     }
 }
 class TestObservedPropertyAtUnobserved {
-    prop = { value: 1 };
+    observedTypeProp = { value: 1 };
+    observedInitProp = { value: 1 };
     unObservedProp = { value: 1 };
-    getPropValue() {
-        trackGet(this, "prop");
-        trackGet(this.prop, "value");
-        return this.prop.value;
+    getObservedTypePropValue() {
+        trackGet(this, "observedTypeProp");
+        trackGet(this.observedTypeProp, "value");
+        return this.observedTypeProp.value;
+    }
+    getObservedInitPropValue() {
+        trackGet(this, "observedInitProp");
+        trackGet(this.observedInitProp, "value");
+        return this.observedInitProp.value;
     }
     getAsProp() {
         trackGet(this.unObservedProp, "value");

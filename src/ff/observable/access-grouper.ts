@@ -95,7 +95,13 @@ export namespace AccessGrouper {
 
 	/** Get a name expression key. */
 	function getNameKey(node: PropertyAccessNode, type: 'get' | 'set'): string {
-		return helper.getText(getAccessNodeNameProperty(node, type))
+		let name = getAccessNodeNameProperty(node, type)
+		
+		if (ts.isStringLiteral(name)) {
+			return `"${name.text}"`
+		}
+
+		return helper.getText(name)
 	}
 
 
@@ -103,7 +109,7 @@ export namespace AccessGrouper {
 	function getAccessNodeNameProperty(node: PropertyAccessNode, type: 'get' | 'set'): TS.Expression {
 		let name: TS.Expression
 
-		if (helper.types.isArray(helper.types.getType(node.expression)) 
+		if (helper.types.isArrayType(helper.types.getType(node.expression)) 
 			|| type === 'get' && ObservedChecker.isMapOrSetReading(node)
 			|| type === 'set' && ObservedChecker.isMapOrSetWriting(node)
 		) {

@@ -301,15 +301,29 @@ export namespace helper {
 				return true
 			}
 
-			// `b: Readonly<{p: 1}>` -> `b.p` is readonly, not observed.
-			// `c: ReadonlyArray<...>` -> `c.?` is readonly, not observed.
-			// `d: DeepReadonly<...>` -> `d.?` and `d.?.?` are readonly, not observed.
+			// `a: Readonly<{p: 1}>` -> `a.p` is readonly, not observe.
+			// `a: ReadonlyArray<...>` -> `a.?` is readonly, not observe.
+			// `a: DeepReadonly<...>` -> `a.?` and `d.?.?` are readonly, not observe.
+			// `readonly {...}` -> it may not 100% strict.
 			let exp = node.expression
-			let type = typeChecker.getTypeAtLocation(exp)
-			let name = types.getName(type)
 
-			if (name === 'Readonly' || name === 'ReadonlyArray') {
-				return true
+			let typeNode = types.getTypeNode(exp)
+			if (!typeNode) {
+				return false
+			}
+
+			if (ts.isTypeReferenceNode(typeNode)) {
+				let name = types.getTypeNodeReferenceName(typeNode)
+				if (name === 'Readonly' || name === 'ReadonlyArray') {
+					return true
+				}
+			}
+
+			// Type was expanded and removed alias.
+			else if (ts.isTypeOperatorNode(typeNode)) {
+				if (typeNode.operator === ts.SyntaxKind.ReadonlyKeyword) {
+					return true
+				}
 			}
 
 			return false
@@ -390,15 +404,24 @@ export namespace helper {
 			return typeChecker.getTypeAtLocation(node)
 		}
 
+		/** Get type node of a node. */
+		export function getTypeNode(node: TS.Node): TS.TypeNode | undefined {
+			return typeToTypeNode(getType(node))
+		}
+
+		/** Get type node of a type. */
+		export function typeToTypeNode(type: TS.Type): TS.TypeNode | undefined {
+			return typeChecker.typeToTypeNode(type, undefined, undefined)
+		}
+
 		/** Get full text of a type, all type parameters are included. */
-		export function getFullText(type: TS.Type): string {
+		export function getTypeFullText(type: TS.Type): string {
 			return typeChecker.typeToString(type)
 		}
 
-		/** Get the name of a type, type parameters are excluded. */
-		export function getName(type: TS.Type): string | undefined {
-			let node = typeChecker.typeToTypeNode(type, undefined, undefined)
-			if (!node || !ts.isTypeReferenceNode(node)) {
+		/** Get the reference name of a type node, all type parameters are excluded. */
+		export function getTypeNodeReferenceName(node: TS.TypeNode): string | undefined {
+			if (!ts.isTypeReferenceNode(node)) {
 				return undefined
 			}
 
@@ -411,7 +434,7 @@ export namespace helper {
 		}
 
 		/** Get the returned type of a method / function declaration. */
-		export function getNodeReturnType(node: TS.SignatureDeclaration): TS.Type | undefined {
+		export function getReturnType(node: TS.SignatureDeclaration): TS.Type | undefined {
 			let signature = typeChecker.getSignatureFromDeclaration(node)
 			if (!signature) {
 				return undefined
@@ -421,18 +444,18 @@ export namespace helper {
 		}
 
 		/** Test whether type is object. */
-		export function isObject(type: TS.Type): boolean {
+		export function isObjectType(type: TS.Type): boolean {
 			if (type.isUnionOrIntersection()) {
-				return type.types.every(t => isObject(t))
+				return type.types.every(t => isObjectType(t))
 			}
 
 			return (type.getFlags() & ts.TypeFlags.Object) > 0
 		}
 
 		/** Test whether type represents a value. */
-		export function isValue(type: TS.Type): boolean {
+		export function isValueType(type: TS.Type): boolean {
 			if (type.isUnionOrIntersection()) {
-				return type.types.every(t => isValue(t))
+				return type.types.every(t => isValueType(t))
 			}
 
 			return (type.getFlags() & (
@@ -447,7 +470,7 @@ export namespace helper {
 		}
 
 		/** Test whether type of a node extends `Array<any>`. */
-		export function isArray(type: TS.Type): boolean {
+		export function isArrayType(type: TS.Type): boolean {
 			return typeChecker.isArrayType(type)
 		}
 	}

@@ -100,6 +100,7 @@ class TestHoistPropInArrayMapFn extends Component {
     render() {
         let c = { value: 3 };
         trackGet(this, "prop1");
+        trackGet(this.prop1, "");
         return this.prop1.map(v => { trackGet(v, "value"); trackGet(this, "prop2"); trackGet(c, "value"); return v.value + this.prop2 + c.value; }).join('');
     }
 }
