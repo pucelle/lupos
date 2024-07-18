@@ -23,6 +23,17 @@ class TestObjectProp extends Component {
         trackSet(this.prop, "value");
     }
 }
+class TestDeconstructAssignment extends Component {
+    prop = { value: 1 };
+    array() {
+        [this.prop] = [{ value: 2 }];
+        trackSet(this, "prop");
+    }
+    object() {
+        ({ prop: this.prop } = { prop: { value: 2 } });
+        trackSet(this, "prop");
+    }
+}
 class TestRepetitiveProp extends Component {
     prop = { value: 1 };
     setProp() {

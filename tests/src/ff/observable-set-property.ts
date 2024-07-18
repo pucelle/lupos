@@ -34,6 +34,20 @@ class TestObjectProp extends Component {
 }
 
 
+class TestDeconstructAssignment extends Component {
+
+	prop = {value: 1}
+
+	array() {
+		[this.prop] = [{value:2}]
+	}
+
+	object() {
+		({prop: this.prop} = {prop: {value:2}})
+	}
+}
+
+
 class TestRepetitiveProp extends Component {
 
 	prop = {value: 1}

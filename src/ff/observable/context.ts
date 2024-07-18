@@ -91,10 +91,12 @@ export class Context {
 		}
 
 		// Add property assignment nodes.
-		else if (helper.assignment.isAssignment(node)) {
-			let assignTo = helper.assignment.getTo(node)
-			if (helper.access.isAccess(assignTo)) {
-				this.mayAddSetTracking(assignTo, false)
+		else if (helper.assign.isAssignment(node)) {
+			let assignTo = helper.assign.getToExpressions(node)
+			for (let node of assignTo) {
+				if (helper.access.isAccess(node)) {
+					this.mayAddSetTracking(node, false)
+				}
 			}
 		}
 

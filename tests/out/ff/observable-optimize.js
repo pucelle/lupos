@@ -1,106 +1,113 @@
-import { Observed, trackGet } from '@pucelle/ff';
-import { Component, SlotContentType } from '@pucelle/lupos.js';
-class TestHoistIndexStatement extends Component {
-    prop = [{ value: 'Text' }, { value: 'Text' }];
-    render1() {
-        let result = '';
-        let index = 0;
-        while (index < 2) {
-            var _ref_0;
-            _ref_0 = index++;
-            result += this.prop[_ref_0].value;
+import { Observed, trackGet, trackSet } from '@pucelle/ff';
+import { Component } from '@pucelle/lupos.js';
+class TestOptimizing extends Component {
+    prop = [{ value: 1 }, { value: 2 }];
+    eliminateChildProp() {
+        this.prop;
+        if (true) {
+            this.prop;
+            trackGet(this, "prop");
+        }
+        trackGet(this, "prop");
+        return '';
+    }
+    eliminateChildVariable() {
+        let prop = { value: 1 };
+        prop.value;
+        if (true) {
+            prop.value;
+            trackGet(prop, "value");
+        }
+        trackGet(prop, "value");
+        return '';
+    }
+    avoidEliminatingSameNameButDifferentVariable() {
+        let prop = { value: 1 };
+        prop.value;
+        if (true) {
+            let prop = { value: 2 };
+            prop.value;
+            trackGet(prop, "value");
+        }
+        trackGet(prop, "value");
+        return '';
+    }
+    moveConditionalConditionForward() {
+        if ((trackGet(this, "prop"), this.prop)) { }
+        return '';
+    }
+    moveIterationInitializerForward() {
+        let i = this.prop[0].value;
+        for ((trackGet(this, "prop"), trackGet(this.prop, ""), trackGet(this.prop[0], "value")); i < 1; i++) { }
+        return '';
+    }
+    moveIterationConditionForward() {
+        for (let i = 0; (trackGet(this, "prop"), trackGet(this.prop, ""), trackGet(this.prop[0], "value"), i < this.prop[0].value); i++) { }
+        return '';
+    }
+    moveIterationIncreasementForward() {
+        for (let i = 0; i < 1; (trackGet(this, "prop"), trackGet(this.prop, ""), trackGet(this.prop[0], "value"), i += this.prop[0].value)) { }
+        return '';
+    }
+    moveForIterationContentTrackingOuter() {
+        for (let i = 0; i < 1; i++) {
+            this.prop[i].value;
             trackGet(this, "prop");
             trackGet(this.prop, "");
-            trackGet(this.prop[_ref_0], "value");
+            trackGet(this.prop[i], "value");
         }
-        return result;
+        return '';
     }
-    render2() {
-        let result = '';
-        let index = -1;
+    moveWhileIterationContentTrackingOuter() {
+        let index = 0;
         while (index < 1) {
             var _ref_0;
-            _ref_0 = ++index;
-            result += this.prop[_ref_0].value;
+            _ref_0 = index++;
+            this.prop[_ref_0].value;
             trackGet(this, "prop");
             trackGet(this.prop, "");
             trackGet(this.prop[_ref_0], "value");
         }
-        return result;
+        return '';
     }
-    render3() {
-        let result = '';
-        let index = 1;
-        while (index >= 0) {
-            var _ref_0;
-            _ref_0 = index--;
-            result += this.prop[_ref_0].value;
-            trackGet(this, "prop");
-            trackGet(this.prop, "");
-            trackGet(this.prop[_ref_0], "value");
-        }
-        return result;
-    }
-    render4() {
-        let result = '';
-        let index = 2;
-        while (index > 0) {
-            var _ref_0;
-            _ref_0 = --index;
-            result += this.prop[_ref_0].value;
-            trackGet(this, "prop");
-            trackGet(this.prop, "");
-            trackGet(this.prop[_ref_0], "value");
-        }
-        return result;
-    }
-    render5() {
-        let result = '';
+    dynamicVariableAsIndex() {
         let index = 0;
-        result += this.prop[index].value;
+        this.prop[index].value;
         index++;
-        result += this.prop[index].value;
+        this.prop[index].value;
         trackGet(this, "prop");
         trackGet(this.prop, "");
         trackGet(this.prop[index], "value");
-        return result;
+        return '';
     }
-    render6() {
-        let result = '';
+    dynamicIndexChangeOtherWhere() {
         let index = { value: 0 };
-        result += this.prop[index.value].value;
-        this.plusIndex(index);
-        result += this.prop[index.value].value;
+        this.prop[index.value].value;
+        index.value++;
+        this.prop[index.value].value;
         trackGet(this, "prop");
         trackGet(this.prop, "");
         trackGet(this.prop[index.value], "value");
-        return result;
+        return '';
     }
-    plusIndex(index) {
-        index.value++;
+    dynamicExp() {
+        let a = this.prop[0];
+        a.value = 1;
+        a = this.prop[1];
+        a.value = 2;
+        trackSet(a, "value");
     }
-    render7() {
-        let result = '';
+    dynamicExpAndIndexParam() {
         let index = 0;
-        result += this.getItem(index).value;
-        index++;
-        result += this.getItem(index).value;
-        return result;
+        let a = this.getItem(index++);
+        a.value = 1;
+        a = this.getItem(index++);
+        a.value = 2;
+        trackSet(a, "value");
     }
     getItem(index) {
         trackGet(this, "prop");
         trackGet(this.prop, "");
         return this.prop[index];
-    }
-}
-class TestHoistPropInArrayMapFn extends Component {
-    static ContentSlotType = SlotContentType.Text;
-    prop1 = [{ value: 1 }];
-    prop2 = 2;
-    render() {
-        let c = { value: 3 };
-        trackGet(this, "prop1");
-        trackGet(this.prop1, "");
-        return this.prop1.map(v => { trackGet(v, "value"); trackGet(this, "prop2"); trackGet(c, "value"); return v.value + this.prop2 + c.value; }).join('');
     }
 }

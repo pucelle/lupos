@@ -101,44 +101,6 @@ export namespace ObservedChecker {
 		return observed
 	}
 
-	/** Get all declared variable name from a variable declaration. */
-	export function getVariableDeclarationNames(node: TS.VariableDeclaration): string[] {
-
-		// `var a = {b:1} as Observed<{b: number}>`, observed.
-		// `var a: Observed<{b: number}> = {b:1}`, observed.
-		// Note here: `Observed` must appear directly, reference or alias is not working.
-
-		if (ts.isObjectBindingPattern(node.name)
-			|| ts.isArrayBindingPattern(node.name)
-		) {
-			return getVariablePatternNames(node.name)
-		}
-		else if (ts.isIdentifier(node.name)) {
-			return [helper.getText(node.name)]
-		}
-		else {
-			return []
-		}
-	}
-
-	/** Get all declared variable name from a variable pattern. */
-	function getVariablePatternNames(node: TS.ObjectBindingPattern | TS.ArrayBindingPattern): string[] {
-		let names: string[] = []
-
-		for (let element of node.elements as TS.NodeArray<TS.BindingElement>) {
-			if (ts.isObjectBindingPattern(element.name)
-				|| ts.isArrayBindingPattern(element.name)
-			) {
-				names.push(...getVariablePatternNames(element.name))
-			}
-			else if (ts.isIdentifier(element.name)) {
-				names.push(helper.getText(element.name))
-			}
-		}
-
-		return names
-	}
-
 
 	/** Whether parameter declaration is observed. */
 	export function isParameterObserved(node: TS.ParameterDeclaration, context: Context = ContextTree.current!): boolean {
@@ -218,8 +180,9 @@ export namespace ObservedChecker {
 		// `a && b`, `a || b`, `a ?? b`, can observe only if both a & b can observe.
 		else if (ts.isBinaryExpression(node)) {
 			return (node.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken
-				|| node.operatorToken.kind === ts.SyntaxKind.BarBarToken
-				|| node.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken)
+					|| node.operatorToken.kind === ts.SyntaxKind.BarBarToken
+					|| node.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken
+				)
 				&& isObserved(node.left)
 				&& isObserved(node.right)
 		}

@@ -333,7 +333,7 @@ export namespace helper {
 
 
 	/** Property Assignment */
-	export namespace assignment {
+	export namespace assign {
 
 		/** Whether be property assignment like `a = x`. */
 		export function isAssignment(node: TS.Node): node is AssignmentNode {
@@ -380,16 +380,74 @@ export namespace helper {
 			}
 		}
 
+
 		/** 
-		 * get the identifier assigning to.
+		 * get the expressions assigning to.
 		 * `a` of `a = b`
+		 * `a, b` of `[a, b] = c`
 		 */
-		export function getTo(node: AssignmentNode): TS.Expression {
+		export function getToExpressions(node: AssignmentNode): TS.Expression[] {
 			if (ts.isBinaryExpression(node)) {
-				return node.left
+				return [...walkAssignToExpressions(node.left)]
 			}
 			else {
-				return node.operand
+				return [node.operand]
+			}
+		}
+
+		/** Walk for  */
+		function* walkAssignToExpressions(node: TS.Expression): Iterable<TS.Expression> {
+			if (ts.isArrayLiteralExpression(node)) {
+				for (let el of node.elements) {
+					yield *walkAssignToExpressions(el)
+				}
+			}
+			else if (ts.isObjectLiteralExpression(node)) {
+				for (let prop of node.properties) {
+					if (ts.isPropertyAssignment(prop)) {
+						yield *walkAssignToExpressions(prop.initializer)
+					}
+				}
+			}
+			else {
+				yield node
+			}
+		}
+	}
+
+
+
+	/** Variable declarations. */
+	export namespace variable {
+
+		/** Walk for all declared variable names from a variable declaration. */
+		export function* walkDeclarationNames(node: TS.VariableDeclaration): Iterable<string> {
+
+			// `var a = {b:1} as Observed<{b: number}>`, observed.
+			// `var a: Observed<{b: number}> = {b:1}`, observed.
+			// Note here: `Observed` must appear directly, reference or alias is not working.
+
+			if (ts.isObjectBindingPattern(node.name)
+				|| ts.isArrayBindingPattern(node.name)
+			) {
+				yield *walkVariablePatternNames(node.name)
+			}
+			else if (ts.isIdentifier(node.name)) {
+				yield helper.getText(node.name)
+			}
+		}
+
+		/** Get all declared variable name from a variable pattern. */
+		function* walkVariablePatternNames(node: TS.ObjectBindingPattern | TS.ArrayBindingPattern): Iterable<string> {
+			for (let element of node.elements as TS.NodeArray<TS.BindingElement>) {
+				if (ts.isObjectBindingPattern(element.name)
+					|| ts.isArrayBindingPattern(element.name)
+				) {
+					yield *walkVariablePatternNames(element.name)
+				}
+				else if (ts.isIdentifier(element.name)) {
+					yield helper.getText(element.name)
+				}
 			}
 		}
 	}

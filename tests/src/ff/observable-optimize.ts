@@ -2,97 +2,123 @@ import {Observed} from '@pucelle/ff'
 import {Component} from '@pucelle/lupos.js'
 
 
-class TestHoistIndexStatement extends Component {
+class TestOptimizing extends Component {
 
-	prop: {value: string}[] = [{value: 'Text'}, {value: 'Text'}]
+	prop: {value: number}[] = [{value: 1}, {value: 2}]
 
-	render1() {
-		let result = ''
-		let index = 0
-		while (index < 2) {
-			result += this.prop[index++].value
+	eliminateChildProp() {
+		this.prop
+		if (true) {
+			this.prop
 		}
-		return result
+
+		return ''
 	}
 
-	render2() {
-		let result = ''
-		let index = -1
+	eliminateChildVariable() {
+		let prop: Observed<{value: number}> = {value: 1}
+		prop.value
+
+		if (true) {
+			prop.value
+		}
+
+		return ''
+	}
+
+	avoidEliminatingSameNameButDifferentVariable() {
+		let prop: Observed<{value: number}> = {value: 1}
+		prop.value
+		
+		if (true) {
+			let prop: Observed<{value: number}> = {value: 2}
+			prop.value
+		}
+
+		return ''
+	}
+
+	moveConditionalConditionForward() {
+		if (this.prop) {}
+
+		return ''
+	}
+
+	moveIterationInitializerForward() {
+		for (let i = this.prop[0].value; i < 1; i++) {}
+
+		return ''
+	}
+
+	moveIterationConditionForward() {
+		for (let i = 0; i < this.prop[0].value; i++) {}
+
+		return ''
+	}
+
+	moveIterationIncreasementForward() {
+		for (let i = 0; i < 1; i+=this.prop[0].value) {}
+
+		return ''
+	}
+
+	moveForIterationContentTrackingOuter() {
+		for (let i = 0; i < 1; i++){
+			this.prop[i].value
+		}
+
+		return ''
+	}
+
+	moveWhileIterationContentTrackingOuter() {
+		let index = 0
 		while (index < 1) {
-			result += this.prop[++index].value
+			this.prop[index++].value
 		}
-		return result
+
+		return ''
 	}
 
-	render3() {
-		let result = ''
-		let index = 1
-		while (index >= 0) {
-			result += this.prop[index--].value
-		}
-		return result
-	}
-
-	render4() {
-		let result = ''
-		let index = 2
-		while (index > 0) {
-			result += this.prop[--index].value
-		}
-		return result
-	}
-
-	render5() {
-		let result = ''
+	dynamicVariableAsIndex() {
 		let index = 0
 
-		result += this.prop[index].value
+		this.prop[index].value
 		index++
-		result += this.prop[index].value
+		this.prop[index].value
 
-		return result
+		return ''
 	}
 
-	render6() {
-		let result = ''
+	dynamicIndexChangeOtherWhere() {
 		let index = {value: 0}
 
-		result += this.prop[index.value].value
-		this.plusIndex(index)
-		result += this.prop[index.value].value
-		
-		return result
-	}
-
-	plusIndex(index: {value: number}) {
+		this.prop[index.value].value
 		index.value++
-	}
-
-	render7() {
-		let result = ''
-		let index = 0
-
-		result += this.getItem(index).value
-		index++
-		result += this.getItem(index).value
+		this.prop[index.value].value
 		
-		return result
+		return ''
 	}
 
-	getItem(index: number) {
+	dynamicExp() {
+		let a = this.prop[0]
+		a.value = 1
+
+		a = this.prop[1]
+		a.value = 2
+	}
+
+	dynamicExpAndIndexParam() {
+		let index = 0
+		let a = this.getItem(index++)
+		a.value = 1
+
+		a = this.getItem(index++)
+		a.value = 2
+	}
+
+	getItem(index: number): Observed<{value: number}> {
 		return this.prop[index]
 	}
 }
 
-
-class TestHoistPropInArrayMapFn extends Component {
-
-	prop1: {value: number}[] = [{value:1}]
-	prop2: number = 2
-
-	render() {
-		let c: Observed<{value: number}> = {value: 3}
-		return this.prop1.map(v => v.value + this.prop2 + c.value).join('')
-	}
-}
 
