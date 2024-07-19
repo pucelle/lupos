@@ -1,7 +1,7 @@
 import { Observed, trackGet, trackSet } from '@pucelle/ff';
 import { Component } from '@pucelle/lupos.js';
 class TestOptimizing extends Component {
-    prop = [{ value: 1 }, { value: 2 }];
+    prop = { value: 1 };
     eliminateChildProp() {
         this.prop;
         if (true) {
@@ -37,39 +37,48 @@ class TestOptimizing extends Component {
         return '';
     }
     moveIterationInitializerForward() {
-        let i = this.prop[0].value;
-        for ((trackGet(this, "prop"), trackGet(this.prop, ""), trackGet(this.prop[0], "value")); i < 1; i++) { }
+        let i = this.prop.value;
+        for ((trackGet(this, "prop"), trackGet(this.prop, "value")); i < 1; i++) { }
         return '';
     }
     moveIterationConditionForward() {
-        for (let i = 0; (trackGet(this, "prop"), trackGet(this.prop, ""), trackGet(this.prop[0], "value"), i < this.prop[0].value); i++) { }
+        for (let i = 0; (trackGet(this, "prop"), trackGet(this.prop, "value"), i < this.prop.value); i++) { }
         return '';
     }
     moveIterationIncreasementForward() {
-        for (let i = 0; i < 1; (trackGet(this, "prop"), trackGet(this.prop, ""), trackGet(this.prop[0], "value"), i += this.prop[0].value)) { }
+        for (let i = 0; i < 1; (trackGet(this, "prop"), trackGet(this.prop, "value"), i += this.prop.value)) { }
         return '';
     }
     moveForIterationContentTrackingOuter() {
         for (let i = 0; i < 1; i++) {
-            this.prop[i].value;
+            this.prop.value;
             trackGet(this, "prop");
-            trackGet(this.prop, "");
-            trackGet(this.prop[i], "value");
+            trackGet(this.prop, "value");
         }
         return '';
     }
     moveWhileIterationContentTrackingOuter() {
         let index = 0;
         while (index < 1) {
-            var _ref_0;
-            _ref_0 = index++;
-            this.prop[_ref_0].value;
+            this.prop.value;
             trackGet(this, "prop");
-            trackGet(this.prop, "");
-            trackGet(this.prop[_ref_0], "value");
+            trackGet(this.prop, "value");
         }
         return '';
     }
+    preventMovingIterationContentWhenIncludesLocalVariables() {
+        let prop = [this.prop, this.prop];
+        for (let i = 0; i < 1; i++) {
+            prop[i].value;
+            trackGet(prop, "");
+            trackGet(prop[i], "value");
+        }
+        trackGet(this, "prop");
+        return '';
+    }
+}
+class TestMutable extends Component {
+    prop = [{ value: 1 }, { value: 2 }];
     dynamicVariableAsIndex() {
         let index = 0;
         this.prop[index].value;

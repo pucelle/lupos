@@ -4,7 +4,7 @@ import {Component} from '@pucelle/lupos.js'
 
 class TestOptimizing extends Component {
 
-	prop: {value: number}[] = [{value: 1}, {value: 2}]
+	prop: {value: number} = {value: 1}
 
 	eliminateChildProp() {
 		this.prop
@@ -45,26 +45,26 @@ class TestOptimizing extends Component {
 	}
 
 	moveIterationInitializerForward() {
-		for (let i = this.prop[0].value; i < 1; i++) {}
+		for (let i = this.prop.value; i < 1; i++) {}
 
 		return ''
 	}
 
 	moveIterationConditionForward() {
-		for (let i = 0; i < this.prop[0].value; i++) {}
+		for (let i = 0; i < this.prop.value; i++) {}
 
 		return ''
 	}
 
 	moveIterationIncreasementForward() {
-		for (let i = 0; i < 1; i+=this.prop[0].value) {}
+		for (let i = 0; i < 1; i+=this.prop.value) {}
 
 		return ''
 	}
 
 	moveForIterationContentTrackingOuter() {
 		for (let i = 0; i < 1; i++){
-			this.prop[i].value
+			this.prop.value
 		}
 
 		return ''
@@ -73,11 +73,26 @@ class TestOptimizing extends Component {
 	moveWhileIterationContentTrackingOuter() {
 		let index = 0
 		while (index < 1) {
-			this.prop[index++].value
+			this.prop.value
 		}
 
 		return ''
 	}
+
+	preventMovingIterationContentWhenIncludesLocalVariables() {
+		let prop: Observed<{value: number}[]> = [this.prop, this.prop]
+
+		for (let i = 0; i < 1; i++){
+			prop[i].value
+		}
+
+		return ''
+	}
+}
+
+class TestMutable extends Component {
+
+	prop: {value: number}[] = [{value: 1}, {value: 2}]
 
 	dynamicVariableAsIndex() {
 		let index = 0
