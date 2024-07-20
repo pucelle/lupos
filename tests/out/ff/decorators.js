@@ -1,10 +1,11 @@
-import { Observed, computed, effect, watch, beginTrack, endTrack, trackSet, trackGet, untrack, enqueue } from '@pucelle/ff';
+import { Observed, computed, effect, watch, trackGet, untrack } from '@pucelle/ff';
 import { Component } from '@pucelle/lupos.js';
 class TestComputed extends Component {
     prop = 1;
     #prop2 = undefined;
     #need_compute_prop2 = true;
     #compute_prop2() {
+        trackGet(this, "prop");
         return this.prop + 1;
     }
     #reset_prop2() { this.#need_compute_prop2 = true; }

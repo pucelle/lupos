@@ -19,23 +19,17 @@ defineVisitor(function(node: TS.Node, index: number) {
 		return
 	}
 
-	return () => {
-		let replaced: TS.Node[] | null = null
-
+	interpolator.replace(index, InterpolationContentType.Normal, () => {
 		if (decoName === 'computed') {
-			replaced = compileComputedDecorator(node)
+			return compileComputedDecorator(node)
 		}
 		else if (decoName === 'effect') {
-			replaced = compileEffectDecorator(node)
+			return compileEffectDecorator(node)
 		}
-		else if (decoName === 'watch') {
-			replaced = compileWatchDecorator(node, decorator)
+		else {
+			return compileWatchDecorator(node, decorator)
 		}
-
-		if (replaced) {
-			interpolator.replace(index, InterpolationContentType.Normal, () => replaced!)
-		}
-	}
+	})
 })
 
 
@@ -94,7 +88,7 @@ function compileComputedDecorator(methodDecl: TS.MethodDeclaration): TS.Node[] {
 		factory.createKeywordTypeNode(ts.SyntaxKind.BooleanKeyword),
 		factory.createIdentifier('true')
 	)
-	
+
 	let computeMethod = factory.createMethodDeclaration(
 		undefined,
 		undefined,
