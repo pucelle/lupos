@@ -80,17 +80,21 @@ export class Context {
 			this.variables.visitVariable(node)
 		}
 
-		// Add property access nodes.
+		// Test and add property access nodes.
 		else if (helper.access.isAccess(node)) {
+
+			// `map.set(...)`
 			if (ObservedChecker.isMapOrSetWriting(node)) {
 				this.mayAddSetTracking(node, true)
 			}
+
+			// `a.b`
 			else {
 				this.mayAddGetTracking(node)
 			}
 		}
 
-		// Add property assignment nodes.
+		// Test and add property assignment nodes.
 		else if (helper.assign.isAssignment(node)) {
 			let assignTo = helper.assign.getToExpressions(node)
 			for (let node of assignTo) {
@@ -161,7 +165,7 @@ export class Context {
 
 			// Capture immediately and insert it into position.
 			if (position.interruptOnPath) {
-				position.context.capturer.manuallyAddCaptured([index], position.index, type)
+				position.context.capturer.addCapturedManually([index], position.index, type)
 			}
 
 			// Capture by target context.
@@ -174,7 +178,7 @@ export class Context {
 		}
 
 		// Move variable declaration list forward.
-		// Should move codes to optimize step later.
+		// TODO: Should move codes to optimize step later.
 		if (this.type === ContextType.IterationInitializer) {
 			let toPosition = ContextTree.findClosestPositionToAddStatement(
 				this.visitingIndex, this

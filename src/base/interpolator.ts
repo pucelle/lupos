@@ -76,6 +76,7 @@ export namespace interpolator {
 	/** Interpolated expressions, and where to interpolate. */
 	const interpolations: ListMap<number, InterpolationItem> = new ListMap()
 
+
 	/** Initialize after enter a new source file */
 	export function initialize() {
 		interpolations.clear()
@@ -158,7 +159,9 @@ export namespace interpolator {
 	}
 
 	/** Replace node to another node normally. */
-	export function replace(index: number, contentType: InterpolationContentType, replace: () => TS.Node | TS.Node[] | undefined) {
+	export function replace(
+		index: number, contentType: InterpolationContentType, replace: () => TS.Node | TS.Node[] | undefined
+	) {
 		add(index, {
 			position: InterpolationPosition.Replace,
 			contentType,
@@ -243,7 +246,10 @@ export namespace interpolator {
 		return node && Array.isArray(node) && node.length === 1 ? node[0] : node
 	}
 
-	/** Update child nodes. */
+	/** 
+	 * Update child nodes.
+	 * For only a few type of nodes.
+	 */
 	function updateChildNodes(node: TS.Node, prependNodes: TS.Node[], appendNodes: TS.Node[]): TS.Node {
 		if (ts.isNamedImports(node)) {
 			return factory.updateNamedImports(node, [
@@ -280,7 +286,8 @@ export namespace interpolator {
 
 	/** Try to replace node to make it can contain neighbor nodes. */
 	function replaceToAddNeighborNodes(
-		index: number, node: TS.Node | TS.Node[] | undefined, beforeNodes: TS.Node[], afterNodes: TS.Node[]
+		index: number, node: TS.Node | TS.Node[] | undefined,
+		beforeNodes: TS.Node[], afterNodes: TS.Node[]
 	): TS.Node | TS.Node[] {
 		let rawNode = visiting.getNode(index)
 		let rawParent = visiting.getNode(visiting.getParentIndex(index)!)
@@ -355,7 +362,7 @@ export namespace interpolator {
 		}
 
 		// `(a) -> a`
-		list = list.map(node => helper.pack.simplifyShallow(node) as TS.Expression)
+		list = list.map(node => helper.pack.normalize(node, false) as TS.Expression)
 
 		return list
 	}

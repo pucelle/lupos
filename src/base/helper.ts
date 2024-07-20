@@ -1033,25 +1033,34 @@ export namespace helper {
 		}
 
 		/** 
-		 * Try to clean a node to remove all not-necessary nodes deeply,
-		 * like remove as expression, or unpack parenthesized.
+		 * Try to clean a node to remove all not-necessary nodes,
+		 * and convert multiple ways of describing a node to a unique way.
+		 * like remove as expression, or unpack parenthesized, element access to property access.
+		 * `deeply` determines whether simplify all descendants.
 		 */
-		export function simplifyDeeply<T extends TS.Node>(node: T): T {
+		export function normalize(node: TS.Node, deeply: boolean): TS.Node {
 			if (ts.isAsExpression(node) || ts.isParenthesizedExpression(node)) {
-				return ts.visitNode(node.expression, simplifyDeeply) as T
+				return normalize(node.expression, deeply)
 			}
-			else {
-				return ts.visitEachChild(node, simplifyDeeply, transformContext) as T
-			}
-		}
 
-		/** 
-		 * Try to clean a node to remove all not-necessary nodes shallow,
-		 * like remove as expression, or unpack parenthesized.
-		 */
-		export function simplifyShallow(node: TS.Node): TS.Node {
-			if (ts.isAsExpression(node) || ts.isParenthesizedExpression(node)) {
-				return node.expression
+			// a['prop'] -> a.prop
+			else if (ts.isElementAccessExpression(node)
+				&& ts.isStringLiteral(node.argumentExpression)
+				&& /^[\w\$_][\w\$_\d]*$/.test(node.argumentExpression.text)
+			) {
+				return factory.createPropertyAccessExpression(
+					normalize(node.expression, deeply) as TS.Expression,
+					factory.createIdentifier(node.argumentExpression.text)
+				)
+			}
+
+			// '...' -> "..."
+			else if (ts.isStringLiteral(node)) {
+				return factory.createStringLiteral(node.text)
+			}
+
+			else if (deeply) {
+				return ts.visitEachChild(node, (node: TS.Node) => normalize(node, true), transformContext)
 			}
 			else {
 				return node

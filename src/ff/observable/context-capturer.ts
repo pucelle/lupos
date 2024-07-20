@@ -120,8 +120,8 @@ export class ContextCapturer {
 		this.captured.set(atIndex, captured)
 	}
 
-	/** Insert specified captured indices to specified position. */
-	manuallyAddCaptured(captured: number[], atIndex: number, type: 'get' | 'set') {
+	/** Insert captured indices to specified position. */
+	addCapturedManually(captured: number[], atIndex: number, type: 'get' | 'set') {
 		this.addCaptureType(type)
 
 		if (this.captured.has(atIndex)) {
@@ -223,12 +223,12 @@ export class ContextCapturer {
 
 	/** Before context will exit. */
 	beforeExit() {
-		this.addReferenceVariables()
-		this.addCapturedInward()
+		this.interpolateReferenceVariables()
+		this.interpolateCapturedInward()
 	}
 
 	/** Add reference variables as declaration statements. */
-	private addReferenceVariables() {
+	private interpolateReferenceVariables() {
 		if (this.referenceVariableNames.length === 0) {
 			return
 		}
@@ -238,7 +238,7 @@ export class ContextCapturer {
 	}
 
 	/** Add captured to interpolator after known capture type of closest ancestral function-like. */
-	private addCapturedInward() {
+	private interpolateCapturedInward() {
 
 		// For source file should also add captured when for not contained by function-like context.
 		if (this.context.type !== ContextType.FunctionLike
@@ -248,8 +248,8 @@ export class ContextCapturer {
 		}
 
 		for (let descent of this.walkSelfAndNonFunctionLikeInward()) {
-			descent.addCaptured()
-			descent.addRestCaptured()
+			descent.interpolateCaptured()
+			descent.interpolateRestCaptured()
 		}
 	}
 
@@ -267,13 +267,13 @@ export class ContextCapturer {
 	}
 
 	/** Add `captured` as interpolation items. */
-	private addCaptured() {
+	private interpolateCaptured() {
 		for (let [atIndex, captured] of this.captured.entries()) {
 			interpolator.before(atIndex, InterpolationContentType.Tracking, () => this.outputCaptured(captured))
 			AccessGrouper.addImport(this.captureType)
 		}
 
-		this.addRestCaptured()
+		this.interpolateRestCaptured()
 	}
 
 	/** 
@@ -282,7 +282,7 @@ export class ContextCapturer {
 	 *  - For like `return this.a`, will move `this.a` ahead.
 	 *  - For like `return (_ref_=a()).b`, will reference returned content and move it ahead.
 	 */
-	private addRestCaptured() {
+	private interpolateRestCaptured() {
 		let captured = this.latestCaptured
 		if (captured.length === 0) {
 			return

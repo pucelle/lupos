@@ -68,7 +68,7 @@ export namespace modifier {
 	export function addVariableAssignmentToList(fromIndex: number, toIndex: number, varName: string) {
 		interpolator.before(toIndex, InterpolationContentType.VariableDeclaration, () => {
 			let node = interpolator.outputChildren(fromIndex) as TS.Expression
-			node = helper.pack.simplifyShallow(node) as TS.Expression
+			node = helper.pack.normalize(node, false) as TS.Expression
 			
 			return factory.createVariableDeclaration(
 				factory.createIdentifier(varName),
@@ -86,7 +86,7 @@ export namespace modifier {
 	export function addReferenceAssignment(fromIndex: number, toIndex: number, refName: string) {
 		interpolator.before(toIndex, InterpolationContentType.Reference, () => {
 			let node = interpolator.outputChildren(fromIndex) as TS.Expression
-			node = helper.pack.simplifyShallow(node) as TS.Expression
+			node = helper.pack.normalize(node, false) as TS.Expression
 
 			return factory.createBinaryExpression(
 				factory.createIdentifier(refName),
@@ -126,12 +126,12 @@ export namespace modifier {
 				}
 			}
 
-			// Insert the first inner position of block.
+			// Insert to the start inner position of block.
 			else if (helper.pack.canBlock(rawNode)) {
 				toIndex = visiting.getFirstChildIndex(index)!
 			}
 
-			// Insert the statements of `case` of `default`.
+			// Insert to the statements of `case` or `default`.
 			else {
 				toIndex = visiting.getChildIndex(index, 1)
 			}

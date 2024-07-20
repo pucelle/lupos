@@ -125,12 +125,12 @@ export namespace visiting {
 		return IndexMap.get(node)!
 	}
 
-	/** Look upward for a visiting index, and the node at which match test fn. */
-	export function findUpward(fromIndex: number, until: number | null, test: (node: TS.Node) => boolean) : number | null {
+	/** Look upward for a visiting index, and the node at where match test fn. */
+	export function findUpward(fromIndex: number, untilIndex: number | null, test: (node: TS.Node) => boolean) : number | null {
 		let index: number | undefined = fromIndex
 
 		// Look upward for a variable declaration.
-		while (index !== undefined && index !== until) {
+		while (index !== undefined && index !== untilIndex) {
 			let node = visiting.getNode(index)
 			if (test(node)) {
 				return index

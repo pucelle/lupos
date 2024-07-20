@@ -8,7 +8,7 @@ export namespace AccessGrouper {
 
 	/** 
 	 * Add get or set tracking imports.
-	 * Not add when making expressions because
+	 * Not add when making expressions automatically because it's outputting already.
 	 */
 	export function addImport(type: 'get' | 'set') {
 		modifier.addImport(type === 'get' ? 'trackGet' : 'trackSet', '@pucelle/ff')
@@ -17,19 +17,19 @@ export namespace AccessGrouper {
 
 	/** Group expressions to lately insert a position. */
 	export function makeExpressions(exps: PropertyAccessNode[], type: 'get' | 'set'): TS.Expression[] {
-		exps = exps.map(exp => helper.pack.simplifyDeeply(exp))
+		exps = exps.map(exp => helper.pack.normalize(exp, true)) as PropertyAccessNode[]
 
-		let grouped = groupGetExpressions(exps)
-		let made = grouped.map(item => createGroupedGetExpression(item, type))
+		let grouped = groupExpressions(exps)
+		let made = grouped.map(item => createGroupedExpression(item, type))
 
 		return made
 	}
 
 	
 	/** Group get expressions by property belonged to object. */
-	function groupGetExpressions(exps: PropertyAccessNode[]): PropertyAccessNode[][] {
+	function groupExpressions(exps: PropertyAccessNode[]): PropertyAccessNode[][] {
 		let group = groupBy(exps, (node: PropertyAccessNode) => {
-			return [getExpKey(node), node]
+			return [getExpressionKey(node), node]
 		})
 
 		return [...group.values()]
@@ -37,7 +37,7 @@ export namespace AccessGrouper {
 
 
 	/** Make a key by a property accessing node. */
-	function getExpKey(node: PropertyAccessNode) {
+	function getExpressionKey(node: PropertyAccessNode) {
 		let exp = node.expression
 		let key = helper.getText(exp).trim()
 
@@ -50,9 +50,9 @@ export namespace AccessGrouper {
 
 
 	/** Create a `trackGet` statement. */
-	function createGroupedGetExpression(nodes: PropertyAccessNode[], type: 'get' | 'set'): TS.Expression {
+	function createGroupedExpression(nodes: PropertyAccessNode[], type: 'get' | 'set'): TS.Expression {
 		let node = nodes[0]
-		let parameters = createGetNameParameter(nodes, type)
+		let parameters = createNameParameter(nodes, type)
 		
 		let trackGet = factory.createCallExpression(
 			factory.createIdentifier(type === 'get' ? 'trackGet' : 'trackSet'),
@@ -75,7 +75,7 @@ export namespace AccessGrouper {
 
 
 	/** Create a parameter for `trackGet` by a group of nodes. */
-	function createGetNameParameter(nodes: PropertyAccessNode[], type: 'get' | 'set'): TS.Expression[] {
+	function createNameParameter(nodes: PropertyAccessNode[], type: 'get' | 'set'): TS.Expression[] {
 		let node = nodes[0]
 		let group = groupNameExpressionKeys(nodes, type)
 		let nameExps = [...group.values()].map(nodes => getAccessNodeNameProperty(nodes[0], type))
