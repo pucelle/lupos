@@ -1,6 +1,6 @@
 import type TS from 'typescript'
 import {ObservedChecker} from './observed-checker'
-import {helper, modifier, PropertyAccessNode, ts, visiting} from '../../base'
+import {helper, modifier, AccessNode, ts, visiting} from '../../base'
 import {ContextState} from './context-state'
 import {ContextTargetPosition, ContextTree, ContextType} from './context-tree'
 import {ContextVariables} from './context-variables'
@@ -23,6 +23,9 @@ export class Context {
 	readonly variables: ContextVariables
 	readonly capturer: ContextCapturer
 
+	/** Closest ancestral context, which's type is function-like.  */
+	readonly closestFunctionLike: Context
+
 	constructor(type: ContextType, node: TS.Node, parent: Context | null) {
 		this.type = type
 		this.visitingIndex = visiting.current.index
@@ -32,8 +35,23 @@ export class Context {
 		this.variables = new ContextVariables(this)
 		this.capturer = new ContextCapturer(this)
 
+		this.closestFunctionLike = type === ContextType.FunctionLike || !parent
+			? this
+			: parent.closestFunctionLike
+
 		if (parent) {
 			parent.enterChild(this)
+		}
+	}
+
+	/** Walk self and descendants. */
+	*walkInward(filter: (context: Context) => boolean): Iterable<Context> {
+		if (filter(this)) {
+			yield this
+		}
+
+		for (let child of this.children) {
+			yield *child.walkInward(filter)
 		}
 	}
 
@@ -83,7 +101,7 @@ export class Context {
 		// Test and add property access nodes.
 		else if (helper.access.isAccess(node)) {
 
-			// `map.set(...)`
+			// `map.set`, `set.set`
 			if (ObservedChecker.isMapOrSetWriting(node)) {
 				this.mayAddSetTracking(node, true)
 			}
@@ -114,7 +132,7 @@ export class Context {
 	}
 
 	/** Add a property access expression. */
-	private mayAddGetTracking(node: PropertyAccessNode) {
+	private mayAddGetTracking(node: AccessNode) {
 		if (this.state.nothingReturned) {
 			return
 		}
@@ -124,6 +142,8 @@ export class Context {
 		}
 
 		if (ObservedChecker.isAccessingObserved(node)
+
+			// `map.has`, and `map` get observed.
 			|| ObservedChecker.isMapOrSetReading(node)
 				&& ObservedChecker.isObserved(node.expression)
 		) {
@@ -132,7 +152,7 @@ export class Context {
 	}
 
 	/** Add a property assignment expression. */
-	private mayAddSetTracking(node: PropertyAccessNode, fromMapOrSet: boolean) {
+	private mayAddSetTracking(node: AccessNode, fromMapOrSet: boolean) {
 		if (!this.capturer.shouldCapture('set')) {
 			return
 		}
@@ -145,7 +165,7 @@ export class Context {
 	}
 
 	/** Add get or set tracking after testing. */
-	private addTracking(node: PropertyAccessNode, type: 'get' | 'set') {
+	private addTracking(node: AccessNode, type: 'get' | 'set') {
 		let index = visiting.getIndex(node)
 		let position: ContextTargetPosition | null = null
 

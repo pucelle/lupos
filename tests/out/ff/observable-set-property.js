@@ -13,7 +13,7 @@ class TestElementProp extends Component {
         let prop = 'prop';
         this['prop'] = 1;
         this[prop] = 1;
-        trackSet(this, 'prop', prop);
+        trackSet(this, "prop", prop);
     }
 }
 class TestObjectProp extends Component {

@@ -11,7 +11,7 @@ class TestElementProp extends Component {
     prop = 1;
     getProp() {
         let prop = 'prop';
-        trackGet(this, 'prop', prop);
+        trackGet(this, "prop", prop);
         return this['prop']
             + this[prop];
     }

@@ -2,8 +2,8 @@ import type TS from 'typescript'
 import {factory, printer, sourceFile, transformContext, ts, typeChecker} from './global'
 
 
-/** Property access types. */
-export type PropertyAccessNode = TS.PropertyAccessExpression | TS.ElementAccessExpression
+/** Property or element access types. */
+export type AccessNode = TS.PropertyAccessExpression | TS.ElementAccessExpression
 
 /** Property access types. */
 export type AssignmentNode = TS.BinaryExpression | TS.PostfixUnaryExpression | TS.PrefixUnaryExpression
@@ -275,58 +275,20 @@ export namespace helper {
 	export namespace access {
 
 		/** Whether be accessing like `a.b` or `a[b]`. */
-		export function isAccess(node: TS.Node): node is PropertyAccessNode {
+		export function isAccess(node: TS.Node): node is AccessNode {
 			return ts.isPropertyAccessExpression(node) || ts.isElementAccessExpression(node)
 		}
 
 		/** get accessing name node. */
-		export function getNameNode(node: PropertyAccessNode): TS.Expression {
+		export function getNameNode(node: AccessNode): TS.Expression {
 			return ts.isPropertyAccessExpression(node)
 				? node.name
 				: node.argumentExpression
 		}
 
 		/** get property accessing name. */
-		export function getNameText(node: PropertyAccessNode): string{
+		export function getNameText(node: AccessNode): string{
 			return getText(getNameNode(node))
-		}
-
-		/** Analysis whether a property access expression is readonly. */
-		export function isReadonly(node: PropertyAccessNode): boolean {
-
-			// `class A{readonly p}` -> `p` and `this['p']` are readonly.
-			// `interface A{readonly p}` -> `p` and `this['p']` are readonly.
-			let nameDecl = symbol.resolveProperty(node)
-			if (nameDecl && nameDecl.modifiers?.find(m => m.kind === ts.SyntaxKind.ReadonlyKeyword)) {
-				return true
-			}
-
-			// `a: Readonly<{p: 1}>` -> `a.p` is readonly, not observe.
-			// `a: ReadonlyArray<...>` -> `a.?` is readonly, not observe.
-			// `a: DeepReadonly<...>` -> `a.?` and `d.?.?` are readonly, not observe.
-			// `readonly {...}` -> it may not 100% strict.
-			let exp = node.expression
-
-			let typeNode = types.getTypeNode(exp)
-			if (!typeNode) {
-				return false
-			}
-
-			if (ts.isTypeReferenceNode(typeNode)) {
-				let name = types.getTypeNodeReferenceName(typeNode)
-				if (name === 'Readonly' || name === 'ReadonlyArray') {
-					return true
-				}
-			}
-
-			// Type was expanded and removed alias.
-			else if (ts.isTypeOperatorNode(typeNode)) {
-				if (typeNode.operator === ts.SyntaxKind.ReadonlyKeyword) {
-					return true
-				}
-			}
-
-			return false
 		}
 	}
 
@@ -531,6 +493,44 @@ export namespace helper {
 		export function isArrayType(type: TS.Type): boolean {
 			return typeChecker.isArrayType(type)
 		}
+
+		/** Analysis whether a property access expression is readonly. */
+		export function isReadonly(node: AccessNode): boolean {
+
+			// `class A{readonly p}` -> `p` and `this['p']` are readonly.
+			// `interface A{readonly p}` -> `p` and `this['p']` are readonly.
+			let nameDecl = symbol.resolveProperty(node)
+			if (nameDecl && nameDecl.modifiers?.find(m => m.kind === ts.SyntaxKind.ReadonlyKeyword)) {
+				return true
+			}
+
+			// `a: Readonly<{p: 1}>` -> `a.p` is readonly, not observe.
+			// `a: ReadonlyArray<...>` -> `a.?` is readonly, not observe.
+			// `a: DeepReadonly<...>` -> `a.?` and `d.?.?` are readonly, not observe.
+			// `readonly {...}` -> it may not 100% strict.
+			let exp = node.expression
+
+			let typeNode = getTypeNode(exp)
+			if (!typeNode) {
+				return false
+			}
+
+			if (ts.isTypeReferenceNode(typeNode)) {
+				let name = getTypeNodeReferenceName(typeNode)
+				if (name === 'Readonly' || name === 'ReadonlyArray') {
+					return true
+				}
+			}
+
+			// Type was expanded and removed alias.
+			else if (ts.isTypeOperatorNode(typeNode)) {
+				if (typeNode.operator === ts.SyntaxKind.ReadonlyKeyword) {
+					return true
+				}
+			}
+
+			return false
+		}
 	}
 
 
@@ -681,7 +681,7 @@ export namespace helper {
 		}
 
 		/** Resolve a property declaration or signature. */
-		export function resolveProperty(node: PropertyAccessNode): TS.PropertySignature | TS.PropertyDeclaration | undefined {
+		export function resolveProperty(node: AccessNode): TS.PropertySignature | TS.PropertyDeclaration | undefined {
 			let name = ts.isPropertyAccessExpression(node) ? node.name : node.argumentExpression
 
 			let testFn = ((node: TS.Node) => ts.isPropertySignature(node) || ts.isPropertyDeclaration(node)) as
@@ -691,7 +691,7 @@ export namespace helper {
 		}
 
 		/** Resolve get accessor declaration or signature. */
-		export function resolvePropertyOrGetAccessor(node: PropertyAccessNode):
+		export function resolvePropertyOrGetAccessor(node: AccessNode):
 			TS.PropertySignature | TS.PropertyDeclaration | TS.GetAccessorDeclaration | undefined
 		{
 			let name = ts.isPropertyAccessExpression(node) ? node.name : node.argumentExpression
@@ -706,7 +706,7 @@ export namespace helper {
 		}
 
 		/** Resolve a method declaration or signature. */
-		export function resolveMethod(node: PropertyAccessNode): TS.MethodSignature | TS.MethodDeclaration | undefined {
+		export function resolveMethod(node: AccessNode): TS.MethodSignature | TS.MethodDeclaration | undefined {
 			let name = ts.isPropertyAccessExpression(node) ? node.name : node.argumentExpression
 
 			let testFn = ((node: TS.Node) => ts.isMethodSignature(node) || ts.isMethodDeclaration(node)) as
@@ -958,19 +958,60 @@ export namespace helper {
 			return factory.createParenthesizedExpression(exp)
 		}
 
-		/** Remove commands from a node, normally from a property access node. */
-		export function removeComments<T extends TS.Node>(node: T): T {
+		/** 
+		 * For each level of nodes, extract final expressions from a parenthesized expression.
+		 * `(a, b, c)` -> `c`
+		 */
+		export function extractFinalParenthesized(node: TS.Node): TS.Node {
+			if (ts.isParenthesizedExpression(node)) {
+				let exp = node.expression
+				if (ts.isBinaryExpression(exp) && exp.operatorToken.kind === ts.SyntaxKind.CommaToken) {
+					return extractFinalParenthesized(exp.right)
+				}
+			}
+
+			return ts.visitEachChild(node, extractFinalParenthesized as any, transformContext)
+		}
+
+		/** Remove comments from a property or element access node. */
+		export function removeAccessComments<T extends TS.Node>(node: T): T {
 			if (ts.isPropertyAccessExpression(node)) {
-				return factory.createPropertyAccessExpression(
-					removeComments(node.expression),
-					node.name
-				) as TS.Node as T
+
+				// `a?.b`
+				if (node.questionDotToken) {
+					return factory.createPropertyAccessChain(
+						removeAccessComments(node.expression),
+						node.questionDotToken,
+						removeAccessComments(node.name),
+					) as TS.Node as T
+				}
+
+				// `a.b`
+				else {
+					return factory.createPropertyAccessExpression(
+						removeAccessComments(node.expression),
+						removeAccessComments(node.name)
+					) as TS.Node as T
+				}
 			}
 			else if (ts.isElementAccessExpression(node)) {
-				return factory.createElementAccessExpression(
-					removeComments(node.expression),
-					node.argumentExpression
-				) as TS.Node as T
+				
+				// `a?.[b]`
+				if (node.questionDotToken) {
+					return factory.createElementAccessChain(
+						removeAccessComments(node.expression),
+						node.questionDotToken,
+						removeAccessComments(node.argumentExpression),
+					) as TS.Node as T
+				}
+
+				// `a[b]`
+				else {
+					return factory.createElementAccessExpression(
+						removeAccessComments(node.expression),
+						removeAccessComments(node.argumentExpression)
+					) as TS.Node as T
+				}
 			}
 			else if (ts.isIdentifier(node)) {
 				return factory.createIdentifier(helper.getText(node)) as TS.Node as T
@@ -986,7 +1027,7 @@ export namespace helper {
 		 * Replace property access node to a reference.
 		 * `a.b().c -> _ref_.c`
 		 */
-		export function replaceReferencedAccess(node: PropertyAccessNode, exp: TS.Expression): PropertyAccessNode {
+		export function replaceReferencedAccess(node: AccessNode, exp: TS.Expression): AccessNode {
 			if (ts.isPropertyAccessExpression(node)) {
 				return factory.createPropertyAccessExpression(
 					exp,
@@ -1048,10 +1089,23 @@ export namespace helper {
 				&& ts.isStringLiteral(node.argumentExpression)
 				&& /^[\w\$_][\w\$_\d]*$/.test(node.argumentExpression.text)
 			) {
-				return factory.createPropertyAccessExpression(
-					normalize(node.expression, deeply) as TS.Expression,
-					factory.createIdentifier(node.argumentExpression.text)
-				)
+
+				// `a?.b`
+				if (node.questionDotToken) {
+					return factory.createPropertyAccessChain(
+						normalize(node.expression, deeply) as TS.Expression,
+						node.questionDotToken,
+						factory.createIdentifier(node.argumentExpression.text)
+					)
+				}
+
+				// `a.b`
+				else {
+					return factory.createPropertyAccessExpression(
+						normalize(node.expression, deeply) as TS.Expression,
+						factory.createIdentifier(node.argumentExpression.text)
+					)
+				}
 			}
 
 			// '...' -> "..."
@@ -1065,16 +1119,6 @@ export namespace helper {
 			else {
 				return node
 			}
-		}
-
-		/** Try extract final expressions from a parenthesized expression. */
-		export function extractFinalParenthesized(pe: TS.ParenthesizedExpression): TS.Expression {
-			let exp = pe.expression
-			if (ts.isBinaryExpression(exp) && exp.operatorToken.kind === ts.SyntaxKind.CommaToken) {
-				return exp.right
-			}
-
-			return exp
 		}
 	}
 }

@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {InterpolationContentType, PropertyAccessNode, factory, helper, interpolator, modifier, ts, visiting} from '../../base'
+import {InterpolationContentType, AccessNode, factory, helper, interpolator, modifier, ts, visiting} from '../../base'
 import {Context} from './context'
 import {ContextTargetPosition, ContextTree, ContextType} from './context-tree'
 import {AccessGrouper} from './access-grouper'
@@ -19,11 +19,11 @@ export class ContextCapturer {
 
 	constructor(context: Context) {
 		this.context = context
-		this.transferCapturingFromParent()
+		this.transferFromParent()
 	}
 
 	/** Transfer from some captured properties to child. */
-	private transferCapturingFromParent() {
+	private transferFromParent() {
 		let parent = this.context.parent
 		if (!parent) {
 			return
@@ -33,7 +33,7 @@ export class ContextCapturer {
 		if (parent.type === ContextType.FunctionLike
 			&& this.context.type === ContextType.BlockLike
 		) {
-			let captured = parent.capturer.transferCapturedToChild()
+			let captured = parent.capturer.transferLatestCapturedToChild()
 			this.latestCaptured = captured
 		}
 
@@ -44,7 +44,7 @@ export class ContextCapturer {
 	}
 
 	/** Transfer captured indices to child. */
-	transferCapturedToChild() {
+	transferLatestCapturedToChild() {
 		let captured = this.latestCaptured
 		this.latestCaptured = []
 
@@ -70,43 +70,22 @@ export class ContextCapturer {
 	/** Every time capture a new index, check type and may toggle capture type. */
 	private addCaptureType(type: 'get' | 'set') {
 		if (type === 'set' && this.captureType === 'get') {
-			this.broadcastSetCaptureType()
-		}
-	}
 
-	/** Broadcast to closest ancestral function-like capturer. */
-	private broadcastSetCaptureType() {
-		let closestFunctionLikeOrSelf = this.findClosestFunctionLike() || this
-		
-		for (let descent of closestFunctionLikeOrSelf.walkNonSetCaptureTypeInward()) {
-			descent.captureType = 'set'
-			descent.captured = new Map()
-			descent.latestCaptured = []
-		}
-	}
-
-	/** Find closest ancestral function-like capturer. */
-	private findClosestFunctionLike(): ContextCapturer | null {
-		let context: Context | null = this.context
-		
-		while (context && context.type !== ContextType.FunctionLike) {
-			context = context.parent
-		}
-
-		return context ? context.capturer : null
-	}
-
-	/** Walk self and descendant capturers, and exclude set type capturers. */
-	private *walkNonSetCaptureTypeInward(): Iterable<ContextCapturer> {
-		yield this
-
-		for (let child of this.context.children) {
-			if (child.capturer.captureType === 'set') {
-				continue
+			// Broadcast to closest function-like context, and broadcast down.
+			let walking = this.context.closestFunctionLike
+				.walkInward(c => c.capturer.captureType === 'get')
+			
+			for (let descent of walking) {
+				descent.capturer.applySetCaptureTpe()
 			}
-
-			yield *child.capturer.walkNonSetCaptureTypeInward()
 		}
+	}
+
+	/** Apply capture type to `set`. */
+	private applySetCaptureTpe() {
+		this.captureType = 'set'
+		this.captured = new Map()
+		this.latestCaptured = []
 	}
 
 	/** Insert captured indices to specified position. */
@@ -130,46 +109,6 @@ export class ContextCapturer {
 		else {
 			this.captured.set(atIndex, captured)
 		}
-	}
-
-	/** Transfer specified indices to specified position. */
-	private outputCaptured(captured: number[]): TS.Expression[] {
-		let exps = captured.map(i => {
-			let node = interpolator.outputChildren(i) as PropertyAccessNode
-			let exp = node.expression
-			let name = helper.access.getNameNode(node)
-			let changed = false
-
-			// Normally for `a().b` -> `(_ref_ = a(), _ref_).b`, extract `_ref_.b`.
-			if (ts.isParenthesizedExpression(exp)) {
-				let extracted = helper.pack.extractFinalParenthesized(exp)
-				if (extracted !== exp) {
-					exp = extracted as TS.LeftHandSideExpression
-					changed = true
-				}
-			}
-
-			if (ts.isParenthesizedExpression(name)) {
-				let extracted = helper.pack.extractFinalParenthesized(name)
-				if (extracted !== name) {
-					name = extracted
-					changed = true
-				}
-			}
-
-			if (!changed) {
-				return node
-			}
-
-			if (ts.isPropertyAccessExpression(node)) {
-				return factory.createPropertyAccessExpression(exp, name as TS.MemberName)
-			}
-			else {
-				return factory.createElementAccessExpression(exp, name)
-			}
-		})
-
-		return AccessGrouper.makeExpressions(exps, this.captureType)
 	}
 
 	/** 
@@ -240,29 +179,15 @@ export class ContextCapturer {
 	/** Add captured to interpolator after known capture type of closest ancestral function-like. */
 	private interpolateCapturedInward() {
 
-		// For source file should also add captured when for not contained by function-like context.
-		if (this.context.type !== ContextType.FunctionLike
-			&& !ts.isSourceFile(this.context.node)
-		) {
-			return
-		}
+		// For source file should also interpolate captured
+		// for those not been contained by function-like context.
+		if (this.context === this.context.closestFunctionLike) {
+			let walking = this.context.closestFunctionLike
+				.walkInward(c => c.closestFunctionLike === this.context)
 
-		for (let descent of this.walkSelfAndNonFunctionLikeInward()) {
-			descent.interpolateCaptured()
-			descent.interpolateRestCaptured()
-		}
-	}
-
-	/** Walk self and descendant capturers, and exclude function like capturers. */
-	private *walkSelfAndNonFunctionLikeInward(): Iterable<ContextCapturer> {
-		yield this
-
-		for (let child of this.context.children) {
-			if (child.type === ContextType.FunctionLike) {
-				continue
+			for (let descent of walking) {
+				descent.capturer.interpolateCaptured()
 			}
-
-			yield *child.capturer.walkSelfAndNonFunctionLikeInward()
 		}
 	}
 
@@ -273,6 +198,7 @@ export class ContextCapturer {
 			AccessGrouper.addImport(this.captureType)
 		}
 
+		this.captured.clear()
 		this.interpolateRestCaptured()
 	}
 
@@ -283,15 +209,15 @@ export class ContextCapturer {
 	 *  - For like `return (_ref_=a()).b`, will reference returned content and move it ahead.
 	 */
 	private interpolateRestCaptured() {
-		let captured = this.latestCaptured
-		if (captured.length === 0) {
+		if (this.latestCaptured.length === 0) {
 			return
 		}
 
-		this.latestCaptured = []
-
+		let captured = this.latestCaptured
 		let node = this.context.node
 		let index = this.context.visitingIndex
+
+		this.latestCaptured = []
 
 		// Can put statements, insert to the end of statements.
 		if (helper.pack.canPutStatements(node)) {
@@ -304,5 +230,15 @@ export class ContextCapturer {
 		}
 
 		AccessGrouper.addImport(this.captureType)
+	}
+	
+	/** Transfer specified indices to specified position. */
+	private outputCaptured(captured: number[]): TS.Expression[] {
+		let exps = captured.map(i => {
+			let node = interpolator.outputChildren(i)
+			return helper.pack.extractFinalParenthesized(node)
+		}) as AccessNode[]
+
+		return AccessGrouper.makeExpressions(exps, this.captureType)
 	}
 }

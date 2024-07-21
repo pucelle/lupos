@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {PropertyAccessNode, factory, helper, modifier, ts} from '../../base'
+import {AccessNode, factory, helper, modifier, ts} from '../../base'
 import {groupBy} from '../../utils'
 import {ObservedChecker} from './observed-checker'
 
@@ -16,8 +16,8 @@ export namespace AccessGrouper {
 	
 
 	/** Group expressions to lately insert a position. */
-	export function makeExpressions(exps: PropertyAccessNode[], type: 'get' | 'set'): TS.Expression[] {
-		exps = exps.map(exp => helper.pack.normalize(exp, true)) as PropertyAccessNode[]
+	export function makeExpressions(exps: AccessNode[], type: 'get' | 'set'): TS.Expression[] {
+		exps = exps.map(exp => helper.pack.normalize(exp, true)) as AccessNode[]
 
 		let grouped = groupExpressions(exps)
 		let made = grouped.map(item => createGroupedExpression(item, type))
@@ -27,8 +27,8 @@ export namespace AccessGrouper {
 
 	
 	/** Group get expressions by property belonged to object. */
-	function groupExpressions(exps: PropertyAccessNode[]): PropertyAccessNode[][] {
-		let group = groupBy(exps, (node: PropertyAccessNode) => {
+	function groupExpressions(exps: AccessNode[]): AccessNode[][] {
+		let group = groupBy(exps, (node: AccessNode) => {
 			return [getExpressionKey(node), node]
 		})
 
@@ -37,7 +37,7 @@ export namespace AccessGrouper {
 
 
 	/** Make a key by a property accessing node. */
-	function getExpressionKey(node: PropertyAccessNode) {
+	function getExpressionKey(node: AccessNode) {
 		let exp = node.expression
 		let key = helper.getText(exp).trim()
 
@@ -49,8 +49,8 @@ export namespace AccessGrouper {
 	}
 
 
-	/** Create a `trackGet` statement. */
-	function createGroupedExpression(nodes: PropertyAccessNode[], type: 'get' | 'set'): TS.Expression {
+	/** Create a `trackGet` or `trackSet` call. */
+	function createGroupedExpression(nodes: AccessNode[], type: 'get' | 'set'): TS.Expression {
 		let node = nodes[0]
 		let parameters = createNameParameter(nodes, type)
 		
@@ -63,7 +63,7 @@ export namespace AccessGrouper {
 		// `a?.b` -> `a && trackGet(a, 'b')`
 		if (node.questionDotToken) {
 			return factory.createBinaryExpression(
-				helper.pack.removeComments(node.expression),
+				helper.pack.removeAccessComments(node.expression),
 				factory.createToken(ts.SyntaxKind.AmpersandAmpersandToken),
 				trackGet
 			)
@@ -74,27 +74,27 @@ export namespace AccessGrouper {
 	}
 
 
-	/** Create a parameter for `trackGet` by a group of nodes. */
-	function createNameParameter(nodes: PropertyAccessNode[], type: 'get' | 'set'): TS.Expression[] {
+	/** Create a parameter for `trackGet` or `trackSet` by a group of nodes. */
+	function createNameParameter(nodes: AccessNode[], type: 'get' | 'set'): TS.Expression[] {
 		let node = nodes[0]
 		let group = groupNameExpressionKeys(nodes, type)
 		let nameExps = [...group.values()].map(nodes => getAccessNodeNameProperty(nodes[0], type))
 
 		return [
-			helper.pack.removeComments(node.expression),
+			helper.pack.removeAccessComments(node.expression),
 			...nameExps,
 		]
 	}
 
 
 	/** Get all expression keys, repetitive keys are excluded. */
-	function groupNameExpressionKeys(nodes: PropertyAccessNode[], type: 'get' | 'set'): Map<string, PropertyAccessNode[]> {
+	function groupNameExpressionKeys(nodes: AccessNode[], type: 'get' | 'set'): Map<string, AccessNode[]> {
 		return groupBy(nodes, node => [getNameKey(node, type), node])
 	}
 
 
 	/** Get a name expression key. */
-	function getNameKey(node: PropertyAccessNode, type: 'get' | 'set'): string {
+	function getNameKey(node: AccessNode, type: 'get' | 'set'): string {
 		let name = getAccessNodeNameProperty(node, type)
 		
 		if (ts.isStringLiteral(name)) {
@@ -106,7 +106,7 @@ export namespace AccessGrouper {
 
 
 	/** Get name of property expression. */
-	function getAccessNodeNameProperty(node: PropertyAccessNode, type: 'get' | 'set'): TS.Expression {
+	function getAccessNodeNameProperty(node: AccessNode, type: 'get' | 'set'): TS.Expression {
 		let name: TS.Expression
 
 		if (helper.types.isArrayType(helper.types.getType(node.expression)) 
@@ -119,7 +119,7 @@ export namespace AccessGrouper {
 			name = factory.createStringLiteral(helper.getText(node.name))
 		}
 		else {
-			name = helper.pack.removeComments(node.argumentExpression)
+			name = helper.pack.removeAccessComments(node.argumentExpression)
 		}
 
 		return name

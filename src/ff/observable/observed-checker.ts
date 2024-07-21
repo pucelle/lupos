@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {PropertyAccessNode} from '../../base/helper'
+import {AccessNode} from '../../base/helper'
 import {ts, helper, typeChecker} from '../../base'
 import {ContextTree} from './context-tree'
 import {Context} from './context'
@@ -15,7 +15,7 @@ import {Context} from './context'
  * `var a = [observed]; var b = a[0]`
  * `[observed][0]`
  */
-export type CanObserveNode = PropertyAccessNode
+export type CanObserveNode = AccessNode
 	| TS.Identifier | TS.ThisExpression
 	| TS.CallExpression | TS.ParenthesizedExpression
 	| TS.BinaryExpression | TS.ConditionalExpression
@@ -231,7 +231,7 @@ export namespace ObservedChecker {
 
 
 	/** Returns whether a property accessing is observed. */
-	export function isAccessingObserved(node: PropertyAccessNode, context: Context = ContextTree.current!): boolean {
+	export function isAccessingObserved(node: AccessNode, context: Context = ContextTree.current!): boolean {
 
 		// Will never observe private identifier like `a.#b`.
 		if (ts.isPropertyAccessExpression(node) && ts.isPrivateIdentifier(node.name)) {
@@ -244,7 +244,7 @@ export namespace ObservedChecker {
 		}
 
 		// Readonly properties are always not been observed.
-		let readonly = helper.access.isReadonly(node)
+		let readonly = helper.types.isReadonly(node)
 		if (readonly) {
 			return false
 		}
@@ -271,7 +271,7 @@ export namespace ObservedChecker {
 		// Note here it can't recognize class like type declarations:
 		// `interface A`
 		// `interface AConstructor{new(): A}`
-		// This codes get comment, so no matter what class instance,
+		// This codes get commented, so no matter what class instance,
 		// once it appears as a property, it will be observed.
 		// let clsDecl = helper.symbol.resolveDeclarationByType(type, ts.isClassDeclaration)
 		// if (clsDecl && !helper.cls.isImplemented(clsDecl, 'Observed', '@pucelle/ff')) {
@@ -326,7 +326,7 @@ export namespace ObservedChecker {
 
 
 	/** Check whether a property or get accessor declaration, or a property declaration is observed. */
-	function checkPropertyOrGetAccessorObserved(node: PropertyAccessNode): boolean {
+	function checkPropertyOrGetAccessorObserved(node: AccessNode): boolean {
 
 		// `class A{p: Observed}` -> `this.p` and `this['p']` is observed.
 		// `interface A{p: Observed}` -> `this.p` and `this['p']` is observed.
@@ -356,7 +356,7 @@ export namespace ObservedChecker {
 
 
 	/** Test whether calls `Map.has`, `Map.get` or `Set.has` */
-	export function isMapOrSetReading(node: PropertyAccessNode) {
+	export function isMapOrSetReading(node: AccessNode) {
 		let typeNode = helper.types.getTypeNode(node.expression)
 		let objName = typeNode ? helper.types.getTypeNodeReferenceName(typeNode) : undefined
 		let propName = helper.access.getNameText(node)
@@ -374,7 +374,7 @@ export namespace ObservedChecker {
 
 
 	/** Test whether calls `Map.set`, or `Set.set`. */
-	export function isMapOrSetWriting(node: PropertyAccessNode) {
+	export function isMapOrSetWriting(node: AccessNode) {
 		let typeNode = helper.types.getTypeNode(node.expression)
 		let objName = typeNode ? helper.types.getTypeNodeReferenceName(typeNode) : undefined
 		let propName = helper.access.getNameText(node)
