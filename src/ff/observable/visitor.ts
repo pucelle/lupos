@@ -1,6 +1,7 @@
 import type TS from 'typescript'
 import {defineVisitor, ts} from '../../base'
 import {ContextTree, ContextType} from './context-tree'
+import {AccessReferences} from './access-references'
 
 
 /** 
@@ -8,6 +9,12 @@ import {ContextTree, ContextType} from './context-tree'
  * Cant mix with other visitors because it requires full type references to work.
  */
 defineVisitor(function(node: TS.Node) {
+
+	// Initialize
+	if (ts.isSourceFile(node)) {
+		ContextTree.initialize()
+		AccessReferences.initialize()
+	}
 
 	// Create `case` / `default` content context.
 	if (node.parent && ts.isCaseOrDefaultClause(node.parent) && node === node.parent.statements[0]) {

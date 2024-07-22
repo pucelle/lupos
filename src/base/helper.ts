@@ -276,7 +276,8 @@ export namespace helper {
 
 		/** Whether be accessing like `a.b` or `a[b]`. */
 		export function isAccess(node: TS.Node): node is AccessNode {
-			return ts.isPropertyAccessExpression(node) || ts.isElementAccessExpression(node)
+			return ts.isPropertyAccessExpression(node)
+				|| ts.isElementAccessExpression(node)
 		}
 
 		/** get accessing name node. */
@@ -382,13 +383,27 @@ export namespace helper {
 	/** Variable declarations. */
 	export namespace variable {
 
+		/** Test whether a node is an variable name identifier. */
+		export function isVariableIdentifier(node: TS.Node): node is TS.Identifier {
+			if (!ts.isIdentifier(node)) {
+				return false
+			}
+
+			if (node.parent
+				&& ts.isPropertyAccessExpression(node.parent)
+				&& node === access.getNameNode(node.parent)
+			) {
+				return false
+			}
+
+			return true
+		}
+
 		/** Walk for all declared variable names from a variable declaration. */
 		export function* walkDeclarationNames(node: TS.VariableDeclaration): Iterable<string> {
 
-			// `var a = {b:1} as Observed<{b: number}>`, observed.
-			// `var a: Observed<{b: number}> = {b:1}`, observed.
-			// Note here: `Observed` must appear directly, reference or alias is not working.
-
+			// `{a} = ...`
+			// `[a] = ...`
 			if (ts.isObjectBindingPattern(node.name)
 				|| ts.isArrayBindingPattern(node.name)
 			) {
@@ -531,6 +546,43 @@ export namespace helper {
 
 			return false
 		}
+
+			
+		/** Test whether calls `Map.has`, `Map.get` or `Set.has` */
+		export function isMapOrSetReading(node: AccessNode) {
+			let typeNode = getTypeNode(node.expression)
+			let objName = typeNode ? getTypeNodeReferenceName(typeNode) : undefined
+			let propName = helper.access.getNameText(node)
+
+			if (objName === 'Map') {
+				return propName === 'has' || propName === 'get' || propName === 'size'
+			}
+			else if (objName === 'Set') {
+				return propName === 'has' || propName === 'size'
+			}
+			else {
+				return false
+			}
+		}
+
+
+		/** Test whether calls `Map.set`, or `Set.set`. */
+		export function isMapOrSetWriting(node: AccessNode) {
+			let typeNode = getTypeNode(node.expression)
+			let objName = typeNode ? getTypeNodeReferenceName(typeNode) : undefined
+			let propName = helper.access.getNameText(node)
+
+			if (objName === 'Map') {
+				return propName === 'set'
+			}
+			else if (objName === 'Set') {
+				return propName === 'add'
+			}
+			else {
+				return false
+			}
+		}
+
 	}
 
 
@@ -935,7 +987,7 @@ export namespace helper {
 
 		/** 
 		 * Bundle expressions to a parenthesized expression.
-		 * `[a, b] -> (a, b)`
+		 * `a, b -> (a, b)`
 		 */
 		export function parenthesizeExpressions(...exps: TS.Expression[]): TS.Expression {
 

@@ -23,41 +23,6 @@ export type CanObserveNode = AccessNode
 	
 /** Help to check observed state. */
 export namespace ObservedChecker {
-	
-	/** Check at which context the variable declared, or this attached. */
-	export function getIdentifierDeclaredContext(
-		node: TS.Identifier | TS.ThisExpression, context = ContextTree.current!
-	): Context | null {
-		if (node.kind === ts.SyntaxKind.ThisKeyword) {
-			if (ts.isMethodDeclaration(context.node)
-				|| ts.isFunctionDeclaration(context.node)
-				|| ts.isFunctionExpression(context.node)
-				|| ts.isSetAccessorDeclaration(context.node)
-				|| ts.isGetAccessorDeclaration(context.node)
-			) {
-				return context
-			}
-			else if (context.parent) {
-				return getIdentifierDeclaredContext(node, context.parent)
-			}
-			else {
-				return null
-			}
-		}
-		else {
-			let name = node.text
-			if (context.variables.hasLocalVariable(name)) {
-				return context
-			}
-			else if (context.parent) {
-				return getIdentifierDeclaredContext(node, context.parent!)
-			}
-			else {
-				return null
-			}
-		}
-	}
-
 
 	/** Whether should observe node by it's type node. */
 	export function isTypeNodeObserved(node: TS.TypeNode): boolean {
@@ -352,42 +317,6 @@ export namespace ObservedChecker {
 		}
 
 		return false
-	}
-
-
-	/** Test whether calls `Map.has`, `Map.get` or `Set.has` */
-	export function isMapOrSetReading(node: AccessNode) {
-		let typeNode = helper.types.getTypeNode(node.expression)
-		let objName = typeNode ? helper.types.getTypeNodeReferenceName(typeNode) : undefined
-		let propName = helper.access.getNameText(node)
-
-		if (objName === 'Map') {
-			return propName === 'has' || propName === 'get' || propName === 'size'
-		}
-		else if (objName === 'Set') {
-			return propName === 'has' || propName === 'size'
-		}
-		else {
-			return false
-		}
-	}
-
-
-	/** Test whether calls `Map.set`, or `Set.set`. */
-	export function isMapOrSetWriting(node: AccessNode) {
-		let typeNode = helper.types.getTypeNode(node.expression)
-		let objName = typeNode ? helper.types.getTypeNodeReferenceName(typeNode) : undefined
-		let propName = helper.access.getNameText(node)
-
-		if (objName === 'Map') {
-			return propName === 'set'
-		}
-		else if (objName === 'Set') {
-			return propName === 'add'
-		}
-		else {
-			return false
-		}
 	}
 
 	

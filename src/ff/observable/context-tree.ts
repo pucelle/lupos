@@ -265,7 +265,34 @@ export namespace ContextTree {
 			current.visitNode(node)
 		}
 	}
+
+	/** 
+	 * Walk context itself and descendants.
+	 * Always walk descendants before it-self.
+	 */
+	export function* walkInward(context: Context, filter: (context: Context) => boolean): Iterable<Context> {
+		for (let child of context.children) {
+			yield *walkInward(child, filter)
+		}
+
+		if (filter(context)) {
+			yield context
+		}
+	}
 	
+	/** Check at which context the specified named variable declared, or this attached. */
+	export function getVariableDeclaredContext(name: string, context = ContextTree.current!): Context | null {
+		if (context.variables.hasLocalVariable(name)) {
+			return context
+		}
+		else if (context.parent) {
+			return getVariableDeclaredContext(name, context.parent!)
+		}
+		else {
+			return null
+		}
+	}
+
 	/** Find an ancestral context, which can insert variable to. */
 	export function findClosestPositionToAddVariable(index: number, from: Context): ContextTargetPosition {
 		let context = from

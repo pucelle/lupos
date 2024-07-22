@@ -1,8 +1,10 @@
 import type TS from 'typescript'
-import {InterpolationContentType, AccessNode, factory, helper, interpolator, modifier, ts, visiting} from '../../base'
+import {InterpolationContentType, AccessNode, helper, interpolator, modifier} from '../../base'
 import {Context} from './context'
-import {ContextTargetPosition, ContextTree, ContextType} from './context-tree'
+import {ContextTree, ContextType} from './context-tree'
 import {AccessGrouper} from './access-grouper'
+import {ListMap} from '../../utils'
+import {AccessReferences} from './access-references'
 
 
 /** 
@@ -12,8 +14,8 @@ import {AccessGrouper} from './access-grouper'
 export class ContextCapturer {
 
 	readonly context: Context
-	private referenceVariableNames: string[] = []
-	private captured: Map<number, number[]> = new Map()
+	private variableNames: string[] = []
+	private captured: ListMap<number, number> = new ListMap()
 	private latestCaptured: number[] = []
 	private captureType: 'get' | 'set' = 'get'
 
@@ -29,26 +31,10 @@ export class ContextCapturer {
 			return
 		}
 
-		// Transfer from function parameters to function body.
-		if (parent.type === ContextType.FunctionLike
-			&& this.context.type === ContextType.BlockLike
-		) {
-			let captured = parent.capturer.transferLatestCapturedToChild()
-			this.latestCaptured = captured
-		}
-
 		// Broadcast down capture type within a function-like context.
 		if (parent.type !== ContextType.FunctionLike) {
 			this.captureType = parent.capturer.captureType
 		}
-	}
-
-	/** Transfer captured indices to child. */
-	transferLatestCapturedToChild() {
-		let captured = this.latestCaptured
-		this.latestCaptured = []
-
-		return captured
 	}
 
 	/** Whether should capture indices in specified type. */
@@ -61,10 +47,25 @@ export class ContextCapturer {
 		}
 	}
 
-	/** Capture an index at specified position. */
+	/** Capture an index. */
 	capture(index: number, type: 'get' | 'set') {
 		this.addCaptureType(type)
 		this.latestCaptured.push(index)
+	}
+
+	/** Cancel capturing an index. */
+	unCapture(index: number) {
+		for (let key of [...this.captured.keys()]) {
+			if (this.captured.has(key, index)) {
+				this.captured.delete(key, index)
+				return
+			}
+		}
+
+		let spliceIndex = this.latestCaptured.indexOf(index)
+		if (spliceIndex > -1) {
+			this.latestCaptured.splice(spliceIndex, 1)
+		}
 	}
 
 	/** Every time capture a new index, check type and may toggle capture type. */
@@ -72,8 +73,10 @@ export class ContextCapturer {
 		if (type === 'set' && this.captureType === 'get') {
 
 			// Broadcast to closest function-like context, and broadcast down.
-			let walking = this.context.closestFunctionLike
-				.walkInward(c => c.capturer.captureType === 'get')
+			let walking = ContextTree.walkInward(
+				this.context.closestFunctionLike,
+				c => c.capturer.captureType === 'get'
+			)
 			
 			for (let descent of walking) {
 				descent.capturer.applySetCaptureTpe()
@@ -84,7 +87,7 @@ export class ContextCapturer {
 	/** Apply capture type to `set`. */
 	private applySetCaptureTpe() {
 		this.captureType = 'set'
-		this.captured = new Map()
+		this.captured.clear()
 		this.latestCaptured = []
 	}
 
@@ -100,56 +103,9 @@ export class ContextCapturer {
 	}
 
 	/** Insert captured indices to specified position. */
-	addCapturedManually(captured: number[], atIndex: number, type: 'get' | 'set') {
+	addCapturedManually(index: number, atIndex: number, type: 'get' | 'set') {
 		this.addCaptureType(type)
-
-		if (this.captured.has(atIndex)) {
-			this.captured.get(atIndex)!.push(...captured)
-		}
-		else {
-			this.captured.set(atIndex, captured)
-		}
-	}
-
-	/** 
-	 * Reference a complex expression to become a reference variable.
-	 * 
-	 * e.g.:
-	 * 	   `a.b().c`-> `_ref_ = a.b(); ... _ref_`
-	 *     `a[b++]` -> `_ref_ = b++; ... a[_ref_]`
-	 * 
-	 * Return reference position.
-	 */
-	reference(index: number): ContextTargetPosition {
-		let varPosition = ContextTree.findClosestPositionToAddVariable(index, this.context)
-		let refName = varPosition.context.variables.makeUniqueVariable('_ref_')
-
-		// Insert one: `var ... _ref_ = ...`
-		if (ts.isVariableDeclaration(visiting.getNode(varPosition.index))) {
-			
-			// insert `var _ref_ = a.b()` to found position.
-			modifier.addVariableAssignmentToList(index, varPosition.index, refName)
-
-			// replace `a.b()` -> `_ref_`.
-			interpolator.replace(index, InterpolationContentType.Reference, () => factory.createIdentifier(refName))
-
-			return varPosition
-		}
-
-		// Insert two: `var _ref_`, and `_ref_ = ...`
-		else {
-			varPosition.context.capturer.addUniqueVariable(refName)
-
-			let refPosition = ContextTree.findClosestPositionToAddStatement(index, this.context)
-
-			// insert `_ref_ = a.b()` to found position.
-			modifier.addReferenceAssignment(index, refPosition.index, refName)
-
-			// replace `a.b()` -> `_ref_`.
-			interpolator.replace(index, InterpolationContentType.Reference, () => factory.createIdentifier(refName))
-
-			return refPosition
-		}
+		this.captured.add(atIndex, index)
 	}
 
 	/** 
@@ -157,42 +113,74 @@ export class ContextCapturer {
 	 * Current context must be a found context than can be added.
 	 */
 	addUniqueVariable(variableName: string) {
-		this.referenceVariableNames.push(variableName)
+		this.variableNames.push(variableName)
 	}
 
 	/** Before context will exit. */
 	beforeExit() {
-		this.interpolateReferenceVariables()
-		this.interpolateCapturedInward()
-	}
-
-	/** Add reference variables as declaration statements. */
-	private interpolateReferenceVariables() {
-		if (this.referenceVariableNames.length === 0) {
-			return
-		}
-
-		modifier.addVariables(this.context.visitingIndex, this.referenceVariableNames)
-		this.referenceVariableNames = []
-	}
-
-	/** Add captured to interpolator after known capture type of closest ancestral function-like. */
-	private interpolateCapturedInward() {
-
-		// For source file should also interpolate captured
-		// for those not been contained by function-like context.
 		if (this.context === this.context.closestFunctionLike) {
-			let walking = this.context.closestFunctionLike
-				.walkInward(c => c.closestFunctionLike === this.context)
+			let walking = ContextTree.walkInward(
+				this.context.closestFunctionLike,
+				c => c.closestFunctionLike === this.context
+			)
 
 			for (let descent of walking) {
+
+				// First order is important, checking references step may
+				// add more variables, and adjust captured.
+				descent.capturer.checkReferences()
+
+				descent.capturer.interpolateVariables()
 				descent.capturer.interpolateCaptured()
 			}
 		}
 	}
 
+	/** Check captured indices and reference if possible. */
+	private checkReferences() {
+		for (let index of this.captured.values()) {
+			AccessReferences.mayReferenceAccess(index, this.captureType, this.context)
+		}
+
+		for (let index of this.latestCaptured) {
+			AccessReferences.mayReferenceAccess(index, this.captureType, this.context)
+		}
+
+		// Move variable declaration list forward.
+		// TODO: Should move codes to optimize step later.
+		if ((this.captured.keyCount() > 0 || this.latestCaptured.length > 0)
+			&& this.context.type === ContextType.IterationInitializer) {
+			let toPosition = ContextTree.findClosestPositionToAddStatement(
+				this.context.visitingIndex, this.context
+			)
+
+			modifier.moveOnce(this.context.visitingIndex, toPosition.index)
+		}
+
+		// Transfer from function parameters to function body.
+		// if (this.context.parent?.type === ContextType.FunctionLike) {
+		// 	this.captured.add()
+		// 	modifier.moveOnce(this.context.visitingIndex, toPosition.index)
+		// }
+	}
+
+	/** Add reference variables as declaration statements. */
+	private interpolateVariables() {
+		if (this.variableNames.length === 0) {
+			return
+		}
+
+		modifier.addVariables(this.context.visitingIndex, this.variableNames)
+		this.variableNames = []
+	}
+
 	/** Add `captured` as interpolation items. */
 	private interpolateCaptured() {
+		// TODO
+		if (this.context.type === ContextType.FunctionLike) {
+			return
+		}
+
 		for (let [atIndex, captured] of this.captured.entries()) {
 			interpolator.before(atIndex, InterpolationContentType.Tracking, () => this.outputCaptured(captured))
 			AccessGrouper.addImport(this.captureType)

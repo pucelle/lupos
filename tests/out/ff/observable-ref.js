@@ -27,14 +27,12 @@ class TestRef extends Component {
     *yieldRef() {
         var _ref_0;
         _ref_0 = this.getProp();
-        trackGet(_ref_0, "value");
-        yield _ref_0.value;
+        yield (trackGet(_ref_0, "value"), _ref_0.value);
     }
     ifRef() {
         var _ref_0;
         _ref_0 = this.getProp();
-        trackGet(_ref_0, "value");
-        if (_ref_0.value) {
+        if ((trackGet(_ref_0, "value"), _ref_0.value)) {
             return true;
         }
         return false;
@@ -52,18 +50,15 @@ class TestRef extends Component {
     multipleConditionalRef() {
         var _ref_0, _ref_1, _ref_2;
         _ref_0 = this.getProp();
-        trackGet(_ref_0, "value");
-        return _ref_0.value
-            ? (_ref_1 = this.getNextProp(0), trackGet(_ref_1, "value"), _ref_1.value) ? 1
-                : 2
+        return (trackGet(_ref_0, "value"), _ref_0.value) ? (_ref_1 = this.getNextProp(0), trackGet(_ref_1, "value"), _ref_1.value) ? 1
+            : 2
             : (_ref_2 = this.getNextProp(1), trackGet(_ref_2, "value"), _ref_2.value) ? 3
                 : 4;
     }
     multipleBinaryRef() {
         var _ref_0, _ref_1, _ref_2;
         _ref_0 = this.getProp();
-        trackGet(_ref_0, "value");
-        return _ref_0.value || (_ref_1 = this.getNextProp(0), trackGet(_ref_1, "value"), _ref_1.value) || (_ref_2 = this.getNextProp(1), trackGet(_ref_2, "value"), _ref_2.value);
+        return (trackGet(_ref_0, "value"), _ref_0.value) || (_ref_1 = this.getNextProp(0), trackGet(_ref_1, "value"), _ref_1.value) || (_ref_2 = this.getNextProp(1), trackGet(_ref_2, "value"), _ref_2.value);
     }
     deepRef() {
         var _ref_0, _ref_1;
@@ -74,7 +69,6 @@ class TestRef extends Component {
         return _ref_1.value;
     }
     parameterRef(value = (_ref_0 = this.getProp(), _ref_0).value) {
-        trackGet(_ref_0, "value");
         return value;
     }
     indexRef() {
@@ -83,6 +77,7 @@ class TestRef extends Component {
         let i = 0;
         _ref_1 = i++;
         trackGet(this, "prop");
+        trackGet(a, "");
         trackGet(a[_ref_1], "value");
         return a[_ref_1].value;
     }
@@ -105,8 +100,7 @@ class TestRef extends Component {
         let i;
         _ref_1 = this.getProp();
         i = _ref_1.value;
-        trackGet(_ref_1, "value");
-        for (; i < 1; i++) {
+        for (trackGet(_ref_1, "value"); i < 1; i++) {
             break;
         }
         return '';

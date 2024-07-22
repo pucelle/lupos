@@ -1,10 +1,11 @@
 import type TS from 'typescript'
 import {ObservedChecker} from './observed-checker'
-import {helper, modifier, AccessNode, ts, visiting} from '../../base'
+import {helper, AccessNode, ts, visiting} from '../../base'
 import {ContextState} from './context-state'
-import {ContextTargetPosition, ContextTree, ContextType} from './context-tree'
+import {ContextType} from './context-tree'
 import {ContextVariables} from './context-variables'
 import {ContextCapturer} from './context-capturer'
+import {AccessReferences} from './access-references'
 
 
 /** 
@@ -23,7 +24,10 @@ export class Context {
 	readonly variables: ContextVariables
 	readonly capturer: ContextCapturer
 
-	/** Closest ancestral context, which's type is function-like.  */
+	/** 
+	 * Self or closest ancestral context, which's type is function-like,
+	 * or node is a source file.
+	 */
 	readonly closestFunctionLike: Context
 
 	constructor(type: ContextType, node: TS.Node, parent: Context | null) {
@@ -41,17 +45,6 @@ export class Context {
 
 		if (parent) {
 			parent.enterChild(this)
-		}
-	}
-
-	/** Walk self and descendants. */
-	*walkInward(filter: (context: Context) => boolean): Iterable<Context> {
-		if (filter(this)) {
-			yield this
-		}
-
-		for (let child of this.children) {
-			yield *child.walkInward(filter)
 		}
 	}
 
@@ -87,7 +80,7 @@ export class Context {
 	 * When visiting a node, child nodes of this node have visited.
 	 */
 	visitNode(node: TS.Node) {
-		
+
 		// Add parameters.
 		if (ts.isParameter(node)) {
 			this.variables.visitParameter(node)
@@ -102,7 +95,7 @@ export class Context {
 		else if (helper.access.isAccess(node)) {
 
 			// `map.set`, `set.set`
-			if (ObservedChecker.isMapOrSetWriting(node)) {
+			if (helper.types.isMapOrSetWriting(node)) {
 				this.mayAddSetTracking(node, true)
 			}
 
@@ -110,6 +103,8 @@ export class Context {
 			else {
 				this.mayAddGetTracking(node)
 			}
+
+			AccessReferences.visitAssess(node, this)
 		}
 
 		// Test and add property assignment nodes.
@@ -119,6 +114,8 @@ export class Context {
 				if (helper.access.isAccess(node)) {
 					this.mayAddSetTracking(node, false)
 				}
+				
+				AccessReferences.visitAssignment(node, this)
 			}
 		}
 
@@ -144,10 +141,10 @@ export class Context {
 		if (ObservedChecker.isAccessingObserved(node)
 
 			// `map.has`, and `map` get observed.
-			|| ObservedChecker.isMapOrSetReading(node)
+			|| helper.types.isMapOrSetReading(node)
 				&& ObservedChecker.isObserved(node.expression)
 		) {
-			this.addTracking(node, 'get')
+			this.capturer.capture(visiting.getIndex(node), 'get')
 		}
 	}
 
@@ -160,52 +157,8 @@ export class Context {
 		if (!fromMapOrSet && ObservedChecker.isAccessingObserved(node)
 			|| fromMapOrSet && ObservedChecker.isObserved(node.expression)
 		) {
-			this.addTracking(node, 'set')
+			this.capturer.capture(visiting.getIndex(node), 'set')
 		}
-	}
-
-	/** Add get or set tracking after testing. */
-	private addTracking(node: AccessNode, type: 'get' | 'set') {
-		let index = visiting.getIndex(node)
-		let position: ContextTargetPosition | null = null
-
-		// Use a reference variable to replace expression.
-		if (ObservedChecker.shouldReference(node.expression)) {
-			let expIndex = visiting.getFirstChildIndex(index)!
-			position = this.capturer.reference(expIndex)
-		}
-
-		// Use a reference variable to replace name.
-		if (ObservedChecker.shouldReference(helper.access.getNameNode(node))) {
-			let nameIndex = visiting.getLastChildIndex(index)!
-			position = this.capturer.reference(nameIndex) || position
-		}
-
-		if (position) {
-
-			// Capture immediately and insert it into position.
-			if (position.interruptOnPath) {
-				position.context.capturer.addCapturedManually([index], position.index, type)
-			}
-
-			// Capture by target context.
-			else {
-				position.context.capturer.capture(index, type)
-			}
-		}
-		else {
-			this.capturer.capture(index, type)
-		}
-
-		// Move variable declaration list forward.
-		// TODO: Should move codes to optimize step later.
-		if (this.type === ContextType.IterationInitializer) {
-			let toPosition = ContextTree.findClosestPositionToAddStatement(
-				this.visitingIndex, this
-			)
-
-			modifier.moveOnce(this.visitingIndex, toPosition.index)
-		}	
 	}
 
 	/** Add a break and output expressions before specified position. */
