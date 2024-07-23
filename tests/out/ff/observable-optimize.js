@@ -1,4 +1,4 @@
-import { Observed, trackGet, trackSet } from '@pucelle/ff';
+import { Observed, trackGet } from '@pucelle/ff';
 import { Component } from '@pucelle/lupos.js';
 class TestOptimizing extends Component {
     prop = { value: 1 };

@@ -1,3 +1,8 @@
+import {modifier} from '../../base'
+import {Context} from './context'
+import {ContextTree, ContextType} from './context-tree'
+
+
 /**
  * 0. Should find a way to hash access expression.
  * 1. If parent context has a tracking, child contexts should eliminate it.
@@ -6,54 +11,74 @@
  * 4. If previous captured has a tracking, should eliminate it from following captured.
  */
 export namespace Optimizer {
-	
-	/** Lift node to outer context. */
-	function getLiftedContext(node: CanObserveNode): ObservedContext | null {
-		if (this.helper.isPropertyAccessing(node)) {
-			let exp = node.expression
 
-			if (ObservedChecker.canObserve(exp, this.helper)) {
-				return this.getLiftedContext(exp)
-			}
-			else {
-				return null
-			}
+	/** 
+	 * Optimize each context before it will exit.
+	 * All child contexts have been optimized.
+	 */
+	export function optimize(context: Context) {
+		if (!context.capturer.hasCaptured()) {
+			return
 		}
-		else {
-			if (node.pos === -1) {
-				return null
-			}
-			// else if (node.kind === this.helper.ts.SyntaxKind.ThisKeyword) {
-			// 	if (this.parent && this.helper.ts.isArrowFunction(this.parent.node)) {
-			// 		return this.parent.parent!.getLiftedContext(node)
-			// 	}
-			// 	else {
-			// 		return this
-			// 	}
-			// }
-			// else if (this.variableObserved.has(node.getText())) {
-			// 	return this
-			// }
-			else if (this.parent) {
-				return this.parent.getLiftedContext(node)
-			}
-			else {
-				return null
-			}
+
+		if (context.type === ContextType.FunctionLike) {
+			moveParameterCapturedToBody(context)
+		}
+		else if (context.type === ContextType.IterationInitializer) {
+			moveIterationInitializerForward(context)
 		}
 	}
 
-	
-	function checkContext() {
 
-		// Move variable declaration list forward.
-		// TODO: Should move codes to optimize step later.
-		if (this.type === ContextType.IterationInitializer) {
-			let toPosition = ContextTree.findClosestPositionToAddStatement(
-				this.visitingIndex, this
-			)
-
-			modifier.moveOnce(this.visitingIndex, toPosition.index)
-		}
+	/** Move captured from parameter to following function body. */
+	function moveParameterCapturedToBody(context: Context) {
+		context.capturer.moveCapturedAheadOf(context.children[0].capturer)
 	}
+
+
+	/** Move whole content from iteration initializer forward. */
+	function moveIterationInitializerForward(context: Context) {
+		let toPosition = ContextTree.findClosestPositionToAddStatement(
+			context.visitingIndex, context
+		)
+
+		modifier.moveOnce(context.visitingIndex, toPosition.index)
+	}
+
+
+	// /** Lift node to outer context. */
+	// function getLiftedContext(node: CanObserveNode): ObservedContext | null {
+	// 	if (this.helper.isPropertyAccessing(node)) {
+	// 		let exp = node.expression
+
+	// 		if (ObservedChecker.canObserve(exp, this.helper)) {
+	// 			return this.getLiftedContext(exp)
+	// 		}
+	// 		else {
+	// 			return null
+	// 		}
+	// 	}
+	// 	else {
+	// 		if (node.pos === -1) {
+	// 			return null
+	// 		}
+	// 		// else if (node.kind === this.helper.ts.SyntaxKind.ThisKeyword) {
+	// 		// 	if (this.parent && this.helper.ts.isArrowFunction(this.parent.node)) {
+	// 		// 		return this.parent.parent!.getLiftedContext(node)
+	// 		// 	}
+	// 		// 	else {
+	// 		// 		return this
+	// 		// 	}
+	// 		// }
+	// 		// else if (this.variableObserved.has(node.getText())) {
+	// 		// 	return this
+	// 		// }
+	// 		else if (this.parent) {
+	// 			return this.parent.getLiftedContext(node)
+	// 		}
+	// 		else {
+	// 			return null
+	// 		}
+	// 	}
+	// }
 }

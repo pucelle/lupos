@@ -53,7 +53,6 @@ export class Context {
 	 * and current context will exit.
 	 */
 	beforeExit() {
-		this.optimize()
 		this.capturer.beforeExit()
 
 		if (this.parent) {
@@ -70,8 +69,8 @@ export class Context {
 	leaveChild(child: Context) {
 		this.state.mergeChildContext(child)
 
-		if (child.state.isInnerFlowStop()) {
-			this.addBreak(child.visitingIndex)
+		if (child.state.isFlowInterrupted()) {
+			this.capturer.breakCaptured(child.visitingIndex)
 		}
 	}
 
@@ -124,7 +123,7 @@ export class Context {
 			|| ts.isBreakOrContinueStatement(node)
 		) {
 			this.state.applyInnerBreakLike(true)
-			this.addBreak(visiting.current.index)
+			this.capturer.breakCaptured(visiting.current.index)
 		}
 	}
 
@@ -159,26 +158,5 @@ export class Context {
 		) {
 			this.capturer.capture(visiting.getIndex(node), 'set')
 		}
-	}
-
-	/** Add a break and output expressions before specified position. */
-	private addBreak(index: number) {
-		let parentIndex = visiting.getParentIndex(index)!
-		let parentNode = visiting.getNode(parentIndex)
-
-		// Insert before expression statement.
-		if (ts.isExpressionStatement(parentNode)) {
-			index = parentIndex
-		}
-
-		this.capturer.breakCaptured(index)
-	}
-
-	/** 
-	 * Do optimize, after all descendant contexts are ready.
-	 * Normally it will hoist captured dependencies higher.
-	 */
-	private optimize() {
-		
 	}
 }

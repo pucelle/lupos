@@ -1,10 +1,18 @@
 import type TS from 'typescript'
-import {InterpolationContentType, AccessNode, helper, interpolator, modifier} from '../../base'
+import {InterpolationContentType, AccessNode, helper, interpolator, modifier, InterpolationPosition} from '../../base'
 import {Context} from './context'
 import {ContextTree, ContextType} from './context-tree'
 import {AccessGrouper} from './access-grouper'
-import {ListMap} from '../../utils'
 import {AccessReferences} from './access-references'
+import {Optimizer} from './optimizer'
+
+
+/** Captured item, will be inserted to a position. */
+interface CapturedItem {
+	position: InterpolationPosition
+	indices: number[]
+	toIndex: number
+}
 
 
 /** 
@@ -15,13 +23,24 @@ export class ContextCapturer {
 
 	readonly context: Context
 	private variableNames: string[] = []
-	private captured: ListMap<number, number> = new ListMap()
-	private latestCaptured: number[] = []
+	private captured: CapturedItem[]
+	private latestCaptured!: CapturedItem
 	private captureType: 'get' | 'set' = 'get'
 
 	constructor(context: Context) {
 		this.context = context
+
+		this.resetLatestCaptured()
+		this.captured = [this.latestCaptured]
 		this.transferFromParent()
+	}
+
+	private resetLatestCaptured() {
+		this.latestCaptured = {
+			position: InterpolationPosition.Before,
+			indices: [],
+			toIndex: -1,
+		}
 	}
 
 	/** Transfer from some captured properties to child. */
@@ -50,21 +69,38 @@ export class ContextCapturer {
 	/** Capture an index. */
 	capture(index: number, type: 'get' | 'set') {
 		this.addCaptureType(type)
-		this.latestCaptured.push(index)
+		this.latestCaptured.indices.push(index)
 	}
 
-	/** Cancel capturing an index. */
-	unCapture(index: number) {
-		for (let key of [...this.captured.keys()]) {
-			if (this.captured.has(key, index)) {
-				this.captured.delete(key, index)
-				return
-			}
-		}
+	/** Whether has captured some indices. */
+	hasCaptured(): boolean {
+		return this.captured.some(item => item.indices.length > 0)
+	}
 
-		let spliceIndex = this.latestCaptured.indexOf(index)
-		if (spliceIndex > -1) {
-			this.latestCaptured.splice(spliceIndex, 1)
+	/** Move all captured to target capturer. */
+	moveCapturedAheadOf(toCapturer: ContextCapturer) {
+		let indices = this.captured.map(item => item.indices).flat()
+		this.captured = []
+
+		// Insert to the first of internal captured.
+		toCapturer.captured[0].indices.unshift(...indices)
+	}
+
+	/** Move all captured to an ancestral, target capturer. */
+	moveCapturedUpward(toCapturer: ContextCapturer) {
+		let indices = this.captured.map(item => item.indices).flat()
+		this.captured = []
+
+		let item = toCapturer.captured.find(item => item.toIndex === this.context.visitingIndex)
+		if (item) {
+			item.indices.push(...indices)
+		}
+		else {
+			item = {
+				position: InterpolationPosition.Before,
+				indices,
+				toIndex: this.context.visitingIndex,
+			}
 		}
 	}
 
@@ -73,39 +109,32 @@ export class ContextCapturer {
 		if (type === 'set' && this.captureType === 'get') {
 
 			// Broadcast to closest function-like context, and broadcast down.
-			let walking = ContextTree.walkInward(
+			let walking = ContextTree.walkInwardChildFirst(
 				this.context.closestFunctionLike,
 				c => c.capturer.captureType === 'get'
 			)
 			
 			for (let descent of walking) {
-				descent.capturer.applySetCaptureTpe()
+				descent.capturer.applySetCaptureType()
 			}
 		}
 	}
 
 	/** Apply capture type to `set`. */
-	private applySetCaptureTpe() {
+	private applySetCaptureType() {
 		this.captureType = 'set'
-		this.captured.clear()
-		this.latestCaptured = []
+		this.captured = [this.latestCaptured]
+		this.latestCaptured.indices = []
 	}
 
 	/** Insert captured indices to specified position. */
 	breakCaptured(atIndex: number) {
-		let captured = this.latestCaptured
-		if (captured.length === 0) {
-			return
-		}
+		// Even no indices captured, still break.
+		// Later may append indices to this item.
 
-		this.latestCaptured = []
-		this.captured.set(atIndex, captured)
-	}
-
-	/** Insert captured indices to specified position. */
-	addCapturedManually(index: number, atIndex: number, type: 'get' | 'set') {
-		this.addCaptureType(type)
-		this.captured.add(atIndex, index)
+		this.latestCaptured.toIndex = atIndex
+		this.resetLatestCaptured()
+		this.captured.push(this.latestCaptured)
 	}
 
 	/** 
@@ -116,52 +145,98 @@ export class ContextCapturer {
 		this.variableNames.push(variableName)
 	}
 
-	/** Before context will exit. */
+	/** Before each context will exit. */
 	beforeExit() {
+		this.endCapture()
+
 		if (this.context === this.context.closestFunctionLike) {
-			let walking = ContextTree.walkInward(
-				this.context.closestFunctionLike,
-				c => c.closestFunctionLike === this.context
-			)
+			for (let descent of this.walkInwardChildFirst()) {
+				descent.preProcessCaptured()
+			}
 
-			for (let descent of walking) {
-
-				// First order is important, checking references step may
-				// add more variables, and adjust captured.
-				descent.capturer.checkReferences()
-
-				descent.capturer.interpolateVariables()
-				descent.capturer.interpolateCaptured()
+			for (let descent of this.walkInwardSelfFirst()) {
+				descent.postProcessCaptured()
 			}
 		}
 	}
 
+	private* walkInwardChildFirst(): Iterable<ContextCapturer> {
+		for (let context of ContextTree.walkInwardChildFirst(
+			this.context.closestFunctionLike,
+			c => c.closestFunctionLike === this.context
+		)) {
+			yield context.capturer
+		}
+	}
+
+	private* walkInwardSelfFirst(): Iterable<ContextCapturer> {
+		for (let context of ContextTree.walkInwardSelfFirst(
+			this.context.closestFunctionLike,
+			c => c.closestFunctionLike === this.context
+		)) {
+			yield context.capturer
+		}
+	}
+
+	/** Prepare latest captured item. */
+	private endCapture() {
+		let item = this.latestCaptured
+		let index = this.context.visitingIndex
+		let node = this.context.node
+
+		item.toIndex = index
+
+		// Insert before whole content of target capturer.
+		if (this.context.type === ContextType.FlowInterruptWithContent) {
+			item.position = InterpolationPosition.Before
+		}
+
+		// Insert before whole content of target capturer.
+		else if (this.context.type === ContextType.ConditionalCondition
+			&& this.context.parent!.type === ContextType.ConditionalAndContent
+		) {
+			item.position = InterpolationPosition.Before
+		}
+
+		// Can put statements, insert to the end of statements.
+		else if (helper.pack.canPutStatements(node)) {
+			item.position = InterpolationPosition.Append
+		}
+
+		// Insert to the end.
+		else {
+			item.position = InterpolationPosition.After
+		}
+	}
+
+	/** Process current captured, step 1. */
+	private preProcessCaptured() {
+
+		// First order is important, checking references step may
+		// add more variables, and adjust captured.
+		this.checkAccessReferences()
+
+		// Must after reference step, reference step will look for position,
+		// which requires indices stay at their context.
+		Optimizer.optimize(this.context)
+	}
+
+	/** 
+	 * Process current captured, step 2.
+	 * Previous step may move indices forward or backward.
+	 */
+	private postProcessCaptured() {
+		this.interpolateVariables()
+		this.interpolateCaptured()
+	}
+	
 	/** Check captured indices and reference if possible. */
-	private checkReferences() {
-		for (let index of this.captured.values()) {
-			AccessReferences.mayReferenceAccess(index, this.captureType, this.context)
+	private checkAccessReferences() {
+		for (let item of this.captured) {
+			for (let index of item.indices) {
+				AccessReferences.mayReferenceAccess(index, this.context)
+			}
 		}
-
-		for (let index of this.latestCaptured) {
-			AccessReferences.mayReferenceAccess(index, this.captureType, this.context)
-		}
-
-		// Move variable declaration list forward.
-		// TODO: Should move codes to optimize step later.
-		if ((this.captured.keyCount() > 0 || this.latestCaptured.length > 0)
-			&& this.context.type === ContextType.IterationInitializer) {
-			let toPosition = ContextTree.findClosestPositionToAddStatement(
-				this.context.visitingIndex, this.context
-			)
-
-			modifier.moveOnce(this.context.visitingIndex, toPosition.index)
-		}
-
-		// Transfer from function parameters to function body.
-		// if (this.context.parent?.type === ContextType.FunctionLike) {
-		// 	this.captured.add()
-		// 	modifier.moveOnce(this.context.visitingIndex, toPosition.index)
-		// }
 	}
 
 	/** Add reference variables as declaration statements. */
@@ -176,50 +251,21 @@ export class ContextCapturer {
 
 	/** Add `captured` as interpolation items. */
 	private interpolateCaptured() {
-		// TODO
-		if (this.context.type === ContextType.FunctionLike) {
-			return
-		}
+		for (let item of this.captured) {
+			if (item.indices.length === 0) {
+				continue
+			}
 
-		for (let [atIndex, captured] of this.captured.entries()) {
-			interpolator.before(atIndex, InterpolationContentType.Tracking, () => this.outputCaptured(captured))
+			interpolator.add(item.toIndex, {
+				position: item.position,
+				contentType: InterpolationContentType.Tracking,
+				exps: () => this.outputCaptured(item.indices),
+			})
+
 			AccessGrouper.addImport(this.captureType)
 		}
-
-		this.captured.clear()
-		this.interpolateRestCaptured()
 	}
 
-	/** 
-	 * Add rest captured expressions before end position of context, or before a return statement.
-	 * But:
-	 *  - For like `return this.a`, will move `this.a` ahead.
-	 *  - For like `return (_ref_=a()).b`, will reference returned content and move it ahead.
-	 */
-	private interpolateRestCaptured() {
-		if (this.latestCaptured.length === 0) {
-			return
-		}
-
-		let captured = this.latestCaptured
-		let node = this.context.node
-		let index = this.context.visitingIndex
-
-		this.latestCaptured = []
-
-		// Can put statements, insert to the end of statements.
-		if (helper.pack.canPutStatements(node)) {
-			interpolator.append(index, InterpolationContentType.Tracking, () => this.outputCaptured(captured))
-		}
-
-		// insert after current index, and process later.
-		else {
-			interpolator.after(index, InterpolationContentType.Tracking, () => this.outputCaptured(captured))
-		}
-
-		AccessGrouper.addImport(this.captureType)
-	}
-	
 	/** Transfer specified indices to specified position. */
 	private outputCaptured(captured: number[]): TS.Expression[] {
 		let exps = captured.map(i => {

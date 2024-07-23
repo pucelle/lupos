@@ -1,16 +1,10 @@
-/** Creates a new list from picking items from `list` and excluding items inside any one of `excludeLists`. */
-export function difference<T>(list: Iterable<T>, ...excludeLists: Iterable<T>[]): T[] {
-	let set: Set<T> = new Set(list)
-
-	for (let difArray of excludeLists) {
-		for (let item of difArray) {
-			set.delete(item)
-		}
+/** Remove item from list. */
+export function removeFromList<T>(list: T[], item: T) {
+	let index = list.indexOf(item)
+	if (index > -1) {
+		list.splice(index, 1)
 	}
-
-	return [...set]
 }
-
 
 
 /** `K => V[]` Map Struct. */

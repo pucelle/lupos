@@ -24,12 +24,6 @@ export interface InterpolationItem {
 	 * Only one `replace` can exist.
 	 */
 	replace?: () => TS.Node | TS.Node[] | undefined
-
-	/** 
-	 * Must exist for `UpdateInternal` position.
-	 * Only one `update` can exist.
-	 */
-	update?: () => TS.Node | undefined
 }
 
 export enum InterpolationPosition {
@@ -54,9 +48,6 @@ export enum InterpolationPosition {
 
 	/** Replace to some other nodes. */
 	Replace,
-
-	/** Update with new children, for only internal usage. */
-	UpdateInternal,
 }
 
 export enum InterpolationContentType {
@@ -84,25 +75,34 @@ export namespace interpolator {
 
 
 	/** Add an item. */
-	function add(index: number, item: InterpolationItem) {
+	export function add(toIndex: number, item: InterpolationItem) {
 
 		// Not fully replace it.
 		if (item.position === InterpolationPosition.Prepend) {
-			let firstIndex = visiting.getFirstChildIndex(index)
+			let firstIndex = visiting.getFirstChildIndex(toIndex)
 			if (firstIndex) {
-				index = firstIndex
+				toIndex = firstIndex
 				item.position = InterpolationPosition.Before
 			}
 		}
 		else if (item.position === InterpolationPosition.Append) {
-			let lastIndex = visiting.getLastChildIndex(index)
+			let lastIndex = visiting.getLastChildIndex(toIndex)
 			if (lastIndex) {
-				index = lastIndex
+				toIndex = lastIndex
 				item.position = InterpolationPosition.After
 			}
 		}
+		else if (item.position === InterpolationPosition.Before || item.position === InterpolationPosition.After) {
+			let parentIndex = visiting.getParentIndex(toIndex)!
+			let parentNode = visiting.getNode(parentIndex)
 
-		interpolations.add(index, item)
+			// Insert before or after expression statement.
+			if (ts.isExpressionStatement(parentNode)) {
+				toIndex = parentIndex
+			}
+		}
+
+		interpolations.add(toIndex, item)
 	}
 
 
@@ -290,12 +290,11 @@ export namespace interpolator {
 		beforeNodes: TS.Node[], afterNodes: TS.Node[]
 	): TS.Node | TS.Node[] {
 		let rawNode = visiting.getNode(index)
-		let rawParent = visiting.getNode(visiting.getParentIndex(index)!)
-		let isFlowInterrupted = helper.pack.isFlowInterruption(rawNode)
+		let rawParent = rawNode.parent
 
 		// Insert statements.
 		if (helper.pack.canPutStatements(rawParent)) {
-			let list = arrangeNeighborNodes(node, beforeNodes, afterNodes, isFlowInterrupted)
+			let list = arrangeNeighborNodes(node, beforeNodes, afterNodes)
 			return list.map(n => helper.pack.toStatement(n))
 		}
 
@@ -304,20 +303,11 @@ export namespace interpolator {
 			if (ts.isArrowFunction(rawParent)) {
 				node = factory.createReturnStatement(node as TS.Expression)
 			}
-			let list = arrangeNeighborNodes(node, beforeNodes, afterNodes, isFlowInterrupted)
+			let list = arrangeNeighborNodes(node, beforeNodes, afterNodes)
 
 			return factory.createBlock(
 				list.map(n => helper.pack.toStatement(n))
 			)
-		}
-
-		// Unpack return statement, parenthesize it, move returned node to the end, and re-pack.
-		else if (isFlowInterrupted) {
-			let exp = helper.pack.getMayFlowInterruptionContent(node as TS.Expression)
-			let list = arrangeNeighborNodes(exp, beforeNodes, afterNodes, isFlowInterrupted)
-			let parenthesized = helper.pack.parenthesizeExpressions(...list)
-
-			return helper.pack.restoreFlowInterruption(parenthesized, node as TS.ReturnStatement | TS.Expression)
 		}
 
 		// Parenthesize it, move returned node to the end.
@@ -334,7 +324,11 @@ export namespace interpolator {
 	}
 
 	/** Re-arrange node list. */
-	function arrangeNeighborNodes(node: TS.Node | TS.Node[] | undefined, beforeNodes: TS.Node[], afterNodes: TS.Node[], returnOriginal: boolean): TS.Expression[] {
+	function arrangeNeighborNodes(
+		node: TS.Node | TS.Node[] | undefined,
+		beforeNodes: TS.Node[], afterNodes: TS.Node[],
+		returnOriginal: boolean = false
+	): TS.Expression[] {
 		let list: TS.Expression[] = []
 
 		if (returnOriginal) {

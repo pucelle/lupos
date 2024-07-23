@@ -247,49 +247,6 @@ export namespace ObservedChecker {
 	}
 
 
-	/** 
-	 * Whether be a complex expression, and should be reference.
-	 * `a().b` -> `var _ref_; ...; _ref_ = a(); _ref_.b`
-	 * or `a[i++]` -> `var _ref; ... ; _ref_ = i++; a[_ref]`
-	 */
-	export function shouldReference(node: TS.Expression): boolean {
-
-		// `a && b`, `a || b`, `a ?? b`.
-		if (ts.isBinaryExpression(node)) {
-			return true
-		}
-
-		// `a++`, `++a`.
-		if (ts.isPostfixUnaryExpression(node) || ts.isPrefixUnaryExpression(node)) {
-			return true
-		}
-
-		// `(...)`
-		else if (ts.isParenthesizedExpression(node)) {
-			return shouldReference(node.expression)
-		}
-
-		// `(a as Observed<{b: number}>).b`
-		else if (ts.isAsExpression(node)) {
-			return shouldReference(node.expression)
-		}
-
-		// `a ? b : c`
-		else if (ts.isConditionalExpression(node)) {
-			return true
-		}
-
-		// `a.b()`
-		else if (ts.isCallExpression(node)) {
-			return true
-		}
-
-		else {
-			return false
-		}
-	}
-
-
 	/** Check whether a property or get accessor declaration, or a property declaration is observed. */
 	function checkPropertyOrGetAccessorObserved(node: AccessNode): boolean {
 

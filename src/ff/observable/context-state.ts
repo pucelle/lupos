@@ -23,34 +23,30 @@ export class ContextState {
 	readonly nothingReturned: boolean
 
 	/** 
-	 * Whether be `break`, `return`, or `continue` to stop current execution flow,
-	 * or be `await` or `yield` statement.
-	 */
-	readonly selfFlowInterrupted: number = 0
-
-	/** 
 	 * Whether inner codes has `break`, `return`, or `continue` to stop current execution flow,
 	 * or inner codes has `await` or `yield` statement.
 	 */
-	innerFlowInterrupted: number = 0
+	flowInterrupted: number = 0
 
 	constructor(context: Context) {
 		this.context = context
 		this.nothingReturned = this.checkNothingReturned()
 
+		let flowInterrupted = 0
+
 		if (ts.isReturnStatement(this.context.node)) {
-			this.selfFlowInterrupted |= FlowStopType.Return
+			flowInterrupted |= FlowStopType.Return
 		}
 		
 		if (ts.isBreakOrContinueStatement(this.context.node)) {
-			this.selfFlowInterrupted |= FlowStopType.BreakLike
+			flowInterrupted |= FlowStopType.BreakLike
 		}
 		
 		if (ts.isAwaitExpression(this.context.node) || ts.isYieldExpression(this.context.node)) {
-			this.selfFlowInterrupted |= FlowStopType.YieldLike
+			flowInterrupted |= FlowStopType.YieldLike
 		}
 
-		this.innerFlowInterrupted = this.selfFlowInterrupted
+		this.flowInterrupted = flowInterrupted
 	}
 
 	private checkNothingReturned(): boolean {
@@ -70,7 +66,7 @@ export class ContextState {
 			return 
 		}
 
-		this.innerFlowInterrupted |= value ? FlowStopType.Return : 0
+		this.flowInterrupted |= value ? FlowStopType.Return : 0
 	}
 
 	applyInnerBreakLike(value: boolean) {
@@ -85,7 +81,7 @@ export class ContextState {
 			return
 		}
 
-		this.innerFlowInterrupted |= value ? FlowStopType.BreakLike : 0
+		this.flowInterrupted |= value ? FlowStopType.BreakLike : 0
 	}
 
 	applyInnerYieldLike(value: boolean) {
@@ -93,7 +89,7 @@ export class ContextState {
 			return 
 		}
 
-		this.innerFlowInterrupted |= value ? FlowStopType.YieldLike : 0
+		this.flowInterrupted |= value ? FlowStopType.YieldLike : 0
 	}
 
 	/** 
@@ -107,18 +103,13 @@ export class ContextState {
 			return
 		}
 
-		this.applyInnerReturn(Boolean(child.state.innerFlowInterrupted & FlowStopType.Return))
-		this.applyInnerBreakLike(Boolean(child.state.innerFlowInterrupted & FlowStopType.BreakLike))
-		this.applyInnerYieldLike(Boolean(child.state.innerFlowInterrupted & FlowStopType.YieldLike))
+		this.applyInnerReturn(Boolean(child.state.flowInterrupted & FlowStopType.Return))
+		this.applyInnerBreakLike(Boolean(child.state.flowInterrupted & FlowStopType.BreakLike))
+		this.applyInnerYieldLike(Boolean(child.state.flowInterrupted & FlowStopType.YieldLike))
 	}
 
 	/** Whether break like, or return, or yield like inside. */
-	isInnerFlowStop(): boolean {
-		return this.innerFlowInterrupted > 0
-	}
-
-	/** Whether break like, or return, or yield like itself. */
-	isSelfFlowStop(): boolean {
-		return this.selfFlowInterrupted > 0
+	isFlowInterrupted(): boolean {
+		return this.flowInterrupted > 0
 	}
 }

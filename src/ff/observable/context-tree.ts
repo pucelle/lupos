@@ -63,12 +63,6 @@ export enum ContextType {
 export interface ContextTargetPosition{
 	context: Context
 	index: number
-
-	/** 
-	 * Indicates whether meet interrupt statement on the path,
-	 * from current position to target position.
-	 */
-	interruptOnPath: boolean
 }
 
 
@@ -268,15 +262,29 @@ export namespace ContextTree {
 
 	/** 
 	 * Walk context itself and descendants.
-	 * Always walk descendants before it-self.
+	 * Always walk descendants before self.
 	 */
-	export function* walkInward(context: Context, filter: (context: Context) => boolean): Iterable<Context> {
+	export function* walkInwardChildFirst(context: Context, filter: (context: Context) => boolean): Iterable<Context> {
 		for (let child of context.children) {
-			yield *walkInward(child, filter)
+			yield *walkInwardChildFirst(child, filter)
 		}
 
 		if (filter(context)) {
 			yield context
+		}
+	}
+
+	/** 
+	 * Walk context itself and descendants.
+	 * Always walk descendants after self.
+	 */
+	export function* walkInwardSelfFirst(context: Context, filter: (context: Context) => boolean): Iterable<Context> {
+		if (filter(context)) {
+			yield context
+		}
+
+		for (let child of context.children) {
+			yield *walkInwardSelfFirst(child, filter)
 		}
 	}
 	
@@ -297,14 +305,12 @@ export namespace ContextTree {
 	export function findClosestPositionToAddVariable(index: number, from: Context): ContextTargetPosition {
 		let context = from
 		let variableDeclarationIndex = visiting.findUpward(index, from.visitingIndex, ts.isVariableDeclaration)
-		let interruptOnPath = false
 
 		// Look upward for a variable declaration.
 		if (variableDeclarationIndex !== null) {
 			return {
 				context,
 				index: variableDeclarationIndex,
-				interruptOnPath: false,
 			}
 		}
 
@@ -317,13 +323,11 @@ export namespace ContextTree {
 			}
 
 			context = context.parent!
-			interruptOnPath ||= context.state.isSelfFlowStop()
 		}
 
 		return {
 			context,
 			index: visiting.getFirstChildIndex(context.visitingIndex)!,
-			interruptOnPath,
 		}
 	}
 
@@ -333,14 +337,12 @@ export namespace ContextTree {
 	 */
 	export function findClosestPositionToAddStatement(index: number, from: Context): ContextTargetPosition {
 		let context: Context | null = from
-		let interruptOnPath = false
 
 		// Parameter initializer, no place to insert statements, returns position itself.
 		if (context.type === ContextType.FunctionLike) {
 			return {
 				context,
 				index,
-				interruptOnPath,
 			}
 		}
 
@@ -353,8 +355,6 @@ export namespace ContextTree {
 
 			// Now index can be located to context visiting index for easier looking upward.
 			index = context.visitingIndex
-
-			interruptOnPath ||= context.state.isSelfFlowStop()
 
 			// Can't cross these types of context.
 
@@ -387,7 +387,6 @@ export namespace ContextTree {
 		return {
 			context,
 			index,
-			interruptOnPath,
 		}
 	}
 }

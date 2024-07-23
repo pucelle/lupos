@@ -1,6 +1,5 @@
 import {AccessNode, factory, helper, InterpolationContentType, interpolator, modifier, transformContext, ts, visiting} from '../../base'
 import type TS from 'typescript'
-import {ObservedChecker} from './observed-checker'
 import {ContextTargetPosition, ContextTree} from './context-tree'
 import {Context} from './context'
 import {ListMap} from '../../utils'
@@ -96,7 +95,7 @@ export namespace AccessReferences {
 
 
 	/** Visit an assess node, and determine whether reference it. */
-	export function mayReferenceAccess(index: number, _type: 'get' | 'set', context: Context) {
+	export function mayReferenceAccess(index: number, context: Context) {
 		if (referencedAccessIndices.has(index)) {
 			return
 		}
@@ -108,35 +107,64 @@ export namespace AccessReferences {
 		let nameIndex = visiting.getIndex(nameNode)
 
 		// Use a reference variable to replace expression.
-		if (ObservedChecker.shouldReference(node.expression) || mutableIndices.has(expIndex)) {
+		if (shouldReference(node.expression) || mutableIndices.has(expIndex)) {
 			position = reference(expIndex, context)
 		}
 
 		// Use a reference variable to replace name.
-		if (ObservedChecker.shouldReference(nameNode) || mutableIndices.has(nameIndex)) {
+		if (shouldReference(nameNode) || mutableIndices.has(nameIndex)) {
 			position = reference(nameIndex, context) || position
 		}
 
-		// Move captured index to target context.
-		// TODO: Will move codes to optimize step.
-		// if (position) {
-
-		// 	// Move captured to where reference expression inserted.
-		// 	//if (position.interruptOnPath) {
-		// 		context.capturer.unCapture(index)
-		// 		position.context.capturer.addCapturedManually(index, position.index, type)
-		// 	// }
-
-		// 	// // Capture by target context.
-		// 	// else if (context !== position.context) {
-		// 	// 	context.capturer.unCapture(index)
-		// 	// 	position.context.capturer.capture(index, type)
-		// 	// }
-		// }
-
-		referencedAccessIndices.add(index)
+		if (position) {
+			referencedAccessIndices.add(index)
+		}
 	}
 	
+
+	/** 
+	 * Whether be a complex expression, and should be reference.
+	 * `a().b` -> `var _ref_; ...; _ref_ = a(); _ref_.b`
+	 * or `a[i++]` -> `var _ref; ... ; _ref_ = i++; a[_ref]`
+	 */
+	function shouldReference(node: TS.Expression): boolean {
+
+		// `a && b`, `a || b`, `a ?? b`, `a + b`, `a, b`.
+		if (ts.isBinaryExpression(node)) {
+			return true
+		}
+
+		// `a++`, `++a`.
+		if (ts.isPostfixUnaryExpression(node) || ts.isPrefixUnaryExpression(node)) {
+			return true
+		}
+
+		// `(...)`
+		else if (ts.isParenthesizedExpression(node)) {
+			return shouldReference(node.expression)
+		}
+
+		// `(a as Observed<{b: number}>).b`
+		else if (ts.isAsExpression(node)) {
+			return shouldReference(node.expression)
+		}
+
+		// `a ? b : c`
+		else if (ts.isConditionalExpression(node)) {
+			return true
+		}
+
+		// `a.b()`
+		else if (ts.isCallExpression(node)) {
+			return true
+		}
+
+		else {
+			return false
+		}
+	}
+
+
 	/** 
 	 * Reference a complex expression to become a reference variable.
 	 * 

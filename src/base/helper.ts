@@ -827,21 +827,6 @@ export namespace helper {
 					&& node === parent.body && !ts.isBlock(node)
 		}
 
-		/** 
-		 * Get content of `return`, `await`, `or yield`,
-		 * or return itself if is implicit return content of arrow function.
-		 */
-		export function getMayFlowInterruptionContent(node: TS.Expression): TS.Expression {
-			if (ts.isReturnStatement(node)
-				|| ts.isYieldExpression(node)
-				|| ts.isAwaitExpression(node)
-			) {
-				return node.expression!
-			}
-
-			return node
-		}
-
 		/** Whether be a block or a source file. */
 		export function canBlock(node: TS.Node): node is TS.SourceFile | TS.Block {
 			return ts.isSourceFile(node)
@@ -1108,21 +1093,6 @@ export namespace helper {
 			else {
 				throw new Error(`Don't know how to pack "${getText(node)}" to a statement!`)
 			}
-		}
-
-		/** Wrap by a statement if not yet. */
-		export function restoreFlowInterruption(content: TS.Expression, rawNode: TS.ReturnStatement | TS.Expression): TS.Expression | TS.Statement {
-			if (ts.isReturnStatement(rawNode)) {
-				return factory.createReturnStatement(content)
-			}
-			else if (ts.isYieldExpression(rawNode)) {
-				return factory.createYieldExpression(rawNode.asteriskToken!, content)
-			}
-			else if (ts.isAwaitExpression(content)) {
-				return factory.createAwaitExpression(content)
-			}
-
-			return content
 		}
 
 		/** 

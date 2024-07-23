@@ -27,7 +27,8 @@ class TestRef extends Component {
     *yieldRef() {
         var _ref_0;
         _ref_0 = this.getProp();
-        yield (trackGet(_ref_0, "value"), _ref_0.value);
+        trackGet(_ref_0, "value");
+        yield _ref_0.value;
     }
     ifRef() {
         var _ref_0;
@@ -69,6 +70,7 @@ class TestRef extends Component {
         return _ref_1.value;
     }
     parameterRef(value = (_ref_0 = this.getProp(), _ref_0).value) {
+        trackGet(_ref_0, "value");
         return value;
     }
     indexRef() {

@@ -19,5 +19,5 @@
 			{"transform": "../src/index.ts"},
 		]
 	},
-	"include": ["src/**/observable-mutable.ts"],
+	"include": ["src/**/observable-ref.ts"],
 }
