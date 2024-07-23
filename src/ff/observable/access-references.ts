@@ -41,6 +41,7 @@ export namespace AccessReferences {
 		referenceMap.clear()
 		visitedNodes.clear()
 		mutableIndices.clear()
+		referencedAccessIndices.clear()
 	}
 
 	/** Visit an assess node, and it may make several reference items. */
