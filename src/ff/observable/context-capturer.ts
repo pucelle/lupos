@@ -300,11 +300,10 @@ export class ContextCapturer {
 	 * If a node with captured index use local variables and can't be moved, leave it.
 	 */
 	moveCapturedOutwardTo(toCapturer: ContextCapturer) {
-		let indices = this.captured.map(item => item.indices).flat()
+		let indices = this.captured[0].indices
 		let residualIndices = toCapturer.moveCapturedIndicesTo(indices, this)
 
-		this.latestCaptured.indices = residualIndices
-		this.captured = [this.latestCaptured]
+		this.captured[0].indices = residualIndices
 	}
 
 	/** 

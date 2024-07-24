@@ -6,22 +6,92 @@ class TestOptimizing extends Component {
 
 	prop: {value: number} = {value: 1}
 
-	eliminateChildProp() {
+	moveConditionalConditionOutward() {
+		if (this.prop) {}
+
+		return ''
+	}
+
+	moveConditionalConditionOutwardInterrupted() {
+		if (this.prop) {
+			return
+		}
+
+		return ''
+	}
+
+	eliminateOwnRepetitiveAfterReturn() {
 		this.prop
-		if (true) {
+
+		if (1) {
+			return
+		}
+
+		this.prop
+
+		return ''
+	}
+
+	*persistOwnRepetitiveAfterYield() {
+		this.prop
+		yield 0
+		this.prop
+	}
+
+	async persistOwnRepetitiveAfterAwait() {
+		this.prop
+		await Promise.resolve()
+		this.prop
+
+		return ''
+	}
+
+	eliminateRepetitiveProp() {
+		this.prop
+
+		if (1) {
 			this.prop
 		}
 
 		return ''
 	}
 
-	eliminateChildVariable() {
-		let prop: Observed<{value: number}> = {value: 1}
-		prop.value
-
-		if (true) {
-			prop.value
+	eliminateRepetitivePropAfterReturn() {
+		if (1) {
+			return ''
 		}
+
+		this.prop
+
+		if (1) {
+			return this.prop
+		}
+
+		return ''
+	}
+
+	mergeAllIfElseBranches() {
+		if (1) {
+			this.prop
+		}
+		else if (1) {
+			this.prop
+		}
+		else {
+			this.prop
+		}
+
+		return ''
+	}
+
+	mergeAllConditionalBranches() {
+		1 ? this.prop : this.prop
+
+		return ''
+	}
+
+	mergeAllBinaryBranches() {
+		this.prop && this.prop || this.prop
 
 		return ''
 	}
@@ -30,7 +100,7 @@ class TestOptimizing extends Component {
 		let prop: Observed<{value: number}> = {value: 1}
 		prop.value
 		
-		if (true) {
+		if (1) {
 			let prop: Observed<{value: number}> = {value: 2}
 			prop.value
 		}
@@ -38,25 +108,35 @@ class TestOptimizing extends Component {
 		return ''
 	}
 
-	moveConditionalConditionForward() {
-		if (this.prop) {}
-
-		return ''
-	}
-
-	moveIterationInitializerForward() {
+	moveIterationInitializerOutward() {
 		for (let i = this.prop.value; i < 1; i++) {}
 
 		return ''
 	}
 
-	moveIterationConditionForward() {
+	moveInternalReturnedIterationInitializerOutward() {
+		for (let i = this.prop.value; i < 1; i++) {
+			return
+		}
+
+		return ''
+	}
+
+	moveIterationConditionOutward() {
 		for (let i = 0; i < this.prop.value; i++) {}
 
 		return ''
 	}
 
-	moveIterationIncreasementForward() {
+	preventMoveIterationConditionOutward() {
+		let props: Observed<{value: number}[]> = [this.prop, this.prop]
+
+		for (let i = 0; i < props[i].value; i++) {}
+
+		return ''
+	}
+
+	moveIterationIncreasementOutward() {
 		for (let i = 0; i < 1; i+=this.prop.value) {}
 
 		return ''
@@ -80,10 +160,10 @@ class TestOptimizing extends Component {
 	}
 
 	preventMovingIterationContentWhenIncludesLocalVariables() {
-		let prop: Observed<{value: number}[]> = [this.prop, this.prop]
+		let props: Observed<{value: number}[]> = [this.prop, this.prop]
 
 		for (let i = 0; i < 1; i++){
-			prop[i].value
+			props[i].value
 		}
 
 		return ''

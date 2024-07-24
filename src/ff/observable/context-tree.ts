@@ -381,16 +381,18 @@ export namespace ContextTree {
 				break
 			}
 
-			// Can't cross these types of context.
-			if (context.type === ContextType.ConditionalCondition
-				|| context.type === ContextType.ConditionalContent
-				|| context.type === ContextType.IterationConditionIncreasement
-				|| context.type === ContextType.IterationContent
-			) {
-				break
-			}
-
+			// To outer context.
 			if (node === context.node) {
+				
+				// Can't cross these types of node, end here.
+				if (context.type === ContextType.ConditionalCondition
+					|| context.type === ContextType.ConditionalContent
+					|| context.type === ContextType.IterationConditionIncreasement
+					|| context.type === ContextType.IterationContent
+				) {
+					break
+				}
+
 				context = context.parent!
 			}
 

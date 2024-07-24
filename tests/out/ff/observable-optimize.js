@@ -2,29 +2,86 @@ import { Observed, trackGet } from '@pucelle/ff';
 import { Component } from '@pucelle/lupos.js';
 class TestOptimizing extends Component {
     prop = { value: 1 };
-    eliminateChildProp() {
+    moveConditionalConditionOutward() {
+        if (this.prop) { }
+        trackGet(this, "prop");
+        return '';
+    }
+    moveConditionalConditionOutwardInterrupted() {
+        trackGet(this, "prop");
+        if (this.prop) {
+            return;
+        }
+        return '';
+    }
+    eliminateOwnRepetitiveAfterReturn() {
         this.prop;
-        if (true) {
+        trackGet(this, "prop");
+        if (1) {
+            return;
+        }
+        this.prop;
+        return '';
+    }
+    *persistOwnRepetitiveAfterYield() {
+        this.prop;
+        trackGet(this, "prop");
+        yield 0;
+        this.prop;
+    }
+    async persistOwnRepetitiveAfterAwait() {
+        this.prop;
+        trackGet(this, "prop");
+        await Promise.resolve();
+        this.prop;
+        return '';
+    }
+    eliminateRepetitiveProp() {
+        this.prop;
+        if (1) {
             this.prop;
-            trackGet(this, "prop");
         }
         trackGet(this, "prop");
         return '';
     }
-    eliminateChildVariable() {
-        let prop = { value: 1 };
-        prop.value;
-        if (true) {
-            prop.value;
-            trackGet(prop, "value");
+    eliminateRepetitivePropAfterReturn() {
+        if (1) {
+            return '';
         }
-        trackGet(prop, "value");
+        this.prop;
+        trackGet(this, "prop");
+        if (1) {
+            return this.prop;
+        }
+        return '';
+    }
+    mergeAllIfElseBranches() {
+        if (1) {
+            this.prop;
+        }
+        else if (1) {
+            this.prop;
+        }
+        else {
+            this.prop;
+        }
+        trackGet(this, "prop");
+        return '';
+    }
+    mergeAllConditionalBranches() {
+        1 ? this.prop : this.prop;
+        trackGet(this, "prop");
+        return '';
+    }
+    mergeAllBinaryBranches() {
+        this.prop && this.prop || this.prop;
+        trackGet(this, "prop");
         return '';
     }
     avoidEliminatingSameNameButDifferentVariable() {
         let prop = { value: 1 };
         prop.value;
-        if (true) {
+        if (1) {
             let prop = { value: 2 };
             prop.value;
             trackGet(prop, "value");
@@ -32,48 +89,66 @@ class TestOptimizing extends Component {
         trackGet(prop, "value");
         return '';
     }
-    moveConditionalConditionForward() {
-        if ((trackGet(this, "prop"), this.prop)) { }
-        return '';
-    }
-    moveIterationInitializerForward() {
+    moveIterationInitializerOutward() {
         let i = this.prop.value;
-        for ((trackGet(this, "prop"), trackGet(this.prop, "value")); i < 1; i++) { }
+        for (; i < 1; i++) { }
+        trackGet(this, "prop");
+        trackGet(this.prop, "value");
         return '';
     }
-    moveIterationConditionForward() {
-        for (let i = 0; (trackGet(this, "prop"), trackGet(this.prop, "value"), i < this.prop.value); i++) { }
+    moveInternalReturnedIterationInitializerOutward() {
+        let i = this.prop.value;
+        trackGet(this, "prop");
+        trackGet(this.prop, "value");
+        for (; i < 1; i++) {
+            return;
+        }
         return '';
     }
-    moveIterationIncreasementForward() {
-        for (let i = 0; i < 1; (trackGet(this, "prop"), trackGet(this.prop, "value"), i += this.prop.value)) { }
+    moveIterationConditionOutward() {
+        for (let i = 0; i < this.prop.value; i++) { }
+        trackGet(this, "prop");
+        trackGet(this.prop, "value");
+        return '';
+    }
+    preventMoveIterationConditionOutward() {
+        let _ref_0, props = [this.prop, this.prop];
+        for (let i = 0; (_ref_0 = i, trackGet(props[_ref_0], "value"), i < props[_ref_0].value); i++) { }
+        trackGet(this, "prop");
+        trackGet(props, "");
+        return '';
+    }
+    moveIterationIncreasementOutward() {
+        for (let i = 0; i < 1; i += this.prop.value) { }
+        trackGet(this, "prop");
+        trackGet(this.prop, "value");
         return '';
     }
     moveForIterationContentTrackingOuter() {
         for (let i = 0; i < 1; i++) {
             this.prop.value;
-            trackGet(this, "prop");
-            trackGet(this.prop, "value");
         }
+        trackGet(this, "prop");
+        trackGet(this.prop, "value");
         return '';
     }
     moveWhileIterationContentTrackingOuter() {
         let index = 0;
         while (index < 1) {
             this.prop.value;
-            trackGet(this, "prop");
-            trackGet(this.prop, "value");
         }
+        trackGet(this, "prop");
+        trackGet(this.prop, "value");
         return '';
     }
     preventMovingIterationContentWhenIncludesLocalVariables() {
-        let prop = [this.prop, this.prop];
+        let props = [this.prop, this.prop];
         for (let i = 0; i < 1; i++) {
-            prop[i].value;
-            trackGet(prop, "");
-            trackGet(prop[i], "value");
+            props[i].value;
+            trackGet(props[i], "value");
         }
         trackGet(this, "prop");
+        trackGet(props, "");
         return '';
     }
 }

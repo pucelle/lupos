@@ -32,6 +32,9 @@ export namespace Optimizer {
 		else if (context.type === ContextType.IterationConditionIncreasement) {
 			moveIterationConditionIncreasementOutward(context)
 		}
+		else if (context.type === ContextType.IterationContent) {
+			moveIterationContentOutward(context)
+		}
 
 		if (context.type === ContextType.FunctionLike) {
 			eliminateRepetitiveWithAncestorsRecursively(context)
@@ -41,7 +44,7 @@ export namespace Optimizer {
 	}
 
 
-	/** Move conditional condition outward. */
+	/** Move conditional condition tracking outward. */
 	function moveConditionalConditionOutward(context: Context) {
 		if (!context.capturer.hasCaptured()) {
 			return
@@ -54,7 +57,7 @@ export namespace Optimizer {
 	}
 
 
-	/** Merge all branches and move outward. */
+	/** Merge all branches tracking and move outward. */
 	function mergeConditionalBranches(context: Context) {
 		let contentChildren = context.children.filter(child => {
 			return child.type === ContextType.ConditionalContent
@@ -76,7 +79,7 @@ export namespace Optimizer {
 	}
 
 
-	/** Move whole content of iteration initializer forward. */
+	/** Move whole content of iteration initializer outward. */
 	function moveIterationInitializerForward(context: Context) {
 		if (!context.capturer.hasCaptured()) {
 			return
@@ -91,13 +94,26 @@ export namespace Optimizer {
 	}
 
 
-	/** Move iteration condition or increasement outward. */
+	/** Move iteration condition or increasement tracking outward. */
 	function moveIterationConditionIncreasementOutward(context: Context) {
 		if (!context.capturer.hasCaptured()) {
 			return
 		}
 
-		// parent of if conditional.
+		// parent of iteration.
+		let targetContext = context.parent!.parent!
+
+		context.capturer.moveCapturedOutwardTo(targetContext.capturer)
+	}
+
+
+	/** Move iteration content tracking outward. */
+	function moveIterationContentOutward(context: Context) {
+		if (!context.capturer.hasCaptured()) {
+			return
+		}
+
+		// parent of iteration.
 		let targetContext = context.parent!.parent!
 
 		context.capturer.moveCapturedOutwardTo(targetContext.capturer)
