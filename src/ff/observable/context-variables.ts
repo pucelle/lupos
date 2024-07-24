@@ -1,9 +1,8 @@
 import type TS from 'typescript'
 import {ObservedChecker} from './observed-checker'
-import {helper, transformContext, ts} from '../../base'
+import {helper, ts} from '../../base'
 import {Context} from './context'
 import {ContextTree, ContextType} from './context-tree'
-import {factory} from 'typescript'
 
 
 /** Mark all variables with a context. */
@@ -103,32 +102,14 @@ export class ContextVariables {
 	 * The suffix is normally a context visiting index,
 	 * then the hashing is unique across whole source file.
 	 */
-	hashVariable(name: string) {
+	hashVariableName(name: string): {name: string, suffix: number} {
 		let targetContext = ContextTree.getVariableDeclaredContext(name, this.context)
-		let suffix = targetContext ? targetContext.visitingIndex : '0'
+		let suffix = targetContext ? targetContext.visitingIndex : 0
 
-		return name + '_' + suffix
-	}
-
-	/** Hash a node, normalize and add a unique suffix to all variable nodes. */
-	hashNode<T extends TS.Node>(node: T): T {
-		return helper.pack.normalize(
-			ts.visitNode(node, (n: TS.Node) => this.hashVisitNode(n))!,
-			true
-		) as T
-	}
-
-	private hashVisitNode(node: TS.Node): TS.Node | undefined {
-		if (helper.variable.isVariableIdentifier(node)) {
-			return factory.createIdentifier(this.hashVariable(node.text))
+		return {
+			name: name + '_' + suffix,
+			suffix,
 		}
-
-		// `a?.b` -> `a.b`
-		else if (node.kind === ts.SyntaxKind.QuestionDotToken) {
-			return undefined
-		}
-
-		return ts.visitEachChild(node, (n: TS.Node) => this.hashVisitNode(n), transformContext)
 	}
 
 	/** 
@@ -216,9 +197,7 @@ export class ContextVariables {
 	private makeParametersObserved(parameters: TS.NodeArray<TS.ParameterDeclaration>) {
 		for (let param of parameters) {
 			let beObject = helper.types.isObjectType(helper.types.getType(param))
-			if (beObject) {
-				this.variableObserved.set(helper.getText(param.name), true)
-			}
+			this.variableObserved.set(helper.getText(param.name), beObject)
 		}
 	}
 
@@ -230,6 +209,13 @@ export class ContextVariables {
 
 	/** Visit a variable. */
 	visitVariable(node: TS.VariableDeclaration) {
+
+		// Initializer register variables for whole for iteration.
+		if (this.context.type === ContextType.IterationInitializer) {
+			this.context.parent!.variables.visitVariable(node)
+			return
+		}
+
 		let observed = ObservedChecker.isVariableDeclarationObserved(node)
 		let names = helper.variable.walkDeclarationNames(node)
 

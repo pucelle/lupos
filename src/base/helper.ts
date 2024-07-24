@@ -805,7 +805,7 @@ export namespace helper {
 	export namespace pack {
 
 		/** Whether be function, method, or get/set accessor. */
-		export function isFunctionLike(node: TS.Node): boolean {
+		export function isFunctionLike(node: TS.Node): node is TS.FunctionLikeDeclarationBase {
 			return ts.isMethodDeclaration(node)
 				|| ts.isFunctionDeclaration(node)
 				|| ts.isFunctionExpression(node)
@@ -849,10 +849,7 @@ export namespace helper {
 
 			if (ts.isIfStatement(parent)
 				&& (node === parent.thenStatement
-
-					// `else if ...` if part cant be expanded.
 					|| node === parent.elseStatement
-						&& !ts.isIfStatement(node)
 				)
 			) {
 				return true	
@@ -881,14 +878,6 @@ export namespace helper {
 		/** Whether can be extended to a block to put statements. */
 		export function canExtendToPutStatements(node: TS.Node): node is TS.Expression | TS.ExpressionStatement {
 			return canExtendToBlock(node)
-		}
-
-		/** Whether can put statements, or can be extended to a block to put statements. */
-		export function canMayExtendToPutStatements(node: TS.Node):
-			node is TS.SourceFile | TS.Block | TS.CaseOrDefaultClause | TS.Expression | TS.ExpressionStatement
-		{
-			return canPutStatements(node)
-				|| canExtendToPutStatements(node)
 		}
 
 		/** 

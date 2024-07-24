@@ -4,7 +4,8 @@ import {ContextType} from './context-tree'
 import {helper, ts} from '../../base'
 
 
-enum FlowStopType {
+/** How the flow was interrupted. */
+export enum FlowInterruptedByType {
 	Return = 1,
 	BreakLike = 2,
 	YieldLike = 4,
@@ -19,6 +20,7 @@ export class ContextState {
 	 * Whether function has nothing returned.
 	 * If a method returns nothing, we stop tracking it's property getting.
 	 * Initialize from a function-like type of context, and broadcast to descendants.
+	 * A generator returns an `Iterable`, so it is not nothing returned.
 	 */
 	readonly nothingReturned: boolean
 
@@ -26,7 +28,7 @@ export class ContextState {
 	 * Whether inner codes has `break`, `return`, or `continue` to stop current execution flow,
 	 * or inner codes has `await` or `yield` statement.
 	 */
-	flowInterrupted: number = 0
+	flowInterruptedBy: number = 0
 
 	constructor(context: Context) {
 		this.context = context
@@ -35,18 +37,18 @@ export class ContextState {
 		let flowInterrupted = 0
 
 		if (ts.isReturnStatement(this.context.node)) {
-			flowInterrupted |= FlowStopType.Return
+			flowInterrupted |= FlowInterruptedByType.Return
 		}
 		
 		if (ts.isBreakOrContinueStatement(this.context.node)) {
-			flowInterrupted |= FlowStopType.BreakLike
+			flowInterrupted |= FlowInterruptedByType.BreakLike
 		}
 		
 		if (ts.isAwaitExpression(this.context.node) || ts.isYieldExpression(this.context.node)) {
-			flowInterrupted |= FlowStopType.YieldLike
+			flowInterrupted |= FlowInterruptedByType.YieldLike
 		}
 
-		this.flowInterrupted = flowInterrupted
+		this.flowInterruptedBy = flowInterrupted
 	}
 
 	private checkNothingReturned(): boolean {
@@ -66,7 +68,7 @@ export class ContextState {
 			return 
 		}
 
-		this.flowInterrupted |= value ? FlowStopType.Return : 0
+		this.flowInterruptedBy |= value ? FlowInterruptedByType.Return : 0
 	}
 
 	applyInnerBreakLike(value: boolean) {
@@ -81,7 +83,7 @@ export class ContextState {
 			return
 		}
 
-		this.flowInterrupted |= value ? FlowStopType.BreakLike : 0
+		this.flowInterruptedBy |= value ? FlowInterruptedByType.BreakLike : 0
 	}
 
 	applyInnerYieldLike(value: boolean) {
@@ -89,7 +91,7 @@ export class ContextState {
 			return 
 		}
 
-		this.flowInterrupted |= value ? FlowStopType.YieldLike : 0
+		this.flowInterruptedBy |= value ? FlowInterruptedByType.YieldLike : 0
 	}
 
 	/** 
@@ -103,13 +105,13 @@ export class ContextState {
 			return
 		}
 
-		this.applyInnerReturn(Boolean(child.state.flowInterrupted & FlowStopType.Return))
-		this.applyInnerBreakLike(Boolean(child.state.flowInterrupted & FlowStopType.BreakLike))
-		this.applyInnerYieldLike(Boolean(child.state.flowInterrupted & FlowStopType.YieldLike))
+		this.applyInnerReturn(Boolean(child.state.flowInterruptedBy & FlowInterruptedByType.Return))
+		this.applyInnerBreakLike(Boolean(child.state.flowInterruptedBy & FlowInterruptedByType.BreakLike))
+		this.applyInnerYieldLike(Boolean(child.state.flowInterruptedBy & FlowInterruptedByType.YieldLike))
 	}
 
 	/** Whether break like, or return, or yield like inside. */
 	isFlowInterrupted(): boolean {
-		return this.flowInterrupted > 0
+		return this.flowInterruptedBy > 0
 	}
 }

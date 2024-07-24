@@ -4,10 +4,7 @@ import {ContextTree, ContextType} from './context-tree'
 import {AccessReferences} from './access-references'
 
 
-/** 
- * It add observable codes to source file.
- * Cant mix with other visitors because it requires full type references to work.
- */
+/** It add dependency tracking codes to source file. */
 defineVisitor(function(node: TS.Node) {
 
 	// Initialize

@@ -7,6 +7,14 @@ export function removeFromList<T>(list: T[], item: T) {
 }
 
 
+/** Add item to list without repetition. */
+export function addToList<T>(list: T[], item: T) {
+	if (!list.includes(item)) {
+		list.push(item)
+	}
+}
+
+
 /** `K => V[]` Map Struct. */
 export class ListMap<K, V> {
 

@@ -3,6 +3,7 @@ import type TS from 'typescript'
 import {ContextTargetPosition, ContextTree} from './context-tree'
 import {Context} from './context'
 import {ListMap} from '../../utils'
+import {Hashing} from './hashing'
 
 
 /** 
@@ -15,7 +16,7 @@ export namespace AccessReferences {
 	 * The referenced expressions like `a`, `a.b` of `a.b.c`,
 	 * and the mapped visiting index of `a.b.c`.
 	 */
-	let referenceMap: ListMap<string, number> = new ListMap()
+	const referenceMap: ListMap<string, number> = new ListMap()
 
 	/** 
 	 * Remember visiting indices that have been visited.
@@ -27,13 +28,13 @@ export namespace AccessReferences {
 	 * 
 	 * By avoid visiting a node twice, will only reference `a`.
 	 */
-	let visitedNodes: Set<TS.Node> = new Set()
+	const visitedNodes: Set<TS.Node> = new Set()
 
 	/** If access as `a.b`, and later assign `a`, then `a` of `a.b` become mutable. */
-	let mutableIndices: Set<number> = new Set()
+	const mutableIndices: Set<number> = new Set()
 
 	/** Indices where access nodes have been referenced. */
-	let referencedAccessIndices: Set<number> = new Set()
+	const referencedAccessIndices: Set<number> = new Set()
 
 
 	/** Initialize after enter a new source file. */
@@ -43,6 +44,13 @@ export namespace AccessReferences {
 		mutableIndices.clear()
 		referencedAccessIndices.clear()
 	}
+
+
+	/** Whether has referenced access node in specified index. */
+	export function hasReferenced(index: number): boolean {
+		return referencedAccessIndices.has(index)
+	}
+
 
 	/** Visit an assess node, and it may make several reference items. */
 	export function visitAssess(node: AccessNode, context: Context) {
@@ -68,8 +76,8 @@ export namespace AccessReferences {
 
 		// `a?.b` has been replaced to `a.b`
 		if (helper.access.isAccess(node) || helper.variable.isVariableIdentifier(node)) {
-			let hash = helper.getText(context.variables.hashNode(node))
-			referenceMap.add(hash, topIndex)
+			let hashName = Hashing.getHash(visiting.getIndex(node), context).name
+			referenceMap.add(hashName, topIndex)
 		}
 
 		return ts.visitEachChild(node, (n: TS.Node) => visitAccessChildren(n, topIndex, context), transformContext)
@@ -82,10 +90,9 @@ export namespace AccessReferences {
 	 * Otherwise, `a.b; a = ...; a.b;`, only the first `a` will be referenced.
 	 */
 	export function visitAssignment(node: TS.Expression, context: Context) {
-		node = context.variables.hashNode(node)
-
 		if (helper.access.isAccess(node) || helper.variable.isVariableIdentifier(node)) {
-			let indices = referenceMap.get(helper.getText(node))
+			let hashName = Hashing.getHash(visiting.getIndex(node), context).name
+			let indices = referenceMap.get(hashName)
 			if (indices) {
 				for (let index of indices) {
 					mutableIndices.add(index)
@@ -179,7 +186,7 @@ export namespace AccessReferences {
 		let varPosition = ContextTree.findClosestPositionToAddVariable(index, context)
 		let refName = varPosition.context.variables.makeUniqueVariable('_ref_')
 
-		// Insert one: `var ... _ref_ = ...`
+		// Insert one to existing declaration list: `var ... _ref_ = ...`
 		if (ts.isVariableDeclaration(visiting.getNode(varPosition.index))) {
 			
 			// insert `var _ref_ = a.b()` to found position.
@@ -193,7 +200,7 @@ export namespace AccessReferences {
 
 		// Insert two: `var _ref_`, and `_ref_ = ...`
 		else {
-			varPosition.context.capturer.addUniqueVariable(refName)
+			varPosition.context.capturer.addUniqueVariable(refName, varPosition.index)
 
 			let refPosition = ContextTree.findClosestPositionToAddStatement(index, context)
 

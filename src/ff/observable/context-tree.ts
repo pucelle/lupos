@@ -5,8 +5,8 @@ import {Context} from './context'
 
 export enum ContextType {
 
-	/** Block or a source file. */
-	BlockLike,
+	/** Source file. */
+	SourceFile,
 
 	/** 
 	 * Normally help to process parameters.
@@ -46,8 +46,8 @@ export enum ContextType {
 	/** `for (let...)` */
 	IterationInitializer,
 
-	/** `while (...)`, `for (...)` */
-	IterationCondition,
+	/** `while (...)`, `for (; ...; ...)` */
+	IterationConditionIncreasement,
 
 	/** 
 	 * `while () ...`, `for () ...`, May run for none, 1 time, multiple times.
@@ -82,11 +82,9 @@ export namespace ContextTree {
 	export function checkContextType(node: TS.Node): ContextType | null {
 		let parent = node.parent
 
-		// Block like, module contains a block inside.
-		if (ts.isSourceFile(node)
-			|| ts.isBlock(node)
-		) {
-			return ContextType.BlockLike
+		// Source file
+		if (ts.isSourceFile(node)) {
+			return ContextType.SourceFile
 		}
 
 		// Function like
@@ -150,14 +148,8 @@ export namespace ContextTree {
 			return ContextType.FlowInterruptWithContent
 		}
 
-		
-		//// Note `case` and `default` will be handled outside.
-		if (!parent) {
-			return null
-		}
-
 		// `if (...) ...`
-		if (ts.isIfStatement(parent)) {
+		else if (ts.isIfStatement(parent)) {
 			if (node === parent.expression) {
 				return ContextType.ConditionalCondition
 			}
@@ -171,7 +163,7 @@ export namespace ContextTree {
 		}
 
 		// `switch (...)`, `case (...)`
-		if (ts.isSwitchStatement(parent) || ts.isCaseClause(parent)) {
+		else if (ts.isSwitchStatement(parent) || ts.isCaseClause(parent)) {
 			if (node === parent.expression) {
 				return ContextType.ConditionalCondition
 			}
@@ -212,7 +204,7 @@ export namespace ContextTree {
 			else if (node === parent.condition
 				|| node === parent.incrementor
 			) {
-				return ContextType.IterationCondition
+				return ContextType.IterationConditionIncreasement
 			}
 			else if (node === parent.statement) {
 				return ContextType.IterationContent
@@ -226,7 +218,7 @@ export namespace ContextTree {
 			|| ts.isDoStatement(parent)
 		) {
 			if (node === parent.expression) {
-				return ContextType.IterationCondition
+				return ContextType.IterationConditionIncreasement
 			}
 			else if (node === parent.statement) {
 				return ContextType.IterationContent
@@ -260,6 +252,7 @@ export namespace ContextTree {
 		}
 	}
 
+
 	/** 
 	 * Walk context itself and descendants.
 	 * Always walk descendants before self.
@@ -287,7 +280,23 @@ export namespace ContextTree {
 			yield *walkInwardSelfFirst(child, filter)
 		}
 	}
+
 	
+	/** Get the context leaves when walking from a context to an ancestral context. */
+	export function getWalkingOutwardLeaves(fromContext: Context, toContext: Context) : Context[] {
+		let context: Context | undefined = fromContext
+		let leaves: Context[] = []
+
+		// Look outward for a node which can pass test.
+		while (context !== undefined && context !== toContext) {
+			leaves.push(context)
+			context = context.parent!
+		}
+
+		return leaves
+	}
+	
+
 	/** Check at which context the specified named variable declared, or this attached. */
 	export function getVariableDeclaredContext(name: string, context = ContextTree.current!): Context | null {
 		if (context.variables.hasLocalVariable(name)) {
@@ -301,11 +310,12 @@ export namespace ContextTree {
 		}
 	}
 
+
 	/** Find an ancestral context, which can insert variable to. */
 	export function findClosestPositionToAddVariable(index: number, from: Context): ContextTargetPosition {
 		let context = from
-		let variableDeclarationIndex = visiting.findUpward(index, from.visitingIndex, ts.isVariableDeclaration)
-
+		let variableDeclarationIndex = visiting.findOutward(index, from.visitingIndex, ts.isVariableDeclaration)
+	
 		// Look upward for a variable declaration.
 		if (variableDeclarationIndex !== null) {
 			return {
@@ -314,20 +324,25 @@ export namespace ContextTree {
 			}
 		}
 
-		while (context) {
-			let node = context.node
+		let node = visiting.getNode(index)
 
-			// Not extend from `if()...` to `if(){...}`.
+		while (true) {
+
+			// Will not extend from `if()...` to `if(){...}`.
 			if (helper.pack.canPutStatements(node)) {
 				break
 			}
 
-			context = context.parent!
+			if (node === context.node) {
+				context = context.parent!
+			}
+
+			node = node.parent
 		}
 
 		return {
 			context,
-			index: visiting.getFirstChildIndex(context.visitingIndex)!,
+			index: visiting.getFirstChildIndex(visiting.getIndex(node))!,
 		}
 	}
 
@@ -337,56 +352,54 @@ export namespace ContextTree {
 	 */
 	export function findClosestPositionToAddStatement(index: number, from: Context): ContextTargetPosition {
 		let context: Context | null = from
+		let parameterIndex = visiting.findOutward(index, from.visitingIndex, ts.isParameter)
 
 		// Parameter initializer, no place to insert statements, returns position itself.
-		if (context.type === ContextType.FunctionLike) {
+		if (parameterIndex !== null) {
 			return {
 				context,
 				index,
 			}
 		}
 
-		while (context) {
+		let node = visiting.getNode(index)
 
-			// Can extend from `if()...` to `if(){...}`.
-			if (helper.pack.canMayExtendToPutStatements(context.node)) {
+		while (true) {
+
+			// Can extend from `if()...` to `if(){...}`, insert before node.
+			if (helper.pack.canExtendToPutStatements(node)) {
 				break
 			}
 
-			// Now index can be located to context visiting index for easier looking upward.
-			index = context.visitingIndex
+			// `{...}`, insert before node.
+			if (helper.pack.canPutStatements(node.parent)) {
+
+				// Context of node.parent.
+				if (node === context.node) {
+					context = context.parent!
+				}
+				break
+			}
 
 			// Can't cross these types of context.
-
-			// `if condition` can be referenced forward, but `else if condition` can't.
-			// Same as `a ? b : c ? d : e`.
 			if (context.type === ContextType.ConditionalCondition
-					&& context.parent!.type === ContextType.ConditionalAndContent
-
 				|| context.type === ContextType.ConditionalContent
-				|| context.type === ContextType.IterationCondition
+				|| context.type === ContextType.IterationConditionIncreasement
 				|| context.type === ContextType.IterationContent
 			) {
 				break
 			}
 
-			context = context.parent!
-		}
-
-		if (helper.pack.canPutStatements(context.node)) {
-
-			// Look up until parent is context node.
-			while (visiting.getParentIndex(index) !== context.visitingIndex) {
-				index = visiting.getParentIndex(index)!
+			if (node === context.node) {
+				context = context.parent!
 			}
-		}
-		else {
-			index = context.visitingIndex
+
+			node = node.parent
 		}
 
 		return {
 			context,
-			index,
+			index: visiting.getIndex(node),
 		}
 	}
 }

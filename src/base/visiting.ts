@@ -34,6 +34,7 @@ export namespace visiting {
 		index: -1,
 	}
 	
+	
 	/** Initialize before start a new source file. */
 	export function initialize() {
 		stack = []
@@ -125,18 +126,37 @@ export namespace visiting {
 		return IndexMap.get(node)!
 	}
 
-	/** Look upward for a visiting index, and the node at where match test fn. */
-	export function findUpward(fromIndex: number, untilIndex: number | null, test: (node: TS.Node) => boolean) : number | null {
+	/** Look outward for a visiting index, and the node at where match test fn. */
+	export function findOutward(fromIndex: number, untilIndex: number | null, test: (node: TS.Node) => boolean) : number | null {
 		let index: number | undefined = fromIndex
 
-		// Look upward for a variable declaration.
+		// Look outward for a node which can pass test.
 		while (index !== undefined && index !== untilIndex) {
-			let node = visiting.getNode(index)
+			let node = getNode(index)
 			if (test(node)) {
 				return index
 			}
 
-			index = visiting.getParentIndex(index)
+			index = getParentIndex(index)
+		}
+
+		return null
+	}
+
+	/** Look outward for a visiting index, which is the sibling of `siblingIndex`. */
+	export function findOutwardSiblingWith(fromIndex: number, siblingIndex: number) : number | null {
+		let parentIndex = getParentIndex(siblingIndex)
+		let index: number | undefined = fromIndex
+
+		// Look outward for a variable declaration.
+		while (index !== undefined) {
+			let pi = getParentIndex(index)
+
+			if (pi === parentIndex) {
+				return index
+			}
+
+			index = pi
 		}
 
 		return null

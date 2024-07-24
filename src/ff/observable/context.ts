@@ -1,7 +1,7 @@
 import type TS from 'typescript'
 import {ObservedChecker} from './observed-checker'
 import {helper, AccessNode, ts, visiting} from '../../base'
-import {ContextState} from './context-state'
+import {ContextState, FlowInterruptedByType} from './context-state'
 import {ContextType} from './context-tree'
 import {ContextVariables} from './context-variables'
 import {ContextCapturer} from './context-capturer'
@@ -70,7 +70,7 @@ export class Context {
 		this.state.mergeChildContext(child)
 
 		if (child.state.isFlowInterrupted()) {
-			this.capturer.breakCaptured(child.visitingIndex)
+			this.capturer.breakCaptured(child.visitingIndex, child.state.flowInterruptedBy)
 		}
 	}
 
@@ -118,12 +118,16 @@ export class Context {
 			}
 		}
 
-		// `break` or `continue`, or empty `return`, or body of arrow function.
-		else if (ts.isReturnStatement(node) && !node.expression
-			|| ts.isBreakOrContinueStatement(node)
-		) {
+		// Empty `return`.
+		else if (ts.isReturnStatement(node) && !node.expression) {
+			this.state.applyInnerReturn(true)
+			this.capturer.breakCaptured(visiting.current.index, FlowInterruptedByType.Return)
+		}
+
+		// `break` or `continue`.
+		else if (ts.isBreakOrContinueStatement(node)) {
 			this.state.applyInnerBreakLike(true)
-			this.capturer.breakCaptured(visiting.current.index)
+			this.capturer.breakCaptured(visiting.current.index, FlowInterruptedByType.BreakLike)
 		}
 	}
 

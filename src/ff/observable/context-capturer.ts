@@ -1,10 +1,13 @@
 import type TS from 'typescript'
-import {InterpolationContentType, AccessNode, helper, interpolator, modifier, InterpolationPosition} from '../../base'
+import {InterpolationContentType, AccessNode, helper, interpolator, modifier, InterpolationPosition, visiting, ts} from '../../base'
 import {Context} from './context'
 import {ContextTree, ContextType} from './context-tree'
 import {AccessGrouper} from './access-grouper'
 import {AccessReferences} from './access-references'
 import {Optimizer} from './optimizer'
+import {FlowInterruptedByType} from './context-state'
+import {Hashing} from './hashing'
+import {removeFromList} from '../../utils'
 
 
 /** Captured item, will be inserted to a position. */
@@ -12,6 +15,7 @@ interface CapturedItem {
 	position: InterpolationPosition
 	indices: number[]
 	toIndex: number
+	flowInterruptedBy: number
 }
 
 
@@ -21,8 +25,40 @@ interface CapturedItem {
  */
 export class ContextCapturer {
 
+	
+	/** Get intersected indices across capturers. */
+	static intersectIndices(capturers: ContextCapturer[]): number[] {
+		let counter: Map<string, {index: number, count: number}> = new Map()
+		
+		for (let capturer of capturers) {
+
+			// Only codes of the first item is always running.
+			for (let index of capturer.captured[0].indices) {
+
+				// Has been referenced, ignore always.
+				if (AccessReferences.hasReferenced(index)) {
+					continue
+				}
+
+				let hashName = Hashing.getHash(index, capturer.context).name
+				let countItem = counter.get(hashName)
+				if (!countItem) {
+					countItem = {index, count: 0}
+					counter.set(hashName, countItem)
+				}
+				countItem.count++
+			}
+		}
+
+		return [...counter.values()]
+			.filter(item => item.count === capturers.length)
+			.map(item => item.index)
+	}
+
+
 	readonly context: Context
 	private variableNames: string[] = []
+	private variableInterpolateIndex: number = -1
 	private captured: CapturedItem[]
 	private latestCaptured!: CapturedItem
 	private captureType: 'get' | 'set' = 'get'
@@ -40,6 +76,7 @@ export class ContextCapturer {
 			position: InterpolationPosition.Before,
 			indices: [],
 			toIndex: -1,
+			flowInterruptedBy: 0,
 		}
 	}
 
@@ -77,33 +114,6 @@ export class ContextCapturer {
 		return this.captured.some(item => item.indices.length > 0)
 	}
 
-	/** Move all captured to target capturer. */
-	moveCapturedAheadOf(toCapturer: ContextCapturer) {
-		let indices = this.captured.map(item => item.indices).flat()
-		this.captured = []
-
-		// Insert to the first of internal captured.
-		toCapturer.captured[0].indices.unshift(...indices)
-	}
-
-	/** Move all captured to an ancestral, target capturer. */
-	moveCapturedUpward(toCapturer: ContextCapturer) {
-		let indices = this.captured.map(item => item.indices).flat()
-		this.captured = []
-
-		let item = toCapturer.captured.find(item => item.toIndex === this.context.visitingIndex)
-		if (item) {
-			item.indices.push(...indices)
-		}
-		else {
-			item = {
-				position: InterpolationPosition.Before,
-				indices,
-				toIndex: this.context.visitingIndex,
-			}
-		}
-	}
-
 	/** Every time capture a new index, check type and may toggle capture type. */
 	private addCaptureType(type: 'get' | 'set') {
 		if (type === 'set' && this.captureType === 'get') {
@@ -128,11 +138,12 @@ export class ContextCapturer {
 	}
 
 	/** Insert captured indices to specified position. */
-	breakCaptured(atIndex: number) {
+	breakCaptured(atIndex: number, flowInterruptedBy: number) {
 		// Even no indices captured, still break.
 		// Later may append indices to this item.
 
 		this.latestCaptured.toIndex = atIndex
+		this.latestCaptured.flowInterruptedBy = flowInterruptedBy
 		this.resetLatestCaptured()
 		this.captured.push(this.latestCaptured)
 	}
@@ -141,8 +152,9 @@ export class ContextCapturer {
 	 * Add a unique variable by variable name.
 	 * Current context must be a found context than can be added.
 	 */
-	addUniqueVariable(variableName: string) {
+	addUniqueVariable(variableName: string, index: number) {
 		this.variableNames.push(variableName)
+		this.variableInterpolateIndex = index
 	}
 
 	/** Before each context will exit. */
@@ -186,15 +198,21 @@ export class ContextCapturer {
 
 		item.toIndex = index
 
-		// Insert before whole content of target capturer.
-		if (this.context.type === ContextType.FlowInterruptWithContent) {
-			item.position = InterpolationPosition.Before
+		// Insert to function body.
+		if (this.context.type === ContextType.FunctionLike) {
+			let body = (node as TS.FunctionLikeDeclarationBase).body!
+			item.toIndex = visiting.getIndex(body)
+
+			if (ts.isBlock(body)) {
+				item.position = InterpolationPosition.Append
+			}
+			else {
+				item.position = InterpolationPosition.After
+			}
 		}
 
 		// Insert before whole content of target capturer.
-		else if (this.context.type === ContextType.ConditionalCondition
-			&& this.context.parent!.type === ContextType.ConditionalAndContent
-		) {
+		else if (this.context.type === ContextType.FlowInterruptWithContent) {
 			item.position = InterpolationPosition.Before
 		}
 
@@ -245,7 +263,7 @@ export class ContextCapturer {
 			return
 		}
 
-		modifier.addVariables(this.context.visitingIndex, this.variableNames)
+		modifier.addVariables(this.variableInterpolateIndex, this.variableNames)
 		this.variableNames = []
 	}
 
@@ -274,5 +292,131 @@ export class ContextCapturer {
 		}) as AccessNode[]
 
 		return AccessGrouper.makeExpressions(exps, this.captureType)
+	}
+
+
+	/** 
+	 * Move captured indices to an ancestral, target capturer.
+	 * If a node with captured index use local variables and can't be moved, leave it.
+	 */
+	moveCapturedOutwardTo(toCapturer: ContextCapturer) {
+		let indices = this.captured.map(item => item.indices).flat()
+		let residualIndices = toCapturer.moveCapturedIndicesTo(indices, this)
+
+		this.latestCaptured.indices = residualIndices
+		this.captured = [this.latestCaptured]
+	}
+
+	/** 
+	 * Move captured index to self.
+	 * `fromCapturer` locates where indices move from.
+	 * Returns residual indices that failed to move.
+	 */
+	moveCapturedIndicesTo(indices: number[], fromCapturer: ContextCapturer): number[] {
+		let item = this.captured.find(item => {
+			let itemSiblingIndex = visiting.findOutwardSiblingWith(fromCapturer.context.visitingIndex, item.toIndex)
+			if (!itemSiblingIndex) {
+				return false
+			}
+
+			return item.toIndex >= itemSiblingIndex
+		}) || this.latestCaptured
+
+		let contextLeaves = ContextTree.getWalkingOutwardLeaves(fromCapturer.context, this.context)
+		let leavedIndices = contextLeaves.map(c => c.visitingIndex)
+		let residualIndices: number[] = []
+
+		for (let index of indices) {
+			let node = visiting.getNode(index)
+			let hashed = Hashing.getHash(index, fromCapturer.context)
+
+			// `a[i]`, and a is array, ignore hash of `i`.
+			if (ts.isElementAccessExpression(node)
+				&& ts.isIdentifier(node.argumentExpression)
+				&& helper.types.isArrayType(helper.types.getType(node.expression))
+			) {
+				hashed = Hashing.getHash(visiting.getIndex(node.expression), fromCapturer.context)
+			}
+
+			// Leave contexts contain any referenced variable.
+			if (hashed.referenceIndices.some(i => leavedIndices.includes(i))) {
+				residualIndices.push(index)
+			}
+			else {
+				item.indices.push(index)
+			}
+		}
+
+		return residualIndices
+	}
+
+	/** Eliminate repetitive captured. */
+	eliminateOwnRepetitive() {
+		let hashes: Set<string> = new Set()
+
+		for (let item of this.captured) {
+			for (let index of [...item.indices]) {
+
+				// Has been referenced, ignore always.
+				if (AccessReferences.hasReferenced(index)) {
+					continue
+				}
+
+				let hashName = Hashing.getHash(index, this.context).name
+
+				if (hashes.has(hashName)) {
+					removeFromList(item.indices, index)
+				}
+				else {
+					hashes.add(hashName)
+				}
+			}
+
+			// Has yield like.
+			if ((item.flowInterruptedBy & FlowInterruptedByType.YieldLike) > 0) {
+				hashes.clear()
+			}
+		}
+	}
+
+	/** Eliminate repetitive captured with an outer hash. */
+	eliminateRepetitiveRecursively(hashSet: Set<string>) {
+		let ownHashes = new Set(hashSet)
+		let startChildIndex = 0
+
+		for (let item of this.captured) {
+			for (let index of [...item.indices]) {
+
+				// Has been referenced, ignore always.
+				if (AccessReferences.hasReferenced(index)) {
+					continue
+				}
+
+				let hashName = Hashing.getHash(index, this.context).name
+				if (ownHashes.has(hashName)) {
+					removeFromList(item.indices, index)
+				}
+				else {
+					ownHashes.add(hashName)
+				}
+			}
+
+			// Every time after update hash set, recursively eliminating child context,
+			// which's visiting index <= captured `toIndex`.
+			for (; startChildIndex < this.context.children.length; startChildIndex++) {
+				let child = this.context.children[startChildIndex]
+				if (child.visitingIndex > item.toIndex) {
+					break
+				}
+
+				child.capturer.eliminateRepetitiveRecursively(ownHashes)
+			}
+		}
+
+		// Last captured item may have wrong `toIndex`, here ensure to visit all child contexts.
+		for (; startChildIndex < this.context.children.length; startChildIndex++) {
+			let child = this.context.children[startChildIndex]
+			child.capturer.eliminateRepetitiveRecursively(ownHashes)
+		}
 	}
 }

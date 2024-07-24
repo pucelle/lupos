@@ -76,7 +76,7 @@ export namespace interpolator {
 
 	/** Add an item. */
 	export function add(toIndex: number, item: InterpolationItem) {
-
+		
 		// Not fully replace it.
 		if (item.position === InterpolationPosition.Prepend) {
 			let firstIndex = visiting.getFirstChildIndex(toIndex)
