@@ -19,5 +19,5 @@
 			{"transform": "../src/index.ts"},
 		]
 	},
-	"include": ["src/**/observable-optimize.ts"],
+	"include": ["src/**/*.ts"],
 }

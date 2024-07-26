@@ -142,6 +142,14 @@ export class ContextCapturer {
 		// Even no indices captured, still break.
 		// Later may append indices to this item.
 
+		// Conditional can't be break, it contains only condition captured,
+		// and output captured only before context node.
+		if (this.context.type === ContextType.Conditional
+			|| this.context.type === ContextType.ConditionalAndContent
+		) {
+			return
+		}
+
 		this.latestCaptured.toIndex = atIndex
 		this.latestCaptured.flowInterruptedBy = flowInterruptedBy
 		this.resetLatestCaptured()
@@ -212,7 +220,12 @@ export class ContextCapturer {
 		}
 
 		// Insert before whole content of target capturer.
-		else if (this.context.type === ContextType.FlowInterruptWithContent) {
+		// Normally codes will be moved outward on optimization step.
+		// This codes can avoid error occurred even no optimization.
+		else if (this.context.type === ContextType.FlowInterruptWithContent
+			|| this.context.type === ContextType.Conditional
+			|| this.context.type === ContextType.ConditionalAndContent
+		) {
 			item.position = InterpolationPosition.Before
 		}
 
@@ -301,18 +314,23 @@ export class ContextCapturer {
 	 */
 	moveCapturedOutwardTo(toCapturer: ContextCapturer) {
 		let indices = this.captured[0].indices
-		let residualIndices = toCapturer.moveCapturedIndicesTo(indices, this)
+		if (indices.length === 0) {
+			return
+		}
 
+		let residualIndices = toCapturer.moveCapturedIndicesIn(indices, this)
 		this.captured[0].indices = residualIndices
 	}
 
 	/** 
-	 * Move captured index to self.
+	 * Try to move captured indices to self.
 	 * `fromCapturer` locates where indices move from.
 	 * Returns residual indices that failed to move.
 	 */
-	moveCapturedIndicesTo(indices: number[], fromCapturer: ContextCapturer): number[] {
+	moveCapturedIndicesIn(indices: number[], fromCapturer: ContextCapturer): number[] {
 		let item = this.captured.find(item => {
+
+			// Look upward until sibling of `toIndex`
 			let itemSiblingIndex = visiting.findOutwardSiblingWith(fromCapturer.context.visitingIndex, item.toIndex)
 			if (!itemSiblingIndex) {
 				return false

@@ -97,12 +97,22 @@ export namespace modifier {
 	}
 
 	/** Add variables to target index as declaration statements or variable items. */
-	export function addVariables(index: number, names: string[]) {
-		let rawNode = visiting.getNode(index)
+	export function addVariables(toIndex: number, names: string[]) {
+		let rawNode = visiting.getNode(toIndex)
 		let exps: TS.VariableDeclarationList | TS.VariableDeclaration[]
-		let toIndex: number
-		
-		if (helper.pack.canPutStatements(rawNode)) {
+
+		// `for (let i = 0; ...) ...`
+		if (ts.isVariableDeclaration(rawNode)) {
+			exps = names.map(name => 
+				factory.createVariableDeclaration(
+					factory.createIdentifier(name),
+					undefined,
+					undefined,
+					undefined
+				)
+			)
+		}
+		else {
 			exps = factory.createVariableDeclarationList(
 				names.map(name => 
 					factory.createVariableDeclaration(
@@ -114,47 +124,6 @@ export namespace modifier {
 				),
 				ts.NodeFlags.None
 			)
-
-			// Insert after import statements.
-			if (ts.isSourceFile(rawNode)) {
-				let beforeNode = rawNode.statements.find(n => !ts.isImportDeclaration(n))
-				if (beforeNode) {
-					toIndex = visiting.getIndex(beforeNode)
-				}
-				else {
-					toIndex = visiting.getFirstChildIndex(index)!
-				}
-			}
-
-			// Insert to the start inner position of block.
-			else if (helper.pack.canBlock(rawNode)) {
-				toIndex = visiting.getFirstChildIndex(index)!
-			}
-
-			// Insert to the statements of `case` or `default`.
-			else {
-				toIndex = visiting.getChildIndex(index, 1)
-			}
-		}
-
-		// `for (let i = 0; ...) ...`
-		else if (ts.isVariableStatement(rawNode)) {
-
-			// First of variable list.
-			toIndex = visiting.getFirstChildIndex(visiting.getFirstChildIndex(index)!)!
-
-			exps = names.map(name => 
-				factory.createVariableDeclaration(
-					factory.createIdentifier(name),
-					undefined,
-					undefined,
-					undefined
-				)
-			)
-		}
-
-		else {
-			throw new Error(`Cant add variables to "${helper.getText(visiting.getNode(index))}"!`)
 		}
 
 		interpolator.before(toIndex, InterpolationContentType.VariableDeclaration, () => exps)

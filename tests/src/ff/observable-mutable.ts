@@ -13,7 +13,7 @@ class TestMutable extends Component {
 		index++
 		this.prop[index].value
 
-		return ''
+		return 0
 	}
 
 	dynamicIndexChangeOtherWhere() {
@@ -23,7 +23,7 @@ class TestMutable extends Component {
 		index.value++
 		this.prop[index.value].value
 		
-		return ''
+		return 0
 	}
 
 	dynamicExp() {

@@ -5,14 +5,14 @@ class TestOptimizing extends Component {
     moveConditionalConditionOutward() {
         if (this.prop) { }
         trackGet(this, "prop");
-        return '';
+        return 0;
     }
     moveConditionalConditionOutwardInterrupted() {
         trackGet(this, "prop");
         if (this.prop) {
             return;
         }
-        return '';
+        return 0;
     }
     eliminateOwnRepetitiveAfterReturn() {
         this.prop;
@@ -21,7 +21,7 @@ class TestOptimizing extends Component {
             return;
         }
         this.prop;
-        return '';
+        return 0;
     }
     *persistOwnRepetitiveAfterYield() {
         this.prop;
@@ -34,7 +34,7 @@ class TestOptimizing extends Component {
         trackGet(this, "prop");
         await Promise.resolve();
         this.prop;
-        return '';
+        return 0;
     }
     eliminateRepetitiveProp() {
         this.prop;
@@ -42,18 +42,18 @@ class TestOptimizing extends Component {
             this.prop;
         }
         trackGet(this, "prop");
-        return '';
+        return 0;
     }
     eliminateRepetitivePropAfterReturn() {
         if (1) {
-            return '';
+            return 0;
         }
         this.prop;
         trackGet(this, "prop");
         if (1) {
             return this.prop;
         }
-        return '';
+        return 0;
     }
     mergeAllIfElseBranches() {
         if (1) {
@@ -66,17 +66,61 @@ class TestOptimizing extends Component {
             this.prop;
         }
         trackGet(this, "prop");
-        return '';
+        return 0;
+    }
+    preventMergeIfOnlyBranch() {
+        if (1) {
+            this.prop;
+            trackGet(this, "prop");
+        }
+        return 0;
+    }
+    mergeAllSwitchCaseBranches() {
+        var a = '';
+        switch (a) {
+            case '1':
+                this.prop;
+                break;
+            case '2':
+                this.prop;
+                break;
+            default:
+                this.prop;
+        }
+        trackGet(this, "prop");
+        return 0;
+    }
+    mergeNoDefaultSwitchCaseBranches() {
+        var a = '';
+        switch (a) {
+            case '1':
+                this.prop;
+                break;
+            case '2':
+                this.prop;
+                break;
+        }
+        trackGet(this, "prop");
+        return 0;
+    }
+    mergeReturnedSwitchCaseBranches() {
+        var a = '';
+        trackGet(this, "prop");
+        switch (a) {
+            case '1': return this.prop;
+            case '2': return this.prop;
+        }
+        return 0;
     }
     mergeAllConditionalBranches() {
         1 ? this.prop : this.prop;
         trackGet(this, "prop");
-        return '';
+        return 0;
     }
     mergeAllBinaryBranches() {
         this.prop && this.prop || this.prop;
         trackGet(this, "prop");
-        return '';
+        return 0;
     }
     avoidEliminatingSameNameButDifferentVariable() {
         let prop = { value: 1 };
@@ -87,14 +131,14 @@ class TestOptimizing extends Component {
             trackGet(prop, "value");
         }
         trackGet(prop, "value");
-        return '';
+        return 0;
     }
     moveIterationInitializerOutward() {
         let i = this.prop.value;
         for (; i < 1; i++) { }
         trackGet(this, "prop");
         trackGet(this.prop, "value");
-        return '';
+        return 0;
     }
     moveInternalReturnedIterationInitializerOutward() {
         let i = this.prop.value;
@@ -103,26 +147,27 @@ class TestOptimizing extends Component {
         for (; i < 1; i++) {
             return;
         }
-        return '';
+        return 0;
     }
     moveIterationConditionOutward() {
         for (let i = 0; i < this.prop.value; i++) { }
         trackGet(this, "prop");
         trackGet(this.prop, "value");
-        return '';
+        return 0;
     }
     preventMoveIterationConditionOutward() {
-        let _ref_0, props = [this.prop, this.prop];
+        var _ref_0;
+        let props = [this.prop, this.prop];
         for (let i = 0; (_ref_0 = i, trackGet(props[_ref_0], "value"), i < props[_ref_0].value); i++) { }
         trackGet(this, "prop");
         trackGet(props, "");
-        return '';
+        return 0;
     }
     moveIterationIncreasementOutward() {
         for (let i = 0; i < 1; i += this.prop.value) { }
         trackGet(this, "prop");
         trackGet(this.prop, "value");
-        return '';
+        return 0;
     }
     moveForIterationContentTrackingOuter() {
         for (let i = 0; i < 1; i++) {
@@ -130,7 +175,7 @@ class TestOptimizing extends Component {
         }
         trackGet(this, "prop");
         trackGet(this.prop, "value");
-        return '';
+        return 0;
     }
     moveWhileIterationContentTrackingOuter() {
         let index = 0;
@@ -139,7 +184,7 @@ class TestOptimizing extends Component {
         }
         trackGet(this, "prop");
         trackGet(this.prop, "value");
-        return '';
+        return 0;
     }
     preventMovingIterationContentWhenIncludesLocalVariables() {
         let props = [this.prop, this.prop];
@@ -149,6 +194,6 @@ class TestOptimizing extends Component {
         }
         trackGet(this, "prop");
         trackGet(props, "");
-        return '';
+        return 0;
     }
 }

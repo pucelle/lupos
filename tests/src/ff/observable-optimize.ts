@@ -9,7 +9,7 @@ class TestOptimizing extends Component {
 	moveConditionalConditionOutward() {
 		if (this.prop) {}
 
-		return ''
+		return 0
 	}
 
 	moveConditionalConditionOutwardInterrupted() {
@@ -17,7 +17,7 @@ class TestOptimizing extends Component {
 			return
 		}
 
-		return ''
+		return 0
 	}
 
 	eliminateOwnRepetitiveAfterReturn() {
@@ -29,7 +29,7 @@ class TestOptimizing extends Component {
 
 		this.prop
 
-		return ''
+		return 0
 	}
 
 	*persistOwnRepetitiveAfterYield() {
@@ -43,7 +43,7 @@ class TestOptimizing extends Component {
 		await Promise.resolve()
 		this.prop
 
-		return ''
+		return 0
 	}
 
 	eliminateRepetitiveProp() {
@@ -53,12 +53,12 @@ class TestOptimizing extends Component {
 			this.prop
 		}
 
-		return ''
+		return 0
 	}
 
 	eliminateRepetitivePropAfterReturn() {
 		if (1) {
-			return ''
+			return 0
 		}
 
 		this.prop
@@ -67,7 +67,7 @@ class TestOptimizing extends Component {
 			return this.prop
 		}
 
-		return ''
+		return 0
 	}
 
 	mergeAllIfElseBranches() {
@@ -81,19 +81,73 @@ class TestOptimizing extends Component {
 			this.prop
 		}
 
-		return ''
+		return 0
+	}
+
+	preventMergeIfOnlyBranch() {
+		if (1) {
+			this.prop
+		}
+
+		return 0
+	}
+
+	mergeAllSwitchCaseBranches() {
+		var a: string = ''
+
+        switch (a) {
+            case '1':
+            	this.prop
+				break;
+
+            case '2':
+        		this.prop
+				break;
+
+			default:
+				this.prop
+        }
+
+        return 0
+    }
+
+	mergeNoDefaultSwitchCaseBranches() {
+		var a: string = ''
+
+        switch (a) {
+            case '1':
+            	this.prop
+				break;
+
+            case '2':
+        		this.prop
+				break;
+        }
+
+        return 0;
+    }
+
+	mergeReturnedSwitchCaseBranches() {
+		var a: string = ''
+		
+		switch (a) {
+			case '1': return this.prop
+			case '2': return this.prop
+		}
+
+		return 0
 	}
 
 	mergeAllConditionalBranches() {
 		1 ? this.prop : this.prop
 
-		return ''
+		return 0
 	}
 
 	mergeAllBinaryBranches() {
 		this.prop && this.prop || this.prop
 
-		return ''
+		return 0
 	}
 
 	avoidEliminatingSameNameButDifferentVariable() {
@@ -105,13 +159,13 @@ class TestOptimizing extends Component {
 			prop.value
 		}
 
-		return ''
+		return 0
 	}
 
 	moveIterationInitializerOutward() {
 		for (let i = this.prop.value; i < 1; i++) {}
 
-		return ''
+		return 0
 	}
 
 	moveInternalReturnedIterationInitializerOutward() {
@@ -119,13 +173,13 @@ class TestOptimizing extends Component {
 			return
 		}
 
-		return ''
+		return 0
 	}
 
 	moveIterationConditionOutward() {
 		for (let i = 0; i < this.prop.value; i++) {}
 
-		return ''
+		return 0
 	}
 
 	preventMoveIterationConditionOutward() {
@@ -133,13 +187,13 @@ class TestOptimizing extends Component {
 
 		for (let i = 0; i < props[i].value; i++) {}
 
-		return ''
+		return 0
 	}
 
 	moveIterationIncreasementOutward() {
 		for (let i = 0; i < 1; i+=this.prop.value) {}
 
-		return ''
+		return 0
 	}
 
 	moveForIterationContentTrackingOuter() {
@@ -147,7 +201,7 @@ class TestOptimizing extends Component {
 			this.prop.value
 		}
 
-		return ''
+		return 0
 	}
 
 	moveWhileIterationContentTrackingOuter() {
@@ -156,7 +210,7 @@ class TestOptimizing extends Component {
 			this.prop.value
 		}
 
-		return ''
+		return 0
 	}
 
 	preventMovingIterationContentWhenIncludesLocalVariables() {
@@ -166,6 +220,6 @@ class TestOptimizing extends Component {
 			props[i].value
 		}
 
-		return ''
+		return 0
 	}
 }

@@ -3,16 +3,27 @@ import {Component} from '@pucelle/lupos.js'
 
 class TestIfStatement extends Component {
 
-	prop1: string = ''
-	prop2: string = ''
+	prop1: number = 0
+	prop2: number = 0
 
 	testIf() {
+		if (this.prop1)
+			this.prop1
+		else if (this.prop2)
+			this.prop2
+		else
+			0
+
+		return 0
+	}
+
+	testIfReturned() {
 		if (this.prop1)
 			return this.prop1
 		else if (this.prop2)
 			return this.prop2
 		else
-			return ''
+			return 0
 	}
 }
 
@@ -29,7 +40,7 @@ class TestSwitchBlock extends Component {
 			case '2': return this.prop
 		}
 
-		return ''
+		return 0
 	}
 
 	variableCond() {
@@ -38,7 +49,7 @@ class TestSwitchBlock extends Component {
 			case '2': return this.prop
 		}
 
-		return ''
+		return 0
 	}
 }
 
@@ -51,7 +62,7 @@ class TestForBlock extends Component {
 		for (let i = 0; i < 10; i++)
 			this.prop
 
-		return ''
+		return 0
 	}
 
 	testForInitializer() {
@@ -59,7 +70,7 @@ class TestForBlock extends Component {
 			this.prop
 		}
 
-		return ''
+		return 0
 	}
 
 	testForCondition() {
@@ -67,7 +78,7 @@ class TestForBlock extends Component {
 			this.prop
 		}
 
-		return ''
+		return 0
 	}
 
 	testForIncreasement() {
@@ -75,7 +86,7 @@ class TestForBlock extends Component {
 			this.prop
 		}
 
-		return ''
+		return 0
 	}
 }
 
@@ -88,7 +99,7 @@ class TestWhileBlock extends Component {
 	testWhile() {
 		let i = 0
 		while (i < 10) this.prop
-		return ''
+		return 0
 	}
 }
 
@@ -100,7 +111,7 @@ class TestDoWhileBlock extends Component {
 	testDoWhile() {
 		let i = 0
 		do {this.prop} while (i < 10)
-		return ''
+		return 0
 	}
 }
 
@@ -117,7 +128,7 @@ class TestBreakStatement extends Component {
 			this.prop2
 		}
 
-		return ''
+		return 0
 	}
 }
 
@@ -134,7 +145,7 @@ class TestContinueStatement extends Component {
 			this.prop2
 		}
 
-		return ''
+		return 0
 	}
 }
 
@@ -148,7 +159,7 @@ class TestAwaitStatement extends Component {
 		this.prop1
 		await Promise.resolve()
 		this.prop2
-		return ''
+		return 0
 	}
 }
 

@@ -21,21 +21,16 @@ export enum ContextType {
 	Conditional,
 
 	/** 
-	 * `if (...)`, `case ...`,
-	 * or left part of binary expressions like `a && b`, `a || b`, `a ?? b`.
-	 */
-	ConditionalCondition,
-
-	/** 
 	 * Content of `if`, `else`;
-	 * Content of `case`, `default`.
+	 * Whole `case`, `default`.
 	 * Right part of binary expressions like `a && b`, `a || b`, `a ?? b`.
 	 * 
 	 */
 	ConditionalContent,
 
 	/** 
-	 * For `if` of the `else if`.
+	 * For `if` of the `else if`,
+	 * or `c ? d : e` of complex expressions like `a ? b : c ? d : e`
 	 * It acts as both `Conditional` and `ConditionalContent`.
 	 */
 	ConditionalAndContent,
@@ -126,10 +121,18 @@ export namespace ContextTree {
 
 			// `switch(...) {...}`, `case(...): ...`, `default: ...`
 			|| ts.isSwitchStatement(node)
-			|| ts.isCaseClause(node)
-			|| ts.isDefaultClause(node)
 		) {
 			return ContextType.Conditional
+		}
+
+		// `case ...`, `default ...`.
+		// Note for case expression `case ...`,
+		// It's tracking expressions will be captured by whole context,
+		// and insert to following statements.
+		// This cause some risks, but normally we assume that `case ...`
+		// should always with static condition expression.
+		else if (ts.isCaseOrDefaultClause(node)) {
+			return ContextType.ConditionalContent
 		}
 
 		// Iteration
@@ -150,10 +153,7 @@ export namespace ContextTree {
 
 		// `if (...) ...`
 		else if (ts.isIfStatement(parent)) {
-			if (node === parent.expression) {
-				return ContextType.ConditionalCondition
-			}
-			else if (node === parent.thenStatement
+			if (node === parent.thenStatement
 
 				// For `if ... else if...`, the second if statement belongs to `Conditional`.
 				|| node === parent.elseStatement
@@ -162,21 +162,11 @@ export namespace ContextTree {
 			}
 		}
 
-		// `switch (...)`, `case (...)`
-		else if (ts.isSwitchStatement(parent) || ts.isCaseClause(parent)) {
-			if (node === parent.expression) {
-				return ContextType.ConditionalCondition
-			}
-		}
-
 		// Content of `case` and `default` will be processed in `visitor.ts`.
 
 		// `a ? b : c`
 		else if (ts.isConditionalExpression(parent)) {
-			if (node === parent.condition) {
-				return ContextType.ConditionalCondition
-			}
-			else if (node === parent.whenTrue || node === parent.whenFalse) {
+			if (node === parent.whenTrue || node === parent.whenFalse) {
 				return ContextType.ConditionalContent
 			}
 		}
@@ -187,10 +177,7 @@ export namespace ContextTree {
 				|| parent.operatorToken.kind === ts.SyntaxKind.BarBarToken
 				|| parent.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken)
 			) {
-				if (node === parent.left) {
-					return ContextType.ConditionalCondition
-				}
-				else if (node === parent.right) {
+				if (node === parent.right) {
 					return ContextType.ConditionalContent
 				}
 			}
@@ -311,16 +298,18 @@ export namespace ContextTree {
 	}
 
 
-	/** Find an ancestral context, which can insert variable to. */
+	/** Find an ancestral context and position, which can insert variable before it. */
 	export function findClosestPositionToAddVariable(index: number, from: Context): ContextTargetPosition {
 		let context = from
-		let variableDeclarationIndex = visiting.findOutward(index, from.visitingIndex, ts.isVariableDeclaration)
+		let variableDeclListIndex = visiting.findOutward(index, from.visitingIndex, ts.isVariableDeclarationList)
 	
 		// Look upward for a variable declaration.
-		if (variableDeclarationIndex !== null) {
+		if (variableDeclListIndex !== null) {
+			let firstDeclIndex = visiting.getFirstChildIndex(variableDeclListIndex)!
+
 			return {
 				context,
-				index: variableDeclarationIndex,
+				index: firstDeclIndex,
 			}
 		}
 
@@ -339,15 +328,38 @@ export namespace ContextTree {
 
 			node = node.parent
 		}
+		
+		// Where to insert before.
+		index = visiting.getIndex(node)
+		let toIndex: number
+
+		// For `case`, insert after expression.
+		if (ts.isCaseClause(node)) {
+			toIndex = visiting.getChildIndex(index, 1)!
+		}
+		
+		// Insert before the first not import statements.
+		else if (ts.isSourceFile(node)) {
+			let beforeNode = node.statements.findLast(n => !ts.isImportDeclaration(n))
+			if (beforeNode) {
+				toIndex = visiting.getIndex(beforeNode)
+			}
+			else {
+				toIndex = visiting.getFirstChildIndex(index)!
+			}
+		}
+		else {
+			toIndex = visiting.getFirstChildIndex(index)!
+		}
 
 		return {
 			context,
-			index: visiting.getFirstChildIndex(visiting.getIndex(node))!,
+			index: toIndex,
 		}
 	}
 
 	/** 
-	 * Find a ancestral context, which can move statements to it.
+	 * Find an ancestral index and context, which can move statements to before it.
 	 * Must before current position, and must not cross any conditional or iteration context.
 	 */
 	export function findClosestPositionToAddStatement(index: number, from: Context): ContextTargetPosition {
@@ -384,9 +396,8 @@ export namespace ContextTree {
 			// To outer context.
 			if (node === context.node) {
 				
-				// Can't cross these types of node, end here.
-				if (context.type === ContextType.ConditionalCondition
-					|| context.type === ContextType.ConditionalContent
+				// Can't cross these types of node, end at the inner start of it.
+				if (context.type === ContextType.ConditionalContent
 					|| context.type === ContextType.IterationConditionIncreasement
 					|| context.type === ContextType.IterationContent
 				) {

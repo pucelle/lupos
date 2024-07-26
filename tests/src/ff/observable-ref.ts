@@ -31,7 +31,7 @@ class TestRef extends Component {
 		if (this.getProp().value) {
 			return true
 		}
-		return false
+		return 0
 	}
 
 	elseIfRef() {
@@ -41,7 +41,7 @@ class TestRef extends Component {
 		else if (this.getProp().value) {
 			return true
 		}
-		return false
+		return 0
 	}
 
 	multipleConditionalRef() {
@@ -77,7 +77,7 @@ class TestRef extends Component {
 			break
 		}
 
-		return ''
+		return 0
 	}
 
 	forDoubleVariableInitializerRef() {
@@ -85,7 +85,7 @@ class TestRef extends Component {
 			break
 		}
 
-		return ''
+		return 0
 	}
 
 	forExpressionInitializerRef() {
@@ -94,7 +94,7 @@ class TestRef extends Component {
 			break
 		}
 
-		return ''
+		return 0
 	}
 
 	forConditionRef() {
@@ -102,7 +102,7 @@ class TestRef extends Component {
 			break
 		}
 
-		return ''
+		return 0
 	}
 
 	forIncreasementRef() {
@@ -110,6 +110,21 @@ class TestRef extends Component {
 			break
 		}
 
-		return ''
+		return 0
+	}
+
+	caseDefaultRef() {
+		var a: string = ''
+
+        switch (a) {
+            case '1':
+            	this.getProp().value
+				break;
+
+			default:
+				this.getProp().value
+        }
+
+        return 0
 	}
 }

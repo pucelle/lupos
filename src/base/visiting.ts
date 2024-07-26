@@ -27,9 +27,6 @@ export namespace visiting {
 	/** Node -> Node visiting index. */
 	const IndexMap: Map<TS.Node, number> = new Map()
 
-	/** Node visiting index -> Node sibling index. */
-	const SiblingIndexMap: Map<number, number> = new Map()
-
 	export let current: VisitingItem = {
 		index: -1,
 	}
@@ -43,7 +40,6 @@ export namespace visiting {
 		ParentMap.clear()
 		NodeMap.clear()
 		IndexMap.clear()
-		SiblingIndexMap.clear()
 
 		current = {
 			index: -1,
@@ -58,7 +54,6 @@ export namespace visiting {
 			let parent = stack[stack.length - 1]
 			ChildMap.add(parent.index, current.index)
 			ParentMap.set(current.index, parent.index)
-			SiblingIndexMap.set(current.index, ChildMap.get(parent.index)!.length - 1)
 		}
 
 		NodeMap.set(current.index, node)
@@ -80,7 +75,7 @@ export namespace visiting {
 	}
 
 	/** Get child visiting index, by parent index and child sibling index. */
-	export function getChildIndex(parentIndex: number, siblingIndex: number): number {
+	export function getChildIndex(parentIndex: number, siblingIndex: number): number | undefined {
 		return ChildMap.get(parentIndex)![siblingIndex]
 	}
 
@@ -104,11 +99,6 @@ export namespace visiting {
 	/** Get all child visiting indices. */
 	export function getChildIndices(parentIndex: number): number[] | undefined {
 		return ChildMap.get(parentIndex)!
-	}
-
-	/** Get sibling index among it's sibling nodes by visiting index. */
-	export function getSiblingIndex(index: number): number {
-		return SiblingIndexMap.get(index)!
 	}
 
 	/** Get parent visiting index by child visiting index. */

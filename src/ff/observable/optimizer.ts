@@ -1,4 +1,4 @@
-import {modifier} from '../../base'
+import {modifier, ts} from '../../base'
 import {Context} from './context'
 import {ContextCapturer} from './context-capturer'
 import {ContextTree, ContextType} from './context-tree'
@@ -18,20 +18,31 @@ export namespace Optimizer {
 	 * All child contexts have been optimized.
 	 */
 	export function optimize(context: Context) {
-		if (context.type === ContextType.ConditionalCondition) {
-			moveConditionalConditionOutward(context)
+		if (context.type === ContextType.FlowInterruptWithContent) {
+			moveFlowInterruptedOutward(context)
 		}
+
 		else if (context.type === ContextType.Conditional
 			|| context.type === ContextType.ConditionalAndContent
 		) {
-			mergeConditionalBranches(context)
+			mergeConditionalContentBranches(context)
+
+			// Must after merging.
+			if (context.type === ContextType.Conditional) {
+				moveConditionalOutward(context)
+			}
 		}
+
 		else if (context.type === ContextType.IterationInitializer) {
 			moveIterationInitializerForward(context)
 		}
+
+		// This optimizing has low risk.
 		else if (context.type === ContextType.IterationConditionIncreasement) {
 			moveIterationConditionIncreasementOutward(context)
 		}
+
+		// This optimizing has low risk.
 		else if (context.type === ContextType.IterationContent) {
 			moveIterationContentOutward(context)
 		}
@@ -44,27 +55,51 @@ export namespace Optimizer {
 	}
 
 
-	/** Move conditional condition tracking outward. */
-	function moveConditionalConditionOutward(context: Context) {
+	/** Move conditional tracking outward. */
+	function moveFlowInterruptedOutward(context: Context) {
 		if (!context.capturer.hasCaptured()) {
 			return
 		}
 
-		// parent of if conditional.
-		let targetContext = context.parent!.parent!
+		// parent of conditional.
+		let targetContext = context.parent!
 
 		context.capturer.moveCapturedOutwardTo(targetContext.capturer)
 	}
 
 
+	/** Move conditional tracking outward. */
+	function moveConditionalOutward(context: Context) {
+		if (!context.capturer.hasCaptured()) {
+			return
+		}
+
+		// parent of conditional.
+		let targetContext = context.parent!
+		context.capturer.moveCapturedOutwardTo(targetContext.capturer)
+	}
+
+
 	/** Merge all branches tracking and move outward. */
-	function mergeConditionalBranches(context: Context) {
+	function mergeConditionalContentBranches(context: Context) {
 		let contentChildren = context.children.filter(child => {
 			return child.type === ContextType.ConditionalContent
 				|| child.type === ContextType.ConditionalAndContent
 		})
 
-		if (contentChildren.length <= 1) {
+		let canMerge = false
+
+		// Case branches can always merge.
+		if (ts.isSwitchStatement(context.node)) {
+			canMerge = true
+		}
+
+		// Must have both two branches .
+		else {
+			canMerge = contentChildren.length >= 2
+		}
+
+		if (!canMerge) {
 			return
 		}
 
@@ -75,7 +110,7 @@ export namespace Optimizer {
 			return
 		}
 
-		context.capturer.moveCapturedIndicesTo(shared, context.capturer)
+		context.capturer.moveCapturedIndicesIn(shared, contentChildren[0].capturer)
 	}
 
 
@@ -130,41 +165,4 @@ export namespace Optimizer {
 	function eliminateOwnRepetitive(context: Context) {
 		context.capturer.eliminateOwnRepetitive()
 	}
-
-
-	// /** Lift node to outer context. */
-	// function getLiftedContext(node: CanObserveNode): ObservedContext | null {
-	// 	if (this.helper.isPropertyAccessing(node)) {
-	// 		let exp = node.expression
-
-	// 		if (ObservedChecker.canObserve(exp, this.helper)) {
-	// 			return this.getLiftedContext(exp)
-	// 		}
-	// 		else {
-	// 			return null
-	// 		}
-	// 	}
-	// 	else {
-	// 		if (node.pos === -1) {
-	// 			return null
-	// 		}
-	// 		// else if (node.kind === this.helper.ts.SyntaxKind.ThisKeyword) {
-	// 		// 	if (this.parent && this.helper.ts.isArrowFunction(this.parent.node)) {
-	// 		// 		return this.parent.parent!.getLiftedContext(node)
-	// 		// 	}
-	// 		// 	else {
-	// 		// 		return this
-	// 		// 	}
-	// 		// }
-	// 		// else if (this.variableObserved.has(node.getText())) {
-	// 		// 	return this
-	// 		// }
-	// 		else if (this.parent) {
-	// 			return this.parent.getLiftedContext(node)
-	// 		}
-	// 		else {
-	// 			return null
-	// 		}
-	// 	}
-	// }
 }

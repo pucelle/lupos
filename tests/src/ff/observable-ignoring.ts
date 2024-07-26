@@ -33,21 +33,21 @@ class TestIgnoringMethod extends Component {
 	}
 
 	anyMethod() {
-		return ''
+		return 0
 	}
 }
 
 
 interface MethodSignature {
-	property: () => string
-	method(): string
+	property: () => number
+	method(): number
 }
 
 class TestNotIgnoringFnPropertySignature extends Component {
 
 	member: MethodSignature = {
-		property: () => '',
-		method(){return ''}
+		property: () => 0,
+		method(){return 0}
 	}
 
 	notIgnoreFnProperty() {

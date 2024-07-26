@@ -76,9 +76,15 @@ export function transformer(program: TS.Program, extras: TransformerExtras) {
 				return node
 			}
 
-			ts.visitNode(sourceFile, visit)
-			modifier.apply()
-			return interpolator.output(0) as TS.SourceFile
+			try {
+				ts.visitNode(sourceFile, visit)
+				modifier.apply()
+				return interpolator.output(0) as TS.SourceFile
+			}
+			catch (err) {
+				console.log(`Failed to transform source file "${sourceFile.fileName}"!`)
+				throw err
+			}
 		}
 	}
 }

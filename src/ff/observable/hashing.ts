@@ -19,6 +19,12 @@ export namespace Hashing {
 	const hashMap: Map<number, HashItem> = new Map()
 
 
+	/** Initialize before visiting a new source file. */
+	export function initialize() {
+		hashMap.clear()
+	}
+
+
 	/** 
 	 * Get hash of node at the specified visiting index.
 	 * Note hashing will transform `a?.b` -> `a.b`.
