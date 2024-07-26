@@ -1,8 +1,8 @@
 import type TS from 'typescript'
 import {ObservedChecker} from './observed-checker'
-import {helper, AccessNode, ts, visiting} from '../../base'
-import {ContextState, FlowInterruptedByType} from './context-state'
-import {ContextType} from './context-tree'
+import {helper, AccessNode, ts, visiting, FlowInterruptionTypeMask} from '../../base'
+import {ContextState} from './context-state'
+import {ContextTypeMask} from './context-tree'
 import {ContextVariables} from './context-variables'
 import {ContextCapturer} from './context-capturer'
 import {AccessReferences} from './access-references'
@@ -15,7 +15,7 @@ import {AccessReferences} from './access-references'
  */
 export class Context {
 
-	readonly type: ContextType
+	readonly type: number
 	readonly visitingIndex: number
 	readonly node: TS.Node
 	readonly parent: Context | null
@@ -30,7 +30,7 @@ export class Context {
 	 */
 	readonly closestFunctionLike: Context
 
-	constructor(type: ContextType, node: TS.Node, parent: Context | null) {
+	constructor(type: number, node: TS.Node, parent: Context | null) {
 		this.type = type
 		this.visitingIndex = visiting.current.index
 		this.node = node
@@ -39,9 +39,9 @@ export class Context {
 		this.variables = new ContextVariables(this)
 		this.capturer = new ContextCapturer(this)
 
-		this.closestFunctionLike = type === ContextType.FunctionLike || !parent
+		this.closestFunctionLike = (type & ContextTypeMask.FunctionLike) || (type & ContextTypeMask.SourceFile)
 			? this
-			: parent.closestFunctionLike
+			: parent!.closestFunctionLike
 
 		if (parent) {
 			parent.enterChild(this)
@@ -70,7 +70,7 @@ export class Context {
 		this.state.mergeChildContext(child)
 
 		if (child.state.isFlowInterrupted()) {
-			this.capturer.breakCaptured(child.visitingIndex, child.state.flowInterruptedBy)
+			this.capturer.breakCaptured(child.visitingIndex, child.state.flowInterruptionType)
 		}
 	}
 
@@ -120,14 +120,14 @@ export class Context {
 
 		// Empty `return`.
 		else if (ts.isReturnStatement(node) && !node.expression) {
-			this.state.applyInnerReturn(true)
-			this.capturer.breakCaptured(visiting.current.index, FlowInterruptedByType.Return)
+			this.state.unionFlowInterruptionType(FlowInterruptionTypeMask.Return)
+			this.capturer.breakCaptured(visiting.current.index, FlowInterruptionTypeMask.Return)
 		}
 
 		// `break` or `continue`.
 		else if (ts.isBreakOrContinueStatement(node)) {
-			this.state.applyInnerBreakLike(true)
-			this.capturer.breakCaptured(visiting.current.index, FlowInterruptedByType.BreakLike)
+			this.state.unionFlowInterruptionType(FlowInterruptionTypeMask.BreakLike)
+			this.capturer.breakCaptured(visiting.current.index, FlowInterruptionTypeMask.BreakLike)
 		}
 	}
 

@@ -1,11 +1,10 @@
 import type TS from 'typescript'
-import {InterpolationContentType, AccessNode, helper, interpolator, modifier, InterpolationPosition, visiting, ts} from '../../base'
+import {InterpolationContentType, AccessNode, helper, interpolator, modifier, InterpolationPosition, visiting, ts, FlowInterruptionTypeMask} from '../../base'
 import {Context} from './context'
-import {ContextTree, ContextType} from './context-tree'
+import {ContextTree, ContextTypeMask} from './context-tree'
 import {AccessGrouper} from './access-grouper'
 import {AccessReferences} from './access-references'
 import {Optimizer} from './optimizer'
-import {FlowInterruptedByType} from './context-state'
 import {Hashing} from './hashing'
 import {removeFromList} from '../../utils'
 
@@ -28,9 +27,11 @@ export class ContextCapturer {
 	
 	/** Get intersected indices across capturers. */
 	static intersectIndices(capturers: ContextCapturer[]): number[] {
-		let counter: Map<string, {index: number, count: number}> = new Map()
-		
-		for (let capturer of capturers) {
+		let map: Map<string, number>
+
+		for (let i = 0; i < capturers.length; i++) {
+			let capturer = capturers[i]
+			let ownMap: Map<string, number> = new Map()
 
 			// Only codes of the first item is always running.
 			for (let index of capturer.captured[0].indices) {
@@ -41,18 +42,26 @@ export class ContextCapturer {
 				}
 
 				let hashName = Hashing.getHash(index, capturer.context).name
-				let countItem = counter.get(hashName)
-				if (!countItem) {
-					countItem = {index, count: 0}
-					counter.set(hashName, countItem)
+				ownMap.set(hashName, index)
+			}
+
+			if (i === 0) {
+				map = ownMap
+			}
+			else {
+				for (let key of [...map!.keys()]) {
+					if (!ownMap.has(key)) {
+						map!.delete(key)
+					}
 				}
-				countItem.count++
+			}
+
+			if (map!.size === 0) {
+				break
 			}
 		}
 
-		return [...counter.values()]
-			.filter(item => item.count === capturers.length)
-			.map(item => item.index)
+		return [...map!.values()]
 	}
 
 
@@ -68,7 +77,7 @@ export class ContextCapturer {
 
 		this.resetLatestCaptured()
 		this.captured = [this.latestCaptured]
-		this.transferFromParent()
+		this.fromParent()
 	}
 
 	private resetLatestCaptured() {
@@ -81,14 +90,14 @@ export class ContextCapturer {
 	}
 
 	/** Transfer from some captured properties to child. */
-	private transferFromParent() {
+	private fromParent() {
 		let parent = this.context.parent
 		if (!parent) {
 			return
 		}
 
 		// Broadcast down capture type within a function-like context.
-		if (parent.type !== ContextType.FunctionLike) {
+		if ((parent.type & ContextTypeMask.FunctionLike) === 0) {
 			this.captureType = parent.capturer.captureType
 		}
 	}
@@ -142,11 +151,8 @@ export class ContextCapturer {
 		// Even no indices captured, still break.
 		// Later may append indices to this item.
 
-		// Conditional can't be break, it contains only condition captured,
-		// and output captured only before context node.
-		if (this.context.type === ContextType.Conditional
-			|| this.context.type === ContextType.ConditionalAndContent
-		) {
+		// Conditional can't be break, it captures only condition expression.
+		if (this.context.type & ContextTypeMask.Conditional) {
 			return
 		}
 
@@ -207,7 +213,7 @@ export class ContextCapturer {
 		item.toIndex = index
 
 		// Insert to function body.
-		if (this.context.type === ContextType.FunctionLike) {
+		if (this.context.type & ContextTypeMask.FunctionLike) {
 			let body = (node as TS.FunctionLikeDeclarationBase).body!
 			item.toIndex = visiting.getIndex(body)
 
@@ -222,9 +228,8 @@ export class ContextCapturer {
 		// Insert before whole content of target capturer.
 		// Normally codes will be moved outward on optimization step.
 		// This codes can avoid error occurred even no optimization.
-		else if (this.context.type === ContextType.FlowInterruptWithContent
-			|| this.context.type === ContextType.Conditional
-			|| this.context.type === ContextType.ConditionalAndContent
+		else if (this.context.type & ContextTypeMask.FlowInterruption
+			|| this.context.type & ContextTypeMask.Conditional
 		) {
 			item.position = InterpolationPosition.Before
 		}
@@ -389,7 +394,7 @@ export class ContextCapturer {
 				}
 
 				// Has yield like.
-				if ((item.flowInterruptedBy & FlowInterruptedByType.YieldLike) > 0) {
+				if ((item.flowInterruptedBy & FlowInterruptionTypeMask.YieldLike) > 0) {
 					ownHashes.clear()
 				}
 			}

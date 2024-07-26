@@ -3,55 +3,50 @@ import {helper, ts, visiting} from '../../base'
 import {Context} from './context'
 
 
-export enum ContextType {
+export enum ContextTypeMask {
 
 	/** Source file. */
-	SourceFile,
+	SourceFile = 2 ** 0,
 
 	/** 
 	 * Normally help to process parameters.
 	 * or for ArrowFunction has no block-type body exist.
 	 */
-	FunctionLike,
+	FunctionLike = 2 ** 1,
 
 	/** 
 	 * `if`, `case`, `default`,
 	 * or binary expressions like `a && b`, `a || b`, `a ?? b`.
 	 */
-	Conditional,
+	Conditional = 2 ** 2,
 
 	/** 
 	 * Content of `if`, `else`;
-	 * Whole `case`, `default`.
+	 * Whole `case ...`, `default ...`.
 	 * Right part of binary expressions like `a && b`, `a || b`, `a ?? b`.
-	 * 
 	 */
-	ConditionalContent,
+	ConditionalContent = 2 ** 3,
 
-	/** 
-	 * For `if` of the `else if`,
-	 * or `c ? d : e` of complex expressions like `a ? b : c ? d : e`
-	 * It acts as both `Conditional` and `ConditionalContent`.
-	 */
-	ConditionalAndContent,
+	/** `case ...: ...`, `default ...` */
+	CaseDefaultContent = 2 ** 4,
 
 	/** Process For iteration initializer, condition, incrementor. */
-	Iteration,
+	Iteration = 2 ** 5,
 
 	/** `for (let...)` */
-	IterationInitializer,
+	IterationInitializer = 2 ** 6,
 
 	/** `while (...)`, `for (; ...; ...)` */
-	IterationConditionIncreasement,
+	IterationConditionIncreasement = 2 ** 7,
 
 	/** 
 	 * `while () ...`, `for () ...`, May run for none, 1 time, multiple times.
 	 * Content itself can be a block, or a normal expression.
 	 */
-	IterationContent,
+	IterationContent = 2 ** 8,
 
-	/** `return`, `break`, `continue`, `yield`, `await`. */
-	FlowInterruptWithContent,
+	/** `return`, `break`, `continue`, `yield`, `await`, and with content. */
+	FlowInterruption = 2 ** 9,
 }
 
 /** Content and a visiting index position. */
@@ -74,55 +69,44 @@ export namespace ContextTree {
 	}
 
 	/** Check Context type of a node. */
-	export function checkContextType(node: TS.Node): ContextType | null {
+	export function checkContextType(node: TS.Node): number {
 		let parent = node.parent
+		let type = 0
 
 		// Source file
 		if (ts.isSourceFile(node)) {
-			return ContextType.SourceFile
+			type |= ContextTypeMask.SourceFile
 		}
 
 		// Function like
 		else if (helper.pack.isFunctionLike(node)) {
-			return ContextType.FunctionLike
+			type |= ContextTypeMask.FunctionLike
 		}
 
-		// For `if...else if...`, the second if will be identified as `ConditionalAndContent`.
+		// For `if...else if...`
 		else if (ts.isIfStatement(node)) {
-			if (ts.isIfStatement(parent) && node === parent.elseStatement) {
-				return ContextType.ConditionalAndContent
-			}
-			else {
-				return ContextType.Conditional
-			}
+			type |= ContextTypeMask.Conditional
 		}
 
 		// `a ? b : c`
 		else if (ts.isConditionalExpression(node)) {
-			if (ts.isConditionalExpression(parent) && (
-				node === parent.whenTrue || node === parent.whenFalse
-			)) {
-				return ContextType.ConditionalAndContent
-			}
-			else {
-				return ContextType.Conditional
-			}
+			type |= ContextTypeMask.Conditional
 		}
 
-		// Conditional.
-		else if (
-			
-			//  `a && b`, `a || b`, `a ?? b`
-			ts.isBinaryExpression(node) && (
+		//  `a && b`, `a || b`, `a ?? b`
+		else if (ts.isBinaryExpression(node)
+			&& (
 				node.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken
 				|| node.operatorToken.kind === ts.SyntaxKind.BarBarToken
 				|| node.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken
 			)
-
-			// `switch(...) {...}`, `case(...): ...`, `default: ...`
-			|| ts.isSwitchStatement(node)
 		) {
-			return ContextType.Conditional
+			type |= ContextTypeMask.Conditional
+		}
+
+		// `switch(...) {...}`
+		else if (ts.isSwitchStatement(node)) {
+			type |= ContextTypeMask.Conditional
 		}
 
 		// `case ...`, `default ...`.
@@ -130,9 +114,9 @@ export namespace ContextTree {
 		// It's tracking expressions will be captured by whole context,
 		// and insert to following statements.
 		// This cause some risks, but normally we assume that `case ...`
-		// should always with static condition expression.
+		// should always work with static condition expression.
 		else if (ts.isCaseOrDefaultClause(node)) {
-			return ContextType.ConditionalContent
+			type |= (ContextTypeMask.ConditionalContent | ContextTypeMask.CaseDefaultContent)
 		}
 
 		// Iteration
@@ -142,32 +126,31 @@ export namespace ContextTree {
 			|| ts.isWhileStatement(node)
 			|| ts.isDoStatement(node)
 		) {
-			return ContextType.Iteration
+			type |= ContextTypeMask.Iteration
 		}
 
 		// Flow stop, and has content.
 		// `break` and `continue` contains no expressions, so should not be a context type.
-		else if (helper.pack.isFlowInterruption(node)) {
-			return ContextType.FlowInterruptWithContent
+		else if (helper.pack.getFlowInterruptionType(node) > 0) {
+			type |= ContextTypeMask.FlowInterruption
+		}
+
+
+		if (!parent) {
+			return type
 		}
 
 		// `if (...) ...`
-		else if (ts.isIfStatement(parent)) {
-			if (node === parent.thenStatement
-
-				// For `if ... else if...`, the second if statement belongs to `Conditional`.
-				|| node === parent.elseStatement
-			) {
-				return ContextType.ConditionalContent
+		if (ts.isIfStatement(parent)) {
+			if (node === parent.thenStatement || node === parent.elseStatement) {
+				type |= ContextTypeMask.ConditionalContent
 			}
 		}
-
-		// Content of `case` and `default` will be processed in `visitor.ts`.
 
 		// `a ? b : c`
 		else if (ts.isConditionalExpression(parent)) {
 			if (node === parent.whenTrue || node === parent.whenFalse) {
-				return ContextType.ConditionalContent
+				type |= ContextTypeMask.ConditionalContent
 			}
 		}
 
@@ -178,7 +161,7 @@ export namespace ContextTree {
 				|| parent.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken)
 			) {
 				if (node === parent.right) {
-					return ContextType.ConditionalContent
+					type |= ContextTypeMask.ConditionalContent
 				}
 			}
 		}
@@ -186,15 +169,15 @@ export namespace ContextTree {
 		// `for (;;) ...`
 		else if (ts.isForStatement(parent)) {
 			if (node === parent.initializer) {
-				return ContextType.IterationInitializer
+				type |= ContextTypeMask.IterationInitializer
 			}
 			else if (node === parent.condition
 				|| node === parent.incrementor
 			) {
-				return ContextType.IterationConditionIncreasement
+				type |= ContextTypeMask.IterationConditionIncreasement
 			}
 			else if (node === parent.statement) {
-				return ContextType.IterationContent
+				type |= ContextTypeMask.IterationContent
 			}
 		}
 
@@ -205,18 +188,18 @@ export namespace ContextTree {
 			|| ts.isDoStatement(parent)
 		) {
 			if (node === parent.expression) {
-				return ContextType.IterationConditionIncreasement
+				type |= ContextTypeMask.IterationConditionIncreasement
 			}
 			else if (node === parent.statement) {
-				return ContextType.IterationContent
+				type |= ContextTypeMask.IterationContent
 			}
 		}
 
-		return null
+		return type
 	}
 	
 	/** Create a context from node and push to stack. */
-	export function createContext(type: ContextType, node: TS.Node): Context {
+	export function createContext(type: ContextTypeMask, node: TS.Node): Context {
 		let context = new Context(type, node, current)
 		contextStack.push(current)
 
@@ -395,9 +378,9 @@ export namespace ContextTree {
 			if (node === context.node) {
 				
 				// Can't cross these types of node, end at the inner start of it.
-				if (context.type === ContextType.ConditionalContent
-					|| context.type === ContextType.IterationConditionIncreasement
-					|| context.type === ContextType.IterationContent
+				if (context.type & ContextTypeMask.ConditionalContent
+					|| context.type & ContextTypeMask.IterationConditionIncreasement
+					|| context.type & ContextTypeMask.IterationContent
 				) {
 					break
 				}

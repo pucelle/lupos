@@ -55,14 +55,12 @@ class TestRef extends Component {
     }
     multipleConditionalRef() {
         var _ref_0, _ref_1, _ref_2;
-        _ref_0 = this.getNextProp(0);
-        _ref_1 = this.getNextProp(1);
         _ref_2 = this.getProp();
         trackGet(_ref_2, "value");
         return _ref_2.value
-            ? (trackGet(_ref_0, "value"), _ref_0.value
+            ? (_ref_0 = this.getNextProp(0), trackGet(_ref_0, "value"), _ref_0.value
                 ? 1
-                : 2) : (trackGet(_ref_1, "value"), _ref_1.value
+                : 2) : (_ref_1 = this.getNextProp(1), trackGet(_ref_1, "value"), _ref_1.value
             ? 3
             : 4);
     }

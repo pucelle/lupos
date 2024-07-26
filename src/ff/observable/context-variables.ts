@@ -2,7 +2,7 @@ import type TS from 'typescript'
 import {ObservedChecker} from './observed-checker'
 import {helper, ts} from '../../base'
 import {Context} from './context'
-import {ContextTree, ContextType} from './context-tree'
+import {ContextTree, ContextTypeMask} from './context-tree'
 
 
 /** Mark all variables with a context. */
@@ -26,7 +26,7 @@ export class ContextVariables {
 		this.context = context
 		this.thisObserved = this.checkThisObserved()
 
-		if (this.context.type === ContextType.FunctionLike) {
+		if (this.context.type & ContextTypeMask.FunctionLike) {
 			this.checkObservedParameters()
 		}
 	}
@@ -35,8 +35,8 @@ export class ContextVariables {
 	private checkThisObserved(): boolean {
 		let node = this.context.node
 
-		// Inherit from parent context, except arrow function.
-		if (this.context.type !== ContextType.FunctionLike
+		// Inherit from parent context but not function, but arrow function is allowed.
+		if ((this.context.type & ContextTypeMask.FunctionLike) === 0
 			|| ts.isArrowFunction(node)
 		) {
 			return this.context.parent?.variables.thisObserved ?? false
@@ -210,8 +210,8 @@ export class ContextVariables {
 	/** Visit a variable. */
 	visitVariable(node: TS.VariableDeclaration) {
 
-		// Initializer register variables for whole for iteration.
-		if (this.context.type === ContextType.IterationInitializer) {
+		// For Initializer register variables for whole For Iteration.
+		if (this.context.type & ContextTypeMask.IterationInitializer) {
 			this.context.parent!.variables.visitVariable(node)
 			return
 		}

@@ -14,6 +14,13 @@ export interface ResolvedImportNames {
 	moduleName: string
 }
 
+/** How the flow was interrupted. */
+export enum FlowInterruptionTypeMask {
+	Return = 1,
+	BreakLike = 2,
+	YieldLike = 4,
+}
+
 
 /** Help to get and check. */
 export namespace helper {
@@ -814,17 +821,31 @@ export namespace helper {
 				|| ts.isArrowFunction(node)
 		}
 
-		/** Whether be `return` with content, `yield`, `await`, or arrow function implicitly return. */
-		export function isFlowInterruption(node: TS.Node): node is TS.ReturnStatement | TS.Expression {
-			let parent = node.parent
-			
-			return ts.isReturnStatement(node) && !!node.expression
-				|| ts.isAwaitExpression(node)
-				|| ts.isYieldExpression(node)
+		/** 
+		 * Get flow interruption type,
+		 * it represents whether flow was interrupted be `return` with content,
+		 * `yield`, `await`, or arrow function with implicit returning.
+		 */
+		export function getFlowInterruptionType(node: TS.Node): number {
+			let type = 0
 
-				// Arrow function without block body.
-				|| ts.isArrowFunction(parent)
-					&& node === parent.body && !ts.isBlock(node)
+			if (ts.isReturnStatement(node)
+				|| node.parent
+					&& ts.isArrowFunction(node.parent)
+					&& node === node.parent.body && !ts.isBlock(node)
+			) {
+				type |= FlowInterruptionTypeMask.Return
+			}
+			
+			if (ts.isBreakOrContinueStatement(node)) {
+				type |= FlowInterruptionTypeMask.BreakLike
+			}
+			
+			if (ts.isAwaitExpression(node) || ts.isYieldExpression(node)) {
+				type |= FlowInterruptionTypeMask.YieldLike
+			}
+
+			return type
 		}
 
 		/** Whether be a block or a source file. */

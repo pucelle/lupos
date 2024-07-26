@@ -1,7 +1,7 @@
 import {modifier, ts} from '../../base'
 import {Context} from './context'
 import {ContextCapturer} from './context-capturer'
-import {ContextTree, ContextType} from './context-tree'
+import {ContextTree, ContextTypeMask} from './context-tree'
 
 
 /**
@@ -18,45 +18,43 @@ export namespace Optimizer {
 	 * All child contexts have been optimized.
 	 */
 	export function optimize(context: Context) {
-		if (context.type === ContextType.FlowInterruptWithContent) {
-			moveFlowInterruptedOutward(context)
+		if (context.type & ContextTypeMask.FlowInterruption) {
+			moveFlowInterruptionCapturingOutward(context)
 		}
 
-		else if (context.type === ContextType.Conditional
-			|| context.type === ContextType.ConditionalAndContent
-		) {
-			mergeConditionalContentBranches(context)
+		if (context.type & ContextTypeMask.Conditional) {
+			mergeConditionalContentCapturingBranches(context)
 
 			// Must after merging.
-			// For `ConditionalAndContent`, if moved to outer Conditional,
-			// later it will also be moved outer.
-			if (context.type === ContextType.Conditional) {
-				moveConditionalOutward(context)
+			// For `ConditionalContent`, if moving to outer Conditional,
+			// later it will be moved outer again, until out-most Non-Conditional.
+			if ((context.type & ContextTypeMask.ConditionalContent) === 0) {
+				moveConditionalCapturingOutward(context)
 			}
 		}
 
-		else if (context.type === ContextType.IterationInitializer) {
-			moveIterationInitializerForward(context)
+		if (context.type & ContextTypeMask.IterationInitializer) {
+			moveIterationInitializerCapturingOutward(context)
 		}
 
-		// This optimizing has low risk.
-		else if (context.type === ContextType.IterationConditionIncreasement) {
+		// This optimizing has a low risk, codes may not run when no looping.
+		if (context.type & ContextTypeMask.IterationConditionIncreasement) {
 			moveIterationConditionIncreasementOutward(context)
 		}
 
-		// This optimizing has low risk.
-		else if (context.type === ContextType.IterationContent) {
-			moveIterationContentOutward(context)
+		// This optimizing has low risk, codes may not run when no looping.
+		if (context.type & ContextTypeMask.IterationContent) {
+			moveIterationContentCapturingOutward(context)
 		}
 
-		if (context.type === ContextType.FunctionLike) {
-			eliminateRepetitiveWithAncestorsRecursively(context)
+		if (context.type & ContextTypeMask.FunctionLike) {
+			eliminateRepetitiveCapturingRecursively(context)
 		}
 	}
 
 
 	/** Move conditional tracking outward. */
-	function moveFlowInterruptedOutward(context: Context) {
+	function moveFlowInterruptionCapturingOutward(context: Context) {
 		if (!context.capturer.hasCaptured()) {
 			return
 		}
@@ -69,7 +67,7 @@ export namespace Optimizer {
 
 
 	/** Move conditional tracking outward. */
-	function moveConditionalOutward(context: Context) {
+	function moveConditionalCapturingOutward(context: Context) {
 		if (!context.capturer.hasCaptured()) {
 			return
 		}
@@ -81,15 +79,14 @@ export namespace Optimizer {
 
 
 	/** Merge all branches tracking and move outward. */
-	function mergeConditionalContentBranches(context: Context) {
+	function mergeConditionalContentCapturingBranches(context: Context) {
 		let contentChildren = context.children.filter(child => {
-			return child.type === ContextType.ConditionalContent
-				|| child.type === ContextType.ConditionalAndContent
+			return child.type & ContextTypeMask.ConditionalContent
 		})
 
 		let canMerge = false
 
-		// Case branches can always merge.
+		// Merge different case conditions.
 		if (ts.isSwitchStatement(context.node)) {
 			canMerge = true
 		}
@@ -115,7 +112,7 @@ export namespace Optimizer {
 
 
 	/** Move whole content of iteration initializer outward. */
-	function moveIterationInitializerForward(context: Context) {
+	function moveIterationInitializerCapturingOutward(context: Context) {
 		if (!context.capturer.hasCaptured()) {
 			return
 		}
@@ -143,7 +140,7 @@ export namespace Optimizer {
 
 
 	/** Move iteration content tracking outward. */
-	function moveIterationContentOutward(context: Context) {
+	function moveIterationContentCapturingOutward(context: Context) {
 		if (!context.capturer.hasCaptured()) {
 			return
 		}
@@ -156,7 +153,7 @@ export namespace Optimizer {
 
 
 	/** Eliminate repetitive captured indices that repeat itself or with it's descendants. */
-	function eliminateRepetitiveWithAncestorsRecursively(context: Context) {
+	function eliminateRepetitiveCapturingRecursively(context: Context) {
 		context.capturer.eliminateRepetitiveRecursively(new Set())
 	}
 }

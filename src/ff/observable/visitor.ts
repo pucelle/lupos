@@ -17,7 +17,7 @@ defineVisitor(function(node: TS.Node) {
 
 	// Check contextual state, must after observable state pushing.
 	let type = ContextTree.checkContextType(node)
-	if (type !== null) {
+	if (type !== 0) {
 		ContextTree.createContext(type, node)
 	}
 
@@ -25,7 +25,7 @@ defineVisitor(function(node: TS.Node) {
 	return () => {
 		ContextTree.visitNode(node)
 
-		if (type !== null) {
+		if (type !== 0) {
 			ContextTree.pop()
 		}
 	}
