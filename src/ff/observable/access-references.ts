@@ -46,9 +46,18 @@ export namespace AccessReferences {
 	}
 
 
-	/** Whether has referenced access node in specified index. */
-	export function hasReferenced(index: number): boolean {
-		return referencedAccessIndices.has(index)
+	/** Whether any descendant access node has been referenced. */
+	export function isAccessReferencedExternal(index: number): boolean {
+		if (referencedAccessIndices.has(index)) {
+			return true
+		}
+
+		let childIndices = visiting.getChildIndices(index)
+		if (!childIndices) {
+			return false
+		}
+
+		return childIndices.some(i => isAccessReferencedExternal(i))
 	}
 
 

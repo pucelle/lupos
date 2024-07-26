@@ -22,13 +22,13 @@ class TestIgnoringMethod extends Component {
         return this.anyMethod();
     }
     anyMethod() {
-        return '';
+        return 0;
     }
 }
 class TestNotIgnoringFnPropertySignature extends Component {
     member = {
-        property: () => '',
-        method() { return ''; }
+        property: () => 0,
+        method() { return 0; }
     };
     notIgnoreFnProperty() {
         trackGet(this, "member");
@@ -41,8 +41,8 @@ class TestIgnoringInternalMethods extends Component {
     prop2 = new Map([[1, 2]]);
     ignoreArrayMethods() {
         trackGet(this, "prop1", "prop2");
-        trackGet(this.prop2, "");
         trackGet(this.prop1, "");
+        trackGet(this.prop2, "");
         return this.prop1.join('')
             + this.prop2.get(1);
     }

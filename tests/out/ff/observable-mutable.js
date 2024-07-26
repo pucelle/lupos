@@ -13,7 +13,7 @@ class TestMutable extends Component {
         trackGet(this.prop, "");
         trackGet(this.prop[_ref_0], "value");
         trackGet(this.prop[index], "value");
-        return '';
+        return 0;
     }
     dynamicIndexChangeOtherWhere() {
         var _ref_0;
@@ -26,7 +26,7 @@ class TestMutable extends Component {
         trackGet(this.prop, "");
         trackGet(this.prop[_ref_0], "value");
         trackGet(this.prop[index.value], "value");
-        return '';
+        return 0;
     }
     dynamicExp() {
         var _ref_0;

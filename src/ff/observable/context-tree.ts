@@ -301,15 +301,13 @@ export namespace ContextTree {
 	/** Find an ancestral context and position, which can insert variable before it. */
 	export function findClosestPositionToAddVariable(index: number, from: Context): ContextTargetPosition {
 		let context = from
-		let variableDeclListIndex = visiting.findOutward(index, from.visitingIndex, ts.isVariableDeclarationList)
+		let variableDeclListIndex = visiting.findOutward(index, from.visitingIndex, ts.isVariableDeclaration)
 	
 		// Look upward for a variable declaration.
-		if (variableDeclListIndex !== null) {
-			let firstDeclIndex = visiting.getFirstChildIndex(variableDeclListIndex)!
-
+		if (variableDeclListIndex !== undefined) {
 			return {
 				context,
-				index: firstDeclIndex,
+				index: variableDeclListIndex,
 			}
 		}
 
@@ -367,7 +365,7 @@ export namespace ContextTree {
 		let parameterIndex = visiting.findOutward(index, from.visitingIndex, ts.isParameter)
 
 		// Parameter initializer, no place to insert statements, returns position itself.
-		if (parameterIndex !== null) {
+		if (parameterIndex !== undefined) {
 			return {
 				context,
 				index,

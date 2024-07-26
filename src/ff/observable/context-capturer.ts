@@ -36,7 +36,7 @@ export class ContextCapturer {
 			for (let index of capturer.captured[0].indices) {
 
 				// Has been referenced, ignore always.
-				if (AccessReferences.hasReferenced(index)) {
+				if (AccessReferences.isAccessReferencedExternal(index)) {
 					continue
 				}
 
@@ -332,7 +332,7 @@ export class ContextCapturer {
 
 			// Look upward until sibling of `toIndex`
 			let itemSiblingIndex = visiting.findOutwardSiblingWith(fromCapturer.context.visitingIndex, item.toIndex)
-			if (!itemSiblingIndex) {
+			if (itemSiblingIndex === undefined) {
 				return false
 			}
 
@@ -367,35 +367,6 @@ export class ContextCapturer {
 		return residualIndices
 	}
 
-	/** Eliminate repetitive captured. */
-	eliminateOwnRepetitive() {
-		let hashes: Set<string> = new Set()
-
-		for (let item of this.captured) {
-			for (let index of [...item.indices]) {
-
-				// Has been referenced, ignore always.
-				if (AccessReferences.hasReferenced(index)) {
-					continue
-				}
-
-				let hashName = Hashing.getHash(index, this.context).name
-
-				if (hashes.has(hashName)) {
-					removeFromList(item.indices, index)
-				}
-				else {
-					hashes.add(hashName)
-				}
-			}
-
-			// Has yield like.
-			if ((item.flowInterruptedBy & FlowInterruptedByType.YieldLike) > 0) {
-				hashes.clear()
-			}
-		}
-	}
-
 	/** Eliminate repetitive captured with an outer hash. */
 	eliminateRepetitiveRecursively(hashSet: Set<string>) {
 		let ownHashes = new Set(hashSet)
@@ -405,7 +376,7 @@ export class ContextCapturer {
 			for (let index of [...item.indices]) {
 
 				// Has been referenced, ignore always.
-				if (AccessReferences.hasReferenced(index)) {
+				if (AccessReferences.isAccessReferencedExternal(index)) {
 					continue
 				}
 
@@ -415,6 +386,11 @@ export class ContextCapturer {
 				}
 				else {
 					ownHashes.add(hashName)
+				}
+
+				// Has yield like.
+				if ((item.flowInterruptedBy & FlowInterruptedByType.YieldLike) > 0) {
+					ownHashes.clear()
 				}
 			}
 

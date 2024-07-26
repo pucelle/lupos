@@ -318,7 +318,7 @@ export namespace interpolator {
 
 		// Otherwise, return list directly.
 		else {
-			let list = arrangeNeighborNodes(node, beforeNodes, afterNodes, false)
+			let list = arrangeNeighborNodes(node, beforeNodes, afterNodes)
 			return list
 		}
 	}

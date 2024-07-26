@@ -33,33 +33,44 @@ class TestRef extends Component {
     ifRef() {
         var _ref_0;
         _ref_0 = this.getProp();
-        if ((trackGet(_ref_0, "value"), _ref_0.value)) {
+        trackGet(_ref_0, "value");
+        if (_ref_0.value) {
             return true;
         }
-        return false;
+        return 0;
     }
     elseIfRef() {
         var _ref_0;
         if (Boolean(1)) {
             return true;
         }
-        else if ((_ref_0 = this.getProp(), trackGet(_ref_0, "value"), _ref_0.value)) {
-            return true;
+        else {
+            _ref_0 = this.getProp();
+            trackGet(_ref_0, "value");
+            if (_ref_0.value) {
+                return true;
+            }
         }
-        return false;
+        return 0;
     }
     multipleConditionalRef() {
         var _ref_0, _ref_1, _ref_2;
-        _ref_0 = this.getProp();
-        return (trackGet(_ref_0, "value"), _ref_0.value) ? (_ref_1 = this.getNextProp(0), trackGet(_ref_1, "value"), _ref_1.value) ? 1
-            : 2
-            : (_ref_2 = this.getNextProp(1), trackGet(_ref_2, "value"), _ref_2.value) ? 3
-                : 4;
+        _ref_0 = this.getNextProp(0);
+        _ref_1 = this.getNextProp(1);
+        _ref_2 = this.getProp();
+        trackGet(_ref_2, "value");
+        return _ref_2.value
+            ? (trackGet(_ref_0, "value"), _ref_0.value
+                ? 1
+                : 2) : (trackGet(_ref_1, "value"), _ref_1.value
+            ? 3
+            : 4);
     }
     multipleBinaryRef() {
         var _ref_0, _ref_1, _ref_2;
-        _ref_0 = this.getProp();
-        return (trackGet(_ref_0, "value"), _ref_0.value) || (_ref_1 = this.getNextProp(0), trackGet(_ref_1, "value"), _ref_1.value) || (_ref_2 = this.getNextProp(1), trackGet(_ref_2, "value"), _ref_2.value);
+        _ref_1 = this.getProp();
+        trackGet(_ref_1, "value");
+        return _ref_1.value || (_ref_0 = this.getNextProp(0), trackGet(_ref_0, "value"), _ref_0.value) || (_ref_2 = this.getNextProp(1), trackGet(_ref_2, "value"), _ref_2.value);
     }
     deepRef() {
         var _ref_0, _ref_1;
@@ -85,40 +96,63 @@ class TestRef extends Component {
     }
     forVariableInitializerRef() {
         let _ref_1 = this.getProp(), i = _ref_1.value;
-        for (trackGet(_ref_1, "value"); i < 1; i++) {
+        for (; i < 1; i++) {
             break;
         }
-        return '';
+        trackGet(_ref_1, "value");
+        return 0;
     }
     forDoubleVariableInitializerRef() {
         let i = this.prop.value, _ref_1 = this.getNextProp(i), j = _ref_1.value;
-        for ((trackGet(this, "prop"), trackGet(this.prop, "value"), trackGet(_ref_1, "value")); j < 1; j++) {
+        for (trackGet(_ref_1, "value"); j < 1; j++) {
             break;
         }
-        return '';
+        trackGet(this, "prop");
+        trackGet(this.prop, "value");
+        return 0;
     }
     forExpressionInitializerRef() {
         var _ref_1;
         let i;
         _ref_1 = this.getProp();
         i = _ref_1.value;
-        for (trackGet(_ref_1, "value"); i < 1; i++) {
+        for (; i < 1; i++) {
             break;
         }
-        return '';
+        trackGet(_ref_1, "value");
+        return 0;
     }
     forConditionRef() {
         var _ref_1;
-        for (let i = 0; (_ref_1 = this.getProp(), trackGet(_ref_1, "value"), i < _ref_1.value); i++) {
+        for (let i = 0; (_ref_1 = this.getProp(), i < _ref_1.value); i++) {
             break;
         }
-        return '';
+        trackGet(_ref_1, "value");
+        return 0;
     }
     forIncreasementRef() {
         var _ref_1;
-        for (let i = 0; i < 1; (_ref_1 = this.getProp(), trackGet(_ref_1, "value"), i += _ref_1.value)) {
+        for (let i = 0; i < 1; (_ref_1 = this.getProp(), i += _ref_1.value)) {
             break;
         }
-        return '';
+        trackGet(_ref_1, "value");
+        return 0;
+    }
+    caseDefaultRef() {
+        var a = '';
+        switch (a) {
+            case '1':
+                var _ref_1;
+                _ref_1 = this.getProp();
+                _ref_1.value;
+                trackGet(_ref_1, "value");
+                break;
+            default:
+                var _ref_1;
+                _ref_1 = this.getProp();
+                _ref_1.value;
+                trackGet(_ref_1, "value");
+        }
+        return 0;
     }
 }

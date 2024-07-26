@@ -28,12 +28,14 @@ class TestOptimizing extends Component {
         trackGet(this, "prop");
         yield 0;
         this.prop;
+        trackGet(this, "prop");
     }
     async persistOwnRepetitiveAfterAwait() {
         this.prop;
         trackGet(this, "prop");
         await Promise.resolve();
         this.prop;
+        trackGet(this, "prop");
         return 0;
     }
     eliminateRepetitiveProp() {

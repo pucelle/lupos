@@ -117,7 +117,7 @@ export namespace visiting {
 	}
 
 	/** Look outward for a visiting index, and the node at where match test fn. */
-	export function findOutward(fromIndex: number, untilIndex: number | null, test: (node: TS.Node) => boolean) : number | null {
+	export function findOutward(fromIndex: number, untilIndex: number | undefined, test: (node: TS.Node) => boolean) : number | undefined {
 		let index: number | undefined = fromIndex
 
 		// Look outward for a node which can pass test.
@@ -130,11 +130,11 @@ export namespace visiting {
 			index = getParentIndex(index)
 		}
 
-		return null
+		return undefined
 	}
 
 	/** Look outward for a visiting index, which is the sibling of `siblingIndex`. */
-	export function findOutwardSiblingWith(fromIndex: number, siblingIndex: number) : number | null {
+	export function findOutwardSiblingWith(fromIndex: number, siblingIndex: number) : number | undefined {
 		let parentIndex = getParentIndex(siblingIndex)
 		let index: number | undefined = fromIndex
 
@@ -149,6 +149,6 @@ export namespace visiting {
 			index = pi
 		}
 
-		return null
+		return undefined
 	}
 }

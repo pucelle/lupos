@@ -36,7 +36,10 @@ export class ContextState {
 
 		let flowInterrupted = 0
 
-		if (ts.isReturnStatement(this.context.node)) {
+		if (ts.isReturnStatement(this.context.node)
+			|| this.context.node.parent && ts.isArrowFunction(this.context.node.parent)
+				&& this.context.node === this.context.node.parent.body && !ts.isBlock(this.context.node)
+		) {
 			flowInterrupted |= FlowInterruptedByType.Return
 		}
 		

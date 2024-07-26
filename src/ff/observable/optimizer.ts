@@ -28,6 +28,8 @@ export namespace Optimizer {
 			mergeConditionalContentBranches(context)
 
 			// Must after merging.
+			// For `ConditionalAndContent`, if moved to outer Conditional,
+			// later it will also be moved outer.
 			if (context.type === ContextType.Conditional) {
 				moveConditionalOutward(context)
 			}
@@ -50,8 +52,6 @@ export namespace Optimizer {
 		if (context.type === ContextType.FunctionLike) {
 			eliminateRepetitiveWithAncestorsRecursively(context)
 		}
-
-		eliminateOwnRepetitive(context)
 	}
 
 
@@ -155,14 +155,8 @@ export namespace Optimizer {
 	}
 
 
-	/** Eliminate repetitive captured indices that repeat with it's ancestors. */
+	/** Eliminate repetitive captured indices that repeat itself or with it's descendants. */
 	function eliminateRepetitiveWithAncestorsRecursively(context: Context) {
 		context.capturer.eliminateRepetitiveRecursively(new Set())
-	}
-
-
-	/** Eliminate repetitive captured. */
-	function eliminateOwnRepetitive(context: Context) {
-		context.capturer.eliminateOwnRepetitive()
 	}
 }
