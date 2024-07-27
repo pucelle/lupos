@@ -273,16 +273,8 @@ function compileSetContextDecorator(
 	hasDeletedContextVariables: boolean
 ): [TS.MethodDeclaration | TS.ConstructorDeclaration, TS.MethodDeclaration | undefined] {
 	let propName = helper.getText(propDecl.name)
-
-	let classNameIdentifier = helper.symbol.getIdentifier(propDecl.parent)
-	if (!classNameIdentifier) {
-		let superClass = helper.cls.getSuper(propDecl.parent as TS.ClassDeclaration)
-		if (superClass) {
-			classNameIdentifier = helper.symbol.getIdentifier(superClass)
-		}
-	}
-
-	let className = helper.getText(classNameIdentifier!)
+	let superClass = helper.cls.getSuper(propDecl.parent as TS.ClassDeclaration)!
+	let className = helper.getText(helper.symbol.getIdentifier(superClass)!)
 		
 	if (connect) {
 		let connectStatement = factory.createExpressionStatement(factory.createCallExpression(
@@ -343,17 +335,9 @@ function compileUseContextDecorator(
 	hasDeletedContextVariables: boolean
 ): [TS.MethodDeclaration | TS.ConstructorDeclaration, TS.MethodDeclaration | undefined] {
 	let propName = helper.getText(propDecl.name)
-
-	let classNameIdentifier = helper.symbol.getIdentifier(propDecl.parent)
-	if (!classNameIdentifier) {
-		let superClass = helper.cls.getSuper(propDecl.parent as TS.ClassDeclaration)
-		if (superClass) {
-			classNameIdentifier = helper.symbol.getIdentifier(superClass)
-		}
-	}
-
-	let className = helper.getText(classNameIdentifier!)
-		
+	let superClass = helper.cls.getSuper(propDecl.parent as TS.ClassDeclaration)!
+	let className = helper.getText(helper.symbol.getIdentifier(superClass)!)
+	
 	if (connect) {
 		let connectStatement = factory.createExpressionStatement(factory.createBinaryExpression(
 			factory.createPropertyAccessExpression(

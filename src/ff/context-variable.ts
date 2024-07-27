@@ -55,10 +55,10 @@ function compileSetContextDecorator(propDecl: TS.PropertyDeclaration): TS.Node[]
 ```ts
 Compile `@useContext prop` to:
 
-#prop_declared_by: any | null = null
+#prop_declared_by: any = undefined
 
 // @useContext
-get prop(): number | undefined {
+get prop(): any {
 	return this.#prop_declared_by?.['prop']
 }
 ```
@@ -78,10 +78,7 @@ function compileUseContextDecorator(propDecl: TS.PropertyDeclaration): TS.Node[]
 		undefined,
 		factory.createIdentifier(propName),
 		[],
-		factory.createUnionTypeNode([
-		 	factory.createKeywordTypeNode(ts.SyntaxKind.NumberKeyword),
-			factory.createKeywordTypeNode(ts.SyntaxKind.UndefinedKeyword)
-		]),
+		factory.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword),
 		factory.createBlock([
 			factory.createReturnStatement(factory.createElementAccessChain(
 				factory.createPropertyAccessExpression(

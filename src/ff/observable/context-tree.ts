@@ -344,7 +344,7 @@ export namespace ContextTree {
 	 * Must before current position, and must not cross any conditional or iteration context.
 	 */
 	export function findClosestPositionToAddStatement(index: number, from: Context): ContextTargetPosition {
-		let context: Context | null = from
+		let context = from
 		let parameterIndex = visiting.findOutward(index, from.visitingIndex, ts.isParameter)
 
 		// Parameter initializer, no place to insert statements, returns position itself.
