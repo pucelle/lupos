@@ -1072,7 +1072,7 @@ export namespace helper {
 
 		/** 
 		 * Replace property access node to a reference.
-		 * `a.b().c -> _ref_.c`
+		 * `a.b().c -> $ref_.c`
 		 */
 		export function replaceReferencedAccess(node: AccessNode, exp: TS.Expression): AccessNode {
 			if (ts.isPropertyAccessExpression(node)) {

@@ -158,9 +158,9 @@ class TestOptimizing extends Component {
         return 0;
     }
     preventMoveIterationConditionOutward() {
-        var _ref_0;
+        var $ref_0;
         let props = [this.prop, this.prop];
-        for (let i = 0; (_ref_0 = i, trackGet(props[_ref_0], "value"), i < props[_ref_0].value); i++) { }
+        for (let i = 0; ($ref_0 = i, trackGet(props[$ref_0], "value"), i < props[$ref_0].value); i++) { }
         trackGet(this, "prop");
         trackGet(props, "");
         return 0;

@@ -1,2 +1,2 @@
 import './content-slot'
-import './style'
+import './css'

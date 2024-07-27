@@ -63,7 +63,7 @@ export namespace modifier {
 	
 	/** 
 	 * Insert a variable assignment from a position to an existing variable list.
-	 * `a.b()` -> `var ..., _ref_ = a.b()`, and move it.
+	 * `a.b()` -> `var ..., $ref_ = a.b()`, and move it.
 	 */
 	export function addVariableAssignmentToList(fromIndex: number, toIndex: number, varName: string) {
 		interpolator.before(toIndex, InterpolationContentType.VariableDeclaration, () => {
@@ -81,7 +81,7 @@ export namespace modifier {
 
 	/** 
 	 * Insert a reference expression from a position to another position.
-	 * `a.b()` -> `_ref_ = a.b()`, and move it.
+	 * `a.b()` -> `$ref_ = a.b()`, and move it.
 	 */
 	export function addReferenceAssignment(fromIndex: number, toIndex: number, refName: string) {
 		interpolator.before(toIndex, InterpolationContentType.Reference, () => {

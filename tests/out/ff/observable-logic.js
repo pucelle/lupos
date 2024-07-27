@@ -19,25 +19,25 @@ class TestAndOrDoubleQuestionOperators extends Component {
         return this.prop1.value ?? (trackGet(this, "prop2"), trackGet(this.prop2, "value"), this.prop2.value);
     }
     orProp() {
-        var _ref_0;
-        _ref_0 = this.prop1 || (trackGet(this, "prop2"), this.prop2);
-        trackGet(_ref_0, "value");
+        var $ref_0;
+        $ref_0 = this.prop1 || (trackGet(this, "prop2"), this.prop2);
+        trackGet($ref_0, "value");
         trackGet(this, "prop1");
-        return _ref_0.value;
+        return $ref_0.value;
     }
     andProp() {
-        var _ref_0;
-        _ref_0 = this.prop1 && (trackGet(this, "prop2"), this.prop2);
-        trackGet(_ref_0, "value");
+        var $ref_0;
+        $ref_0 = this.prop1 && (trackGet(this, "prop2"), this.prop2);
+        trackGet($ref_0, "value");
         trackGet(this, "prop1");
-        return _ref_0.value;
+        return $ref_0.value;
     }
     qqProp() {
-        var _ref_0;
-        _ref_0 = this.prop1 ?? (trackGet(this, "prop2"), this.prop2);
-        trackGet(_ref_0, "value");
+        var $ref_0;
+        $ref_0 = this.prop1 ?? (trackGet(this, "prop2"), this.prop2);
+        trackGet($ref_0, "value");
         trackGet(this, "prop1");
-        return _ref_0.value;
+        return $ref_0.value;
     }
 }
 class TestTernaryConditionalOperator extends Component {

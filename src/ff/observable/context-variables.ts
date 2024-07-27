@@ -196,8 +196,8 @@ export class ContextVariables {
 	/** Remember observed parameters. */
 	private makeParametersObserved(parameters: TS.NodeArray<TS.ParameterDeclaration>) {
 		for (let param of parameters) {
-			let beObject = helper.types.isObjectType(helper.types.getType(param))
-			this.variableObserved.set(helper.getText(param.name), beObject)
+			let beValue = helper.types.isValueType(helper.types.getType(param))
+			this.variableObserved.set(helper.getText(param.name), !beValue)
 		}
 	}
 

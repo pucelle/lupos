@@ -1,6 +1,6 @@
 import { Observed, trackGet } from '@pucelle/ff';
 import { Component } from '@pucelle/lupos.js';
-var _ref_0;
+var $ref_0;
 class TestRef extends Component {
     prop = { value: 1 };
     getProp() {
@@ -12,97 +12,97 @@ class TestRef extends Component {
         return this.prop;
     }
     doubleVariableDeclarationRef() {
-        let i = this.prop.value, _ref_0 = this.getNextProp(i), j = _ref_0.value;
+        let i = this.prop.value, $ref_0 = this.getNextProp(i), j = $ref_0.value;
         trackGet(this, "prop");
         trackGet(this.prop, "value");
-        trackGet(_ref_0, "value");
+        trackGet($ref_0, "value");
         return j;
     }
     normalRef() {
-        var _ref_0;
-        _ref_0 = this.getProp();
-        trackGet(_ref_0, "value");
-        return _ref_0.value;
+        var $ref_0;
+        $ref_0 = this.getProp();
+        trackGet($ref_0, "value");
+        return $ref_0.value;
     }
     *yieldRef() {
-        var _ref_0;
-        _ref_0 = this.getProp();
-        trackGet(_ref_0, "value");
-        yield _ref_0.value;
+        var $ref_0;
+        $ref_0 = this.getProp();
+        trackGet($ref_0, "value");
+        yield $ref_0.value;
     }
     ifRef() {
-        var _ref_0;
-        _ref_0 = this.getProp();
-        trackGet(_ref_0, "value");
-        if (_ref_0.value) {
+        var $ref_0;
+        $ref_0 = this.getProp();
+        trackGet($ref_0, "value");
+        if ($ref_0.value) {
             return true;
         }
         return 0;
     }
     elseIfRef() {
-        var _ref_0;
+        var $ref_0;
         if (Boolean(1)) {
             return true;
         }
         else {
-            _ref_0 = this.getProp();
-            trackGet(_ref_0, "value");
-            if (_ref_0.value) {
+            $ref_0 = this.getProp();
+            trackGet($ref_0, "value");
+            if ($ref_0.value) {
                 return true;
             }
         }
         return 0;
     }
     multipleConditionalRef() {
-        var _ref_0, _ref_1, _ref_2;
-        _ref_2 = this.getProp();
-        trackGet(_ref_2, "value");
-        return _ref_2.value
-            ? (_ref_0 = this.getNextProp(0), trackGet(_ref_0, "value"), _ref_0.value
+        var $ref_0, $ref_1, $ref_2;
+        $ref_2 = this.getProp();
+        trackGet($ref_2, "value");
+        return $ref_2.value
+            ? ($ref_0 = this.getNextProp(0), trackGet($ref_0, "value"), $ref_0.value
                 ? 1
-                : 2) : (_ref_1 = this.getNextProp(1), trackGet(_ref_1, "value"), _ref_1.value
+                : 2) : ($ref_1 = this.getNextProp(1), trackGet($ref_1, "value"), $ref_1.value
             ? 3
             : 4);
     }
     multipleBinaryRef() {
-        var _ref_0, _ref_1, _ref_2;
-        _ref_1 = this.getProp();
-        trackGet(_ref_1, "value");
-        return _ref_1.value || (_ref_0 = this.getNextProp(0), trackGet(_ref_0, "value"), _ref_0.value) || (_ref_2 = this.getNextProp(1), trackGet(_ref_2, "value"), _ref_2.value);
+        var $ref_0, $ref_1, $ref_2;
+        $ref_1 = this.getProp();
+        trackGet($ref_1, "value");
+        return $ref_1.value || ($ref_0 = this.getNextProp(0), trackGet($ref_0, "value"), $ref_0.value) || ($ref_2 = this.getNextProp(1), trackGet($ref_2, "value"), $ref_2.value);
     }
     deepRef() {
-        var _ref_0, _ref_1;
-        _ref_0 = this.getProp();
-        _ref_1 = this.getNextProp(_ref_0.value);
-        trackGet(_ref_0, "value");
-        trackGet(_ref_1, "value");
-        return _ref_1.value;
+        var $ref_0, $ref_1;
+        $ref_0 = this.getProp();
+        $ref_1 = this.getNextProp($ref_0.value);
+        trackGet($ref_0, "value");
+        trackGet($ref_1, "value");
+        return $ref_1.value;
     }
-    parameterRef(value = (_ref_0 = this.getProp(), _ref_0).value) {
-        trackGet(_ref_0, "value");
+    parameterRef(value = ($ref_0 = this.getProp(), $ref_0).value) {
+        trackGet($ref_0, "value");
         return value;
     }
     indexRef() {
-        var _ref_1;
+        var $ref_1;
         let a = [this.prop];
         let i = 0;
-        _ref_1 = i++;
+        $ref_1 = i++;
         trackGet(this, "prop");
         trackGet(a, "");
-        trackGet(a[_ref_1], "value");
-        return a[_ref_1].value;
+        trackGet(a[$ref_1], "value");
+        return a[$ref_1].value;
     }
     forVariableInitializerRef() {
-        let _ref_1 = this.getProp(), i = _ref_1.value;
+        let $ref_1 = this.getProp(), i = $ref_1.value;
         for (; i < 1; i++) {
             break;
         }
-        trackGet(_ref_1, "value");
+        trackGet($ref_1, "value");
         return 0;
     }
     forDoubleVariableInitializerRef() {
-        let i = this.prop.value, _ref_1 = this.getNextProp(i), j = _ref_1.value;
-        for (trackGet(_ref_1, "value"); j < 1; j++) {
+        let i = this.prop.value, $ref_1 = this.getNextProp(i), j = $ref_1.value;
+        for (trackGet($ref_1, "value"); j < 1; j++) {
             break;
         }
         trackGet(this, "prop");
@@ -110,46 +110,46 @@ class TestRef extends Component {
         return 0;
     }
     forExpressionInitializerRef() {
-        var _ref_1;
+        var $ref_1;
         let i;
-        _ref_1 = this.getProp();
-        i = _ref_1.value;
+        $ref_1 = this.getProp();
+        i = $ref_1.value;
         for (; i < 1; i++) {
             break;
         }
-        trackGet(_ref_1, "value");
+        trackGet($ref_1, "value");
         return 0;
     }
     forConditionRef() {
-        var _ref_1;
-        for (let i = 0; (_ref_1 = this.getProp(), i < _ref_1.value); i++) {
+        var $ref_1;
+        for (let i = 0; ($ref_1 = this.getProp(), i < $ref_1.value); i++) {
             break;
         }
-        trackGet(_ref_1, "value");
+        trackGet($ref_1, "value");
         return 0;
     }
     forIncreasementRef() {
-        var _ref_1;
-        for (let i = 0; i < 1; (_ref_1 = this.getProp(), i += _ref_1.value)) {
+        var $ref_1;
+        for (let i = 0; i < 1; ($ref_1 = this.getProp(), i += $ref_1.value)) {
             break;
         }
-        trackGet(_ref_1, "value");
+        trackGet($ref_1, "value");
         return 0;
     }
     caseDefaultRef() {
         var a = '';
         switch (a) {
             case '1':
-                var _ref_1;
-                _ref_1 = this.getProp();
-                _ref_1.value;
-                trackGet(_ref_1, "value");
+                var $ref_1;
+                $ref_1 = this.getProp();
+                $ref_1.value;
+                trackGet($ref_1, "value");
                 break;
             default:
-                var _ref_1;
-                _ref_1 = this.getProp();
-                _ref_1.value;
-                trackGet(_ref_1, "value");
+                var $ref_1;
+                $ref_1 = this.getProp();
+                $ref_1.value;
+                trackGet($ref_1, "value");
         }
         return 0;
     }
