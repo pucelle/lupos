@@ -122,6 +122,16 @@ export namespace interpolator {
 	}
 
 
+	/** Remove node. */
+	export function remove(index: number) {
+		add(index, {
+			position: InterpolationPosition.Replace,
+			contentType: InterpolationContentType.Normal,
+			replace: () => undefined,
+		})
+	}
+
+
 	/** Insert expressions to before specified position. */
 	export function before(index: number, contentType: InterpolationContentType, exps: () => TS.Node | TS.Node[]) {
 		add(index, {

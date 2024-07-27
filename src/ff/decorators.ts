@@ -4,7 +4,7 @@ import {helper, ts, defineVisitor, modifier, factory, interpolator, Interpolatio
 
 defineVisitor(function(node: TS.Node, index: number) {
 		
-	// Method and decorated, and may need to check whether class is observable.
+	// Method and decorated.
 	if (!ts.isMethodDeclaration(node)) {
 		return
 	}
