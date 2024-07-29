@@ -9,6 +9,8 @@ export interface HTMLToken {
 /** Attribute names and values */
 export interface HTMLAttribute {
 	name: string
+
+	/** Quotes have been removed. */
 	value: string | null
 }
 
@@ -132,9 +134,9 @@ export namespace HTMLTokenParser {
 		return tokens
 	}
 
-	/** Trim text by removing `\r\n\t`. */
+	/** Trim text by removing `\r\n\t` and spaces in the front and end of each line. */
 	function trimText(text: string) {
-		return text.replace(/^[\r\n\t]+|[\r\n\t]+$/g, '')
+		return text.replace(/^[\r\n\t ]+|[\r\n\t ]+$/g, '')
 	}
 
 	/** Parses a HTML attribute string to an attribute list. */
@@ -144,7 +146,7 @@ export namespace HTMLTokenParser {
 
 		while (match = AttrRE.exec(attr)) {
 			let name = match[1]
-			let value = match[2]
+			let value = match[2].replace(/^(['"])(.*?)\1$/, '$1')
 	
 			attrs.push({
 				name,

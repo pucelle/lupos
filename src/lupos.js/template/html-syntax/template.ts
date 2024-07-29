@@ -1,7 +1,7 @@
 import {NodeRange} from '../../lupos.js/src/internals/node-range'
 import {NodeAnchor, NodeAnchorType} from '../../lupos.js/src/internals/node-anchor'
 import {TemplateResult} from '../../../../../lupos.js/src/template/template-result'
-import {parseTemplate, Slot, SlotType} from '../parser/parser'
+import {parseTemplate, Slot, SlotType} from '../parsers/template'
 import {NodePart} from '../../lupos.js/src/template2/parts/node-part'
 import {MayAttrPart} from '../../lupos.js/src/template2/parts/may-attr-part'
 import {EventPart} from '../../lupos.js/src/template2/parts/event-part'

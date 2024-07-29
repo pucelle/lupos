@@ -46,8 +46,13 @@ export namespace TemplateSlotPlaceholder {
 	}
 
 	/** Split a full template string by template slot placeholder `$LUPOS_SLOT_INDEX_\d_. */
-	export function splitTemplateString(parsed: string): string[] {
-		return parsed.split(/\$LUPOS_SLOT_INDEX_\d+\$/g)
+	export function parseTemplateStrings(parsed: string): string[] | null {
+		let result = parsed.split(/\$LUPOS_SLOT_INDEX_\d+\$/g)
+		if (result.length === 2 && result[0] === '' && result[1] === '') {
+			return null
+		}
+
+		return result
 	}
 
 
@@ -64,8 +69,8 @@ export namespace TemplateSlotPlaceholder {
 
 
 	/** Get slot index from placeholder `$LUPOS_SLOT_INDEX_\d_. */
-	export function getUniqueSlotIndex(string: string): number {
-		return Number(string.match(/^\$LUPOS_SLOT_INDEX_(\d+)\$$/)?.[1] ?? -1)
+	export function getUniqueSlotIndex(string: string): number | null {
+		return Number(string.match(/^\$LUPOS_SLOT_INDEX_(\d+)\$$/)?.[1] ?? null)
 	}
 
 

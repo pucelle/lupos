@@ -12,14 +12,17 @@ export enum HTMLNodeType {
 export class HTMLNode {
 
 	readonly type: HTMLNodeType
-	readonly token: Omit<HTMLToken, 'type'>
+	readonly tagName?: string
+	text?: string
+	attrs?: HTMLAttribute[]
 
 	children: HTMLNode[] = []
 	parent: HTMLNode | null = null
 
 	constructor(type: HTMLNodeType, token: Omit<HTMLToken, 'type'>) {
 		this.type = type
-		this.token = token
+		this.text = token.text
+		this.attrs = token.attrs
 	}
 
 	private setParent(parent: HTMLNode) {
@@ -71,7 +74,7 @@ export class HTMLNode {
 	*walk(): Iterable<HTMLNode> {
 		yield this
 
-		for (let child of this.children) {
+		for (let child of [...this.children]) {
 			yield *child.walk()
 		}
 	}
@@ -88,10 +91,20 @@ export class HTMLNode {
 		this.parent = null
 	}
 
+	removeAttr(attr: HTMLAttribute) {
+		removeFromList(this.attrs!, attr)
+	}
+
 	wrapWith(tagName: string, attrs?: HTMLAttribute[]) {
 		let newNode = new HTMLNode(HTMLNodeType.Tag, {tagName, attrs})
 		newNode.addChild(this)
 		this.parent!.replaceChild(this, newNode)
+	}
+
+	replaceWith(...nodes: HTMLNode[]) {
+		let index = this.siblingIndex
+		this.parent!.children.splice(index, 1, ...nodes)
+		this.parent = null
 	}
 
 	separate(): HTMLTree {
@@ -116,7 +129,7 @@ export class HTMLNode {
 	closest(tag: string): HTMLNode | null {
 		let node: HTMLNode | null = this
 
-		while (node && node.token.tagName !== tag) {
+		while (node && node.tagName !== tag) {
 			node = node.parent
 		}
 

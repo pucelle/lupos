@@ -1,9 +1,14 @@
 import type TS from 'typescript'
 import {helper, defineVisitor, ts, interpolator, InterpolationContentType, TemplateSlotPlaceholder} from '../../base'
-import {TemplateParser} from './parser/parser'
+import {TemplateParser, HTMLTreeParser} from './parsers'
 
 
 defineVisitor(function(node: TS.Node, index: number) {
+	if (ts.isSourceFile(node)) {
+		HTMLTreeParser.initialize()
+		return
+	}
+
 	if (!ts.isTaggedTemplateExpression(node)) {
 		return
 	}
