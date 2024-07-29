@@ -18,7 +18,7 @@ html`<div class=${this.className} @click=${this.onClick}></div>`
 		})
 
 	scoped:
-		return $t0
+		return new CompiledTemplateResult($t0, [values])
 
 
 html`<div @click.prevent=${this.onClick}></div>`

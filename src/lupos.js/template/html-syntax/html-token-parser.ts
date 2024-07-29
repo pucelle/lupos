@@ -3,7 +3,7 @@ export interface HTMLToken {
 	type: HTMLTokenType
 	text?: string
 	tagName?: string
-	attributes?: HTMLAttribute[]
+	attrs?: HTMLAttribute[]
 }
 
 /** Attribute names and values */
@@ -106,7 +106,7 @@ export namespace HTMLTokenParser {
 				tokens.push({
 					type: HTMLTokenType.StartTag,
 					tagName,
-					attributes,
+					attrs: attributes,
 				})
 
 				//`<tag />` -> `<tag></tag>`
@@ -164,7 +164,7 @@ export namespace HTMLTokenParser {
 			switch (token.type) {
 				case HTMLTokenType.StartTag:
 					let tagName = token.tagName!
-					let attribute = joinAttributes(token.attributes!)
+					let attribute = joinAttributes(token.attrs!)
 					codes += '<' + tagName + attribute + '>'
 					break
 

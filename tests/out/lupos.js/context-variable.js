@@ -3,23 +3,23 @@ import { Component } from '@pucelle/lupos.js';
 class Parent extends Component {
     onConnected() {
         super.onConnected();
-        Parent.setContextVariable(this, "prop");
+        Component.setContextVariable(this, "prop");
     }
     onDisconnected() {
         super.onDisconnected();
-        Parent.deleteContextVariables(this);
+        Component.deleteContextVariables(this);
     }
     prop = 1;
 }
 class Child extends Component {
     onConnected() {
         super.onConnected();
-        this.#prop_declared_by = Child.getContextVariableDeclared(this, "prop");
+        this.#prop_declared_by = Component.getContextVariableDeclared(this, "prop");
     }
     onDisconnected() {
         super.onDisconnected();
         this.#prop_declared_by = undefined;
-        Child.deleteContextVariables(this);
+        Component.deleteContextVariables(this);
     }
     #prop_declared_by = undefined;
     get prop() {
