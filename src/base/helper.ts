@@ -417,7 +417,7 @@ export namespace helper {
 				yield *walkVariablePatternNames(node.name)
 			}
 			else if (ts.isIdentifier(node.name)) {
-				yield helper.getText(node.name)
+				yield getText(node.name)
 			}
 		}
 
@@ -430,7 +430,7 @@ export namespace helper {
 					yield *walkVariablePatternNames(element.name)
 				}
 				else if (ts.isIdentifier(element.name)) {
-					yield helper.getText(element.name)
+					yield getText(element.name)
 				}
 			}
 		}
@@ -559,7 +559,7 @@ export namespace helper {
 		export function isMapOrSetReading(node: AccessNode) {
 			let typeNode = getTypeNode(node.expression)
 			let objName = typeNode ? getTypeNodeReferenceName(typeNode) : undefined
-			let propName = helper.access.getNameText(node)
+			let propName = access.getNameText(node)
 
 			if (objName === 'Map') {
 				return propName === 'has' || propName === 'get' || propName === 'size'
@@ -577,7 +577,7 @@ export namespace helper {
 		export function isMapOrSetWriting(node: AccessNode) {
 			let typeNode = getTypeNode(node.expression)
 			let objName = typeNode ? getTypeNodeReferenceName(typeNode) : undefined
-			let propName = helper.access.getNameText(node)
+			let propName = access.getNameText(node)
 
 			if (objName === 'Map') {
 				return propName === 'set'
@@ -1061,7 +1061,7 @@ export namespace helper {
 				}
 			}
 			else if (ts.isIdentifier(node)) {
-				return factory.createIdentifier(helper.getText(node)) as TS.Node as T
+				return factory.createIdentifier(getText(node)) as TS.Node as T
 			}
 			else if (node.kind === ts.SyntaxKind.ThisKeyword) {
 				return factory.createThis() as TS.Node as T
@@ -1151,6 +1151,46 @@ export namespace helper {
 			else {
 				return node
 			}
+		}
+	}
+
+
+	/** Test whether node references some property or variable mutable. */
+	export namespace mutable {
+		
+		/** Test expression represented value is mutable. */
+		export function isMutable(node: TS.Expression): boolean {
+			return visitNodeTestMutable(node)
+		}
+
+		function visitNodeTestMutable(node: TS.Node): boolean {
+			let mutable = false
+
+			// Variable
+			if (variable.isVariableIdentifier(node)) {
+				let variableDecl = symbol.resolveDeclaration(node, ts.isVariableDeclaration)
+				let constVariable = variableDecl && (variableDecl.parent.parent.flags & ts.NodeFlags.Const) > 0
+				mutable ||= !constVariable
+			}
+
+			// Readonly, or method.
+			else if (access.isAccess(node)) {
+
+				// Use method, but not call it.
+				let useNotCalledMethod = symbol.resolveMethod(node) && !ts.isCallExpression(node.parent)
+
+				// Use readonly property.
+				let useReadonlyProperty = symbol.resolveProperty(node) && types.isReadonly(node)
+
+				mutable ||= !(useNotCalledMethod || useReadonlyProperty)
+			}
+
+			ts.visitEachChild(node, (node: TS.Node) => {
+				mutable ||= visitNodeTestMutable(node)
+				return node
+			}, transformContext)
+
+			return mutable
 		}
 	}
 }

@@ -10,6 +10,8 @@ interface DeepReferenceItem {
 
 interface ReferenceOutputItem {
 
+	type: ReferenceOutputType
+
 	/** Node reference index. */
 	index: number
 
@@ -20,11 +22,17 @@ interface ReferenceOutputItem {
 	visitSteps: number[]
 }
 
+enum ReferenceOutputType {
+	DirectlyReference,
+	IntermediateReference,
+}
+
 
 export class HTMLNodeReferences {
 
 	readonly tree: HTMLTree
-	private indexSeed = 0
+	private directlyReferenceSeed = -1
+	private intermediateReferenceSeed = -1
 	private references: Map<HTMLNode, number> = new Map()
 
 	constructor(tree: HTMLTree) {
@@ -40,9 +48,9 @@ export class HTMLNodeReferences {
 			return this.references.get(node)!
 		}
 
-		this.references.set(node, ++this.indexSeed)
+		this.references.set(node, ++this.directlyReferenceSeed)
 
-		return this.indexSeed
+		return this.directlyReferenceSeed
 	}
 
 	/** Whether node has been referenced. */
@@ -101,6 +109,7 @@ export class HTMLNodeReferences {
 			let index = this.getReferenceIndex(item.node)
 
 			yield {
+				type: ReferenceOutputType.DirectlyReference,
 				index,
 				visitFromIndex: fromIndex,
 				visitSteps: steps,
@@ -121,9 +130,10 @@ export class HTMLNodeReferences {
 		// f.d
 		// f.e
 		else if (item.children.length > 1) {
-			let index = ++this.indexSeed
+			let index = ++this.intermediateReferenceSeed
 
 			yield {
+				type: ReferenceOutputType.IntermediateReference,
 				index,
 				visitFromIndex: fromIndex,
 				visitSteps: steps,

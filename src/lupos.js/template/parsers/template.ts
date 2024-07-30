@@ -1,7 +1,7 @@
 import type TS from 'typescript'
-import {HTMLNode, HTMLNodeType, HTMLTree} from '../html-syntax'
-import {TemplateSlotPlaceholder} from '../../../base'
+import {HTMLNode, HTMLTree} from '../html-syntax'
 import {HTMLTreeParser} from './html-tree'
+import {helper} from '../../../base'
 
 
 export type TemplateType = 'html' | 'svg'
@@ -34,6 +34,7 @@ export class TemplateParser {
 	readonly values: TS.Expression[]
 
 	private treeParsers: HTMLTreeParser[] = []
+	private remappedValueIndices: Map<number, number> = new Map()
 
 	constructor(type: TemplateType, string: string, values: TS.Expression[]) {
 		this.type = type
@@ -48,6 +49,35 @@ export class TemplateParser {
 		this.treeParsers.push(parser)
 
 		return parser
+	}
+
+	/** Removes all static values. */
+	private remapValueIndices() {
+		let count = 0
+
+		for (let i = 0; i < this.values.length; i++) {
+			let node = this.values[i]
+
+			if (!helper.mutable.isMutable(node)) {
+				continue
+			}
+
+			this.remappedValueIndices.set(i, count)
+			count++
+		}
+	}
+
+	/** 
+	 * Add a customized value to list.
+	 * Return the value index.
+	 */
+	addCustomizedValue(node: TS.Expression): number {
+		this.values.push(node)
+		return this.values.length - 1
+	}
+
+	getRemappedValueIndex(index: number): number | undefined {
+		return this.remappedValueIndices.get(index)
 	}
 
 	/** Create a template element with `html` as content. */

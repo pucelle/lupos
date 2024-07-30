@@ -1,5 +1,4 @@
 import {removeFromList} from '../../../utils'
-import {HTMLNodeReferences} from './html-node-references'
 import {HTMLAttribute, HTMLToken, HTMLTokenParser, HTMLTokenType} from './html-token-parser'
 
 
@@ -75,6 +74,12 @@ export class HTMLNode {
 		yield this
 
 		for (let child of [...this.children]) {
+
+			// May be removed when walking.
+			if (child.parent !== this) {
+				continue
+			}
+
 			yield *child.walk()
 		}
 	}
@@ -170,13 +175,7 @@ export class HTMLTree extends HTMLNode {
 		return tree
 	}
 
-
-	readonly references: HTMLNodeReferences
-	
 	constructor() {
 		super(HTMLNodeType.Tag, {tagName: 'template'})
-		this.references = new HTMLNodeReferences(this)
 	}
-
-
 }

@@ -1,61 +1,8 @@
 import {helper, TemplateSlotPlaceholder} from '../../../base'
 import {HTMLNode, HTMLNodeType, HTMLTree} from '../html-syntax'
+import {HTMLNodeReferences} from '../html-syntax/html-node-references'
+import {SlotBase, SlotTagSlot, SlotType} from './slots'
 import {TemplateParser} from './template'
-
-
-/** Each template slot represent a `${...}`. */
-export interface Slot {
-
-	/** Slot type. */
-	type: SlotType
-
-	/** Slot attribute name, be `null` for dynamic binding `<tag ${...}>`. */
-	name: string | null
-
-	/** If defined as `???="a${...}b"`, be `[a, b]`. Otherwise be `null`. */
-	strings: string[] | null
-
-	/** 
-	 * Value indices in the whole template.
-	 * Having more than one values for `???="a${...}b${...}c"`.
-	 * Is `null` if slot is a fixed slot defined like `???="..."`.
-	 */
-	valueIndices: number[] | null
-
-	/** Index of the node the slot placed at within the document fragment. */
-	nodeIndex: number | null
-
-	/** If slot uses another tree as it's content. */
-	treeIndex: number | null
-}
-
-/** Type of each template slot. */
-export enum SlotType {
-
-	/** `>${...}<`, content, normally a template result, or a list of template result, or null. */
-	Content,
-
-	/** Pure text node. */
-	Text,
-
-	/** `<slot>` */
-	SlotTag,
-
-	/** `<${} ...>` */
-	DynamicComponent,
-
-	/** `<tag attr=...>` */
-	Attr,
-
-	/** `<tag .property=...>` */
-	Property,
-
-	/** `<tag @event=...>` */
-	Event,
-
-	/** `<tag :class=...>` */
-	Binging,
-}
 
 
 /** Parse a html tree of a template. */
@@ -73,11 +20,12 @@ export class HTMLTreeParser {
 	readonly parent: HTMLTreeParser | null
 	readonly fromNode: HTMLNode | null
 	readonly index: number
-
+	readonly references: HTMLNodeReferences
+	
 	inSVG: boolean = false
 	wrappedBySVG: boolean = false
 
-	private slots: Slot[] = []
+	private slots: SlotBase[] = []
 
 	constructor(template: TemplateParser, tree: HTMLTree, parent: HTMLTreeParser | null, fromNode: HTMLNode | null) {
 		this.template = template
@@ -85,7 +33,8 @@ export class HTMLTreeParser {
 		this.parent = parent
 		this.fromNode = fromNode
 		this.index = ++HTMLTreeParser.indexSeed
-
+		this.references = new HTMLNodeReferences(this.tree)
+		
 		this.initSVGWrapping()
 		this.parseSlots()
 	}
@@ -121,11 +70,11 @@ export class HTMLTreeParser {
 						this.parseSlotTag(node)
 					}
 					else if (TemplateSlotPlaceholder.isCompleteSlotIndex(tagName)) {
-						this.parseDynamicTagName(node)
+						this.parseDynamicTag(node)
 						break
 					}
 					else if (tagName.startsWith('lupos:')) {
-						this.parseDynamicTagName(node)
+						this.parseFlowControlTag(node)
 						break
 					}
 
@@ -157,40 +106,36 @@ export class HTMLTreeParser {
 	private parseSlotTag(node: HTMLNode) {
 		let nameAttr = node.attrs!.find(a => a.name === 'name')
 		let name = nameAttr?.name || null
-		let parser: HTMLTreeParser | null = null
 
-		// Slot default content.
-		if (node.children.length > 0) {
-			parser = this.separateSubTree(node)
-		}
-
-		this.slots.push({
-			type: SlotType.SlotTag,
-			name,
-			strings: null,
-			valueIndices: null,
-			nodeIndex: this.tree.references.reference(node),
-			treeIndex: parser ? parser.index : null,
-		})
+		this.addSlot(new SlotTagSlot(SlotType.SlotTag, name, null, null, node, this))
 	}
 
-	private separateSubTree(node: HTMLNode): HTMLTreeParser {
+	private addSlot(slot: SlotBase) {
+		slot.parse()
+		this.slots.push(slot)
+	}
+
+	separateSubTree(node: HTMLNode): HTMLTreeParser {
 		let tree = node.separateChildren()
 		return this.template.addTreeParser(tree, this, node)
 	}
 
-	private parseDynamicTagName(node: HTMLNode) {
+	private parseDynamicTag(node: HTMLNode) {
 		let nameAttr = node.attrs!.find(a => a.name === 'name')
 		let name = nameAttr?.name || null
 
 		this.slots.push({
-			type: SlotType.DynamicComponent,
+			type: SlotType.DynamicTag,
 			name,
 			strings: null,
 			valueIndices: [TemplateSlotPlaceholder.getUniqueSlotIndex(node.tagName!)!],
 			nodeIndex: this.tree.references.reference(node),
 			treeIndex: null,
 		})
+	}
+
+	private parseFlowControlTag(node: HTMLNode) {
+
 	}
 
 	private parseAttributes(node: HTMLNode) {
@@ -209,7 +154,7 @@ export class HTMLTreeParser {
 					break
 
 				case ':':
-					type = SlotType.Binging
+					type = SlotType.Binding
 					break
 
 				case '@':
@@ -253,7 +198,7 @@ export class HTMLTreeParser {
 		}
 	}
 
-	/** Parses `<tag>${...}</tag>`. */
+	/** Parse `<tag>${...}</tag>`. */
 	private parseText(node: HTMLNode) {
 
 		// Note `text` has been trimmed when parsing tokens.
@@ -288,7 +233,6 @@ export class HTMLTreeParser {
 
 		// Text, Comment, Text, Comment...
 		else if (strings) {
-
 			let mixedNodes: HTMLNode[] = []
 
 			for (let i = 0; i < strings.length; i++) {
