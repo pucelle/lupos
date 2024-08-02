@@ -1,7 +1,7 @@
 import type TS from 'typescript'
 import {HTMLNode, HTMLTree} from '../html-syntax'
 import {HTMLTreeParser} from './html-tree'
-import {helper} from '../../../base'
+import {factory, helper, ts} from '../../../base'
 
 
 export type TemplateType = 'html' | 'svg'
@@ -31,17 +31,18 @@ export function extendsAttributes(el: Element, attributes: {name: string, value:
 export class TemplateParser {
 
 	readonly type: TemplateType
-	readonly values: TS.Expression[]
+	readonly slotNodes: TS.Expression[]
 
 	private treeParsers: HTMLTreeParser[] = []
-	private remappedValueIndices: Map<number, number> = new Map()
+	private valueIndicesMutable: Map<number, boolean> = new Map()
 
 	constructor(type: TemplateType, string: string, values: TS.Expression[]) {
 		this.type = type
-		this.values = values
+		this.slotNodes = values
 
 		let tree = HTMLTree.fromString(string)
 		this.addTreeParser(tree, null, null)
+		this.checkValueIndicesMutable()
 	}
 
 	addTreeParser(tree: HTMLTree, parent: HTMLTreeParser | null, fromNode: HTMLNode | null): HTMLTreeParser {
@@ -51,33 +52,51 @@ export class TemplateParser {
 		return parser
 	}
 
-	/** Removes all static values. */
-	private remapValueIndices() {
-		let count = 0
-
-		for (let i = 0; i < this.values.length; i++) {
-			let node = this.values[i]
-
-			if (!helper.mutable.isMutable(node)) {
-				continue
-			}
-
-			this.remappedValueIndices.set(i, count)
-			count++
+	/** Removes all static values and remap value indices. */
+	private checkValueIndicesMutable() {
+		for (let i = 0; i < this.slotNodes.length; i++) {
+			let node = this.slotNodes[i]
+			this.valueIndicesMutable.set(i, helper.mutable.isMutable(node))
 		}
 	}
 
-	/** 
-	 * Add a customized value to list.
-	 * Return the value index.
-	 */
-	addCustomizedValue(node: TS.Expression): number {
-		this.values.push(node)
-		return this.values.length - 1
+	/** Returns whether the value at specified index is mutable. */
+	isValueAtIndexMutable(index: number): boolean {
+		return this.valueIndicesMutable.get(index)!
 	}
 
-	getRemappedValueIndex(index: number): number | undefined {
-		return this.remappedValueIndices.get(index)
+	/** 
+	 * `...${...}...` -> ${'...' + ... + '...'}
+	 * Bundle a interpolation strings and value indices to a new expression.
+	 * It uses `indices[0]` as new index.
+	 */
+	bundleValueIndices(strings: string[], valueIndices: number[]) {
+		let value: TS.Expression = factory.createStringLiteral(strings[0])
+
+		// string[0] + values[0] + strings[1] + ...
+		for (let i = 1; i < strings.length; i++) {
+			value = factory.createBinaryExpression(
+				value,
+				factory.createToken(ts.SyntaxKind.PlusToken),
+				this.slotNodes[valueIndices[i - 1]]
+			)
+
+			value = factory.createBinaryExpression(
+				value,
+				factory.createToken(ts.SyntaxKind.PlusToken),
+				factory.createStringLiteral(strings[i])
+			)
+		}
+
+		this.slotNodes[valueIndices[0]] = value
+
+		// Other values become undefined, and will be removed in the following remapping step.
+		for (let i = 1; i < valueIndices.length; i++) {
+			this.slotNodes[valueIndices[i]] = factory.createIdentifier('undefined')
+		}
+
+		// Mutable if any of original indices is mutable.
+		this.valueIndicesMutable.set(valueIndices[0], valueIndices.some(i => this.valueIndicesMutable.get(i)))
 	}
 
 	/** Create a template element with `html` as content. */
@@ -151,6 +170,37 @@ export class TemplateParser {
 	}
 
 	output(): TS.Expression {
+
+	}
+
+	private outputInit() {
+		let indicesMap = this.remapValueIndices()
+	}
+
+	/** Removes all static values and remap value indices. */
+	private remapValueIndices(): Map<number, number> {
+		let count = 0
+		let remappedValueIndices: Map<number, number> = new Map()
+
+		for (let i = 0; i < this.slotNodes.length; i++) {
+			let node = this.slotNodes[i]
+
+			if (!helper.mutable.isMutable(node)) {
+				continue
+			}
+
+			remappedValueIndices.set(i, count)
+			count++
+		}
+
+		return remappedValueIndices
+	}
+
+	private getRemappedValueIndex(index: number): number | undefined {
+		return this.remappedValueIndices.get(index)
+	}
+
+	private outputUpdate() {
 
 	}
 }

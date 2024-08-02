@@ -79,13 +79,8 @@ export namespace HTMLTokenParser {
 
 			lastIndex = TagRE.lastIndex
 			
-			// Comments
-			if (piece[1] === '!') {
-				tokens.push({
-					type: HTMLTokenType.Comment,
-					text: piece.slice(4, -3),
-				})
-			}
+			// Comments, Ignore.
+			if (piece[1] === '!') {}
 
 			// Close Tag
 			else if (piece[1] === '/') {

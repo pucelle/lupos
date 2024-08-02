@@ -2,7 +2,7 @@ import type TS from 'typescript'
 import {SlotBase} from './base'
 
 
-export class EventSlot extends SlotBase {
+export class FlowControlSlot extends SlotBase {
 
 	init() {
 

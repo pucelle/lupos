@@ -30,11 +30,10 @@ defineVisitor(function(node: TS.Node, index: number) {
 	}
 
 	let typeText = helper.types.getTypeFullText(renderType)
-	let slotType: 'TemplateResult' | 'TemplateResultArray' | 'Text' | null = null
+	let slotType: 'TemplateResult' | 'TemplateResultArray' | 'Text' | 'Node' | null = null
 
 	// Check Slot Type.
-	if (renderType.isUnion()) {}
-	else if (typeText === 'TemplateResult') {
+	if (typeText === 'TemplateResult') {
 		slotType = 'TemplateResult'
 	}
 	else if (typeText === 'TemplateResult[]') {
@@ -42,6 +41,9 @@ defineVisitor(function(node: TS.Node, index: number) {
 	}
 	else if (typeText === 'string' || typeText === 'number') {
 		slotType = 'Text'
+	}
+	else if (/^\w*?(Node|Element)$/.test(typeText)) {
+		slotType = 'Node'
 	}
 
 	// Add a property `static ContentSlotType = SlotContentType.xxx`.

@@ -54,11 +54,11 @@ export class HTMLNode {
 		this.parent!.children.splice(this.siblingIndex + 1, 0, sibling)
 	}
 
-	previousSibling() {
+	get previousSibling() {
 		return this.parent!.childAt(this.siblingIndex - 1)
 	}
 
-	nextSibling() {
+	get nextSibling() {
 		return this.parent!.childAt(this.siblingIndex + 1)
 	}
 

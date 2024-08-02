@@ -1,3 +1,4 @@
+import {VariableNames} from '../parsers/variable-names'
 import {HTMLNode, HTMLTree} from './html-node'
 
 
@@ -31,8 +32,6 @@ enum ReferenceOutputType {
 export class HTMLNodeReferences {
 
 	readonly tree: HTMLTree
-	private directlyReferenceSeed = -1
-	private intermediateReferenceSeed = -1
 	private references: Map<HTMLNode, number> = new Map()
 
 	constructor(tree: HTMLTree) {
@@ -48,19 +47,24 @@ export class HTMLNodeReferences {
 			return this.references.get(node)!
 		}
 
-		this.references.set(node, ++this.directlyReferenceSeed)
+		let index = VariableNames.getDoublyUniqueIndex('directly', this)
+		this.references.set(node, index)
 
-		return this.directlyReferenceSeed
+		return index
+	}
+
+	/** 
+	 * Reference node if not, and return it's reference variable name.
+	 * Like `$node_0`.
+	 */
+	getReferenceName(node: HTMLNode) {
+		let nodeIndex = this.reference(node)
+		return VariableNames.node + '_' + nodeIndex
 	}
 
 	/** Whether node has been referenced. */
 	hasReferenced(node: HTMLNode): boolean {
 		return this.references.has(node)
-	}
-
-	/** Get reference index of a node, which must have been referenced. */
-	getReferenceIndex(node: HTMLNode): number {
-		return this.references.get(node)!
 	}
 
 	/** Output all reference sequence. */
@@ -106,7 +110,7 @@ export class HTMLNodeReferences {
 
 		// Output directly
 		if (this.hasReferenced(item.node)) {
-			let index = this.getReferenceIndex(item.node)
+			let index = this.references.get(item.node)!
 
 			yield {
 				type: ReferenceOutputType.DirectlyReference,
@@ -130,7 +134,7 @@ export class HTMLNodeReferences {
 		// f.d
 		// f.e
 		else if (item.children.length > 1) {
-			let index = ++this.intermediateReferenceSeed
+			let index = VariableNames.getDoublyUniqueIndex('intermediate', this)
 
 			yield {
 				type: ReferenceOutputType.IntermediateReference,

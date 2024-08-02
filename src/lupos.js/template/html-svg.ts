@@ -1,11 +1,12 @@
 import type TS from 'typescript'
 import {helper, defineVisitor, ts, interpolator, InterpolationContentType, TemplateSlotPlaceholder} from '../../base'
-import {TemplateParser, HTMLTreeParser} from './parsers'
+import {TemplateParser} from './parsers'
+import {VariableNames} from './parsers/variable-names'
 
 
 defineVisitor(function(node: TS.Node, index: number) {
 	if (ts.isSourceFile(node)) {
-		HTMLTreeParser.initialize()
+		VariableNames.initialize()
 		return
 	}
 

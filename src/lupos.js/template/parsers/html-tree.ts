@@ -1,19 +1,48 @@
 import {helper, TemplateSlotPlaceholder} from '../../../base'
 import {HTMLNode, HTMLNodeType, HTMLTree} from '../html-syntax'
 import {HTMLNodeReferences} from '../html-syntax/html-node-references'
-import {SlotBase, SlotTagSlot, SlotType} from './slots'
+import {SlotBase, DynamicComponentSlot, FlowControlSlot, PropertySlot, BindingSlot, EventSlot, AttributeSlot, TextSlot, ContentSlot, ComponentSlot} from './slots'
 import {TemplateParser} from './template'
+import {VariableNames} from './variable-names'
+
+
+/** Type of each template slot. */
+enum SlotType {
+
+	/** `>${...}<`, content, normally a template result, or a list of template result, or null. */
+	Content,
+
+	/** Pure text node. */
+	Text,
+
+	/** `<slot>` */
+	SlotTag,
+
+	/** `<Component>` */
+	Component,
+
+	/** `<${} ...>` */
+	DynamicComponent,
+
+	/** `<lupos:if>`, ... */
+	FlowControl,
+
+	/** `<tag attr=...>` */
+	Attribute,
+
+	/** `<tag .property=...>` */
+	Property,
+
+	/** `<tag @event=...>` */
+	Event,
+
+	/** `<tag :class=...>` */
+	Binding,
+}
 
 
 /** Parse a html tree of a template. */
 export class HTMLTreeParser {
-
-	static indexSeed: number = -1
-
-	static initialize() {
-		this.indexSeed = -1
-	}
-
 
 	readonly template: TemplateParser
 	readonly tree: HTMLTree
@@ -26,13 +55,15 @@ export class HTMLTreeParser {
 	wrappedBySVG: boolean = false
 
 	private slots: SlotBase[] = []
+	private variableNames: string[] = []
+	private referencedComponentMap: Map<HTMLNode, string> = new Map()
 
 	constructor(template: TemplateParser, tree: HTMLTree, parent: HTMLTreeParser | null, fromNode: HTMLNode | null) {
 		this.template = template
 		this.tree = tree
 		this.parent = parent
 		this.fromNode = fromNode
-		this.index = ++HTMLTreeParser.indexSeed
+		this.index = VariableNames.getUniqueIndex('tree-index')
 		this.references = new HTMLNodeReferences(this.tree)
 		
 		this.initSVGWrapping()
@@ -69,6 +100,9 @@ export class HTMLTreeParser {
 					if (tagName === 'slot') {
 						this.parseSlotTag(node)
 					}
+					else if (/^[A-Z]/.test(tagName)) {
+						this.parseComponentTag(node)
+					}
 					else if (TemplateSlotPlaceholder.isCompleteSlotIndex(tagName)) {
 						this.parseDynamicTag(node)
 						break
@@ -103,50 +137,95 @@ export class HTMLTreeParser {
 		}
 	}
 
+	/** Note `node` may not in tree when adding the slot. */
+	private addSlot(
+		type: SlotType,
+		name: string | null,
+		strings: string[] | null,
+		valueIndices: number[] | null,
+		node: HTMLNode
+	) {
+		if (strings && valueIndices) {
+			this.template.bundleValueIndices(strings, valueIndices)
+		}
+
+		let slot: SlotBase
+		let string = strings ? strings[0] : null
+		let valueIndex = valueIndices ? valueIndices[0] : null
+
+		switch (type) {
+			case SlotType.SlotTag:
+				slot = new PropertySlot(name, string, valueIndex, node, this)
+				break
+
+			case SlotType.Component:
+				slot = new ComponentSlot(name, string, valueIndex, node, this)
+				break
+
+			case SlotType.DynamicComponent:
+				slot = new DynamicComponentSlot(name, string, valueIndex, node, this)
+				break
+
+			case SlotType.FlowControl:
+				slot = new FlowControlSlot(name, string, valueIndex, node, this)
+				break
+
+			case SlotType.Property:
+				slot = new PropertySlot(name, string, valueIndex, node, this)
+				break
+			
+			case SlotType.Binding:
+				slot = new BindingSlot(name, string, valueIndex, node, this)
+				break
+			
+			case SlotType.Event:
+				slot = new EventSlot(name, string, valueIndex, node, this)
+				break
+			
+			case SlotType.Attribute:
+				slot = new AttributeSlot(name, string, valueIndex, node, this)
+				break
+
+			case SlotType.Text:
+				slot = new TextSlot(name, string, valueIndex, node, this)
+				break
+			
+			case SlotType.Content:
+				slot = new ContentSlot(name, string, valueIndex, node, this)
+				break
+		}
+
+		this.slots.push(slot)
+	}
+
 	private parseSlotTag(node: HTMLNode) {
 		let nameAttr = node.attrs!.find(a => a.name === 'name')
 		let name = nameAttr?.name || null
 
-		this.addSlot(new SlotTagSlot(SlotType.SlotTag, name, null, null, node, this))
+		this.addSlot(SlotType.SlotTag, name, null, null, node)
 	}
 
-	private addSlot(slot: SlotBase) {
-		slot.parse()
-		this.slots.push(slot)
-	}
-
-	separateSubTree(node: HTMLNode): HTMLTreeParser {
-		let tree = node.separateChildren()
-		return this.template.addTreeParser(tree, this, node)
+	private parseComponentTag(node: HTMLNode) {
+		this.addSlot(SlotType.Component, null, null, null, node)
 	}
 
 	private parseDynamicTag(node: HTMLNode) {
-		let nameAttr = node.attrs!.find(a => a.name === 'name')
-		let name = nameAttr?.name || null
-
-		this.slots.push({
-			type: SlotType.DynamicTag,
-			name,
-			strings: null,
-			valueIndices: [TemplateSlotPlaceholder.getUniqueSlotIndex(node.tagName!)!],
-			nodeIndex: this.tree.references.reference(node),
-			treeIndex: null,
-		})
+		this.addSlot(SlotType.DynamicComponent, null, null, null, node)
 	}
 
 	private parseFlowControlTag(node: HTMLNode) {
-
+		this.addSlot(SlotType.FlowControl, null, null, null, node)
 	}
 
 	private parseAttributes(node: HTMLNode) {
 		for (let attr of node.attrs!) {
 			let {name, value} = attr
+			let type: SlotType | null = null
 			
 			// `<tag ...=${...}>
 			// `<tag ...="...${...}...">
-			let type: SlotType | undefined
-			let slotIndices = value ? TemplateSlotPlaceholder.getSlotIndices(value) : []
 			let strings = value !== null ? TemplateSlotPlaceholder.parseTemplateStrings(value) : null
+			let slotIndices = value !== null ? TemplateSlotPlaceholder.getSlotIndices(value) : null
 
 			switch (name[0]) {
 				case '.':
@@ -160,41 +239,35 @@ export class HTMLTreeParser {
 				case '@':
 					type = SlotType.Event
 					break
-
+				
 				default:
-					type = SlotType.Attr
+					if (slotIndices) {
+						type = SlotType.Attribute
+					}
 			}
 
-			if (type !== undefined) {
+			if (type === null) {
+				continue
+			}
+
+			if (type !== SlotType.Attribute) {
 				name = name.slice(1)
 			}
 
-			if (slotIndices.length > 0) {
-				this.slots.push({
-					type,
-					name,
-					strings: null,
-					valueIndices: slotIndices,
-					nodeIndex: this.tree.references.reference(node),
-					treeIndex: null,
-				})
-
-				node.removeAttr(attr)
+			if (type === SlotType.Property) {
+				this.addSlot(SlotType.Property, name, strings, slotIndices, node)
+			}
+			else if (type === SlotType.Binding) {
+				this.addSlot(SlotType.Binding, name, strings, slotIndices, node)
+			}
+			else if (type === SlotType.Event) {
+				this.addSlot(SlotType.Event, name, strings, slotIndices, node)
+			}
+			else if (type === SlotType.Attribute) {
+				this.addSlot(SlotType.Attribute, name, strings, slotIndices, node)
 			}
 
-			// `.a="b"`
-			else if (type !== SlotType.Attr) {
-				this.slots.push({
-					type,
-					name,
-					strings,
-					valueIndices: null,
-					nodeIndex: this.tree.references.reference(node),
-					treeIndex: null,
-				})
-
-				node.removeAttr(attr)
-			}
+			node.removeAttr(attr)
 		}
 	}
 
@@ -208,27 +281,17 @@ export class HTMLTreeParser {
 		}
 
 		let strings = TemplateSlotPlaceholder.parseTemplateStrings(text)
-		let slotIndices = TemplateSlotPlaceholder.getSlotIndices(text)
-		let joinAsAWholeText = false
+		let slotIndices = TemplateSlotPlaceholder.getSlotIndices(text)!
 
 		// `>{textValue}<` or
 		// `>${html`...`}<`
-		if (slotIndices.length > 0) {
-			joinAsAWholeText = slotIndices.every(index => {
-				return helper.types.isValueType(helper.types.getType(this.template.values[index]))
-			})
-		}
+		let joinAsAWholeText = slotIndices.every(index => {
+			return helper.types.isValueType(helper.types.getType(this.template.slotNodes[index]))
+		})
 
 		// Text `...${...}...`
 		if (joinAsAWholeText) {
-			this.slots.push({
-				type: SlotType.Text,
-				name: null,
-				strings,
-				valueIndices: slotIndices,
-				nodeIndex: this.tree.references.reference(node),
-				treeIndex: null,
-			})
+			this.addSlot(SlotType.Text, null, strings, slotIndices, node)
 		}
 
 		// Text, Comment, Text, Comment...
@@ -243,17 +306,9 @@ export class HTMLTreeParser {
 
 				if (i < slotIndices.length) {
 					let comment = new HTMLNode(HTMLNodeType.Comment, {})
-
-					this.slots.push({
-						type: SlotType.Content,
-						name: null,
-						strings: null,
-						valueIndices: [slotIndices[i]],
-						nodeIndex: this.tree.references.reference(comment),
-						treeIndex: null,
-					})
-
 					mixedNodes.push(comment)
+
+					this.addSlot(SlotType.Content, null, null, [slotIndices[i]], node)
 				}
 			}
 
@@ -261,6 +316,70 @@ export class HTMLTreeParser {
 		}
 
 		return text
+	}
+	
+	/** Separate node to an independent tree. */
+	separateSubTree(node: HTMLNode): HTMLTreeParser {
+		let tree = node.separateChildren()
+		return this.template.addTreeParser(tree, this, node)
+	}
+
+	/** `$maker_0` */
+	getMakerVariableName(): string {
+		return VariableNames.maker + '_' + this.index
+	}
+
+	/** `$slot_0` */
+	getUniqueSlotVariableName(): string {
+		let name = VariableNames.getUniqueName(VariableNames.slot, this)
+		this.variableNames.push(name)
+		return name
+	}
+
+	/** `$latest_0` */
+	getUniqueLatestVariableName(): string {
+		let name = VariableNames.getUniqueName(VariableNames.latest, this)
+		this.variableNames.push(name)
+		return name
+	}
+
+	/** `$binding_0` */
+	getUniqueBindingVariableName(): string {
+		let name = VariableNames.getUniqueName(VariableNames.binding, this)
+		this.variableNames.push(name)
+		return name
+	}
+
+	/** `$block_0` */
+	getUniqueBlockVariableName(): string {
+		let name = VariableNames.getUniqueName(VariableNames.block, this)
+		this.variableNames.push(name)
+		return name
+	}
+
+	/** 
+	 * Reference component of a node and get it's unique variable name.
+	 * Must call it in `init` method.
+	 */
+	refComponent(node: HTMLNode): string {
+		if (this.referencedComponentMap.has(node)) {
+			return this.referencedComponentMap.get(node)!
+		}
+		
+		let comName = VariableNames.getUniqueName(VariableNames.com, this)
+		this.referencedComponentMap.set(node, comName)
+
+		return comName
+	}
+
+	/** Get component name of a refed component by it's node. */
+	getRefedComponentName(node: HTMLNode): string | undefined {
+		return this.referencedComponentMap.get(node)
+	}
+
+	/** Returns whether component of a node has been referenced. */
+	isComponentReferenced(node: HTMLNode) {
+		return this.referencedComponentMap.has(node)
 	}
 }
 

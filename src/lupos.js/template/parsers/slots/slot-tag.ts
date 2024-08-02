@@ -1,53 +1,141 @@
 import type TS from 'typescript'
 import {HTMLTreeParser} from '../html-tree'
 import {SlotBase} from './base'
-import {factory} from '../../../../base'
+import {factory, modifier, ts} from '../../../../base'
 import {VariableNames} from '../variable-names'
 
 
 export class SlotTagSlot extends SlotBase {
 
+	/** To parse content of `<slot>...</slot>` */
 	private defaultContentParser: HTMLTreeParser | null = null
-	private namedValueIndex: number | null = null
 
-	parse() {
+	/** $slot_0 */
+	private slotVariableName: string = ''
 
-		if (this.name) {
-			let value = factory.createCallExpression(
-				factory.createPropertyAccessExpression(
-				factory.createIdentifier(VariableNames.context),
-				factory.createIdentifier('__getSlotElement')
-				),
-				undefined,
-				[factory.createStringLiteral(this.name)]
-			)
-
-			this.namedValueIndex = this.tree.template.addCustomizedValue(value)
-		}
+	init() {
 
 		// Slot default content.
 		if (this.node.children.length > 0) {
 			this.defaultContentParser = this.tree.separateSubTree(this.node)
 		}
+
+		// $slot_0
+		this.slotVariableName = this.tree.getUniqueSlotVariableName()
 	}
 
-	outputInit(): TS.Statement[] {
+	outputInit() {
 		if (this.name) {
-
+			return this.outputNamedInit()
 		}
-
-		let nodeIndex = this.tree.references.getReferenceIndex(this.node)
-		let valueIndex = this.tree.template.getRemappedValueIndex()
+		else {
+			return this.outputNoNamedInit()
+		}
 	}
 
-	outputUpdate(): TS.Statement[] {
-		if (this.namedValueIndex !== null) {
-			let valueIndex = this.tree.template.getRemappedValueIndex(this.namedValueIndex)
+	private outputNamedInit() {
+		modifier.addImport('TemplateSlot', '@pucelle/lupos.js')
+		modifier.addImport('SlotPosition', '@pucelle/lupos.js')
 
-			return 
+		let nodeName = this.tree.references.getReferenceName(this.node)
+
+		// `$slot_0 = new TemplateSlot<null>(
+		// 	 new SlotPosition(SlotPositionType.AfterContent, s),
+		// 	 $context
+		// )`
+		// It's not a known content type slot, slot elements may be empty,
+		// and then would use default content.
+		return factory.createBinaryExpression(
+			factory.createIdentifier(this.slotVariableName),
+			factory.createToken(ts.SyntaxKind.EqualsToken),
+			factory.createNewExpression(
+				factory.createIdentifier('TemplateSlot'),
+				[factory.createLiteralTypeNode(factory.createNull())],
+				[
+					factory.createNewExpression(
+						factory.createIdentifier('SlotPosition'),
+						undefined,
+						[
+							factory.createNumericLiteral('1'),
+							factory.createIdentifier(nodeName)
+						]
+					),
+					factory.createIdentifier(VariableNames.context)
+				]
+			)
+		)
+	}
+
+	private outputNoNamedInit() {
+		let nodeName = this.tree.references.getReferenceName(this.node)
+			
+		// `$node_0.append(...$context.__getRestSlotNodes())`
+		return factory.createCallExpression(
+			factory.createPropertyAccessExpression(
+				factory.createIdentifier(nodeName),
+				factory.createIdentifier('append')
+			),
+			undefined,
+			[factory.createSpreadElement(factory.createCallExpression(
+				factory.createPropertyAccessExpression(
+				factory.createIdentifier(VariableNames.context),
+				factory.createIdentifier('__getRestSlotNodes')
+				),
+				undefined,
+				[]
+			))]
+		)
+	}
+
+	outputUpdate() {
+		if (this.name) {
+			return this.outputNamedUpdate()
 		}
-		
-		let nodeIndex = this.tree.references.getReferenceIndex(this.node)
-		let valueIndex = this.tree.template.getRemappedValueIndex()
+		else {
+			return []
+		}
+	}
+
+	private outputNamedUpdate() {
+		modifier.addImport('TemplateSlot', '@pucelle/lupos.js')
+
+		// `this.__getSlotElement(slotName)`
+		let toValue: TS.Expression = factory.createCallExpression(
+			factory.createPropertyAccessExpression(
+				factory.createIdentifier(VariableNames.context),
+				factory.createIdentifier('__getSlotElement')
+			),
+			undefined,
+			[factory.createStringLiteral(this.name!)]
+		)
+
+		if (this.defaultContentParser) {
+			modifier.addImport('CompiledTemplateResult', '@pucelle/lupos.js')
+
+			// this.__getSlotElement(slotName) || new CompiledTemplateResult($maker_0, $values)
+			toValue = factory.createBinaryExpression(
+				toValue,
+				factory.createToken(ts.SyntaxKind.BarBarToken),
+				factory.createNewExpression(
+					factory.createIdentifier('CompiledTemplateResult'),
+					undefined,
+					[
+						factory.createIdentifier(this.defaultContentParser.getMakerVariableName()),
+						factory.createIdentifier(VariableNames.values)
+					]
+				)
+			)
+		}
+
+		// $slot_0.update(this.__getSlotElement(slotName))
+		// $slot_0.update(this.__getSlotElement(slotName) || new CompiledTemplateResult($maker_0, $values))
+		return factory.createCallExpression(
+			factory.createPropertyAccessExpression(
+				factory.createIdentifier(this.slotVariableName),
+				factory.createIdentifier('update')
+			),
+			undefined,
+			[toValue]
+		)
 	}
 }

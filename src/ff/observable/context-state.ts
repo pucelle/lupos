@@ -42,7 +42,7 @@ export class ContextState {
 		return !!(type && (type.getFlags() & ts.TypeFlags.Void))
 	}
 
-	/** Union with external contents type. */
+	/** Union with internal contents type. */
 	unionFlowInterruptionType(type: number) {
 		if (this.context.type & ContextTypeMask.FunctionLike) {
 			return 

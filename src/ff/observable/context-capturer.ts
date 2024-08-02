@@ -37,7 +37,7 @@ export class ContextCapturer {
 			for (let index of capturer.captured[0].indices) {
 
 				// Has been referenced, ignore always.
-				if (AccessReferences.isAccessReferencedExternal(index)) {
+				if (AccessReferences.isAccessReferencedInternal(index)) {
 					continue
 				}
 
@@ -381,7 +381,7 @@ export class ContextCapturer {
 			for (let index of [...item.indices]) {
 
 				// Has been referenced, ignore always.
-				if (AccessReferences.isAccessReferencedExternal(index)) {
+				if (AccessReferences.isAccessReferencedInternal(index)) {
 					continue
 				}
 

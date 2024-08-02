@@ -3,6 +3,7 @@ import type TS from 'typescript'
 import {modifier} from './modifier'
 import {interpolator} from './interpolator'
 import {visiting} from './visiting'
+import {imports} from './imports'
 
 
 export let typeChecker: TS.TypeChecker
@@ -31,4 +32,5 @@ export function setSourceFile(file: TS.SourceFile) {
 	visiting.initialize()
 	interpolator.initialize()
 	modifier.initialize()
+	imports.initialize()
 }

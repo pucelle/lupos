@@ -403,6 +403,11 @@ export namespace helper {
 				return false
 			}
 
+			// `undefined` is a identifier.
+			if (node.text === 'undefined') {
+				return false
+			}
+
 			return true
 		}
 
@@ -508,6 +513,21 @@ export namespace helper {
 					| ts.TypeFlags.ESSymbolLike
 					| ts.TypeFlags.Undefined
 					| ts.TypeFlags.Null
+			)) > 0
+		}
+
+		/** Test whether type represents a value, and not null or undefined. */
+		export function isNonNullableValueType(type: TS.Type): boolean {
+			if (type.isUnionOrIntersection()) {
+				return type.types.every(t => isValueType(t))
+			}
+
+			return (type.getFlags() & (
+				ts.TypeFlags.StringLike
+					| ts.TypeFlags.NumberLike
+					| ts.TypeFlags.BigIntLike
+					| ts.TypeFlags.BooleanLike
+					| ts.TypeFlags.ESSymbolLike
 			)) > 0
 		}
 

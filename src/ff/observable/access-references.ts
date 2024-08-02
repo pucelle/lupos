@@ -47,7 +47,7 @@ export namespace AccessReferences {
 
 
 	/** Whether any descendant access node has been referenced. */
-	export function isAccessReferencedExternal(index: number): boolean {
+	export function isAccessReferencedInternal(index: number): boolean {
 		if (referencedAccessIndices.has(index)) {
 			return true
 		}
@@ -57,7 +57,7 @@ export namespace AccessReferences {
 			return false
 		}
 
-		return childIndices.some(i => isAccessReferencedExternal(i))
+		return childIndices.some(i => isAccessReferencedInternal(i))
 	}
 
 

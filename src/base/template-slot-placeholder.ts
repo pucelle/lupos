@@ -74,8 +74,12 @@ export namespace TemplateSlotPlaceholder {
 	}
 
 
-	/** Get all slot indices from a string containing some template slot placeholders `$LUPOS_SLOT_INDEX_\d_. */
-	export function getSlotIndices(string: string): number[] {
-		return [...string.matchAll(/\$LUPOS_SLOT_INDEX_(\d+)\$/g)].map(m => Number(m[1]))
+	/** 
+	 * Get all slot indices from a string containing some template slot placeholders `$LUPOS_SLOT_INDEX_\d_.
+	 * Returns `null` if no index.
+	 */
+	export function getSlotIndices(string: string): number[] | null {
+		let indices = [...string.matchAll(/\$LUPOS_SLOT_INDEX_(\d+)\$/g)].map(m => Number(m[1]))
+		return indices.length > 0 ? indices : null
 	}
 }
