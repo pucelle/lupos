@@ -1,8 +1,5 @@
-import type TS from 'typescript'
 import {SlotBase} from './base'
-import {factory, helper, modifier, TemplateSlotPlaceholder, ts} from '../../../../base'
-import {HTMLNodeType} from '../../html-syntax'
-import {VariableNames} from '../variable-names'
+import {factory, helper, ts} from '../../../../base'
 
 
 export class ContentSlot extends SlotBase {
@@ -20,7 +17,7 @@ export class ContentSlot extends SlotBase {
 		this.slotContentType = this.identifySlotContentType()
 		this.slotVariableName = this.tree.getUniqueSlotVariableName()
 
-		if (this.tree.template.isValueAtIndexMutable(this.valueIndex!)) {
+		if (this.isValueMutable()) {
 
 			// Assume for `TemplateResult` or `TemplateResult[]`, it regenerates every time.
 			if (this.slotContentType === 2 || this.slotContentType === 3) {
@@ -30,10 +27,8 @@ export class ContentSlot extends SlotBase {
 	}
 
 	private identifySlotContentType(): number | null {
-		let valueNode = this.tree.template.slotNodes[this.valueIndex!]
+		let valueNode = this.getSlotNode()
 		let typeText = helper.types.getTypeFullText(helper.types.getType(valueNode))
-
-		
 		let slotContentType: number | null = null
 
 		if (typeText === 'TemplateResult') {
@@ -53,83 +48,19 @@ export class ContentSlot extends SlotBase {
 	}
 
 	outputInit() {
-		modifier.addImport('TemplateSlot', '@pucelle/lupos.js')
-		modifier.addImport('SlotPosition', '@pucelle/lupos.js')
-
-		let position: number
-		let nextNode = this.node.nextSibling
-		let parent = this.node.parent!
-		let nodeName: string
-
-		// Use next node to locate.
-		if (nextNode && nextNode.type !== HTMLNodeType.Comment) {
-			nodeName = this.tree.references.getReferenceName(nextNode)
-			this.node.remove()
-
-			// SlotPositionType.Before
-			position = 2
-		}
-		
-		// Parent is stable enough.
-		else if (parent.tagName !== 'template'
-			&& !TemplateSlotPlaceholder.hasSlotIndex(parent.tagName!)
-		) {
-			nodeName = this.tree.references.getReferenceName(parent)
-			this.node.remove()
-
-			// SlotPositionType.AfterContent
-			position = 1
-		}
-
-		// Use the comment node to locate.
-		else {
-			nodeName = this.tree.references.getReferenceName(this.node)
-
-			// SlotPositionType.Before
-			position = 2
-		}
-
-
-		// $slot_0 = new TemplateSlot(
-		//   new SlotPosition(SlotPositionType.Before / AfterContent, $context),
-		//   context,
-		//   ?SlotContentType.xxx
-		// )
-		let templateSlotParams: TS.Expression[] = [
-			factory.createNewExpression(
-				factory.createIdentifier('SlotPosition'),
-				undefined,
-				[
-					factory.createNumericLiteral(position),
-					factory.createIdentifier(nodeName)
-				]
-			),
-			factory.createIdentifier(VariableNames.context)
-		]
-
-		// Knows about content type.
-		if (this.slotContentType !== null) {
-			templateSlotParams.push(factory.createNumericLiteral(this.slotContentType))
-		}
+		let templateSLot = this.makeTemplateSlot(this.slotContentType)
 
 		return factory.createBinaryExpression(
 			factory.createIdentifier(this.slotVariableName),
 			factory.createToken(ts.SyntaxKind.EqualsToken),
-			factory.createNewExpression(
-				factory.createIdentifier('TemplateSlot'),
-				undefined,
-				templateSlotParams
-			)
+			templateSLot
 		)
 	}
 
 	outputUpdate() {
 
 		// $values[0]
-		let value = factory.createElementAccessExpression(
-			factory.createIdentifier(VariableNames.values),
-			factory.createNumericLiteral(this.valueIndex!)
-		)
+		let value = this.getOutputValueNode()
 
 		// $latest_0 === $values[0] && $slot_0.update($latest_0 = $values[0])
 		if (this.latestVariableName) {
@@ -165,9 +96,7 @@ export class ContentSlot extends SlotBase {
 					factory.createIdentifier('update')
 				),
 				undefined,
-				[
-					value
-				]
+				[value]
 			)
 		}
 	}

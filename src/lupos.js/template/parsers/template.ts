@@ -35,6 +35,7 @@ export class TemplateParser {
 
 	private treeParsers: HTMLTreeParser[] = []
 	private valueIndicesMutable: Map<number, boolean> = new Map()
+	private remappedValueIndices: Map<number, number> = new Map()
 
 	constructor(type: TemplateType, string: string, values: TS.Expression[]) {
 		this.type = type
@@ -174,13 +175,12 @@ export class TemplateParser {
 	}
 
 	private outputInit() {
-		let indicesMap = this.remapValueIndices()
+		this.remapValueIndices()
 	}
 
 	/** Removes all static values and remap value indices. */
-	private remapValueIndices(): Map<number, number> {
+	private remapValueIndices() {
 		let count = 0
-		let remappedValueIndices: Map<number, number> = new Map()
 
 		for (let i = 0; i < this.slotNodes.length; i++) {
 			let node = this.slotNodes[i]
@@ -189,15 +189,13 @@ export class TemplateParser {
 				continue
 			}
 
-			remappedValueIndices.set(i, count)
+			this.remappedValueIndices.set(i, count)
 			count++
 		}
-
-		return remappedValueIndices
 	}
 
-	private getRemappedValueIndex(index: number): number | undefined {
-		return this.remappedValueIndices.get(index)
+	getRemappedValueIndex(index: number): number {
+		return this.remappedValueIndices.get(index)!
 	}
 
 	private outputUpdate() {

@@ -1,123 +1,117 @@
+import type TS from 'typescript'
 import {SlotBase} from './base'
-import {factory, ts} from '../../../../base'
-import {VariableNames} from '../variable-names'
+import {factory, helper, imports, TemplateSlotPlaceholder, ts, typeChecker} from '../../../../base'
 
 
 export class PropertySlot extends SlotBase {
 
-	private latestName: string = ''
+	/** Property Name. */
+	declare name: string
+
+	/** $latest_0 */
+	private latestVariableName: string | null = null
+
+	/** Indicates whether attach to target component or element. */
+	private targetType: 'component' | 'element' = 'element'
 
 	init() {
-		this.latestName = this.tree.getUniqueLatestVariableName()
+		if (this.isValueMutable()) {
+			this.latestVariableName = this.tree.getUniqueLatestVariableName()
+		}
+
+		this.targetType = this.checkTargetType()
+
+		if (this.targetType === 'component') {
+			this.refAsComponent()
+		}
+	}
+
+	private checkTargetType(): 'component' | 'element' {
+		let tagName = this.node.tagName!
+		let isComponent = /^[A-Z]/.test(tagName)
+		let isDynamicComponent = TemplateSlotPlaceholder.isCompleteSlotIndex(tagName)
+
+		if (isComponent || isDynamicComponent) {
+			let com: TS.Node | undefined
+			if (isComponent) {
+				com = imports.getImportByName(tagName)
+			}
+			else {
+				com = this.getSlotNode()
+			}
+
+			if (!com) {
+				return 'element'
+			}
+
+			let comType = helper.types.getType(com)
+
+			// Directly query for declaration member at type.
+			let propertyDeclType = typeChecker.getPropertyOfType(comType, this.name!)
+			if (!propertyDeclType) {
+				return 'element'
+			}
+
+			if (!helper.symbol.resolveDeclarationBySymbol(propertyDeclType, ts.isPropertyDeclaration)) {
+				return 'element'
+			}
+
+			return 'component'
+		}
+
+		return  'element'
 	}
 
 	outputUpdate() {
-		let nodeTagName = this.node.tagName!
+		let target: TS.Identifier
 
-		// `<Com>` property
-		if (/^[A-Z]/.test(nodeTagName)) {
-			return this.outputNonNullableValueUpdate()
+		// $com_0
+		if (this.targetType === 'component') {
+			target = factory.createIdentifier(this.getRefedComponentName())
 		}
-		
-		// `<div>` property
+
+		// $node_0
 		else {
-			return this.outputNullableValueUpdate()
+			target = factory.createIdentifier(this.getRefedNodeName())
 		}
-	}
 
-	private outputNonNullableValueUpdate() {
-		let nodeName = this.tree.references.getReferenceName(this.node)
+		// $values[0]
+		let value = this.getOutputValueNode()
 
-		let value = factory.createElementAccessExpression(
-			factory.createIdentifier(VariableNames.values),
-			factory.createNumericLiteral(this.valueIndex!)
-		)
-
-		// $latest_0 === $values[0] && $node_0.setAttribute(attrName, $latest_0 = $values[0])
-		return factory.createBinaryExpression(
-			factory.createBinaryExpression(
-				factory.createIdentifier(this.latestName),
-				factory.createToken(ts.SyntaxKind.EqualsEqualsEqualsToken),
-				value
-			),
-			factory.createToken(ts.SyntaxKind.AmpersandAmpersandToken),
-			factory.createCallExpression(
-				factory.createPropertyAccessExpression(
-					factory.createIdentifier(nodeName),
-					factory.createIdentifier('setAttribute')
+		// $latest_0 === $values[0] && target[propertyName] = $latest_0 = $values[0]
+		if (this.latestVariableName) {
+			return factory.createBinaryExpression(
+				factory.createBinaryExpression(
+					factory.createIdentifier(this.latestVariableName),
+					factory.createToken(ts.SyntaxKind.EqualsEqualsEqualsToken),
+					value
 				),
-				undefined,
-				[
-					factory.createIdentifier(this.name!),
+				factory.createToken(ts.SyntaxKind.AmpersandAmpersandToken),
+				factory.createBinaryExpression(
+					factory.createPropertyAccessExpression(
+						target,
+						factory.createIdentifier(this.name)
+					),
+					factory.createToken(ts.SyntaxKind.EqualsToken),
 					factory.createBinaryExpression(
-						factory.createIdentifier(this.latestName),
+						factory.createIdentifier(this.latestVariableName),
 						factory.createToken(ts.SyntaxKind.EqualsToken),
 						value
 					)
-				]
+				),
 			)
-		)
-	}
+		}
 
-	private outputNullableValueUpdate() {
-		let nodeName = this.tree.references.getReferenceName(this.node)
-
-		let value = factory.createElementAccessExpression(
-			factory.createIdentifier(VariableNames.values),
-			factory.createNumericLiteral(this.valueIndex!)
-		)
-
-		// if ($latest_0 === $values[0]) { 
-		// 	 $values[0] === null ? $node_0.removeAttribute(attrName) : $node_0.setAttribute(attrName, $values[0])
-		//	 $latest_0 = null
-		// }
-		return factory.createIfStatement(
-			factory.createBinaryExpression(
-				factory.createIdentifier(this.latestName),
-				factory.createToken(ts.SyntaxKind.EqualsEqualsEqualsToken),
-				factory.createElementAccessExpression(
-					factory.createIdentifier("$values"),
-					factory.createNumericLiteral("0")
-				)
-			),
-			factory.createBlock(
-				[
-					factory.createExpressionStatement(factory.createConditionalExpression(
-						factory.createBinaryExpression(
-							value,
-							factory.createToken(ts.SyntaxKind.EqualsEqualsEqualsToken),
-							factory.createNull()
-						),
-						factory.createToken(ts.SyntaxKind.QuestionToken),
-						factory.createCallExpression(
-							factory.createPropertyAccessExpression(
-								factory.createIdentifier(nodeName),
-								factory.createIdentifier('removeAttribute')
-							),
-							undefined,
-							[factory.createIdentifier(this.name!)]
-						),
-						factory.createToken(ts.SyntaxKind.ColonToken),
-						factory.createCallExpression(
-							factory.createPropertyAccessExpression(
-								factory.createIdentifier(nodeName),
-								factory.createIdentifier('setAttribute')
-							),
-							undefined,
-							[
-								factory.createIdentifier(this.name!),
-								value
-							]
-						)
-					)),
-					factory.createExpressionStatement(factory.createBinaryExpression(
-						factory.createIdentifier('$latest_0'),
-						factory.createToken(ts.SyntaxKind.EqualsToken),
-						factory.createNull()
-					))
-				],
-				true
+		// target[propertyName] = $values[0]
+		else {
+			return factory.createBinaryExpression(
+				factory.createPropertyAccessExpression(
+					target,
+					factory.createIdentifier(this.name)
+				),
+				factory.createToken(ts.SyntaxKind.EqualsToken),
+				value
 			)
-		)
+		}
 	}
 }

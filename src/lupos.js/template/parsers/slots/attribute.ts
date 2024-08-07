@@ -4,20 +4,20 @@ import {factory, helper, ts} from '../../../../base'
 
 export class AttributeSlot extends SlotBase {
 
+	/** Attribute name. */
 	declare readonly name: string
-	declare readonly valueIndex: number
 
 	/** $latest_0 */
 	private latestVariableName: string | null = null
 
 	init() {
-		if (this.tree.template.isValueAtIndexMutable(this.valueIndex)) {
+		if (this.isValueMutable()) {
 			this.latestVariableName = this.tree.getUniqueLatestVariableName()
 		}
 	}
 
 	outputUpdate() {
-		let slotNode = this.tree.template.slotNodes[this.valueIndex]
+		let slotNode = this.getSlotNode()
 		let slotNodeType = helper.types.getType(slotNode)
 
 		// `$values[0]` is not nullable
@@ -34,7 +34,7 @@ export class AttributeSlot extends SlotBase {
 	private outputNonNullableValueUpdate() {
 
 		// $node_0
-		let nodeName = this.tree.references.getReferenceName(this.node)
+		let nodeName = this.getRefedNodeName()
 
 		// $values[0]
 		let value = this.getOutputValueNode()
@@ -83,8 +83,9 @@ export class AttributeSlot extends SlotBase {
 	}
 
 	private outputNullableValueUpdate() {
+
 		// $node_0
-		let nodeName = this.tree.references.getReferenceName(this.node)
+		let nodeName = this.getRefedNodeName()
 
 		// $values[0]
 		let value = this.getOutputValueNode()

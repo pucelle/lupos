@@ -1,6 +1,5 @@
 import {SlotBase} from './base'
 import {factory, ts} from '../../../../base'
-import {VariableNames} from '../variable-names'
 
 
 export class TextSlot extends SlotBase {
@@ -13,12 +12,10 @@ export class TextSlot extends SlotBase {
 	}
 
 	outputUpdate() {
-		let nodeName = this.tree.references.getReferenceName(this.node)
+		let nodeName = this.getRefedNodeName()
 
-		let value = factory.createElementAccessExpression(
-			factory.createIdentifier(VariableNames.values),
-			factory.createNumericLiteral(this.valueIndex!)
-		)
+		// $values[0]
+		let value = this.getOutputValueNode()
 
 		// $latest_0 === $values[0] && $node_0.data = $latest_0 = $values[0]
 		return factory.createBinaryExpression(

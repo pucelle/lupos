@@ -16,7 +16,7 @@ export class BindingSlot extends SlotBase {
 	private bindingVariableName: string = ''
 
 	init() {
-		if (this.tree.template.isValueAtIndexMutable(this.valueIndex!)) {
+		if (this.isValueMutable()) {
 			this.latestVariableName = this.tree.getUniqueLatestVariableName()
 		}
 
@@ -24,7 +24,7 @@ export class BindingSlot extends SlotBase {
 	}
 
 	outputInit() {
-		let nodeName = this.tree.references.getReferenceName(this.node)
+		let nodeName = this.getRefedNodeName()
 
 		// :class -> ClassBinding
 		let bindingClassImport = imports.getImportByNameLike(this.name)
@@ -56,37 +56,75 @@ export class BindingSlot extends SlotBase {
 
 	outputUpdate() {
 
-		// $values[0], or "..."
+		// $values[0], or '...'
 		let value = this.getOutputValueNode()
 
 		let callWith: {method: string, value: TS.Expression} = {method: 'update', value}
-
 		if (this.name === 'class') {
 			callWith = this.getClassUpdateCallWith(value)
 		}
 		else if (this.name === 'style') {
 			callWith = this.getStyleUpdateCallWith(value)
 		}
+		else if (this.name === 'ref') {
+			callWith.value = this.getRefUpdateCallWithValue(value)
+		}
+
+		let callMethod = callWith.method
+		let callValue = callWith.value
+
+		// if ($latest_0 !== $values[0]) {
+		//	 $binding_0.callMethod(callValue)
+		//	 $latest_0 !== $values[0]
+		// }
+		if (this.latestVariableName && callValue !== value) {
+			return factory.createIfStatement(
+				factory.createBinaryExpression(
+					factory.createIdentifier(this.latestVariableName),
+					factory.createToken(ts.SyntaxKind.ExclamationEqualsEqualsToken),
+					value
+				),
+				factory.createBlock(
+					[
+						factory.createExpressionStatement(factory.createCallExpression(
+							factory.createPropertyAccessExpression(
+								factory.createIdentifier(this.bindingVariableName),
+								factory.createIdentifier(callMethod)
+							),
+							undefined,
+							[callValue]
+						)),
+						factory.createExpressionStatement(factory.createBinaryExpression(
+							factory.createIdentifier(this.latestVariableName),
+							factory.createToken(ts.SyntaxKind.ExclamationEqualsEqualsToken),
+							value
+						))
+					],
+					true
+				),
+				undefined
+			)
+		}
 
 		// $latest_0 === $values[0] && $binding_0.update($latest_0 = $values[0])
-		if (this.latestVariableName) {
+		else if (this.latestVariableName) {
 			return factory.createBinaryExpression(
 				factory.createBinaryExpression(
 					factory.createIdentifier(this.latestVariableName),
 					factory.createToken(ts.SyntaxKind.EqualsEqualsEqualsToken),
-					value
+					callValue
 				),
 				factory.createToken(ts.SyntaxKind.AmpersandAmpersandToken),
 				factory.createCallExpression(
 					factory.createPropertyAccessExpression(
 						factory.createIdentifier(this.bindingVariableName),
-						factory.createIdentifier('update')
+						factory.createIdentifier(callMethod)
 					),
 					undefined,
 					[factory.createBinaryExpression(
 						factory.createIdentifier(this.latestVariableName),
 						factory.createToken(ts.SyntaxKind.EqualsToken),
-						value
+						callValue
 					)]
 				)
 			)
@@ -95,13 +133,13 @@ export class BindingSlot extends SlotBase {
 		// $binding_0.update($values[0])
 		else {
 			return factory.createCallExpression(
-					factory.createPropertyAccessExpression(
-						factory.createIdentifier(this.bindingVariableName),
-						factory.createIdentifier('update')
-					),
-					undefined,
-					[value]
-				)
+				factory.createPropertyAccessExpression(
+					factory.createIdentifier(this.bindingVariableName),
+					factory.createIdentifier(callMethod)
+				),
+				undefined,
+				[callValue]
+			)
 		}
 	}
 
@@ -119,14 +157,14 @@ export class BindingSlot extends SlotBase {
 			}
 		}
 
-		if (this.valueIndex === null) {
+		if (this.hasValueIndex()) {
 			return {
 				method: 'updateString',
 				value,
 			}
 		}
 
-		let slotNode = this.tree.template.slotNodes[this.valueIndex]
+		let slotNode = this.getSlotNode()
 		let slotNodeType = helper.types.getType(slotNode)
 
 		if (helper.types.isValueType(slotNodeType)) {
@@ -162,12 +200,12 @@ export class BindingSlot extends SlotBase {
 				if (this.modifiers[1] === 'url') {
 					value = factory.createBinaryExpression(
 						factory.createBinaryExpression(
-							factory.createStringLiteral("url("),
+							factory.createStringLiteral('url('),
 							factory.createToken(ts.SyntaxKind.PlusToken),
 							value
 						),
 						factory.createToken(ts.SyntaxKind.PlusToken),
-						factory.createStringLiteral(")")
+						factory.createStringLiteral(')')
 					)
 				}
 
@@ -180,7 +218,7 @@ export class BindingSlot extends SlotBase {
 					)
 				}
 
-				// `px`, `rem`, ...
+				// `.px`, `.rem`, ...
 				else if (/^\w+$/.test(this.modifiers[1])) {
 					value = factory.createBinaryExpression(
 						value,
@@ -202,14 +240,14 @@ export class BindingSlot extends SlotBase {
 			}
 		}
 
-		if (this.valueIndex === null) {
+		if (this.hasValueIndex()) {
 			return {
 				method: 'updateString',
 				value,
 			}
 		}
 
-		let slotNode = this.tree.template.slotNodes[this.valueIndex]
+		let slotNode = this.getSlotNode()
 		let slotNodeType = helper.types.getType(slotNode)
 
 		if (helper.types.isValueType(slotNodeType)) {
@@ -229,5 +267,64 @@ export class BindingSlot extends SlotBase {
 			method: 'update',
 			value
 		}
+	}
+
+	private getRefUpdateCallWithValue(value: TS.Expression): TS.Expression {
+		if (helper.access.isAccess(value)) {
+			let exp = value.expression
+			let name = helper.access.getNameNode(value)
+
+			// this.refName ->
+			// (el) => this.__setSlotElement(refName, el)
+			if (exp.kind === ts.SyntaxKind.ThisKeyword) {
+				return factory.createArrowFunction(
+					undefined,
+					undefined,
+					[factory.createParameterDeclaration(
+						undefined,
+						undefined,
+						factory.createIdentifier('el'),
+						undefined,
+						undefined,
+						undefined
+					)],
+					undefined,
+					factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
+					factory.createCallExpression(
+						factory.createPropertyAccessExpression(
+							factory.createThis(),
+							factory.createIdentifier('__setSlotElement')
+						),
+						undefined,
+						[
+							name,
+							factory.createIdentifier('el'),
+						]
+					)
+				)
+			}
+		}
+
+		// this.refName ->
+		// (el) => this.refName = el
+		return factory.createArrowFunction(
+			undefined,
+			undefined,
+			[factory.createParameterDeclaration(
+				undefined,
+				undefined,
+				factory.createIdentifier('el'),
+				undefined,
+				undefined,
+				undefined
+			)],
+			undefined,
+			factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
+			factory.createBinaryExpression(
+				value,
+				factory.createToken(ts.SyntaxKind.EqualsToken),
+				factory.createIdentifier('el')
+			)
+			)			
 	}
 }

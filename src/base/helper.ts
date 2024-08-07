@@ -168,7 +168,7 @@ export namespace helper {
 			}
 
 			let firstType = extendHeritageClause.types[0]
-			if (!firstType || !ts.isExpressionWithTypeArguments(firstType)) {
+			if (!firstType) {
 				return undefined
 			}
 
@@ -617,6 +617,40 @@ export namespace helper {
 	/** Symbol & Resolving */
 	export namespace symbol {
 
+		/** Returns the identifier, like variable or declaration name of a given node if possible. */
+		export function getIdentifier(node: TS.Node): TS.Identifier | undefined {
+
+			// Identifier itself.
+			if (ts.isIdentifier(node)) {
+				return node
+			}
+
+			// Declaration of a class or interface, property, method, function name, get or set name.
+			if ((ts.isClassLike(node)
+					|| ts.isInterfaceDeclaration(node)
+					|| ts.isVariableDeclaration(node)
+					|| ts.isMethodDeclaration(node)
+					|| ts.isPropertyDeclaration(node)
+					|| ts.isFunctionDeclaration(node)
+					|| ts.isGetAccessorDeclaration(node)
+					|| ts.isSetAccessorDeclaration(node)
+				)
+				&& node.name
+				&& ts.isIdentifier(node.name)
+			) {
+				return node.name
+			}
+
+			// Identifier of type node.
+			if (ts.isTypeReferenceNode(node)
+				&& ts.isIdentifier(node.typeName)
+			) {
+				return node.typeName
+			}
+
+			return undefined
+		}
+
 		/** Test whether a node has an import name and located at a module. */
 		export function isImportedFrom(node: TS.Node, memberName: string, moduleName: string): boolean {
 			let nm = resolveImport(node)
@@ -635,9 +669,7 @@ export namespace helper {
 			// `import * as M`, and use it's member like `M.member`.
 			if (ts.isPropertyAccessExpression(node)) {
 				let declName = getText(node.name)
-				let symbol = resolveSymbol(node.expression, false)
-				let decl = symbol ? resolveDeclarationBySymbol(symbol, ts.isNamespaceImport) : undefined
-
+				let decl = resolveDeclaration(node.expression, ts.isNamespaceImport, false)
 				if (decl) {
 					let moduleNameNode = decl.parent.parent.moduleSpecifier
 					let moduleName = ts.isStringLiteral(moduleNameNode) ? moduleNameNode.text : ''
@@ -649,9 +681,7 @@ export namespace helper {
 				}
 			}
 			else {
-				let symbol = resolveSymbol(node, false)
-				let decl = symbol ? resolveDeclarationBySymbol(symbol, ts.isImportSpecifier) : undefined
-
+				let decl = resolveDeclaration(node, ts.isImportSpecifier, false)
 				if (decl) {
 					let moduleNameNode = decl.parent.parent.parent.moduleSpecifier
 					let moduleName = ts.isStringLiteral(moduleNameNode) ? moduleNameNode.text : ''
@@ -692,43 +722,13 @@ export namespace helper {
 			return symbol
 		}
 
-		/** Returns the identifier, like variable or declaration name of a given node if possible. */
-		export function getIdentifier(node: TS.Node): TS.Identifier | undefined {
-
-			// Identifier itself.
-			if (ts.isIdentifier(node)) {
-				return node
-			}
-
-			// Declaration of a class or interface, property, method, function name, get or set name.
-			if ((ts.isClassLike(node)
-					|| ts.isInterfaceDeclaration(node)
-					|| ts.isVariableDeclaration(node)
-					|| ts.isMethodDeclaration(node)
-					|| ts.isPropertyDeclaration(node)
-					|| ts.isFunctionDeclaration(node)
-					|| ts.isGetAccessorDeclaration(node)
-					|| ts.isSetAccessorDeclaration(node)
-				)
-				&& node.name
-				&& ts.isIdentifier(node.name)
-			) {
-				return node.name
-			}
-
-			// Identifier of type node.
-			if (ts.isTypeReferenceNode(node)
-				&& ts.isIdentifier(node.typeName)
-			) {
-				return node.typeName
-			}
-
-			return undefined
-		}
-
 		/** Resolves the declarations of a node. */
-		export function resolveDeclarations<T extends TS.Declaration>(node: TS.Node, test?: (node: TS.Node) => node is T): T[] | undefined {
-			let symbol = resolveSymbol(node, true)
+		export function resolveDeclarations<T extends TS.Declaration>(
+			node: TS.Node,
+			test?: (node: TS.Node) => node is T,
+			resolveAlias: boolean = true
+		): T[] | undefined {
+			let symbol = resolveSymbol(node, resolveAlias)
 			if (!symbol) {
 				return undefined
 			}
@@ -742,9 +742,13 @@ export namespace helper {
 		}
 
 		/** Resolves the first declaration from a node. */
-		export function resolveDeclaration<T extends TS.Node>(node: TS.Node, test: (node: TS.Node) => node is T): T | undefined {
-			let decls = resolveDeclarations(node)
-			return decls?.find(test) as T | undefined
+		export function resolveDeclaration<T extends TS.Node>(
+			node: TS.Node,
+			test?: (node: TS.Node) => node is T,
+			resolveAlias: boolean = true
+		): T | undefined {
+			let decls = resolveDeclarations(node, undefined, resolveAlias)
+			return (test ? decls?.find(test) : decls?.[0]) as T | undefined
 		}
 
 		/** Resolves the first declaration from specified type. */
@@ -807,6 +811,149 @@ export namespace helper {
 
 			return resolveDeclaration(node.expression, testFn)
 		}
+
+
+		/** 
+		 * Resolve interface and all it's extended interfaces,
+		 * and interface like type literal: `type A = {...}`.
+		 */
+		export function* resolveInterfaceLikeChain(node: TS.Node): Iterable<TS.InterfaceDeclaration | TS.TypeLiteralNode> {
+			if (ts.isTypeLiteralNode(node)) {
+				yield node
+			}
+
+			if (!ts.isInterfaceDeclaration(node) && !ts.isTypeAliasDeclaration(node)) {
+				let resolved = resolveDeclarations(node, n => ts.isInterfaceDeclaration(n) || ts.isTypeAliasDeclaration(n))
+				if (resolved) {
+					for (let res of resolved) {
+						yield *resolveInterfaceLikeChain(res)
+					}
+				}
+			}
+
+			if (ts.isInterfaceDeclaration(node)) {
+				let extendHeritageClause = node.heritageClauses?.find(hc => {
+					return hc.token === ts.SyntaxKind.ExtendsKeyword
+				})
+	
+				if (!extendHeritageClause) {
+					return
+				}
+				
+				for (let type of extendHeritageClause.types) {
+					let exp = type.expression
+					yield *resolveInterfaceLikeChain(exp)
+				}
+			}
+			else if (ts.isTypeAliasDeclaration(node)) {
+				if (ts.isIntersectionTypeNode(node.type) || ts.isUnionTypeNode(node.type)) {
+					for (let type of node.type.types) {
+						yield *resolveInterfaceLikeChain(type)
+					}
+				}
+				else if (ts.isTypeLiteralNode(node.type)) {
+					yield node.type
+				}
+			}
+		}
+
+		/** 
+		 * Resolve all the class type parameters,
+		 * which are the extended parameters of a final heritage class,
+		 * and is interface like or type literal like.
+		 */
+		export function resolveExtendedInterfaceLikeTypeParameters(
+			node: TS.ClassDeclaration, finalHeritageName: string, finalHeritageTypeParameterIndex: number
+		): (TS.InterfaceDeclaration | TS.TypeLiteralNode)[] {
+			let classDecl: TS.ClassDeclaration | undefined = node
+
+			// <A & B, C> -> [[A, B], [C]]
+			let referencedTypeParameters: (TS.InterfaceDeclaration | TS.TypeLiteralNode)[][] = []
+
+			while (true) {
+				let selfParameters = classDecl.typeParameters
+
+				classDecl = cls.getSuper(classDecl)
+				if (!classDecl) {
+					break
+				}
+
+				let extendHeritageClause = classDecl.heritageClauses?.find(hc => {
+					return hc.token === ts.SyntaxKind.ExtendsKeyword
+				})!
+				
+				
+				let firstType = extendHeritageClause.types[0]
+				let superParameters = firstType.typeArguments
+
+				if (superParameters) {
+					referencedTypeParameters = remapReferencedTypeParameters(referencedTypeParameters, selfParameters, superParameters)
+				}
+
+				if (classDecl.name && getText(classDecl.name) === finalHeritageName) {
+					return referencedTypeParameters[finalHeritageTypeParameterIndex]
+				}
+			}
+			
+			return []
+		}
+
+		/** Analysis type references, and remap type reference from input parameters to super parameters. */
+		function remapReferencedTypeParameters(
+			referenced: (TS.InterfaceDeclaration | TS.TypeLiteralNode)[][],
+			selfParameters: TS.NodeArray<TS.TypeParameterDeclaration> | undefined,
+			superParameters: TS.NodeArray<TS.TypeNode>
+		): (TS.InterfaceDeclaration | TS.TypeLiteralNode)[][] {
+			let selfMap: Map<string, (TS.InterfaceDeclaration | TS.TypeLiteralNode)[]> = new Map()
+			let remapped: (TS.InterfaceDeclaration | TS.TypeLiteralNode)[][] = []
+
+			if (selfParameters) {
+				for (let i = 0; i < selfParameters.length; i++) {
+					let param = selfParameters[i]
+					selfMap.set(param.name.text, referenced[i])
+				}
+			}
+
+			for (let i = 0; i < superParameters.length; i++) {
+				let param = superParameters[i]
+				let destructed = destructTypeNode(param)
+				let paramReferenced: (TS.InterfaceDeclaration | TS.TypeLiteralNode)[] = []
+
+				for (let ref of destructed) {
+					if (ts.isTypeReferenceNode(ref)) {
+						let refName = helper.getText(ref.typeName)
+
+						// Use input parameter.
+						if (selfMap.has(refName)) {
+							paramReferenced.push(...selfMap.get(refName)!)
+						}
+
+						// Use declared interface, or type literal.
+						else {
+							let chain = resolveInterfaceLikeChain(ref)
+							paramReferenced.push(...chain)
+						}
+					}
+				}
+
+				remapped.push(paramReferenced)
+			}
+
+			return remapped
+		}
+
+		// `A & B` -> `[A, B]`
+		function destructTypeNode(node: TS.TypeNode): (TS.TypeReferenceNode | TS.TypeLiteralNode)[] {
+			if (ts.isIntersectionTypeNode(node) || ts.isUnionTypeNode(node)) {
+				return node.types.map(n => destructTypeNode(n)).flat()
+			}
+			else if (ts.isTypeReferenceNode(node) || ts.isTypeLiteralNode(node)) {
+				return [node]
+			}
+			else {
+				return []
+			}
+		}
 	}
 
 
@@ -839,6 +986,21 @@ export namespace helper {
 				|| ts.isGetAccessorDeclaration(node)
 				|| ts.isSetAccessorDeclaration(node)
 				|| ts.isArrowFunction(node)
+		}
+
+		/** Get closest function-like ancestral node. */
+		export function getClosestFunctionLike(node: TS.Node): TS.FunctionLikeDeclarationBase | null {
+			let ancestor = node.parent
+
+			while (ancestor) {
+				if (isFunctionLike(ancestor)) {
+					return ancestor
+				}
+
+				ancestor = ancestor.parent
+			}
+
+			return null
 		}
 
 		/** 
@@ -1180,21 +1342,36 @@ export namespace helper {
 		
 		/** Test expression represented value is mutable. */
 		export function isMutable(node: TS.Expression): boolean {
-			return visitNodeTestMutable(node)
+			return visitNodeTestMutable(node, false)
 		}
 
-		function visitNodeTestMutable(node: TS.Node): boolean {
+		function visitNodeTestMutable(node: TS.Node, inChildContext: boolean): boolean {
 			let mutable = false
+
+			inChildContext ||= pack.isFunctionLike(node)
 
 			// Variable
 			if (variable.isVariableIdentifier(node)) {
-				let variableDecl = symbol.resolveDeclaration(node, ts.isVariableDeclaration)
-				let constVariable = variableDecl && (variableDecl.parent.parent.flags & ts.NodeFlags.Const) > 0
-				mutable ||= !constVariable
+
+				// If in child context, become mutable only when uses a local variable.
+				// Which means: the variable should not been declared at top level of source file.
+				if (inChildContext) {
+					let declOfSameSourceFile = symbol.resolveDeclaration(node, undefined, false)
+					let closestContext = declOfSameSourceFile ? pack.getClosestFunctionLike(declOfSameSourceFile) : null
+					let declInTopOfSourceFile = closestContext && ts.isSourceFile(closestContext)
+
+					mutable ||= !declInTopOfSourceFile
+				}
+				else {
+					let variableDecl = symbol.resolveDeclaration(node, ts.isVariableDeclaration)
+					let constVariable = variableDecl && (variableDecl.parent.parent.flags & ts.NodeFlags.Const) > 0
+					mutable ||= !constVariable
+				}
 			}
 
 			// Readonly, or method.
-			else if (access.isAccess(node)) {
+			// If in child context, all property visiting is not mutable.
+			else if (access.isAccess(node) && !inChildContext) {
 
 				// Use method, but not call it.
 				let useNotCalledMethod = symbol.resolveMethod(node) && !ts.isCallExpression(node.parent)
@@ -1206,7 +1383,7 @@ export namespace helper {
 			}
 
 			ts.visitEachChild(node, (node: TS.Node) => {
-				mutable ||= visitNodeTestMutable(node)
+				mutable ||= visitNodeTestMutable(node, inChildContext)
 				return node
 			}, transformContext)
 

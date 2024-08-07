@@ -42,7 +42,7 @@ export class HTMLNodeReferences {
 	 * Add a reference after known a node should be referenced.
 	 * Returns the reference index.
 	 */
-	reference(node: HTMLNode): number {
+	referenceAsIndex(node: HTMLNode): number {
 		if (this.references.has(node)) {
 			return this.references.get(node)!
 		}
@@ -57,8 +57,8 @@ export class HTMLNodeReferences {
 	 * Reference node if not, and return it's reference variable name.
 	 * Like `$node_0`.
 	 */
-	getReferenceName(node: HTMLNode) {
-		let nodeIndex = this.reference(node)
+	referenceAsName(node: HTMLNode) {
+		let nodeIndex = this.referenceAsIndex(node)
 		return VariableNames.node + '_' + nodeIndex
 	}
 

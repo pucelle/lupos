@@ -37,7 +37,7 @@ export class SlotTagSlot extends SlotBase {
 		modifier.addImport('TemplateSlot', '@pucelle/lupos.js')
 		modifier.addImport('SlotPosition', '@pucelle/lupos.js')
 
-		let nodeName = this.tree.references.getReferenceName(this.node)
+		let nodeName = this.getRefedNodeName()
 
 		// `$slot_0 = new TemplateSlot<null>(
 		// 	 new SlotPosition(SlotPositionType.AfterContent, s),
@@ -67,7 +67,7 @@ export class SlotTagSlot extends SlotBase {
 	}
 
 	private outputNoNamedInit() {
-		let nodeName = this.tree.references.getReferenceName(this.node)
+		let nodeName = this.getRefedNodeName()
 			
 		// `$node_0.append(...$context.__getRestSlotNodes())`
 		return factory.createCallExpression(

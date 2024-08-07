@@ -1,45 +1,97 @@
+import type TS from 'typescript'
 import {SlotBase} from './base'
 import {factory, modifier, ts} from '../../../../base'
 
 
 export class DynamicComponentSlot extends SlotBase {
 
-	/** $com_0 */
-	private comVariableName: string = ''
-
 	/** $block_0 */
 	private blockVariableName: string = ''
 
 	init() {
-		this.comVariableName = this.tree.refComponent(this.node)
+		this.refAsComponent()
 		this.blockVariableName = this.tree.getUniqueBlockVariableName()
 	}
 
-	outputInit() {
+	outputInit(nodeAttrInits: TS.Statement[]) {
 		modifier.addImport('DynamicComponentBlock', '@pucelle/lupos.js')
+		modifier.addImport('TemplateSlot', '@pucelle/lupos.js')
+		modifier.addImport('SlotPosition', '@pucelle/lupos.js')
+		modifier.addImport('SlotRange', '@pucelle/lupos.js')
 
-		let nodeName = this.tree.references.getReferenceName(this.node)
-		let ComName = this.node.tagName!
+		let nodeName = this.getRefedNodeName()
+		let comName = this.getRefedComponentName()
 
-		// $com_0 = new Com($node_0)
-		let comNew = factory.createNewExpression(
-			factory.createIdentifier(ComName),
+
+		// $block_0 = new DynamicComponentBlock(
+		// function(com){
+		//   $node_0 = com.el;
+		//	 $com_0 = com;
+		//	 ...nodeAttrInits
+		// },
+		// new TemplateSlot(new SlotPosition(SlotPositionType.Before, nextChild)),
+		// new SlotRange() / null
+		// )
+
+		let binderFn = factory.createFunctionExpression(
 			undefined,
-			[factory.createIdentifier(nodeName)]
+			undefined,
+			factory.createIdentifier(''),
+			undefined,
+			[factory.createParameterDeclaration(
+				undefined,
+				undefined,
+				factory.createIdentifier('com'),
+				undefined,
+				undefined,
+				undefined
+			)],
+			undefined,
+			factory.createBlock(
+				[
+					factory.createExpressionStatement(factory.createBinaryExpression(
+						factory.createIdentifier(nodeName),
+						factory.createToken(ts.SyntaxKind.EqualsToken),
+						factory.createPropertyAccessExpression(factory.createIdentifier('com'), 'el')
+					)),
+					factory.createExpressionStatement(factory.createBinaryExpression(
+						factory.createIdentifier(comName),
+						factory.createToken(ts.SyntaxKind.EqualsToken),
+						factory.createIdentifier('com')
+					)),
+					...nodeAttrInits,
+				],
+				true
+			)
 		)
 
-		// $block_0 = new DynamicComponentBlock($node_0), after component has been referenced.
-		if (this.tree.isComponentReferenced(this.node)) {
-			let comName = this.tree.refComponent(this.node)
+		let templateSlot = this.makeTemplateSlot(null)
+		let contentRange = this.makeSlotRangeExpression()
 
-			return factory.createBinaryExpression(
-				factory.createIdentifier(comName),
-				factory.createToken(ts.SyntaxKind.EqualsToken),
-				comNew
-			)
-		}
-		else {
-			return comNew
-		}
+		let block = factory.createNewExpression(
+			factory.createIdentifier('DynamicComponentBlock'),
+			undefined,
+			[
+				binderFn,
+				templateSlot,
+				contentRange,
+			]
+		)
+
+		return block
+	}
+
+	outputUpdate() {
+		let value = this.getOutputValueNode()
+
+		// $block_0.update($values[0])
+		return factory.createCallExpression(
+			factory.createPropertyAccessExpression(
+				factory.createIdentifier(this.blockVariableName),
+				factory.createIdentifier('update')
+			),
+			undefined,
+			[value]
+		)
 	}
 }

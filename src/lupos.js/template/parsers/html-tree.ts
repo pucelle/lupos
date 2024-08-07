@@ -361,7 +361,7 @@ export class HTMLTreeParser {
 	 * Reference component of a node and get it's unique variable name.
 	 * Must call it in `init` method.
 	 */
-	refComponent(node: HTMLNode): string {
+	refAsComponent(node: HTMLNode): string {
 		if (this.referencedComponentMap.has(node)) {
 			return this.referencedComponentMap.get(node)!
 		}
@@ -373,12 +373,12 @@ export class HTMLTreeParser {
 	}
 
 	/** Get component name of a refed component by it's node. */
-	getRefedComponentName(node: HTMLNode): string | undefined {
-		return this.referencedComponentMap.get(node)
+	getRefedComponentName(node: HTMLNode): string {
+		return this.referencedComponentMap.get(node)!
 	}
 
 	/** Returns whether component of a node has been referenced. */
-	isComponentReferenced(node: HTMLNode) {
+	isRefedAsComponent(node: HTMLNode): boolean {
 		return this.referencedComponentMap.has(node)
 	}
 }
