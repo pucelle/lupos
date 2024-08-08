@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {ts, defineVisitor, modifier, helper, factory, interpolator, visiting} from '../base'
+import {ts, defineVisitor, Modifier, Helper, factory, Interpolator, Visiting} from '../base'
 
 
 // Add some decorator compiled part to `constructor` or `onConnected` and `onDisconnected`.
@@ -18,19 +18,19 @@ defineVisitor(function(node: TS.Node, index: number) {
 	let hasDeletedContextVariables = false
 
 	// Be a component.
-	if (helper.cls.isDerivedOf(node, 'Component', '@pucelle/lupos.js')) {
-		connect = helper.cls.getMethod(node, 'onConnected')
+	if (Helper.cls.isDerivedOf(node, 'Component', '@pucelle/lupos.js')) {
+		connect = Helper.cls.getMethod(node, 'onConnected')
 		if (!connect) {
 			connect = createCallSuperMethod('onConnected')
 		}
 
-		disconnect = helper.cls.getMethod(node, 'onDisconnected')
+		disconnect = Helper.cls.getMethod(node, 'onDisconnected')
 		if (!disconnect) {
 			disconnect = createCallSuperMethod('onDisconnected')
 		}
 	}
 	else {
-		connect = helper.cls.getConstructor(node)
+		connect = Helper.cls.getConstructor(node)
 		if (!connect) {
 			connect = createConstructor(node)
 		}
@@ -43,12 +43,12 @@ defineVisitor(function(node: TS.Node, index: number) {
 			continue
 		}
 
-		let deco = helper.deco.getFirst(member)
+		let deco = Helper.deco.getFirst(member)
 		if (!deco) {
 			continue
 		}
 
-		let decoName = helper.deco.getName(deco)
+		let decoName = Helper.deco.getName(deco)
 		if (!decoName) {
 			continue
 		}
@@ -58,7 +58,7 @@ defineVisitor(function(node: TS.Node, index: number) {
 		}
 		else if (decoName === 'setContext' && ts.isPropertyDeclaration(member)) {
 			[connect, disconnect] = compileSetContextDecorator(member, connect, disconnect, hasDeletedContextVariables)
-			interpolator.remove(visiting.getIndex(deco))
+			Interpolator.remove(Visiting.getIndex(deco))
 			hasDeletedContextVariables = true
 		}
 		else if (decoName === 'useContext' && ts.isPropertyDeclaration(member)) {
@@ -72,7 +72,7 @@ defineVisitor(function(node: TS.Node, index: number) {
 			continue
 		}
 
-		modifier.addClassMember(index, member, true)
+		Modifier.addClassMember(index, member, true)
 	}
 })
 
@@ -85,7 +85,7 @@ function hasLifeDecorators(node: TS.ClassDeclaration) {
 			return false
 		}
 
-		let decoName = helper.deco.getFirstName(member)
+		let decoName = Helper.deco.getFirstName(member)
 		if (decoName && ['effect', 'watch', 'useContext', 'setContext'].includes(decoName)) {
 			return true
 		}
@@ -128,7 +128,7 @@ function compileEffectOrWatchDecorator(
 	connect: TS.MethodDeclaration | TS.ConstructorDeclaration,
 	disconnect: TS.MethodDeclaration | undefined
 ): [TS.MethodDeclaration | TS.ConstructorDeclaration, TS.MethodDeclaration | undefined] {
-	let methodName = helper.getText(methodDecl.name)
+	let methodName = Helper.getText(methodDecl.name)
 
 	if (connect) {
 		let connectStatement = factory.createExpressionStatement(factory.createCallExpression(
@@ -157,7 +157,7 @@ function compileEffectOrWatchDecorator(
 		))
 		
 		disconnect = addToMethodDeclaration(disconnect, [disconnectStatement])
-		modifier.addImport('untrack', '@pucelle/ff')
+		Modifier.addImport('untrack', '@pucelle/ff')
 	}
 
 	return [connect, disconnect]
@@ -193,9 +193,9 @@ function createCallSuperMethod(name: string): TS.MethodDeclaration {
 
 /** Create a constructor function. */
 function createConstructor(node: TS.ClassDeclaration): TS.ConstructorDeclaration {
-	let parameters = helper.cls.getConstructorParameters(node)
+	let parameters = Helper.cls.getConstructorParameters(node)
 	let statements: TS.Statement[] = []
-	let superCls = helper.cls.getSuper(node)
+	let superCls = Helper.cls.getSuper(node)
 
 	if (superCls) {
 		let callSuper = factory.createExpressionStatement(factory.createCallExpression(
@@ -272,9 +272,9 @@ function compileSetContextDecorator(
 	disconnect: TS.MethodDeclaration | undefined,
 	hasDeletedContextVariables: boolean
 ): [TS.MethodDeclaration | TS.ConstructorDeclaration, TS.MethodDeclaration | undefined] {
-	let propName = helper.getText(propDecl.name)
-	let superClass = helper.cls.getSuper(propDecl.parent as TS.ClassDeclaration)!
-	let className = helper.getText(helper.symbol.getIdentifier(superClass)!)
+	let propName = Helper.getText(propDecl.name)
+	let superClass = Helper.cls.getSuper(propDecl.parent as TS.ClassDeclaration)!
+	let className = Helper.getText(Helper.symbol.getIdentifier(superClass)!)
 		
 	if (connect) {
 		let connectStatement = factory.createExpressionStatement(factory.createCallExpression(
@@ -334,9 +334,9 @@ function compileUseContextDecorator(
 	disconnect: TS.MethodDeclaration | undefined,
 	hasDeletedContextVariables: boolean
 ): [TS.MethodDeclaration | TS.ConstructorDeclaration, TS.MethodDeclaration | undefined] {
-	let propName = helper.getText(propDecl.name)
-	let superClass = helper.cls.getSuper(propDecl.parent as TS.ClassDeclaration)!
-	let className = helper.getText(helper.symbol.getIdentifier(superClass)!)
+	let propName = Helper.getText(propDecl.name)
+	let superClass = Helper.cls.getSuper(propDecl.parent as TS.ClassDeclaration)!
+	let className = Helper.getText(Helper.symbol.getIdentifier(superClass)!)
 	
 	if (connect) {
 		let connectStatement = factory.createExpressionStatement(factory.createBinaryExpression(

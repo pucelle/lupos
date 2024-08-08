@@ -1,8 +1,8 @@
 import type TS from 'typescript'
 import {ListMap} from '../utils'
 import {factory, transformContext, ts} from './global'
-import {visiting} from './visiting'
-import {helper} from './helper'
+import {Visiting} from './visiting'
+import {Helper} from './helper'
 
 
 export interface InterpolationItem {
@@ -62,7 +62,7 @@ export enum InterpolationContentType {
  * It attaches to each context.
  * Remember where to interpolate expressions, and interpolate there some contents.
  */
-export namespace interpolator {
+export namespace Interpolator {
 
 	/** Interpolated expressions, and where to interpolate. */
 	const interpolations: ListMap<number, InterpolationItem> = new ListMap()
@@ -79,22 +79,22 @@ export namespace interpolator {
 		
 		// Not fully replace it.
 		if (item.position === InterpolationPosition.Prepend) {
-			let firstIndex = visiting.getFirstChildIndex(toIndex)
+			let firstIndex = Visiting.getFirstChildIndex(toIndex)
 			if (firstIndex) {
 				toIndex = firstIndex
 				item.position = InterpolationPosition.Before
 			}
 		}
 		else if (item.position === InterpolationPosition.Append) {
-			let lastIndex = visiting.getLastChildIndex(toIndex)
+			let lastIndex = Visiting.getLastChildIndex(toIndex)
 			if (lastIndex) {
 				toIndex = lastIndex
 				item.position = InterpolationPosition.After
 			}
 		}
 		else if (item.position === InterpolationPosition.Before || item.position === InterpolationPosition.After) {
-			let parentIndex = visiting.getParentIndex(toIndex)!
-			let parentNode = visiting.getNode(parentIndex)
+			let parentIndex = Visiting.getParentIndex(toIndex)!
+			let parentNode = Visiting.getNode(parentIndex)
 
 			// Insert before or after expression statement.
 			if (ts.isExpressionStatement(parentNode)) {
@@ -186,8 +186,8 @@ export namespace interpolator {
 	 * bot not replace self or inserts neighbor nodes.
 	 */
 	export function outputChildren(index: number): TS.Node {
-		let node = visiting.getNode(index)
-		let childIndices = visiting.getChildIndices(index)
+		let node = Visiting.getNode(index)
+		let childIndices = Visiting.getChildIndices(index)
 
 		if (!childIndices) {
 			return node
@@ -228,7 +228,7 @@ export namespace interpolator {
 
 		let replace = items.filter(item => item.position === InterpolationPosition.Replace)
 		if (replace.length > 1) {
-			throw new Error(`Only one replace is allowed, happened at position "${helper.getText(visiting.getNode(index))}"!`)
+			throw new Error(`Only one replace is allowed, happened at position "${Helper.getText(Visiting.getNode(index))}"!`)
 		}
 
 		let node: TS.Node | TS.Node[] | undefined
@@ -238,7 +238,7 @@ export namespace interpolator {
 			node = replace[0].replace!()
 
 			if (prependNodes.length > 0 || appendNodes.length > 0) {
-				console.warn(`Child nodes "${childNodes.map(n => helper.getText(n)).join(', ')}" have been dropped!`)
+				console.warn(`Child nodes "${childNodes.map(n => Helper.getText(n)).join(', ')}" have been dropped!`)
 			}
 		}
 		else {
@@ -290,7 +290,7 @@ export namespace interpolator {
 			)
 		}
 		else {
-			throw new Error(`Don't know how to add child nodes for "${helper.getText(node)}"!`)
+			throw new Error(`Don't know how to add child nodes for "${Helper.getText(node)}"!`)
 		}
 	}
 
@@ -299,31 +299,31 @@ export namespace interpolator {
 		index: number, node: TS.Node | TS.Node[] | undefined,
 		beforeNodes: TS.Node[], afterNodes: TS.Node[]
 	): TS.Node | TS.Node[] {
-		let rawNode = visiting.getNode(index)
+		let rawNode = Visiting.getNode(index)
 		let rawParent = rawNode.parent
 
 		// Insert statements.
-		if (helper.pack.canPutStatements(rawParent)) {
+		if (Helper.pack.canPutStatements(rawParent)) {
 			let list = arrangeNeighborNodes(node, beforeNodes, afterNodes)
-			return list.map(n => helper.pack.toStatement(n))
+			return list.map(n => Helper.pack.toStatement(n))
 		}
 
 		// Extend to block and insert statements.
-		else if (helper.pack.canExtendToPutStatements(rawNode)) {
+		else if (Helper.pack.canExtendToPutStatements(rawNode)) {
 			if (ts.isArrowFunction(rawParent)) {
 				node = factory.createReturnStatement(node as TS.Expression)
 			}
 			let list = arrangeNeighborNodes(node, beforeNodes, afterNodes)
 
 			return factory.createBlock(
-				list.map(n => helper.pack.toStatement(n))
+				list.map(n => Helper.pack.toStatement(n))
 			)
 		}
 
 		// Parenthesize it, move returned node to the end.
-		else if (helper.pack.shouldBeUnique(rawNode)) {
+		else if (Helper.pack.shouldBeUnique(rawNode)) {
 			let list = arrangeNeighborNodes(node, beforeNodes, afterNodes, true)
-			return helper.pack.parenthesizeExpressions(...list)
+			return Helper.pack.parenthesizeExpressions(...list)
 		}
 
 		// Otherwise, return list directly.
@@ -366,7 +366,7 @@ export namespace interpolator {
 		}
 
 		// `(a) -> a`
-		list = list.map(node => helper.pack.normalize(node, false) as TS.Expression)
+		list = list.map(node => Helper.pack.normalize(node, false) as TS.Expression)
 
 		return list
 	}

@@ -1,4 +1,4 @@
-import {modifier, ts} from '../../base'
+import {Modifier, ts} from '../../base'
 import {Context} from './context'
 import {ContextCapturer} from './context-capturer'
 import {ContextTree, ContextTypeMask} from './context-tree'
@@ -121,7 +121,7 @@ export namespace Optimizer {
 			context.visitingIndex, context
 		)
 
-		modifier.moveOnce(context.visitingIndex, toPosition.index)
+		Modifier.moveOnce(context.visitingIndex, toPosition.index)
 		context.capturer.moveCapturedOutwardTo(toPosition.context.capturer)
 	}
 

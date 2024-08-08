@@ -1,6 +1,6 @@
 import type TS from 'typescript'
 import {SlotParserBase} from './base'
-import {factory, helper, imports, modifier, TemplateSlotPlaceholder, ts} from '../../../../base'
+import {factory, Helper, Imports, Modifier, TemplateSlotPlaceholder, ts} from '../../../../base'
 import {VariableNames} from '../variable-names'
 
 
@@ -54,7 +54,7 @@ export class EventSlotParser extends SlotParserBase {
 		if (isComponent || isDynamicComponent) {
 			let com: TS.Node | undefined
 			if (isComponent) {
-				com = imports.getImportByName(tagName)
+				com = Imports.getImportByName(tagName)
 			}
 			else {
 				com = this.getOutputValueNode()
@@ -67,7 +67,7 @@ export class EventSlotParser extends SlotParserBase {
 			let classDeclarations: TS.ClassDeclaration[] = []
 
 			if (ts.isUnionTypeNode(com)) {
-				classDeclarations = com.types.map(n => helper.symbol.resolveDeclaration(n, ts.isClassDeclaration))
+				classDeclarations = com.types.map(n => Helper.symbol.resolveDeclaration(n, ts.isClassDeclaration))
 					.filter(v => v) as TS.ClassDeclaration[]
 			}
 			else if (ts.isClassDeclaration(com)) {
@@ -75,13 +75,13 @@ export class EventSlotParser extends SlotParserBase {
 			}
 
 			for (let classDecl of classDeclarations) {
-				for (let interfaceDecl of helper.symbol.resolveExtendedInterfaceLikeTypeParameters(classDecl, 'EventFirer', 0)) {
+				for (let interfaceDecl of Helper.symbol.resolveExtendedInterfaceLikeTypeParameters(classDecl, 'EventFirer', 0)) {
 					for (let member of interfaceDecl.members) {
 						if (!member.name) {
 							continue
 						}
 
-						if (helper.getText(member.name) === this.name) {
+						if (Helper.getText(member.name) === this.name) {
 							return 'component'
 						}
 					}
@@ -170,7 +170,7 @@ export class EventSlotParser extends SlotParserBase {
 	}
 
 	private outputSimulatedInit() {
-		modifier.addImport('SimulatedEvents', '@pucelle/ff')
+		Modifier.addImport('SimulatedEvents', '@pucelle/ff')
 
 		let nodeName = this.getRefedNodeName()
 
@@ -236,7 +236,7 @@ export class EventSlotParser extends SlotParserBase {
 	}
 
 	private outputModifiableInit() {
-		modifier.addImport('DOMModifiableEvents', '@pucelle/ff')
+		Modifier.addImport('DOMModifiableEvents', '@pucelle/ff')
 
 		let nodeName = this.getRefedNodeName()
 

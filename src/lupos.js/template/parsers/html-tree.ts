@@ -1,4 +1,4 @@
-import {helper, TemplateSlotPlaceholder} from '../../../base'
+import {Helper, TemplateSlotPlaceholder} from '../../../base'
 import {HTMLNode, HTMLNodeType, HTMLTree} from '../html-syntax'
 import {HTMLNodeReferences} from '../html-syntax/html-node-references'
 import {SlotParserBase, DynamicComponentSlotParser, FlowControlSlotParser, PropertySlotParser, BindingSlotParser, EventSlotParser, AttributeSlotParser, TextSlotParser, ContentSlotParser, ComponentSlotParser} from './slots'
@@ -286,7 +286,7 @@ export class HTMLTreeParser {
 		// `>{textValue}<` or
 		// `>${html`...`}<`
 		let joinAsAWholeText = slotIndices.every(index => {
-			return helper.types.isValueType(helper.types.getType(this.template.slotNodes[index]))
+			return Helper.types.isValueType(Helper.types.getType(this.template.slotNodes[index]))
 		})
 
 		// Text `...${...}...`

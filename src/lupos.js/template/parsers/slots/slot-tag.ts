@@ -1,7 +1,7 @@
 import type TS from 'typescript'
 import {HTMLTreeParser} from '../html-tree'
 import {SlotParserBase} from './base'
-import {factory, modifier, ts} from '../../../../base'
+import {factory, Modifier, ts} from '../../../../base'
 import {VariableNames} from '../variable-names'
 
 
@@ -34,8 +34,8 @@ export class SlotTagSlotParser extends SlotParserBase {
 	}
 
 	private outputNamedInit() {
-		modifier.addImport('TemplateSlot', '@pucelle/lupos.js')
-		modifier.addImport('SlotPosition', '@pucelle/lupos.js')
+		Modifier.addImport('TemplateSlot', '@pucelle/lupos.js')
+		Modifier.addImport('SlotPosition', '@pucelle/lupos.js')
 
 		let nodeName = this.getRefedNodeName()
 
@@ -97,7 +97,7 @@ export class SlotTagSlotParser extends SlotParserBase {
 	}
 
 	private outputNamedUpdate() {
-		modifier.addImport('TemplateSlot', '@pucelle/lupos.js')
+		Modifier.addImport('TemplateSlot', '@pucelle/lupos.js')
 
 		// `this.__getSlotElement(slotName)`
 		let toValue: TS.Expression = factory.createCallExpression(
@@ -111,7 +111,7 @@ export class SlotTagSlotParser extends SlotParserBase {
 
 		// this.__getSlotElement(slotName) || new CompiledTemplateResult($maker_0, $values)
 		if (this.defaultContentParser) {
-			modifier.addImport('CompiledTemplateResult', '@pucelle/lupos.js')
+			Modifier.addImport('CompiledTemplateResult', '@pucelle/lupos.js')
 
 			toValue = factory.createBinaryExpression(
 				toValue,

@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {helper, ts, defineVisitor, modifier, factory, interpolator, InterpolationContentType, visiting} from '../base'
+import {Helper, ts, defineVisitor, Modifier, factory, Interpolator, InterpolationContentType, Visiting} from '../base'
 
 
 defineVisitor(function(node: TS.Node, index: number) {
@@ -9,17 +9,17 @@ defineVisitor(function(node: TS.Node, index: number) {
 		return
 	}
 
-	let decorator = helper.deco.getFirst(node)!
+	let decorator = Helper.deco.getFirst(node)!
 	if (!decorator) {
 		return
 	}
 
-	let decoName = helper.deco.getName(decorator)
+	let decoName = Helper.deco.getName(decorator)
 	if (!decoName || !['computed', 'effect', 'watch'].includes(decoName)) {
 		return
 	}
 
-	interpolator.replace(index, InterpolationContentType.Normal, () => {
+	Interpolator.replace(index, InterpolationContentType.Normal, () => {
 		if (decoName === 'computed') {
 			return compileComputedDecorator(node)
 		}
@@ -70,8 +70,8 @@ get prop(): any {
 ```
 */
 function compileComputedDecorator(methodDecl: TS.MethodDeclaration): TS.Node[] {
-	let propName = helper.getText(methodDecl.name)
-	let methodBodyIndex = visiting.getIndex(methodDecl.body!)
+	let propName = Helper.getText(methodDecl.name)
+	let methodBodyIndex = Visiting.getIndex(methodDecl.body!)
 
 	let property = factory.createPropertyDeclaration(
 		undefined,
@@ -97,7 +97,7 @@ function compileComputedDecorator(methodDecl: TS.MethodDeclaration): TS.Node[] {
 		undefined,
 		[],
 		undefined,
-		interpolator.outputChildren(methodBodyIndex) as TS.Block
+		Interpolator.outputChildren(methodBodyIndex) as TS.Block
 	)
 	
 	let resetMethod = factory.createMethodDeclaration(
@@ -258,9 +258,9 @@ function compileComputedDecorator(methodDecl: TS.MethodDeclaration): TS.Node[] {
 		)
 	)
 
-	modifier.addImport('beginTrack', '@pucelle/ff')
-	modifier.addImport('endTrack', '@pucelle/ff')
-	modifier.addImport('trackSet', '@pucelle/ff')
+	Modifier.addImport('beginTrack', '@pucelle/ff')
+	Modifier.addImport('endTrack', '@pucelle/ff')
+	Modifier.addImport('trackSet', '@pucelle/ff')
 
 	return [property, needComputeProperty, computeMethod, resetMethod, getter]
 }
@@ -297,7 +297,7 @@ effectFn() {
 ```
 */
 function compileEffectDecorator(methodDecl: TS.MethodDeclaration): TS.Node[] {
-	let methodName = helper.getText(methodDecl.name)
+	let methodName = Helper.getText(methodDecl.name)
 
 	let enqueueMethod = factory.createMethodDeclaration(
 		undefined,
@@ -381,9 +381,9 @@ function compileEffectDecorator(methodDecl: TS.MethodDeclaration): TS.Node[] {
 		)
 	)
 
-	modifier.addImport('beginTrack', '@pucelle/ff')
-	modifier.addImport('endTrack', '@pucelle/ff')
-	modifier.addImport('enqueue', '@pucelle/ff')
+	Modifier.addImport('beginTrack', '@pucelle/ff')
+	Modifier.addImport('endTrack', '@pucelle/ff')
+	Modifier.addImport('enqueue', '@pucelle/ff')
 
 	return [enqueueMethod, effectMethod]
 }
@@ -434,7 +434,7 @@ onWatchChange() {
 ```
 */
 function compileWatchDecorator(methodDecl: TS.MethodDeclaration, decorator: TS.Decorator): TS.Node[] {
-	let methodName = helper.getText(methodDecl.name)
+	let methodName = Helper.getText(methodDecl.name)
 
 	if (!ts.isCallExpression(decorator.expression)) {
 		return []
@@ -472,7 +472,7 @@ function compileWatchDecorator(methodDecl: TS.MethodDeclaration, decorator: TS.D
 			true
 		)
 
-		modifier.addImport('trackGet', '@pucelle/ff')
+		Modifier.addImport('trackGet', '@pucelle/ff')
 	}
 	else if (ts.isFunctionExpression(propertyGetArg)) {
 		propertyGetBlock = propertyGetArg.body
@@ -628,9 +628,9 @@ function compileWatchDecorator(methodDecl: TS.MethodDeclaration, decorator: TS.D
 		)
 	)
 	
-	modifier.addImport('beginTrack', '@pucelle/ff')
-	modifier.addImport('endTrack', '@pucelle/ff')
-	modifier.addImport('enqueue', '@pucelle/ff')
+	Modifier.addImport('beginTrack', '@pucelle/ff')
+	Modifier.addImport('endTrack', '@pucelle/ff')
+	Modifier.addImport('enqueue', '@pucelle/ff')
 
 	return [property, propertyGet, enqueueMethod, watchMethod]
 }

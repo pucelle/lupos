@@ -1,13 +1,13 @@
 import {ListMap} from '../utils'
 import type TS from 'typescript'
 import {factory, sourceFile, ts} from './global'
-import {helper} from './helper'
-import {InterpolationContentType, interpolator} from './interpolator'
-import {visiting} from './visiting'
+import {Helper} from './helper'
+import {InterpolationContentType, Interpolator} from './interpolator'
+import {Visiting} from './visiting'
 
 
 /** Help to do all dirty and detailed work for `interpolator`. */
-export namespace modifier {
+export namespace Modifier {
 	
 	/** All imports. */
 	const imports: ListMap<string, string> = new ListMap()
@@ -28,26 +28,26 @@ export namespace modifier {
 			return
 		}
 
-		interpolator.move(fromIndex, toIndex)
+		Interpolator.move(fromIndex, toIndex)
 		movedIndices.add(fromIndex)
 	}
 
 
 	/** Add a member to a class declaration. */
 	export function addClassMember(classIndex: number, member: TS.ClassElement, preferInsertToHead: boolean = false) {
-		let node = visiting.getNode(classIndex) as TS.ClassDeclaration
-		let name = helper.cls.getMemberName(member)
-		let existing = node.members.find(m => helper.cls.getMemberName(m) === name)
+		let node = Visiting.getNode(classIndex) as TS.ClassDeclaration
+		let name = Helper.cls.getMemberName(member)
+		let existing = node.members.find(m => Helper.cls.getMemberName(m) === name)
 
 		if (existing) {
-			let toIndex = visiting.getIndex(existing)
-			interpolator.replace(toIndex, InterpolationContentType.Normal, () => member)
+			let toIndex = Visiting.getIndex(existing)
+			Interpolator.replace(toIndex, InterpolationContentType.Normal, () => member)
 		}
 		else if (preferInsertToHead) {
-			interpolator.prepend(classIndex, InterpolationContentType.Normal, () => member)
+			Interpolator.prepend(classIndex, InterpolationContentType.Normal, () => member)
 		}
 		else {
-			interpolator.append(classIndex, InterpolationContentType.Normal, () => member)
+			Interpolator.append(classIndex, InterpolationContentType.Normal, () => member)
 		}
 	}
 	
@@ -66,9 +66,9 @@ export namespace modifier {
 	 * `a.b()` -> `var ..., $ref_ = a.b()`, and move it.
 	 */
 	export function addVariableAssignmentToList(fromIndex: number, toIndex: number, varName: string) {
-		interpolator.before(toIndex, InterpolationContentType.VariableDeclaration, () => {
-			let node = interpolator.outputChildren(fromIndex) as TS.Expression
-			node = helper.pack.normalize(node, false) as TS.Expression
+		Interpolator.before(toIndex, InterpolationContentType.VariableDeclaration, () => {
+			let node = Interpolator.outputChildren(fromIndex) as TS.Expression
+			node = Helper.pack.normalize(node, false) as TS.Expression
 			
 			return factory.createVariableDeclaration(
 				factory.createIdentifier(varName),
@@ -84,9 +84,9 @@ export namespace modifier {
 	 * `a.b()` -> `$ref_ = a.b()`, and move it.
 	 */
 	export function addReferenceAssignment(fromIndex: number, toIndex: number, refName: string) {
-		interpolator.before(toIndex, InterpolationContentType.Reference, () => {
-			let node = interpolator.outputChildren(fromIndex) as TS.Expression
-			node = helper.pack.normalize(node, false) as TS.Expression
+		Interpolator.before(toIndex, InterpolationContentType.Reference, () => {
+			let node = Interpolator.outputChildren(fromIndex) as TS.Expression
+			node = Helper.pack.normalize(node, false) as TS.Expression
 
 			return factory.createBinaryExpression(
 				factory.createIdentifier(refName),
@@ -98,7 +98,7 @@ export namespace modifier {
 
 	/** Add variables to target index as declaration statements or variable items. */
 	export function addVariables(toIndex: number, names: string[]) {
-		let rawNode = visiting.getNode(toIndex)
+		let rawNode = Visiting.getNode(toIndex)
 		let exps: TS.VariableDeclarationList | TS.VariableDeclaration[]
 
 		// `for (let i = 0; ...) ...`
@@ -126,7 +126,7 @@ export namespace modifier {
 			)
 		}
 
-		interpolator.before(toIndex, InterpolationContentType.VariableDeclaration, () => exps)
+		Interpolator.before(toIndex, InterpolationContentType.VariableDeclaration, () => exps)
 	}
 
 
@@ -138,7 +138,7 @@ export namespace modifier {
 		// Current process step is: leave them there and wait for package step to eliminate.
 
 		for (let [moduleName, names] of imports.entries()) {
-			let importDecl = helper.imports.getImportFromModule(moduleName)
+			let importDecl = Helper.imports.getImportFromModule(moduleName)
 
 			let namedImports = names.map(name => factory.createImportSpecifier(
 				false,
@@ -148,8 +148,8 @@ export namespace modifier {
 
 			// Add more imports.
 			if (importDecl) {
-				let namedImportsIndex = visiting.getIndex(importDecl.importClause!.namedBindings!)
-				interpolator.append(namedImportsIndex, InterpolationContentType.Normal, () => namedImports)
+				let namedImportsIndex = Visiting.getIndex(importDecl.importClause!.namedBindings!)
+				Interpolator.append(namedImportsIndex, InterpolationContentType.Normal, () => namedImports)
 			}
 
 			// Add an import statement.
@@ -166,8 +166,8 @@ export namespace modifier {
 				)
 
 				let beforeNode = sourceFile.statements.find(st => !ts.isImportDeclaration(st))!
-				let toIndex = visiting.getIndex(beforeNode)
-				interpolator.before(toIndex, InterpolationContentType.Normal, () => importDecl!)
+				let toIndex = Visiting.getIndex(beforeNode)
+				Interpolator.before(toIndex, InterpolationContentType.Normal, () => importDecl!)
 			}
 		}
 	}

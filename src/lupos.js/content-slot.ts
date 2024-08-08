@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {helper, defineVisitor, ts, modifier, factory} from '../base'
+import {Helper, defineVisitor, ts, Modifier, factory} from '../base'
 
 
 defineVisitor(function(node: TS.Node, index: number) {
@@ -8,28 +8,28 @@ defineVisitor(function(node: TS.Node, index: number) {
 	}
 
 	// Be a component.
-	if (!helper.cls.isDerivedOf(node, 'Component', '@pucelle/lupos.js')) {
+	if (!Helper.cls.isDerivedOf(node, 'Component', '@pucelle/lupos.js')) {
 		return
 	}
 
 	// Must not specify `ContentSlotType: ...` itself.
-	let contentSlotProperty = helper.cls.getProperty(node, 'ContentSlotType')
+	let contentSlotProperty = Helper.cls.getProperty(node, 'ContentSlotType')
 	if (contentSlotProperty) {
 		return
 	}
 
 	// Must specify `render(): ...`
-	let renderMethod = helper.cls.getMethod(node, 'render')
+	let renderMethod = Helper.cls.getMethod(node, 'render')
 	if (!renderMethod) {
 		return
 	}
 
-	let renderType = helper.types.getReturnType(renderMethod)
+	let renderType = Helper.types.getReturnType(renderMethod)
 	if (!renderType) {
 		return
 	}
 
-	let typeText = helper.types.getTypeFullText(renderType)
+	let typeText = Helper.types.getTypeFullText(renderType)
 	let slotType: 'TemplateResult' | 'TemplateResultArray' | 'Text' | 'Node' | null = null
 
 	// Check Slot Type.
@@ -48,7 +48,7 @@ defineVisitor(function(node: TS.Node, index: number) {
 
 	// Add a property `static ContentSlotType = SlotContentType.xxx`.
 	if (slotType) {
-		modifier.addImport('SlotContentType', '@pucelle/lupos.js')
+		Modifier.addImport('SlotContentType', '@pucelle/lupos.js')
 
 		let property = factory.createPropertyDeclaration(
 			[
@@ -63,6 +63,6 @@ defineVisitor(function(node: TS.Node, index: number) {
 			)
 		)
 
-		modifier.addClassMember(index, property, true)
+		Modifier.addClassMember(index, property, true)
 	}
 })

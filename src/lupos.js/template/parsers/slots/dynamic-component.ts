@@ -1,6 +1,6 @@
 import type TS from 'typescript'
 import {SlotParserBase} from './base'
-import {factory, modifier, ts} from '../../../../base'
+import {factory, Modifier, ts} from '../../../../base'
 
 
 export class DynamicComponentSlotParser extends SlotParserBase {
@@ -14,7 +14,7 @@ export class DynamicComponentSlotParser extends SlotParserBase {
 	}
 
 	outputInit(nodeAttrInits: TS.Statement[]) {
-		modifier.addImport('DynamicComponentBlock', '@pucelle/lupos.js')
+		Modifier.addImport('DynamicComponentBlock', '@pucelle/lupos.js')
 
 		let nodeName = this.getRefedNodeName()
 		let comName = this.getRefedComponentName()

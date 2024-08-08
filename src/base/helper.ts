@@ -23,7 +23,7 @@ export enum FlowInterruptionTypeMask {
 
 
 /** Help to get and check. */
-export namespace helper {
+export namespace Helper {
 
 
 	//// Global, all node shared
@@ -929,7 +929,7 @@ export namespace helper {
 
 				for (let ref of destructed) {
 					if (ts.isTypeReferenceNode(ref)) {
-						let refName = helper.getText(ref.typeName)
+						let refName = Helper.getText(ref.typeName)
 
 						// Use input parameter.
 						if (selfMap.has(refName)) {

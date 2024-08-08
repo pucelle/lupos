@@ -1,4 +1,4 @@
-import {factory, modifier, ts} from '../../../../base'
+import {factory, Modifier, ts} from '../../../../base'
 import {FlowControlBase} from './base'
 import {VariableNames} from '../variable-names'
 
@@ -39,7 +39,7 @@ export class AwaitFlowControl extends FlowControlBase {
 			return []
 		}
 
-		modifier.addImport('AwaitBlock', '@pucelle/lupos.js')
+		Modifier.addImport('AwaitBlock', '@pucelle/lupos.js')
 
 		// $block_0 = new AwaitBlock(
 		//   makers,

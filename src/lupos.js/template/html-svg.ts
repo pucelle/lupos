@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {helper, defineVisitor, ts, interpolator, InterpolationContentType, TemplateSlotPlaceholder} from '../../base'
+import {Helper, defineVisitor, ts, Interpolator, InterpolationContentType, TemplateSlotPlaceholder} from '../../base'
 import {TemplateParser} from './parsers'
 import {VariableNames} from './parsers/variable-names'
 
@@ -14,7 +14,7 @@ defineVisitor(function(node: TS.Node, index: number) {
 		return
 	}
 
-	let nm = helper.symbol.resolveImport(node)
+	let nm = Helper.symbol.resolveImport(node)
 	if (!nm) {
 		return
 	}
@@ -37,6 +37,6 @@ function parseHTMLTemplate(node: TS.TaggedTemplateExpression, index: number, tem
 	let values = TemplateSlotPlaceholder.extractTemplateValues(node)
 	let parser = new TemplateParser(templateType, string, values)
 
-	interpolator.replace(index, InterpolationContentType.Normal, () => parser.output())
+	Interpolator.replace(index, InterpolationContentType.Normal, () => parser.output())
 }
 

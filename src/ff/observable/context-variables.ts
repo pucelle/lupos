@@ -1,6 +1,6 @@
 import type TS from 'typescript'
 import {ObservedChecker} from './observed-checker'
-import {helper, scopes, ts} from '../../base'
+import {Helper, Scopes, ts} from '../../base'
 import {Context} from './context'
 import {ContextTypeMask} from './context-tree'
 
@@ -57,8 +57,8 @@ export class ContextVariables {
 
 			// Class type resolved implements `Observed<>`.
 			else if (ts.isTypeReferenceNode(typeNode)) {
-				let clsDecl = helper.symbol.resolveDeclaration(typeNode.typeName, ts.isClassDeclaration)
-				if (clsDecl && helper.cls.isImplemented(clsDecl, 'Observed', '@pucelle/ff')) {
+				let clsDecl = Helper.symbol.resolveDeclaration(typeNode.typeName, ts.isClassDeclaration)
+				if (clsDecl && Helper.cls.isImplemented(clsDecl, 'Observed', '@pucelle/ff')) {
 					return true
 				}
 			}
@@ -66,7 +66,7 @@ export class ContextVariables {
 
 		// Method of an observed class.
 		else if (ts.isClassDeclaration(node.parent)
-			&& helper.cls.isImplemented(node.parent, 'Observed', '@pucelle/ff')
+			&& Helper.cls.isImplemented(node.parent, 'Observed', '@pucelle/ff')
 		) {
 			return true
 		}
@@ -92,7 +92,7 @@ export class ContextVariables {
 	 * Current context must be a found context that can contain variables.
 	 */
 	makeUniqueVariable(prefix: string): string {
-		return scopes.getClosestScopeOfNode(this.context.node).makeUniqueVariable(prefix)
+		return Scopes.getClosestScopeOfNode(this.context.node).makeUniqueVariable(prefix)
 	}
 
 	/** Get whether has observed a declared variable by name. */
@@ -132,7 +132,7 @@ export class ContextVariables {
 					observed = ObservedChecker.isTypeNodeObserved(typeNode)
 				}
 
-				this.variableObserved.set(helper.getText(param.name), observed)
+				this.variableObserved.set(Helper.getText(param.name), observed)
 			}
 		}
 
@@ -146,7 +146,7 @@ export class ContextVariables {
 		) {
 			if (ts.isCallExpression(node.parent)) {
 				let exp = node.parent.expression
-				if (helper.access.isAccess(exp)) {
+				if (Helper.access.isAccess(exp)) {
 
 					// `a.b`
 					let callFrom = exp.expression
@@ -162,15 +162,15 @@ export class ContextVariables {
 	/** Remember observed parameters. */
 	private makeParametersObserved(parameters: TS.NodeArray<TS.ParameterDeclaration>) {
 		for (let param of parameters) {
-			let beValue = helper.types.isValueType(helper.types.getType(param))
-			this.variableObserved.set(helper.getText(param.name), !beValue)
+			let beValue = Helper.types.isValueType(Helper.types.getType(param))
+			this.variableObserved.set(Helper.getText(param.name), !beValue)
 		}
 	}
 
 	/** Visit a parameter. */
 	visitParameter(node: TS.ParameterDeclaration) {
 		let observed = ObservedChecker.isParameterObserved(node)
-		this.variableObserved.set(helper.getText(node.name), observed)
+		this.variableObserved.set(Helper.getText(node.name), observed)
 	}
 
 	/** Visit a variable. */
@@ -183,7 +183,7 @@ export class ContextVariables {
 		}
 
 		let observed = ObservedChecker.isVariableDeclarationObserved(node)
-		let names = helper.variable.walkDeclarationNames(node)
+		let names = Helper.variable.walkDeclarationNames(node)
 
 		for (let name of names) {
 			this.variableObserved.set(name, observed)

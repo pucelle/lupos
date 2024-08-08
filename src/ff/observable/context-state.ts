@@ -1,7 +1,7 @@
 import type TS from 'typescript'
 import {Context} from './context'
 import {ContextTypeMask} from './context-tree'
-import {FlowInterruptionTypeMask, helper, ts} from '../../base'
+import {FlowInterruptionTypeMask, Helper, ts} from '../../base'
 
 
 
@@ -26,7 +26,7 @@ export class ContextState {
 		this.nothingReturned = this.checkNothingReturned()
 		
 		if (context.type & ContextTypeMask.FlowInterruption) {
-			this.flowInterruptionType = helper.pack.getFlowInterruptionType(context.node)
+			this.flowInterruptionType = Helper.pack.getFlowInterruptionType(context.node)
 		}
 	}
 
@@ -38,7 +38,7 @@ export class ContextState {
 			return this.context.parent?.state.nothingReturned ?? false
 		}
 
-		let type = helper.types.getReturnType(node as TS.FunctionLikeDeclaration)
+		let type = Helper.types.getReturnType(node as TS.FunctionLikeDeclaration)
 		return !!(type && (type.getFlags() & ts.TypeFlags.Void))
 	}
 

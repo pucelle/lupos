@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {InterpolationContentType, AccessNode, helper, interpolator, modifier, InterpolationPosition, visiting, ts, FlowInterruptionTypeMask, scopes} from '../../base'
+import {InterpolationContentType, AccessNode, Helper, Interpolator, Modifier, InterpolationPosition, Visiting, ts, FlowInterruptionTypeMask, Scopes} from '../../base'
 import {Context} from './context'
 import {ContextTree, ContextTypeMask} from './context-tree'
 import {AccessGrouper} from './access-grouper'
@@ -40,7 +40,7 @@ export class ContextCapturer {
 					continue
 				}
 
-				let hashName = scopes.hashIndex(index).name
+				let hashName = Scopes.hashIndex(index).name
 				ownMap.set(hashName, index)
 			}
 
@@ -214,7 +214,7 @@ export class ContextCapturer {
 		// Insert to function body.
 		if (this.context.type & ContextTypeMask.FunctionLike) {
 			let body = (node as TS.FunctionLikeDeclarationBase).body!
-			item.toIndex = visiting.getIndex(body)
+			item.toIndex = Visiting.getIndex(body)
 
 			if (ts.isBlock(body)) {
 				item.position = InterpolationPosition.Append
@@ -234,7 +234,7 @@ export class ContextCapturer {
 		}
 
 		// Can put statements, insert to the end of statements.
-		else if (helper.pack.canPutStatements(node)) {
+		else if (Helper.pack.canPutStatements(node)) {
 			item.position = InterpolationPosition.Append
 		}
 
@@ -280,7 +280,7 @@ export class ContextCapturer {
 			return
 		}
 
-		modifier.addVariables(this.variableInterpolateIndex, this.variableNames)
+		Modifier.addVariables(this.variableInterpolateIndex, this.variableNames)
 		this.variableNames = []
 	}
 
@@ -291,7 +291,7 @@ export class ContextCapturer {
 				continue
 			}
 
-			interpolator.add(item.toIndex, {
+			Interpolator.add(item.toIndex, {
 				position: item.position,
 				contentType: InterpolationContentType.Tracking,
 				exps: () => this.outputCaptured(item.indices),
@@ -304,8 +304,8 @@ export class ContextCapturer {
 	/** Transfer specified indices to specified position. */
 	private outputCaptured(captured: number[]): TS.Expression[] {
 		let exps = captured.map(i => {
-			let node = interpolator.outputChildren(i)
-			return helper.pack.extractFinalParenthesized(node)
+			let node = Interpolator.outputChildren(i)
+			return Helper.pack.extractFinalParenthesized(node)
 		}) as AccessNode[]
 
 		return AccessGrouper.makeExpressions(exps, this.captureType)
@@ -335,7 +335,7 @@ export class ContextCapturer {
 		let item = this.captured.find(item => {
 
 			// Look upward until sibling of `toIndex`
-			let itemSiblingIndex = visiting.findOutwardSiblingWith(fromCapturer.context.visitingIndex, item.toIndex)
+			let itemSiblingIndex = Visiting.findOutwardSiblingWith(fromCapturer.context.visitingIndex, item.toIndex)
 			if (itemSiblingIndex === undefined) {
 				return false
 			}
@@ -348,15 +348,15 @@ export class ContextCapturer {
 		let residualIndices: number[] = []
 
 		for (let index of indices) {
-			let node = visiting.getNode(index)
-			let hashed = scopes.hashIndex(index)
+			let node = Visiting.getNode(index)
+			let hashed = Scopes.hashIndex(index)
 
 			// `a[i]`, and a is array, ignore hash of `i`.
 			if (ts.isElementAccessExpression(node)
 				&& ts.isIdentifier(node.argumentExpression)
-				&& helper.types.isArrayType(helper.types.getType(node.expression))
+				&& Helper.types.isArrayType(Helper.types.getType(node.expression))
 			) {
-				hashed = scopes.hashNode(node.expression)
+				hashed = Scopes.hashNode(node.expression)
 			}
 
 			// Leave contexts contain any referenced variable.
@@ -384,7 +384,7 @@ export class ContextCapturer {
 					continue
 				}
 
-				let hashName = scopes.hashIndex(index).name
+				let hashName = Scopes.hashIndex(index).name
 				if (ownHashes.has(hashName)) {
 					removeFromList(item.indices, index)
 				}

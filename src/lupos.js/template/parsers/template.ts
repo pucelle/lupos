@@ -1,7 +1,7 @@
 import type TS from 'typescript'
 import {HTMLNode, HTMLTree} from '../html-syntax'
 import {HTMLTreeParser} from './html-tree'
-import {factory, scopes, ts} from '../../../base'
+import {factory, Scopes, ts} from '../../../base'
 
 
 export type TemplateType = 'html' | 'svg'
@@ -59,7 +59,7 @@ export class TemplateParser {
 	private checkValueIndicesMutable() {
 		for (let i = 0; i < this.slotNodes.length; i++) {
 			let node = this.slotNodes[i]
-			this.valueIndicesMutable.set(i, scopes.isMutable(node))
+			this.valueIndicesMutable.set(i, Scopes.isMutable(node))
 		}
 	}
 
@@ -70,7 +70,7 @@ export class TemplateParser {
 		for (let i = 0; i < this.slotNodes.length; i++) {
 			let node = this.slotNodes[i]
 
-			if (!scopes.isMutable(node)) {
+			if (!Scopes.isMutable(node)) {
 				continue
 			}
 

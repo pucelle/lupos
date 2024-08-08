@@ -1,7 +1,7 @@
 import type TS from 'typescript'
 import {HTMLNode, HTMLNodeType} from '../../html-syntax'
 import {HTMLTreeParser} from '../html-tree'
-import {factory, modifier} from '../../../../base'
+import {factory, Modifier} from '../../../../base'
 import {VariableNames} from '../variable-names'
 
 
@@ -131,8 +131,8 @@ export abstract class SlotParserBase {
 
 	/** Make `new TemplateSlot(...)`. */
 	makeTemplateSlot(slotContentType: number | null): TS.Expression {
-		modifier.addImport('TemplateSlot', '@pucelle/lupos.js')
-		modifier.addImport('SlotPosition', '@pucelle/lupos.js')
+		Modifier.addImport('TemplateSlot', '@pucelle/lupos.js')
+		Modifier.addImport('SlotPosition', '@pucelle/lupos.js')
 
 		let position: number
 		let nextNode = this.node.nextSibling
@@ -203,7 +203,7 @@ export abstract class SlotParserBase {
 			return factory.createNull()
 		}
 
-		modifier.addImport('SlotRange', '@pucelle/lupos.js')
+		Modifier.addImport('SlotRange', '@pucelle/lupos.js')
 
 		let firstChild = this.node.firstChild!
 		let lastChild = this.node.lastChild!

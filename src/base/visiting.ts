@@ -1,6 +1,6 @@
 import type TS from 'typescript'
 import {ListMap} from '../utils'
-import {scopes} from './scopes'
+import {Scopes} from './scopes'
 
 
 interface VisitingItem {
@@ -16,7 +16,7 @@ interface VisitingItem {
  * and use this index to do operations,
  * which can avoid confusing with raw node and made node.
  */
-export namespace visiting {
+export namespace Visiting {
 
 	let stack: VisitingItem[] = []
 	let indexSeed: number = -1
@@ -46,7 +46,7 @@ export namespace visiting {
 		ParentMap.clear()
 		NodeMap.clear()
 		IndexMap.clear()
-		scopes.init()
+		Scopes.init()
 
 		current = {
 			index: -1,
@@ -66,7 +66,7 @@ export namespace visiting {
 
 		NodeMap.set(index, node)
 		IndexMap.set(node, index)
-		scopes.toNext(node, index)
+		Scopes.toNext(node, index)
 	}
 
 	/** To first child. */
@@ -77,13 +77,13 @@ export namespace visiting {
 			index: -1,
 		}
 
-		scopes.toChild()
+		Scopes.toChild()
 	}
 
 	/** To parent. */
 	export function toParent() {
 		current = stack.pop()!
-		scopes.toParent()
+		Scopes.toParent()
 	}
 
 

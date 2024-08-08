@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {helper, defineVisitor, ts, factory, interpolator, InterpolationContentType, TemplateSlotPlaceholder} from '../base'
+import {Helper, defineVisitor, ts, factory, Interpolator, InterpolationContentType, TemplateSlotPlaceholder} from '../base'
 
 
 defineVisitor(function(node: TS.Node, index: number) {
@@ -7,7 +7,7 @@ defineVisitor(function(node: TS.Node, index: number) {
 		return
 	}
 
-	if (!helper.symbol.isImportedFrom(node.tag, 'css', '@pucelle/lupos.js')) {
+	if (!Helper.symbol.isImportedFrom(node.tag, 'css', '@pucelle/lupos.js')) {
 		return
 	}
 
@@ -68,7 +68,7 @@ function parseCSSTemplate(node: TS.TaggedTemplateExpression, index: number) {
 	}
 
 	if (replaced) {
-		interpolator.replace(index, InterpolationContentType.Normal, () => replaced!)
+		Interpolator.replace(index, InterpolationContentType.Normal, () => replaced!)
 	}
 }
 

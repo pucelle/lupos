@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {helper, transformContext, ts, visiting, factory} from '../base'
+import {Helper, transformContext, ts, Visiting, factory} from '../base'
 import {addToList} from '../utils'
 
 
@@ -11,7 +11,7 @@ interface HashItem {
 }
 
 
-export namespace scopes {
+export namespace Scopes {
 
 	let stack: Scope[] = []
 	export let current: Scope | null = null
@@ -62,7 +62,7 @@ export namespace scopes {
 		let scope = scopeMap.get(index)
 
 		while (!scope) {
-			index = visiting.getParentIndex(index)!
+			index = Visiting.getParentIndex(index)!
 			scope = scopeMap.get(index)
 		}
 
@@ -72,7 +72,7 @@ export namespace scopes {
 
 	/** Get closest scope contains node. */
 	export function getClosestScopeOfNode(node: TS.Node): Scope {
-		return getClosestScopeOfIndex(visiting.getIndex(node))
+		return getClosestScopeOfIndex(Visiting.getIndex(node))
 	}
 
 
@@ -81,7 +81,7 @@ export namespace scopes {
 	 * Note hashing will transform `a?.b` -> `a.b`.
 	 */
 	export function hashNode(node: TS.Node): HashItem {
-		let index = visiting.getIndex(node)
+		let index = Visiting.getIndex(node)
 		return hashIndex(index)
 	}
 
@@ -94,7 +94,7 @@ export namespace scopes {
 			return hashMap.get(index)!
 		}
 
-		let hashed = doHashOfNode(visiting.getNode(index))
+		let hashed = doHashOfNode(Visiting.getNode(index))
 		hashMap.set(index, hashed)
 
 		return hashed
@@ -108,7 +108,7 @@ export namespace scopes {
 	function doHashOfNode<T extends TS.Node>(node: T): HashItem {
 		let referenceIndices: number[] = []
 
-		node = helper.pack.normalize(
+		node = Helper.pack.normalize(
 			ts.visitNode(node, (n: TS.Node) => {
 				return hashVisitNode(n, referenceIndices)
 			})!,
@@ -116,13 +116,13 @@ export namespace scopes {
 		) as T
 
 		return {
-			name: helper.getText(node),
+			name: Helper.getText(node),
 			referenceIndices,
 		}
 	}
 
 	function hashVisitNode(node: TS.Node, referenceIndices: number[]): TS.Node | undefined {
-		if (helper.variable.isVariableIdentifier(node)) {
+		if (Helper.variable.isVariableIdentifier(node)) {
 			let hashed = hashVariableName(node)
 			addToList(referenceIndices, hashed.suffix)
 
@@ -144,7 +144,7 @@ export namespace scopes {
 	 */
 	function hashVariableName(node: TS.Identifier): {name: string, suffix: number} {
 		let name = node.text
-		let scope = getClosestScopeOfIndex(visiting.getIndex(node))
+		let scope = getClosestScopeOfIndex(Visiting.getIndex(node))
 		let suffix = scope.visitingIndex
 
 		return {
@@ -193,7 +193,7 @@ export namespace scopes {
 		inChildScope ||= ts.isFunctionDeclaration(node)
 
 		// Variable
-		if (helper.variable.isVariableIdentifier(node)) {
+		if (Helper.variable.isVariableIdentifier(node)) {
 
 			// If in child scope, become mutable only when uses a local variable.
 			// Which means: the variable should not been declared in top scope.
@@ -211,13 +211,13 @@ export namespace scopes {
 
 		// Readonly, or method.
 		// If in a child scope, all property visiting is not mutable.
-		else if (helper.access.isAccess(node) && !inChildScope) {
+		else if (Helper.access.isAccess(node) && !inChildScope) {
 
 			// Use method, but not call it.
-			let useNotCalledMethod = helper.symbol.resolveMethod(node) && !ts.isCallExpression(node.parent)
+			let useNotCalledMethod = Helper.symbol.resolveMethod(node) && !ts.isCallExpression(node.parent)
 
 			// Use readonly property.
-			let useReadonlyProperty = helper.symbol.resolveProperty(node) && helper.types.isReadonly(node)
+			let useReadonlyProperty = Helper.symbol.resolveProperty(node) && Helper.types.isReadonly(node)
 
 			mutable ||= !(useNotCalledMethod || useReadonlyProperty)
 		}
@@ -243,9 +243,9 @@ export namespace scopes {
 	}
 
 	function visitNodeTransferToTop(node: TS.Node, replacer: NodeReplacer): TS.Node {
-		
+
 		// Variable
-		if (helper.variable.isVariableIdentifier(node)) {
+		if (Helper.variable.isVariableIdentifier(node)) {
 			if (!isDeclaredInTopScope(node)) {
 				return replacer(node)
 			}
@@ -285,31 +285,31 @@ export class Scope {
 		
 		// Variable declaration.
 		if (ts.isVariableDeclaration(node)) {
-			for (let name of helper.variable.walkDeclarationNames(node)) {
+			for (let name of Helper.variable.walkDeclarationNames(node)) {
 				this.variables.set(name, node)
 			}
 		}
 
 		// Parameter.
 		else if (ts.isParameter(node)) {
-			this.variables.set(helper.getText(node.name), node)
+			this.variables.set(Helper.getText(node.name), node)
 		}
 
 		// `import {a as b}`,  `import {a}`
 		else if (ts.isImportSpecifier(node)) {
-			this.variables.set(helper.getText(node.name), node)
+			this.variables.set(Helper.getText(node.name), node)
 		}
 
 		// `import a`
 		else if (ts.isImportClause(node)) {
 			if (node.name) {
-				this.variables.set(helper.getText(node.name), node)
+				this.variables.set(Helper.getText(node.name), node)
 			}
 		}
 
 		// `import * as a`
 		else if (ts.isNamespaceImport(node)) {
-			this.variables.set(helper.getText(node.name), node)
+			this.variables.set(Helper.getText(node.name), node)
 		}
 	}
 	

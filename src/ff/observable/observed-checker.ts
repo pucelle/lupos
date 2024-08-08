@@ -1,6 +1,6 @@
 import type TS from 'typescript'
 import {AccessNode} from '../../base/helper'
-import {ts, helper, typeChecker} from '../../base'
+import {ts, Helper, typeChecker} from '../../base'
 import {ContextTree} from './context-tree'
 import {Context} from './context'
 
@@ -28,14 +28,14 @@ export namespace ObservedChecker {
 	export function isTypeNodeObserved(node: TS.TypeNode): boolean {
 
 		// `Observed<>`, must use it directly, type extending is now working.
-		if (helper.symbol.isImportedFrom(node, 'Observed', '@pucelle/ff')) {
+		if (Helper.symbol.isImportedFrom(node, 'Observed', '@pucelle/ff')) {
 			return true
 		}
 
 		// `Component` like.
 		else {
-			let clsDecl = helper.symbol.resolveDeclaration(node, ts.isClassDeclaration)
-			if (clsDecl && helper.cls.isImplemented(clsDecl, 'Observed', '@pucelle/ff')) {
+			let clsDecl = Helper.symbol.resolveDeclaration(node, ts.isClassDeclaration)
+			if (clsDecl && Helper.cls.isImplemented(clsDecl, 'Observed', '@pucelle/ff')) {
 				return true 
 			}
 		}
@@ -107,7 +107,7 @@ export namespace ObservedChecker {
 		}
 
 		let exp = calling.expression
-		if (!helper.access.isAccess(exp)) {
+		if (!Helper.access.isAccess(exp)) {
 			return false
 		}
 
@@ -125,7 +125,7 @@ export namespace ObservedChecker {
 		// `a.b`
 		// `(a ? b : c).d`
 		// `(a ?? b).b`
-		if (helper.access.isAccess(node)) {
+		if (Helper.access.isAccess(node)) {
 			return isAccessingObserved(node, context)
 		}
 
@@ -135,8 +135,8 @@ export namespace ObservedChecker {
 			|| ts.isIdentifier(node)
 
 			// variable `b`, bot not property part of `a.b`.
-			&& (!helper.access.isAccess(node.parent)
-				|| helper.access.getNameNode(node.parent) !== node
+			&& (!Helper.access.isAccess(node.parent)
+				|| Helper.access.getNameNode(node.parent) !== node
 			)
 		) {
 			return isIdentifierObserved(node as TS.Identifier | TS.ThisExpression, context)
@@ -160,7 +160,7 @@ export namespace ObservedChecker {
 		// `(a as Observed<{b: number}>).b`
 		else if (ts.isAsExpression(node)) {
 			let typeNode = node.type
-			return typeNode && helper.symbol.isImportedFrom(typeNode, 'Observed', '@pucelle/ff')
+			return typeNode && Helper.symbol.isImportedFrom(typeNode, 'Observed', '@pucelle/ff')
 		}
 
 		// `a ? b : c`, can observe only if both b & c can observe.
@@ -209,7 +209,7 @@ export namespace ObservedChecker {
 		}
 
 		// Readonly properties are always not been observed.
-		let readonly = helper.types.isReadonly(node)
+		let readonly = Helper.types.isReadonly(node)
 		if (readonly) {
 			return false
 		}
@@ -219,14 +219,14 @@ export namespace ObservedChecker {
 		let type = typeChecker.getTypeAtLocation(exp)
 
 		// Visiting like string index will not get observed.
-		if (helper.types.isValueType(type)) {
+		if (Helper.types.isValueType(type)) {
 			return false
 		}
 
 		// Method declarations will always not been observed, except few,
 		// like map or set, which will be processed by outer logic.
-		if (helper.symbol.resolveMethod(node)
-			&& !helper.types.isArrayType(type)
+		if (Helper.symbol.resolveMethod(node)
+			&& !Helper.types.isArrayType(type)
 		) {
 			return false
 		}
@@ -252,7 +252,7 @@ export namespace ObservedChecker {
 
 		// `class A{p: Observed}` -> `this.p` and `this['p']` is observed.
 		// `interface A{p: Observed}` -> `this.p` and `this['p']` is observed.
-		let nameDecl = helper.symbol.resolvePropertyOrGetAccessor(node)
+		let nameDecl = Helper.symbol.resolvePropertyOrGetAccessor(node)
 		if (!nameDecl) {
 			return false
 		}
@@ -279,16 +279,16 @@ export namespace ObservedChecker {
 	
 	/** Returns whether a call expression returned result is observed. */
 	export function isCallObserved(node: TS.CallExpression): boolean {
-		let decl = helper.symbol.resolveCallDeclaration(node)
+		let decl = Helper.symbol.resolveCallDeclaration(node)
 		if (!decl) {
 			return false
 		}
 
 		// Directly return an observed object, which implemented `Observed<>`.
-		let returnType = helper.types.getReturnType(decl)
+		let returnType = Helper.types.getReturnType(decl)
 		if (returnType) {
-			let clsDecl = helper.symbol.resolveDeclarationByType(returnType, ts.isClassDeclaration)
-			if (clsDecl && helper.cls.isImplemented(clsDecl, 'Observed', '@pucelle/ff')) {
+			let clsDecl = Helper.symbol.resolveDeclarationByType(returnType, ts.isClassDeclaration)
+			if (clsDecl && Helper.cls.isImplemented(clsDecl, 'Observed', '@pucelle/ff')) {
 				return true
 			}
 		}

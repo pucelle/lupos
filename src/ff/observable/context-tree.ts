@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {helper, ts, visiting} from '../../base'
+import {Helper, ts, Visiting} from '../../base'
 import {Context} from './context'
 
 
@@ -131,7 +131,7 @@ export namespace ContextTree {
 
 		// Flow stop, and has content.
 		// `break` and `continue` contains no expressions, so should not be a context type.
-		else if (helper.pack.getFlowInterruptionType(node) > 0) {
+		else if (Helper.pack.getFlowInterruptionType(node) > 0) {
 			type |= ContextTypeMask.FlowInterruption
 		}
 
@@ -270,7 +270,7 @@ export namespace ContextTree {
 	/** Find an ancestral context and position, which can insert variable before it. */
 	export function findClosestPositionToAddVariable(index: number, from: Context): ContextTargetPosition {
 		let context = from
-		let variableDeclListIndex = visiting.findOutwardNodeMatch(index, from.visitingIndex, ts.isVariableDeclaration)
+		let variableDeclListIndex = Visiting.findOutwardNodeMatch(index, from.visitingIndex, ts.isVariableDeclaration)
 	
 		// Look upward for a variable declaration.
 		if (variableDeclListIndex !== undefined) {
@@ -280,12 +280,12 @@ export namespace ContextTree {
 			}
 		}
 
-		let node = visiting.getNode(index)
+		let node = Visiting.getNode(index)
 
 		while (true) {
 
 			// Will not extend from `if()...` to `if(){...}`.
-			if (helper.pack.canPutStatements(node)) {
+			if (Helper.pack.canPutStatements(node)) {
 				break
 			}
 
@@ -297,26 +297,26 @@ export namespace ContextTree {
 		}
 		
 		// Where to insert before.
-		index = visiting.getIndex(node)
+		index = Visiting.getIndex(node)
 		let toIndex: number
 
 		// For `case`, insert after expression.
 		if (ts.isCaseClause(node)) {
-			toIndex = visiting.getChildIndex(index, 1)!
+			toIndex = Visiting.getChildIndex(index, 1)!
 		}
 		
 		// Insert before the first not import statements.
 		else if (ts.isSourceFile(node)) {
 			let beforeNode = node.statements.findLast(n => !ts.isImportDeclaration(n))
 			if (beforeNode) {
-				toIndex = visiting.getIndex(beforeNode)
+				toIndex = Visiting.getIndex(beforeNode)
 			}
 			else {
-				toIndex = visiting.getFirstChildIndex(index)!
+				toIndex = Visiting.getFirstChildIndex(index)!
 			}
 		}
 		else {
-			toIndex = visiting.getFirstChildIndex(index)!
+			toIndex = Visiting.getFirstChildIndex(index)!
 		}
 
 		return {
@@ -331,7 +331,7 @@ export namespace ContextTree {
 	 */
 	export function findClosestPositionToAddStatement(index: number, from: Context): ContextTargetPosition {
 		let context = from
-		let parameterIndex = visiting.findOutwardNodeMatch(index, from.visitingIndex, ts.isParameter)
+		let parameterIndex = Visiting.findOutwardNodeMatch(index, from.visitingIndex, ts.isParameter)
 
 		// Parameter initializer, no place to insert statements, returns position itself.
 		if (parameterIndex !== undefined) {
@@ -341,17 +341,17 @@ export namespace ContextTree {
 			}
 		}
 
-		let node = visiting.getNode(index)
+		let node = Visiting.getNode(index)
 
 		while (true) {
 
 			// Can extend from `if()...` to `if(){...}`, insert before node.
-			if (helper.pack.canExtendToPutStatements(node)) {
+			if (Helper.pack.canExtendToPutStatements(node)) {
 				break
 			}
 
 			// `{...}`, insert before node.
-			if (helper.pack.canPutStatements(node.parent)) {
+			if (Helper.pack.canPutStatements(node.parent)) {
 
 				// Context of node.parent.
 				if (node === context.node) {
@@ -379,7 +379,7 @@ export namespace ContextTree {
 
 		return {
 			context,
-			index: visiting.getIndex(node),
+			index: Visiting.getIndex(node),
 		}
 	}
 }

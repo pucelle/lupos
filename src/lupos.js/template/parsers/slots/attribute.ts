@@ -1,5 +1,5 @@
 import {SlotParserBase} from './base'
-import {factory, helper, ts} from '../../../../base'
+import {factory, Helper, ts} from '../../../../base'
 
 
 export class AttributeSlotParser extends SlotParserBase {
@@ -18,10 +18,10 @@ export class AttributeSlotParser extends SlotParserBase {
 
 	outputUpdate() {
 		let slotNode = this.getSlotNode()
-		let slotNodeType = helper.types.getType(slotNode)
+		let slotNodeType = Helper.types.getType(slotNode)
 
 		// `$values[0]` is not nullable
-		if (helper.types.isNonNullableValueType(slotNodeType)) {
+		if (Helper.types.isNonNullableValueType(slotNodeType)) {
 			return this.outputNonNullableValueUpdate()
 		}
 

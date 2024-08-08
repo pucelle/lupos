@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {factory, modifier, ts} from '../../../../base'
+import {factory, Modifier, ts} from '../../../../base'
 import {FlowControlBase} from './base'
 import {VariableNames} from '../variable-names'
 
@@ -46,7 +46,7 @@ export class IfFlowControl extends FlowControlBase {
 
 	outputInit() {
 		let blockClassName = this.cacheable ? 'CacheableIfBlock' : 'IfBlock'
-		modifier.addImport(blockClassName, '@pucelle/lupos.js')
+		Modifier.addImport(blockClassName, '@pucelle/lupos.js')
 
 		// $block_0 = new IfBlock / CacheableIfBlock(
 		//   indexFn,

@@ -1,9 +1,9 @@
 import type TS from 'typescript'
-import {visiting} from './visiting'
-import {interpolator} from './interpolator'
+import {Visiting} from './visiting'
+import {Interpolator} from './interpolator'
 import {TransformerExtras} from 'ts-patch'
 import {setGlobal, setSourceFile, setTransformContext} from './global'
-import {modifier} from './modifier'
+import {Modifier} from './modifier'
 
 
 /** 
@@ -62,13 +62,13 @@ export function transformer(program: TS.Program, extras: TransformerExtras) {
 			setSourceFile(sourceFile)
 
 			function visit(node: TS.Node): TS.Node {
-				visiting.toNext(node)
+				Visiting.toNext(node)
 
-				let doMoreAfterVisitedChildren = applyVisitors(node, visiting.current.index)
+				let doMoreAfterVisitedChildren = applyVisitors(node, Visiting.current.index)
 
-				visiting.toChild()
+				Visiting.toChild()
 				ts.visitEachChild(node, visit, ctx)
-				visiting.toParent()
+				Visiting.toParent()
 
 				doMoreAfterVisitedChildren()
 
@@ -78,8 +78,8 @@ export function transformer(program: TS.Program, extras: TransformerExtras) {
 
 			try {
 				ts.visitNode(sourceFile, visit)
-				modifier.apply()
-				return interpolator.output(0) as TS.SourceFile
+				Modifier.apply()
+				return Interpolator.output(0) as TS.SourceFile
 			}
 			catch (err) {
 				console.log(`Failed to transform source file "${sourceFile.fileName}"!`)

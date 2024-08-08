@@ -1,5 +1,5 @@
 import {SlotParserBase} from './base'
-import {factory, helper, ts} from '../../../../base'
+import {factory, Helper, ts} from '../../../../base'
 
 
 export class ContentSlotParser extends SlotParserBase {
@@ -28,7 +28,7 @@ export class ContentSlotParser extends SlotParserBase {
 
 	private identifySlotContentType(): number | null {
 		let valueNode = this.getSlotNode()
-		let typeText = helper.types.getTypeFullText(helper.types.getType(valueNode))
+		let typeText = Helper.types.getTypeFullText(Helper.types.getType(valueNode))
 		let slotContentType: number | null = null
 
 		if (typeText === 'TemplateResult') {

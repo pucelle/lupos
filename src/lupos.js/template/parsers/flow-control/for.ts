@@ -1,4 +1,4 @@
-import {factory, modifier, ts} from '../../../../base'
+import {factory, Modifier, ts} from '../../../../base'
 import {FlowControlBase} from './base'
 import {VariableNames} from '../variable-names'
 
@@ -20,7 +20,7 @@ export class ForFlowControl extends FlowControlBase {
 	}
 
 	outputInit() {
-		modifier.addImport('ForBlock', '@pucelle/lupos.js')
+		Modifier.addImport('ForBlock', '@pucelle/lupos.js')
 
 		// $block_0 = new ForBlock(
 		//   renderFn,

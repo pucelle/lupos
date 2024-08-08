@@ -1,6 +1,6 @@
 import type TS from 'typescript'
 import {SlotParserBase} from './base'
-import {factory, ts, imports, helper} from '../../../../base'
+import {factory, ts, Imports, Helper} from '../../../../base'
 import {VariableNames} from '../variable-names'
 
 
@@ -27,12 +27,12 @@ export class BindingSlotParser extends SlotParserBase {
 		let nodeName = this.getRefedNodeName()
 
 		// :class -> ClassBinding
-		let bindingClassImport = imports.getImportByNameLike(this.name)
-			|| imports.getImportByNameLike(this.name + 'Binding')!
+		let bindingClassImport = Imports.getImportByNameLike(this.name)
+			|| Imports.getImportByNameLike(this.name + 'Binding')!
 
 		let bindingClassName = bindingClassImport.name.text
-		let bindingClass = helper.symbol.resolveDeclaration(bindingClassImport, ts.isClassDeclaration)!
-		let bindingClassConstructorParams = helper.cls.getConstructorParameters(bindingClass)
+		let bindingClass = Helper.symbol.resolveDeclaration(bindingClassImport, ts.isClassDeclaration)!
+		let bindingClassConstructorParams = Helper.cls.getConstructorParameters(bindingClass)
 		let bindingParams: TS.Expression[] = [factory.createIdentifier(nodeName)]
 
 		if (bindingClassConstructorParams.length > 1) {
@@ -165,21 +165,21 @@ export class BindingSlotParser extends SlotParserBase {
 		}
 
 		let slotNode = this.getSlotNode()
-		let slotNodeType = helper.types.getType(slotNode)
+		let slotNodeType = Helper.types.getType(slotNode)
 
-		if (helper.types.isValueType(slotNodeType)) {
+		if (Helper.types.isValueType(slotNodeType)) {
 			return {
 				method: 'updateString',
 				value,
 			}
 		}
-		else if (helper.types.isArrayType(slotNodeType)) {
+		else if (Helper.types.isArrayType(slotNodeType)) {
 			return {
 				method: 'updateList',
 				value,
 			}
 		}
-		else if (helper.types.isObjectType(slotNodeType)) {
+		else if (Helper.types.isObjectType(slotNodeType)) {
 			return {
 				method: 'updateObject',
 				value,
@@ -248,15 +248,15 @@ export class BindingSlotParser extends SlotParserBase {
 		}
 
 		let slotNode = this.getSlotNode()
-		let slotNodeType = helper.types.getType(slotNode)
+		let slotNodeType = Helper.types.getType(slotNode)
 
-		if (helper.types.isValueType(slotNodeType)) {
+		if (Helper.types.isValueType(slotNodeType)) {
 			return {
 				method: 'updateString',
 				value,
 			}
 		}
-		else if (helper.types.isObjectType(slotNodeType)) {
+		else if (Helper.types.isObjectType(slotNodeType)) {
 			return {
 				method: 'updateObject',
 				value,
@@ -270,9 +270,9 @@ export class BindingSlotParser extends SlotParserBase {
 	}
 
 	private getRefUpdateCallWithValue(value: TS.Expression): TS.Expression {
-		if (helper.access.isAccess(value)) {
+		if (Helper.access.isAccess(value)) {
 			let exp = value.expression
-			let name = helper.access.getNameNode(value)
+			let name = Helper.access.getNameNode(value)
 
 			// this.refName ->
 			// (el) => this.__setSlotElement(refName, el)

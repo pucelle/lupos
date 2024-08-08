@@ -1,6 +1,6 @@
 import type TS from 'typescript'
 import {ObservedChecker} from './observed-checker'
-import {helper, AccessNode, ts, visiting, FlowInterruptionTypeMask} from '../../base'
+import {Helper, AccessNode, ts, Visiting, FlowInterruptionTypeMask} from '../../base'
 import {ContextState} from './context-state'
 import {ContextTypeMask} from './context-tree'
 import {ContextVariables} from './context-variables'
@@ -32,7 +32,7 @@ export class Context {
 
 	constructor(type: number, node: TS.Node, parent: Context | null) {
 		this.type = type
-		this.visitingIndex = visiting.current.index
+		this.visitingIndex = Visiting.current.index
 		this.node = node
 		this.parent = parent
 		this.state = new ContextState(this)
@@ -91,10 +91,10 @@ export class Context {
 		}
 
 		// Test and add property access nodes.
-		else if (helper.access.isAccess(node)) {
+		else if (Helper.access.isAccess(node)) {
 
 			// `map.set`, `set.set`
-			if (helper.types.isMapOrSetWriting(node)) {
+			if (Helper.types.isMapOrSetWriting(node)) {
 				this.mayAddSetTracking(node, true)
 			}
 
@@ -107,10 +107,10 @@ export class Context {
 		}
 
 		// Test and add property assignment nodes.
-		else if (helper.assign.isAssignment(node)) {
-			let assignTo = helper.assign.getToExpressions(node)
+		else if (Helper.assign.isAssignment(node)) {
+			let assignTo = Helper.assign.getToExpressions(node)
 			for (let node of assignTo) {
-				if (helper.access.isAccess(node)) {
+				if (Helper.access.isAccess(node)) {
 					this.mayAddSetTracking(node, false)
 				}
 				
@@ -121,13 +121,13 @@ export class Context {
 		// Empty `return`.
 		else if (ts.isReturnStatement(node) && !node.expression) {
 			this.state.unionFlowInterruptionType(FlowInterruptionTypeMask.Return)
-			this.capturer.breakCaptured(visiting.current.index, FlowInterruptionTypeMask.Return)
+			this.capturer.breakCaptured(Visiting.current.index, FlowInterruptionTypeMask.Return)
 		}
 
 		// `break` or `continue`.
 		else if (ts.isBreakOrContinueStatement(node)) {
 			this.state.unionFlowInterruptionType(FlowInterruptionTypeMask.BreakLike)
-			this.capturer.breakCaptured(visiting.current.index, FlowInterruptionTypeMask.BreakLike)
+			this.capturer.breakCaptured(Visiting.current.index, FlowInterruptionTypeMask.BreakLike)
 		}
 	}
 
@@ -144,10 +144,10 @@ export class Context {
 		if (ObservedChecker.isAccessingObserved(node)
 
 			// `map.has`, and `map` get observed.
-			|| helper.types.isMapOrSetReading(node)
+			|| Helper.types.isMapOrSetReading(node)
 				&& ObservedChecker.isObserved(node.expression)
 		) {
-			this.capturer.capture(visiting.getIndex(node), 'get')
+			this.capturer.capture(Visiting.getIndex(node), 'get')
 		}
 	}
 
@@ -160,7 +160,7 @@ export class Context {
 		if (!fromMapOrSet && ObservedChecker.isAccessingObserved(node)
 			|| fromMapOrSet && ObservedChecker.isObserved(node.expression)
 		) {
-			this.capturer.capture(visiting.getIndex(node), 'set')
+			this.capturer.capture(Visiting.getIndex(node), 'set')
 		}
 	}
 }

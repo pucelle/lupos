@@ -1,4 +1,4 @@
-import {AccessNode, factory, helper, InterpolationContentType, interpolator, modifier, transformContext, ts, visiting, scopes} from '../../base'
+import {AccessNode, factory, Helper, InterpolationContentType, Interpolator, Modifier, transformContext, ts, Visiting, Scopes} from '../../base'
 import type TS from 'typescript'
 import {ContextTargetPosition, ContextTree} from './context-tree'
 import {Context} from './context'
@@ -51,7 +51,7 @@ export namespace AccessReferences {
 			return true
 		}
 
-		let childIndices = visiting.getChildIndices(index)
+		let childIndices = Visiting.getChildIndices(index)
 		if (!childIndices) {
 			return false
 		}
@@ -62,9 +62,9 @@ export namespace AccessReferences {
 
 	/** Visit an assess node, and it may make several reference items. */
 	export function visitAssess(node: AccessNode) {
-		let expIndex = visiting.getIndex(node.expression)!
-		let nameNode = helper.access.getNameNode(node)
-		let nameIndex = visiting.getIndex(nameNode)
+		let expIndex = Visiting.getIndex(node.expression)!
+		let nameNode = Helper.access.getNameNode(node)
+		let nameIndex = Visiting.getIndex(nameNode)
 
 		visitAccessChildren(node.expression, expIndex)
 		visitAccessChildren(nameNode, nameIndex)
@@ -83,8 +83,8 @@ export namespace AccessReferences {
 		visitedNodes.add(node)
 
 		// `a?.b` has been replaced to `a.b`
-		if (helper.access.isAccess(node) || helper.variable.isVariableIdentifier(node)) {
-			let hashName = scopes.hashNode(node).name
+		if (Helper.access.isAccess(node) || Helper.variable.isVariableIdentifier(node)) {
+			let hashName = Scopes.hashNode(node).name
 			referenceMap.add(hashName, topIndex)
 		}
 
@@ -98,8 +98,8 @@ export namespace AccessReferences {
 	 * Otherwise, `a.b; a = ...; a.b;`, only the first `a` will be referenced.
 	 */
 	export function visitAssignment(node: TS.Expression) {
-		if (helper.access.isAccess(node) || helper.variable.isVariableIdentifier(node)) {
-			let hashName = scopes.hashNode(node).name
+		if (Helper.access.isAccess(node) || Helper.variable.isVariableIdentifier(node)) {
+			let hashName = Scopes.hashNode(node).name
 			let indices = referenceMap.get(hashName)
 			if (indices) {
 				for (let index of indices) {
@@ -116,11 +116,11 @@ export namespace AccessReferences {
 			return
 		}
 
-		let node = visiting.getNode(index) as AccessNode
+		let node = Visiting.getNode(index) as AccessNode
 		let position: ContextTargetPosition | null = null
-		let expIndex = visiting.getIndex(node.expression)!
-		let nameNode = helper.access.getNameNode(node)
-		let nameIndex = visiting.getIndex(nameNode)
+		let expIndex = Visiting.getIndex(node.expression)!
+		let nameNode = Helper.access.getNameNode(node)
+		let nameIndex = Visiting.getIndex(nameNode)
 
 		// Use a reference variable to replace expression.
 		if (shouldReference(node.expression) || mutableIndices.has(expIndex)) {
@@ -192,17 +192,17 @@ export namespace AccessReferences {
 	 */
 	function reference(index: number, context: Context): ContextTargetPosition {
 		let varPosition = ContextTree.findClosestPositionToAddVariable(index, context)
-		let closestScope = scopes.getClosestScopeOfNode(varPosition.context.node)
+		let closestScope = Scopes.getClosestScopeOfNode(varPosition.context.node)
 		let refName = closestScope.makeUniqueVariable('$ref_')
 
 		// Insert one to existing declaration list: `var ... $ref_ = ...`
-		if (ts.isVariableDeclaration(visiting.getNode(varPosition.index))) {
+		if (ts.isVariableDeclaration(Visiting.getNode(varPosition.index))) {
 			
 			// insert `var $ref_ = a.b()` to found position.
-			modifier.addVariableAssignmentToList(index, varPosition.index, refName)
+			Modifier.addVariableAssignmentToList(index, varPosition.index, refName)
 
 			// replace `a.b()` -> `$ref_`.
-			interpolator.replace(index, InterpolationContentType.Reference, () => factory.createIdentifier(refName))
+			Interpolator.replace(index, InterpolationContentType.Reference, () => factory.createIdentifier(refName))
 
 			return varPosition
 		}
@@ -214,10 +214,10 @@ export namespace AccessReferences {
 			let refPosition = ContextTree.findClosestPositionToAddStatement(index, context)
 
 			// insert `$ref_ = a.b()` to found position.
-			modifier.addReferenceAssignment(index, refPosition.index, refName)
+			Modifier.addReferenceAssignment(index, refPosition.index, refName)
 
 			// replace `a.b()` -> `$ref_`.
-			interpolator.replace(index, InterpolationContentType.Reference, () => factory.createIdentifier(refName))
+			Interpolator.replace(index, InterpolationContentType.Reference, () => factory.createIdentifier(refName))
 
 			return refPosition
 		}

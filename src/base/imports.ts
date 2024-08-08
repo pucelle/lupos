@@ -1,8 +1,8 @@
 import type TS from 'typescript'
-import {helper} from './helper'
+import {Helper} from './helper'
 
 
-export namespace imports {
+export namespace Imports {
 
 	const ImportsMap: Map<string, TS.ImportSpecifier> = new Map()
 
@@ -13,7 +13,7 @@ export namespace imports {
 	}
 
 	export function add(node: TS.ImportSpecifier) {
-		ImportsMap.set(helper.getText(node.name), node)
+		ImportsMap.set(Helper.getText(node.name), node)
 	}
 
 	export function getImportByName(name: string): TS.ImportSpecifier | undefined {
@@ -26,7 +26,7 @@ export namespace imports {
 		}
 
 		for (let node of ImportsMap.values()) {
-			if (helper.getText(node.name).toLowerCase() === name.toLowerCase()) {
+			if (Helper.getText(node.name).toLowerCase() === name.toLowerCase()) {
 				return node
 			}
 		}

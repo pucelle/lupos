@@ -1,6 +1,6 @@
 import type TS from 'typescript'
 import {SlotParserBase} from './base'
-import {factory, helper, imports, TemplateSlotPlaceholder, ts, typeChecker} from '../../../../base'
+import {factory, Helper, Imports, TemplateSlotPlaceholder, ts, typeChecker} from '../../../../base'
 
 
 export class PropertySlotParser extends SlotParserBase {
@@ -34,7 +34,7 @@ export class PropertySlotParser extends SlotParserBase {
 		if (isComponent || isDynamicComponent) {
 			let com: TS.Node | undefined
 			if (isComponent) {
-				com = imports.getImportByName(tagName)
+				com = Imports.getImportByName(tagName)
 			}
 			else {
 				com = this.getSlotNode()
@@ -44,7 +44,7 @@ export class PropertySlotParser extends SlotParserBase {
 				return 'element'
 			}
 
-			let comType = helper.types.getType(com)
+			let comType = Helper.types.getType(com)
 
 			// Directly query for declaration member at type.
 			let propertyDeclType = typeChecker.getPropertyOfType(comType, this.name!)
@@ -52,7 +52,7 @@ export class PropertySlotParser extends SlotParserBase {
 				return 'element'
 			}
 
-			if (!helper.symbol.resolveDeclarationBySymbol(propertyDeclType, ts.isPropertyDeclaration)) {
+			if (!Helper.symbol.resolveDeclarationBySymbol(propertyDeclType, ts.isPropertyDeclaration)) {
 				return 'element'
 			}
 

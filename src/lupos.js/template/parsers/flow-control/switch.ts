@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {factory, modifier, ts} from '../../../../base'
+import {factory, Modifier, ts} from '../../../../base'
 import {FlowControlBase} from './base'
 import {VariableNames} from '../variable-names'
 
@@ -52,7 +52,7 @@ export class SwitchFlowControl extends FlowControlBase {
 		}
 
 		let blockClassName = this.cacheable ? 'CacheableSwitchBlock' : 'SwitchBlock'
-		modifier.addImport(blockClassName, '@pucelle/lupos.js')
+		Modifier.addImport(blockClassName, '@pucelle/lupos.js')
 
 		// $block_0 = new SwitchBlock / CacheableSwitchBlock(
 		//   indexFn,

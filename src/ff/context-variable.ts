@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {helper, ts, defineVisitor, factory, interpolator, InterpolationContentType} from '../base'
+import {Helper, ts, defineVisitor, factory, Interpolator, InterpolationContentType} from '../base'
 
 
 defineVisitor(function(node: TS.Node, index: number) {
@@ -9,17 +9,17 @@ defineVisitor(function(node: TS.Node, index: number) {
 		return
 	}
 
-	let decorator = helper.deco.getFirst(node)!
+	let decorator = Helper.deco.getFirst(node)!
 	if (!decorator) {
 		return
 	}
 
-	let decoName = helper.deco.getName(decorator)
+	let decoName = Helper.deco.getName(decorator)
 	if (!decoName || !['setContext', 'useContext'].includes(decoName)) {
 		return
 	}
 
-	interpolator.replace(index, InterpolationContentType.Normal, () => {
+	Interpolator.replace(index, InterpolationContentType.Normal, () => {
 		if (decoName === 'setContext') {
 			return compileSetContextDecorator(node)
 		}
@@ -64,7 +64,7 @@ get prop(): any {
 ```
 */
 function compileUseContextDecorator(propDecl: TS.PropertyDeclaration): TS.Node[] {
-	let propName = helper.getText(propDecl.name)
+	let propName = Helper.getText(propDecl.name)
 
 	let propDeclaredBy = factory.createPropertyDeclaration(
 		undefined,
