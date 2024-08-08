@@ -1,12 +1,12 @@
 import type TS from 'typescript'
-import {helper, defineVisitor, ts, factory, interpolator, InterpolationContentType, joinTemplateString, splitTemplateString} from '../base'
+import {helper, defineVisitor, ts, factory, interpolator, InterpolationContentType, TemplateSlotPlaceholder} from '../base'
 
 
 defineVisitor(function(node: TS.Node, index: number) {
 	if (!ts.isTaggedTemplateExpression(node)) {
 		return
 	}
-	
+
 	if (!helper.symbol.isImportedFrom(node.tag, 'css', '@pucelle/lupos.js')) {
 		return
 	}
@@ -17,9 +17,9 @@ defineVisitor(function(node: TS.Node, index: number) {
 
 /** Parse a css template literal. */
 function parseCSSTemplate(node: TS.TaggedTemplateExpression, index: number) {
-	let string = joinTemplateString(node)
+	let string = TemplateSlotPlaceholder.joinTemplateString(node)
 	let parsed = minifyCSSString(parseStyleString(string))
-	let parts = splitTemplateString(parsed)
+	let parts = TemplateSlotPlaceholder.parseTemplateStrings(parsed)!
 	let template = node.template
 	let replaced: TS.TaggedTemplateExpression | null = null
 
@@ -64,9 +64,9 @@ function parseCSSTemplate(node: TS.TaggedTemplateExpression, index: number) {
 				),
 				newSpans
 			)
-		)	
+		)
 	}
-	
+
 	if (replaced) {
 		interpolator.replace(index, InterpolationContentType.Normal, () => replaced!)
 	}
@@ -95,7 +95,7 @@ function parseStyleString(text: string): string {
 				([;{}])
 			)
 		*/
-	
+
 	let match: RegExpExecArray | null
 	let stack: string[][] = []
 	let current: string[] | undefined
@@ -171,7 +171,7 @@ function splitNamesAndCombineNesting(selector: string, current: string[] | undef
 		+?
 		(?:,|$) - if match ',' or '$', end
 	*/
-	
+
 	let match: RegExpExecArray | null
 	let names: string[] = []
 
@@ -187,7 +187,7 @@ function splitNamesAndCombineNesting(selector: string, current: string[] | undef
 	}
 
 	return names
-}	
+}
 
 
 /** 

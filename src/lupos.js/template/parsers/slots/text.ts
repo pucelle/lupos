@@ -1,14 +1,14 @@
-import {SlotBase} from './base'
+import {SlotParserBase} from './base'
 import {factory, ts} from '../../../../base'
 
 
-export class TextSlot extends SlotBase {
+export class TextSlotParser extends SlotParserBase {
 
 	/** $latest_0 */
 	private latestVariableName: string = ''
 
 	init() {
-		this.latestVariableName = this.tree.getUniqueLatestVariableName()
+		this.latestVariableName = this.tree.getUniqueLatestName()
 	}
 
 	outputUpdate() {
@@ -36,7 +36,7 @@ export class TextSlot extends SlotBase {
 					factory.createToken(ts.SyntaxKind.EqualsToken),
 					value
 				)
-			)				
+			)
 		)
 	}
 }

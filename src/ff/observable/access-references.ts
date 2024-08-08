@@ -1,9 +1,8 @@
-import {AccessNode, factory, helper, InterpolationContentType, interpolator, modifier, transformContext, ts, visiting} from '../../base'
+import {AccessNode, factory, helper, InterpolationContentType, interpolator, modifier, transformContext, ts, visiting, scopes} from '../../base'
 import type TS from 'typescript'
 import {ContextTargetPosition, ContextTree} from './context-tree'
 import {Context} from './context'
 import {ListMap} from '../../utils'
-import {Hashing} from './hashing'
 
 
 /** 
@@ -38,7 +37,7 @@ export namespace AccessReferences {
 
 
 	/** Initialize after enter a new source file. */
-	export function initialize() {
+	export function init() {
 		referenceMap.clear()
 		visitedNodes.clear()
 		mutableIndices.clear()
@@ -62,13 +61,13 @@ export namespace AccessReferences {
 
 
 	/** Visit an assess node, and it may make several reference items. */
-	export function visitAssess(node: AccessNode, context: Context) {
+	export function visitAssess(node: AccessNode) {
 		let expIndex = visiting.getIndex(node.expression)!
 		let nameNode = helper.access.getNameNode(node)
 		let nameIndex = visiting.getIndex(nameNode)
 
-		visitAccessChildren(node.expression, expIndex, context)
-		visitAccessChildren(nameNode, nameIndex, context)
+		visitAccessChildren(node.expression, expIndex)
+		visitAccessChildren(nameNode, nameIndex)
 	}
 
 	/** 
@@ -76,7 +75,7 @@ export namespace AccessReferences {
 	 * and build a map of all the referenced variables/accessing, to current node.
 	 * Later, when one of these nodes assigned, we will reference this access node.
 	 */
-	function visitAccessChildren(node: TS.Node, topIndex: number, context: Context): TS.Node {
+	function visitAccessChildren(node: TS.Node, topIndex: number): TS.Node {
 		if (visitedNodes.has(node)) {
 			return node
 		}
@@ -85,11 +84,11 @@ export namespace AccessReferences {
 
 		// `a?.b` has been replaced to `a.b`
 		if (helper.access.isAccess(node) || helper.variable.isVariableIdentifier(node)) {
-			let hashName = Hashing.getHash(visiting.getIndex(node), context).name
+			let hashName = scopes.hashNode(node).name
 			referenceMap.add(hashName, topIndex)
 		}
 
-		return ts.visitEachChild(node, (n: TS.Node) => visitAccessChildren(n, topIndex, context), transformContext)
+		return ts.visitEachChild(node, (n: TS.Node) => visitAccessChildren(n, topIndex), transformContext)
 	}
 
 
@@ -98,9 +97,9 @@ export namespace AccessReferences {
 	 * It supports simply `a.b = ...` or `a = ...`, not `(a || b).c = ...`
 	 * Otherwise, `a.b; a = ...; a.b;`, only the first `a` will be referenced.
 	 */
-	export function visitAssignment(node: TS.Expression, context: Context) {
+	export function visitAssignment(node: TS.Expression) {
 		if (helper.access.isAccess(node) || helper.variable.isVariableIdentifier(node)) {
-			let hashName = Hashing.getHash(visiting.getIndex(node), context).name
+			let hashName = scopes.hashNode(node).name
 			let indices = referenceMap.get(hashName)
 			if (indices) {
 				for (let index of indices) {
@@ -193,7 +192,8 @@ export namespace AccessReferences {
 	 */
 	function reference(index: number, context: Context): ContextTargetPosition {
 		let varPosition = ContextTree.findClosestPositionToAddVariable(index, context)
-		let refName = varPosition.context.variables.makeUniqueVariable('$ref_')
+		let closestScope = scopes.getClosestScopeOfNode(varPosition.context.node)
+		let refName = closestScope.makeUniqueVariable('$ref_')
 
 		// Insert one to existing declaration list: `var ... $ref_ = ...`
 		if (ts.isVariableDeclaration(visiting.getNode(varPosition.index))) {

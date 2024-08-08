@@ -16,7 +16,7 @@ export namespace modifier {
 	const movedIndices: Set<number> = new Set()
 
 
-	export function initialize() {
+	export function init() {
 		imports.clear()
 		movedIndices.clear()
 	}

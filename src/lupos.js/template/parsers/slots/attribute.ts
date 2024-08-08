@@ -1,8 +1,8 @@
-import {SlotBase} from './base'
+import {SlotParserBase} from './base'
 import {factory, helper, ts} from '../../../../base'
 
 
-export class AttributeSlot extends SlotBase {
+export class AttributeSlotParser extends SlotParserBase {
 
 	/** Attribute name. */
 	declare readonly name: string
@@ -12,7 +12,7 @@ export class AttributeSlot extends SlotBase {
 
 	init() {
 		if (this.isValueMutable()) {
-			this.latestVariableName = this.tree.getUniqueLatestVariableName()
+			this.latestVariableName = this.tree.getUniqueLatestName()
 		}
 	}
 
@@ -24,7 +24,7 @@ export class AttributeSlot extends SlotBase {
 		if (helper.types.isNonNullableValueType(slotNodeType)) {
 			return this.outputNonNullableValueUpdate()
 		}
-		
+
 		// `$values[0]` is nullable
 		else {
 			return this.outputNullableValueUpdate()

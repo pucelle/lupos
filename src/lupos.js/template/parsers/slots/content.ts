@@ -1,8 +1,8 @@
-import {SlotBase} from './base'
+import {SlotParserBase} from './base'
 import {factory, helper, ts} from '../../../../base'
 
 
-export class ContentSlot extends SlotBase {
+export class ContentSlotParser extends SlotParserBase {
 
 	/** Of `SlotContentType` */
 	private slotContentType: number | null = null
@@ -15,13 +15,13 @@ export class ContentSlot extends SlotBase {
 
 	init() {
 		this.slotContentType = this.identifySlotContentType()
-		this.slotVariableName = this.tree.getUniqueSlotVariableName()
+		this.slotVariableName = this.tree.getUniqueSlotName()
 
 		if (this.isValueMutable()) {
 
 			// Assume for `TemplateResult` or `TemplateResult[]`, it regenerates every time.
 			if (this.slotContentType === 2 || this.slotContentType === 3) {
-				this.latestVariableName = this.tree.getUniqueLatestVariableName()
+				this.latestVariableName = this.tree.getUniqueLatestName()
 			}
 		}
 	}

@@ -1,10 +1,10 @@
 import type TS from 'typescript'
-import {SlotBase} from './base'
+import {SlotParserBase} from './base'
 import {factory, ts, imports, helper} from '../../../../base'
 import {VariableNames} from '../variable-names'
 
 
-export class BindingSlot extends SlotBase {
+export class BindingSlotParser extends SlotParserBase {
 
 	declare readonly name: string
 	declare readonly modifiers: string[]
@@ -17,10 +17,10 @@ export class BindingSlot extends SlotBase {
 
 	init() {
 		if (this.isValueMutable()) {
-			this.latestVariableName = this.tree.getUniqueLatestVariableName()
+			this.latestVariableName = this.tree.getUniqueLatestName()
 		}
 
-		this.bindingVariableName = this.tree.getUniqueBindingVariableName()
+		this.bindingVariableName = this.tree.getUniqueBindingName()
 	}
 
 	outputInit() {
@@ -325,6 +325,6 @@ export class BindingSlot extends SlotBase {
 				factory.createToken(ts.SyntaxKind.EqualsToken),
 				factory.createIdentifier('el')
 			)
-			)			
+			)
 	}
 }

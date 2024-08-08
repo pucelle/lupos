@@ -5,7 +5,7 @@ import {factory, modifier} from '../../../../base'
 import {VariableNames} from '../variable-names'
 
 
-export abstract class SlotBase {
+export abstract class SlotParserBase {
 
 	/** Attribute name, be `null` for dynamic binding `<tag ${...}>`. */
 	readonly name: string | null = null
@@ -40,7 +40,7 @@ export abstract class SlotBase {
 		this.valueIndex = valueIndex
 
 		if (name !== null) {
-			let splitted = name.split(/[^\w]/g)
+			let splitted = name.split(/[.]/g)
 			this.name = splitted[0]
 			this.modifiers = splitted.slice(1)
 		}
@@ -56,9 +56,14 @@ export abstract class SlotBase {
 		return this.valueIndex !== null
 	}
 
-	/** Returns whether the value node is mutable. */
+	/** Returns whether current value node is mutable. */
 	protected isValueMutable(): boolean {
-		return this.valueIndex !== null && this.tree.template.isValueAtIndexMutable(this.valueIndex)
+		return this.valueIndex !== null && this.isValueAtIndexMutable(this.valueIndex)
+	}
+
+	/** Returns whether the value node at specified index is mutable. */
+	isValueAtIndexMutable(valueIndex: number): boolean {
+		return this.tree.template.isValueAtIndexMutable(valueIndex)
 	}
 
 	/** Get slot node. */
@@ -97,15 +102,25 @@ export abstract class SlotBase {
 	 * Get value node, either `$values[0]`, or `"..."`.
 	 * Can only use it when outputting update.
 	 */
-	protected getOutputValueNode(): TS.Expression {
+	getOutputValueNode(): TS.Expression {
 		if (this.valueIndex === null) {
 			return factory.createStringLiteral(this.string!)
 		}
-		else if (!this.isValueMutable()) {
-			return this.tree.template.slotNodes[this.valueIndex]
+		else {
+			return this.getOutputValueNodeAtIndex(this.valueIndex)
+		}
+	}
+
+	/** 
+	 * Get value node at index, either `$values[0]`, or static slot node.
+	 * Can only use it when outputting update.
+	 */
+	getOutputValueNodeAtIndex(index: number): TS.Expression {
+		if (!this.tree.template.isValueAtIndexMutable(index)) {
+			return this.tree.template.slotNodes[index]
 		}
 		else {
-			let remappedIndex = this.tree.template.getRemappedValueIndex(this.valueIndex)
+			let remappedIndex = this.tree.template.getRemappedValueIndex(index)
 
 			return factory.createElementAccessExpression(
 				factory.createIdentifier(VariableNames.values),
@@ -115,7 +130,7 @@ export abstract class SlotBase {
 	}
 
 	/** Make `new TemplateSlot(...)`. */
-	protected makeTemplateSlot(slotContentType: number | null): TS.Expression {
+	makeTemplateSlot(slotContentType: number | null): TS.Expression {
 		modifier.addImport('TemplateSlot', '@pucelle/lupos.js')
 		modifier.addImport('SlotPosition', '@pucelle/lupos.js')
 
@@ -123,7 +138,7 @@ export abstract class SlotBase {
 		let nextNode = this.node.nextSibling
 		let parent = this.node.parent!
 		let nodeName: string
-		
+
 		// Use next node to locate.
 		if (nextNode && nextNode.type !== HTMLNodeType.Comment) {
 			nodeName = this.tree.references.referenceAsName(nextNode)
@@ -132,7 +147,7 @@ export abstract class SlotBase {
 			// SlotPositionType.Before
 			position = 2
 		}
-		
+
 		// Parent is stable enough.
 		// Would be ok although parent is a dynamic component.
 		else if (parent.tagName !== 'template') {

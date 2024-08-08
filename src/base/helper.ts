@@ -43,6 +43,40 @@ export namespace helper {
 		}
 	}
 
+	/** Returns the identifier, like variable or declaration name of a given node if possible. */
+	export function getIdentifier(node: TS.Node): TS.Identifier | undefined {
+
+		// Identifier itself.
+		if (ts.isIdentifier(node)) {
+			return node
+		}
+
+		// Declaration of a class or interface, property, method, function name, get or set name.
+		if ((ts.isClassLike(node)
+				|| ts.isInterfaceDeclaration(node)
+				|| ts.isVariableDeclaration(node)
+				|| ts.isMethodDeclaration(node)
+				|| ts.isPropertyDeclaration(node)
+				|| ts.isFunctionDeclaration(node)
+				|| ts.isGetAccessorDeclaration(node)
+				|| ts.isSetAccessorDeclaration(node)
+			)
+			&& node.name
+			&& ts.isIdentifier(node.name)
+		) {
+			return node.name
+		}
+
+		// Identifier of type node.
+		if (ts.isTypeReferenceNode(node)
+			&& ts.isIdentifier(node.typeName)
+		) {
+			return node.typeName
+		}
+
+		return undefined
+	}
+
 
 
 	/** Decorator Part */
@@ -396,6 +430,7 @@ export namespace helper {
 				return false
 			}
 
+			// `a.b`, b is identifier, but not a variable identifier.
 			if (node.parent
 				&& ts.isPropertyAccessExpression(node.parent)
 				&& node === access.getNameNode(node.parent)
@@ -411,7 +446,11 @@ export namespace helper {
 			return true
 		}
 
-		/** Walk for all declared variable names from a variable declaration. */
+		/** 
+		 * Walk for all declared variable names from a variable declaration.
+		 * `let [a, b]` = ... -> `[a, b]`
+		 * `let {a, b}` = ... -> `[a, b]`
+		 */
 		export function* walkDeclarationNames(node: TS.VariableDeclaration): Iterable<string> {
 
 			// `{a} = ...`
@@ -614,42 +653,11 @@ export namespace helper {
 
 
 
-	/** Symbol & Resolving */
+	/** 
+	 * Symbol & Resolving
+	 * Performance test: each resolving cost about 1~5 ms.
+	 */
 	export namespace symbol {
-
-		/** Returns the identifier, like variable or declaration name of a given node if possible. */
-		export function getIdentifier(node: TS.Node): TS.Identifier | undefined {
-
-			// Identifier itself.
-			if (ts.isIdentifier(node)) {
-				return node
-			}
-
-			// Declaration of a class or interface, property, method, function name, get or set name.
-			if ((ts.isClassLike(node)
-					|| ts.isInterfaceDeclaration(node)
-					|| ts.isVariableDeclaration(node)
-					|| ts.isMethodDeclaration(node)
-					|| ts.isPropertyDeclaration(node)
-					|| ts.isFunctionDeclaration(node)
-					|| ts.isGetAccessorDeclaration(node)
-					|| ts.isSetAccessorDeclaration(node)
-				)
-				&& node.name
-				&& ts.isIdentifier(node.name)
-			) {
-				return node.name
-			}
-
-			// Identifier of type node.
-			if (ts.isTypeReferenceNode(node)
-				&& ts.isIdentifier(node.typeName)
-			) {
-				return node.typeName
-			}
-
-			return undefined
-		}
 
 		/** Test whether a node has an import name and located at a module. */
 		export function isImportedFrom(node: TS.Node, memberName: string, moduleName: string): boolean {
@@ -977,31 +985,6 @@ export namespace helper {
 
 	/** factory like, re-pack nodes to get another node. */
 	export namespace pack {
-
-		/** Whether be function, method, or get/set accessor. */
-		export function isFunctionLike(node: TS.Node): node is TS.FunctionLikeDeclarationBase {
-			return ts.isMethodDeclaration(node)
-				|| ts.isFunctionDeclaration(node)
-				|| ts.isFunctionExpression(node)
-				|| ts.isGetAccessorDeclaration(node)
-				|| ts.isSetAccessorDeclaration(node)
-				|| ts.isArrowFunction(node)
-		}
-
-		/** Get closest function-like ancestral node. */
-		export function getClosestFunctionLike(node: TS.Node): TS.FunctionLikeDeclarationBase | null {
-			let ancestor = node.parent
-
-			while (ancestor) {
-				if (isFunctionLike(ancestor)) {
-					return ancestor
-				}
-
-				ancestor = ancestor.parent
-			}
-
-			return null
-		}
 
 		/** 
 		 * Get flow interruption type,
@@ -1333,61 +1316,6 @@ export namespace helper {
 			else {
 				return node
 			}
-		}
-	}
-
-
-	/** Test whether node references some property or variable mutable. */
-	export namespace mutable {
-		
-		/** Test expression represented value is mutable. */
-		export function isMutable(node: TS.Expression): boolean {
-			return visitNodeTestMutable(node, false)
-		}
-
-		function visitNodeTestMutable(node: TS.Node, inChildContext: boolean): boolean {
-			let mutable = false
-
-			inChildContext ||= pack.isFunctionLike(node)
-
-			// Variable
-			if (variable.isVariableIdentifier(node)) {
-
-				// If in child context, become mutable only when uses a local variable.
-				// Which means: the variable should not been declared at top level of source file.
-				if (inChildContext) {
-					let declOfSameSourceFile = symbol.resolveDeclaration(node, undefined, false)
-					let closestContext = declOfSameSourceFile ? pack.getClosestFunctionLike(declOfSameSourceFile) : null
-					let declInTopOfSourceFile = closestContext && ts.isSourceFile(closestContext)
-
-					mutable ||= !declInTopOfSourceFile
-				}
-				else {
-					let variableDecl = symbol.resolveDeclaration(node, ts.isVariableDeclaration)
-					let constVariable = variableDecl && (variableDecl.parent.parent.flags & ts.NodeFlags.Const) > 0
-					mutable ||= !constVariable
-				}
-			}
-
-			// Readonly, or method.
-			// If in child context, all property visiting is not mutable.
-			else if (access.isAccess(node) && !inChildContext) {
-
-				// Use method, but not call it.
-				let useNotCalledMethod = symbol.resolveMethod(node) && !ts.isCallExpression(node.parent)
-
-				// Use readonly property.
-				let useReadonlyProperty = symbol.resolveProperty(node) && types.isReadonly(node)
-
-				mutable ||= !(useNotCalledMethod || useReadonlyProperty)
-			}
-
-			ts.visitEachChild(node, (node: TS.Node) => {
-				mutable ||= visitNodeTestMutable(node, inChildContext)
-				return node
-			}, transformContext)
-
-			return mutable
 		}
 	}
 }

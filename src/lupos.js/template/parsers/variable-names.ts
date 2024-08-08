@@ -17,7 +17,7 @@ export namespace VariableNames {
 
 
 	/** Initialize before loading a new source file. */
-	export function initialize() {
+	export function init() {
 		AreaIndexMap.clear()
 		AreaDoublyIndexMap.clear()
 	}

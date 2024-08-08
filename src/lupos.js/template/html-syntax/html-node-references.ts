@@ -1,5 +1,6 @@
 import {VariableNames} from '../parsers/variable-names'
-import {HTMLNode, HTMLTree} from './html-node'
+import {HTMLNode} from './html-node'
+import {HTMLTree} from './html-tree'
 
 
 /** A node, and all the children which has any descendant been referenced. */
@@ -37,7 +38,7 @@ export class HTMLNodeReferences {
 	constructor(tree: HTMLTree) {
 		this.tree = tree
 	}
-	
+
 	/** 
 	 * Add a reference after known a node should be referenced.
 	 * Returns the reference index.
@@ -118,7 +119,7 @@ export class HTMLNodeReferences {
 				visitFromIndex: fromIndex,
 				visitSteps: steps,
 			}
-			
+
 			for (let child of item.children) {
 				yield *this.outputItem(child, index, [])
 			}
@@ -142,7 +143,7 @@ export class HTMLNodeReferences {
 				visitFromIndex: fromIndex,
 				visitSteps: steps,
 			}
-			
+
 			for (let child of item.children) {
 				yield *this.outputItem(child, index, [])
 			}

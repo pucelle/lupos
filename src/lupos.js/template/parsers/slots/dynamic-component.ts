@@ -1,36 +1,33 @@
 import type TS from 'typescript'
-import {SlotBase} from './base'
+import {SlotParserBase} from './base'
 import {factory, modifier, ts} from '../../../../base'
 
 
-export class DynamicComponentSlot extends SlotBase {
+export class DynamicComponentSlotParser extends SlotParserBase {
 
 	/** $block_0 */
 	private blockVariableName: string = ''
 
 	init() {
 		this.refAsComponent()
-		this.blockVariableName = this.tree.getUniqueBlockVariableName()
+		this.blockVariableName = this.tree.getUniqueBlockName()
 	}
 
 	outputInit(nodeAttrInits: TS.Statement[]) {
 		modifier.addImport('DynamicComponentBlock', '@pucelle/lupos.js')
-		modifier.addImport('TemplateSlot', '@pucelle/lupos.js')
-		modifier.addImport('SlotPosition', '@pucelle/lupos.js')
-		modifier.addImport('SlotRange', '@pucelle/lupos.js')
 
 		let nodeName = this.getRefedNodeName()
 		let comName = this.getRefedComponentName()
 
 
 		// $block_0 = new DynamicComponentBlock(
-		// function(com){
-		//   $node_0 = com.el;
-		//	 $com_0 = com;
-		//	 ...nodeAttrInits
-		// },
-		// new TemplateSlot(new SlotPosition(SlotPositionType.Before, nextChild)),
-		// new SlotRange() / null
+		//   function(com){
+		//     $node_0 = com.el;
+		//	   $com_0 = com;
+		//	   ...nodeAttrInits
+		//   },
+		//   new TemplateSlot(new SlotPosition(SlotPositionType.Before, nextChild)),
+		//   new SlotRange() / null
 		// )
 
 		let binderFn = factory.createFunctionExpression(
@@ -68,17 +65,19 @@ export class DynamicComponentSlot extends SlotBase {
 		let templateSlot = this.makeTemplateSlot(null)
 		let contentRange = this.makeSlotRangeExpression()
 
-		let block = factory.createNewExpression(
-			factory.createIdentifier('DynamicComponentBlock'),
-			undefined,
-			[
-				binderFn,
-				templateSlot,
-				contentRange,
-			]
+		return factory.createBinaryExpression(
+			factory.createIdentifier(this.blockVariableName),
+			factory.createToken(ts.SyntaxKind.EqualsToken),
+			factory.createNewExpression(
+				factory.createIdentifier('DynamicComponentBlock'),
+				undefined,
+				[
+					binderFn,
+					templateSlot,
+					contentRange,
+				]
+			)
 		)
-
-		return block
 	}
 
 	outputUpdate() {

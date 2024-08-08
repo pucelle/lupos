@@ -1,9 +1,9 @@
 import type TS from 'typescript'
-import {SlotBase} from './base'
+import {SlotParserBase} from './base'
 import {factory, helper, imports, TemplateSlotPlaceholder, ts, typeChecker} from '../../../../base'
 
 
-export class PropertySlot extends SlotBase {
+export class PropertySlotParser extends SlotParserBase {
 
 	/** Property Name. */
 	declare name: string
@@ -16,7 +16,7 @@ export class PropertySlot extends SlotBase {
 
 	init() {
 		if (this.isValueMutable()) {
-			this.latestVariableName = this.tree.getUniqueLatestVariableName()
+			this.latestVariableName = this.tree.getUniqueLatestName()
 		}
 
 		this.targetType = this.checkTargetType()

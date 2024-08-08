@@ -1,9 +1,9 @@
 import type TS from 'typescript'
-import {SlotBase} from './base'
+import {SlotParserBase} from './base'
 import {factory, ts} from '../../../../base'
 
 
-export class ComponentSlot extends SlotBase {
+export class ComponentSlotParser extends SlotParserBase {
 
 	init() {
 		let hasRestSlotContentExisted = this.node.children.length > 0
@@ -61,7 +61,7 @@ export class ComponentSlot extends SlotBase {
 				[contentRange]
 			)			  
 		}
-		
+
 
 		return [
 			comInit,

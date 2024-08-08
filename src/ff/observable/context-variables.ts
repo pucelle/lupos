@@ -1,8 +1,8 @@
 import type TS from 'typescript'
 import {ObservedChecker} from './observed-checker'
-import {helper, ts} from '../../base'
+import {helper, scopes, ts} from '../../base'
 import {Context} from './context'
-import {ContextTree, ContextTypeMask} from './context-tree'
+import {ContextTypeMask} from './context-tree'
 
 
 /** Mark all variables with a context. */
@@ -74,16 +74,6 @@ export class ContextVariables {
 		return false
 	}
 
-	/** Whether has declared a local variable by name. */
-	hasLocalVariable(name: string): boolean {
-		return this.variableObserved.has(name)
-	}
-
-	/** Get whether has observed a declared local variable by name. */
-	isLocalVariableObserved(name: string): boolean {
-		return this.variableObserved.get(name)!
-	}
-
 	/** Whether has declared a variable by name. */
 	hasVariable(name: string): boolean {
 		if (this.variableObserved.has(name)) {
@@ -98,35 +88,11 @@ export class ContextVariables {
 	}
 
 	/** 
-	 * Hash a node by replace variable names `a` to add a suffix.
-	 * The suffix is normally a context visiting index,
-	 * then the hashing is unique across whole source file.
-	 */
-	hashVariableName(name: string): {name: string, suffix: number} {
-		let targetContext = ContextTree.getVariableDeclaredContext(name, this.context)
-		let suffix = targetContext ? targetContext.visitingIndex : 0
-
-		return {
-			name: name + '_' + suffix,
-			suffix,
-		}
-	}
-
-	/** 
 	 * Get a non-repetitive variable name.
 	 * Current context must be a found context that can contain variables.
 	 */
 	makeUniqueVariable(prefix: string): string {
-		let seed = 0
-		let name = prefix + seed++
-
-		while (this.hasVariable(name)) {
-			name = prefix + seed++
-		}
-
-		this.variableObserved.set(name, false)
-
-		return name
+		return scopes.getClosestScopeOfNode(this.context.node).makeUniqueVariable(prefix)
 	}
 
 	/** Get whether has observed a declared variable by name. */
@@ -210,7 +176,7 @@ export class ContextVariables {
 	/** Visit a variable. */
 	visitVariable(node: TS.VariableDeclaration) {
 
-		// For Initializer register variables for whole For Iteration.
+		// For Initializer registers variables for whole For Iteration can visit.
 		if (this.context.type & ContextTypeMask.IterationInitializer) {
 			this.context.parent!.variables.visitVariable(node)
 			return

@@ -63,7 +63,7 @@ export namespace ContextTree {
 
 
 	/** Initialize before visiting a new source file. */
-	export function initialize() {
+	export function init() {
 		contextStack = []
 		current = null
 	}
@@ -79,7 +79,7 @@ export namespace ContextTree {
 		}
 
 		// Function like
-		else if (helper.pack.isFunctionLike(node)) {
+		else if (ts.isFunctionDeclaration(node)) {
 			type |= ContextTypeMask.FunctionLike
 		}
 
@@ -252,8 +252,8 @@ export namespace ContextTree {
 	}
 
 	
-	/** Get the context leaves when walking from a context to an ancestral context. */
-	export function getWalkingOutwardLeaves(fromContext: Context, toContext: Context) : Context[] {
+	/** Get the leaved context list when walking from a context to an ancestral context. */
+	export function getWalkingOutwardLeaved(fromContext: Context, toContext: Context) : Context[] {
 		let context: Context | undefined = fromContext
 		let leaves: Context[] = []
 
@@ -267,24 +267,10 @@ export namespace ContextTree {
 	}
 	
 
-	/** Check at which context the specified named variable declared, or this attached. */
-	export function getVariableDeclaredContext(name: string, context = ContextTree.current!): Context | null {
-		if (context.variables.hasLocalVariable(name)) {
-			return context
-		}
-		else if (context.parent) {
-			return getVariableDeclaredContext(name, context.parent!)
-		}
-		else {
-			return null
-		}
-	}
-
-
 	/** Find an ancestral context and position, which can insert variable before it. */
 	export function findClosestPositionToAddVariable(index: number, from: Context): ContextTargetPosition {
 		let context = from
-		let variableDeclListIndex = visiting.findOutward(index, from.visitingIndex, ts.isVariableDeclaration)
+		let variableDeclListIndex = visiting.findOutwardNodeMatch(index, from.visitingIndex, ts.isVariableDeclaration)
 	
 		// Look upward for a variable declaration.
 		if (variableDeclListIndex !== undefined) {
@@ -345,7 +331,7 @@ export namespace ContextTree {
 	 */
 	export function findClosestPositionToAddStatement(index: number, from: Context): ContextTargetPosition {
 		let context = from
-		let parameterIndex = visiting.findOutward(index, from.visitingIndex, ts.isParameter)
+		let parameterIndex = visiting.findOutwardNodeMatch(index, from.visitingIndex, ts.isParameter)
 
 		// Parameter initializer, no place to insert statements, returns position itself.
 		if (parameterIndex !== undefined) {

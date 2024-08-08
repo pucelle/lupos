@@ -29,8 +29,8 @@ export function setTransformContext(ctx: TS.TransformationContext) {
 
 export function setSourceFile(file: TS.SourceFile) {
 	sourceFile = file
-	visiting.initialize()
-	interpolator.initialize()
-	modifier.initialize()
-	imports.initialize()
+	visiting.init()
+	interpolator.init()
+	modifier.init()
+	imports.init()
 }

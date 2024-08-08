@@ -69,7 +69,7 @@ export namespace interpolator {
 
 
 	/** Initialize after enter a new source file */
-	export function initialize() {
+	export function init() {
 		interpolations.clear()
 	}
 

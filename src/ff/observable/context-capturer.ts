@@ -1,11 +1,10 @@
 import type TS from 'typescript'
-import {InterpolationContentType, AccessNode, helper, interpolator, modifier, InterpolationPosition, visiting, ts, FlowInterruptionTypeMask} from '../../base'
+import {InterpolationContentType, AccessNode, helper, interpolator, modifier, InterpolationPosition, visiting, ts, FlowInterruptionTypeMask, scopes} from '../../base'
 import {Context} from './context'
 import {ContextTree, ContextTypeMask} from './context-tree'
 import {AccessGrouper} from './access-grouper'
 import {AccessReferences} from './access-references'
 import {Optimizer} from './optimizer'
-import {Hashing} from './hashing'
 import {removeFromList} from '../../utils'
 
 
@@ -41,7 +40,7 @@ export class ContextCapturer {
 					continue
 				}
 
-				let hashName = Hashing.getHash(index, capturer.context).name
+				let hashName = scopes.hashIndex(index).name
 				ownMap.set(hashName, index)
 			}
 
@@ -344,20 +343,20 @@ export class ContextCapturer {
 			return item.toIndex >= itemSiblingIndex
 		}) || this.latestCaptured
 
-		let contextLeaves = ContextTree.getWalkingOutwardLeaves(fromCapturer.context, this.context)
+		let contextLeaves = ContextTree.getWalkingOutwardLeaved(fromCapturer.context, this.context)
 		let leavedIndices = contextLeaves.map(c => c.visitingIndex)
 		let residualIndices: number[] = []
 
 		for (let index of indices) {
 			let node = visiting.getNode(index)
-			let hashed = Hashing.getHash(index, fromCapturer.context)
+			let hashed = scopes.hashIndex(index)
 
 			// `a[i]`, and a is array, ignore hash of `i`.
 			if (ts.isElementAccessExpression(node)
 				&& ts.isIdentifier(node.argumentExpression)
 				&& helper.types.isArrayType(helper.types.getType(node.expression))
 			) {
-				hashed = Hashing.getHash(visiting.getIndex(node.expression), fromCapturer.context)
+				hashed = scopes.hashNode(node.expression)
 			}
 
 			// Leave contexts contain any referenced variable.
@@ -385,7 +384,7 @@ export class ContextCapturer {
 					continue
 				}
 
-				let hashName = Hashing.getHash(index, this.context).name
+				let hashName = scopes.hashIndex(index).name
 				if (ownHashes.has(hashName)) {
 					removeFromList(item.indices, index)
 				}

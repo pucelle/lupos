@@ -140,7 +140,7 @@ export class Template {
 		this.range = new NodeRange(fragment)
 		this.parseParts(nodes, slots)
 	}
-	
+
 	/** Parse template result and returns a fragment. */
 	private parseParts(nodes: Node[] | null, slots: Slot[] | null) {
 		let resultValues = this.currentResult.values
@@ -175,7 +175,7 @@ export class Template {
 					case SlotType.Property:
 						part = new PropertyPart(node as Element, slot.name!, !slot.valueIndices)
 						break
-	
+
 					case SlotType.FixedBinging:
 						part = new FixedBindingPart(node as Element, slot.name!, this.context)
 						break
@@ -239,7 +239,7 @@ export class Template {
 	patch(result: TemplateResult) {
 		for (let {part, strings, valueIndices} of this.parts) {
 			let changed = valueIndices.some(index => this.currentResult.values[index] !== result.values[index])
-			
+
 			if (changed) {
 				let values = valueIndices.map(index => result.values[index])
 				let value = joinStringsAndValues(strings, values)
@@ -309,7 +309,7 @@ export class Template {
 	movesOut() {
 		this.range.movesOut()
 	}
-	
+
 	/** Get all the nodes in current template. */
 	getNodes(): Iterable<ChildNode> {
 		return this.range.getNodes()

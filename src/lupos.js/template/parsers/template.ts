@@ -1,7 +1,7 @@
 import type TS from 'typescript'
 import {HTMLNode, HTMLTree} from '../html-syntax'
 import {HTMLTreeParser} from './html-tree'
-import {factory, helper, ts} from '../../../base'
+import {factory, scopes, ts} from '../../../base'
 
 
 export type TemplateType = 'html' | 'svg'
@@ -44,8 +44,10 @@ export class TemplateParser {
 		let tree = HTMLTree.fromString(string)
 		this.addTreeParser(tree, null, null)
 		this.checkValueIndicesMutable()
+		this.remapValueIndices()
 	}
 
+	/** Add a tree and parent. */
 	addTreeParser(tree: HTMLTree, parent: HTMLTreeParser | null, fromNode: HTMLNode | null): HTMLTreeParser {
 		let parser = new HTMLTreeParser(this, tree, parent, fromNode)
 		this.treeParsers.push(parser)
@@ -57,13 +59,34 @@ export class TemplateParser {
 	private checkValueIndicesMutable() {
 		for (let i = 0; i < this.slotNodes.length; i++) {
 			let node = this.slotNodes[i]
-			this.valueIndicesMutable.set(i, helper.mutable.isMutable(node))
+			this.valueIndicesMutable.set(i, scopes.isMutable(node))
+		}
+	}
+
+	/** Removes all static values and remap value indices. */
+	private remapValueIndices() {
+		let count = 0
+
+		for (let i = 0; i < this.slotNodes.length; i++) {
+			let node = this.slotNodes[i]
+
+			if (!scopes.isMutable(node)) {
+				continue
+			}
+
+			this.remappedValueIndices.set(i, count)
+			count++
 		}
 	}
 
 	/** Returns whether the value at specified index is mutable. */
 	isValueAtIndexMutable(index: number): boolean {
 		return this.valueIndicesMutable.get(index)!
+	}
+
+	/** Get the value index of final output values. */
+	getRemappedValueIndex(index: number): number {
+		return this.remappedValueIndices.get(index)!
 	}
 
 	/** 
@@ -175,27 +198,7 @@ export class TemplateParser {
 	}
 
 	private outputInit() {
-		this.remapValueIndices()
-	}
-
-	/** Removes all static values and remap value indices. */
-	private remapValueIndices() {
-		let count = 0
-
-		for (let i = 0; i < this.slotNodes.length; i++) {
-			let node = this.slotNodes[i]
-
-			if (!helper.mutable.isMutable(node)) {
-				continue
-			}
-
-			this.remappedValueIndices.set(i, count)
-			count++
-		}
-	}
-
-	getRemappedValueIndex(index: number): number {
-		return this.remappedValueIndices.get(index)!
+		
 	}
 
 	private outputUpdate() {

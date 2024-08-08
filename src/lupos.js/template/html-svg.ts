@@ -6,14 +6,14 @@ import {VariableNames} from './parsers/variable-names'
 
 defineVisitor(function(node: TS.Node, index: number) {
 	if (ts.isSourceFile(node)) {
-		VariableNames.initialize()
+		VariableNames.init()
 		return
 	}
 
 	if (!ts.isTaggedTemplateExpression(node)) {
 		return
 	}
-	
+
 	let nm = helper.symbol.resolveImport(node)
 	if (!nm) {
 		return

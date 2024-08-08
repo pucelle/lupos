@@ -47,7 +47,7 @@ export namespace HTMLTokenParser {
 	]
 
 	/** RegExp to match each start/end tag, or intermediate contents. */
-	const TagRE = /<!--[\s\S]*?-->|<([\w-$\d]+)([\s\S]*?)\/?>|<\/[\w-]+>/g
+	const TagRE = /<!--[\s\S]*?-->|<([\w-\d$:]+)([\s\S]*?)\/?>|<\/[\w-]+>/g
 
 	/** RegExp to match attribute string, include Template slot placeholder `$LUPOS_SLOT_INDEX_\d$`. */
 	const AttrRE = /([.:?@\w-$]+)\s*(?:=\s*(".*?"|'.*?'|.)\s*)?/g
@@ -78,7 +78,7 @@ export namespace HTMLTokenParser {
 			}
 
 			lastIndex = TagRE.lastIndex
-			
+
 			// Comments, Ignore.
 			if (piece[1] === '!') {}
 
@@ -142,7 +142,7 @@ export namespace HTMLTokenParser {
 		while (match = AttrRE.exec(attr)) {
 			let name = match[1]
 			let value = match[2].replace(/^(['"])(.*?)\1$/, '$1')
-	
+
 			attrs.push({
 				name,
 				value: value ?? null,

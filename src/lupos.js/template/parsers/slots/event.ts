@@ -1,10 +1,10 @@
 import type TS from 'typescript'
-import {SlotBase} from './base'
+import {SlotParserBase} from './base'
 import {factory, helper, imports, modifier, TemplateSlotPlaceholder, ts} from '../../../../base'
 import {VariableNames} from '../variable-names'
 
 
-export class EventSlot extends SlotBase {
+export class EventSlotParser extends SlotParserBase {
 
 	/** Event Name. */
 	declare name: string
@@ -15,7 +15,6 @@ export class EventSlot extends SlotBase {
 	/** Indicates whether attach to target component or element. */
 	private targetType: 'component' | 'element' = 'element'
 
-
 	private beStaticHandler: boolean = false
 	private beSimulatedEvents: boolean = false
 
@@ -24,7 +23,7 @@ export class EventSlot extends SlotBase {
 		this.beSimulatedEvents = this.testSimulatedEvents()
 
 		if (!this.beStaticHandler) {
-			this.latestVariableName = this.tree.getUniqueLatestVariableName()
+			this.latestVariableName = this.tree.getUniqueLatestName()
 		}
 
 		this.targetType = this.checkTargetType()
@@ -166,7 +165,7 @@ export class EventSlot extends SlotBase {
 						)
 					)
 				]
-			)	
+			)
 		}
 	}
 
@@ -232,7 +231,7 @@ export class EventSlot extends SlotBase {
 						)
 					)
 				]
-			)	
+			)
 		}
 	}
 
@@ -305,7 +304,7 @@ export class EventSlot extends SlotBase {
 						)
 					)
 				]
-			)	
+			)
 		}
 	}
 
@@ -373,20 +372,19 @@ export class EventSlot extends SlotBase {
 						)
 					)
 				]
-			)	
+			)
 		}
 	}
 
 	outputUpdate() {
-		if (!this.beStaticHandler) {
-			return factory.createBinaryExpression(
-				factory.createIdentifier(this.latestVariableName!),
-				factory.createToken(ts.SyntaxKind.EqualsToken),
-				this.getOutputValueNode()
-			)  
-		}
-		else {
+		if (this.beStaticHandler) {
 			return []
 		}
+
+		return factory.createBinaryExpression(
+			factory.createIdentifier(this.latestVariableName!),
+			factory.createToken(ts.SyntaxKind.EqualsToken),
+			this.getOutputValueNode()
+		)
 	}
 }

@@ -103,7 +103,7 @@ export class Context {
 				this.mayAddGetTracking(node)
 			}
 
-			AccessReferences.visitAssess(node, this)
+			AccessReferences.visitAssess(node)
 		}
 
 		// Test and add property assignment nodes.
@@ -114,7 +114,7 @@ export class Context {
 					this.mayAddSetTracking(node, false)
 				}
 				
-				AccessReferences.visitAssignment(node, this)
+				AccessReferences.visitAssignment(node)
 			}
 		}
 

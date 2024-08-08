@@ -1,11 +1,11 @@
 import type TS from 'typescript'
 import {HTMLTreeParser} from '../html-tree'
-import {SlotBase} from './base'
+import {SlotParserBase} from './base'
 import {factory, modifier, ts} from '../../../../base'
 import {VariableNames} from '../variable-names'
 
 
-export class SlotTagSlot extends SlotBase {
+export class SlotTagSlotParser extends SlotParserBase {
 
 	/** To parse content of `<slot>...</slot>` */
 	private defaultContentParser: HTMLTreeParser | null = null
@@ -17,11 +17,11 @@ export class SlotTagSlot extends SlotBase {
 
 		// Slot default content.
 		if (this.node.children.length > 0) {
-			this.defaultContentParser = this.tree.separateSubTree(this.node)
+			this.defaultContentParser = this.tree.separateChildrenAsSubTree(this.node)
 		}
 
 		// $slot_0
-		this.slotVariableName = this.tree.getUniqueSlotVariableName()
+		this.slotVariableName = this.tree.getUniqueSlotName()
 	}
 
 	outputInit() {
@@ -68,7 +68,7 @@ export class SlotTagSlot extends SlotBase {
 
 	private outputNoNamedInit() {
 		let nodeName = this.getRefedNodeName()
-			
+
 		// `$node_0.append(...$context.__getRestSlotNodes())`
 		return factory.createCallExpression(
 			factory.createPropertyAccessExpression(
@@ -109,10 +109,10 @@ export class SlotTagSlot extends SlotBase {
 			[factory.createStringLiteral(this.name!)]
 		)
 
+		// this.__getSlotElement(slotName) || new CompiledTemplateResult($maker_0, $values)
 		if (this.defaultContentParser) {
 			modifier.addImport('CompiledTemplateResult', '@pucelle/lupos.js')
 
-			// this.__getSlotElement(slotName) || new CompiledTemplateResult($maker_0, $values)
 			toValue = factory.createBinaryExpression(
 				toValue,
 				factory.createToken(ts.SyntaxKind.BarBarToken),
@@ -120,7 +120,7 @@ export class SlotTagSlot extends SlotBase {
 					factory.createIdentifier('CompiledTemplateResult'),
 					undefined,
 					[
-						factory.createIdentifier(this.defaultContentParser.getMakerVariableName()),
+						factory.createIdentifier(this.defaultContentParser.getMakerRefName()),
 						factory.createIdentifier(VariableNames.values)
 					]
 				)

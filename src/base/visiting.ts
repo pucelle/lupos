@@ -1,15 +1,21 @@
 import type TS from 'typescript'
 import {ListMap} from '../utils'
+import {scopes} from './scopes'
 
 
 interface VisitingItem {
 
-	/** Visiting index across whole source file. */
+	/** Visiting index unique among whole source file. */
 	index: number
 }
 
 
-/** Indicate node depth and the index in sibling nodes when visiting. */
+/** 
+ * Indicate node global visiting index when visiting.
+ * It applies an unique index to each node,
+ * and use this index to do operations,
+ * which can avoid confusing with raw node and made node.
+ */
 export namespace visiting {
 
 	let stack: VisitingItem[] = []
@@ -33,13 +39,14 @@ export namespace visiting {
 	
 	
 	/** Initialize before start a new source file. */
-	export function initialize() {
+	export function init() {
 		stack = []
 		indexSeed = -1
 		ChildMap.clear()
 		ParentMap.clear()
 		NodeMap.clear()
 		IndexMap.clear()
+		scopes.init()
 
 		current = {
 			index: -1,
@@ -48,16 +55,18 @@ export namespace visiting {
 
 	/** To next sibling. */
 	export function toNext(node: TS.Node) {
-		current.index = ++indexSeed
+		let index = ++indexSeed
+		current.index = index
 
 		if (stack.length > 0) {
 			let parent = stack[stack.length - 1]
-			ChildMap.add(parent.index, current.index)
-			ParentMap.set(current.index, parent.index)
+			ChildMap.add(parent.index, index)
+			ParentMap.set(index, parent.index)
 		}
 
-		NodeMap.set(current.index, node)
-		IndexMap.set(node, current.index)
+		NodeMap.set(index, node)
+		IndexMap.set(node, index)
+		scopes.toNext(node, index)
 	}
 
 	/** To first child. */
@@ -67,12 +76,16 @@ export namespace visiting {
 		current = {
 			index: -1,
 		}
+
+		scopes.toChild()
 	}
 
 	/** To parent. */
 	export function toParent() {
 		current = stack.pop()!
+		scopes.toParent()
 	}
+
 
 	/** Get child visiting index, by parent index and child sibling index. */
 	export function getChildIndex(parentIndex: number, siblingIndex: number): number | undefined {
@@ -116,8 +129,9 @@ export namespace visiting {
 		return IndexMap.get(node)!
 	}
 
+
 	/** Look outward for a visiting index, and the node at where match test fn. */
-	export function findOutward(fromIndex: number, untilIndex: number | undefined, test: (node: TS.Node) => boolean) : number | undefined {
+	export function findOutwardNodeMatch(fromIndex: number, untilIndex: number | undefined, test: (node: TS.Node) => boolean) : number | undefined {
 		let index: number | undefined = fromIndex
 
 		// Look outward for a node which can pass test.

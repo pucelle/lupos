@@ -8,7 +8,7 @@ export namespace imports {
 
 
 	/** Initialize after loading a new source file. */
-	export function initialize() {
+	export function init() {
 		ImportsMap.clear()
 	}
 
