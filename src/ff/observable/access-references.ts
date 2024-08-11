@@ -1,6 +1,6 @@
-import {AccessNode, factory, Helper, InterpolationContentType, Interpolator, Modifier, transformContext, ts, Visiting, Scopes} from '../../base'
+import {AccessNode, factory, Helper, InterpolationContentType, Interpolator, Modifier, transformContext, ts, Visiting, Scoping} from '../../base'
 import type TS from 'typescript'
-import {ContextTargetPosition, ContextTree} from './context-tree'
+import {ContextTree} from './context-tree'
 import {Context} from './context'
 import {ListMap} from '../../utils'
 
@@ -84,7 +84,7 @@ export namespace AccessReferences {
 
 		// `a?.b` has been replaced to `a.b`
 		if (Helper.access.isAccess(node) || Helper.variable.isVariableIdentifier(node)) {
-			let hashName = Scopes.hashNode(node).name
+			let hashName = Scoping.hashNode(node).name
 			referenceMap.add(hashName, topIndex)
 		}
 
@@ -99,7 +99,7 @@ export namespace AccessReferences {
 	 */
 	export function visitAssignment(node: TS.Expression) {
 		if (Helper.access.isAccess(node) || Helper.variable.isVariableIdentifier(node)) {
-			let hashName = Scopes.hashNode(node).name
+			let hashName = Scoping.hashNode(node).name
 			let indices = referenceMap.get(hashName)
 			if (indices) {
 				for (let index of indices) {
@@ -117,22 +117,24 @@ export namespace AccessReferences {
 		}
 
 		let node = Visiting.getNode(index) as AccessNode
-		let position: ContextTargetPosition | null = null
 		let expIndex = Visiting.getIndex(node.expression)!
 		let nameNode = Helper.access.getNameNode(node)
 		let nameIndex = Visiting.getIndex(nameNode)
+		let referenced = false
 
 		// Use a reference variable to replace expression.
 		if (shouldReference(node.expression) || mutableIndices.has(expIndex)) {
-			position = reference(expIndex, context)
+			reference(expIndex, context)
+			referenced = true
 		}
 
 		// Use a reference variable to replace name.
 		if (shouldReference(nameNode) || mutableIndices.has(nameIndex)) {
-			position = reference(nameIndex, context) || position
+			reference(nameIndex, context)
+			referenced = true
 		}
 
-		if (position) {
+		if (referenced) {
 			referencedAccessIndices.add(index)
 		}
 	}
@@ -187,29 +189,25 @@ export namespace AccessReferences {
 	 * e.g.:
 	 * 	   `a.b().c`-> `$ref_ = a.b(); ... $ref_`
 	 *     `a[b++]` -> `$ref_ = b++; ... a[$ref_]`
-	 * 
-	 * Return reference position.
 	 */
-	function reference(index: number, context: Context): ContextTargetPosition {
-		let varPosition = ContextTree.findClosestPositionToAddVariable(index, context)
-		let closestScope = Scopes.getClosestScopeOfNode(varPosition.context.node)
-		let refName = closestScope.makeUniqueVariable('$ref_')
+	function reference(index: number, context: Context) {
+		let varDeclListIndex = Visiting.findOutwardMatch(index, context.visitingIndex, ts.isVariableDeclaration)
+		let varScope = Scoping.findClosestScopeToAddVariable(index)
+		let refName = varScope.makeUniqueVariable('$ref_')
 
-		// Insert one to existing declaration list: `var ... $ref_ = ...`
-		if (ts.isVariableDeclaration(Visiting.getNode(varPosition.index))) {
+		// Insert one variable declaration to existing declaration list: `var ... $ref_ = ...`
+		if (varDeclListIndex !== undefined) {
 			
 			// insert `var $ref_ = a.b()` to found position.
-			Modifier.addVariableAssignmentToList(index, varPosition.index, refName)
+			Modifier.addVariableAssignmentToList(index, varDeclListIndex, refName)
 
 			// replace `a.b()` -> `$ref_`.
 			Interpolator.replace(index, InterpolationContentType.Reference, () => factory.createIdentifier(refName))
-
-			return varPosition
 		}
 
 		// Insert two: `var $ref_`, and `$ref_ = ...`
 		else {
-			varPosition.context.capturer.addUniqueVariable(refName, varPosition.index)
+			varScope.addVariable(refName)
 
 			let refPosition = ContextTree.findClosestPositionToAddStatement(index, context)
 
@@ -218,8 +216,6 @@ export namespace AccessReferences {
 
 			// replace `a.b()` -> `$ref_`.
 			Interpolator.replace(index, InterpolationContentType.Reference, () => factory.createIdentifier(refName))
-
-			return refPosition
 		}
 	}
 }

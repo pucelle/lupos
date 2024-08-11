@@ -286,7 +286,7 @@ export class HTMLTreeParser {
 		// `>{textValue}<` or
 		// `>${html`...`}<`
 		let joinAsAWholeText = slotIndices.every(index => {
-			return Helper.types.isValueType(Helper.types.getType(this.template.slotNodes[index]))
+			return Helper.types.isValueType(Helper.types.getType(this.template.rawValueNodes[index]))
 		})
 
 		// Text `...${...}...`

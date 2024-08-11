@@ -1,6 +1,6 @@
 import type TS from 'typescript'
 import {ObservedChecker} from './observed-checker'
-import {Helper, Scopes, ts} from '../../base'
+import {Helper, ts} from '../../base'
 import {Context} from './context'
 import {ContextTypeMask} from './context-tree'
 
@@ -72,27 +72,6 @@ export class ContextVariables {
 		}
 
 		return false
-	}
-
-	/** Whether has declared a variable by name. */
-	hasVariable(name: string): boolean {
-		if (this.variableObserved.has(name)) {
-			return true
-		}
-
-		if (this.context.parent) {
-			return this.context.parent.variables.hasVariable(name)
-		}
-		
-		return false
-	}
-
-	/** 
-	 * Get a non-repetitive variable name.
-	 * Current context must be a found context that can contain variables.
-	 */
-	makeUniqueVariable(prefix: string): string {
-		return Scopes.getClosestScopeOfNode(this.context.node).makeUniqueVariable(prefix)
 	}
 
 	/** Get whether has observed a declared variable by name. */

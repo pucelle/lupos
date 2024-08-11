@@ -91,12 +91,12 @@ export class SwitchFlowControl extends FlowControlBase {
 			factory.createReturnStatement(factory.createNumericLiteral(defaultIndex))
 		])
 
-		let switchValueNode = this.slot.getOutputValueNodeAtIndex(switchValueIndex)
+		let switchValueNode = this.template.values.outputValueNodeAt(switchValueIndex)
 		let caseNodes: TS.CaseClause[] = []
 
 		for (let i = 0; i < (hasDefault ? valueIndices.length - 1 : valueIndices.length); i++) {
 			let valueIndex = valueIndices[i]!
-			let caseValueNode = this.slot.getOutputValueNodeAtIndex(valueIndex)
+			let caseValueNode = this.template.values.outputValueNodeAt(valueIndex)
 			
 			let caseNode = factory.createCaseClause(
 				caseValueNode,

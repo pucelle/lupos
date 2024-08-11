@@ -1,3 +1,4 @@
+import type TS from 'typescript'
 import {factory, Modifier, ts} from '../../../../base'
 import {FlowControlBase} from './base'
 import {VariableNames} from '../variable-names'
@@ -10,16 +11,18 @@ export class ForFlowControl extends FlowControlBase {
 
 	private ofValueIndex: number | null = null
 	private fnValueIndex: number | null = null
-	private fnValueStatic: boolean = false
 
 	init() {
 		this.blockVariableName = this.tree.getUniqueBlockName()
 		this.ofValueIndex = this.getAttrValueIndex(this.node)
 		this.fnValueIndex = this.getUniqueChildValueIndex(this.node)
-		this.fnValueStatic = this.fnValueIndex !== null ? this.slot.isValueAtIndexMutable(this.fnValueIndex) : true
 	}
 
 	outputInit() {
+		if (this.ofValueIndex === null || this.fnValueIndex === null) {
+			return []
+		}
+
 		Modifier.addImport('ForBlock', '@pucelle/lupos.js')
 
 		// $block_0 = new ForBlock(
@@ -28,8 +31,9 @@ export class ForFlowControl extends FlowControlBase {
 		//   $context_0,
 		// )
 
-		let renderFn = this.outputIfIndexFn(this.valueIndices)
-		let makers = this.outputMakerNodes(this.makerNames)
+		// Force render fn to be static.
+		// So this render fn cant be like `a ? this.render1` : `this.render2`.
+		let renderFnNode = this.template.values.outputValueNodeAt(this.fnValueIndex, true) as TS.FunctionExpression
 		let templateSlot = this.slot.makeTemplateSlot(null)
 
 		return factory.createBinaryExpression(
@@ -39,8 +43,7 @@ export class ForFlowControl extends FlowControlBase {
 				factory.createIdentifier('ForBlock'),
 				undefined,
 				[
-					indexFn,
-					makers,
+					renderFnNode,
 					templateSlot,
 					factory.createIdentifier(VariableNames.context),
 				]

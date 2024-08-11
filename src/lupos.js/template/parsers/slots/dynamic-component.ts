@@ -81,7 +81,7 @@ export class DynamicComponentSlotParser extends SlotParserBase {
 	}
 
 	outputUpdate() {
-		let value = this.getOutputValueNode()
+		let value = this.outputValueNode()
 
 		// $block_0.update($values[0])
 		return factory.createCallExpression(

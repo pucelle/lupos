@@ -3,6 +3,7 @@ import {HTMLNode, HTMLNodeType} from '../../html-syntax'
 import {HTMLTreeParser} from '../html-tree'
 import {factory, Modifier} from '../../../../base'
 import {VariableNames} from '../variable-names'
+import {TemplateParser} from '../template'
 
 
 export abstract class SlotParserBase {
@@ -19,8 +20,11 @@ export abstract class SlotParserBase {
 	/** Index of the node the slot placed at within the document fragment. */
 	readonly node: HTMLNode
 
-	/** Tree current slot belonged to. */
+	/** Tree parser current slot belonged to. */
 	readonly tree: HTMLTreeParser
+
+	/** Template parser current slot belonged to. */
+	readonly template: TemplateParser
 
 	/** 
 	 * Value index in the whole template.
@@ -47,6 +51,7 @@ export abstract class SlotParserBase {
 
 		this.node = node
 		this.tree = tree
+		this.template = tree.template
 
 		this.init()
 	}
@@ -58,17 +63,19 @@ export abstract class SlotParserBase {
 
 	/** Returns whether current value node is mutable. */
 	protected isValueMutable(): boolean {
-		return this.valueIndex !== null && this.isValueAtIndexMutable(this.valueIndex)
+		return this.valueIndex !== null
+			&& this.template.values.isIndexMutable(this.valueIndex)
 	}
 
-	/** Returns whether the value node at specified index is mutable. */
-	isValueAtIndexMutable(valueIndex: number): boolean {
-		return this.tree.template.isValueAtIndexMutable(valueIndex)
+	/** Returns whether current value node can turn from mutable to static. */
+	protected canTurnStatic(): boolean {
+		return this.valueIndex !== null
+			&& this.template.values.canTurnStatic(this.valueIndex)
 	}
 
-	/** Get slot node. */
-	protected getSlotNode(): TS.Expression {
-		return this.tree.template.slotNodes[this.valueIndex!]
+	/** Get raw node, can only use returned node to identify type, cant output. */
+	protected getRawNode(): TS.Expression {
+		return this.template.values.getRawNode(this.valueIndex!)
 	}
 
 	/** Get node variable name. */
@@ -102,30 +109,12 @@ export abstract class SlotParserBase {
 	 * Get value node, either `$values[0]`, or `"..."`.
 	 * Can only use it when outputting update.
 	 */
-	getOutputValueNode(): TS.Expression {
+	outputValueNode(): TS.Expression {
 		if (this.valueIndex === null) {
 			return factory.createStringLiteral(this.string!)
 		}
 		else {
-			return this.getOutputValueNodeAtIndex(this.valueIndex)
-		}
-	}
-
-	/** 
-	 * Get value node at index, either `$values[0]`, or static slot node.
-	 * Can only use it when outputting update.
-	 */
-	getOutputValueNodeAtIndex(index: number): TS.Expression {
-		if (!this.tree.template.isValueAtIndexMutable(index)) {
-			return this.tree.template.slotNodes[index]
-		}
-		else {
-			let remappedIndex = this.tree.template.getRemappedValueIndex(index)
-
-			return factory.createElementAccessExpression(
-				factory.createIdentifier(VariableNames.values),
-				factory.createNumericLiteral(remappedIndex)
-			)
+			return this.template.values.outputValueNodeAt(this.valueIndex)
 		}
 	}
 

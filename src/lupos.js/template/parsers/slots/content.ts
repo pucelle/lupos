@@ -27,7 +27,7 @@ export class ContentSlotParser extends SlotParserBase {
 	}
 
 	private identifySlotContentType(): number | null {
-		let valueNode = this.getSlotNode()
+		let valueNode = this.getRawNode()
 		let typeText = Helper.types.getTypeFullText(Helper.types.getType(valueNode))
 		let slotContentType: number | null = null
 
@@ -60,7 +60,7 @@ export class ContentSlotParser extends SlotParserBase {
 	outputUpdate() {
 
 		// $values[0]
-		let value = this.getOutputValueNode()
+		let value = this.outputValueNode()
 
 		// $latest_0 === $values[0] && $slot_0.update($latest_0 = $values[0])
 		if (this.latestVariableName) {

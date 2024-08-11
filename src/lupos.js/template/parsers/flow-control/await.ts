@@ -71,7 +71,7 @@ export class AwaitFlowControl extends FlowControlBase {
 		}
 
 		// This promise may be static, ignore it.
-		let promiseNode = this.slot.getOutputValueNodeAtIndex(this.promiseIndex)
+		let promiseNode = this.template.values.outputValueNodeAt(this.promiseIndex)
 
 		// $block_0.update(promise, $values)
 		return factory.createCallExpression(

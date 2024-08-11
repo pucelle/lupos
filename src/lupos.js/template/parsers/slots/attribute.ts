@@ -17,7 +17,7 @@ export class AttributeSlotParser extends SlotParserBase {
 	}
 
 	outputUpdate() {
-		let slotNode = this.getSlotNode()
+		let slotNode = this.getRawNode()
 		let slotNodeType = Helper.types.getType(slotNode)
 
 		// `$values[0]` is not nullable
@@ -37,7 +37,7 @@ export class AttributeSlotParser extends SlotParserBase {
 		let nodeName = this.getRefedNodeName()
 
 		// $values[0]
-		let value = this.getOutputValueNode()
+		let value = this.outputValueNode()
 
 		// $latest_0 === $values[0] && $node_0.setAttribute(attrName, $latest_0 = $values[0])
 		if (this.latestVariableName) {
@@ -88,7 +88,7 @@ export class AttributeSlotParser extends SlotParserBase {
 		let nodeName = this.getRefedNodeName()
 
 		// $values[0]
-		let value = this.getOutputValueNode()
+		let value = this.outputValueNode()
 
 		// if ($latest_0 === $values[0]) { 
 		// 	 $values[0] === null ? $node_0.removeAttribute(attrName) : $node_0.setAttribute(attrName, $values[0])

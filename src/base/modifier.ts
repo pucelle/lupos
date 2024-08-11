@@ -4,9 +4,13 @@ import {factory, sourceFile, ts} from './global'
 import {Helper} from './helper'
 import {InterpolationContentType, Interpolator} from './interpolator'
 import {Visiting} from './visiting'
+import {Scoping} from './scoping'
 
 
-/** Help to do all dirty and detailed work for `interpolator`. */
+/** 
+ * Help to do all dirty and detailed work for `interpolator`,
+ * And provides detailed modifications compare with interpolator.
+ */
 export namespace Modifier {
 	
 	/** All imports. */
@@ -132,6 +136,10 @@ export namespace Modifier {
 
 	/** Apply imports to do interpolation. */
 	export function apply() {
+
+		// Ensure all variables outputted.
+		Scoping.applyVariablesAdding()
+
 		// A ts bug here: if insert some named import identifiers,
 		// and update the import statement,
 		// will cause some not used type imports still there.

@@ -57,7 +57,7 @@ export class BindingSlotParser extends SlotParserBase {
 	outputUpdate() {
 
 		// $values[0], or '...'
-		let value = this.getOutputValueNode()
+		let value = this.outputValueNode()
 
 		let callWith: {method: string, value: TS.Expression} = {method: 'update', value}
 		if (this.name === 'class') {
@@ -164,7 +164,7 @@ export class BindingSlotParser extends SlotParserBase {
 			}
 		}
 
-		let slotNode = this.getSlotNode()
+		let slotNode = this.getRawNode()
 		let slotNodeType = Helper.types.getType(slotNode)
 
 		if (Helper.types.isValueType(slotNodeType)) {
@@ -247,7 +247,7 @@ export class BindingSlotParser extends SlotParserBase {
 			}
 		}
 
-		let slotNode = this.getSlotNode()
+		let slotNode = this.getRawNode()
 		let slotNodeType = Helper.types.getType(slotNode)
 
 		if (Helper.types.isValueType(slotNodeType)) {

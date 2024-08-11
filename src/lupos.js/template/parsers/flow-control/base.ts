@@ -3,6 +3,7 @@ import {HTMLNode, HTMLNodeType} from '../../html-syntax'
 import {HTMLTreeParser} from '../html-tree'
 import {FlowControlSlotParser} from '../slots'
 import {factory, TemplateSlotPlaceholder} from '../../../../base'
+import {TemplateParser} from '../template'
 
 
 export abstract class FlowControlBase {
@@ -10,11 +11,13 @@ export abstract class FlowControlBase {
 	readonly slot: FlowControlSlotParser
 	readonly node: HTMLNode
 	readonly tree: HTMLTreeParser
+	readonly template: TemplateParser
 
 	constructor(slot: FlowControlSlotParser) {
 		this.slot = slot
 		this.node = slot.node
 		this.tree = slot.tree
+		this.template = slot.template
 	}
 
 	protected eatNext(...tagNames: string[]): HTMLNode[] {

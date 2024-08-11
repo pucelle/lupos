@@ -991,7 +991,7 @@ export namespace Helper {
 		 * it represents whether flow was interrupted be `return` with content,
 		 * `yield`, `await`, or arrow function with implicit returning.
 		 */
-		export function getFlowInterruptionType(node: TS.Node): number {
+		export function getFlowInterruptionType(node: TS.Node): FlowInterruptionTypeMask {
 			let type = 0
 
 			if (ts.isReturnStatement(node)

@@ -1,17 +1,33 @@
 import type TS from 'typescript'
-import {Helper, transformContext, ts, Visiting, factory} from '../base'
-import {addToList} from '../utils'
+import {Helper, transformContext, ts, Visiting, factory, Modifier} from '.'
+import {addToList, ListMap} from '../utils'
 
 
 interface HashItem {
+
+	/** Unique name. */
 	name: string
 
-	/** The context visiting indices each internal variable reference. */
+	/** The variable visiting indices current node referenced. */
 	referenceIndices: number[]
 }
 
 
-export namespace Scopes {
+/** Whether a expression be mutable, and whether it can turn. */
+export enum MutableMask {
+
+	/** `1`, use `const a`, use `import a`, use global declared `a`, `this.onClick`. */
+	Static = 0,
+
+	/** use local variable `a`. */
+	Mutable = 1,
+
+	/** Have some using `a` not like `function(){a.xxx}` */
+	CantTurn = 2,
+}
+
+
+export namespace Scoping {
 
 	let stack: Scope[] = []
 	export let current: Scope | null = null
@@ -22,12 +38,16 @@ export namespace Scopes {
 	/** Visiting index -> node hash result. */
 	const hashMap: Map<number, HashItem> = new Map()
 
+	/** All added variable names, via scope. */
+	const AddedVariableNames: ListMap<Scope, string> = new ListMap()
+
 
 	/** Initialize before visiting a new source file. */
 	export function init() {
 		stack = []
 		current = null
 		hashMap.clear()
+		AddedVariableNames.clear()
 	}
 
 
@@ -37,7 +57,7 @@ export namespace Scopes {
 			current = new Scope(node, index, null)
 			scopeMap.set(index, current)
 		}
-		else if (ts.isFunctionDeclaration(node)) {
+		else if (ts.isFunctionDeclaration(node) || ts.isBlock(node)) {
 			current = new Scope(node, index, stack[stack.length - 1])
 			scopeMap.set(index, current)
 		}
@@ -57,8 +77,8 @@ export namespace Scopes {
 	}
 	
 
-	/** Get closest scope contains node with specified visiting index. */
-	export function getClosestScopeOfIndex(index: number): Scope {
+	/** Find closest scope contains node with specified visiting index. */
+	export function findClosestScope(index: number): Scope {
 		let scope = scopeMap.get(index)
 
 		while (!scope) {
@@ -70,9 +90,36 @@ export namespace Scopes {
 	}
 
 
-	/** Get closest scope contains node. */
-	export function getClosestScopeOfNode(node: TS.Node): Scope {
-		return getClosestScopeOfIndex(Visiting.getIndex(node))
+	/** Find closest scope contains node. */
+	export function findClosestScopeOfNode(node: TS.Node): Scope {
+		return findClosestScope(Visiting.getIndex(node))
+	}
+
+	
+	/** 
+	 * Find an ancestral scope, and a child visiting index,
+	 * which can insert variable before it.
+	 */
+	export function findClosestScopeToAddVariable(fromIndex: number): Scope {
+		let scope = findClosestScope(fromIndex)
+		while (!scope.canAddStatements()) {
+			scope = scope.parent!
+		}
+
+		return scope
+	}
+
+	/** Add a scope and a variable name to insert into the scope later. */
+	export function addVariable(scope: Scope, name: string) {
+		AddedVariableNames.add(scope, name)
+	}
+
+	/** Add variables to interpolator as declaration statements. */
+	export function applyVariablesAdding() {
+		for (let [scope, names] of AddedVariableNames.entries()) {
+			let index = scope.getIndexToAddVariable()
+			Modifier.addVariables(index, names)
+		}
 	}
 
 
@@ -144,7 +191,7 @@ export namespace Scopes {
 	 */
 	function hashVariableName(node: TS.Identifier): {name: string, suffix: number} {
 		let name = node.text
-		let scope = getClosestScopeOfIndex(Visiting.getIndex(node))
+		let scope = findClosestScopeOfNode(node)
 		let suffix = scope.visitingIndex
 
 		return {
@@ -155,7 +202,7 @@ export namespace Scopes {
 	
 	
 	/** Check at which scope the specified named variable declared. */
-	function getDeclaredScope(node: TS.Identifier, fromScope = getClosestScopeOfNode(node)): Scope | null {
+	function getDeclaredScope(node: TS.Identifier, fromScope = findClosestScopeOfNode(node)): Scope | null {
 		if (fromScope.hasLocalVariable(node.text)) {
 			return fromScope
 		}
@@ -167,13 +214,17 @@ export namespace Scopes {
 		}
 	}
 
-
 	/** Returns whether declared variable at top (source file) scope. */
 	function isDeclaredInTopScope(node: TS.Identifier): boolean {
-		let scope = getDeclaredScope(node)
-		return scope ? ts.isSourceFile(scope.node) : false
+		let declaredIn = getDeclaredScope(node)
+		return declaredIn ? declaredIn.isTopmost() : false
 	}
 
+	/** Returns whether declared in a target scope, and descendant scope of target scope. */
+	function isDeclaredWithinScope(node: TS.Identifier, scope: Scope): boolean {
+		let declaredIn = getDeclaredScope(node)
+		return declaredIn ? scope.isSelfOrAncestorOf(declaredIn) : false
+	}
 
 	/** Returns whether a variable node was declared as const. */
 	function isDeclaredAsConst(node: TS.Identifier): boolean {
@@ -183,13 +234,14 @@ export namespace Scopes {
 
 
 	/** Test whether expression represented value is mutable. */
-	export function isMutable(node: TS.Expression): boolean {
+	export function testMutable(node: TS.Expression): MutableMask {
 		return visitNodeTestMutable(node, false)
 	}
 
-	function visitNodeTestMutable(node: TS.Node, inChildScope: boolean): boolean {
-		let mutable = false
+	function visitNodeTestMutable(node: TS.Node, inChildScope: boolean): MutableMask {
+		let mutable = 0
 
+		// Inside of a function
 		inChildScope ||= ts.isFunctionDeclaration(node)
 
 		// Variable
@@ -199,13 +251,20 @@ export namespace Scopes {
 			// Which means: the variable should not been declared in top scope.
 			if (inChildScope) {
 				let declaredInTopScope = isDeclaredInTopScope(node)
-				mutable ||= !declaredInTopScope
+
+				// Should apply mutable and not applied.
+				if (!declaredInTopScope) {
+					mutable |= MutableMask.Mutable
+				}
 			}
 
 			// Otherwise become mutable except not const defined.
 			else {
 				let constDeclared = isDeclaredAsConst(node)
-				mutable ||= !constDeclared
+				if (!constDeclared) {
+					mutable |= MutableMask.Mutable
+					mutable |= MutableMask.CantTurn
+				}
 			}
 		}
 
@@ -219,11 +278,17 @@ export namespace Scopes {
 			// Use readonly property.
 			let useReadonlyProperty = Helper.symbol.resolveProperty(node) && Helper.types.isReadonly(node)
 
-			mutable ||= !(useNotCalledMethod || useReadonlyProperty)
+			if (!(useNotCalledMethod || useReadonlyProperty)) {
+				mutable |= MutableMask.Mutable
+
+				if (!inChildScope) {
+					mutable |= MutableMask.CantTurn
+				}
+			}
 		}
 
 		ts.visitEachChild(node, (node: TS.Node) => {
-			mutable ||= visitNodeTestMutable(node, inChildScope)
+			mutable |= visitNodeTestMutable(node, inChildScope)
 			return node
 		}, transformContext)
 
@@ -232,32 +297,39 @@ export namespace Scopes {
 
 
 	/** Replace an identifier or this keyword. */
-	type NodeReplacer = (node: TS.Identifier | TS.ThisExpression) => TS.Identifier | TS.ThisExpression
+	type NodeReplacer = (node: TS.Identifier | TS.ThisExpression) => TS.Expression
 
 	/** 
-	 * Transfer a function to top scope, output new function, and a reference variable list.
-	 * `replacer` can help to modify node when doing transfer.
+	 * Transfer a node to top scope, output a new node, and a reference variable list.
+	 * `replacer` can help to modify node when doing transfer,
+	 * it replace local variables and `this` to some parameters.
 	 */
-	export function transferToTop(node: TS.FunctionLikeDeclaration,	replacer: NodeReplacer): TS.FunctionLikeDeclaration {
-		return visitNodeTransferToTop(node, replacer) as TS.FunctionLikeDeclaration
+	export function transferToTopmostScope<T extends TS.Node>(node: T, replacer: NodeReplacer): T {
+		let scope = findClosestScopeOfNode(node)
+		return visitNodeTransferToTop(node, scope, true, replacer) as T
 	}
 
-	function visitNodeTransferToTop(node: TS.Node, replacer: NodeReplacer): TS.Node {
+	function visitNodeTransferToTop(node: TS.Node, scope: Scope, canReplaceThis: boolean, replacer: NodeReplacer): TS.Node {
 
 		// Variable
 		if (Helper.variable.isVariableIdentifier(node)) {
-			if (!isDeclaredInTopScope(node)) {
+
+			// If declared in top scope, or in local scope within transfer content, not replace it.
+			if (!isDeclaredInTopScope(node) && !isDeclaredWithinScope(node, scope)) {
 				return replacer(node)
 			}
 		}
 
 		// this
-		else if (node.kind === ts.SyntaxKind.ThisKeyword) {
+		else if (canReplaceThis && node.kind === ts.SyntaxKind.ThisKeyword) {
 			return replacer(node as TS.ThisExpression)
 		}
 
+		// If enters non-arrow function declaration, cant replace this.
+		canReplaceThis &&= ts.isFunctionDeclaration(node) && !ts.isArrowFunction(node)
+
 		return ts.visitEachChild(node, (node: TS.Node) => {
-			return visitNodeTransferToTop(node, replacer)
+			return visitNodeTransferToTop(node, scope, canReplaceThis, replacer)
 		}, transformContext)
 	}
 }
@@ -266,14 +338,14 @@ export namespace Scopes {
 /** Mark all variables with a context. */
 export class Scope {
 
-	readonly node: TS.FunctionLikeDeclaration | TS.SourceFile
+	readonly node: TS.FunctionLikeDeclaration | TS.Block | TS.SourceFile
 	readonly parent: Scope | null
 	readonly visitingIndex: number
 
 	/** All variables declared here. */
 	private variables: Map<string, TS.Node | null> = new Map()
 
-	constructor(node: TS.FunctionLikeDeclaration | TS.SourceFile, index: number, parent: Scope | null) {
+	constructor(node: TS.FunctionLikeDeclaration | TS.Block | TS.SourceFile, index: number, parent: Scope | null) {
 		this.node = node
 		this.parent = parent
 		this.visitingIndex = index
@@ -282,7 +354,6 @@ export class Scope {
 	/** Visit a descendant node. */
 	visitNode(node: TS.Node) {
 
-		
 		// Variable declaration.
 		if (ts.isVariableDeclaration(node)) {
 			for (let name of Helper.variable.walkDeclarationNames(node)) {
@@ -312,6 +383,29 @@ export class Scope {
 			this.variables.set(Helper.getText(node.name), node)
 		}
 	}
+
+	/** Returns whether be top scope. */
+	isTopmost(): boolean {
+		return ts.isSourceFile(this.node)
+	}
+
+	/** Whether can add more statements inside. */
+	canAddStatements(): boolean {
+		return !ts.isFunctionDeclaration(this.node)
+	}
+
+	/** Test whether current scope is equal or an ancestor of target scope. */
+	isSelfOrAncestorOf(scope: Scope): boolean {
+		if (this === scope) {
+			return true
+		}
+
+		if (this.parent) {
+			return this.parent.isSelfOrAncestorOf(scope)
+		}
+		
+		return false
+	}
 	
 	/** Whether has declared a specified named local variable. */
 	hasLocalVariable(name: string): boolean {
@@ -333,8 +427,10 @@ export class Scope {
 			return (node.parent.flags & ts.NodeFlags.Const) > 0
 		}
 		else if (ts.isParameter(node)) {
-			return true
+			return false
 		}
+
+		// Imported
 		else {
 			return true
 		}
@@ -368,5 +464,25 @@ export class Scope {
 		this.variables.set(name, null)
 
 		return name
+	}
+
+	/** Add a variable. */
+	addVariable(name: string) {
+		Scoping.addVariable(this, name)
+	}
+
+	/** Get best visiting index to add variable before it. */
+	getIndexToAddVariable(): number {
+		let toIndex = Visiting.getFirstChildIndex(this.visitingIndex)!
+
+		// Insert before the first not import statements.
+		if (this.isTopmost()) {
+			let beforeNode = (this.node as TS.SourceFile).statements.findLast(n => !ts.isImportDeclaration(n))
+			if (beforeNode) {
+				toIndex = Visiting.getIndex(beforeNode)
+			}
+		}
+
+		return toIndex
 	}
 }

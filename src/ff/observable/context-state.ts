@@ -43,7 +43,7 @@ export class ContextState {
 	}
 
 	/** Union with internal contents type. */
-	unionFlowInterruptionType(type: number) {
+	unionFlowInterruptionType(type: FlowInterruptionTypeMask) {
 		if (this.context.type & ContextTypeMask.FunctionLike) {
 			return 
 		}

@@ -15,7 +15,7 @@ import {AccessReferences} from './access-references'
  */
 export class Context {
 
-	readonly type: number
+	readonly type: ContextTypeMask
 	readonly visitingIndex: number
 	readonly node: TS.Node
 	readonly parent: Context | null
@@ -30,7 +30,7 @@ export class Context {
 	 */
 	readonly closestFunctionLike: Context
 
-	constructor(type: number, node: TS.Node, parent: Context | null) {
+	constructor(type: ContextTypeMask, node: TS.Node, parent: Context | null) {
 		this.type = type
 		this.visitingIndex = Visiting.current.index
 		this.node = node

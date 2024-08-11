@@ -1,7 +1,8 @@
 import type TS from 'typescript'
 import {HTMLNode, HTMLTree} from '../html-syntax'
 import {HTMLTreeParser} from './html-tree'
-import {factory, Scopes, ts} from '../../../base'
+import {factory, MutableMask, Scoping, ts} from '../../../base'
+import {VariableNames} from './variable-names'
 
 
 export type TemplateType = 'html' | 'svg'
@@ -31,20 +32,16 @@ export function extendsAttributes(el: Element, attributes: {name: string, value:
 export class TemplateParser {
 
 	readonly type: TemplateType
-	readonly slotNodes: TS.Expression[]
+	readonly values: TemplateValues
 
-	private treeParsers: HTMLTreeParser[] = []
-	private valueIndicesMutable: Map<number, boolean> = new Map()
-	private remappedValueIndices: Map<number, number> = new Map()
+	private readonly treeParsers: HTMLTreeParser[] = []
 
 	constructor(type: TemplateType, string: string, values: TS.Expression[]) {
 		this.type = type
-		this.slotNodes = values
+		this.values = new TemplateValues(values)
 
 		let tree = HTMLTree.fromString(string)
 		this.addTreeParser(tree, null, null)
-		this.checkValueIndicesMutable()
-		this.remapValueIndices()
 	}
 
 	/** Add a tree and parent. */
@@ -53,74 +50,6 @@ export class TemplateParser {
 		this.treeParsers.push(parser)
 
 		return parser
-	}
-
-	/** Removes all static values and remap value indices. */
-	private checkValueIndicesMutable() {
-		for (let i = 0; i < this.slotNodes.length; i++) {
-			let node = this.slotNodes[i]
-			this.valueIndicesMutable.set(i, Scopes.isMutable(node))
-		}
-	}
-
-	/** Removes all static values and remap value indices. */
-	private remapValueIndices() {
-		let count = 0
-
-		for (let i = 0; i < this.slotNodes.length; i++) {
-			let node = this.slotNodes[i]
-
-			if (!Scopes.isMutable(node)) {
-				continue
-			}
-
-			this.remappedValueIndices.set(i, count)
-			count++
-		}
-	}
-
-	/** Returns whether the value at specified index is mutable. */
-	isValueAtIndexMutable(index: number): boolean {
-		return this.valueIndicesMutable.get(index)!
-	}
-
-	/** Get the value index of final output values. */
-	getRemappedValueIndex(index: number): number {
-		return this.remappedValueIndices.get(index)!
-	}
-
-	/** 
-	 * `...${...}...` -> ${'...' + ... + '...'}
-	 * Bundle a interpolation strings and value indices to a new expression.
-	 * It uses `indices[0]` as new index.
-	 */
-	bundleValueIndices(strings: string[], valueIndices: number[]) {
-		let value: TS.Expression = factory.createStringLiteral(strings[0])
-
-		// string[0] + values[0] + strings[1] + ...
-		for (let i = 1; i < strings.length; i++) {
-			value = factory.createBinaryExpression(
-				value,
-				factory.createToken(ts.SyntaxKind.PlusToken),
-				this.slotNodes[valueIndices[i - 1]]
-			)
-
-			value = factory.createBinaryExpression(
-				value,
-				factory.createToken(ts.SyntaxKind.PlusToken),
-				factory.createStringLiteral(strings[i])
-			)
-		}
-
-		this.slotNodes[valueIndices[0]] = value
-
-		// Other values become undefined, and will be removed in the following remapping step.
-		for (let i = 1; i < valueIndices.length; i++) {
-			this.slotNodes[valueIndices[i]] = factory.createIdentifier('undefined')
-		}
-
-		// Mutable if any of original indices is mutable.
-		this.valueIndicesMutable.set(valueIndices[0], valueIndices.some(i => this.valueIndicesMutable.get(i)))
 	}
 
 	/** Create a template element with `html` as content. */
@@ -203,5 +132,139 @@ export class TemplateParser {
 
 	private outputUpdate() {
 
+	}
+}
+
+
+/** Help to manage all value nodes. */
+class TemplateValues {
+
+	readonly rawNodes: TS.Expression[]
+
+	private valueHash: Map<string, number> = new Map()
+	private outputNodes: TS.Expression[] = []
+	private indicesMutable: Map<number, MutableMask> = new Map()
+
+	constructor(values: TS.Expression[]) {
+		this.rawNodes = values
+		this.checkIndicesMutable()
+	}
+	
+	/** Removes all static values and remap value indices. */
+	private checkIndicesMutable() {
+		for (let i = 0; i < this.rawNodes.length; i++) {
+			let node = this.rawNodes[i]
+			this.indicesMutable.set(i, Scoping.testMutable(node))
+		}
+	}
+
+	/** Returns whether the value at specified index is mutable. */
+	isIndexMutable(index: number): boolean {
+		return (this.indicesMutable.get(index)! & MutableMask.Mutable) > 0
+	}
+
+	/** Returns whether the value at specified index can turn from mutable to static. */
+	canTurnStatic(index: number): boolean {
+		return (this.indicesMutable.get(index)! & MutableMask.CantTurn) === 0
+	}
+
+	/** Get raw value node at index. */
+	getRawNode(index: number): TS.Expression {
+		return this.rawNodes[index]
+	}
+
+	/** 
+	 * Use value node at index, either `$values[0]`, or static raw node.
+	 * Can only use it when outputting update.
+	 * If `forceStatic`, will treat it as static value node,
+	 * must check `canTurnStatic()` firstly and ensure it can.
+	 */
+	outputValueNodeAt(index: number, forceStatic: boolean = false): TS.Expression {
+		let rawValueNode = this.rawNodes[index]
+
+		// Output static raw node.
+		if (!this.isIndexMutable(index) || forceStatic) {
+			return Scoping.transferToTopmostScope(rawValueNode, this.transferNodeToTopmostScope)
+		}
+
+		// Output from value list.
+		else {
+			return this.outputValueNode(rawValueNode)
+		}
+	}
+
+	/** 
+	 * Output a node, append it to output value node list,
+	 * and returns the output node.
+	 */
+	private outputValueNode(node: TS.Expression): TS.Expression {
+		let hash = Scoping.hashNode(node).name
+		let valueIndex: number
+
+		if (this.valueHash.has(hash)) {
+			valueIndex = this.valueHash.get(hash)!
+		}
+		else {
+			valueIndex = this.rawNodes.length
+			this.outputNodes.push(node)
+			this.valueHash.set(hash, valueIndex)
+		}
+
+		return factory.createElementAccessExpression(
+			factory.createIdentifier(VariableNames.values),
+			factory.createNumericLiteral(valueIndex)
+		)
+	}
+
+	/** 
+	 * Replace local variables to values reference:
+	 * `this.onClick` -> `$context.onClick`
+	 * `localVariableName` -> `$values[...]`, and add it to output value list.
+	 */
+	private transferNodeToTopmostScope(node: TS.Identifier | TS.ThisExpression): TS.Expression {
+
+		// Move variable name as an item of output value list.
+		if (ts.isIdentifier(node)) {
+			return this.outputValueNode(node)
+		}
+
+		// Replace `this` to `$context`.
+		else {
+			return factory.createIdentifier(VariableNames.context)
+		}
+	}
+
+	/** 
+	 * Bundle a interpolation strings and value indices to a new expression.
+	 * It uses `indices[0]` as new index.
+	 * `...${value}...` -> `${'...' + value + '...'}`
+	 */
+	bundleValueIndices(strings: string[], valueIndices: number[]) {
+		let value: TS.Expression = factory.createStringLiteral(strings[0])
+
+		// string[0] + values[0] + strings[1] + ...
+		for (let i = 1; i < strings.length; i++) {
+			value = factory.createBinaryExpression(
+				value,
+				factory.createToken(ts.SyntaxKind.PlusToken),
+				this.rawNodes[valueIndices[i - 1]]
+			)
+
+			value = factory.createBinaryExpression(
+				value,
+				factory.createToken(ts.SyntaxKind.PlusToken),
+				factory.createStringLiteral(strings[i])
+			)
+		}
+
+		this.rawNodes[valueIndices[0]] = value
+
+		// Other values become undefined, and will be removed in the following remapping step.
+		for (let i = 1; i < valueIndices.length; i++) {
+			this.rawNodes[valueIndices[i]] = factory.createIdentifier('undefined')
+		}
+
+		// Mutable if any of original indices is mutable.
+		this.indicesMutable.set(valueIndices[0], valueIndices.some(i => this.indicesMutable.get(i)))
 	}
 }

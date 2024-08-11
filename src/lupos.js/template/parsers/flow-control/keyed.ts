@@ -54,7 +54,7 @@ export class KeyedFlowControl extends FlowControlBase {
 	outputUpdate() {
 		let keyedNode = this.valueIndex === null
 			? factory.createNull()
-			: this.slot.getOutputValueNodeAtIndex(this.valueIndex)
+			: this.template.values.outputValueNodeAt(this.valueIndex)
 
 		// $block_0.update(newKey, $values)
 		return factory.createCallExpression(

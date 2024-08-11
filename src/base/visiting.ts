@@ -1,6 +1,6 @@
 import type TS from 'typescript'
 import {ListMap} from '../utils'
-import {Scopes} from './scopes'
+import {Scoping} from './scoping'
 
 
 interface VisitingItem {
@@ -46,7 +46,7 @@ export namespace Visiting {
 		ParentMap.clear()
 		NodeMap.clear()
 		IndexMap.clear()
-		Scopes.init()
+		Scoping.init()
 
 		current = {
 			index: -1,
@@ -66,7 +66,7 @@ export namespace Visiting {
 
 		NodeMap.set(index, node)
 		IndexMap.set(node, index)
-		Scopes.toNext(node, index)
+		Scoping.toNext(node, index)
 	}
 
 	/** To first child. */
@@ -77,13 +77,13 @@ export namespace Visiting {
 			index: -1,
 		}
 
-		Scopes.toChild()
+		Scoping.toChild()
 	}
 
 	/** To parent. */
 	export function toParent() {
 		current = stack.pop()!
-		Scopes.toParent()
+		Scoping.toParent()
 	}
 
 
@@ -131,7 +131,7 @@ export namespace Visiting {
 
 
 	/** Look outward for a visiting index, and the node at where match test fn. */
-	export function findOutwardNodeMatch(fromIndex: number, untilIndex: number | undefined, test: (node: TS.Node) => boolean) : number | undefined {
+	export function findOutwardMatch(fromIndex: number, untilIndex: number | undefined, test: (node: TS.Node) => boolean) : number | undefined {
 		let index: number | undefined = fromIndex
 
 		// Look outward for a node which can pass test.

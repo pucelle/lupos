@@ -15,7 +15,7 @@ export class TextSlotParser extends SlotParserBase {
 		let nodeName = this.getRefedNodeName()
 
 		// $values[0]
-		let value = this.getOutputValueNode()
+		let value = this.outputValueNode()
 
 		// $latest_0 === $values[0] && $node_0.data = $latest_0 = $values[0]
 		return factory.createBinaryExpression(

@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {InterpolationContentType, AccessNode, Helper, Interpolator, Modifier, InterpolationPosition, Visiting, ts, FlowInterruptionTypeMask, Scopes} from '../../base'
+import {InterpolationContentType, AccessNode, Helper, Interpolator, InterpolationPosition, Visiting, ts, FlowInterruptionTypeMask, Scoping} from '../../base'
 import {Context} from './context'
 import {ContextTree, ContextTypeMask} from './context-tree'
 import {AccessGrouper} from './access-grouper'
@@ -40,7 +40,7 @@ export class ContextCapturer {
 					continue
 				}
 
-				let hashName = Scopes.hashIndex(index).name
+				let hashName = Scoping.hashIndex(index).name
 				ownMap.set(hashName, index)
 			}
 
@@ -65,8 +65,6 @@ export class ContextCapturer {
 
 
 	readonly context: Context
-	private variableNames: string[] = []
-	private variableInterpolateIndex: number = -1
 	private captured: CapturedItem[]
 	private latestCaptured!: CapturedItem
 	private captureType: 'get' | 'set' = 'get'
@@ -161,15 +159,6 @@ export class ContextCapturer {
 		this.captured.push(this.latestCaptured)
 	}
 
-	/** 
-	 * Add a unique variable by variable name.
-	 * Current context must be a found context than can be added.
-	 */
-	addUniqueVariable(variableName: string, index: number) {
-		this.variableNames.push(variableName)
-		this.variableInterpolateIndex = index
-	}
-
 	/** Before each context will exit. */
 	beforeExit() {
 		this.endCapture()
@@ -261,7 +250,6 @@ export class ContextCapturer {
 	 * Previous step may move indices forward or backward.
 	 */
 	private postProcessCaptured() {
-		this.interpolateVariables()
 		this.interpolateCaptured()
 	}
 	
@@ -274,15 +262,6 @@ export class ContextCapturer {
 		}
 	}
 
-	/** Add reference variables as declaration statements. */
-	private interpolateVariables() {
-		if (this.variableNames.length === 0) {
-			return
-		}
-
-		Modifier.addVariables(this.variableInterpolateIndex, this.variableNames)
-		this.variableNames = []
-	}
 
 	/** Add `captured` as interpolation items. */
 	private interpolateCaptured() {
@@ -349,14 +328,14 @@ export class ContextCapturer {
 
 		for (let index of indices) {
 			let node = Visiting.getNode(index)
-			let hashed = Scopes.hashIndex(index)
+			let hashed = Scoping.hashIndex(index)
 
 			// `a[i]`, and a is array, ignore hash of `i`.
 			if (ts.isElementAccessExpression(node)
 				&& ts.isIdentifier(node.argumentExpression)
 				&& Helper.types.isArrayType(Helper.types.getType(node.expression))
 			) {
-				hashed = Scopes.hashNode(node.expression)
+				hashed = Scoping.hashNode(node.expression)
 			}
 
 			// Leave contexts contain any referenced variable.
@@ -384,7 +363,7 @@ export class ContextCapturer {
 					continue
 				}
 
-				let hashName = Scopes.hashIndex(index).name
+				let hashName = Scoping.hashIndex(index).name
 				if (ownHashes.has(hashName)) {
 					removeFromList(item.indices, index)
 				}

@@ -69,7 +69,7 @@ export namespace ContextTree {
 	}
 
 	/** Check Context type of a node. */
-	export function checkContextType(node: TS.Node): number {
+	export function checkContextType(node: TS.Node): ContextTypeMask {
 		let parent = node.parent
 		let type = 0
 
@@ -267,71 +267,13 @@ export namespace ContextTree {
 	}
 	
 
-	/** Find an ancestral context and position, which can insert variable before it. */
-	export function findClosestPositionToAddVariable(index: number, from: Context): ContextTargetPosition {
-		let context = from
-		let variableDeclListIndex = Visiting.findOutwardNodeMatch(index, from.visitingIndex, ts.isVariableDeclaration)
-	
-		// Look upward for a variable declaration.
-		if (variableDeclListIndex !== undefined) {
-			return {
-				context,
-				index: variableDeclListIndex,
-			}
-		}
-
-		let node = Visiting.getNode(index)
-
-		while (true) {
-
-			// Will not extend from `if()...` to `if(){...}`.
-			if (Helper.pack.canPutStatements(node)) {
-				break
-			}
-
-			if (node === context.node) {
-				context = context.parent!
-			}
-
-			node = node.parent
-		}
-		
-		// Where to insert before.
-		index = Visiting.getIndex(node)
-		let toIndex: number
-
-		// For `case`, insert after expression.
-		if (ts.isCaseClause(node)) {
-			toIndex = Visiting.getChildIndex(index, 1)!
-		}
-		
-		// Insert before the first not import statements.
-		else if (ts.isSourceFile(node)) {
-			let beforeNode = node.statements.findLast(n => !ts.isImportDeclaration(n))
-			if (beforeNode) {
-				toIndex = Visiting.getIndex(beforeNode)
-			}
-			else {
-				toIndex = Visiting.getFirstChildIndex(index)!
-			}
-		}
-		else {
-			toIndex = Visiting.getFirstChildIndex(index)!
-		}
-
-		return {
-			context,
-			index: toIndex,
-		}
-	}
-
 	/** 
 	 * Find an ancestral index and context, which can move statements to before it.
 	 * Must before current position, and must not cross any conditional or iteration context.
 	 */
 	export function findClosestPositionToAddStatement(index: number, from: Context): ContextTargetPosition {
 		let context = from
-		let parameterIndex = Visiting.findOutwardNodeMatch(index, from.visitingIndex, ts.isParameter)
+		let parameterIndex = Visiting.findOutwardMatch(index, from.visitingIndex, ts.isParameter)
 
 		// Parameter initializer, no place to insert statements, returns position itself.
 		if (parameterIndex !== undefined) {

@@ -15,14 +15,12 @@ export class EventSlotParser extends SlotParserBase {
 	/** Indicates whether attach to target component or element. */
 	private targetType: 'component' | 'element' = 'element'
 
-	private beStaticHandler: boolean = false
 	private beSimulatedEvents: boolean = false
 
 	init() {
-		this.beStaticHandler = !this.isValueMutable()
 		this.beSimulatedEvents = this.testSimulatedEvents()
 
-		if (!this.beStaticHandler) {
+		if (this.isValueMutable()) {
 			this.latestVariableName = this.tree.getUniqueLatestName()
 		}
 
@@ -57,7 +55,7 @@ export class EventSlotParser extends SlotParserBase {
 				com = Imports.getImportByName(tagName)
 			}
 			else {
-				com = this.getOutputValueNode()
+				com = this.outputValueNode()
 			}
 
 			if (!com) {
@@ -111,7 +109,7 @@ export class EventSlotParser extends SlotParserBase {
 		let comVariableName = this.tree.getRefedComponentName(this.node)
 
 		// $com_0.on('comEventName', eventHandler, $context)
-		if (this.beStaticHandler) {
+		if (!this.isValueMutable() || this.canTurnStatic()) {
 			return factory.createCallExpression(
 				factory.createPropertyAccessExpression(
 					factory.createIdentifier(comVariableName),
@@ -120,7 +118,7 @@ export class EventSlotParser extends SlotParserBase {
 				undefined,
 				[
 					factory.createStringLiteral(this.name),
-					this.getSlotNode(),
+					this.outputValueNode(),
 					factory.createIdentifier(VariableNames.context)
 				]
 			)
@@ -175,7 +173,7 @@ export class EventSlotParser extends SlotParserBase {
 		let nodeName = this.getRefedNodeName()
 
 		// DOMEvents.on($node_0, 'eventName', eventHandler, $context)
-		if (this.beStaticHandler) {
+		if (!this.isValueMutable()) {
 			return factory.createCallExpression(
 				factory.createPropertyAccessExpression(
 					factory.createIdentifier('SimulatedEvents'),
@@ -185,7 +183,7 @@ export class EventSlotParser extends SlotParserBase {
 				[
 					factory.createIdentifier(nodeName),
 					factory.createStringLiteral(this.name),
-					this.getSlotNode(),
+					this.outputValueNode(),
 					factory.createIdentifier(VariableNames.context)
 				]
 			)
@@ -246,7 +244,7 @@ export class EventSlotParser extends SlotParserBase {
 		)
 
 		// DOMModifiableEvents.on($node_0, 'eventName', modifiers, eventHandler, $context)
-		if (this.beStaticHandler) {
+		if (!this.isValueMutable()) {
 			return factory.createCallExpression(
 				factory.createPropertyAccessExpression(
 					factory.createIdentifier('DOMModifiableEvents'),
@@ -257,7 +255,7 @@ export class EventSlotParser extends SlotParserBase {
 					factory.createIdentifier(nodeName),
 					factory.createStringLiteral(this.name),
 					modifiers,
-					this.getSlotNode(),
+					this.outputValueNode(),
 					factory.createIdentifier(VariableNames.context)
 				]
 			)
@@ -312,7 +310,7 @@ export class EventSlotParser extends SlotParserBase {
 		let nodeName = this.getRefedNodeName()
 
 		// $node_0.addEventListener('comEventName', eventHandler.bind($context))
-		if (this.beStaticHandler) {
+		if (!this.isValueMutable()) {
 			return factory.createCallExpression(
 				factory.createPropertyAccessExpression(
 					factory.createIdentifier(nodeName),
@@ -323,7 +321,7 @@ export class EventSlotParser extends SlotParserBase {
 					factory.createStringLiteral(this.name),
 					factory.createCallExpression(
 						factory.createPropertyAccessExpression(
-							this.getOutputValueNode(),
+							this.outputValueNode(),
 						  	factory.createIdentifier('bind')
 						),
 						undefined,
@@ -377,14 +375,14 @@ export class EventSlotParser extends SlotParserBase {
 	}
 
 	outputUpdate() {
-		if (this.beStaticHandler) {
+		if (!this.isValueMutable()) {
 			return []
 		}
 
 		return factory.createBinaryExpression(
 			factory.createIdentifier(this.latestVariableName!),
 			factory.createToken(ts.SyntaxKind.EqualsToken),
-			this.getOutputValueNode()
+			this.outputValueNode()
 		)
 	}
 }

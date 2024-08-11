@@ -88,7 +88,7 @@ export class IfFlowControl extends FlowControlBase {
 
 		for (let i = hasElse ? valueIndices.length - 2 : valueIndices.length - 1; i >= 0; i--) {
 			let valueIndex = valueIndices[i]!
-			let conditionNode = this.slot.getOutputValueNodeAtIndex(valueIndex)
+			let conditionNode = this.template.values.outputValueNodeAt(valueIndex)
 
 			let thenNode = factory.createBlock(
 				[factory.createReturnStatement(factory.createNumericLiteral(i))],

@@ -37,7 +37,7 @@ export class PropertySlotParser extends SlotParserBase {
 				com = Imports.getImportByName(tagName)
 			}
 			else {
-				com = this.getSlotNode()
+				com = this.getRawNode()
 			}
 
 			if (!com) {
@@ -76,7 +76,7 @@ export class PropertySlotParser extends SlotParserBase {
 		}
 
 		// $values[0]
-		let value = this.getOutputValueNode()
+		let value = this.outputValueNode()
 
 		// $latest_0 === $values[0] && target[propertyName] = $latest_0 = $values[0]
 		if (this.latestVariableName) {
