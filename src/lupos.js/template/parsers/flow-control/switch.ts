@@ -10,15 +10,19 @@ export class SwitchFlowControl extends FlowControlBase {
 	private blockVariableName: string = ''
 
 	private cacheable: boolean = false
-
-	private switchValueIndex: number | null = null
+	private switchValueIndex: number = -1
 	private valueIndices: (number | null)[] = []
 	private makerNames: (string | null)[] = []
 
 	init() {
 		this.blockVariableName = this.tree.getUniqueBlockName()
 		this.cacheable = this.hasAttrValue(this.node, 'cache')
-		this.switchValueIndex = this.getAttrValueIndex(this.node)
+
+		let switchValueIndex = this.getAttrValueIndex(this.node)
+		if (switchValueIndex === null) {
+			throw new Error('<lupos:switch ${...}> must accept a parameter as condition!')
+		}
+		this.switchValueIndex = switchValueIndex
 
 		let childNodes = this.node.children
 		let valueIndices: (number | null)[] = []
@@ -26,6 +30,18 @@ export class SwitchFlowControl extends FlowControlBase {
 
 		for (let node of childNodes) {
 			let valueIndex = this.getAttrValueIndex(this.node)
+			if (valueIndex === null && node.tagName === 'lupos:case') {
+				throw new Error('<lupos:case ${...}> must accept a parameter as condition!')
+			}
+
+			if (valueIndex !== null && node.tagName === 'lupos:default') {
+				throw new Error('<lupos:default> should not accept any parameter!')
+			}
+
+			if (valueIndex === null && valueIndices[valueIndices.length - 1] === null) {
+				throw new Error('<lupos:default> is allowed only one to exist on the tail!')
+			}
+
 			valueIndices.push(valueIndex)
 	
 			if (node.children.length > 0) {
@@ -63,7 +79,7 @@ export class SwitchFlowControl extends FlowControlBase {
 
 		let indexFn = this.outputSwitchIndexFn(this.switchValueIndex, this.valueIndices)
 		let makers = this.outputMakerNodes(this.makerNames)
-		let templateSlot = this.slot.makeTemplateSlot(null)
+		let templateSlot = this.slot.makeTemplateSlotNode(null)
 
 		return factory.createBinaryExpression(
 			factory.createIdentifier(this.blockVariableName),

@@ -48,7 +48,7 @@ export class ContentSlotParser extends SlotParserBase {
 	}
 
 	outputInit() {
-		let templateSLot = this.makeTemplateSlot(this.slotContentType)
+		let templateSLot = this.makeTemplateSlotNode(this.slotContentType)
 
 		return factory.createBinaryExpression(
 			factory.createIdentifier(this.slotVariableName),

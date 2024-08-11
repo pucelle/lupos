@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {HTMLTreeParser} from '../html-tree'
+import {TreeParser} from '../tree'
 import {SlotParserBase} from './base'
 import {factory, Modifier, ts} from '../../../../base'
 import {VariableNames} from '../variable-names'
@@ -8,7 +8,7 @@ import {VariableNames} from '../variable-names'
 export class SlotTagSlotParser extends SlotParserBase {
 
 	/** To parse content of `<slot>...</slot>` */
-	private defaultContentParser: HTMLTreeParser | null = null
+	private defaultContentParser: TreeParser | null = null
 
 	/** $slot_0 */
 	private slotVariableName: string = ''

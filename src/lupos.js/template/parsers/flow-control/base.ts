@@ -1,6 +1,6 @@
 import type TS from 'typescript'
 import {HTMLNode, HTMLNodeType} from '../../html-syntax'
-import {HTMLTreeParser} from '../html-tree'
+import {TreeParser} from '../tree'
 import {FlowControlSlotParser} from '../slots'
 import {factory, TemplateSlotPlaceholder} from '../../../../base'
 import {TemplateParser} from '../template'
@@ -10,7 +10,7 @@ export abstract class FlowControlBase {
 
 	readonly slot: FlowControlSlotParser
 	readonly node: HTMLNode
-	readonly tree: HTMLTreeParser
+	readonly tree: TreeParser
 	readonly template: TemplateParser
 
 	constructor(slot: FlowControlSlotParser) {
@@ -84,7 +84,7 @@ export abstract class FlowControlBase {
 	}
 
 	/** Initialize and prepare. */
-	protected init() {}
+	init() {}
 
 	/** Output initialize codes. */
 	outputInit(): TS.Statement | TS.Expression | (TS.Statement| TS.Expression)[] {

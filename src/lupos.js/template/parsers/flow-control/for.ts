@@ -9,20 +9,28 @@ export class ForFlowControl extends FlowControlBase {
 	/** $block_0 */
 	private blockVariableName: string = ''
 
-	private ofValueIndex: number | null = null
-	private fnValueIndex: number | null = null
+	private ofValueIndex: number = -1
+	private fnValueIndex: number = -1
 
 	init() {
 		this.blockVariableName = this.tree.getUniqueBlockName()
-		this.ofValueIndex = this.getAttrValueIndex(this.node)
-		this.fnValueIndex = this.getUniqueChildValueIndex(this.node)
+
+		let ofValueIndex = this.getAttrValueIndex(this.node)
+		let fnValueIndex = this.getUniqueChildValueIndex(this.node)
+
+		if (ofValueIndex === null) {
+			throw new Error('<lupos:for ${...}> must accept a parameter as loop data!')
+		}
+
+		if (fnValueIndex === null) {
+			throw new Error('<lupos:for>${...}</> must accept a parameter as child item renderer!')
+		}
+
+		this.ofValueIndex = ofValueIndex
+		this.fnValueIndex = fnValueIndex
 	}
 
 	outputInit() {
-		if (this.ofValueIndex === null || this.fnValueIndex === null) {
-			return []
-		}
-
 		Modifier.addImport('ForBlock', '@pucelle/lupos.js')
 
 		// $block_0 = new ForBlock(
@@ -32,9 +40,9 @@ export class ForFlowControl extends FlowControlBase {
 		// )
 
 		// Force render fn to be static.
-		// So this render fn cant be like `a ? this.render1` : `this.render2`.
+		// So this render fn can't be like `a ? this.render1` : `this.render2`.
 		let renderFnNode = this.template.values.outputValueNodeAt(this.fnValueIndex, true) as TS.FunctionExpression
-		let templateSlot = this.slot.makeTemplateSlot(null)
+		let templateSlot = this.slot.makeTemplateSlotNode(null)
 
 		return factory.createBinaryExpression(
 			factory.createIdentifier(this.blockVariableName),
@@ -52,8 +60,9 @@ export class ForFlowControl extends FlowControlBase {
 	}
 
 	outputUpdate() {
+		let ofNode = this.template.values.outputValueNodeAt(this.ofValueIndex)
 
-		// $block_0.update($values)
+		// $block_0.update($values[0])
 		return factory.createCallExpression(
 			factory.createPropertyAccessExpression(
 				factory.createIdentifier(this.blockVariableName),
@@ -61,7 +70,7 @@ export class ForFlowControl extends FlowControlBase {
 			),
 			undefined,
 			[
-				factory.createIdentifier(VariableNames.values)
+				ofNode,
 			]
 		)
 	}

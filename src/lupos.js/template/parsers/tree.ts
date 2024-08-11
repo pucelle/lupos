@@ -41,12 +41,14 @@ enum SlotType {
 }
 
 
-/** Parse a html tree of a template. */
-export class HTMLTreeParser {
+/** 
+ * One template may be separated to several trees,
+ * This parser parses one tree. */
+export class TreeParser {
 
 	readonly template: TemplateParser
 	readonly tree: HTMLTree
-	readonly parent: HTMLTreeParser | null
+	readonly parent: TreeParser | null
 	readonly fromNode: HTMLNode | null
 	readonly index: number
 	readonly references: HTMLNodeReferences
@@ -58,7 +60,7 @@ export class HTMLTreeParser {
 	private variableNames: string[] = []
 	private referencedComponentMap: Map<HTMLNode, string> = new Map()
 
-	constructor(template: TemplateParser, tree: HTMLTree, parent: HTMLTreeParser | null, fromNode: HTMLNode | null) {
+	constructor(template: TemplateParser, tree: HTMLTree, parent: TreeParser | null, fromNode: HTMLNode | null) {
 		this.template = template
 		this.tree = tree
 		this.parent = parent
@@ -146,7 +148,7 @@ export class HTMLTreeParser {
 		node: HTMLNode
 	) {
 		if (strings && valueIndices) {
-			this.template.bundleValueIndices(strings, valueIndices)
+			this.template.values.bundleValueIndices(strings, valueIndices)
 		}
 
 		let slot: SlotParserBase
@@ -286,7 +288,7 @@ export class HTMLTreeParser {
 		// `>{textValue}<` or
 		// `>${html`...`}<`
 		let joinAsAWholeText = slotIndices.every(index => {
-			return Helper.types.isValueType(Helper.types.getType(this.template.rawValueNodes[index]))
+			return Helper.types.isValueType(Helper.types.getType(this.template.values.getRawNode(index)))
 		})
 
 		// Text `...${...}...`
@@ -319,7 +321,7 @@ export class HTMLTreeParser {
 	}
 
 	/** Separate children of a node to an independent tree. */
-	separateChildrenAsSubTree(node: HTMLNode): HTMLTreeParser {
+	separateChildrenAsSubTree(node: HTMLNode): TreeParser {
 		let tree = node.separateChildren()
 		return this.template.addTreeParser(tree, this, node)
 	}
@@ -380,6 +382,10 @@ export class HTMLTreeParser {
 	/** Returns whether component of a node has been referenced. */
 	isRefedAsComponent(node: HTMLNode): boolean {
 		return this.referencedComponentMap.has(node)
+	}
+
+	output() {
+		
 	}
 }
 

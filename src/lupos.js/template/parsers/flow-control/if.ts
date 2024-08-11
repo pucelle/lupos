@@ -24,6 +24,19 @@ export class IfFlowControl extends FlowControlBase {
 
 		for (let node of allNodes) {
 			let valueIndex = this.getAttrValueIndex(node)
+			
+			if (valueIndex === null && node.tagName !== 'lupos:else') {
+				throw new Error('<' + node.tagName + ' ${...}> must accept a parameter as condition!')
+			}
+
+			if (valueIndex !== null && node.tagName === 'lupos:else') {
+				throw new Error('<' + node.tagName + '> should not accept any parameter!')
+			}
+
+			if (valueIndex === null && valueIndices[valueIndices.length - 1] === null) {
+				throw new Error('<lupos:else> is allowed only one to exist on the tail!')
+			}
+
 			valueIndices.push(valueIndex)
 	
 			if (node.children.length > 0) {
@@ -33,10 +46,6 @@ export class IfFlowControl extends FlowControlBase {
 			}
 			else {
 				makerNames.push(null)
-			}
-
-			if (node.tagName === 'lupos:else' || valueIndex === null) {
-				break
 			}
 		}
 
@@ -57,7 +66,7 @@ export class IfFlowControl extends FlowControlBase {
 
 		let indexFn = this.outputIfIndexFn(this.valueIndices)
 		let makers = this.outputMakerNodes(this.makerNames)
-		let templateSlot = this.slot.makeTemplateSlot(null)
+		let templateSlot = this.slot.makeTemplateSlotNode(null)
 
 		return factory.createBinaryExpression(
 			factory.createIdentifier(this.blockVariableName),

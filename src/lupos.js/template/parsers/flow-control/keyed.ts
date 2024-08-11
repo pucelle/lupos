@@ -10,12 +10,18 @@ export class KeyedFlowControl extends FlowControlBase {
 
 	private cacheable: boolean = false
 	private makerName: string | null = null
-	private valueIndex: number | null = null
+	private valueIndex: number = 1
 
 	init() {
 		this.blockVariableName = this.tree.getUniqueBlockName()
 		this.cacheable = this.hasAttrValue(this.node, 'cache')
-		this.valueIndex = this.getAttrValueIndex(this.node)
+
+		let valueIndex = this.getAttrValueIndex(this.node)
+		if (valueIndex === null) {
+			throw new Error('<lupos:keyed ${...}> must accept a parameter as key!')
+		}
+
+		this.valueIndex = valueIndex
 
 		if (this.node.children.length > 0) {
 			let tree = this.tree.separateChildrenAsSubTree(this.node)
@@ -34,7 +40,7 @@ export class KeyedFlowControl extends FlowControlBase {
 		// )
 
 		let maker = this.outputMakerNode(this.makerName)
-		let templateSlot = this.slot.makeTemplateSlot(null)
+		let templateSlot = this.slot.makeTemplateSlotNode(null)
 
 		return factory.createBinaryExpression(
 			factory.createIdentifier(this.blockVariableName),
@@ -52,9 +58,7 @@ export class KeyedFlowControl extends FlowControlBase {
 	}
 
 	outputUpdate() {
-		let keyedNode = this.valueIndex === null
-			? factory.createNull()
-			: this.template.values.outputValueNodeAt(this.valueIndex)
+		let keyedNode = this.template.values.outputValueNodeAt(this.valueIndex)
 
 		// $block_0.update(newKey, $values)
 		return factory.createCallExpression(

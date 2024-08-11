@@ -19,7 +19,6 @@ export class DynamicComponentSlotParser extends SlotParserBase {
 		let nodeName = this.getRefedNodeName()
 		let comName = this.getRefedComponentName()
 
-
 		// $block_0 = new DynamicComponentBlock(
 		//   function(com){
 		//     $node_0 = com.el;
@@ -62,8 +61,8 @@ export class DynamicComponentSlotParser extends SlotParserBase {
 			)
 		)
 
-		let templateSlot = this.makeTemplateSlot(null)
-		let contentRange = this.makeSlotRangeExpression()
+		let templateSlot = this.makeTemplateSlotNode(null)
+		let contentRange = this.makeSlotRangeNode()
 
 		return factory.createBinaryExpression(
 			factory.createIdentifier(this.blockVariableName),

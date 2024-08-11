@@ -4,6 +4,7 @@ export namespace VariableNames {
 
 	export const context = '$context'
 	export const values = '$values'
+	export const latestValues = '$latestValues'
 	export const maker = '$maker'
 	export const node = '$node'
 	export const latest = '$latest'

@@ -15,6 +15,7 @@ export class EventSlotParser extends SlotParserBase {
 	/** Indicates whether attach to target component or element. */
 	private targetType: 'component' | 'element' = 'element'
 
+	/** Whether be simulated events. */
 	private beSimulatedEvents: boolean = false
 
 	init() {
@@ -109,7 +110,7 @@ export class EventSlotParser extends SlotParserBase {
 		let comVariableName = this.tree.getRefedComponentName(this.node)
 
 		// $com_0.on('comEventName', eventHandler, $context)
-		if (!this.isValueMutable() || this.canTurnStatic()) {
+		if (!this.isValueMutable() || this.isValueCanTurnStatic()) {
 			return factory.createCallExpression(
 				factory.createPropertyAccessExpression(
 					factory.createIdentifier(comVariableName),

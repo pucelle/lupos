@@ -1,6 +1,6 @@
 import type TS from 'typescript'
 import {HTMLNode, HTMLNodeType} from '../../html-syntax'
-import {HTMLTreeParser} from '../html-tree'
+import {TreeParser} from '../tree'
 import {factory, Modifier} from '../../../../base'
 import {VariableNames} from '../variable-names'
 import {TemplateParser} from '../template'
@@ -21,7 +21,7 @@ export abstract class SlotParserBase {
 	readonly node: HTMLNode
 
 	/** Tree parser current slot belonged to. */
-	readonly tree: HTMLTreeParser
+	readonly tree: TreeParser
 
 	/** Template parser current slot belonged to. */
 	readonly template: TemplateParser
@@ -37,7 +37,7 @@ export abstract class SlotParserBase {
 		string: string | null,
 		valueIndex: number | null,
 		node: HTMLNode,
-		tree: HTMLTreeParser
+		tree: TreeParser
 	) {
 		this.name = name
 		this.string = string
@@ -68,9 +68,9 @@ export abstract class SlotParserBase {
 	}
 
 	/** Returns whether current value node can turn from mutable to static. */
-	protected canTurnStatic(): boolean {
+	protected isValueCanTurnStatic(): boolean {
 		return this.valueIndex !== null
-			&& this.template.values.canTurnStatic(this.valueIndex)
+			&& this.template.values.isIndexCanTurnStatic(this.valueIndex)
 	}
 
 	/** Get raw node, can only use returned node to identify type, cant output. */
@@ -119,7 +119,7 @@ export abstract class SlotParserBase {
 	}
 
 	/** Make `new TemplateSlot(...)`. */
-	makeTemplateSlot(slotContentType: number | null): TS.Expression {
+	makeTemplateSlotNode(slotContentType: number | null): TS.Expression {
 		Modifier.addImport('TemplateSlot', '@pucelle/lupos.js')
 		Modifier.addImport('SlotPosition', '@pucelle/lupos.js')
 
@@ -129,7 +129,7 @@ export abstract class SlotParserBase {
 		let nodeName: string
 
 		// Use next node to locate.
-		if (nextNode && nextNode.type !== HTMLNodeType.Comment) {
+		if (nextNode && this.isPrecedingPositionStable(nextNode)) {
 			nodeName = this.tree.references.referenceAsName(nextNode)
 			this.node.remove()
 
@@ -186,8 +186,24 @@ export abstract class SlotParserBase {
 		)
 	}
 
+	/** 
+	 * Whether preceding position of a html node is stable.
+	 * Means will not remove, or insert other nodes before it.
+	 */
+	private isPrecedingPositionStable(node: HTMLNode): boolean {
+		if (node.type === HTMLNodeType.Comment) {
+			return false
+		}
+
+		if (node.type === HTMLNodeType.Tag && node.tagName!.startsWith('lupos:')) {
+			return false
+		}
+
+		return true
+	}
+
 	/** Make `new SlotRange(...)`. */
-	protected makeSlotRangeExpression(): TS.Expression {
+	protected makeSlotRangeNode(): TS.Expression {
 		if (this.node.children.length > 0) {
 			return factory.createNull()
 		}
@@ -197,8 +213,8 @@ export abstract class SlotParserBase {
 		let firstChild = this.node.firstChild!
 		let lastChild = this.node.lastChild!
 
-		// End outer position of TemplateSlot, may insert contents before it.
-		if (firstChild.type === HTMLNodeType.Comment) {
+		// If first child is not stable, insert a comment before it.
+		if (!this.isPrecedingPositionStable(firstChild)) {
 			let comment = new HTMLNode(HTMLNodeType.Comment, {})
 			firstChild.before(comment)
 			firstChild = comment

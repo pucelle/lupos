@@ -1,6 +1,6 @@
 import type TS from 'typescript'
 import {HTMLNode, HTMLTree} from '../html-syntax'
-import {HTMLTreeParser} from './html-tree'
+import {TreeParser} from './tree'
 import {factory, MutableMask, Scoping, ts} from '../../../base'
 import {VariableNames} from './variable-names'
 
@@ -34,7 +34,7 @@ export class TemplateParser {
 	readonly type: TemplateType
 	readonly values: TemplateValues
 
-	private readonly treeParsers: HTMLTreeParser[] = []
+	private readonly treeParsers: TreeParser[] = []
 
 	constructor(type: TemplateType, string: string, values: TS.Expression[]) {
 		this.type = type
@@ -45,8 +45,8 @@ export class TemplateParser {
 	}
 
 	/** Add a tree and parent. */
-	addTreeParser(tree: HTMLTree, parent: HTMLTreeParser | null, fromNode: HTMLNode | null): HTMLTreeParser {
-		let parser = new HTMLTreeParser(this, tree, parent, fromNode)
+	addTreeParser(tree: HTMLTree, parent: TreeParser | null, fromNode: HTMLNode | null): TreeParser {
+		let parser = new TreeParser(this, tree, parent, fromNode)
 		this.treeParsers.push(parser)
 
 		return parser
@@ -144,6 +144,7 @@ class TemplateValues {
 	private valueHash: Map<string, number> = new Map()
 	private outputNodes: TS.Expression[] = []
 	private indicesMutable: Map<number, MutableMask> = new Map()
+	private anyTransferredToTopmostScope: boolean = false
 
 	constructor(values: TS.Expression[]) {
 		this.rawNodes = values
@@ -164,7 +165,7 @@ class TemplateValues {
 	}
 
 	/** Returns whether the value at specified index can turn from mutable to static. */
-	canTurnStatic(index: number): boolean {
+	isIndexCanTurnStatic(index: number): boolean {
 		return (this.indicesMutable.get(index)! & MutableMask.CantTurn) === 0
 	}
 
@@ -177,19 +178,19 @@ class TemplateValues {
 	 * Use value node at index, either `$values[0]`, or static raw node.
 	 * Can only use it when outputting update.
 	 * If `forceStatic`, will treat it as static value node,
-	 * must check `canTurnStatic()` firstly and ensure it can.
+	 * must check `isIndexCanTurnStatic()` firstly and ensure it can.
 	 */
 	outputValueNodeAt(index: number, forceStatic: boolean = false): TS.Expression {
 		let rawValueNode = this.rawNodes[index]
 
 		// Output static raw node.
-		if (!this.isIndexMutable(index) || forceStatic) {
+		if (!this.isIndexMutable(index) || forceStatic && this.isIndexCanTurnStatic(index)) {
 			return Scoping.transferToTopmostScope(rawValueNode, this.transferNodeToTopmostScope)
 		}
 
 		// Output from value list.
 		else {
-			return this.outputValueNode(rawValueNode)
+			return this.outputValueNode(rawValueNode, false)
 		}
 	}
 
@@ -197,7 +198,7 @@ class TemplateValues {
 	 * Output a node, append it to output value node list,
 	 * and returns the output node.
 	 */
-	private outputValueNode(node: TS.Expression): TS.Expression {
+	private outputValueNode(node: TS.Expression, transferringToTopmostScope: boolean): TS.Expression {
 		let hash = Scoping.hashNode(node).name
 		let valueIndex: number
 
@@ -210,8 +211,12 @@ class TemplateValues {
 			this.valueHash.set(hash, valueIndex)
 		}
 
+		let valueName = transferringToTopmostScope
+			? VariableNames.latestValues
+			: VariableNames.values
+
 		return factory.createElementAccessExpression(
-			factory.createIdentifier(VariableNames.values),
+			factory.createIdentifier(valueName),
 			factory.createNumericLiteral(valueIndex)
 		)
 	}
@@ -225,7 +230,8 @@ class TemplateValues {
 
 		// Move variable name as an item of output value list.
 		if (ts.isIdentifier(node)) {
-			return this.outputValueNode(node)
+			this.anyTransferredToTopmostScope = true
+			return this.outputValueNode(node, true)
 		}
 
 		// Replace `this` to `$context`.

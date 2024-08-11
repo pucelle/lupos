@@ -50,7 +50,7 @@ export class ComponentSlotParser extends SlotParserBase {
 		// )
 		if (hasRestSlotContentExisted) {
 			let comVariableName = this.getRefedComponentName()
-			let contentRange = this.makeSlotRangeExpression()
+			let contentRange = this.makeSlotRangeNode()
 
 			restSlotRangeInit = factory.createCallExpression(
 				factory.createPropertyAccessExpression(

@@ -1,2 +1,2 @@
-export * from './html-tree'
+export * from './tree'
 export * from './template'

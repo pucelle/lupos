@@ -1,5 +1,5 @@
 import {removeFromList} from '../../../utils'
-import {HTMLAttribute, HTMLToken} from './html-token-parser'
+import {HTMLAttribute, HTMLToken, HTMLTokenParser} from './html-token-parser'
 import {HTMLTree} from './html-tree'
 
 
@@ -11,8 +11,8 @@ export enum HTMLNodeType {
 
 export class HTMLNode {
 
-	readonly type: HTMLNodeType
-	readonly tagName?: string
+	type: HTMLNodeType
+	tagName?: string
 	text?: string
 	attrs?: HTMLAttribute[]
 
@@ -140,5 +140,40 @@ export class HTMLNode {
 		}
 
 		return node
+	}
+
+	toReadableString(): string {
+		if (this.type === HTMLNodeType.Tag) {
+			return `<${this.tagName}>
+				${this.children.map(child => child.toReadableString()).join('')}
+			</${this.tagName}>
+			`
+		}
+		else if (this.type === HTMLNodeType.Text) {
+			return this.text!
+		}
+		else {
+			return `<!--${this.text}-->\n`
+		}
+	}
+
+	toTemplateString(): string {
+		if (this.type === HTMLNodeType.Tag) {
+			if (this.tagName!.startsWith('lupos:')) {
+				return `<!---->`
+			}
+
+			if (HTMLTokenParser.SelfClosingTags.includes(this.tagName!)) {
+				return `<${this.tagName} />`
+			}
+
+			return `<${this.tagName}>${this.children.map(child => child.toTemplateString()).join('')}</${this.tagName}>`
+		}
+		else if (this.type === HTMLNodeType.Text) {
+			return this.text!
+		}
+		else {
+			return `<!---->`
+		} 
 	}
 }

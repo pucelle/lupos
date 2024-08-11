@@ -29,7 +29,7 @@ export namespace HTMLTokenParser {
 	 * Tags that self closing.
 	 * Reference from https://developer.mozilla.org/en-US/docs/Glossary/Void_element
 	 */
-	const SelfClosingTags = [
+	export const SelfClosingTags = [
 		'area',
 		'base',
 		'br',

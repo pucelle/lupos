@@ -9,16 +9,20 @@ export class AwaitFlowControl extends FlowControlBase {
 	private blockVariableName: string = ''
 
 	private makerNames: (string | null)[] = []
-	private promiseIndex: number | null = null
+	private promiseIndex: number = -1
 
 	init() {
 		this.blockVariableName = this.tree.getUniqueBlockName()
 
+		let promiseIndex = this.getAttrValueIndex(this.node)
+		if (promiseIndex === null) {
+			throw new Error('<lupos:await ${...}> must accept a parameter as promise to await!')
+		}
+
 		let nextNodes = this.eatNext('lupos:then', 'lupos:catch')
 		let allNodes = [this.node, ...nextNodes]
 		let makerNames: (string | null)[] = []
-		let promiseIndex = this.getAttrValueIndex(this.node)
-
+	
 		for (let node of allNodes) {
 			if (node.children.length > 0) {
 				let tree = this.tree.separateChildrenAsSubTree(node)
@@ -30,15 +34,11 @@ export class AwaitFlowControl extends FlowControlBase {
 			}
 		}
 
-		this.makerNames = makerNames
 		this.promiseIndex = promiseIndex
+		this.makerNames = makerNames
 	}
 
 	outputInit() {
-		if (this.promiseIndex === null) {
-			return []
-		}
-
 		Modifier.addImport('AwaitBlock', '@pucelle/lupos.js')
 
 		// $block_0 = new AwaitBlock(
@@ -48,7 +48,7 @@ export class AwaitFlowControl extends FlowControlBase {
 		// )
 
 		let makers = this.outputMakerNodes(this.makerNames)
-		let templateSlot = this.slot.makeTemplateSlot(null)
+		let templateSlot = this.slot.makeTemplateSlotNode(null)
 
 		return factory.createBinaryExpression(
 			factory.createIdentifier(this.blockVariableName),
@@ -66,10 +66,6 @@ export class AwaitFlowControl extends FlowControlBase {
 	}
 
 	outputUpdate() {
-		if (this.promiseIndex === null) {
-			return []
-		}
-
 		// This promise may be static, ignore it.
 		let promiseNode = this.template.values.outputValueNodeAt(this.promiseIndex)
 
