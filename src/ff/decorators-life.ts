@@ -274,7 +274,7 @@ function compileSetContextDecorator(
 ): [TS.MethodDeclaration | TS.ConstructorDeclaration, TS.MethodDeclaration | undefined] {
 	let propName = Helper.getText(propDecl.name)
 	let superClass = Helper.cls.getSuper(propDecl.parent as TS.ClassDeclaration)!
-	let className = Helper.getText(Helper.symbol.getIdentifier(superClass)!)
+	let className = Helper.getText(Helper.getIdentifier(superClass)!)
 		
 	if (connect) {
 		let connectStatement = factory.createExpressionStatement(factory.createCallExpression(
@@ -336,7 +336,7 @@ function compileUseContextDecorator(
 ): [TS.MethodDeclaration | TS.ConstructorDeclaration, TS.MethodDeclaration | undefined] {
 	let propName = Helper.getText(propDecl.name)
 	let superClass = Helper.cls.getSuper(propDecl.parent as TS.ClassDeclaration)!
-	let className = Helper.getText(Helper.symbol.getIdentifier(superClass)!)
+	let className = Helper.getText(Helper.getIdentifier(superClass)!)
 	
 	if (connect) {
 		let connectStatement = factory.createExpressionStatement(factory.createBinaryExpression(

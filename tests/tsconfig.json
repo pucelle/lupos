@@ -19,5 +19,5 @@
 			{"transform": "../src/index.ts"},
 		]
 	},
-	"include": ["src/**/css.ts"],
+	"include": ["src/ff/*.ts"],
 }

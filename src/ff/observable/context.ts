@@ -92,7 +92,7 @@ export class Context {
 
 		// Test and add property access nodes.
 		else if (Helper.access.isAccess(node)) {
-
+	
 			// `map.set`, `set.set`
 			if (Helper.types.isMapOrSetWriting(node)) {
 				this.mayAddSetTracking(node, true)

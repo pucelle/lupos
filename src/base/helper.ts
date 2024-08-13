@@ -77,6 +77,16 @@ export namespace Helper {
 		return undefined
 	}
 
+	/** Whether be function, method, or get/set accessor. */
+	export function isFunctionLike(node: TS.Node): node is TS.FunctionLikeDeclaration {
+		return ts.isMethodDeclaration(node)
+			|| ts.isFunctionDeclaration(node)
+			|| ts.isFunctionExpression(node)
+			|| ts.isGetAccessorDeclaration(node)
+			|| ts.isSetAccessorDeclaration(node)
+			|| ts.isArrowFunction(node)
+	}
+
 
 
 	/** Decorator Part */

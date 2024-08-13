@@ -79,7 +79,7 @@ export namespace ContextTree {
 		}
 
 		// Function like
-		else if (ts.isFunctionDeclaration(node)) {
+		else if (Helper.isFunctionLike(node)) {
 			type |= ContextTypeMask.FunctionLike
 		}
 

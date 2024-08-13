@@ -62,7 +62,7 @@ export namespace Scoping {
 			current = new Scope(node, index, null)
 			scopeMap.set(index, current)
 		}
-		else if (ts.isFunctionDeclaration(node) || ts.isBlock(node)) {
+		else if (Helper.isFunctionLike(node) || ts.isBlock(node)) {
 			current = new Scope(node, index, stack[stack.length - 1])
 			scopeMap.set(index, current)
 		}
@@ -260,7 +260,7 @@ export namespace Scoping {
 		let mutable = 0
 
 		// Inside of a function
-		inFunction ||= ts.isFunctionDeclaration(node)
+		inFunction ||= Helper.isFunctionLike(node)
 
 		// Variable
 		if (Helper.variable.isVariableIdentifier(node)) {
@@ -344,7 +344,7 @@ export namespace Scoping {
 		}
 
 		// If enters non-arrow function declaration, cant replace this.
-		canReplaceThis &&= ts.isFunctionDeclaration(node) && !ts.isArrowFunction(node)
+		canReplaceThis &&= Helper.isFunctionLike(node) && !ts.isArrowFunction(node)
 
 		return ts.visitEachChild(node, (node: TS.Node) => {
 			return visitNodeTransferToTopmost(node, scope, canReplaceThis, replacer)
@@ -409,7 +409,7 @@ export class Scope {
 
 	/** Whether can add more statements inside. */
 	canAddStatements(): boolean {
-		return !ts.isFunctionDeclaration(this.node)
+		return !Helper.isFunctionLike(this.node)
 	}
 
 	/** Test whether current scope is equal or an ancestor of target scope. */

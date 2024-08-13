@@ -94,12 +94,7 @@ export class ContextVariables {
 		// Assume `this` is observed.
 		// `var a = this.a` -> observed.
 		// `var b = a.b` -> observed.
-		if (ts.isMethodDeclaration(node)
-			|| ts.isFunctionDeclaration(node)
-			|| ts.isFunctionExpression(node)
-			|| ts.isArrowFunction(node)
-			|| ts.isSetAccessorDeclaration(node)
-		) {
+		if (Helper.isFunctionLike(node)) {
 			let parameters = node.parameters
 
 			// If re-declare `this` parameter.
