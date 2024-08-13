@@ -10,23 +10,16 @@ interface DeepReferenceItem {
 	children: DeepReferenceItem[]
 }
 
-interface ReferenceOutputItem {
+export interface ReferenceOutputItem {
 
-	type: ReferenceOutputType
+	/** Visiting node. */
+	node: HTMLNode
 
-	/** Node reference index. */
-	index: number
+	/** The node where visit from. */
+	visitFromNode: HTMLNode
 
-	/** The node reference index where visit from. */
-	visitFromIndex: number
-
-	/** The child index sequence. */
+	/** The child index sequence, can be `-1` when been the last child. */
 	visitSteps: number[]
-}
-
-enum ReferenceOutputType {
-	DirectlyReference,
-	IntermediateReference,
 }
 
 
@@ -43,12 +36,12 @@ export class HTMLNodeReferences {
 	 * Add a reference after known a node should be referenced.
 	 * Returns the reference index.
 	 */
-	referenceAsIndex(node: HTMLNode): number {
+	refAsIndex(node: HTMLNode): number {
 		if (this.references.has(node)) {
 			return this.references.get(node)!
 		}
 
-		let index = VariableNames.getDoublyUniqueIndex('directly', this)
+		let index = VariableNames.getUniqueIndex(this)
 		this.references.set(node, index)
 
 		return index
@@ -58,8 +51,17 @@ export class HTMLNodeReferences {
 	 * Reference node if not, and return it's reference variable name.
 	 * Like `$node_0`.
 	 */
-	referenceAsName(node: HTMLNode) {
-		let nodeIndex = this.referenceAsIndex(node)
+	refAsName(node: HTMLNode) {
+		let nodeIndex = this.refAsIndex(node)
+		return VariableNames.node + '_' + nodeIndex
+	}
+
+	/** 
+	 * Get already referenced name.
+	 * Like `$node_0`.
+	 */
+	getRefedName(node: HTMLNode) {
+		let nodeIndex = this.references.get(node)!
 		return VariableNames.node + '_' + nodeIndex
 	}
 
@@ -70,12 +72,12 @@ export class HTMLNodeReferences {
 
 	/** Output all reference sequence. */
 	output(): Iterable<ReferenceOutputItem> {
-		let tree = this.makeDeepReferenceTree()
-		if (!tree) {
+		let refTree = this.makeDeepReferenceTree()
+		if (!refTree) {
 			return []
 		}
 
-		return this.outputItem(tree, 0, [])
+		return this.outputItem(refTree, this.tree, [])
 	}
 
 	/** Made deep reference tree. */
@@ -88,7 +90,12 @@ export class HTMLNodeReferences {
 
 		for (let i = 0; i < node.children.length; i++) {
 			let child = node.children[i]
-			let item = this.makeDeepReferenceItem(child, i)
+
+			// Last sibling -> `-1`
+			let siblingIndex = i > 0 && i === node.children.length - 1 ? -1 : i
+
+			let item = this.makeDeepReferenceItem(child, siblingIndex)
+
 			if (item) {
 				children.push(item)
 			}
@@ -106,22 +113,20 @@ export class HTMLNodeReferences {
 	}
 
 	/** `steps` doesn't include current item sibling index. */
-	private *outputItem(item: DeepReferenceItem, fromIndex: number, parentalSteps: number[]): Iterable<ReferenceOutputItem> {
-		let steps = [...parentalSteps, item.siblingIndex]
+	private *outputItem(item: DeepReferenceItem, visitFromNode: HTMLNode, parentalSteps: number[]): Iterable<ReferenceOutputItem> {
+		let visitSteps = [...parentalSteps, item.siblingIndex]
 
 		// Output directly
 		if (this.hasReferenced(item.node)) {
-			let index = this.references.get(item.node)!
 
 			yield {
-				type: ReferenceOutputType.DirectlyReference,
-				index,
-				visitFromIndex: fromIndex,
-				visitSteps: steps,
+				node: item.node,
+				visitFromNode,
+				visitSteps,
 			}
 
 			for (let child of item.children) {
-				yield *this.outputItem(child, index, [])
+				yield *this.outputItem(child, item.node, [])
 			}
 		}
 
@@ -135,24 +140,23 @@ export class HTMLNodeReferences {
 		// f.d
 		// f.e
 		else if (item.children.length > 1) {
-			let index = VariableNames.getDoublyUniqueIndex('intermediate', this)
+			this.refAsIndex(item.node)
 
 			yield {
-				type: ReferenceOutputType.IntermediateReference,
-				index,
-				visitFromIndex: fromIndex,
-				visitSteps: steps,
+				node: item.node,
+				visitFromNode,
+				visitSteps,
 			}
 
 			for (let child of item.children) {
-				yield *this.outputItem(child, index, [])
+				yield *this.outputItem(child, item.node, [])
 			}
 		}
 
 		// Add step to current path
 		else {
 			for (let child of item.children) {
-				yield *this.outputItem(child, fromIndex, steps)
+				yield *this.outputItem(child, visitFromNode, visitSteps)
 			}
 		}
 	}

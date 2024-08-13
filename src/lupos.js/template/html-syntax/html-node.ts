@@ -142,9 +142,26 @@ export class HTMLNode {
 		return node
 	}
 
+	
+	/** 
+	 * Whether preceding position of current node is stable.
+	 * Means will not remove, or insert other nodes before it.
+	 */
+	isPrecedingPositionStable(): boolean {
+		if (this.type === HTMLNodeType.Comment) {
+			return false
+		}
+
+		if (this.type === HTMLNodeType.Tag && this.tagName!.startsWith('lupos:')) {
+			return false
+		}
+
+		return true
+	}
+
 	toReadableString(): string {
 		if (this.type === HTMLNodeType.Tag) {
-			return `<${this.tagName}>
+			return `<${this.tagName}${this.toStringOfAttrs()}>
 				${this.children.map(child => child.toReadableString()).join('')}
 			</${this.tagName}>
 			`
@@ -157,6 +174,30 @@ export class HTMLNode {
 		}
 	}
 
+	private toStringOfAttrs(): string {
+		let joined: string[] = []
+
+		for (let {name, value} of this.attrs!) {
+			if (/^[.:?@$]/.test(name)) {
+				continue
+			}
+
+			if (value === null) {
+				joined.push(name)
+			}
+			else {
+				if (value.includes('"')) {
+					joined.push(name + "='" + value.replace(/[\\']/g, '\\$&') + "'")
+				}
+				else {
+					joined.push(name + '="' + value.replace(/[\\]/g, '\\\\') + '"')
+				}
+			}
+		}
+
+		return joined.map(v => ' ' + v).join('')
+	}
+
 	toTemplateString(): string {
 		if (this.type === HTMLNodeType.Tag) {
 			if (this.tagName!.startsWith('lupos:')) {
@@ -164,10 +205,11 @@ export class HTMLNode {
 			}
 
 			if (HTMLTokenParser.SelfClosingTags.includes(this.tagName!)) {
-				return `<${this.tagName} />`
+				return `<${this.tagName}${this.toStringOfAttrs()} />`
 			}
 
-			return `<${this.tagName}>${this.children.map(child => child.toTemplateString()).join('')}</${this.tagName}>`
+			let contents = this.children.map(child => child.toTemplateString()).join('')
+			return `<${this.tagName}${this.toStringOfAttrs()}>${contents}</${this.tagName}>`
 		}
 		else if (this.type === HTMLNodeType.Text) {
 			return this.text!

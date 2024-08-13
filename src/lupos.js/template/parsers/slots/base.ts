@@ -21,7 +21,7 @@ export abstract class SlotParserBase {
 	readonly node: HTMLNode
 
 	/** Tree parser current slot belonged to. */
-	readonly tree: TreeParser
+	readonly treeParser: TreeParser
 
 	/** Template parser current slot belonged to. */
 	readonly template: TemplateParser
@@ -30,14 +30,14 @@ export abstract class SlotParserBase {
 	 * Value index in the whole template.
 	 * Is `null` if slot is a fixed slot defined like `???="..."`.
 	 */
-	private readonly valueIndex: number | null
+	readonly valueIndex: number | null
 
 	constructor(
 		name: string | null,
 		string: string | null,
 		valueIndex: number | null,
 		node: HTMLNode,
-		tree: TreeParser
+		treeParser: TreeParser
 	) {
 		this.name = name
 		this.string = string
@@ -50,8 +50,8 @@ export abstract class SlotParserBase {
 		}
 
 		this.node = node
-		this.tree = tree
-		this.template = tree.template
+		this.treeParser = treeParser
+		this.template = treeParser.template
 
 		this.init()
 	}
@@ -73,6 +73,18 @@ export abstract class SlotParserBase {
 			&& this.template.values.isIndexCanTurnStatic(this.valueIndex)
 	}
 
+	/** Returns whether current value has been outputted as mutable. */
+	isValueOutputAsMutable(): boolean {
+		return this.valueIndex !== null
+			&& this.template.values.isIndexOutputAsMutable(this.valueIndex)
+	}
+
+	/** Returns whether current value has been transferred to topmost scope. */
+	isValueTransferredToTopmost(): boolean {
+		return this.valueIndex !== null
+			&& this.template.values.isIndexTransferredToTopmost(this.valueIndex)
+	}
+
 	/** Get raw node, can only use returned node to identify type, cant output. */
 	protected getRawNode(): TS.Expression {
 		return this.template.values.getRawNode(this.valueIndex!)
@@ -80,7 +92,7 @@ export abstract class SlotParserBase {
 
 	/** Get node variable name. */
 	protected getRefedNodeName(): string {
-		return this.tree.references.referenceAsName(this.node)
+		return this.treeParser.references.refAsName(this.node)
 	}
 
 	/** 
@@ -88,7 +100,7 @@ export abstract class SlotParserBase {
 	 * Can only use it in `init`.
 	 */
 	protected refAsComponent() {
-		this.tree.refAsComponent(this.node)
+		this.treeParser.refAsComponent(this.node)
 	}
 
 	/**
@@ -97,12 +109,7 @@ export abstract class SlotParserBase {
 	 * Can only use it in `outputInit` or `outputUpdate`.
 	 */
 	protected getRefedComponentName(): string {
-		return this.tree.getRefedComponentName(this.node)
-	}
-
-	/** Returns whether component of a node has been referenced. */
-	protected isRefedAsComponent(): boolean {
-		return this.tree.isRefedAsComponent(this.node)
+		return this.treeParser.getRefedComponentName(this.node)
 	}
 
 	/** 
@@ -114,12 +121,12 @@ export abstract class SlotParserBase {
 			return factory.createStringLiteral(this.string!)
 		}
 		else {
-			return this.template.values.outputValueNodeAt(this.valueIndex)
+			return this.template.values.outputNodeAt(this.valueIndex)
 		}
 	}
 
 	/** Make `new TemplateSlot(...)`. */
-	makeTemplateSlotNode(slotContentType: number | null): TS.Expression {
+	outputTemplateSlotNode(slotContentType: number | null): TS.Expression {
 		Modifier.addImport('TemplateSlot', '@pucelle/lupos.js')
 		Modifier.addImport('SlotPosition', '@pucelle/lupos.js')
 
@@ -129,8 +136,8 @@ export abstract class SlotParserBase {
 		let nodeName: string
 
 		// Use next node to locate.
-		if (nextNode && this.isPrecedingPositionStable(nextNode)) {
-			nodeName = this.tree.references.referenceAsName(nextNode)
+		if (nextNode && nextNode.isPrecedingPositionStable()) {
+			nodeName = this.treeParser.references.refAsName(nextNode)
 			this.node.remove()
 
 			// SlotPositionType.Before
@@ -140,7 +147,7 @@ export abstract class SlotParserBase {
 		// Parent is stable enough.
 		// Would be ok although parent is a dynamic component.
 		else if (parent.tagName !== 'template') {
-			nodeName = this.tree.references.referenceAsName(parent)
+			nodeName = this.treeParser.references.refAsName(parent)
 			this.node.remove()
 
 			// SlotPositionType.AfterContent
@@ -186,22 +193,6 @@ export abstract class SlotParserBase {
 		)
 	}
 
-	/** 
-	 * Whether preceding position of a html node is stable.
-	 * Means will not remove, or insert other nodes before it.
-	 */
-	private isPrecedingPositionStable(node: HTMLNode): boolean {
-		if (node.type === HTMLNodeType.Comment) {
-			return false
-		}
-
-		if (node.type === HTMLNodeType.Tag && node.tagName!.startsWith('lupos:')) {
-			return false
-		}
-
-		return true
-	}
-
 	/** Make `new SlotRange(...)`. */
 	protected makeSlotRangeNode(): TS.Expression {
 		if (this.node.children.length > 0) {
@@ -214,14 +205,14 @@ export abstract class SlotParserBase {
 		let lastChild = this.node.lastChild!
 
 		// If first child is not stable, insert a comment before it.
-		if (!this.isPrecedingPositionStable(firstChild)) {
+		if (!firstChild.isPrecedingPositionStable()) {
 			let comment = new HTMLNode(HTMLNodeType.Comment, {})
 			firstChild.before(comment)
 			firstChild = comment
 		}
 
-		let firstChildName = this.tree.references.referenceAsName(firstChild)
-		let lastChildName = this.tree.references.referenceAsName(lastChild)
+		let firstChildName = this.treeParser.references.refAsName(firstChild)
+		let lastChildName = this.treeParser.references.refAsName(lastChild)
 
 		return factory.createNewExpression(
 			factory.createIdentifier('SlotRange'),

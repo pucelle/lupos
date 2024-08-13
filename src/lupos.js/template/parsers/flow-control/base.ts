@@ -10,13 +10,13 @@ export abstract class FlowControlBase {
 
 	readonly slot: FlowControlSlotParser
 	readonly node: HTMLNode
-	readonly tree: TreeParser
+	readonly treeParser: TreeParser
 	readonly template: TemplateParser
 
 	constructor(slot: FlowControlSlotParser) {
 		this.slot = slot
 		this.node = slot.node
-		this.tree = slot.tree
+		this.treeParser = slot.treeParser
 		this.template = slot.template
 	}
 
@@ -71,16 +71,16 @@ export abstract class FlowControlBase {
 	}
 
 	/** Make a maker array nodes by maker names. */
-	protected outputMakerNodes(makerNames: (string | null)[]): TS.ArrayLiteralExpression {
+	protected outputMakerNodes(templateNames: (string | null)[]): TS.ArrayLiteralExpression {
 		return factory.createArrayLiteralExpression(
-			makerNames.map(name => this.outputMakerNode(name)),
+			templateNames.map(name => this.outputMakerNode(name)),
 			false
 		)
 	}
 
 	/** Make a maker node by a maker name. */
-	protected outputMakerNode(makerName: string | null): TS.Identifier | TS.NullLiteral {
-		return makerName ? factory.createIdentifier(makerName) : factory.createNull()
+	protected outputMakerNode(templateName: string | null): TS.Identifier | TS.NullLiteral {
+		return templateName ? factory.createIdentifier(templateName) : factory.createNull()
 	}
 
 	/** Initialize and prepare. */

@@ -17,10 +17,10 @@ export class BindingSlotParser extends SlotParserBase {
 
 	init() {
 		if (this.isValueMutable()) {
-			this.latestVariableName = this.tree.getUniqueLatestName()
+			this.latestVariableName = this.treeParser.getUniqueLatestName()
 		}
 
-		this.bindingVariableName = this.tree.getUniqueBindingName()
+		this.bindingVariableName = this.treeParser.getUniqueBindingName()
 	}
 
 	outputInit() {
@@ -325,6 +325,6 @@ export class BindingSlotParser extends SlotParserBase {
 				factory.createToken(ts.SyntaxKind.EqualsToken),
 				factory.createIdentifier('el')
 			)
-			)
+		)
 	}
 }

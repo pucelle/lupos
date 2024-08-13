@@ -37,4 +37,9 @@ export class HTMLTree extends HTMLNode {
 	constructor() {
 		super(HTMLNodeType.Tag, {tagName: 'template'})
 	}
+
+	/** Get string of all contents. */
+	getContentString() {
+		return this.children.map(child => child.toTemplateString()).join('')
+	}
 }

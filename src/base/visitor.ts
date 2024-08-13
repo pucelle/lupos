@@ -4,6 +4,7 @@ import {Interpolator} from './interpolator'
 import {TransformerExtras} from 'ts-patch'
 import {setGlobal, setSourceFile, setTransformContext} from './global'
 import {Modifier} from './modifier'
+import {Scoping} from './scoping'
 
 
 /** 
@@ -63,12 +64,17 @@ export function transformer(program: TS.Program, extras: TransformerExtras) {
 
 			function visit(node: TS.Node): TS.Node {
 				Visiting.toNext(node)
+				Scoping.toNext(node)
 
 				let doMoreAfterVisitedChildren = applyVisitors(node, Visiting.current.index)
 
 				Visiting.toChild()
+				Scoping.toChild()
+
 				ts.visitEachChild(node, visit, ctx)
+				
 				Visiting.toParent()
+				Scoping.toParent()
 
 				doMoreAfterVisitedChildren()
 
@@ -79,6 +85,7 @@ export function transformer(program: TS.Program, extras: TransformerExtras) {
 			try {
 				ts.visitNode(sourceFile, visit)
 				Modifier.apply()
+				Scoping.apply()
 				return Interpolator.output(0) as TS.SourceFile
 			}
 			catch (err) {

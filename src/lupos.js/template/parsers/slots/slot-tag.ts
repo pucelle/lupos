@@ -17,11 +17,11 @@ export class SlotTagSlotParser extends SlotParserBase {
 
 		// Slot default content.
 		if (this.node.children.length > 0) {
-			this.defaultContentParser = this.tree.separateChildrenAsSubTree(this.node)
+			this.defaultContentParser = this.treeParser.separateChildrenAsSubTree(this.node)
 		}
 
 		// $slot_0
-		this.slotVariableName = this.tree.getUniqueSlotName()
+		this.slotVariableName = this.treeParser.getUniqueSlotName()
 	}
 
 	outputInit() {
@@ -120,7 +120,7 @@ export class SlotTagSlotParser extends SlotParserBase {
 					factory.createIdentifier('CompiledTemplateResult'),
 					undefined,
 					[
-						factory.createIdentifier(this.defaultContentParser.getMakerRefName()),
+						factory.createIdentifier(this.defaultContentParser.getTemplateRefName()),
 						factory.createIdentifier(VariableNames.values)
 					]
 				)

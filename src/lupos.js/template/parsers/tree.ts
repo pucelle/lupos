@@ -1,8 +1,8 @@
 import {Helper, TemplateSlotPlaceholder} from '../../../base'
-import {HTMLNode, HTMLNodeType, HTMLTree} from '../html-syntax'
-import {HTMLNodeReferences} from '../html-syntax/html-node-references'
-import {SlotParserBase, DynamicComponentSlotParser, FlowControlSlotParser, PropertySlotParser, BindingSlotParser, EventSlotParser, AttributeSlotParser, TextSlotParser, ContentSlotParser, ComponentSlotParser} from './slots'
+import {HTMLNode, HTMLNodeType, HTMLTree, HTMLNodeReferences} from '../html-syntax'
+import {SlotParserBase, DynamicComponentSlotParser, FlowControlSlotParser, PropertySlotParser, BindingSlotParser, EventSlotParser, AttributeSlotParser, TextSlotParser, ContentSlotParser, ComponentSlotParser, SlotTagSlotParser, TemplateAttributeSlotParser} from './slots'
 import {TemplateParser} from './template'
+import {TreeOutputHandler} from './tree-output'
 import {VariableNames} from './variable-names'
 
 
@@ -30,6 +30,9 @@ enum SlotType {
 	/** `<tag attr=...>` */
 	Attribute,
 
+	/** `<template attr="">` */
+	TemplateAttribute,
+
 	/** `<tag .property=...>` */
 	Property,
 
@@ -53,12 +56,13 @@ export class TreeParser {
 	readonly index: number
 	readonly references: HTMLNodeReferences
 
-	inSVG: boolean = false
-	wrappedBySVG: boolean = false
-
+	private wrappedBySVG: boolean = false
+	private inSVG: boolean = false
+	private outputHandler: TreeOutputHandler
 	private slots: SlotParserBase[] = []
 	private variableNames: string[] = []
-	private referencedComponentMap: Map<HTMLNode, string> = new Map()
+	private partNames: string[] = []
+	private refedComponentMap: Map<HTMLNode, string> = new Map()
 
 	constructor(template: TemplateParser, tree: HTMLTree, parent: TreeParser | null, fromNode: HTMLNode | null) {
 		this.template = template
@@ -69,6 +73,8 @@ export class TreeParser {
 		this.references = new HTMLNodeReferences(this.tree)
 
 		this.initSVGWrapping()
+		this.outputHandler = new TreeOutputHandler(this, this.wrappedBySVG)
+
 		this.parseSlots()
 	}
 
@@ -102,10 +108,10 @@ export class TreeParser {
 					if (tagName === 'slot') {
 						this.parseSlotTag(node)
 					}
-					else if (/^[A-Z]/.test(tagName)) {
+					else if (TemplateSlotPlaceholder.isNamedComponent(tagName)) {
 						this.parseComponentTag(node)
 					}
-					else if (TemplateSlotPlaceholder.isCompleteSlotIndex(tagName)) {
+					else if (TemplateSlotPlaceholder.isDynamicComponent(tagName)) {
 						this.parseDynamicTag(node)
 						break
 					}
@@ -121,21 +127,6 @@ export class TreeParser {
 					this.parseText(node)
 					break
 			}
-		}
-
-		let template = createTemplateFromHTML(codes)
-		let attributes: {name: string, value: string}[] | null = null
-
-		if (svgWrapped) {
-			let svg = template.content.firstElementChild!
-			template.content.append(...svg.childNodes)
-			svg.remove()
-		}
-
-		// We can define some classes or styles on the top element if renders `<template class="...">`.
-		if (firstTag && firstTag.tagName === 'template') {
-			template = template.content.firstElementChild as HTMLTemplateElement
-			attributes = [...template.attributes].map(({name, value}) => ({name, value}))
 		}
 	}
 
@@ -157,7 +148,7 @@ export class TreeParser {
 
 		switch (type) {
 			case SlotType.SlotTag:
-				slot = new PropertySlotParser(name, string, valueIndex, node, this)
+				slot = new SlotTagSlotParser(name, string, valueIndex, node, this)
 				break
 
 			case SlotType.Component:
@@ -186,6 +177,10 @@ export class TreeParser {
 
 			case SlotType.Attribute:
 				slot = new AttributeSlotParser(name, string, valueIndex, node, this)
+				break
+
+			case SlotType.TemplateAttribute:
+				slot = new TemplateAttributeSlotParser(name, string, valueIndex, node, this)
 				break
 
 			case SlotType.Text:
@@ -268,6 +263,9 @@ export class TreeParser {
 			else if (type === SlotType.Attribute) {
 				this.addSlot(SlotType.Attribute, name, strings, slotIndices, node)
 			}
+			else if (node.tagName === 'template') {
+				this.addSlot(SlotType.TemplateAttribute, name, strings, slotIndices, node)
+			}
 
 			node.removeAttr(attr)
 		}
@@ -326,28 +324,35 @@ export class TreeParser {
 		return this.template.addTreeParser(tree, this, node)
 	}
 
-	/** Return variable name to reference current maker, like `$maker_0`. */
-	getMakerRefName(): string {
-		return VariableNames.maker + '_' + this.index
+	/** Return variable name to reference current template maker, like `$template_0`. */
+	getTemplateRefName(): string {
+		return VariableNames.template + '_' + this.index
+	}
+
+	/** Return variable name to reference current template using html template maker, like `$html_0`. */
+	getHTMLRefName(): string {
+		return VariableNames.html + '_' + this.index
 	}
 
 	/** `$slot_0` */
 	getUniqueSlotName(): string {
 		let name = VariableNames.getUniqueName(VariableNames.slot, this)
 		this.variableNames.push(name)
-		return name
-	}
-
-	/** `$latest_0` */
-	getUniqueLatestName(): string {
-		let name = VariableNames.getUniqueName(VariableNames.latest, this)
-		this.variableNames.push(name)
+		this.partNames.push(name)
 		return name
 	}
 
 	/** `$binding_0` */
 	getUniqueBindingName(): string {
 		let name = VariableNames.getUniqueName(VariableNames.binding, this)
+		this.variableNames.push(name)
+		this.partNames.push(name)
+		return name
+	}
+
+	/** `$latest_0` */
+	getUniqueLatestName(): string {
+		let name = VariableNames.getUniqueName(VariableNames.latest, this)
 		this.variableNames.push(name)
 		return name
 	}
@@ -364,28 +369,26 @@ export class TreeParser {
 	 * Must call it in `init` method.
 	 */
 	refAsComponent(node: HTMLNode): string {
-		if (this.referencedComponentMap.has(node)) {
-			return this.referencedComponentMap.get(node)!
+		if (this.refedComponentMap.has(node)) {
+			return this.refedComponentMap.get(node)!
 		}
 
 		let comName = VariableNames.getUniqueName(VariableNames.com, this)
-		this.referencedComponentMap.set(node, comName)
+		this.refedComponentMap.set(node, comName)
+		this.variableNames.push(comName)
+		this.partNames.push(comName)
 
 		return comName
 	}
 
 	/** Get component name of a refed component by it's node. */
 	getRefedComponentName(node: HTMLNode): string {
-		return this.referencedComponentMap.get(node)!
+		return this.refedComponentMap.get(node)!
 	}
 
-	/** Returns whether component of a node has been referenced. */
-	isRefedAsComponent(node: HTMLNode): boolean {
-		return this.referencedComponentMap.has(node)
-	}
-
+	/** Output contents and interpolate. */
 	output() {
-		
+		this.outputHandler.output(this.slots, this.variableNames, this.partNames)
 	}
 }
 

@@ -82,4 +82,22 @@ export namespace TemplateSlotPlaceholder {
 		let indices = [...string.matchAll(/\$LUPOS_SLOT_INDEX_(\d+)\$/g)].map(m => Number(m[1]))
 		return indices.length > 0 ? indices : null
 	}
+
+
+	/** Whether tag name represents named component. */
+	export function isNamedComponent(tagName: string): boolean {
+		return /^[A-Z]/.test(tagName)
+	}
+
+
+	/** Whether tag name represents dynamic component. */
+	export function isDynamicComponent(tagName: string): boolean {
+		return isCompleteSlotIndex(tagName)
+	}
+
+
+	/** Whether tag name represents named component or dynamic component. */
+	export function isComponent(tagName: string): boolean {
+		return isNamedComponent(tagName) || isDynamicComponent(tagName)
+	}
 }

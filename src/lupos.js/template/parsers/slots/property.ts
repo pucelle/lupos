@@ -16,7 +16,7 @@ export class PropertySlotParser extends SlotParserBase {
 
 	init() {
 		if (this.isValueMutable()) {
-			this.latestVariableName = this.tree.getUniqueLatestName()
+			this.latestVariableName = this.treeParser.getUniqueLatestName()
 		}
 
 		this.targetType = this.checkTargetType()
@@ -28,8 +28,8 @@ export class PropertySlotParser extends SlotParserBase {
 
 	private checkTargetType(): 'component' | 'element' {
 		let tagName = this.node.tagName!
-		let isComponent = /^[A-Z]/.test(tagName)
-		let isDynamicComponent = TemplateSlotPlaceholder.isCompleteSlotIndex(tagName)
+		let isComponent = TemplateSlotPlaceholder.isNamedComponent(tagName)
+		let isDynamicComponent = TemplateSlotPlaceholder.isDynamicComponent(tagName)
 
 		if (isComponent || isDynamicComponent) {
 			let com: TS.Node | undefined

@@ -4,7 +4,6 @@ import {factory, sourceFile, ts} from './global'
 import {Helper} from './helper'
 import {InterpolationContentType, Interpolator} from './interpolator'
 import {Visiting} from './visiting'
-import {Scoping} from './scoping'
 
 
 /** 
@@ -19,10 +18,14 @@ export namespace Modifier {
 	/** The visiting indices the node at where will be moved. */
 	const movedIndices: Set<number> = new Set()
 
+	/** Declarations will be inserted to source file, after import statements. */
+	let topmostDeclarations: (TS.Expression | TS.Statement)[] = []
+
 
 	export function init() {
 		imports.clear()
 		movedIndices.clear()
+		topmostDeclarations = []
 	}
 
 
@@ -100,45 +103,18 @@ export namespace Modifier {
 		})
 	}
 
-	/** Add variables to target index as declaration statements or variable items. */
-	export function addVariables(toIndex: number, names: string[]) {
-		let rawNode = Visiting.getNode(toIndex)
-		let exps: TS.VariableDeclarationList | TS.VariableDeclaration[]
 
-		// `for (let i = 0; ...) ...`
-		if (ts.isVariableDeclaration(rawNode)) {
-			exps = names.map(name => 
-				factory.createVariableDeclaration(
-					factory.createIdentifier(name),
-					undefined,
-					undefined,
-					undefined
-				)
-			)
-		}
-		else {
-			exps = factory.createVariableDeclarationList(
-				names.map(name => 
-					factory.createVariableDeclaration(
-						factory.createIdentifier(name),
-						undefined,
-						undefined,
-						undefined
-					)
-				),
-				ts.NodeFlags.None
-			)
-		}
-
-		Interpolator.before(toIndex, InterpolationContentType.VariableDeclaration, () => exps)
+	/** Add some declarations to the head of source file, bug after import statements. */
+	export function addTopmostDeclarations(...decls: (TS.Expression | TS.Statement)[]) {
+		topmostDeclarations.push(...decls)
 	}
 
 
 	/** Apply imports to do interpolation. */
 	export function apply() {
+		let firstNonImportNode = sourceFile.statements.find(st => !ts.isImportDeclaration(st))!
+		let sourceFileIndex = Visiting.getIndex(firstNonImportNode)
 
-		// Ensure all variables outputted.
-		Scoping.applyVariablesAdding()
 
 		// A ts bug here: if insert some named import identifiers,
 		// and update the import statement,
@@ -173,10 +149,13 @@ export namespace Modifier {
 					undefined
 				)
 
-				let beforeNode = sourceFile.statements.find(st => !ts.isImportDeclaration(st))!
-				let toIndex = Visiting.getIndex(beforeNode)
-				Interpolator.before(toIndex, InterpolationContentType.Normal, () => importDecl!)
+				Interpolator.before(sourceFileIndex, InterpolationContentType.Normal, () => importDecl!)
 			}
+		}
+
+		// Insert declarations after import statements.
+		if (topmostDeclarations.length > 0) {
+			Interpolator.before(sourceFileIndex, InterpolationContentType.Normal, () => topmostDeclarations)
 		}
 	}
 }

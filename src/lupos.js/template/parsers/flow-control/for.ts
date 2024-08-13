@@ -13,7 +13,7 @@ export class ForFlowControl extends FlowControlBase {
 	private fnValueIndex: number = -1
 
 	init() {
-		this.blockVariableName = this.tree.getUniqueBlockName()
+		this.blockVariableName = this.treeParser.getUniqueBlockName()
 
 		let ofValueIndex = this.getAttrValueIndex(this.node)
 		let fnValueIndex = this.getUniqueChildValueIndex(this.node)
@@ -41,8 +41,8 @@ export class ForFlowControl extends FlowControlBase {
 
 		// Force render fn to be static.
 		// So this render fn can't be like `a ? this.render1` : `this.render2`.
-		let renderFnNode = this.template.values.outputValueNodeAt(this.fnValueIndex, true) as TS.FunctionExpression
-		let templateSlot = this.slot.makeTemplateSlotNode(null)
+		let renderFnNode = this.template.values.outputNodeAt(this.fnValueIndex, true) as TS.FunctionExpression
+		let templateSlot = this.slot.outputTemplateSlotNode(null)
 
 		return factory.createBinaryExpression(
 			factory.createIdentifier(this.blockVariableName),
@@ -60,7 +60,7 @@ export class ForFlowControl extends FlowControlBase {
 	}
 
 	outputUpdate() {
-		let ofNode = this.template.values.outputValueNodeAt(this.ofValueIndex)
+		let ofNode = this.template.values.outputNodeAt(this.ofValueIndex)
 
 		// $block_0.update($values[0])
 		return factory.createCallExpression(

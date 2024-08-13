@@ -12,10 +12,10 @@ export class SwitchFlowControl extends FlowControlBase {
 	private cacheable: boolean = false
 	private switchValueIndex: number = -1
 	private valueIndices: (number | null)[] = []
-	private makerNames: (string | null)[] = []
+	private templateNames: (string | null)[] = []
 
 	init() {
-		this.blockVariableName = this.tree.getUniqueBlockName()
+		this.blockVariableName = this.treeParser.getUniqueBlockName()
 		this.cacheable = this.hasAttrValue(this.node, 'cache')
 
 		let switchValueIndex = this.getAttrValueIndex(this.node)
@@ -26,7 +26,7 @@ export class SwitchFlowControl extends FlowControlBase {
 
 		let childNodes = this.node.children
 		let valueIndices: (number | null)[] = []
-		let makerNames: (string | null)[] = []
+		let templateNames: (string | null)[] = []
 
 		for (let node of childNodes) {
 			let valueIndex = this.getAttrValueIndex(this.node)
@@ -45,12 +45,12 @@ export class SwitchFlowControl extends FlowControlBase {
 			valueIndices.push(valueIndex)
 	
 			if (node.children.length > 0) {
-				let tree = this.tree.separateChildrenAsSubTree(node)
-				let makerName = tree.getMakerRefName()
-				makerNames.push(makerName)
+				let tree = this.treeParser.separateChildrenAsSubTree(node)
+				let temName = tree.getTemplateRefName()
+				templateNames.push(temName)
 			}
 			else {
-				makerNames.push(null)
+				templateNames.push(null)
 			}
 
 			if (node.tagName === 'lupos:default' || valueIndex === null) {
@@ -58,7 +58,7 @@ export class SwitchFlowControl extends FlowControlBase {
 			}
 		}
 
-		this.makerNames = makerNames
+		this.templateNames = templateNames
 		this.valueIndices = valueIndices
 	}
 
@@ -78,8 +78,8 @@ export class SwitchFlowControl extends FlowControlBase {
 		// )
 
 		let indexFn = this.outputSwitchIndexFn(this.switchValueIndex, this.valueIndices)
-		let makers = this.outputMakerNodes(this.makerNames)
-		let templateSlot = this.slot.makeTemplateSlotNode(null)
+		let makers = this.outputMakerNodes(this.templateNames)
+		let templateSlot = this.slot.outputTemplateSlotNode(null)
 
 		return factory.createBinaryExpression(
 			factory.createIdentifier(this.blockVariableName),
@@ -107,12 +107,12 @@ export class SwitchFlowControl extends FlowControlBase {
 			factory.createReturnStatement(factory.createNumericLiteral(defaultIndex))
 		])
 
-		let switchValueNode = this.template.values.outputValueNodeAt(switchValueIndex)
+		let switchValueNode = this.template.values.outputNodeAt(switchValueIndex)
 		let caseNodes: TS.CaseClause[] = []
 
 		for (let i = 0; i < (hasDefault ? valueIndices.length - 1 : valueIndices.length); i++) {
 			let valueIndex = valueIndices[i]!
-			let caseValueNode = this.template.values.outputValueNodeAt(valueIndex)
+			let caseValueNode = this.template.values.outputNodeAt(valueIndex)
 			
 			let caseNode = factory.createCaseClause(
 				caseValueNode,

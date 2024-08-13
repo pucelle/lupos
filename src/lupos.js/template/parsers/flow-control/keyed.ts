@@ -9,11 +9,11 @@ export class KeyedFlowControl extends FlowControlBase {
 	private blockVariableName: string = ''
 
 	private cacheable: boolean = false
-	private makerName: string | null = null
+	private templateName: string | null = null
 	private valueIndex: number = 1
 
 	init() {
-		this.blockVariableName = this.tree.getUniqueBlockName()
+		this.blockVariableName = this.treeParser.getUniqueBlockName()
 		this.cacheable = this.hasAttrValue(this.node, 'cache')
 
 		let valueIndex = this.getAttrValueIndex(this.node)
@@ -24,8 +24,8 @@ export class KeyedFlowControl extends FlowControlBase {
 		this.valueIndex = valueIndex
 
 		if (this.node.children.length > 0) {
-			let tree = this.tree.separateChildrenAsSubTree(this.node)
-			this.makerName = tree.getMakerRefName()
+			let tree = this.treeParser.separateChildrenAsSubTree(this.node)
+			this.templateName = tree.getTemplateRefName()
 		}
 	}
 
@@ -39,8 +39,8 @@ export class KeyedFlowControl extends FlowControlBase {
 		//   $context_0,
 		// )
 
-		let maker = this.outputMakerNode(this.makerName)
-		let templateSlot = this.slot.makeTemplateSlotNode(null)
+		let maker = this.outputMakerNode(this.templateName)
+		let templateSlot = this.slot.outputTemplateSlotNode(null)
 
 		return factory.createBinaryExpression(
 			factory.createIdentifier(this.blockVariableName),
@@ -58,7 +58,7 @@ export class KeyedFlowControl extends FlowControlBase {
 	}
 
 	outputUpdate() {
-		let keyedNode = this.template.values.outputValueNodeAt(this.valueIndex)
+		let keyedNode = this.template.values.outputNodeAt(this.valueIndex)
 
 		// $block_0.update(newKey, $values)
 		return factory.createCallExpression(

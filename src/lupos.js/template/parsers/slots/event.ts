@@ -22,7 +22,7 @@ export class EventSlotParser extends SlotParserBase {
 		this.beSimulatedEvents = this.testSimulatedEvents()
 
 		if (this.isValueMutable()) {
-			this.latestVariableName = this.tree.getUniqueLatestName()
+			this.latestVariableName = this.treeParser.getUniqueLatestName()
 		}
 
 		this.targetType = this.checkTargetType()
@@ -47,12 +47,12 @@ export class EventSlotParser extends SlotParserBase {
 
 	private checkTargetType(): 'component' | 'element' {
 		let tagName = this.node.tagName!
-		let isComponent = /^[A-Z]/.test(tagName)
-		let isDynamicComponent = TemplateSlotPlaceholder.isCompleteSlotIndex(tagName)
+		let isNamedComponent = TemplateSlotPlaceholder.isNamedComponent(tagName)
+		let isDynamicComponent = TemplateSlotPlaceholder.isDynamicComponent(tagName)
 
-		if (isComponent || isDynamicComponent) {
+		if (isNamedComponent || isDynamicComponent) {
 			let com: TS.Node | undefined
-			if (isComponent) {
+			if (isNamedComponent) {
 				com = Imports.getImportByName(tagName)
 			}
 			else {
@@ -107,7 +107,7 @@ export class EventSlotParser extends SlotParserBase {
 	}
 
 	private outputComponentInit() {
-		let comVariableName = this.tree.getRefedComponentName(this.node)
+		let comVariableName = this.treeParser.getRefedComponentName(this.node)
 
 		// $com_0.on('comEventName', eventHandler, $context)
 		if (!this.isValueMutable() || this.isValueCanTurnStatic()) {

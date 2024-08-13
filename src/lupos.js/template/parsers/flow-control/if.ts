@@ -11,16 +11,16 @@ export class IfFlowControl extends FlowControlBase {
 
 	private cacheable: boolean = false
 	private valueIndices: (number | null)[] = []
-	private makerNames: (string | null)[] = []
+	private templateNames: (string | null)[] = []
 
 	init() {
-		this.blockVariableName = this.tree.getUniqueBlockName()
+		this.blockVariableName = this.treeParser.getUniqueBlockName()
 		this.cacheable = this.hasAttrValue(this.node, 'cache')
 
 		let nextNodes = this.eatNext('lupos:elseif', 'lupos:else')
 		let allNodes = [this.node, ...nextNodes]
 		let valueIndices: (number | null)[] = []
-		let makerNames: (string | null)[] = []
+		let templateNames: (string | null)[] = []
 
 		for (let node of allNodes) {
 			let valueIndex = this.getAttrValueIndex(node)
@@ -40,16 +40,16 @@ export class IfFlowControl extends FlowControlBase {
 			valueIndices.push(valueIndex)
 	
 			if (node.children.length > 0) {
-				let tree = this.tree.separateChildrenAsSubTree(node)
-				let makerName = tree.getMakerRefName()
-				makerNames.push(makerName)
+				let tree = this.treeParser.separateChildrenAsSubTree(node)
+				let temName = tree.getTemplateRefName()
+				templateNames.push(temName)
 			}
 			else {
-				makerNames.push(null)
+				templateNames.push(null)
 			}
 		}
 
-		this.makerNames = makerNames
+		this.templateNames = templateNames
 		this.valueIndices = valueIndices
 	}
 
@@ -65,8 +65,8 @@ export class IfFlowControl extends FlowControlBase {
 		// )
 
 		let indexFn = this.outputIfIndexFn(this.valueIndices)
-		let makers = this.outputMakerNodes(this.makerNames)
-		let templateSlot = this.slot.makeTemplateSlotNode(null)
+		let makers = this.outputMakerNodes(this.templateNames)
+		let templateSlot = this.slot.outputTemplateSlotNode(null)
 
 		return factory.createBinaryExpression(
 			factory.createIdentifier(this.blockVariableName),
@@ -97,7 +97,7 @@ export class IfFlowControl extends FlowControlBase {
 
 		for (let i = hasElse ? valueIndices.length - 2 : valueIndices.length - 1; i >= 0; i--) {
 			let valueIndex = valueIndices[i]!
-			let conditionNode = this.template.values.outputValueNodeAt(valueIndex)
+			let conditionNode = this.template.values.outputNodeAt(valueIndex)
 
 			let thenNode = factory.createBlock(
 				[factory.createReturnStatement(factory.createNumericLiteral(i))],

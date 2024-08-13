@@ -1,6 +1,5 @@
 import type TS from 'typescript'
 import {ListMap} from '../utils'
-import {Scoping} from './scoping'
 
 
 interface VisitingItem {
@@ -46,7 +45,6 @@ export namespace Visiting {
 		ParentMap.clear()
 		NodeMap.clear()
 		IndexMap.clear()
-		Scoping.init()
 
 		current = {
 			index: -1,
@@ -66,7 +64,6 @@ export namespace Visiting {
 
 		NodeMap.set(index, node)
 		IndexMap.set(node, index)
-		Scoping.toNext(node, index)
 	}
 
 	/** To first child. */
@@ -76,14 +73,11 @@ export namespace Visiting {
 		current = {
 			index: -1,
 		}
-
-		Scoping.toChild()
 	}
 
 	/** To parent. */
 	export function toParent() {
 		current = stack.pop()!
-		Scoping.toParent()
 	}
 
 

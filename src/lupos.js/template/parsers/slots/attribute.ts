@@ -12,7 +12,7 @@ export class AttributeSlotParser extends SlotParserBase {
 
 	init() {
 		if (this.isValueMutable()) {
-			this.latestVariableName = this.tree.getUniqueLatestName()
+			this.latestVariableName = this.treeParser.getUniqueLatestName()
 		}
 	}
 

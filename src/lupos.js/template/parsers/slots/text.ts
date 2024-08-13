@@ -8,7 +8,7 @@ export class TextSlotParser extends SlotParserBase {
 	private latestVariableName: string = ''
 
 	init() {
-		this.latestVariableName = this.tree.getUniqueLatestName()
+		this.latestVariableName = this.treeParser.getUniqueLatestName()
 	}
 
 	outputUpdate() {

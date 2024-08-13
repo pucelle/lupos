@@ -10,7 +10,7 @@ export class DynamicComponentSlotParser extends SlotParserBase {
 
 	init() {
 		this.refAsComponent()
-		this.blockVariableName = this.tree.getUniqueBlockName()
+		this.blockVariableName = this.treeParser.getUniqueBlockName()
 	}
 
 	outputInit(nodeAttrInits: TS.Statement[]) {
@@ -61,7 +61,7 @@ export class DynamicComponentSlotParser extends SlotParserBase {
 			)
 		)
 
-		let templateSlot = this.makeTemplateSlotNode(null)
+		let templateSlot = this.outputTemplateSlotNode(null)
 		let contentRange = this.makeSlotRangeNode()
 
 		return factory.createBinaryExpression(

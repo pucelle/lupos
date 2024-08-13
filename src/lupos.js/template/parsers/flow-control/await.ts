@@ -8,11 +8,11 @@ export class AwaitFlowControl extends FlowControlBase {
 	/** $block_0 */
 	private blockVariableName: string = ''
 
-	private makerNames: (string | null)[] = []
+	private templateNames: (string | null)[] = []
 	private promiseIndex: number = -1
 
 	init() {
-		this.blockVariableName = this.tree.getUniqueBlockName()
+		this.blockVariableName = this.treeParser.getUniqueBlockName()
 
 		let promiseIndex = this.getAttrValueIndex(this.node)
 		if (promiseIndex === null) {
@@ -21,21 +21,21 @@ export class AwaitFlowControl extends FlowControlBase {
 
 		let nextNodes = this.eatNext('lupos:then', 'lupos:catch')
 		let allNodes = [this.node, ...nextNodes]
-		let makerNames: (string | null)[] = []
+		let templateNames: (string | null)[] = []
 	
 		for (let node of allNodes) {
 			if (node.children.length > 0) {
-				let tree = this.tree.separateChildrenAsSubTree(node)
-				let makerName = tree.getMakerRefName()
-				makerNames.push(makerName)
+				let tree = this.treeParser.separateChildrenAsSubTree(node)
+				let templateName = tree.getTemplateRefName()
+				templateNames.push(templateName)
 			}
 			else {
-				makerNames.push(null)
+				templateNames.push(null)
 			}
 		}
 
 		this.promiseIndex = promiseIndex
-		this.makerNames = makerNames
+		this.templateNames = templateNames
 	}
 
 	outputInit() {
@@ -47,8 +47,8 @@ export class AwaitFlowControl extends FlowControlBase {
 		//   $context_0,
 		// )
 
-		let makers = this.outputMakerNodes(this.makerNames)
-		let templateSlot = this.slot.makeTemplateSlotNode(null)
+		let makers = this.outputMakerNodes(this.templateNames)
+		let templateSlot = this.slot.outputTemplateSlotNode(null)
 
 		return factory.createBinaryExpression(
 			factory.createIdentifier(this.blockVariableName),
@@ -67,7 +67,7 @@ export class AwaitFlowControl extends FlowControlBase {
 
 	outputUpdate() {
 		// This promise may be static, ignore it.
-		let promiseNode = this.template.values.outputValueNodeAt(this.promiseIndex)
+		let promiseNode = this.template.values.outputNodeAt(this.promiseIndex)
 
 		// $block_0.update(promise, $values)
 		return factory.createCallExpression(

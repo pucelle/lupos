@@ -15,13 +15,13 @@ export class ContentSlotParser extends SlotParserBase {
 
 	init() {
 		this.slotContentType = this.identifySlotContentType()
-		this.slotVariableName = this.tree.getUniqueSlotName()
+		this.slotVariableName = this.treeParser.getUniqueSlotName()
 
 		if (this.isValueMutable()) {
 
 			// Assume for `TemplateResult` or `TemplateResult[]`, it regenerates every time.
 			if (this.slotContentType === 2 || this.slotContentType === 3) {
-				this.latestVariableName = this.tree.getUniqueLatestName()
+				this.latestVariableName = this.treeParser.getUniqueLatestName()
 			}
 		}
 	}
@@ -48,7 +48,7 @@ export class ContentSlotParser extends SlotParserBase {
 	}
 
 	outputInit() {
-		let templateSLot = this.makeTemplateSlotNode(this.slotContentType)
+		let templateSLot = this.outputTemplateSlotNode(this.slotContentType)
 
 		return factory.createBinaryExpression(
 			factory.createIdentifier(this.slotVariableName),

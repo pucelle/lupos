@@ -1,6 +1,9 @@
 import type TS from 'typescript'
-import {Helper, transformContext, ts, Visiting, factory, Modifier} from '.'
 import {addToList, ListMap} from '../utils'
+import {factory, transformContext, ts} from './global'
+import {Visiting} from './visiting'
+import {InterpolationContentType, Interpolator} from './interpolator'
+import {Helper} from './helper'
 
 
 interface HashItem {
@@ -22,8 +25,8 @@ export enum MutableMask {
 	/** use local variable `a`. */
 	Mutable = 1,
 
-	/** Have some using `a` not like `function(){a.xxx}` */
-	CantTurn = 2,
+	/** Have some variable using directly, but not use them inside a function. */
+	CantTurnStatic = 2,
 }
 
 
@@ -52,7 +55,9 @@ export namespace Scoping {
 
 
 	/** To next sibling. */
-	export function toNext(node: TS.Node, index: number) {
+	export function toNext(node: TS.Node) {
+		let index = Visiting.getIndex(node)
+
 		if (ts.isSourceFile(node)) {
 			current = new Scope(node, index, null)
 			scopeMap.set(index, current)
@@ -115,10 +120,23 @@ export namespace Scoping {
 	}
 
 	/** Add variables to interpolator as declaration statements. */
-	export function applyVariablesAdding() {
+	export function apply() {
 		for (let [scope, names] of AddedVariableNames.entries()) {
-			let index = scope.getIndexToAddVariable()
-			Modifier.addVariables(index, names)
+			let toIndex = scope.getIndexToAddVariable()
+
+			let exps = factory.createVariableDeclarationList(
+				names.map(name => 
+					factory.createVariableDeclaration(
+						factory.createIdentifier(name),
+						undefined,
+						undefined,
+						undefined
+					)
+				),
+				ts.NodeFlags.None
+			)
+
+			Interpolator.before(toIndex, InterpolationContentType.VariableDeclaration, () => exps)
 		}
 	}
 
@@ -238,22 +256,22 @@ export namespace Scoping {
 		return visitNodeTestMutable(node, false)
 	}
 
-	function visitNodeTestMutable(node: TS.Node, inChildScope: boolean): MutableMask {
+	function visitNodeTestMutable(node: TS.Node, inFunction: boolean): MutableMask {
 		let mutable = 0
 
 		// Inside of a function
-		inChildScope ||= ts.isFunctionDeclaration(node)
+		inFunction ||= ts.isFunctionDeclaration(node)
 
 		// Variable
 		if (Helper.variable.isVariableIdentifier(node)) {
 
 			// If in child scope, become mutable only when uses a local variable.
 			// Which means: the variable should not been declared in top scope.
-			if (inChildScope) {
-				let declaredInTopScope = isDeclaredInTopScope(node)
+			if (inFunction) {
+				let declaredInTopmostScope = isDeclaredInTopScope(node)
 
 				// Should apply mutable and not applied.
-				if (!declaredInTopScope) {
+				if (!declaredInTopmostScope) {
 					mutable |= MutableMask.Mutable
 				}
 			}
@@ -263,14 +281,14 @@ export namespace Scoping {
 				let constDeclared = isDeclaredAsConst(node)
 				if (!constDeclared) {
 					mutable |= MutableMask.Mutable
-					mutable |= MutableMask.CantTurn
+					mutable |= MutableMask.CantTurnStatic
 				}
 			}
 		}
 
 		// Readonly, or method.
 		// If in a child scope, all property visiting is not mutable.
-		else if (Helper.access.isAccess(node) && !inChildScope) {
+		else if (Helper.access.isAccess(node) && !inFunction) {
 
 			// Use method, but not call it.
 			let useNotCalledMethod = Helper.symbol.resolveMethod(node) && !ts.isCallExpression(node.parent)
@@ -281,14 +299,14 @@ export namespace Scoping {
 			if (!(useNotCalledMethod || useReadonlyProperty)) {
 				mutable |= MutableMask.Mutable
 
-				if (!inChildScope) {
-					mutable |= MutableMask.CantTurn
+				if (!inFunction) {
+					mutable |= MutableMask.CantTurnStatic
 				}
 			}
 		}
 
 		ts.visitEachChild(node, (node: TS.Node) => {
-			mutable |= visitNodeTestMutable(node, inChildScope)
+			mutable |= visitNodeTestMutable(node, inFunction)
 			return node
 		}, transformContext)
 
@@ -306,10 +324,10 @@ export namespace Scoping {
 	 */
 	export function transferToTopmostScope<T extends TS.Node>(node: T, replacer: NodeReplacer): T {
 		let scope = findClosestScopeOfNode(node)
-		return visitNodeTransferToTop(node, scope, true, replacer) as T
+		return visitNodeTransferToTopmost(node, scope, true, replacer) as T
 	}
 
-	function visitNodeTransferToTop(node: TS.Node, scope: Scope, canReplaceThis: boolean, replacer: NodeReplacer): TS.Node {
+	function visitNodeTransferToTopmost(node: TS.Node, scope: Scope, canReplaceThis: boolean, replacer: NodeReplacer): TS.Node {
 
 		// Variable
 		if (Helper.variable.isVariableIdentifier(node)) {
@@ -329,7 +347,7 @@ export namespace Scoping {
 		canReplaceThis &&= ts.isFunctionDeclaration(node) && !ts.isArrowFunction(node)
 
 		return ts.visitEachChild(node, (node: TS.Node) => {
-			return visitNodeTransferToTop(node, scope, canReplaceThis, replacer)
+			return visitNodeTransferToTopmost(node, scope, canReplaceThis, replacer)
 		}, transformContext)
 	}
 }
@@ -466,7 +484,10 @@ export class Scope {
 		return name
 	}
 
-	/** Add a variable. */
+	/** 
+	 * Add a variable.
+	 * Several variable declarations will be stacked to a variable statement.
+	 */
 	addVariable(name: string) {
 		Scoping.addVariable(this, name)
 	}
