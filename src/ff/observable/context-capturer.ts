@@ -65,6 +65,7 @@ export class ContextCapturer {
 
 
 	readonly context: Context
+
 	private captured: CapturedItem[]
 	private latestCaptured!: CapturedItem
 	private captureType: 'get' | 'set' = 'get'
@@ -322,8 +323,10 @@ export class ContextCapturer {
 			return item.toIndex >= itemSiblingIndex
 		}) || this.latestCaptured
 
-		let contextLeaves = ContextTree.getWalkingOutwardLeaved(fromCapturer.context, this.context)
-		let leavedIndices = contextLeaves.map(c => c.visitingIndex)
+		let fromScope = fromCapturer.context.getDeclarationScope()
+		let toScope = this.context.getDeclarationScope()
+		let scopeLeaves = Scoping.findWalkingOutwardLeaves(fromScope, toScope)
+		let leavedIndices = scopeLeaves.map(c => c.visitingIndex)
 		let residualIndices: number[] = []
 
 		for (let index of indices) {

@@ -251,21 +251,6 @@ export namespace ContextTree {
 		}
 	}
 
-	
-	/** Get the leaved context list when walking from a context to an ancestral context. */
-	export function getWalkingOutwardLeaved(fromContext: Context, toContext: Context) : Context[] {
-		let context: Context | undefined = fromContext
-		let leaves: Context[] = []
-
-		// Look outward for a node which can pass test.
-		while (context !== undefined && context !== toContext) {
-			leaves.push(context)
-			context = context.parent!
-		}
-
-		return leaves
-	}
-	
 
 	/** 
 	 * Find an ancestral index and context, which can move statements to before it.

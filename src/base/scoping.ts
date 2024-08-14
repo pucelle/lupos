@@ -36,10 +36,10 @@ export namespace Scoping {
 	export let current: Scope | null = null
 
 	/** Visiting index -> scope. */
-	const scopeMap: Map<number, Scope> = new Map()
+	const ScopeMap: Map<number, Scope> = new Map()
 
 	/** Visiting index -> node hash result. */
-	const hashMap: Map<number, HashItem> = new Map()
+	const HashMap: Map<number, HashItem> = new Map()
 
 	/** All added variable names, via scope. */
 	const AddedVariableNames: ListMap<Scope, string> = new ListMap()
@@ -49,7 +49,8 @@ export namespace Scoping {
 	export function init() {
 		stack = []
 		current = null
-		hashMap.clear()
+		ScopeMap.clear()
+		HashMap.clear()
 		AddedVariableNames.clear()
 	}
 
@@ -60,11 +61,14 @@ export namespace Scoping {
 
 		if (ts.isSourceFile(node)) {
 			current = new Scope(node, index, null)
-			scopeMap.set(index, current)
+			ScopeMap.set(index, current)
 		}
-		else if (Helper.isFunctionLike(node) || ts.isBlock(node)) {
+		else if (Helper.isFunctionLike(node)
+			|| ts.isForStatement(node)
+			|| ts.isBlock(node)
+		) {
 			current = new Scope(node, index, stack[stack.length - 1])
-			scopeMap.set(index, current)
+			ScopeMap.set(index, current)
 		}
 		else {
 			current!.visitNode(node)
@@ -84,11 +88,11 @@ export namespace Scoping {
 
 	/** Find closest scope contains node with specified visiting index. */
 	export function findClosestScope(index: number): Scope {
-		let scope = scopeMap.get(index)
+		let scope = ScopeMap.get(index)
 
 		while (!scope) {
 			index = Visiting.getParentIndex(index)!
-			scope = scopeMap.get(index)
+			scope = ScopeMap.get(index)
 		}
 
 		return scope
@@ -113,6 +117,21 @@ export namespace Scoping {
 
 		return scope
 	}
+	
+	/** Get the leaved scope list when walking from a scope to an ancestral scope. */
+	export function findWalkingOutwardLeaves(fromScope: Scope, toScope: Scope) : Scope[] {
+		let scope: Scope | undefined = fromScope
+		let leaves: Scope[] = []
+
+		// Look outward for a node which can pass test.
+		while (scope && scope !== toScope) {
+			leaves.push(scope)
+			scope = scope.parent!
+		}
+
+		return leaves
+	}
+	
 
 	/** Add a scope and a variable name to insert into the scope later. */
 	export function addVariable(scope: Scope, name: string) {
@@ -133,7 +152,7 @@ export namespace Scoping {
 						undefined
 					)
 				),
-				ts.NodeFlags.None
+				ts.NodeFlags.Let
 			)
 
 			Interpolator.before(toIndex, InterpolationContentType.VariableDeclaration, () => exps)
@@ -155,12 +174,12 @@ export namespace Scoping {
 	 * Note hashing will transform `a?.b` -> `a.b`.
 	 */
 	export function hashIndex(index: number): HashItem {
-		if (hashMap.has(index)) {
-			return hashMap.get(index)!
+		if (HashMap.has(index)) {
+			return HashMap.get(index)!
 		}
 
-		let hashed = doHashOfNode(Visiting.getNode(index))
-		hashMap.set(index, hashed)
+		let hashed = doHashingOfNode(Visiting.getNode(index))
+		HashMap.set(index, hashed)
 
 		return hashed
 	}
@@ -170,7 +189,7 @@ export namespace Scoping {
 	 * `maximumReferencedIndex` means: if you want to move this node,
 	 * it can't be moved before node with visiting index >= this value. 
 	 */
-	function doHashOfNode<T extends TS.Node>(node: T): HashItem {
+	function doHashingOfNode<T extends TS.Node>(node: T): HashItem {
 		let referenceIndices: number[] = []
 
 		node = Helper.pack.normalize(
@@ -209,7 +228,7 @@ export namespace Scoping {
 	 */
 	function hashVariableName(node: TS.Identifier): {name: string, suffix: number} {
 		let name = node.text
-		let scope = findClosestScopeOfNode(node)
+		let scope = findDeclaredScope(node) || findClosestScopeOfNode(node)
 		let suffix = scope.visitingIndex
 
 		return {
@@ -220,12 +239,12 @@ export namespace Scoping {
 	
 	
 	/** Check at which scope the specified named variable declared. */
-	function getDeclaredScope(node: TS.Identifier, fromScope = findClosestScopeOfNode(node)): Scope | null {
+	export function findDeclaredScope(node: TS.Identifier, fromScope = findClosestScopeOfNode(node)): Scope | null {
 		if (fromScope.hasLocalVariable(node.text)) {
 			return fromScope
 		}
 		else if (fromScope.parent) {
-			return getDeclaredScope(node, fromScope.parent!)
+			return findDeclaredScope(node, fromScope.parent!)
 		}
 		else {
 			return null
@@ -234,19 +253,19 @@ export namespace Scoping {
 
 	/** Returns whether declared variable at top (source file) scope. */
 	function isDeclaredInTopScope(node: TS.Identifier): boolean {
-		let declaredIn = getDeclaredScope(node)
+		let declaredIn = findDeclaredScope(node)
 		return declaredIn ? declaredIn.isTopmost() : false
 	}
 
 	/** Returns whether declared in a target scope, and descendant scope of target scope. */
 	function isDeclaredWithinScope(node: TS.Identifier, scope: Scope): boolean {
-		let declaredIn = getDeclaredScope(node)
+		let declaredIn = findDeclaredScope(node)
 		return declaredIn ? scope.isSelfOrAncestorOf(declaredIn) : false
 	}
 
 	/** Returns whether a variable node was declared as const. */
 	function isDeclaredAsConst(node: TS.Identifier): boolean {
-		let scope = getDeclaredScope(node)
+		let scope = findDeclaredScope(node)
 		return scope ? scope.isLocalVariableConst(node.text) : false
 	}
 
@@ -356,14 +375,18 @@ export namespace Scoping {
 /** Mark all variables with a context. */
 export class Scope {
 
-	readonly node: TS.FunctionLikeDeclaration | TS.Block | TS.SourceFile
+	readonly node: TS.FunctionLikeDeclaration | TS.ForStatement | TS.Block | TS.SourceFile
 	readonly parent: Scope | null
 	readonly visitingIndex: number
 
 	/** All variables declared here. */
 	private variables: Map<string, TS.Node | null> = new Map()
 
-	constructor(node: TS.FunctionLikeDeclaration | TS.Block | TS.SourceFile, index: number, parent: Scope | null) {
+	constructor(
+		node: TS.FunctionLikeDeclaration | TS.ForStatement | TS.Block | TS.SourceFile,
+		index: number,
+		parent: Scope | null
+	) {
 		this.node = node
 		this.parent = parent
 		this.visitingIndex = index
@@ -410,6 +433,7 @@ export class Scope {
 	/** Whether can add more statements inside. */
 	canAddStatements(): boolean {
 		return !Helper.isFunctionLike(this.node)
+			&& !ts.isForStatement(this.node)
 	}
 
 	/** Test whether current scope is equal or an ancestor of target scope. */

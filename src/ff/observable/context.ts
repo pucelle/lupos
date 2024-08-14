@@ -1,6 +1,6 @@
 import type TS from 'typescript'
 import {ObservedChecker} from './observed-checker'
-import {Helper, AccessNode, ts, Visiting, FlowInterruptionTypeMask} from '../../base'
+import {Helper, AccessNode, ts, Visiting, FlowInterruptionTypeMask, Scoping} from '../../base'
 import {ContextState} from './context-state'
 import {ContextTypeMask} from './context-tree'
 import {ContextVariables} from './context-variables'
@@ -45,6 +45,19 @@ export class Context {
 
 		if (parent) {
 			parent.enterChild(this)
+		}
+	}
+
+	/** 
+	 * Get scope for putting declarations.
+	 * For function context, it returns the scope of function body.
+	 */
+	getDeclarationScope() {
+		if (Helper.isFunctionLike(this.node) && this.node.body) {
+			return Scoping.findClosestScopeOfNode(this.node.body)
+		}
+		else {
+			return Scoping.findClosestScopeOfNode(this.node)
 		}
 	}
 

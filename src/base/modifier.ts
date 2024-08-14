@@ -13,30 +13,30 @@ import {Visiting} from './visiting'
 export namespace Modifier {
 	
 	/** All imports. */
-	const imports: ListMap<string, string> = new ListMap()
+	const Imports: ListMap<string, string> = new ListMap()
 
 	/** The visiting indices the node at where will be moved. */
-	const movedIndices: Set<number> = new Set()
+	const MovedIndices: Set<number> = new Set()
 
 	/** Declarations will be inserted to source file, after import statements. */
 	let topmostDeclarations: (TS.Expression | TS.Statement)[] = []
 
 
 	export function init() {
-		imports.clear()
-		movedIndices.clear()
+		Imports.clear()
+		MovedIndices.clear()
 		topmostDeclarations = []
 	}
 
 
 	/** Move node to another position, for each from index, only move for once. */
 	export function moveOnce(fromIndex: number, toIndex: number) {
-		if (movedIndices.has(fromIndex)) {
+		if (MovedIndices.has(fromIndex)) {
 			return
 		}
 
 		Interpolator.move(fromIndex, toIndex)
-		movedIndices.add(fromIndex)
+		MovedIndices.add(fromIndex)
 	}
 
 
@@ -64,7 +64,7 @@ export namespace Modifier {
 	 * Repetitive adding will be eliminated.
 	 */
 	export function addImport(memberName: string, moduleName: string) {
-		imports.addIf(moduleName, memberName)
+		Imports.addIf(moduleName, memberName)
 	}
 
 	
@@ -121,7 +121,7 @@ export namespace Modifier {
 		// will cause some not used type imports still there.
 		// Current process step is: leave them there and wait for package step to eliminate.
 
-		for (let [moduleName, names] of imports.entries()) {
+		for (let [moduleName, names] of Imports.entries()) {
 			let importDecl = Helper.imports.getImportFromModule(moduleName)
 
 			let namedImports = names.map(name => factory.createImportSpecifier(

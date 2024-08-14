@@ -3,7 +3,7 @@ import { Component } from '@pucelle/lupos.js';
 class TestMutable extends Component {
     prop = [{ value: 1 }, { value: 2 }];
     dynamicVariableAsIndex() {
-        var $ref_0;
+        let $ref_0;
         let index = 0;
         $ref_0 = index;
         this.prop[$ref_0].value;
@@ -16,7 +16,7 @@ class TestMutable extends Component {
         return 0;
     }
     dynamicIndexChangeOtherWhere() {
-        var $ref_0;
+        let $ref_0;
         let index = { value: 0 };
         $ref_0 = index.value;
         this.prop[$ref_0].value;
@@ -29,7 +29,7 @@ class TestMutable extends Component {
         return 0;
     }
     dynamicExp() {
-        var $ref_0;
+        let $ref_0;
         let a = this.prop[0];
         $ref_0 = a;
         $ref_0.value = 1;
@@ -39,7 +39,7 @@ class TestMutable extends Component {
         trackSet(a, "value");
     }
     dynamicExpAndIndexParam() {
-        var $ref_0;
+        let $ref_0;
         let index = 0;
         let a = this.getItem(index++);
         $ref_0 = a;

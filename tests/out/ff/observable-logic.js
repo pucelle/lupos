@@ -19,21 +19,21 @@ class TestAndOrDoubleQuestionOperators extends Component {
         return this.prop1.value ?? (trackGet(this, "prop2"), trackGet(this.prop2, "value"), this.prop2.value);
     }
     orProp() {
-        var $ref_0;
+        let $ref_0;
         $ref_0 = this.prop1 || (trackGet(this, "prop2"), this.prop2);
         trackGet($ref_0, "value");
         trackGet(this, "prop1");
         return $ref_0.value;
     }
     andProp() {
-        var $ref_0;
+        let $ref_0;
         $ref_0 = this.prop1 && (trackGet(this, "prop2"), this.prop2);
         trackGet($ref_0, "value");
         trackGet(this, "prop1");
         return $ref_0.value;
     }
     qqProp() {
-        var $ref_0;
+        let $ref_0;
         $ref_0 = this.prop1 ?? (trackGet(this, "prop2"), this.prop2);
         trackGet($ref_0, "value");
         trackGet(this, "prop1");

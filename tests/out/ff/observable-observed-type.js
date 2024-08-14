@@ -96,7 +96,7 @@ class TestMethodReturnedType extends Component {
         return item.value;
     }
     getValueUseMethodSingleExp() {
-        var $ref_0;
+        let $ref_0;
         $ref_0 = this.getNormalItem();
         trackGet($ref_0, "value");
         return $ref_0.value;
@@ -111,7 +111,7 @@ class TestMethodReturnedType extends Component {
         return item.value;
     }
     getValueUseObservedMethodSingleExp() {
-        var $ref_0;
+        let $ref_0;
         $ref_0 = this.getObservedItem();
         trackGet($ref_0, "value");
         return $ref_0.value;
@@ -121,7 +121,7 @@ class TestMethodReturnedType extends Component {
         return this.prop;
     }
     getValueUseObservedInstance() {
-        var $ref_0;
+        let $ref_0;
         $ref_0 = this.getInstance();
         trackGet($ref_0, "prop");
         trackGet($ref_0.prop, "value");

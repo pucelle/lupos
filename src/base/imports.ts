@@ -4,6 +4,7 @@ import {Helper} from './helper'
 
 export namespace Imports {
 
+	/** All added imports. */
 	const ImportsMap: Map<string, TS.ImportSpecifier> = new Map()
 
 

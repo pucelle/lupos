@@ -1,6 +1,6 @@
 import { Observed, trackGet } from '@pucelle/ff';
 import { Component } from '@pucelle/lupos.js';
-var $ref_0;
+let $ref_0;
 class TestRef extends Component {
     prop = { value: 1 };
     getProp() {
@@ -19,19 +19,19 @@ class TestRef extends Component {
         return j;
     }
     normalRef() {
-        var $ref_0;
+        let $ref_0;
         $ref_0 = this.getProp();
         trackGet($ref_0, "value");
         return $ref_0.value;
     }
     *yieldRef() {
-        var $ref_0;
+        let $ref_0;
         $ref_0 = this.getProp();
         trackGet($ref_0, "value");
         yield $ref_0.value;
     }
     ifRef() {
-        var $ref_0;
+        let $ref_0;
         $ref_0 = this.getProp();
         trackGet($ref_0, "value");
         if ($ref_0.value) {
@@ -40,7 +40,7 @@ class TestRef extends Component {
         return 0;
     }
     elseIfRef() {
-        var $ref_0;
+        let $ref_0;
         if (Boolean(1)) {
             return true;
         }
@@ -54,7 +54,7 @@ class TestRef extends Component {
         return 0;
     }
     multipleConditionalRef() {
-        var $ref_0, $ref_1, $ref_2;
+        let $ref_0, $ref_1, $ref_2;
         $ref_2 = this.getProp();
         trackGet($ref_2, "value");
         return $ref_2.value
@@ -65,13 +65,13 @@ class TestRef extends Component {
             : 4);
     }
     multipleBinaryRef() {
-        var $ref_0, $ref_1, $ref_2;
+        let $ref_0, $ref_1, $ref_2;
         $ref_1 = this.getProp();
         trackGet($ref_1, "value");
         return $ref_1.value || ($ref_0 = this.getNextProp(0), trackGet($ref_0, "value"), $ref_0.value) || ($ref_2 = this.getNextProp(1), trackGet($ref_2, "value"), $ref_2.value);
     }
     deepRef() {
-        var $ref_0, $ref_1;
+        let $ref_0, $ref_1;
         $ref_0 = this.getProp();
         $ref_1 = this.getNextProp($ref_0.value);
         trackGet($ref_0, "value");
@@ -83,7 +83,7 @@ class TestRef extends Component {
         return value;
     }
     indexRef() {
-        var $ref_1;
+        let $ref_1;
         let a = [this.prop];
         let i = 0;
         $ref_1 = i++;
@@ -110,7 +110,7 @@ class TestRef extends Component {
         return 0;
     }
     forExpressionInitializerRef() {
-        var $ref_1;
+        let $ref_1;
         let i;
         $ref_1 = this.getProp();
         i = $ref_1.value;
@@ -121,7 +121,7 @@ class TestRef extends Component {
         return 0;
     }
     forConditionRef() {
-        var $ref_1;
+        let $ref_1;
         for (let i = 0; ($ref_1 = this.getProp(), i < $ref_1.value); i++) {
             break;
         }
@@ -129,7 +129,7 @@ class TestRef extends Component {
         return 0;
     }
     forIncreasementRef() {
-        var $ref_1;
+        let $ref_1;
         for (let i = 0; i < 1; ($ref_1 = this.getProp(), i += $ref_1.value)) {
             break;
         }
@@ -137,19 +137,18 @@ class TestRef extends Component {
         return 0;
     }
     caseDefaultRef() {
+        let $ref_1, $ref_2;
         var a = '';
         switch (a) {
             case '1':
-                var $ref_1;
                 $ref_1 = this.getProp();
                 $ref_1.value;
                 trackGet($ref_1, "value");
                 break;
             default:
-                var $ref_1;
-                $ref_1 = this.getProp();
-                $ref_1.value;
-                trackGet($ref_1, "value");
+                $ref_2 = this.getProp();
+                $ref_2.value;
+                trackGet($ref_2, "value");
         }
         return 0;
     }

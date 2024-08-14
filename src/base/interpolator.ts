@@ -65,12 +65,12 @@ export enum InterpolationContentType {
 export namespace Interpolator {
 
 	/** Interpolated expressions, and where to interpolate. */
-	const interpolations: ListMap<number, InterpolationItem> = new ListMap()
+	const Interpolations: ListMap<number, InterpolationItem> = new ListMap()
 
 
 	/** Initialize after enter a new source file */
 	export function init() {
-		interpolations.clear()
+		Interpolations.clear()
 	}
 
 
@@ -102,7 +102,7 @@ export namespace Interpolator {
 			}
 		}
 
-		interpolations.add(toIndex, item)
+		Interpolations.add(toIndex, item)
 	}
 
 
@@ -206,7 +206,7 @@ export namespace Interpolator {
 	 * and replace self and inserts all neighbor nodes.
 	 */
 	export function output(index: number): TS.Node | TS.Node[] | undefined {
-		let items = interpolations.get(index)
+		let items = Interpolations.get(index)
 		if (!items) {
 			return outputChildren(index)
 		}
