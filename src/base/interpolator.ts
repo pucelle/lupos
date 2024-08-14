@@ -3,6 +3,7 @@ import {ListMap} from '../utils'
 import {factory, transformContext, ts} from './global'
 import {Visiting} from './visiting'
 import {Helper} from './helper'
+import {definePreVisitCallback} from './visitor-callbacks'
 
 
 export interface InterpolationItem {
@@ -69,7 +70,7 @@ export namespace Interpolator {
 
 
 	/** Initialize after enter a new source file */
-	export function init() {
+	export function initialize() {
 		Interpolations.clear()
 	}
 
@@ -371,3 +372,6 @@ export namespace Interpolator {
 		return list
 	}
 }
+
+
+definePreVisitCallback(Interpolator.initialize)

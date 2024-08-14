@@ -105,7 +105,7 @@ export class TemplateValues {
 			valueIndex = this.valueHash.get(hash)!
 		}
 		else {
-			valueIndex = this.rawNodes.length
+			valueIndex = this.outputNodes.length
 			this.outputNodes.push(node)
 			this.valueHash.set(hash, valueIndex)
 		}

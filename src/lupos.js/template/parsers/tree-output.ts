@@ -59,12 +59,12 @@ export class TreeOutputHandler {
 
 		// let $binding_0, $block_0, $latest_0, $slot_0, ...
 		// Must after others.
-		let varStatement = this.outputVarNames(varNames)
+		let varStatements = this.outputVarNames(varNames)
 
 		let initStatements = [
 			rootNode,
 			...nodeRefs,
-			varStatement,
+			varStatements,
 			...init,
 			...staticUpdate,
 		].flat().map(n => Helper.pack.toStatement(n))
@@ -119,7 +119,7 @@ export class TreeOutputHandler {
 					)]
 					)
 				)],
-				ts.NodeFlags.Const | ts.NodeFlags.Constant | ts.NodeFlags.Constant
+				ts.NodeFlags.Const
 			)
 		)
 
@@ -381,7 +381,11 @@ export class TreeOutputHandler {
 		return list
 	}
 
-	private outputVarNames(varNames: string[]) {
+	private outputVarNames(varNames: string[]): OutputNodes {
+		if (!varNames.length) {
+			return []
+		}
+
 		return factory.createVariableStatement(
 			undefined,
 			factory.createVariableDeclarationList(
@@ -416,11 +420,18 @@ export class TreeOutputHandler {
 				factory.createIdentifier('update'),
 				undefined,
 				undefined,
-				[],
+				[factory.createParameterDeclaration(
+					undefined,
+					undefined,
+					factory.createIdentifier(VariableNames.values),
+					undefined,
+					undefined,
+					undefined
+				)],
 				undefined,
 				factory.createBlock(
 					update.map(n => Helper.pack.toStatement(n)),
-					false
+					true
 				)
 			)
 		}

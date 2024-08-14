@@ -193,7 +193,7 @@ function createCallSuperMethod(name: string): TS.MethodDeclaration {
 
 /** Create a constructor function. */
 function createConstructor(node: TS.ClassDeclaration): TS.ConstructorDeclaration {
-	let parameters = Helper.cls.getConstructorParameters(node)
+	let parameters = Helper.cls.getConstructorParameters(node) ?? []
 	let statements: TS.Statement[] = []
 	let superCls = Helper.cls.getSuper(node)
 
@@ -209,7 +209,7 @@ function createConstructor(node: TS.ClassDeclaration): TS.ConstructorDeclaration
 
 	return factory.createConstructorDeclaration(
 		undefined,
-		parameters || [],
+		parameters,
 		factory.createBlock(
 			statements,
 			true

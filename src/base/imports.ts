@@ -1,5 +1,6 @@
 import type TS from 'typescript'
 import {Helper} from './helper'
+import {definePreVisitCallback} from './visitor-callbacks'
 
 
 export namespace Imports {
@@ -9,10 +10,11 @@ export namespace Imports {
 
 
 	/** Initialize after loading a new source file. */
-	export function init() {
+	export function initialize() {
 		ImportsMap.clear()
 	}
 
+	/** Add an import item when visiting nodes. */
 	export function add(node: TS.ImportSpecifier) {
 		ImportsMap.set(Helper.getText(node.name), node)
 	}
@@ -20,18 +22,7 @@ export namespace Imports {
 	export function getImportByName(name: string): TS.ImportSpecifier | undefined {
 		return ImportsMap.get(name)
 	}
-
-	export function getImportByNameLike(name: string): TS.ImportSpecifier | undefined {
-		if (ImportsMap.has(name)) {
-			return ImportsMap.get(name)
-		}
-
-		for (let node of ImportsMap.values()) {
-			if (Helper.getText(node.name).toLowerCase() === name.toLowerCase()) {
-				return node
-			}
-		}
-
-		return undefined
-	}
 }
+
+
+definePreVisitCallback(Imports.initialize)

@@ -14,7 +14,7 @@ defineVisitor(function(node: TS.Node, index: number) {
 		return
 	}
 
-	let nm = Helper.symbol.resolveImport(node)
+	let nm = Helper.symbol.resolveImport(node.tag)
 	if (!nm) {
 		return
 	}
@@ -27,7 +27,10 @@ defineVisitor(function(node: TS.Node, index: number) {
 		return
 	}
 
-	parseHTMLTemplate(node, index, nm.memberName)
+	// Must after all descendant nodes visited.
+	return () => {
+		parseHTMLTemplate(node, index, nm.memberName as 'html' | 'svg')
+	}
 })
 
 
@@ -36,7 +39,8 @@ function parseHTMLTemplate(node: TS.TaggedTemplateExpression, index: number, tem
 	let string = TemplateSlotPlaceholder.joinTemplateString(node)
 	let values = TemplateSlotPlaceholder.extractTemplateValues(node)
 	let parser = new TemplateParser(templateType, string, values)
-
-	Interpolator.replace(index, InterpolationContentType.Normal, () => parser.output())
+	let parsed = parser.output()
+	
+	Interpolator.replace(index, InterpolationContentType.Normal, () => parsed)
 }
 

@@ -2,6 +2,7 @@ import type TS from 'typescript'
 import {SlotParserBase} from './base'
 import {factory, ts, Imports, Helper} from '../../../../base'
 import {VariableNames} from '../variable-names'
+import {toCamelCase, toCapitalize} from '../../../../utils'
 
 
 export class BindingSlotParser extends SlotParserBase {
@@ -27,31 +28,49 @@ export class BindingSlotParser extends SlotParserBase {
 		let nodeName = this.getRefedNodeName()
 
 		// :class -> ClassBinding
-		let bindingClassImport = Imports.getImportByNameLike(this.name)
-			|| Imports.getImportByNameLike(this.name + 'Binding')!
+		let bindingClassImport = Imports.getImportByName(this.name)
+			|| Imports.getImportByName(toCapitalize(toCamelCase(this.name)) + 'Binding')!
+		
+		if (!bindingClassImport) {
+			throw new Error(`Please make sure to import "${this.name}" or "${toCapitalize(toCamelCase(this.name)) + 'Binding'}"`)
+		}
 
 		let bindingClassName = bindingClassImport.name.text
 		let bindingClass = Helper.symbol.resolveDeclaration(bindingClassImport, ts.isClassDeclaration)!
-		let bindingClassConstructorParams = Helper.cls.getConstructorParameters(bindingClass)
+
+		let bindingClassParams = bindingClass ? Helper.cls.getConstructorParameters(bindingClass) : undefined
 		let bindingParams: TS.Expression[] = [factory.createIdentifier(nodeName)]
 
-		if (bindingClassConstructorParams.length > 1) {
+		// Need `context` parameter
+		if (!bindingClassParams || bindingClassParams.length > 1) {
 			bindingParams.push(factory.createIdentifier(VariableNames.context))
 		}
 
-		if (bindingClassConstructorParams.length > 2) {
+		// Need `modifiers` parameter
+		if (!bindingClassParams || bindingClassParams.length > 2) {
 			bindingParams.push(factory.createArrayLiteralExpression(
 				this.modifiers.map(m => factory.createStringLiteral(m)),
 				false
 			))
 		}
 
-		// new ClassBinding($node_0, ?$context, ?modifiers)
-		return factory.createNewExpression(
-			factory.createIdentifier(bindingClassName),
+		// let $binding_0 = new ClassBinding($node_0, ?context, ?modifiers)
+		return factory.createVariableStatement(
 			undefined,
-			bindingParams
-		)
+			factory.createVariableDeclarationList(
+				[factory.createVariableDeclaration(
+				factory.createIdentifier(this.bindingVariableName),
+				undefined,
+				undefined,
+				factory.createNewExpression(
+					factory.createIdentifier(bindingClassName),
+					undefined,
+					bindingParams
+				)
+				)],
+				ts.NodeFlags.Let
+			)
+		)	
 	}
 
 	outputUpdate() {
@@ -75,7 +94,7 @@ export class BindingSlotParser extends SlotParserBase {
 
 		// if ($latest_0 !== $values[0]) {
 		//	 $binding_0.callMethod(callValue)
-		//	 $latest_0 !== $values[0]
+		//	 $latest_0 = $values[0]
 		// }
 		if (this.latestVariableName && callValue !== value) {
 			return factory.createIfStatement(
@@ -96,7 +115,7 @@ export class BindingSlotParser extends SlotParserBase {
 						)),
 						factory.createExpressionStatement(factory.createBinaryExpression(
 							factory.createIdentifier(this.latestVariableName),
-							factory.createToken(ts.SyntaxKind.ExclamationEqualsEqualsToken),
+							factory.createToken(ts.SyntaxKind.EqualsToken),
 							value
 						))
 					],
@@ -106,12 +125,12 @@ export class BindingSlotParser extends SlotParserBase {
 			)
 		}
 
-		// $latest_0 === $values[0] && $binding_0.update($latest_0 = $values[0])
+		// $latest_0 !== $values[0] && $binding_0.update($latest_0 = $values[0])
 		else if (this.latestVariableName) {
 			return factory.createBinaryExpression(
 				factory.createBinaryExpression(
 					factory.createIdentifier(this.latestVariableName),
-					factory.createToken(ts.SyntaxKind.EqualsEqualsEqualsToken),
+					factory.createToken(ts.SyntaxKind.ExclamationEqualsEqualsToken),
 					callValue
 				),
 				factory.createToken(ts.SyntaxKind.AmpersandAmpersandToken),
@@ -157,7 +176,7 @@ export class BindingSlotParser extends SlotParserBase {
 			}
 		}
 
-		if (this.hasValueIndex()) {
+		if (!this.hasValueIndex()) {
 			return {
 				method: 'updateString',
 				value,

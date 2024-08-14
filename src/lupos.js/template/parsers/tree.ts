@@ -113,11 +113,9 @@ export class TreeParser {
 					}
 					else if (TemplateSlotPlaceholder.isDynamicComponent(tagName)) {
 						this.parseDynamicTag(node)
-						break
 					}
 					else if (tagName.startsWith('lupos:')) {
 						this.parseFlowControlTag(node)
-						break
 					}
 
 					this.parseAttributes(node)
@@ -192,6 +190,7 @@ export class TreeParser {
 				break
 		}
 
+		slot.init()
 		this.slots.push(slot)
 	}
 
@@ -320,7 +319,7 @@ export class TreeParser {
 
 	/** Separate children of a node to an independent tree. */
 	separateChildrenAsSubTree(node: HTMLNode): TreeParser {
-		let tree = node.separateChildren()
+		let tree = HTMLTree.fromSeparatingChildren(node)
 		return this.template.addTreeParser(tree, this, node)
 	}
 
@@ -336,7 +335,7 @@ export class TreeParser {
 
 	/** `$slot_0` */
 	getUniqueSlotName(): string {
-		let name = VariableNames.getUniqueName(VariableNames.slot, this)
+		let name = VariableNames.getDoublyUniqueName(VariableNames.slot, this)
 		this.variableNames.push(name)
 		this.partNames.push(name)
 		return name
@@ -344,22 +343,21 @@ export class TreeParser {
 
 	/** `$binding_0` */
 	getUniqueBindingName(): string {
-		let name = VariableNames.getUniqueName(VariableNames.binding, this)
-		this.variableNames.push(name)
+		let name = VariableNames.getDoublyUniqueName(VariableNames.binding, this)
 		this.partNames.push(name)
 		return name
 	}
 
 	/** `$latest_0` */
 	getUniqueLatestName(): string {
-		let name = VariableNames.getUniqueName(VariableNames.latest, this)
+		let name = VariableNames.getDoublyUniqueName(VariableNames.latest, this)
 		this.variableNames.push(name)
 		return name
 	}
 
 	/** `$block_0` */
 	getUniqueBlockName(): string {
-		let name = VariableNames.getUniqueName(VariableNames.block, this)
+		let name = VariableNames.getDoublyUniqueName(VariableNames.block, this)
 		this.variableNames.push(name)
 		return name
 	}
@@ -373,7 +371,7 @@ export class TreeParser {
 			return this.refedComponentMap.get(node)!
 		}
 
-		let comName = VariableNames.getUniqueName(VariableNames.com, this)
+		let comName = VariableNames.getDoublyUniqueName(VariableNames.com, this)
 		this.refedComponentMap.set(node, comName)
 		this.variableNames.push(comName)
 		this.partNames.push(comName)

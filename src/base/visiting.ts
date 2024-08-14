@@ -1,5 +1,6 @@
 import type TS from 'typescript'
 import {ListMap} from '../utils'
+import {definePreVisitCallback} from './visitor-callbacks'
 
 
 interface VisitingItem {
@@ -38,7 +39,7 @@ export namespace Visiting {
 	
 	
 	/** Initialize before start a new source file. */
-	export function init() {
+	export function initialize() {
 		stack = []
 		indexSeed = -1
 		ChildMap.clear()
@@ -160,3 +161,5 @@ export namespace Visiting {
 		return undefined
 	}
 }
+
+definePreVisitCallback(Visiting.initialize)

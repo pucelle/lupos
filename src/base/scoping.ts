@@ -4,6 +4,7 @@ import {factory, transformContext, ts} from './global'
 import {Visiting} from './visiting'
 import {InterpolationContentType, Interpolator} from './interpolator'
 import {Helper} from './helper'
+import {definePostVisitCallback, definePreVisitCallback} from './visitor-callbacks'
 
 
 interface HashItem {
@@ -46,7 +47,7 @@ export namespace Scoping {
 
 
 	/** Initialize before visiting a new source file. */
-	export function init() {
+	export function initialize() {
 		stack = []
 		current = null
 		ScopeMap.clear()
@@ -139,7 +140,7 @@ export namespace Scoping {
 	}
 
 	/** Add variables to interpolator as declaration statements. */
-	export function apply() {
+	export function applyInterpolation() {
 		for (let [scope, names] of AddedVariableNames.entries()) {
 			let toIndex = scope.getIndexToAddVariable()
 
@@ -192,12 +193,11 @@ export namespace Scoping {
 	function doHashingOfNode<T extends TS.Node>(node: T): HashItem {
 		let referenceIndices: number[] = []
 
-		node = Helper.pack.normalize(
-			ts.visitNode(node, (n: TS.Node) => {
-				return hashVisitNode(n, referenceIndices)
-			})!,
-			true
-		) as T
+		let hashVisited = ts.visitNode(node, (n: TS.Node) => {
+			return hashVisitNode(n, referenceIndices)
+		})!
+
+		node = Helper.pack.normalize(hashVisited, true) as T
 
 		return {
 			name: Helper.getText(node),
@@ -531,3 +531,7 @@ export class Scope {
 		return toIndex
 	}
 }
+
+
+definePreVisitCallback(Scoping.initialize)
+definePostVisitCallback(Scoping.applyInterpolation)

@@ -4,6 +4,7 @@ import {factory, sourceFile, ts} from './global'
 import {Helper} from './helper'
 import {InterpolationContentType, Interpolator} from './interpolator'
 import {Visiting} from './visiting'
+import {definePostVisitCallback, definePreVisitCallback} from './visitor-callbacks'
 
 
 /** 
@@ -22,7 +23,7 @@ export namespace Modifier {
 	let topmostDeclarations: (TS.Expression | TS.Statement)[] = []
 
 
-	export function init() {
+	export function initialize() {
 		Imports.clear()
 		MovedIndices.clear()
 		topmostDeclarations = []
@@ -111,7 +112,7 @@ export namespace Modifier {
 
 
 	/** Apply imports to do interpolation. */
-	export function apply() {
+	export function applyInterpolation() {
 		let firstNonImportNode = sourceFile.statements.find(st => !ts.isImportDeclaration(st))!
 		let sourceFileIndex = Visiting.getIndex(firstNonImportNode)
 
@@ -159,3 +160,6 @@ export namespace Modifier {
 		}
 	}
 }
+
+definePreVisitCallback(Modifier.initialize)
+definePostVisitCallback(Modifier.applyInterpolation)

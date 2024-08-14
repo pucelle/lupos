@@ -78,12 +78,12 @@ export class PropertySlotParser extends SlotParserBase {
 		// $values[0]
 		let value = this.outputValueNode()
 
-		// $latest_0 === $values[0] && target[propertyName] = $latest_0 = $values[0]
+		// $latest_0 !== $values[0] && target[propertyName] = $latest_0 = $values[0]
 		if (this.latestVariableName) {
 			return factory.createBinaryExpression(
 				factory.createBinaryExpression(
 					factory.createIdentifier(this.latestVariableName),
-					factory.createToken(ts.SyntaxKind.EqualsEqualsEqualsToken),
+					factory.createToken(ts.SyntaxKind.ExclamationEqualsEqualsToken),
 					value
 				),
 				factory.createToken(ts.SyntaxKind.AmpersandAmpersandToken),

@@ -32,19 +32,15 @@ export namespace VariableNames {
 		return index
 	}
 
-	export function getUniqueName(prefix: string, area: any) {
-		return prefix + '_' + getUniqueIndex(area)
-	}
-
-	export function getDoublyUniqueIndex(innerArea: string, outerArea: any) {
-		let index = AreaDoublyIndexMap.get(outerArea, innerArea) ?? -1
+	export function getDoublyUniqueIndex(prefix: string, area: any) {
+		let index = AreaDoublyIndexMap.get(area, prefix) ?? -1
 		index++
-		AreaDoublyIndexMap.set(outerArea, innerArea, index)
+		AreaDoublyIndexMap.set(area, prefix, index)
 
 		return index
 	}
 
-	export function getDoublyUniqueName(prefix: string, innerArea: string, outerArea: any) {
-		return prefix + '_' + getDoublyUniqueIndex(innerArea, outerArea)
+	export function getDoublyUniqueName(prefix: string, area: any) {
+		return prefix + '_' + getDoublyUniqueIndex(prefix, area)
 	}
 }

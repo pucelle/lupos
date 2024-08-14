@@ -1,6 +1,5 @@
 import {removeFromList} from '../../../utils'
 import {HTMLAttribute, HTMLToken, HTMLTokenParser} from './html-token-parser'
-import {HTMLTree} from './html-tree'
 
 
 export enum HTMLNodeType {
@@ -12,17 +11,18 @@ export enum HTMLNodeType {
 export class HTMLNode {
 
 	type: HTMLNodeType
-	tagName?: string
-	text?: string
-	attrs?: HTMLAttribute[]
+	tagName: string | undefined
+	text: string | undefined
+	attrs: HTMLAttribute[] | undefined
 
 	children: HTMLNode[] = []
 	parent: HTMLNode | null = null
 
 	constructor(type: HTMLNodeType, token: Omit<HTMLToken, 'type'>) {
 		this.type = type
-		this.text = token.text
+		this.tagName = token.tagName
 		this.attrs = token.attrs
+		this.text = token.text
 	}
 
 	private setParent(parent: HTMLNode) {
@@ -113,25 +113,6 @@ export class HTMLNode {
 		this.parent = null
 	}
 
-	separate(): HTMLTree {
-		this.remove()
-		let tree = new HTMLTree()
-		tree.addChild(this)
-
-		return tree
-	}
-
-	separateChildren(): HTMLTree {
-		let tree = new HTMLTree()
-
-		for (let child of this.children) {
-			child.remove()
-			tree.addChild(child)
-		}
-
-		return tree
-	}
-
 	closest(tag: string): HTMLNode | null {
 		let node: HTMLNode | null = this
 
@@ -159,18 +140,18 @@ export class HTMLNode {
 		return true
 	}
 
-	toReadableString(): string {
+	toReadableString(tab = ''): string {
 		if (this.type === HTMLNodeType.Tag) {
-			return `<${this.tagName}${this.toStringOfAttrs()}>
-				${this.children.map(child => child.toReadableString()).join('')}
-			</${this.tagName}>
-			`
+			return tab + `<${this.tagName}${this.toStringOfAttrs()}>`
+				+ this.children.map(child => child.toReadableString(tab + '\t')).map(v => '\n' + v).join('')
+			+ (this.children.length > 0 ? `\n${tab}` : '')
+			+ `</${this.tagName}>`
 		}
 		else if (this.type === HTMLNodeType.Text) {
-			return this.text!
+			return tab + this.text!
 		}
 		else {
-			return `<!--${this.text}-->\n`
+			return tab + `<!--${this.text}-->\n`
 		}
 	}
 

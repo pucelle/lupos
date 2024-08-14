@@ -114,7 +114,12 @@ export class HTMLNodeReferences {
 
 	/** `steps` doesn't include current item sibling index. */
 	private *outputItem(item: DeepReferenceItem, visitFromNode: HTMLNode, parentalSteps: number[]): Iterable<ReferenceOutputItem> {
-		let visitSteps = [...parentalSteps, item.siblingIndex]
+		let visitSteps = [...parentalSteps]
+
+		// No visit step for tree.
+		if (item.node !== this.tree) {
+			visitSteps.push(item.siblingIndex)
+		}
 
 		// Output directly
 		if (this.hasReferenced(item.node)) {

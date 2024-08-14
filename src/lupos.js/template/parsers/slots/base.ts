@@ -52,8 +52,6 @@ export abstract class SlotParserBase {
 		this.node = node
 		this.treeParser = treeParser
 		this.template = treeParser.template
-
-		this.init()
 	}
 
 	/** Returns whether have value index exist. */
@@ -225,7 +223,7 @@ export abstract class SlotParserBase {
 	}
 
 	/** Initialize and prepare. */
-	protected init() {}
+	init() {}
 
 	/** 
 	 * Output initialize codes.

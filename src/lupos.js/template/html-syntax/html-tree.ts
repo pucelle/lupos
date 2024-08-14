@@ -34,8 +34,27 @@ export class HTMLTree extends HTMLNode {
 		return tree
 	}
 
+	static fromSeparating(node: HTMLNode): HTMLTree {
+		node.remove()
+		let tree = new HTMLTree()
+		tree.addChild(node)
+
+		return tree
+	}
+
+	static fromSeparatingChildren(node: HTMLNode): HTMLTree {
+		let tree = new HTMLTree()
+
+		for (let child of node.children) {
+			child.remove()
+			tree.addChild(child)
+		}
+
+		return tree
+	}
+
 	constructor() {
-		super(HTMLNodeType.Tag, {tagName: 'template'})
+		super(HTMLNodeType.Tag, {tagName: 'template', attrs: []})
 	}
 
 	/** Get string of all contents. */

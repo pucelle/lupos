@@ -15,6 +15,18 @@ export function addToList<T>(list: T[], item: T) {
 }
 
 
+/** Convert `string` to camel case type: `a-bc` -> `abc`. */
+export function toCamelCase(string: string): string {
+	return string.replace(/[-_ ][a-z]/gi, m0 => m0[1].toUpperCase())
+}
+
+
+/** Uppercase the first character of `string`: `abc` -> `Abc` */
+export function toCapitalize(string: string): string {
+	return string.slice(0, 1).toUpperCase() + string.slice(1)
+}
+
+
 /** `K => V[]` Map Struct. */
 export class ListMap<K, V> {
 

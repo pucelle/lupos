@@ -160,7 +160,7 @@ export class EventSlotParser extends SlotParserBase {
 									factory.createSpreadElement(factory.createIdentifier('args'))
 								]
 							))],
-							false
+							true
 						)
 					)
 				]
@@ -226,7 +226,7 @@ export class EventSlotParser extends SlotParserBase {
 									factory.createSpreadElement(factory.createIdentifier('args'))
 								]
 							))],
-							false
+							true
 						)
 					)
 				]
@@ -299,7 +299,7 @@ export class EventSlotParser extends SlotParserBase {
 									factory.createSpreadElement(factory.createIdentifier('args'))
 								]
 							))],
-							false
+							true
 						)
 					)
 				]
@@ -367,7 +367,7 @@ export class EventSlotParser extends SlotParserBase {
 									factory.createSpreadElement(factory.createIdentifier('args'))
 								]
 							))],
-							false
+							true
 						)
 					)
 				]

@@ -1,10 +1,5 @@
 import {TransformerExtras} from 'ts-patch'
 import type TS from 'typescript'
-import {Modifier} from './modifier'
-import {Interpolator} from './interpolator'
-import {Visiting} from './visiting'
-import {Imports} from './imports'
-import {Scoping} from './scoping'
 
 
 export let typeChecker: TS.TypeChecker
@@ -30,9 +25,4 @@ export function setTransformContext(ctx: TS.TransformationContext) {
 
 export function setSourceFile(file: TS.SourceFile) {
 	sourceFile = file
-	Visiting.init()
-	Scoping.init()
-	Interpolator.init()
-	Modifier.init()
-	Imports.init()
 }

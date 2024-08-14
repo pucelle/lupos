@@ -3,8 +3,9 @@ import {Visiting} from './visiting'
 import {Interpolator} from './interpolator'
 import {TransformerExtras} from 'ts-patch'
 import {setGlobal, setSourceFile, setTransformContext} from './global'
-import {Modifier} from './modifier'
 import {Scoping} from './scoping'
+import {Imports} from './imports'
+import {runPostVisitCallbacks, runPreVisitCallbacks} from './visitor-callbacks'
 
 
 /** 
@@ -61,6 +62,7 @@ export function transformer(program: TS.Program, extras: TransformerExtras) {
 
 		return (sourceFile: TS.SourceFile) => {
 			setSourceFile(sourceFile)
+			runPreVisitCallbacks()
 
 			function visit(node: TS.Node): TS.Node {
 				Visiting.toNext(node)
@@ -78,18 +80,23 @@ export function transformer(program: TS.Program, extras: TransformerExtras) {
 
 				doMoreAfterVisitedChildren()
 
+				// Remember import members.
+				if (ts.isImportSpecifier(node)) {
+					Imports.add(node)
+				}
+
 				// Returned result has no matter.
 				return node
 			}
 
 			try {
 				ts.visitNode(sourceFile, visit)
-				Modifier.apply()
-				Scoping.apply()
+				runPostVisitCallbacks()
+
 				return Interpolator.output(0) as TS.SourceFile
 			}
 			catch (err) {
-				console.log(`Failed to transform source file "${sourceFile.fileName}"!`)
+				console.warn(`Failed to transform source file "${sourceFile.fileName}"!`)
 				throw err
 			}
 		}

@@ -60,6 +60,7 @@ export namespace Helper {
 				|| ts.isFunctionDeclaration(node)
 				|| ts.isGetAccessorDeclaration(node)
 				|| ts.isSetAccessorDeclaration(node)
+				|| ts.isImportSpecifier(node)
 			)
 			&& node.name
 			&& ts.isIdentifier(node.name)
@@ -151,10 +152,10 @@ export namespace Helper {
 
 		/** 
 		 * Get one class property declaration by it's name.
-		 * `followExtend` specifies whether will look at extended class.
+		 * `resolveExtend` specifies whether will look at extended class.
 		 */
-		export function getProperty(node: TS.ClassDeclaration, propertyName: string, followExtend: boolean = false): TS.PropertyDeclaration | undefined {
-			if (followExtend) {
+		export function getProperty(node: TS.ClassDeclaration, propertyName: string, resolveExtend: boolean = false): TS.PropertyDeclaration | undefined {
+			if (resolveExtend) {
 				let prop = getProperty(node, propertyName, false)
 				if (prop) {
 					return prop
@@ -162,7 +163,7 @@ export namespace Helper {
 
 				let superClass = getSuper(node)
 				if (superClass) {
-					return getProperty(superClass, propertyName, followExtend)
+					return getProperty(superClass, propertyName, resolveExtend)
 				}
 
 				return undefined
@@ -177,10 +178,10 @@ export namespace Helper {
 
 		/** 
 		 * Get one class method declaration by it's name.
-		 * `followExtend` specifies whether will look at extended class.
+		 * `resolveExtend` specifies whether will look at extended class.
 		 */
-		export function getMethod(node: TS.ClassDeclaration, methodName: string, followExtend: boolean = false): TS.MethodDeclaration | undefined {
-			if (followExtend) {
+		export function getMethod(node: TS.ClassDeclaration, methodName: string, resolveExtend: boolean = false): TS.MethodDeclaration | undefined {
+			if (resolveExtend) {
 				let prop = getMethod(node, methodName, false)
 				if (prop) {
 					return prop
@@ -188,7 +189,7 @@ export namespace Helper {
 
 				let superClass = getSuper(node)
 				if (superClass) {
-					return getMethod(superClass, methodName, followExtend)
+					return getMethod(superClass, methodName, resolveExtend)
 				}
 
 				return undefined
@@ -280,23 +281,30 @@ export namespace Helper {
 		}
 
 		/** Get constructor. */
-		export function getConstructor(node: TS.ClassDeclaration): TS.ConstructorDeclaration | undefined {
-			return node.members.find(v => ts.isConstructorDeclaration(v)) as TS.ConstructorDeclaration | undefined
+		export function getConstructor(node: TS.ClassDeclaration, resolveExtend: boolean = false): TS.ConstructorDeclaration | undefined {
+			let cons = node.members.find(v => ts.isConstructorDeclaration(v)) as TS.ConstructorDeclaration | undefined
+			if (cons) {
+				return cons
+			}
+
+			if (resolveExtend) {
+				let superClass = getSuper(node)
+				if (superClass) {
+					return getConstructor(superClass, resolveExtend)
+				}
+			}
+
+			return undefined
 		}
 
 		/** Get constructor parameter list, even from super class. */
-		export function getConstructorParameters(node: TS.ClassDeclaration): TS.ParameterDeclaration[] {
-			let constructor = getConstructor(node)
+		export function getConstructorParameters(node: TS.ClassDeclaration): TS.ParameterDeclaration[] | undefined {
+			let constructor = getConstructor(node, true)
 			if (constructor) {
 				return [...constructor.parameters]
 			}
-			
-			let superClass = getSuper(node)
-			if (superClass) {
-				return getConstructorParameters(superClass)
-			}
-
-			return []
+	
+			return undefined
 		}
 
 		/** Whether property or method has specified modifier. */

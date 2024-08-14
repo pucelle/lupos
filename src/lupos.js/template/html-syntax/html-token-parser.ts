@@ -50,7 +50,7 @@ export namespace HTMLTokenParser {
 	const TagRE = /<!--[\s\S]*?-->|<([\w-\d$:]+)([\s\S]*?)\/?>|<\/[\w-]+>/g
 
 	/** RegExp to match attribute string, include Template slot placeholder `$LUPOS_SLOT_INDEX_\d$`. */
-	const AttrRE = /([.:?@\w-$]+)\s*(?:=\s*(".*?"|'.*?'|.)\s*)?/g
+	const AttrRE = /([.:@\w$-]+)\s*(?:=\s*(".*?"|'.*?'|\S*)\s*)?/g
 
 
 	/**
@@ -97,13 +97,13 @@ export namespace HTMLTokenParser {
 			// Start Tag
 			else {
 				let tagName = match[1]
-				let attributes = parseAttribute(match[2])
+				let attrs = parseAttributes(match[2])
 				let selfClose = SelfClosingTags.includes(tagName)
 
 				tokens.push({
 					type: HTMLTokenType.StartTag,
 					tagName,
-					attrs: attributes,
+					attrs,
 				})
 
 				//`<tag />` -> `<tag></tag>`
@@ -135,13 +135,13 @@ export namespace HTMLTokenParser {
 	}
 
 	/** Parses a HTML attribute string to an attribute list. */
-	function parseAttribute(attr: string): HTMLAttribute[] {
+	function parseAttributes(attr: string): HTMLAttribute[] {
 		let match: RegExpExecArray | null
 		let attrs: HTMLAttribute[] = []
 
 		while (match = AttrRE.exec(attr)) {
 			let name = match[1]
-			let value = match[2].replace(/^(['"])(.*?)\1$/, '$1')
+			let value = match[2]?.replace(/^(['"])(.*?)\1$/, '$1')
 
 			attrs.push({
 				name,
