@@ -1,24 +1,28 @@
 import {Component, html, ClassBinding} from '@pucelle/lupos.js'
 
 
-class TestClassBinding extends Component {
+class TestBinding extends Component {
 
 	className = 'className'
 	booleanValue = true
 
-	testClassString() {
+	testInterpolatedString() {
+		return html`<div :class="${this.className} className2" />`
+	}
+
+	testString() {
 		return html`<div :class=${this.className} />`
 	}
 
-	testClassArray() {
+	testArray() {
 		return html`<div :class=${[this.className]} />`
 	}
 
-	testClassObject() {
+	testObject() {
 		return html`<div :class=${{'className': this.booleanValue}} />`
 	}
 
-	testClassModifier() {
+	testModifier() {
 		return html`<div :class.prop=${this.booleanValue} />`
 	}
 }
@@ -26,19 +30,19 @@ class TestClassBinding extends Component {
 
 class TestStaticClassBinding extends Component {
 
-	testClassString() {
+	testString() {
 		return html`<div :class=${'className'} />`
 	}
 
-	testClassArray() {
+	testArray() {
 		return html`<div :class=${['className']} />`
 	}
 
-	testClassObject() {
+	testObject() {
 		return html`<div :class=${{'className': true}} />`
 	}
 
-	testClassModifier() {
+	testModifier() {
 		return html`<div :class.prop=${true} />`
 	}
 }

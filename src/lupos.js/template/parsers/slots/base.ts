@@ -14,8 +14,14 @@ export abstract class SlotParserBase {
 	/** Modifiers. */
 	readonly modifiers: string[] | null = []
 
-	/** If defined as `???="..."`, be `...`. Otherwise be `null`. */
-	readonly string: string | null
+	/** String parts of template slot. */
+	readonly strings: string[] | null
+
+	/** 
+	 * Value index in the whole template.
+	 * Is `null` if slot is a fixed slot defined like `???="..."`.
+	 */
+	readonly valueIndices: number[] | null
 
 	/** Index of the node the slot placed at within the document fragment. */
 	readonly node: HTMLNode
@@ -26,22 +32,16 @@ export abstract class SlotParserBase {
 	/** Template parser current slot belonged to. */
 	readonly template: TemplateParser
 
-	/** 
-	 * Value index in the whole template.
-	 * Is `null` if slot is a fixed slot defined like `???="..."`.
-	 */
-	readonly valueIndex: number | null
-
 	constructor(
 		name: string | null,
-		string: string | null,
-		valueIndex: number | null,
+		strings: string[] | null,
+		valueIndices: number[] | null,
 		node: HTMLNode,
 		treeParser: TreeParser
 	) {
 		this.name = name
-		this.string = string
-		this.valueIndex = valueIndex
+		this.strings = strings
+		this.valueIndices = valueIndices
 
 		if (name !== null) {
 			let splitted = name.split(/[.]/g)
@@ -54,38 +54,47 @@ export abstract class SlotParserBase {
 		this.template = treeParser.template
 	}
 
-	/** Returns whether have value index exist. */
+	/** Returns whether have value indices exist. */
 	protected hasValueIndex(): boolean {
-		return this.valueIndex !== null
+		return this.valueIndices !== null
+	}
+
+	/** Returns whether have strings exist. */
+	protected hasString(): boolean {
+		return this.strings !== null
 	}
 
 	/** Returns whether current value node is mutable. */
 	protected isValueMutable(): boolean {
-		return this.valueIndex !== null
-			&& this.template.values.isIndexMutable(this.valueIndex)
+		return this.valueIndices !== null
+			&& this.valueIndices.some(index => this.template.values.isIndexMutable(index))
 	}
 
 	/** Returns whether current value node can turn from mutable to static. */
 	protected isValueCanTurnStatic(): boolean {
-		return this.valueIndex !== null
-			&& this.template.values.isIndexCanTurnStatic(this.valueIndex)
+		return this.valueIndices !== null
+			&& this.valueIndices.every(index => this.template.values.isIndexCanTurnStatic(index))
 	}
 
 	/** Returns whether current value has been outputted as mutable. */
 	isValueOutputAsMutable(): boolean {
-		return this.valueIndex !== null
-			&& this.template.values.isIndexOutputAsMutable(this.valueIndex)
+		return this.valueIndices !== null
+			&& this.valueIndices.some(index => this.template.values.isIndexOutputAsMutable(index))
 	}
 
 	/** Returns whether current value has been transferred to topmost scope. */
 	isValueTransferredToTopmost(): boolean {
-		return this.valueIndex !== null
-			&& this.template.values.isIndexTransferredToTopmost(this.valueIndex)
+		return this.valueIndices !== null
+			&& this.valueIndices.some(index => this.template.values.isIndexTransferredToTopmost(index))
 	}
 
-	/** Get raw node, can only use returned node to identify type, cant output. */
-	protected getRawNode(): TS.Expression {
-		return this.template.values.getRawNode(this.valueIndex!)
+	/** 
+	 * Get first of raw value nodes,
+	 * can only use returned node to identify type, cant output.
+	 * If not `hasString()`, this value will always exist.
+	 */
+	protected getFirstValueNode(): TS.Expression | null {
+		return this.valueIndices ? this.template.values.getRawNode(this.valueIndices[0]) : null
 	}
 
 	/** Get node variable name. */
@@ -115,12 +124,7 @@ export abstract class SlotParserBase {
 	 * Can only use it when outputting update.
 	 */
 	outputValueNode(): TS.Expression {
-		if (this.valueIndex === null) {
-			return factory.createStringLiteral(this.string!)
-		}
-		else {
-			return this.template.values.outputNodeAt(this.valueIndex)
-		}
+		return this.template.values.outputValue(this.valueIndices, this.strings)
 	}
 
 	/** Make `new TemplateSlot(...)`. */

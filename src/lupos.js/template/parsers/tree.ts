@@ -136,57 +136,51 @@ export class TreeParser {
 		valueIndices: number[] | null,
 		node: HTMLNode
 	) {
-		if (strings && valueIndices) {
-			this.template.values.bundleValueIndices(strings, valueIndices)
-		}
-
 		let slot: SlotParserBase
-		let string = strings ? strings[0] : null
-		let valueIndex = valueIndices ? valueIndices[0] : null
-
+		
 		switch (type) {
 			case SlotType.SlotTag:
-				slot = new SlotTagSlotParser(name, string, valueIndex, node, this)
+				slot = new SlotTagSlotParser(name, strings, valueIndices, node, this)
 				break
 
 			case SlotType.Component:
-				slot = new ComponentSlotParser(name, string, valueIndex, node, this)
+				slot = new ComponentSlotParser(name, strings, valueIndices, node, this)
 				break
 
 			case SlotType.DynamicComponent:
-				slot = new DynamicComponentSlotParser(name, string, valueIndex, node, this)
+				slot = new DynamicComponentSlotParser(name, strings, valueIndices, node, this)
 				break
 
 			case SlotType.FlowControl:
-				slot = new FlowControlSlotParser(name, string, valueIndex, node, this)
+				slot = new FlowControlSlotParser(name, strings, valueIndices, node, this)
 				break
 
 			case SlotType.Property:
-				slot = new PropertySlotParser(name, string, valueIndex, node, this)
+				slot = new PropertySlotParser(name, strings, valueIndices, node, this)
 				break
 
 			case SlotType.Binding:
-				slot = new BindingSlotParser(name, string, valueIndex, node, this)
+				slot = new BindingSlotParser(name, strings, valueIndices, node, this)
 				break
 
 			case SlotType.Event:
-				slot = new EventSlotParser(name, string, valueIndex, node, this)
+				slot = new EventSlotParser(name, strings, valueIndices, node, this)
 				break
 
 			case SlotType.Attribute:
-				slot = new AttributeSlotParser(name, string, valueIndex, node, this)
+				slot = new AttributeSlotParser(name, strings, valueIndices, node, this)
 				break
 
 			case SlotType.TemplateAttribute:
-				slot = new TemplateAttributeSlotParser(name, string, valueIndex, node, this)
+				slot = new TemplateAttributeSlotParser(name, strings, valueIndices, node, this)
 				break
 
 			case SlotType.Text:
-				slot = new TextSlotParser(name, string, valueIndex, node, this)
+				slot = new TextSlotParser(name, strings, valueIndices, node, this)
 				break
 
 			case SlotType.Content:
-				slot = new ContentSlotParser(name, string, valueIndex, node, this)
+				slot = new ContentSlotParser(name, strings, valueIndices, node, this)
 				break
 		}
 
@@ -215,12 +209,12 @@ export class TreeParser {
 
 	private parseAttributes(node: HTMLNode) {
 		for (let attr of node.attrs!) {
-			let {name, value} = attr
+			let {name, value, quoted} = attr
 			let type: SlotType | null = null
 
 			// `<tag ...=${...}>
 			// `<tag ...="...${...}...">
-			let strings = value !== null ? TemplateSlotPlaceholder.parseTemplateStrings(value) : null
+			let strings = value !== null ? TemplateSlotPlaceholder.parseTemplateStrings(value, quoted) : null
 			let slotIndices = value !== null ? TemplateSlotPlaceholder.getSlotIndices(value) : null
 
 			switch (name[0]) {

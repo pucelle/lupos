@@ -63,10 +63,10 @@ export class TreeOutputHandler {
 
 		let initStatements = [
 			rootNode,
-			...nodeRefs,
+			nodeRefs,
+			init,
 			varStatements,
-			...init,
-			...staticUpdate,
+			staticUpdate,
 		].flat().map(n => Helper.pack.toStatement(n))
 
 		// $template_0

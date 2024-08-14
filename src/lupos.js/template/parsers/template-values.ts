@@ -1,12 +1,12 @@
 import type TS from 'typescript'
-import {factory, MutableMask, Scoping, ts} from '../../../base'
+import {factory, Helper, MutableMask, Scoping, ts} from '../../../base'
 import {VariableNames} from './variable-names'
 
 
 /** Help to manage all value nodes. */
 export class TemplateValues {
 
-	readonly rawNodes: TS.Expression[]
+	readonly valueNodes: TS.Expression[]
 
 	private valueHash: Map<string, number> = new Map()
 	private outputNodes: TS.Expression[] = []
@@ -14,15 +14,15 @@ export class TemplateValues {
 	private indicesOutputAsMutable: Map<number, boolean> = new Map()
 	private indicesTransferred: Set<number> = new Set()
 
-	constructor(rawNodes: TS.Expression[]) {
-		this.rawNodes = rawNodes
+	constructor(valueNodes: TS.Expression[]) {
+		this.valueNodes = valueNodes
 		this.checkIndicesMutable()
 	}
 	
 	/** Removes all static values and remap value indices. */
 	private checkIndicesMutable() {
-		for (let i = 0; i < this.rawNodes.length; i++) {
-			let node = this.rawNodes[i]
+		for (let i = 0; i < this.valueNodes.length; i++) {
+			let node = this.valueNodes[i]
 			this.indicesMutable.set(i, Scoping.testMutable(node))
 		}
 	}
@@ -49,7 +49,7 @@ export class TemplateValues {
 
 	/** Get raw value node at index. */
 	getRawNode(index: number): TS.Expression {
-		return this.rawNodes[index]
+		return this.valueNodes[index]
 	}
 
 	/** 
@@ -58,19 +58,34 @@ export class TemplateValues {
 	 * If `forceStatic`, will treat it as static value node,
 	 * must check `isIndexCanTurnStatic()` firstly and ensure it can.
 	 */
-	outputNodeAt(index: number, forceStatic: boolean = false): TS.Expression {
-		let rawValueNode = this.rawNodes[index]
-
-		// Output static raw node.
-		if (!this.isIndexMutable(index) || forceStatic && this.isIndexCanTurnStatic(index)) {
-			this.indicesOutputAsMutable.set(index, false)
-			return Scoping.transferToTopmostScope(rawValueNode, this.transferNodeToTopmostScope.bind(this, index))
+	outputValue(valueIndices: number[] | null, strings: string[] | null = null, forceStatic: boolean = false): TS.Expression {
+		if (valueIndices === null) {
+			return factory.createStringLiteral(strings![0])
 		}
+		
+		let valueNodes = valueIndices.map(index => {
+			let valueNode = this.valueNodes[index]
+			let mutable = this.isIndexMutable(index)
+			let canTurn = this.isIndexCanTurnStatic(index)
 
-		// Output from value list.
+			// Output static raw node.
+			if (!mutable || forceStatic && canTurn) {
+				this.indicesOutputAsMutable.set(index, false)
+				return Scoping.transferToTopmostScope(valueNode, this.transferNodeToTopmostScope.bind(this, index))
+			}
+
+			// Output from value list.
+			else {
+				this.indicesOutputAsMutable.set(index, true)
+				return this.outputValueNodeOf(valueNode, false)
+			}
+		})
+
+		if (strings) {
+			return this.bundleStringsAndValueNodes(strings, valueNodes)
+		}
 		else {
-			this.indicesOutputAsMutable.set(index, true)
-			return this.outputNode(rawValueNode, false)
+			return valueNodes[0]
 		}
 	}
 
@@ -84,7 +99,7 @@ export class TemplateValues {
 		// Move variable name as an item of output value list.
 		if (ts.isIdentifier(node)) {
 			this.indicesTransferred.add(index)
-			return this.outputNode(node, true)
+			return this.outputValueNodeOf(node, true)
 		}
 
 		// Replace `this` to `$context`.
@@ -97,7 +112,7 @@ export class TemplateValues {
 	 * Output a node, append it to output value node list,
 	 * and returns the output node.
 	 */
-	private outputNode(node: TS.Expression, transferringToTopmostScope: boolean): TS.Expression {
+	private outputValueNodeOf(node: TS.Expression, transferringToTopmostScope: boolean): TS.Expression {
 		let hash = Scoping.hashNode(node).name
 		let valueIndex: number
 
@@ -125,34 +140,38 @@ export class TemplateValues {
 	 * It uses `indices[0]` as new index.
 	 * `...${value}...` -> `${'...' + value + '...'}`
 	 */
-	bundleValueIndices(strings: string[], valueIndices: number[]) {
-		let value: TS.Expression = factory.createStringLiteral(strings[0])
+	private bundleStringsAndValueNodes(strings: string[], valueNodes: TS.Expression[]): TS.Expression {
+		let parts: TS.Expression[] = []
 
 		// string[0] + values[0] + strings[1] + ...
-		for (let i = 1; i < strings.length; i++) {
+		for (let i = 0; i < strings.length; i++) {
+			if (strings[i]) {
+				parts.push(factory.createStringLiteral(strings[i]))
+			}
+
+			if (i < strings.length - 1) {
+				parts.push(valueNodes[i])
+			}
+		}
+
+		// '' + ...
+		if (!ts.isStringLiteral(parts[0])
+			&& !Helper.types.isStringType(Helper.types.getType(parts[0]))
+		) {
+			parts.unshift(factory.createStringLiteral(''))
+		}
+
+		let value = parts[0]
+
+		for (let i = 1; i < parts.length; i++) {
 			value = factory.createBinaryExpression(
 				value,
 				factory.createToken(ts.SyntaxKind.PlusToken),
-				this.rawNodes[valueIndices[i - 1]]
-			)
-
-			value = factory.createBinaryExpression(
-				value,
-				factory.createToken(ts.SyntaxKind.PlusToken),
-				factory.createStringLiteral(strings[i])
+				parts[i]
 			)
 		}
 
-		this.rawNodes[valueIndices[0]] = value
-
-		// Other values become undefined, and will be removed in the following remapping step.
-		for (let i = 1; i < valueIndices.length; i++) {
-			this.rawNodes[valueIndices[i]] = factory.createIdentifier('undefined')
-		}
-
-		// Byte OR of all indices' mutable.
-		let reduced = valueIndices.reduce((a, b) => a | b, 0)
-		this.indicesMutable.set(valueIndices[0], reduced)
+		return value
 	}
 
 	/** Output all values to an array. */

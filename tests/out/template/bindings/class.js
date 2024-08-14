@@ -111,37 +111,37 @@ const $template_7 = new TemplateMaker($context => {
         parts: [$binding_0]
     };
 });
-class TestClassBinding extends Component {
+class TestBinding extends Component {
     className = 'className';
     booleanValue = true;
-    testClassString() {
+    testString() {
         trackGet(this, "className");
         return new CompiledTemplateResult($template_0, [this.className]);
     }
-    testClassArray() {
+    testArray() {
         trackGet(this, "className");
         return new CompiledTemplateResult($template_1, [[this.className]]);
     }
-    testClassObject() {
+    testObject() {
         trackGet(this, "booleanValue");
         return new CompiledTemplateResult($template_2, [{ 'className': this.booleanValue }]);
     }
-    testClassModifier() {
+    testModifier() {
         trackGet(this, "booleanValue");
         return new CompiledTemplateResult($template_3, [this.booleanValue]);
     }
 }
 class TestStaticClassBinding extends Component {
-    testClassString() {
+    testString() {
         return new CompiledTemplateResult($template_4, []);
     }
-    testClassArray() {
+    testArray() {
         return new CompiledTemplateResult($template_5, []);
     }
-    testClassObject() {
+    testObject() {
         return new CompiledTemplateResult($template_6, []);
     }
-    testClassModifier() {
+    testModifier() {
         return new CompiledTemplateResult($template_7, []);
     }
 }

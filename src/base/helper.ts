@@ -573,6 +573,16 @@ export namespace Helper {
 			)) > 0
 		}
 
+		/** Test whether type represents a string. */
+		export function isStringType(type: TS.Type): boolean {
+			return (type.getFlags() & ts.TypeFlags.StringLike) > 0
+		}
+
+		/** Test whether type represents a number. */
+		export function isNumericType(type: TS.Type): boolean {
+			return (type.getFlags() & ts.TypeFlags.NumberLike) > 0
+		}
+
 		/** Test whether type represents a value, and not null or undefined. */
 		export function isNonNullableValueType(type: TS.Type): boolean {
 			if (type.isUnionOrIntersection()) {

@@ -183,22 +183,22 @@ export class BindingSlotParser extends SlotParserBase {
 			}
 		}
 
-		let slotNode = this.getRawNode()
-		let slotNodeType = Helper.types.getType(slotNode)
+		let slotNode = this.getFirstValueNode()
+		let slotNodeType = slotNode ? Helper.types.getType(slotNode) : null
 
-		if (Helper.types.isValueType(slotNodeType)) {
+		if (this.hasString() || Helper.types.isValueType(slotNodeType!)) {
 			return {
 				method: 'updateString',
 				value,
 			}
 		}
-		else if (Helper.types.isArrayType(slotNodeType)) {
+		else if (Helper.types.isArrayType(slotNodeType!)) {
 			return {
 				method: 'updateList',
 				value,
 			}
 		}
-		else if (Helper.types.isObjectType(slotNodeType)) {
+		else if (Helper.types.isObjectType(slotNodeType!)) {
 			return {
 				method: 'updateObject',
 				value,
@@ -259,23 +259,23 @@ export class BindingSlotParser extends SlotParserBase {
 			}
 		}
 
-		if (this.hasValueIndex()) {
+		if (!this.hasValueIndex()) {
 			return {
 				method: 'updateString',
 				value,
 			}
 		}
 
-		let slotNode = this.getRawNode()
-		let slotNodeType = Helper.types.getType(slotNode)
+		let slotNode = this.getFirstValueNode()
+		let slotNodeType = slotNode ? Helper.types.getType(slotNode) : null
 
-		if (Helper.types.isValueType(slotNodeType)) {
+		if (this.hasString() || Helper.types.isValueType(slotNodeType!)) {
 			return {
 				method: 'updateString',
 				value,
 			}
 		}
-		else if (Helper.types.isObjectType(slotNodeType)) {
+		else if (Helper.types.isObjectType(slotNodeType!)) {
 			return {
 				method: 'updateObject',
 				value,

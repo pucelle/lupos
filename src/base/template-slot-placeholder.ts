@@ -45,10 +45,13 @@ export namespace TemplateSlotPlaceholder {
 		return values
 	}
 
-	/** Split a full template string by template slot placeholder `$LUPOS_SLOT_INDEX_\d_. */
-	export function parseTemplateStrings(parsed: string): string[] | null {
+	/** 
+	 * Split a full template string by template slot placeholder `$LUPOS_SLOT_INDEX_\d_.
+	 * If `quoted`, must return a string list.
+	 */
+	export function parseTemplateStrings(parsed: string, quoted: boolean = false): string[] | null {
 		let result = parsed.split(/\$LUPOS_SLOT_INDEX_\d+\$/g)
-		if (result.length === 2 && result[0] === '' && result[1] === '') {
+		if (result.length === 2 && result[0] === '' && result[1] === '' && !quoted) {
 			return null
 		}
 

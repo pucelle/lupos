@@ -17,11 +17,11 @@ export class AttributeSlotParser extends SlotParserBase {
 	}
 
 	outputUpdate() {
-		let slotNode = this.getRawNode()
-		let slotNodeType = Helper.types.getType(slotNode)
+		let slotNode = this.getFirstValueNode()
+		let slotNodeType = slotNode ? Helper.types.getType(slotNode) : null
 
 		// `$values[0]` is not nullable
-		if (Helper.types.isNonNullableValueType(slotNodeType)) {
+		if (this.hasString() || Helper.types.isNonNullableValueType(slotNodeType!)) {
 			return this.outputNonNullableValueUpdate()
 		}
 

@@ -9,16 +9,17 @@ export class TemplateAttributeSlotParser extends SlotParserBase {
 	declare readonly name: string
 
 	/** Attribute value. */
-	declare readonly string: string
+	declare readonly strings: [string]
 
 	/** Has no value index related. */
-	declare readonly valueIndex: null
+	declare readonly valueIndices: null
 
 	outputInit() {
+		let string = this.strings[0]
 
 		// class="..."
 		if (this.name === 'class') {
-			let classNames = this.string.split(/\s+/).filter(v => v)
+			let classNames = string.split(/\s+/).filter(v => v)
 
 			return factory.createCallExpression(
 				factory.createPropertyAccessExpression(
@@ -38,7 +39,7 @@ export class TemplateAttributeSlotParser extends SlotParserBase {
 
 		// style="..."
 		else if (this.name === 'style') {
-			let styles = this.string.split(/\s*;\s*/)
+			let styles = string.split(/\s*;\s*/)
 				.map(v => v.split(/\s*:\s*/))
 				.filter(v => v[0])
 
@@ -84,7 +85,7 @@ export class TemplateAttributeSlotParser extends SlotParserBase {
 				undefined,
 				[
 				  factory.createStringLiteral(this.name),
-				  factory.createStringLiteral(this.string)
+				  factory.createStringLiteral(string)
 				]
 			) 
 		}

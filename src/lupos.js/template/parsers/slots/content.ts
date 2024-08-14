@@ -27,8 +27,9 @@ export class ContentSlotParser extends SlotParserBase {
 	}
 
 	private identifySlotContentType(): number | null {
-		let valueNode = this.getRawNode()
-		let typeText = Helper.types.getTypeFullText(Helper.types.getType(valueNode))
+		let valueNode = this.getFirstValueNode()
+		let valueType = valueNode ? Helper.types.getType(valueNode) : null
+		let typeText = valueType ? Helper.types.getTypeFullText(valueType) : null
 		let slotContentType: number | null = null
 
 		if (typeText === 'TemplateResult') {
@@ -40,7 +41,7 @@ export class ContentSlotParser extends SlotParserBase {
 		else if (typeText === 'string' || typeText === 'number') {
 			slotContentType = 2
 		}
-		else if (/^\w*?(Node|Element)$/.test(typeText)) {
+		else if (typeText && /^\w*?(Node|Element)$/.test(typeText)) {
 			slotContentType = 3
 		}
 

@@ -12,6 +12,9 @@ export interface HTMLAttribute {
 
 	/** Quotes have been removed. */
 	value: string | null
+
+	/** Whether attribute value been quoted and value will be transformed to string. */
+	quoted: boolean
 }
 
 /** HTML token type. */
@@ -141,11 +144,17 @@ export namespace HTMLTokenParser {
 
 		while (match = AttrRE.exec(attr)) {
 			let name = match[1]
-			let value = match[2]?.replace(/^(['"])(.*?)\1$/, '$1')
+			let value = match[2]
+			
+			let quoted = value ? /^(['"])(.*)\1$/.test(value) : false
+			if (quoted) {
+				value = value.replace(/^(['"])(.*)\1$/, '$2')
+			}
 
 			attrs.push({
 				name,
 				value: value ?? null,
+				quoted,
 			})
 		}
 
