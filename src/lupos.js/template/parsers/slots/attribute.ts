@@ -20,6 +20,8 @@ export class AttributeSlotParser extends SlotParserBase {
 		let slotNode = this.getFirstValueNode()
 		let slotNodeType = slotNode ? Helper.types.getType(slotNode) : null
 
+		console.log(Helper.getText(slotNode!))
+
 		// `$values[0]` is not nullable
 		if (this.hasString() || Helper.types.isNonNullableValueType(slotNodeType!)) {
 			return this.outputNonNullableValueUpdate()
@@ -39,30 +41,37 @@ export class AttributeSlotParser extends SlotParserBase {
 		// $values[0]
 		let value = this.outputValueNode()
 
-		// $latest_0 !== $values[0] && $node_0.setAttribute(attrName, $latest_0 = $values[0])
+		// if ($latest_0 !== $values[0]) {
+		//   $node_0.setAttribute(attrName, $latest_0 = $values[0])
+		// }
 		if (this.latestVariableName) {
-			return factory.createBinaryExpression(
+			return factory.createIfStatement(
 				factory.createBinaryExpression(
 					factory.createIdentifier(this.latestVariableName),
 					factory.createToken(ts.SyntaxKind.ExclamationEqualsEqualsToken),
 					value
 				),
-				factory.createToken(ts.SyntaxKind.AmpersandAmpersandToken),
-				factory.createCallExpression(
-					factory.createPropertyAccessExpression(
-						factory.createIdentifier(nodeName),
-						factory.createIdentifier('setAttribute')
-					),
-					undefined,
+				factory.createBlock(
 					[
-						factory.createIdentifier(this.name),
-						factory.createBinaryExpression(
-							factory.createIdentifier(this.latestVariableName),
-							factory.createToken(ts.SyntaxKind.EqualsToken),
-							value
-						)
-					]
-				)
+						factory.createExpressionStatement(factory.createCallExpression(
+							factory.createPropertyAccessExpression(
+								factory.createIdentifier(nodeName),
+								factory.createIdentifier('setAttribute')
+							),
+							undefined,
+							[
+								factory.createStringLiteral(this.name),
+								factory.createBinaryExpression(
+									factory.createIdentifier(this.latestVariableName),
+									factory.createToken(ts.SyntaxKind.EqualsToken),
+									value
+								)
+							]
+						))
+					],
+					true
+				),
+				undefined
 			)
 		}
 
@@ -75,7 +84,7 @@ export class AttributeSlotParser extends SlotParserBase {
 				),
 				undefined,
 				[
-					factory.createIdentifier(this.name),
+					factory.createStringLiteral(this.name),
 					value
 				]
 			)
@@ -116,7 +125,7 @@ export class AttributeSlotParser extends SlotParserBase {
 									factory.createIdentifier('removeAttribute')
 								),
 								undefined,
-								[factory.createIdentifier(this.name)]
+								[factory.createStringLiteral(this.name)]
 							),
 							factory.createToken(ts.SyntaxKind.ColonToken),
 							factory.createCallExpression(
@@ -126,7 +135,7 @@ export class AttributeSlotParser extends SlotParserBase {
 								),
 								undefined,
 								[
-									factory.createIdentifier(this.name),
+									factory.createStringLiteral(this.name),
 									value
 								]
 							)
@@ -157,7 +166,7 @@ export class AttributeSlotParser extends SlotParserBase {
 						factory.createIdentifier('removeAttribute')
 					),
 					undefined,
-					[factory.createIdentifier(this.name)]
+					[factory.createStringLiteral(this.name)]
 				),
 				factory.createToken(ts.SyntaxKind.ColonToken),
 				factory.createCallExpression(
@@ -167,7 +176,7 @@ export class AttributeSlotParser extends SlotParserBase {
 					),
 					undefined,
 					[
-						factory.createIdentifier(this.name),
+						factory.createStringLiteral(this.name),
 						value
 					]
 				)

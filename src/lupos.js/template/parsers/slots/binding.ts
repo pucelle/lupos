@@ -1,8 +1,8 @@
 import type TS from 'typescript'
 import {SlotParserBase} from './base'
-import {factory, ts, Imports, Helper} from '../../../../base'
+import {factory, ts, Imports, Helper, TemplateSlotPlaceholder} from '../../../../base'
 import {VariableNames} from '../variable-names'
-import {toCamelCase, toCapitalize} from '../../../../utils'
+import {addToList, toCamelCase, toCapitalize} from '../../../../utils'
 
 
 export class BindingSlotParser extends SlotParserBase {
@@ -16,12 +16,42 @@ export class BindingSlotParser extends SlotParserBase {
 	/** $binding_0 */
 	private bindingVariableName: string = ''
 
+	/** Force output value node for ref binding. */
+	private forceRefStatic: boolean = false
+
 	init() {
-		if (this.isValueMutable()) {
+		if (this.name === 'ref') {
+			this.initRef()
+		}
+
+		if (this.isValueMutable() && !this.forceRefStatic) {
 			this.latestVariableName = this.treeParser.getUniqueLatestName()
 		}
 
 		this.bindingVariableName = this.treeParser.getUniqueBindingName()
+	}
+
+	private initRef() {
+		
+		// If declare property as `XXXElement`, force ref element.
+		let rawValueNode = this.getFirstValueNode()
+		if (rawValueNode && TemplateSlotPlaceholder.isComponent(this.node.tagName!)) {
+			let type = Helper.types.getType(rawValueNode)
+			let typeText = Helper.types.getTypeFullText(type)
+
+			if (/^\w*?Element$/.test(typeText)) {
+				addToList(this.modifiers, 'el')
+			}
+		}
+
+		// Will be compiled as a function and become static.
+		if (rawValueNode &&
+			(Helper.access.isAccess(rawValueNode)
+				|| Helper.variable.isVariableIdentifier(rawValueNode)
+			)
+		) {
+			this.forceRefStatic = true
+		}
 	}
 
 	outputInit() {
@@ -47,7 +77,7 @@ export class BindingSlotParser extends SlotParserBase {
 		}
 
 		// Need `modifiers` parameter
-		if (!bindingClassParams || bindingClassParams.length > 2) {
+		if (!bindingClassParams || bindingClassParams.length > 2 && this.modifiers.length > 0) {
 			bindingParams.push(factory.createArrayLiteralExpression(
 				this.modifiers.map(m => factory.createStringLiteral(m)),
 				false
@@ -76,14 +106,14 @@ export class BindingSlotParser extends SlotParserBase {
 	outputUpdate() {
 
 		// $values[0], or '...'
-		let value = this.outputValueNode()
+		let value = this.forceRefStatic ? null : this.outputValueNode()
 
-		let callWith: {method: string, value: TS.Expression} = {method: 'update', value}
+		let callWith: {method: string, value: TS.Expression} = {method: 'update', value: value!}
 		if (this.name === 'class') {
-			callWith = this.getClassUpdateCallWith(value)
+			callWith = this.getClassUpdateCallWith(value!)
 		}
 		else if (this.name === 'style') {
-			callWith = this.getStyleUpdateCallWith(value)
+			callWith = this.getStyleUpdateCallWith(value!)
 		}
 		else if (this.name === 'ref') {
 			callWith.value = this.getRefUpdateCallWithValue(value)
@@ -101,7 +131,7 @@ export class BindingSlotParser extends SlotParserBase {
 				factory.createBinaryExpression(
 					factory.createIdentifier(this.latestVariableName),
 					factory.createToken(ts.SyntaxKind.ExclamationEqualsEqualsToken),
-					value
+					value!
 				),
 				factory.createBlock(
 					[
@@ -116,7 +146,7 @@ export class BindingSlotParser extends SlotParserBase {
 						factory.createExpressionStatement(factory.createBinaryExpression(
 							factory.createIdentifier(this.latestVariableName),
 							factory.createToken(ts.SyntaxKind.EqualsToken),
-							value
+							value!
 						))
 					],
 					true
@@ -125,27 +155,34 @@ export class BindingSlotParser extends SlotParserBase {
 			)
 		}
 
-		// $latest_0 !== $values[0] && $binding_0.update($latest_0 = $values[0])
+		// if ($latest_0 !== $values[0]) {
+		//    $binding_0.callMethod($latest_0 = $values[0])
+		// }
 		else if (this.latestVariableName) {
-			return factory.createBinaryExpression(
+			return factory.createIfStatement(
 				factory.createBinaryExpression(
 					factory.createIdentifier(this.latestVariableName),
 					factory.createToken(ts.SyntaxKind.ExclamationEqualsEqualsToken),
-					callValue
+					value!
 				),
-				factory.createToken(ts.SyntaxKind.AmpersandAmpersandToken),
-				factory.createCallExpression(
-					factory.createPropertyAccessExpression(
-						factory.createIdentifier(this.bindingVariableName),
-						factory.createIdentifier(callMethod)
-					),
-					undefined,
-					[factory.createBinaryExpression(
-						factory.createIdentifier(this.latestVariableName),
-						factory.createToken(ts.SyntaxKind.EqualsToken),
-						callValue
-					)]
-				)
+				factory.createBlock(
+					[
+						factory.createExpressionStatement(factory.createCallExpression(
+							factory.createPropertyAccessExpression(
+								factory.createIdentifier(this.bindingVariableName),
+								factory.createIdentifier(callMethod)
+							),
+							undefined,
+							[factory.createBinaryExpression(
+								factory.createIdentifier(this.latestVariableName),
+								factory.createToken(ts.SyntaxKind.EqualsToken),
+								callValue
+							)]
+						))
+					],
+					true
+				),
+				undefined
 			)
 		}
 
@@ -288,62 +325,34 @@ export class BindingSlotParser extends SlotParserBase {
 		}
 	}
 
-	private getRefUpdateCallWithValue(value: TS.Expression): TS.Expression {
-		if (Helper.access.isAccess(value)) {
-			let exp = value.expression
-			let name = Helper.access.getNameNode(value)
-
-			// this.refName ->
-			// (el) => this.__setSlotElement(refName, el)
-			if (exp.kind === ts.SyntaxKind.ThisKeyword) {
-				return factory.createArrowFunction(
-					undefined,
-					undefined,
-					[factory.createParameterDeclaration(
-						undefined,
-						undefined,
-						factory.createIdentifier('el'),
-						undefined,
-						undefined,
-						undefined
-					)],
-					undefined,
-					factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
-					factory.createCallExpression(
-						factory.createPropertyAccessExpression(
-							factory.createThis(),
-							factory.createIdentifier('__setSlotElement')
-						),
-						undefined,
-						[
-							name,
-							factory.createIdentifier('el'),
-						]
-					)
-				)
-			}
-		}
+	private getRefUpdateCallWithValue(value: TS.Expression | null): TS.Expression {
+		let rawValueNode = this.getFirstValueNode()!
 
 		// this.refName ->
 		// (el) => this.refName = el
-		return factory.createArrowFunction(
-			undefined,
-			undefined,
-			[factory.createParameterDeclaration(
+		if (this.forceRefStatic) {
+			return factory.createArrowFunction(
 				undefined,
 				undefined,
-				factory.createIdentifier('el'),
+				[factory.createParameterDeclaration(
+					undefined,
+					undefined,
+					factory.createIdentifier('el'),
+					undefined,
+					undefined,
+					undefined
+				)],
 				undefined,
-				undefined,
-				undefined
-			)],
-			undefined,
-			factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
-			factory.createBinaryExpression(
-				value,
-				factory.createToken(ts.SyntaxKind.EqualsToken),
-				factory.createIdentifier('el')
+				factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
+				factory.createBinaryExpression(
+					rawValueNode,
+					factory.createToken(ts.SyntaxKind.EqualsToken),
+					factory.createIdentifier('el')
+				)
 			)
-		)
+		}
+
+		// () => {...}
+		return value!
 	}
 }

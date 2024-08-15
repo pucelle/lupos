@@ -1,7 +1,7 @@
 import {Component, html, ClassBinding} from '@pucelle/lupos.js'
 
 
-class TestBinding extends Component {
+class TestClassBinding extends Component {
 
 	className = 'className'
 	booleanValue = true
@@ -12,6 +12,10 @@ class TestBinding extends Component {
 
 	testString() {
 		return html`<div :class=${this.className} />`
+	}
+
+	testQuoted() {
+		return html`<div :class="${this.booleanValue}" />`
 	}
 
 	testArray() {
@@ -29,6 +33,10 @@ class TestBinding extends Component {
 
 
 class TestStaticClassBinding extends Component {
+
+	testInterpolatedString() {
+		return html`<div :class="${'className'} className2" />`
+	}
 
 	testString() {
 		return html`<div :class=${'className'} />`

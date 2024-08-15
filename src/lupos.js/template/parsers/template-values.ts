@@ -82,7 +82,7 @@ export class TemplateValues {
 		})
 
 		if (strings) {
-			return this.bundleStringsAndValueNodes(strings, valueNodes)
+			return this.bundleStringsAndValueNodes(strings, valueIndices, valueNodes)
 		}
 		else {
 			return valueNodes[0]
@@ -140,7 +140,7 @@ export class TemplateValues {
 	 * It uses `indices[0]` as new index.
 	 * `...${value}...` -> `${'...' + value + '...'}`
 	 */
-	private bundleStringsAndValueNodes(strings: string[], valueNodes: TS.Expression[]): TS.Expression {
+	private bundleStringsAndValueNodes(strings: string[], valueIndices: number[], valueNodes: TS.Expression[]): TS.Expression {
 		let parts: TS.Expression[] = []
 
 		// string[0] + values[0] + strings[1] + ...
@@ -154,12 +154,16 @@ export class TemplateValues {
 			}
 		}
 
+		
+		let firstRawNode = this.getRawNode(valueIndices[0])
+
 		// '' + ...
 		if (!ts.isStringLiteral(parts[0])
-			&& !Helper.types.isStringType(Helper.types.getType(parts[0]))
+			&& !Helper.types.isStringType(Helper.types.getType(firstRawNode))
 		) {
 			parts.unshift(factory.createStringLiteral(''))
 		}
+
 
 		let value = parts[0]
 

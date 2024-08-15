@@ -586,7 +586,7 @@ export namespace Helper {
 		/** Test whether type represents a value, and not null or undefined. */
 		export function isNonNullableValueType(type: TS.Type): boolean {
 			if (type.isUnionOrIntersection()) {
-				return type.types.every(t => isValueType(t))
+				return type.types.every(t => isNonNullableValueType(t))
 			}
 
 			return (type.getFlags() & (

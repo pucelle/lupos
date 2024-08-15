@@ -10,8 +10,12 @@ class TestStyleBinding extends Component {
 		return html`<div :style="color: ${this.styleValue}" />`
 	}
 
-	testWholeString() {
+	testString() {
 		return html`<div :style=${`color: ${this.styleValue}`} />`
+	}
+
+	testQuoted() {
+		return html`<div :style="${this.numericValue}" />`
 	}
 
 	testObject() {
@@ -38,12 +42,16 @@ class TestStyleBinding extends Component {
 
 class TestStaticStyleBinding extends Component {
 
+	testInterpolatedString() {
+		return html`<div :style="color: ${'red'}" />`
+	}
+
 	testString() {
-		return html`<div :style=${'className'} />`
+		return html`<div :style=${'styleValue'} />`
 	}
 
 	testObject() {
-		return html`<div :style=${{'className': true}} />`
+		return html`<div :style=${{styleName: 'styleValue'}} />`
 	}
 
 	testModifier() {
