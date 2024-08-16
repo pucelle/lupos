@@ -1,17 +1,23 @@
 import {SlotParserBase} from './base'
 import {factory, Helper, ts} from '../../../../base'
+import {SlotContentType} from '../../enums'
 
 
 export class ContentSlotParser extends SlotParserBase {
 
 	/** Of `SlotContentType` */
-	private slotContentType: number | null = null
+	private slotContentType: SlotContentType | null = null
 
 	/** $slot_0 */
 	private slotVariableName: string = ''
 
 	/** $latest_0 */
 	private latestVariableName: string | null = null
+
+	/** Content slot will always update dynamically. */
+	isValueOutputAsMutable(): boolean {
+		return true
+	}
 
 	init() {
 		this.slotContentType = this.identifySlotContentType()
@@ -20,7 +26,11 @@ export class ContentSlotParser extends SlotParserBase {
 		if (this.isValueMutable()) {
 
 			// Assume for `TemplateResult` or `TemplateResult[]`, it regenerates every time.
-			if (this.slotContentType === 2 || this.slotContentType === 3) {
+			// And for node, slot itself will compare value.
+			if (this.slotContentType !== SlotContentType.TemplateResult
+				&& this.slotContentType !== SlotContentType.TemplateResultList
+				&& this.slotContentType !== SlotContentType.Node
+			) {
 				this.latestVariableName = this.treeParser.getUniqueLatestName()
 			}
 		}
@@ -33,35 +43,42 @@ export class ContentSlotParser extends SlotParserBase {
 		let slotContentType: number | null = null
 
 		if (typeText === 'TemplateResult') {
-			slotContentType = 0
+			slotContentType = SlotContentType.TemplateResult
 		}
 		else if (typeText === 'TemplateResult[]') {
-			slotContentType = 1
+			slotContentType = SlotContentType.TemplateResultList
 		}
 		else if (typeText === 'string' || typeText === 'number') {
-			slotContentType = 2
+			slotContentType = SlotContentType.Text
 		}
 		else if (typeText && /^\w*?(Node|Element)$/.test(typeText)) {
-			slotContentType = 3
+			slotContentType = SlotContentType.Node
 		}
 
 		return slotContentType
 	}
 
 	outputInit() {
-		let templateSLot = this.outputTemplateSlotNode(this.slotContentType)
+		let templateSLot = this.outputTemplateSlot(this.slotContentType)
 
-		return factory.createBinaryExpression(
-			factory.createIdentifier(this.slotVariableName),
-			factory.createToken(ts.SyntaxKind.EqualsToken),
-			templateSLot
+		return factory.createVariableStatement(
+			undefined,
+			factory.createVariableDeclarationList(
+				[factory.createVariableDeclaration(
+				factory.createIdentifier(this.slotVariableName),
+				undefined,
+				undefined,
+				templateSLot
+				)],
+				ts.NodeFlags.Let
+			)
 		)
 	}
 
 	outputUpdate() {
 
 		// $values[0]
-		let value = this.outputValueNode()
+		let value = this.outputValue()
 
 		// $latest_0 !== $values[0] && $slot_0.update($latest_0 = $values[0])
 		if (this.latestVariableName) {

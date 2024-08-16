@@ -24,7 +24,10 @@ export class BindingSlotParser extends SlotParserBase {
 			this.initRef()
 		}
 
-		if (this.isValueMutable() && !this.forceRefStatic) {
+		if (this.isValueMutable()
+			&& !this.forceRefStatic
+			&& this.name !== 'transition'	// transition value always change.
+		) {
 			this.latestVariableName = this.treeParser.getUniqueLatestName()
 		}
 
@@ -100,13 +103,13 @@ export class BindingSlotParser extends SlotParserBase {
 				)],
 				ts.NodeFlags.Let
 			)
-		)	
+		)
 	}
 
 	outputUpdate() {
 
 		// $values[0], or '...'
-		let value = this.forceRefStatic ? null : this.outputValueNode()
+		let value = this.forceRefStatic ? null : this.outputValue()
 
 		let callWith: {method: string, value: TS.Expression} = {method: 'update', value: value!}
 		if (this.name === 'class') {
@@ -337,7 +340,7 @@ export class BindingSlotParser extends SlotParserBase {
 				[factory.createParameterDeclaration(
 					undefined,
 					undefined,
-					factory.createIdentifier('el'),
+					factory.createIdentifier('refed'),
 					undefined,
 					undefined,
 					undefined
@@ -347,7 +350,7 @@ export class BindingSlotParser extends SlotParserBase {
 				factory.createBinaryExpression(
 					rawValueNode,
 					factory.createToken(ts.SyntaxKind.EqualsToken),
-					factory.createIdentifier('el')
+					factory.createIdentifier('refed')
 				)
 			)
 		}

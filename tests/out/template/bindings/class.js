@@ -2,10 +2,10 @@ import { Component, html, ClassBinding, TemplateMaker, SlotPosition, HTMLMaker }
 import { trackGet } from "@pucelle/ff";
 const $html_0 = new HTMLMaker("<div></div>");
 const $template_0 = new TemplateMaker($context => {
+    let $latest_0;
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $binding_0 = new ClassBinding($node_0);
-    let $latest_0;
     return {
         el: $node,
         position: new SlotPosition(2, $node_0),
@@ -19,10 +19,10 @@ const $template_0 = new TemplateMaker($context => {
 });
 const $html_1 = new HTMLMaker("<div></div>");
 const $template_1 = new TemplateMaker($context => {
+    let $latest_0;
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     let $binding_0 = new ClassBinding($node_0);
-    let $latest_0;
     return {
         el: $node,
         position: new SlotPosition(2, $node_0),
@@ -36,10 +36,10 @@ const $template_1 = new TemplateMaker($context => {
 });
 const $html_2 = new HTMLMaker("<div></div>");
 const $template_2 = new TemplateMaker($context => {
+    let $latest_0;
     let $node = $html_2.make();
     let $node_0 = $node.content.firstChild;
     let $binding_0 = new ClassBinding($node_0);
-    let $latest_0;
     return {
         el: $node,
         position: new SlotPosition(2, $node_0),
@@ -53,10 +53,10 @@ const $template_2 = new TemplateMaker($context => {
 });
 const $html_3 = new HTMLMaker("<div></div>");
 const $template_3 = new TemplateMaker($context => {
+    let $latest_0;
     let $node = $html_3.make();
     let $node_0 = $node.content.firstChild;
     let $binding_0 = new ClassBinding($node_0);
-    let $latest_0;
     return {
         el: $node,
         position: new SlotPosition(2, $node_0),
@@ -70,10 +70,10 @@ const $template_3 = new TemplateMaker($context => {
 });
 const $html_4 = new HTMLMaker("<div></div>");
 const $template_4 = new TemplateMaker($context => {
+    let $latest_0;
     let $node = $html_4.make();
     let $node_0 = $node.content.firstChild;
     let $binding_0 = new ClassBinding($node_0);
-    let $latest_0;
     return {
         el: $node,
         position: new SlotPosition(2, $node_0),
@@ -87,10 +87,10 @@ const $template_4 = new TemplateMaker($context => {
 });
 const $html_5 = new HTMLMaker("<div></div>");
 const $template_5 = new TemplateMaker($context => {
+    let $latest_0;
     let $node = $html_5.make();
     let $node_0 = $node.content.firstChild;
     let $binding_0 = new ClassBinding($node_0);
-    let $latest_0;
     return {
         el: $node,
         position: new SlotPosition(2, $node_0),

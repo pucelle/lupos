@@ -48,7 +48,7 @@ export class AwaitFlowControl extends FlowControlBase {
 		// )
 
 		let makers = this.outputMakerNodes(this.templateNames)
-		let templateSlot = this.slot.outputTemplateSlotNode(null)
+		let templateSlot = this.slot.outputTemplateSlot(null)
 
 		return factory.createBinaryExpression(
 			factory.createIdentifier(this.blockVariableName),

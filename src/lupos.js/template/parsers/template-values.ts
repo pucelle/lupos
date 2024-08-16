@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {factory, Helper, MutableMask, Scoping, ts} from '../../../base'
+import {factory, Helper, Interpolator, MutableMask, Scoping, ts, Visiting} from '../../../base'
 import {VariableNames} from './variable-names'
 
 
@@ -110,9 +110,12 @@ export class TemplateValues {
 
 	/** 
 	 * Output a node, append it to output value node list,
-	 * and returns the output node.
+	 * and returns it's reference node.
 	 */
 	private outputValueNodeOf(node: TS.Expression, transferringToTopmostScope: boolean): TS.Expression {
+		let index = Visiting.getIndex(node)
+		node = Interpolator.output(index) as TS.Expression
+
 		let hash = Scoping.hashNode(node).name
 		let valueIndex: number
 

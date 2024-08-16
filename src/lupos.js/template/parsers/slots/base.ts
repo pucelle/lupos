@@ -4,6 +4,7 @@ import {TreeParser} from '../tree'
 import {factory, Modifier} from '../../../../base'
 import {VariableNames} from '../variable-names'
 import {TemplateParser} from '../template'
+import {SlotPositionType} from '../../enums'
 
 
 export abstract class SlotParserBase {
@@ -123,12 +124,12 @@ export abstract class SlotParserBase {
 	 * Get value node, either `$values[0]`, or `"..."`.
 	 * Can only use it when outputting update.
 	 */
-	outputValueNode(): TS.Expression {
+	outputValue(): TS.Expression {
 		return this.template.values.outputValue(this.valueIndices, this.strings)
 	}
 
 	/** Make `new TemplateSlot(...)`. */
-	outputTemplateSlotNode(slotContentType: number | null): TS.Expression {
+	outputTemplateSlot(slotContentType: number | null): TS.Expression {
 		Modifier.addImport('TemplateSlot', '@pucelle/lupos.js')
 		Modifier.addImport('SlotPosition', '@pucelle/lupos.js')
 
@@ -141,9 +142,7 @@ export abstract class SlotParserBase {
 		if (nextNode && nextNode.isPrecedingPositionStable()) {
 			nodeName = this.treeParser.references.refAsName(nextNode)
 			this.node.remove()
-
-			// SlotPositionType.Before
-			position = 2
+			position = SlotPositionType.Before
 		}
 
 		// Parent is stable enough.
@@ -151,17 +150,13 @@ export abstract class SlotParserBase {
 		else if (parent.tagName !== 'template') {
 			nodeName = this.treeParser.references.refAsName(parent)
 			this.node.remove()
-
-			// SlotPositionType.AfterContent
-			position = 1
+			position = SlotPositionType.AfterContent
 		}
 
 		// Use the comment node to locate.
 		else {
 			nodeName = this.getRefedNodeName()
-
-			// SlotPositionType.Before
-			position = 2
+			position = SlotPositionType.Before
 		}
 
 
@@ -170,6 +165,8 @@ export abstract class SlotParserBase {
 		//   context,
 		//   ?SlotContentType.xxx
 		// )
+
+		let slotContentTypeNodes = slotContentType !== null ? [factory.createNumericLiteral(slotContentType)] : []
 
 		let templateSlotParams: TS.Expression[] = [
 			factory.createNewExpression(
@@ -180,13 +177,9 @@ export abstract class SlotParserBase {
 					factory.createIdentifier(nodeName)
 				]
 			),
-			factory.createIdentifier(VariableNames.context)
+			factory.createIdentifier(VariableNames.context),
+			...slotContentTypeNodes
 		]
-
-		// Knows about content type.
-		if (slotContentType !== null) {
-			templateSlotParams.push(factory.createNumericLiteral(slotContentType))
-		}
 
 		return factory.createNewExpression(
 			factory.createIdentifier('TemplateSlot'),
@@ -196,8 +189,8 @@ export abstract class SlotParserBase {
 	}
 
 	/** Make `new SlotRange(...)`. */
-	protected makeSlotRangeNode(): TS.Expression {
-		if (this.node.children.length > 0) {
+	protected makeSlotRange(): TS.Expression {
+		if (this.node.children.length === 0) {
 			return factory.createNull()
 		}
 

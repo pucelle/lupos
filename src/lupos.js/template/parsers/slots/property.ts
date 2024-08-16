@@ -76,29 +76,36 @@ export class PropertySlotParser extends SlotParserBase {
 		}
 
 		// $values[0]
-		let value = this.outputValueNode()
+		let value = this.outputValue()
 
-		// $latest_0 !== $values[0] && target[propertyName] = $latest_0 = $values[0]
+		// if ($latest_0 !== $values[0]) {
+		//   target[propertyName] = $latest_0 = $values[0]
+		// }
 		if (this.latestVariableName) {
-			return factory.createBinaryExpression(
+			return factory.createIfStatement(
 				factory.createBinaryExpression(
 					factory.createIdentifier(this.latestVariableName),
 					factory.createToken(ts.SyntaxKind.ExclamationEqualsEqualsToken),
 					value
 				),
-				factory.createToken(ts.SyntaxKind.AmpersandAmpersandToken),
-				factory.createBinaryExpression(
-					factory.createPropertyAccessExpression(
-						target,
-						factory.createIdentifier(this.name)
-					),
-					factory.createToken(ts.SyntaxKind.EqualsToken),
-					factory.createBinaryExpression(
-						factory.createIdentifier(this.latestVariableName),
-						factory.createToken(ts.SyntaxKind.EqualsToken),
-						value
-					)
+				factory.createBlock(
+					[
+						factory.createExpressionStatement(factory.createBinaryExpression(
+							factory.createPropertyAccessExpression(
+								target,
+								factory.createIdentifier(this.name)
+							),
+							factory.createToken(ts.SyntaxKind.EqualsToken),
+							factory.createBinaryExpression(
+								factory.createIdentifier(this.latestVariableName),
+								factory.createToken(ts.SyntaxKind.EqualsToken),
+								value
+							)
+						))
+					],
+					true
 				),
+				undefined
 			)
 		}
 

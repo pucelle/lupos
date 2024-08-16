@@ -6,8 +6,8 @@ class TestTemplateResult extends L.Component {
         return null;
     }
 }
-class TestTemplateResultArray extends Component {
-    static ContentSlotType = SlotContentType.TemplateResultArray;
+class TestTemplateResultList extends Component {
+    static ContentSlotType = SlotContentType.TemplateResultList;
     render() {
         return null;
     }

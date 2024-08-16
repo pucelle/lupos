@@ -79,7 +79,7 @@ export class SwitchFlowControl extends FlowControlBase {
 
 		let indexFn = this.outputSwitchIndexFn(this.switchValueIndex, this.valueIndices)
 		let makers = this.outputMakerNodes(this.templateNames)
-		let templateSlot = this.slot.outputTemplateSlotNode(null)
+		let templateSlot = this.slot.outputTemplateSlot(null)
 
 		return factory.createBinaryExpression(
 			factory.createIdentifier(this.blockVariableName),

@@ -56,7 +56,7 @@ export class EventSlotParser extends SlotParserBase {
 				com = Imports.getImportByName(tagName)
 			}
 			else {
-				com = this.outputValueNode()
+				com = this.outputValue()
 			}
 
 			if (!com) {
@@ -119,7 +119,7 @@ export class EventSlotParser extends SlotParserBase {
 				undefined,
 				[
 					factory.createStringLiteral(this.name),
-					this.outputValueNode(),
+					this.outputValue(),
 					factory.createIdentifier(VariableNames.context)
 				]
 			)
@@ -184,7 +184,7 @@ export class EventSlotParser extends SlotParserBase {
 				[
 					factory.createIdentifier(nodeName),
 					factory.createStringLiteral(this.name),
-					this.outputValueNode(),
+					this.outputValue(),
 					factory.createIdentifier(VariableNames.context)
 				]
 			)
@@ -256,7 +256,7 @@ export class EventSlotParser extends SlotParserBase {
 					factory.createIdentifier(nodeName),
 					factory.createStringLiteral(this.name),
 					modifiers,
-					this.outputValueNode(),
+					this.outputValue(),
 					factory.createIdentifier(VariableNames.context)
 				]
 			)
@@ -322,7 +322,7 @@ export class EventSlotParser extends SlotParserBase {
 					factory.createStringLiteral(this.name),
 					factory.createCallExpression(
 						factory.createPropertyAccessExpression(
-							this.outputValueNode(),
+							this.outputValue(),
 						  	factory.createIdentifier('bind')
 						),
 						undefined,
@@ -383,7 +383,7 @@ export class EventSlotParser extends SlotParserBase {
 		return factory.createBinaryExpression(
 			factory.createIdentifier(this.latestVariableName!),
 			factory.createToken(ts.SyntaxKind.EqualsToken),
-			this.outputValueNode()
+			this.outputValue()
 		)
 	}
 }

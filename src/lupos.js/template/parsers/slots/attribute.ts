@@ -20,8 +20,6 @@ export class AttributeSlotParser extends SlotParserBase {
 		let slotNode = this.getFirstValueNode()
 		let slotNodeType = slotNode ? Helper.types.getType(slotNode) : null
 
-		console.log(Helper.getText(slotNode!))
-
 		// `$values[0]` is not nullable
 		if (this.hasString() || Helper.types.isNonNullableValueType(slotNodeType!)) {
 			return this.outputNonNullableValueUpdate()
@@ -39,7 +37,7 @@ export class AttributeSlotParser extends SlotParserBase {
 		let nodeName = this.getRefedNodeName()
 
 		// $values[0]
-		let value = this.outputValueNode()
+		let value = this.outputValue()
 
 		// if ($latest_0 !== $values[0]) {
 		//   $node_0.setAttribute(attrName, $latest_0 = $values[0])
@@ -75,7 +73,7 @@ export class AttributeSlotParser extends SlotParserBase {
 			)
 		}
 
-		//$node_0.setAttribute(attrName, $values[0])
+		// $node_0.setAttribute(attrName, $values[0])
 		else {
 			return factory.createCallExpression(
 				factory.createPropertyAccessExpression(
@@ -97,7 +95,7 @@ export class AttributeSlotParser extends SlotParserBase {
 		let nodeName = this.getRefedNodeName()
 
 		// $values[0]
-		let value = this.outputValueNode()
+		let value = this.outputValue()
 
 		// if ($latest_0 === $values[0]) { 
 		// 	 $values[0] === null ? $node_0.removeAttribute(attrName) : $node_0.setAttribute(attrName, $values[0])

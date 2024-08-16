@@ -13,7 +13,7 @@ export class HTMLTree extends HTMLNode {
 			switch (token.type) {
 				case HTMLTokenType.StartTag:
 					let node = new HTMLNode(HTMLNodeType.Tag, token)
-					current.addChild(node)
+					current.append(node)
 					current = node
 					break
 
@@ -22,11 +22,11 @@ export class HTMLTree extends HTMLNode {
 					break
 
 				case HTMLTokenType.Text:
-					current.addChild(new HTMLNode(HTMLNodeType.Text, token))
+					current.append(new HTMLNode(HTMLNodeType.Text, token))
 					break
 
 				case HTMLTokenType.Comment:
-					current.addChild(new HTMLNode(HTMLNodeType.Comment, token))
+					current.append(new HTMLNode(HTMLNodeType.Comment, token))
 					break
 			}
 		}
@@ -37,7 +37,7 @@ export class HTMLTree extends HTMLNode {
 	static fromSeparating(node: HTMLNode): HTMLTree {
 		node.remove()
 		let tree = new HTMLTree()
-		tree.addChild(node)
+		tree.append(node)
 
 		return tree
 	}
@@ -47,7 +47,7 @@ export class HTMLTree extends HTMLNode {
 
 		for (let child of node.children) {
 			child.remove()
-			tree.addChild(child)
+			tree.append(child)
 		}
 
 		return tree

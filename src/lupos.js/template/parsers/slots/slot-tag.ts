@@ -3,6 +3,7 @@ import {TreeParser} from '../tree'
 import {SlotParserBase} from './base'
 import {factory, Modifier, ts} from '../../../../base'
 import {VariableNames} from '../variable-names'
+import {SlotContentType, SlotPositionType} from '../../enums'
 
 
 export class SlotTagSlotParser extends SlotParserBase {
@@ -13,10 +14,15 @@ export class SlotTagSlotParser extends SlotParserBase {
 	/** $slot_0 */
 	private slotVariableName: string = ''
 
+	/** Named slot should be updated dynamically. */
+	isValueOutputAsMutable(): boolean {
+		return !!this.name
+	}
+
 	init() {
 
 		// Slot default content.
-		if (this.node.children.length > 0) {
+		if (this.name && this.node.children.length > 0) {
 			this.defaultContentParser = this.treeParser.separateChildrenAsSubTree(this.node)
 		}
 
@@ -29,7 +35,7 @@ export class SlotTagSlotParser extends SlotParserBase {
 			return this.outputNamedInit()
 		}
 		else {
-			return this.outputNoNamedInit()
+			return this.outputNonNamedInit()
 		}
 	}
 
@@ -38,35 +44,45 @@ export class SlotTagSlotParser extends SlotParserBase {
 		Modifier.addImport('SlotPosition', '@pucelle/lupos.js')
 
 		let nodeName = this.getRefedNodeName()
+		let slotContentType = this.defaultContentParser ? null : SlotContentType.Node
+		let slotContentTypeNodes = slotContentType ? [factory.createNumericLiteral(slotContentType)] : []
 
-		// `$slot_0 = new TemplateSlot<null>(
+		// `let $slot_0 = new TemplateSlot<null>(
 		// 	 new SlotPosition(SlotPositionType.AfterContent, s),
 		// 	 $context
 		// )`
 		// It's not a known content type slot, slot elements may be empty,
-		// and then would use default content.
-		return factory.createBinaryExpression(
-			factory.createIdentifier(this.slotVariableName),
-			factory.createToken(ts.SyntaxKind.EqualsToken),
-			factory.createNewExpression(
-				factory.createIdentifier('TemplateSlot'),
-				[factory.createLiteralTypeNode(factory.createNull())],
-				[
-					factory.createNewExpression(
-						factory.createIdentifier('SlotPosition'),
-						undefined,
-						[
-							factory.createNumericLiteral('1'),
-							factory.createIdentifier(nodeName)
-						]
-					),
-					factory.createIdentifier(VariableNames.context)
-				]
+		// and then we would use default content.
+		return factory.createVariableStatement(
+			undefined,
+			factory.createVariableDeclarationList(
+				[factory.createVariableDeclaration(
+				factory.createIdentifier(this.slotVariableName),
+				undefined,
+				undefined,
+				factory.createNewExpression(
+					factory.createIdentifier('TemplateSlot'),
+					[factory.createLiteralTypeNode(factory.createNull())],
+					[
+						factory.createNewExpression(
+							factory.createIdentifier('SlotPosition'),
+							undefined,
+							[
+								factory.createNumericLiteral(SlotPositionType.AfterContent),
+								factory.createIdentifier(nodeName)
+							]
+						),
+						factory.createIdentifier(VariableNames.context),
+						...slotContentTypeNodes
+					]
+				)
+				)],
+				ts.NodeFlags.Let
 			)
 		)
 	}
 
-	private outputNoNamedInit() {
+	private outputNonNamedInit() {
 		let nodeName = this.getRefedNodeName()
 
 		// `$node_0.append(...$context.__getRestSlotNodes())`
@@ -115,7 +131,7 @@ export class SlotTagSlotParser extends SlotParserBase {
 
 			toValue = factory.createBinaryExpression(
 				toValue,
-				factory.createToken(ts.SyntaxKind.BarBarToken),
+				factory.createToken(ts.SyntaxKind.QuestionQuestionToken),
 				factory.createNewExpression(
 					factory.createIdentifier('CompiledTemplateResult'),
 					undefined,

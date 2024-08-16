@@ -10,7 +10,7 @@ class TestTemplateResult extends L.Component {
 }
 
 
-class TestTemplateResultArray extends Component {
+class TestTemplateResultList extends Component {
 
 	render(): TemplateResult[] {
 		return null as any

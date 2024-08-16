@@ -31,8 +31,10 @@ export class TemplateParser {
 	/** Add a tree and parent. */
 	addTreeParser(tree: HTMLTree, parent: TreeParser | null, fromNode: HTMLNode | null): TreeParser {
 		let parser = new TreeParser(this, tree, parent, fromNode)
+		
 		this.treeParsers.push(parser)
-
+		parser.init()
+		
 		return parser
 	}
 

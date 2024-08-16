@@ -74,8 +74,6 @@ export class TreeParser {
 
 		this.initSVGWrapping()
 		this.outputHandler = new TreeOutputHandler(this, this.wrappedBySVG)
-
-		this.parseSlots()
 	}
 
 	private initSVGWrapping() {
@@ -97,6 +95,14 @@ export class TreeParser {
 		}
 
 		this.inSVG = inSVG
+	}
+
+	init() {
+		this.parseSlots()
+
+		for (let slot of this.slots) {
+			slot.init()
+		}
 	}
 
 	private parseSlots() {
@@ -184,7 +190,6 @@ export class TreeParser {
 				break
 		}
 
-		slot.init()
 		this.slots.push(slot)
 	}
 
@@ -208,7 +213,7 @@ export class TreeParser {
 	}
 
 	private parseAttributes(node: HTMLNode) {
-		for (let attr of node.attrs!) {
+		for (let attr of [...node.attrs!]) {
 			let {name, value, quoted} = attr
 			let type: SlotType | null = null
 
@@ -282,9 +287,10 @@ export class TreeParser {
 			return Helper.types.isValueType(Helper.types.getType(this.template.values.getRawNode(index)))
 		})
 
-		// Text `...${...}...`
+		// Whole text of `...${...}...`
 		if (joinAsAWholeText) {
 			this.addSlot(SlotType.Text, null, strings, slotIndices, node)
+			node.text = ' '
 		}
 
 		// Text, Comment, Text, Comment...
@@ -308,6 +314,15 @@ export class TreeParser {
 			node.replaceWith(...mixedNodes)
 		}
 
+		// A single content.
+		else {
+			let comment = new HTMLNode(HTMLNodeType.Comment, {})
+			node.replaceWith(comment)
+			node = comment
+
+			this.addSlot(SlotType.Content, null, null, slotIndices, node)
+		}
+
 		return text
 	}
 
@@ -322,15 +337,9 @@ export class TreeParser {
 		return VariableNames.template + '_' + this.index
 	}
 
-	/** Return variable name to reference current template using html template maker, like `$html_0`. */
-	getHTMLRefName(): string {
-		return VariableNames.html + '_' + this.index
-	}
-
 	/** `$slot_0` */
 	getUniqueSlotName(): string {
 		let name = VariableNames.getDoublyUniqueName(VariableNames.slot, this)
-		this.variableNames.push(name)
 		this.partNames.push(name)
 		return name
 	}
@@ -352,7 +361,6 @@ export class TreeParser {
 	/** `$block_0` */
 	getUniqueBlockName(): string {
 		let name = VariableNames.getDoublyUniqueName(VariableNames.block, this)
-		this.variableNames.push(name)
 		return name
 	}
 
@@ -367,7 +375,6 @@ export class TreeParser {
 
 		let comName = VariableNames.getDoublyUniqueName(VariableNames.com, this)
 		this.refedComponentMap.set(node, comName)
-		this.variableNames.push(comName)
 		this.partNames.push(comName)
 
 		return comName

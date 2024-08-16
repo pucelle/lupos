@@ -2,10 +2,10 @@ import { Component, html, StyleBinding, TemplateMaker, SlotPosition, HTMLMaker }
 import { trackGet } from "@pucelle/ff";
 const $html_0 = new HTMLMaker("<div></div>");
 const $template_0 = new TemplateMaker($context => {
+    let $latest_0;
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $binding_0 = new StyleBinding($node_0);
-    let $latest_0;
     return {
         el: $node,
         position: new SlotPosition(2, $node_0),
@@ -19,10 +19,10 @@ const $template_0 = new TemplateMaker($context => {
 });
 const $html_1 = new HTMLMaker("<div></div>");
 const $template_1 = new TemplateMaker($context => {
+    let $latest_0;
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     let $binding_0 = new StyleBinding($node_0);
-    let $latest_0;
     return {
         el: $node,
         position: new SlotPosition(2, $node_0),
@@ -36,10 +36,10 @@ const $template_1 = new TemplateMaker($context => {
 });
 const $html_2 = new HTMLMaker("<div></div>");
 const $template_2 = new TemplateMaker($context => {
+    let $latest_0;
     let $node = $html_2.make();
     let $node_0 = $node.content.firstChild;
     let $binding_0 = new StyleBinding($node_0);
-    let $latest_0;
     return {
         el: $node,
         position: new SlotPosition(2, $node_0),
@@ -53,10 +53,10 @@ const $template_2 = new TemplateMaker($context => {
 });
 const $html_3 = new HTMLMaker("<div></div>");
 const $template_3 = new TemplateMaker($context => {
+    let $latest_0;
     let $node = $html_3.make();
     let $node_0 = $node.content.firstChild;
     let $binding_0 = new StyleBinding($node_0);
-    let $latest_0;
     return {
         el: $node,
         position: new SlotPosition(2, $node_0),
@@ -70,10 +70,10 @@ const $template_3 = new TemplateMaker($context => {
 });
 const $html_4 = new HTMLMaker("<div></div>");
 const $template_4 = new TemplateMaker($context => {
+    let $latest_0;
     let $node = $html_4.make();
     let $node_0 = $node.content.firstChild;
     let $binding_0 = new StyleBinding($node_0);
-    let $latest_0;
     return {
         el: $node,
         position: new SlotPosition(2, $node_0),
@@ -88,10 +88,10 @@ const $template_4 = new TemplateMaker($context => {
 });
 const $html_5 = new HTMLMaker("<div></div>");
 const $template_5 = new TemplateMaker($context => {
+    let $latest_0;
     let $node = $html_5.make();
     let $node_0 = $node.content.firstChild;
     let $binding_0 = new StyleBinding($node_0);
-    let $latest_0;
     return {
         el: $node,
         position: new SlotPosition(2, $node_0),
@@ -106,10 +106,10 @@ const $template_5 = new TemplateMaker($context => {
 });
 const $html_6 = new HTMLMaker("<div></div>");
 const $template_6 = new TemplateMaker($context => {
+    let $latest_0;
     let $node = $html_6.make();
     let $node_0 = $node.content.firstChild;
     let $binding_0 = new StyleBinding($node_0);
-    let $latest_0;
     return {
         el: $node,
         position: new SlotPosition(2, $node_0),
@@ -124,10 +124,10 @@ const $template_6 = new TemplateMaker($context => {
 });
 const $html_7 = new HTMLMaker("<div></div>");
 const $template_7 = new TemplateMaker($context => {
+    let $latest_0;
     let $node = $html_7.make();
     let $node_0 = $node.content.firstChild;
     let $binding_0 = new StyleBinding($node_0);
-    let $latest_0;
     return {
         el: $node,
         position: new SlotPosition(2, $node_0),
@@ -169,15 +169,10 @@ const $template_10 = new TemplateMaker($context => {
     let $node = $html_10.make();
     let $node_0 = $node.content.firstChild;
     let $binding_0 = new StyleBinding($node_0);
-    let $latest_0;
+    $binding_0.updateObject({ styleName: 'styleValue' });
     return {
         el: $node,
         position: new SlotPosition(2, $node_0),
-        update($values) {
-            if ($latest_0 !== $values[0]) {
-                $binding_0.updateObject($latest_0 = $values[0]);
-            }
-        },
         parts: [$binding_0]
     };
 });
@@ -237,7 +232,7 @@ class TestStaticStyleBinding extends Component {
         return new CompiledTemplateResult($template_9, []);
     }
     testObject() {
-        return new CompiledTemplateResult($template_10, [{ styleName: 'styleValue' }]);
+        return new CompiledTemplateResult($template_10, []);
     }
     testModifier() {
         return new CompiledTemplateResult($template_11, []);

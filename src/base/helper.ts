@@ -451,12 +451,20 @@ export namespace Helper {
 			// `a.b`, b is identifier, but not a variable identifier.
 			if (node.parent
 				&& ts.isPropertyAccessExpression(node.parent)
-				&& node === access.getNameNode(node.parent)
+				&& node === node.parent.name
 			) {
 				return false
 			}
 
-			// `undefined` is a identifier.
+			// {a: 1}, a is identifier, but not variable identifier.
+			if (node.parent
+				&& ts.isPropertyAssignment(node.parent)
+				&& node === node.parent.name
+			) {
+				return false
+			}
+
+			// `undefined` is an identifier.
 			if (node.text === 'undefined') {
 				return false
 			}

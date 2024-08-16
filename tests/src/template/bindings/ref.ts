@@ -7,21 +7,21 @@ class TestRefBinding extends Component {
 	refCom: any
 	refElByType!: HTMLElement
 
-	// testRefEl() {
-	// 	return html`<div :ref=${this.refEl} />`
-	// }
+	testRefEl() {
+		return html`<div :ref=${this.refEl} />`
+	}
 
 	testRefCom() {
 		return html`<ChildComponent :ref=${this.refCom} />`
 	}
 
-	// testRefElModifier() {
-	// 	return html`<ChildComponent :ref.el=${this.refEl} />`
-	// }
+	testRefElModifier() {
+		return html`<ChildComponent :ref.el=${this.refEl} />`
+	}
 
-	// testRefElByDeclarationType() {
-	// 	return html`<ChildComponent :ref=${this.refElByType} />`
-	// }
+	testRefElByDeclarationType() {
+		return html`<ChildComponent :ref=${this.refElByType} />`
+	}
 }
 
 class ChildComponent extends Component {}

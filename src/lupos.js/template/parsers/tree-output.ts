@@ -4,6 +4,8 @@ import {HTMLNode, HTMLNodeType, HTMLTree} from '../html-syntax'
 import {factory, Helper, Modifier, TemplateSlotPlaceholder, ts} from '../../../base'
 import {SlotParserBase} from './slots'
 import {VariableNames} from './variable-names'
+import {SlotPositionType} from '../enums'
+import {HTMLOutputHandler} from './html-output'
 
 
 type OutputNodes = TS.Expression | TS.Statement | (TS.Expression | TS.Statement)[]
@@ -26,29 +28,17 @@ export class TreeOutputHandler {
 		this.wrappedByTemplate = this.tree.firstChild?.tagName === 'template'
 	}
 
-	private isEmptyHTMLTemplate(): boolean {
-		if (this.wrappedBySVG || this.wrappedByTemplate) {
-			return this.tree.firstChild!.children.length === 0
-		}
-		else {
-			return this.tree.children.length === 0
-		}
-	}
-
 	output(slots: SlotParserBase[], varNames: string[], partNames: string[]) {
 		Modifier.addImport('TemplateMaker', '@pucelle/lupos.js')
+
+		// May modify nodes, must before outputting HTML Maker.
+		let templatePosition = this.outputSlotPosition()
 
 		// Must output slots firstly, it completes references.
 		let {init, staticUpdate, update} = this.outputSlots(slots)
 
 		// Output `$latest_values = $values` if needed.
 		this.outputLatestValues(slots, varNames, update)
-
-		// May modify nodes, must before outputting HTML Maker.
-		let templatePosition = this.outputSlotPosition()
-
-		// const $html_0 = new HTMLMaker(...)
-		this.outputHTMLMaker()
 
 		// let $node = $html_0.make()
 		let rootNode = this.outputRootHTML()
@@ -62,10 +52,10 @@ export class TreeOutputHandler {
 		let varStatements = this.outputVarNames(varNames)
 
 		let initStatements = [
+			varStatements,
 			rootNode,
 			nodeRefs,
 			init,
-			varStatements,
 			staticUpdate,
 		].flat().map(n => Helper.pack.toStatement(n))
 
@@ -159,9 +149,13 @@ export class TreeOutputHandler {
 
 			let attrInitStatements = attrInit.flat().map(n => Helper.pack.toStatement(n))
 			let initNodes = slot.outputInit(attrInitStatements)
-			let updateNodes = slot.outputUpdate()
-
+	
 			init.push(initNodes)
+		}
+
+		for (let i = 0; i < slots.length; i++) {
+			let slot = slots[i]
+			let updateNodes = slot.outputUpdate()
 
 			if (slot.isValueOutputAsMutable()) {
 				update.push(updateNodes)
@@ -195,30 +189,32 @@ export class TreeOutputHandler {
 
 	/** Make `new SlotPosition(...)` to indicate the start inner position of template. */
 	private outputSlotPosition(): TS.Expression | null {
-		if (this.isEmptyHTMLTemplate()) {
-			return null
-		}
-
 		Modifier.addImport('SlotPosition', '@pucelle/lupos.js')
 
-		// SlotPositionType.Before
-		let position = 2
+		let position = SlotPositionType.Before
 
-		let firstNode = this.tree.firstChild!
+		let container: HTMLNode = this.tree
+		let firstNode = container.firstChild!
+
 		if (this.wrappedBySVG || this.wrappedByTemplate) {
+			container = container.firstChild!
 			firstNode = firstNode.firstChild!
 		}
 
-		let nodeName: string
+		// Insert a comment at least, to make sure having a position.
+		if (!firstNode) {
+			firstNode = new HTMLNode(HTMLNodeType.Comment, {})
+			container.append(firstNode)
+		}
 
-		// Use a new comment node to locate.
+		// Use a new comment node to locate if position is not stable.
 		if (!firstNode.isPrecedingPositionStable()) {
 			let comment = new HTMLNode(HTMLNodeType.Comment, {})
 			firstNode.before(comment)
 			firstNode = comment
 		}
 
-		nodeName = this.parser.references.refAsName(firstNode)
+		let nodeName = this.parser.references.refAsName(firstNode)
 
 		// new SlotPosition(SlotPositionType.Before, $context),
 		return factory.createNewExpression(
@@ -231,45 +227,10 @@ export class TreeOutputHandler {
 		)
 	}
 
-	private outputHTMLMaker() {
-		Modifier.addImport('HTMLMaker', '@pucelle/lupos.js')
-
-		let htmlString = this.parser.tree.getContentString()
-
-		// $html_0
-		let htmlName = this.parser.getHTMLRefName()
-		let parameters: TS.Expression[] = [factory.createStringLiteral(htmlString)]
-
-		// Template get wrapped.
-		if (this.wrappedBySVG || this.wrappedByTemplate) {
-			parameters.push(factory.createTrue())
-		}
-		
-		// const $html_0 = new HTMLMaker('...', wrapped)
-		let htmlNode = factory.createVariableStatement(
-			undefined,
-			factory.createVariableDeclarationList(
-				[factory.createVariableDeclaration(
-					factory.createIdentifier(htmlName),
-					undefined,
-					undefined,
-					factory.createNewExpression(
-						factory.createIdentifier('HTMLMaker'),
-						undefined,
-						parameters
-					)
-				)],
-				ts.NodeFlags.Const
-			)
-		)
-
-		Modifier.addTopmostDeclarations(htmlNode)
-	}
-
 	private outputRootHTML(): OutputNodes {
 
 		// $html_0
-		let htmlName = this.parser.getHTMLRefName()
+		let htmlName = HTMLOutputHandler.output(this.parser, this.wrappedBySVG || this.wrappedByTemplate)
 
 		// $node
 		let rootNodeName = VariableNames.node
@@ -402,6 +363,7 @@ export class TreeOutputHandler {
 
 	/** TemplateInitResult, `{el, position, update, parts}`. */
 	private outputTemplateInitResult(position: TS.Expression | null, update: OutputNodeList, partNames: string[]) {
+		
 		// position part.
 		let positionNode: TS.PropertyAssignment | null = null
 		if (position) {

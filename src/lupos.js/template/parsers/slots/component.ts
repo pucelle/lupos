@@ -18,13 +18,20 @@ export class ComponentSlotParser extends SlotParserBase {
 		let comVariableName = this.getRefedComponentName()
 
 		// $com_0 = new Com($node_0), after component has been referenced.
-		let comInit = factory.createBinaryExpression(
-			factory.createIdentifier(comVariableName),
-			factory.createToken(ts.SyntaxKind.EqualsToken),
-			factory.createNewExpression(
-				factory.createIdentifier(ComName),
+		let comInit = factory.createVariableStatement(
+			undefined,
+			factory.createVariableDeclarationList(
+				[factory.createVariableDeclaration(
+				factory.createIdentifier(comVariableName),
 				undefined,
-				[factory.createIdentifier(nodeName)]
+				undefined,
+				factory.createNewExpression(
+					factory.createIdentifier(ComName),
+					undefined,
+					[factory.createIdentifier(nodeName)]
+				)
+				)],
+				ts.NodeFlags.Let
 			)
 		)
 
@@ -33,7 +40,7 @@ export class ComponentSlotParser extends SlotParserBase {
 		// )
 		if (hasRestSlotContentExisted) {
 			let comVariableName = this.getRefedComponentName()
-			let contentRange = this.makeSlotRangeNode()
+			let contentRange = this.makeSlotRange()
 
 			restSlotRangeInit = factory.createCallExpression(
 				factory.createPropertyAccessExpression(

@@ -45,7 +45,7 @@ export class ForFlowControl extends FlowControlBase {
 			[this.fnValueIndex], null, true
 		) as TS.FunctionExpression
 		
-		let templateSlot = this.slot.outputTemplateSlotNode(null)
+		let templateSlot = this.slot.outputTemplateSlot(null)
 
 		return factory.createBinaryExpression(
 			factory.createIdentifier(this.blockVariableName),

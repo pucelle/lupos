@@ -40,7 +40,7 @@ export class KeyedFlowControl extends FlowControlBase {
 		// )
 
 		let maker = this.outputMakerNode(this.templateName)
-		let templateSlot = this.slot.outputTemplateSlotNode(null)
+		let templateSlot = this.slot.outputTemplateSlot(null)
 
 		return factory.createBinaryExpression(
 			factory.createIdentifier(this.blockVariableName),

@@ -61,8 +61,8 @@ export class DynamicComponentSlotParser extends SlotParserBase {
 			)
 		)
 
-		let templateSlot = this.outputTemplateSlotNode(null)
-		let contentRange = this.makeSlotRangeNode()
+		let templateSlot = this.outputTemplateSlot(null)
+		let contentRange = this.makeSlotRange()
 
 		return factory.createBinaryExpression(
 			factory.createIdentifier(this.blockVariableName),
@@ -80,7 +80,7 @@ export class DynamicComponentSlotParser extends SlotParserBase {
 	}
 
 	outputUpdate() {
-		let value = this.outputValueNode()
+		let value = this.outputValue()
 
 		// $block_0.update($values[0])
 		return factory.createCallExpression(

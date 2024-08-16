@@ -1,3 +1,4 @@
+import {TemplateSlotPlaceholder} from '../../../base'
 import {removeFromList} from '../../../utils'
 import {HTMLAttribute, HTMLToken, HTMLTokenParser} from './html-token-parser'
 
@@ -25,21 +26,21 @@ export class HTMLNode {
 		this.text = token.text
 	}
 
-	private setParent(parent: HTMLNode) {
+	private setParent(parent: HTMLNode | null) {
 		this.parent = parent
-	}
-
-	private replaceChild(oldChild: HTMLNode, newChild: HTMLNode) {
-		let index = this.children.indexOf(oldChild)!
-		this.children[index] = newChild
 	}
 
 	get siblingIndex(): number {
 		return this.parent!.children.indexOf(this)!
 	}
 
-	addChild(child: HTMLNode) {
+	append(child: HTMLNode) {
 		this.children.push(child)
+		child.setParent(this)
+	}
+
+	prepend(child: HTMLNode) {
+		this.children.unshift(child)
 		child.setParent(this)
 	}
 
@@ -87,14 +88,14 @@ export class HTMLNode {
 
 	remove() {
 		removeFromList(this.parent!.children, this)
-		this.parent = null
+		this.setParent(null)
 	}
 
 	/** Remove self, but keep children to replace it's position. */
 	removeSelf() {
 		let index = this.siblingIndex
 		this.parent!.children.splice(index, 1, ...this.children)
-		this.parent = null
+		this.setParent(null)
 	}
 
 	removeAttr(attr: HTMLAttribute) {
@@ -103,14 +104,22 @@ export class HTMLNode {
 
 	wrapWith(tagName: string, attrs?: HTMLAttribute[]) {
 		let newNode = new HTMLNode(HTMLNodeType.Tag, {tagName, attrs})
-		newNode.addChild(this)
-		this.parent!.replaceChild(this, newNode)
+		let index = this.siblingIndex
+
+		this.parent!.children[index] = newNode
+		newNode.setParent(this)
+		newNode.append(this)
 	}
 
 	replaceWith(...nodes: HTMLNode[]) {
 		let index = this.siblingIndex
 		this.parent!.children.splice(index, 1, ...nodes)
-		this.parent = null
+
+		for (let node of nodes) {
+			node.setParent(this.parent)
+		}
+
+		this.setParent(null)
 	}
 
 	closest(tag: string): HTMLNode | null {
@@ -181,16 +190,24 @@ export class HTMLNode {
 
 	toTemplateString(): string {
 		if (this.type === HTMLNodeType.Tag) {
-			if (this.tagName!.startsWith('lupos:')) {
+			let tagName = this.tagName!
+
+			// Flow control
+			if (tagName.startsWith('lupos:')) {
 				return `<!---->`
 			}
 
-			if (HTMLTokenParser.SelfClosingTags.includes(this.tagName!)) {
-				return `<${this.tagName}${this.toStringOfAttrs()} />`
+			// Component
+			if (TemplateSlotPlaceholder.isComponent(tagName)) {
+				tagName = 'div'
+			}
+
+			if (HTMLTokenParser.SelfClosingTags.includes(tagName)) {
+				return `<${tagName}${this.toStringOfAttrs()} />`
 			}
 
 			let contents = this.children.map(child => child.toTemplateString()).join('')
-			return `<${this.tagName}${this.toStringOfAttrs()}>${contents}</${this.tagName}>`
+			return `<${tagName}${this.toStringOfAttrs()}>${contents}</${tagName}>`
 		}
 		else if (this.type === HTMLNodeType.Text) {
 			return this.text!

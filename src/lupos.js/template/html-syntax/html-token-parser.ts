@@ -145,7 +145,7 @@ export namespace HTMLTokenParser {
 		while (match = AttrRE.exec(attr)) {
 			let name = match[1]
 			let value = match[2]
-			
+
 			let quoted = value ? /^(['"])(.*)\1$/.test(value) : false
 			if (quoted) {
 				value = value.replace(/^(['"])(.*)\1$/, '$2')
