@@ -37,7 +37,7 @@ export class BindingSlotParser extends SlotParserBase {
 	private initRef() {
 		
 		// If declare property as `XXXElement`, force ref element.
-		let rawValueNode = this.getFirstValueNode()
+		let rawValueNode = this.getFirstRawValueNode()
 		if (rawValueNode && TemplateSlotPlaceholder.isComponent(this.node.tagName!)) {
 			let type = Helper.types.getType(rawValueNode)
 			let typeText = Helper.types.getTypeFullText(type)
@@ -223,7 +223,7 @@ export class BindingSlotParser extends SlotParserBase {
 			}
 		}
 
-		let slotNode = this.getFirstValueNode()
+		let slotNode = this.getFirstRawValueNode()
 		let slotNodeType = slotNode ? Helper.types.getType(slotNode) : null
 
 		if (this.hasString() || Helper.types.isValueType(slotNodeType!)) {
@@ -306,7 +306,7 @@ export class BindingSlotParser extends SlotParserBase {
 			}
 		}
 
-		let slotNode = this.getFirstValueNode()
+		let slotNode = this.getFirstRawValueNode()
 		let slotNodeType = slotNode ? Helper.types.getType(slotNode) : null
 
 		if (this.hasString() || Helper.types.isValueType(slotNodeType!)) {
@@ -329,7 +329,7 @@ export class BindingSlotParser extends SlotParserBase {
 	}
 
 	private getRefUpdateCallWithValue(value: TS.Expression | null): TS.Expression {
-		let rawValueNode = this.getFirstValueNode()!
+		let rawValueNode = this.getFirstRawValueNode()!
 
 		// this.refName ->
 		// (el) => this.refName = el

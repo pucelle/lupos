@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {factory, Modifier, ts} from '../../../base'
+import {definePreVisitCallback, factory, Modifier, ts} from '../../../base'
 import {TreeParser} from './tree'
 import {DoubleKeysMap} from '../../../utils'
 import {VariableNames} from './variable-names'
@@ -8,6 +8,12 @@ import {VariableNames} from './variable-names'
 export namespace HTMLOutputHandler {
 
 	const Cache: DoubleKeysMap<string, boolean, string> = new DoubleKeysMap()
+
+
+	/** Initialize before loading each new source file. */
+	export function initialize() {
+		Cache.clear()
+	}
 
 	
 	/** 
@@ -57,3 +63,6 @@ export namespace HTMLOutputHandler {
 		return htmlName
 	}
 }
+
+
+definePreVisitCallback(HTMLOutputHandler.initialize)

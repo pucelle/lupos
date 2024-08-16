@@ -37,7 +37,7 @@ export class PropertySlotParser extends SlotParserBase {
 				com = Imports.getImportByName(tagName)
 			}
 			else {
-				com = this.getFirstValueNode()!
+				com = this.getFirstRawValueNode()!
 			}
 
 			if (!com) {

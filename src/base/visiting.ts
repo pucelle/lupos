@@ -114,14 +114,14 @@ export namespace Visiting {
 		return ParentMap.get(childIndex)!
 	}
 
-	/** Get node by visiting index. */
+	/** Get raw node by visiting index. */
 	export function getNode(index: number): TS.Node {
 		return NodeMap.get(index)!
 	}
 
-	/** Get visiting index by node. */
-	export function getIndex(node: TS.Node): number {
-		return IndexMap.get(node)!
+	/** Get visiting index by a raw node. */
+	export function getIndex(rawNode: TS.Node): number {
+		return IndexMap.get(rawNode)!
 	}
 
 

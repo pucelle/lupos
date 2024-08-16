@@ -14,11 +14,6 @@ export class ContentSlotParser extends SlotParserBase {
 	/** $latest_0 */
 	private latestVariableName: string | null = null
 
-	/** Content slot will always update dynamically. */
-	isValueOutputAsMutable(): boolean {
-		return true
-	}
-
 	init() {
 		this.slotContentType = this.identifySlotContentType()
 		this.slotVariableName = this.treeParser.getUniqueSlotName()
@@ -37,7 +32,7 @@ export class ContentSlotParser extends SlotParserBase {
 	}
 
 	private identifySlotContentType(): number | null {
-		let valueNode = this.getFirstValueNode()
+		let valueNode = this.getFirstRawValueNode()
 		let valueType = valueNode ? Helper.types.getType(valueNode) : null
 		let typeText = valueType ? Helper.types.getTypeFullText(valueType) : null
 		let slotContentType: number | null = null

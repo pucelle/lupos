@@ -162,11 +162,11 @@ export namespace Scoping {
 
 
 	/** 
-	 * Get hash of node.
+	 * Get hash of raw node, which has a visiting index.
 	 * Note hashing will transform `a?.b` -> `a.b`.
 	 */
-	export function hashNode(node: TS.Node): HashItem {
-		let index = Visiting.getIndex(node)
+	export function hashNode(rawNode: TS.Node): HashItem {
+		let index = Visiting.getIndex(rawNode)
 		return hashIndex(index)
 	}
 
@@ -337,35 +337,36 @@ export namespace Scoping {
 	type NodeReplacer = (node: TS.Identifier | TS.ThisExpression) => TS.Expression
 
 	/** 
-	 * Transfer a node to top scope, output a new node, and a reference variable list.
+	 * Transfer a raw node to top scope,
+	 * output a new node, and a referenced variable list.
 	 * `replacer` can help to modify node when doing transfer,
 	 * it replace local variables and `this` to some parameters.
 	 */
-	export function transferToTopmostScope<T extends TS.Node>(node: T, replacer: NodeReplacer): T {
-		let scope = findClosestScopeOfNode(node)
-		return visitNodeTransferToTopmost(node, scope, true, replacer) as T
+	export function transferToTopmostScope<T extends TS.Node>(rawNode: T, replacer: NodeReplacer): T {
+		let scope = findClosestScopeOfNode(rawNode)
+		return visitNodeTransferToTopmost(rawNode, scope, true, replacer) as T
 	}
 
-	function visitNodeTransferToTopmost(node: TS.Node, scope: Scope, canReplaceThis: boolean, replacer: NodeReplacer): TS.Node {
+	function visitNodeTransferToTopmost(rawNode: TS.Node, scope: Scope, canReplaceThis: boolean, replacer: NodeReplacer): TS.Node {
 
 		// Variable
-		if (Helper.variable.isVariableIdentifier(node)) {
+		if (Helper.variable.isVariableIdentifier(rawNode)) {
 
 			// If declared in top scope, or in local scope within transfer content, not replace it.
-			if (!isDeclaredInTopScope(node) && !isDeclaredWithinScope(node, scope)) {
-				return replacer(node)
+			if (!isDeclaredInTopScope(rawNode) && !isDeclaredWithinScope(rawNode, scope)) {
+				return replacer(rawNode)
 			}
 		}
 
 		// this
-		else if (canReplaceThis && node.kind === ts.SyntaxKind.ThisKeyword) {
-			return replacer(node as TS.ThisExpression)
+		else if (canReplaceThis && rawNode.kind === ts.SyntaxKind.ThisKeyword) {
+			return replacer(rawNode as TS.ThisExpression)
 		}
 
 		// If enters non-arrow function declaration, cant replace this.
-		canReplaceThis &&= Helper.isFunctionLike(node) && !ts.isArrowFunction(node)
+		canReplaceThis &&= Helper.isFunctionLike(rawNode) && !ts.isArrowFunction(rawNode)
 
-		return ts.visitEachChild(node, (node: TS.Node) => {
+		return ts.visitEachChild(rawNode, (node: TS.Node) => {
 			return visitNodeTransferToTopmost(node, scope, canReplaceThis, replacer)
 		}, transformContext)
 	}

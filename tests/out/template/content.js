@@ -12,10 +12,12 @@ const $template_1 = new TemplateMaker($context => {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_0), $context, 0);
-    $slot_0.update(html `<div></div>`);
     return {
         el: $node,
         position: new SlotPosition(2, $node_0),
+        update($values) {
+            $slot_0.update(html `<div></div>`);
+        },
         parts: [$slot_0]
     };
 });

@@ -56,6 +56,7 @@ export class EventSlotParser extends SlotParserBase {
 				com = Imports.getImportByName(tagName)
 			}
 			else {
+				// TODO
 				com = this.outputValue()
 			}
 

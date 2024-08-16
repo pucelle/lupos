@@ -94,7 +94,7 @@ export abstract class SlotParserBase {
 	 * can only use returned node to identify type, cant output.
 	 * If not `hasString()`, this value will always exist.
 	 */
-	protected getFirstValueNode(): TS.Expression | null {
+	protected getFirstRawValueNode(): TS.Expression | null {
 		return this.valueIndices ? this.template.values.getRawNode(this.valueIndices[0]) : null
 	}
 
@@ -124,8 +124,8 @@ export abstract class SlotParserBase {
 	 * Get value node, either `$values[0]`, or `"..."`.
 	 * Can only use it when outputting update.
 	 */
-	outputValue(): TS.Expression {
-		return this.template.values.outputValue(this.valueIndices, this.strings)
+	outputValue(forceStatic: boolean = false): TS.Expression {
+		return this.template.values.outputValue(this.valueIndices, this.strings, forceStatic)
 	}
 
 	/** Make `new TemplateSlot(...)`. */

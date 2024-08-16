@@ -112,19 +112,22 @@ export class TemplateValues {
 	 * Output a node, append it to output value node list,
 	 * and returns it's reference node.
 	 */
-	private outputValueNodeOf(node: TS.Expression, transferringToTopmostScope: boolean): TS.Expression {
-		let index = Visiting.getIndex(node)
-		node = Interpolator.output(index) as TS.Expression
-
-		let hash = Scoping.hashNode(node).name
+	private outputValueNodeOf(rawNode: TS.Expression, transferringToTopmostScope: boolean): TS.Expression {
+		let hash = Scoping.hashNode(rawNode).name
 		let valueIndex: number
+
+	
+		// May value is another template.
+		let visitingIndex = Visiting.getIndex(rawNode)
+		let valueNode = Interpolator.output(visitingIndex) as TS.Expression
+
 
 		if (this.valueHash.has(hash)) {
 			valueIndex = this.valueHash.get(hash)!
 		}
 		else {
 			valueIndex = this.outputNodes.length
-			this.outputNodes.push(node)
+			this.outputNodes.push(valueNode)
 			this.valueHash.set(hash, valueIndex)
 		}
 
