@@ -114,6 +114,11 @@ export namespace Visiting {
 		return ParentMap.get(childIndex)!
 	}
 
+	/** Test whether have raw node by visiting index. */
+	export function hasNode(node: TS.Node): boolean {
+		return IndexMap.has(node)
+	}
+
 	/** Get raw node by visiting index. */
 	export function getNode(index: number): TS.Node {
 		return NodeMap.get(index)!
@@ -123,6 +128,7 @@ export namespace Visiting {
 	export function getIndex(rawNode: TS.Node): number {
 		return IndexMap.get(rawNode)!
 	}
+	
 
 
 	/** Look outward for a visiting index, and the node at where match test fn. */

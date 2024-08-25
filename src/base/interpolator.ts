@@ -371,6 +371,20 @@ export namespace Interpolator {
 
 		return list
 	}
+
+	/** 
+	 * Output an node, even the parameter node is an updated node,
+	 * will still test it's all descendant nodes,
+	 * and replace if it's a raw node.
+	 */
+	export function outputPartial(mayUpdatedNode: TS.Node): TS.Node {
+		if (Visiting.hasNode(mayUpdatedNode)) {
+			return outputChildren(Visiting.getIndex(mayUpdatedNode))
+		}
+		else {
+			return ts.visitEachChild(mayUpdatedNode, outputPartial, transformContext)
+		}
+	}
 }
 
 

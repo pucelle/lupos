@@ -81,6 +81,8 @@ export class TemplateValues {
 			}
 		})
 
+		valueNodes = valueNodes
+
 		if (strings) {
 			return this.bundleStringsAndValueNodes(strings, valueIndices, valueNodes)
 		}
@@ -115,12 +117,6 @@ export class TemplateValues {
 	private outputValueNodeOf(rawNode: TS.Expression, transferringToTopmostScope: boolean): TS.Expression {
 		let hash = Scoping.hashNode(rawNode).name
 		let valueIndex: number
-
-	
-		// May value is another template.
-		let visitingIndex = Visiting.getIndex(rawNode)
-		let valueNode = Interpolator.output(visitingIndex) as TS.Expression
-
 
 		if (this.valueHash.has(hash)) {
 			valueIndex = this.valueHash.get(hash)!
