@@ -133,6 +133,8 @@ export abstract class SlotParserBase {
 		Modifier.addImport('TemplateSlot', '@pucelle/lupos.js')
 		Modifier.addImport('SlotPosition', '@pucelle/lupos.js')
 
+		console.log(this.node)
+
 		let position: number
 		let nextNode = this.node.nextSibling
 		let parent = this.node.parent!

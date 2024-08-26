@@ -117,6 +117,7 @@ export class HTMLNode {
 
 		for (let node of nodes) {
 			node.setParent(this.parent)
+			console.log(node)
 		}
 
 		this.setParent(null)

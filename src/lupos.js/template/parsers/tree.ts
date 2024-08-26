@@ -307,7 +307,7 @@ export class TreeParser {
 					let comment = new HTMLNode(HTMLNodeType.Comment, {})
 					mixedNodes.push(comment)
 
-					this.addSlot(SlotType.Content, null, null, [slotIndices[i]], node)
+					this.addSlot(SlotType.Content, null, null, [slotIndices[i]], comment)
 				}
 			}
 
@@ -317,10 +317,8 @@ export class TreeParser {
 		// A single content.
 		else {
 			let comment = new HTMLNode(HTMLNodeType.Comment, {})
+			this.addSlot(SlotType.Content, null, null, slotIndices, comment)
 			node.replaceWith(comment)
-			node = comment
-
-			this.addSlot(SlotType.Content, null, null, slotIndices, node)
 		}
 
 		return text

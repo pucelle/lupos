@@ -377,9 +377,9 @@ export namespace Interpolator {
 	 * will still test it's all descendant nodes,
 	 * and replace if it's a raw node.
 	 */
-	export function outputPartial(mayUpdatedNode: TS.Node): TS.Node {
+	export function outputPartial<T extends TS.Node>(mayUpdatedNode: T): T {
 		if (Visiting.hasNode(mayUpdatedNode)) {
-			return outputChildren(Visiting.getIndex(mayUpdatedNode))
+			return output(Visiting.getIndex(mayUpdatedNode)) as T
 		}
 		else {
 			return ts.visitEachChild(mayUpdatedNode, outputPartial, transformContext)

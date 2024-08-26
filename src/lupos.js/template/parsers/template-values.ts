@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {factory, Helper, Interpolator, MutableMask, Scoping, ts, Visiting} from '../../../base'
+import {factory, Helper, Interpolator, MutableMask, Scoping, ts} from '../../../base'
 import {VariableNames} from './variable-names'
 
 
@@ -64,20 +64,23 @@ export class TemplateValues {
 		}
 		
 		let valueNodes = valueIndices.map(index => {
-			let valueNode = this.valueNodes[index]
+			let rawValueNode = this.valueNodes[index]
 			let mutable = this.isIndexMutable(index)
 			let canTurn = this.isIndexCanTurnStatic(index)
 
 			// Output static raw node.
 			if (!mutable || forceStatic && canTurn) {
 				this.indicesOutputAsMutable.set(index, false)
-				return Scoping.transferToTopmostScope(valueNode, this.transferNodeToTopmostScope.bind(this, index))
+				let transferred = Scoping.transferToTopmostScope(rawValueNode, this.transferNodeToTopmostScope.bind(this, index))
+				let interpolated = Interpolator.outputPartial(transferred)
+
+				return interpolated
 			}
 
 			// Output from value list.
 			else {
 				this.indicesOutputAsMutable.set(index, true)
-				return this.outputValueNodeOf(valueNode, false)
+				return this.outputValueNodeOf(rawValueNode, false)
 			}
 		})
 
@@ -122,8 +125,10 @@ export class TemplateValues {
 			valueIndex = this.valueHash.get(hash)!
 		}
 		else {
+			let interpolated = Interpolator.outputPartial(rawNode)
+
 			valueIndex = this.outputNodes.length
-			this.outputNodes.push(valueNode)
+			this.outputNodes.push(interpolated)
 			this.valueHash.set(hash, valueIndex)
 		}
 
@@ -159,7 +164,7 @@ export class TemplateValues {
 		
 		let firstRawNode = this.getRawNode(valueIndices[0])
 
-		// '' + ...
+		// '' + ... if it's not a string type of value.
 		if (!ts.isStringLiteral(parts[0])
 			&& !Helper.types.isStringType(Helper.types.getType(firstRawNode))
 		) {
