@@ -125,18 +125,22 @@ const $template_10 = new TemplateMaker($context => {
         position: new SlotPosition(2, $node_0)
     };
 });
+const $html_2 = new HTMLMaker("<div> <!----> <!----> </div>");
 const $template_11 = new TemplateMaker($context => {
-    let $node = $html_1.make();
+    let $node = $html_2.make();
     let $node_0 = $node.content.firstChild;
-    let $node_1 = $node_0.firstChild;
-    let $slot_0 = new TemplateSlot(new SlotPosition(2, $node_1), $context);
-    let $slot_1 = new TemplateSlot(new SlotPosition(1, $node_0), $context, 0);
+    let $node_1 = $node_0.childNodes[1];
+    let $node_2 = $node_0.childNodes[3];
+    let $slot_0 = new TemplateSlot(new SlotPosition(2, $node_1), $context, 2);
+    let $slot_1 = new TemplateSlot(new SlotPosition(2, $node_2), $context, 0);
+    let $slot_2 = new TemplateSlot(new SlotPosition(1, $node_0), $context, 2);
     $slot_0.update('1');
     $slot_1.update(new CompiledTemplateResult($template_10, []));
+    $slot_2.update('1');
     return {
         el: $node,
         position: new SlotPosition(2, $node_0),
-        parts: [$slot_0, $slot_1]
+        parts: [$slot_0, $slot_1, $slot_2]
     };
 });
 class TestContent extends Component {

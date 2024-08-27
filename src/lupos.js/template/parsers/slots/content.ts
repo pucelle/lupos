@@ -43,7 +43,9 @@ export class ContentSlotParser extends SlotParserBase {
 		else if (typeText === 'TemplateResult[]') {
 			slotContentType = SlotContentType.TemplateResultList
 		}
-		else if (typeText === 'string' || typeText === 'number') {
+		else if (typeText === 'string' || typeText === 'number'
+			|| valueType && Helper.types.isNonNullableValueType(valueType)
+		) {
 			slotContentType = SlotContentType.Text
 		}
 		else if (typeText && /^\w*?(Node|Element)$/.test(typeText)) {

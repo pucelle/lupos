@@ -79,13 +79,16 @@ export class TemplateAttributeSlotParser extends SlotParserBase {
 		else {
 			return factory.createCallExpression(
 				factory.createPropertyAccessExpression(
-				  factory.createIdentifier(VariableNames.context),
-				  factory.createIdentifier('setAttribute')
+					factory.createPropertyAccessExpression(
+						factory.createIdentifier(VariableNames.context),
+						factory.createIdentifier('el')
+					),
+					factory.createIdentifier('setAttribute')
 				),
 				undefined,
 				[
-				  factory.createStringLiteral(this.name),
-				  factory.createStringLiteral(string)
+				  	factory.createStringLiteral(this.name),
+				  	factory.createStringLiteral(string)
 				]
 			) 
 		}

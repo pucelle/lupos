@@ -18,8 +18,11 @@ export interface ReferenceOutputItem {
 	/** The node where visit from. */
 	visitFromNode: HTMLNode
 
-	/** The child index sequence, can be `-1` when been the last child. */
-	visitSteps: number[]
+	/** 
+	 * The child index sequence, can be `-1` when been the last child.
+	 * If should ignore node when doing output, like template node, be `null`.
+	 */
+	visitSteps: number[] | null
 }
 
 
@@ -114,11 +117,19 @@ export class HTMLNodeReferences {
 
 	/** `steps` doesn't include current item sibling index. */
 	private *outputItem(item: DeepReferenceItem, visitFromNode: HTMLNode, parentalSteps: number[]): Iterable<ReferenceOutputItem> {
-		let visitSteps = [...parentalSteps]
+		let steps: number[] = [...parentalSteps]
+		let visitSteps: number[] | null = steps
 
 		// No visit step for tree.
 		if (item.node !== this.tree) {
-			visitSteps.push(item.siblingIndex)
+			steps.push(item.siblingIndex)
+		}
+
+		// Template tags get removed, no visit steps, but still iterate them.
+		if (item.node.tagName === 'template'
+			&& item.node.parent === this.tree
+		) {
+			visitSteps = null
 		}
 
 		// Output directly
@@ -161,7 +172,7 @@ export class HTMLNodeReferences {
 		// Add step to current path
 		else {
 			for (let child of item.children) {
-				yield *this.outputItem(child, visitFromNode, visitSteps)
+				yield *this.outputItem(child, visitFromNode, steps)
 			}
 		}
 	}

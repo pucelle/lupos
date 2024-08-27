@@ -39,7 +39,9 @@ defineVisitor(function(node: TS.Node, index: number) {
 	else if (typeText === 'TemplateResult[]') {
 		slotType = 'TemplateResultList'
 	}
-	else if (typeText === 'string' || typeText === 'number') {
+	else if (typeText === 'string' || typeText === 'number'
+		|| Helper.types.isNonNullableValueType(renderType)
+	) {
 		slotType = 'Text'
 	}
 	else if (/^\w*?(Node|Element)$/.test(typeText)) {

@@ -40,6 +40,6 @@ class TestContent extends Component {
 	}
 
 	testMultipleContents() {
-		return html`<div>${'1'} ${html`<div></div>`}</div>`
+		return html`<div> ${'1'} ${html`<div></div>`} ${'1'}</div>`
 	}
 }

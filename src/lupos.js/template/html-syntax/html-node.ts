@@ -117,7 +117,6 @@ export class HTMLNode {
 
 		for (let node of nodes) {
 			node.setParent(this.parent)
-			console.log(node)
 		}
 
 		this.setParent(null)
@@ -215,6 +214,11 @@ export class HTMLNode {
 		}
 		else {
 			return `<!---->`
-		} 
+		}
+	}
+
+	/** Get string of all the contents. */
+	getContentString() {
+		return this.children.map(child => child.toTemplateString()).join('')
 	}
 }

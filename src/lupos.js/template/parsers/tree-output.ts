@@ -192,7 +192,6 @@ export class TreeOutputHandler {
 		Modifier.addImport('SlotPosition', '@pucelle/lupos.js')
 
 		let position = SlotPositionType.Before
-
 		let container: HTMLNode = this.tree
 		let firstNode = container.firstChild!
 
@@ -208,7 +207,7 @@ export class TreeOutputHandler {
 		}
 
 		// Use a new comment node to locate if position is not stable.
-		if (!firstNode.isPrecedingPositionStable()) {
+		else if (!firstNode.isPrecedingPositionStable()) {
 			let comment = new HTMLNode(HTMLNodeType.Comment, {})
 			firstNode.before(comment)
 			firstNode = comment
@@ -230,7 +229,7 @@ export class TreeOutputHandler {
 	private outputRootHTML(): OutputNodes {
 
 		// $html_0
-		let htmlName = HTMLOutputHandler.output(this.parser, this.wrappedBySVG || this.wrappedByTemplate)
+		let htmlName = HTMLOutputHandler.output(this.parser, this.wrappedBySVG)
 
 		// $node
 		let rootNodeName = VariableNames.node
@@ -268,8 +267,19 @@ export class TreeOutputHandler {
 			// $node.firstChild
 			let fromExp: TS.Expression
 
+			// When visiting template.content.firstChild,
+			// uses `$context.el` to replace it.
+			if (!visitSteps) {
+				fromExp = factory.createPropertyAccessExpression(
+					factory.createIdentifier(VariableNames.context),
+					'el'
+				)
+
+				visitSteps = []
+			}
+
 			// Where the total reference from.
-			if (visitFromNode === this.tree) {
+			else if (visitFromNode === this.tree) {
 
 				// $node.content
 				fromExp = factory.createPropertyAccessExpression(
@@ -277,25 +287,14 @@ export class TreeOutputHandler {
 					'content'
 				)
 
-				// When visiting template.content.firstChild,
-				// uses `$context.el` to replace it.
-				if (this.wrappedByTemplate && visitSteps.length === 1) {
-					fromExp = factory.createPropertyAccessExpression(
-						factory.createIdentifier(VariableNames.context),
-						'el'
-					)
-
-					visitSteps = []
-				}
-
 				// Eliminate the first path piece.
-				else if (this.wrappedBySVG || this.wrappedByTemplate) {
+				if (this.wrappedBySVG || this.wrappedByTemplate) {
 					visitSteps = visitSteps.slice(1)
 				}
 			}
-			else {
 
-				// $node_0
+			// $node_0
+			else {
 				let nodeName = this.parser.references.getRefedName(visitFromNode)
 				fromExp = factory.createIdentifier(nodeName)
 			}

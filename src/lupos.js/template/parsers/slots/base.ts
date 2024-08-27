@@ -133,23 +133,26 @@ export abstract class SlotParserBase {
 		Modifier.addImport('TemplateSlot', '@pucelle/lupos.js')
 		Modifier.addImport('SlotPosition', '@pucelle/lupos.js')
 
-		console.log(this.node)
-
 		let position: number
 		let nextNode = this.node.nextSibling
 		let parent = this.node.parent!
 		let nodeName: string
 
 		// Use next node to locate.
-		if (nextNode && nextNode.isPrecedingPositionStable()) {
-			nodeName = this.treeParser.references.refAsName(nextNode)
+		if (nextNode
+			&& nextNode.isPrecedingPositionStable()
+			&& this.canRemoveNode(this.node)
+		) {
 			this.node.remove()
+			nodeName = this.treeParser.references.refAsName(nextNode)
 			position = SlotPositionType.Before
 		}
 
 		// Parent is stable enough.
 		// Would be ok although parent is a dynamic component.
-		else if (parent.tagName !== 'template') {
+		else if (parent.tagName !== 'template'
+			&& this.canRemoveNode(this.node)
+		) {
 			nodeName = this.treeParser.references.refAsName(parent)
 			this.node.remove()
 			position = SlotPositionType.AfterContent
@@ -188,6 +191,18 @@ export abstract class SlotParserBase {
 			undefined,
 			templateSlotParams
 		)
+	}
+
+	/** Whether can remove current node, and will not cause two text node joining. */
+	private canRemoveNode(node: HTMLNode): boolean {
+		let previousBeText = node.previousSibling?.type === HTMLNodeType.Text
+		let nextBeText = node.nextSibling?.type === HTMLNodeType.Text
+		
+		if (previousBeText && nextBeText) {
+			return false
+		}
+
+		return true
 	}
 
 	/** Make `new SlotRange(...)`. */

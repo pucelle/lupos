@@ -54,11 +54,15 @@ export class HTMLTree extends HTMLNode {
 	}
 
 	constructor() {
-		super(HTMLNodeType.Tag, {tagName: 'template', attrs: []})
+		super(HTMLNodeType.Tag, {tagName: 'tree', attrs: []})
 	}
 
-	/** Get string of all contents. */
 	getContentString() {
-		return this.children.map(child => child.toTemplateString()).join('')
+		if (this.firstChild?.tagName === 'template') {
+			return this.firstChild.getContentString()
+		}
+		else {
+			return super.getContentString()
+		}
 	}
 }

@@ -241,30 +241,19 @@ export class TreeParser {
 					}
 			}
 
+			if (type === null && node.tagName === 'template') {
+				type = SlotType.TemplateAttribute
+			}
+
 			if (type === null) {
 				continue
 			}
 
-			if (type !== SlotType.Attribute) {
+			if (type === null && type !== SlotType.Attribute) {
 				name = name.slice(1)
 			}
 
-			if (type === SlotType.Property) {
-				this.addSlot(SlotType.Property, name, strings, slotIndices, node)
-			}
-			else if (type === SlotType.Binding) {
-				this.addSlot(SlotType.Binding, name, strings, slotIndices, node)
-			}
-			else if (type === SlotType.Event) {
-				this.addSlot(SlotType.Event, name, strings, slotIndices, node)
-			}
-			else if (type === SlotType.Attribute) {
-				this.addSlot(SlotType.Attribute, name, strings, slotIndices, node)
-			}
-			else if (node.tagName === 'template') {
-				this.addSlot(SlotType.TemplateAttribute, name, strings, slotIndices, node)
-			}
-
+			this.addSlot(type, name, strings, slotIndices, node)
 			node.removeAttr(attr)
 		}
 	}
