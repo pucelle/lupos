@@ -7,7 +7,7 @@ export class HTMLTree extends HTMLNode {
 	static fromString(string: string): HTMLTree {
 		let tokens = HTMLTokenParser.parseToTokens(string)
 		let tree = new HTMLTree()
-		let current: HTMLNode = tree
+		let current: HTMLNode | null = tree
 
 		for (let token of tokens) {
 			switch (token.type) {
@@ -18,7 +18,20 @@ export class HTMLTree extends HTMLNode {
 					break
 
 				case HTMLTokenType.EndTag:
-					current = current.parent!
+					do {
+						if (current.tagName === token.tagName) {
+							current = current.parent
+							break
+						}
+
+						if (token.tagName === '') {
+							current = current.parent
+							break
+						}
+
+						current = current.parent
+					} while (current)
+
 					break
 
 				case HTMLTokenType.Text:
@@ -28,6 +41,10 @@ export class HTMLTree extends HTMLNode {
 				case HTMLTokenType.Comment:
 					current.append(new HTMLNode(HTMLNodeType.Comment, token))
 					break
+			}
+
+			if (!current) {
+				break
 			}
 		}
 

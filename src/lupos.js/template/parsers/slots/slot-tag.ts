@@ -53,31 +53,23 @@ export class SlotTagSlotParser extends SlotParserBase {
 		// )`
 		// It's not a known content type slot, slot elements may be empty,
 		// and then we would use default content.
-		return factory.createVariableStatement(
-			undefined,
-			factory.createVariableDeclarationList(
-				[factory.createVariableDeclaration(
-				factory.createIdentifier(this.slotVariableName),
-				undefined,
-				undefined,
-				factory.createNewExpression(
-					factory.createIdentifier('TemplateSlot'),
-					[factory.createLiteralTypeNode(factory.createNull())],
-					[
-						factory.createNewExpression(
-							factory.createIdentifier('SlotPosition'),
-							undefined,
-							[
-								factory.createNumericLiteral(SlotPositionType.AfterContent),
-								factory.createIdentifier(nodeName)
-							]
-						),
-						factory.createIdentifier(VariableNames.context),
-						...slotContentTypeNodes
-					]
-				)
-				)],
-				ts.NodeFlags.Let
+		return this.addVariableAssignment(
+			this.slotVariableName,
+			factory.createNewExpression(
+				factory.createIdentifier('TemplateSlot'),
+				[factory.createLiteralTypeNode(factory.createNull())],
+				[
+					factory.createNewExpression(
+						factory.createIdentifier('SlotPosition'),
+						undefined,
+						[
+							factory.createNumericLiteral(SlotPositionType.AfterContent),
+							factory.createIdentifier(nodeName)
+						]
+					),
+					factory.createIdentifier(VariableNames.context),
+					...slotContentTypeNodes
+				]
 			)
 		)
 	}

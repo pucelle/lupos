@@ -60,9 +60,10 @@ export class TreeParser {
 	private inSVG: boolean = false
 	private outputHandler: TreeOutputHandler
 	private slots: SlotParserBase[] = []
-	private variableNames: string[] = []
+	private preDeclaredVariableNames: string[] = []
 	private partNames: string[] = []
 	private refedComponentMap: Map<HTMLNode, string> = new Map()
+	private hasDynamicComponent: boolean = false
 
 	constructor(template: TemplateParser, tree: HTMLTree, parent: TreeParser | null, fromNode: HTMLNode | null) {
 		this.template = template
@@ -154,6 +155,7 @@ export class TreeParser {
 				break
 
 			case SlotType.DynamicComponent:
+				this.hasDynamicComponent = true
 				slot = new DynamicComponentSlotParser(name, strings, valueIndices, node, this)
 				break
 
@@ -205,7 +207,8 @@ export class TreeParser {
 	}
 
 	private parseDynamicTag(node: HTMLNode) {
-		this.addSlot(SlotType.DynamicComponent, null, null, null, node)
+		let valueIndices = TemplateSlotPlaceholder.getSlotIndices(node.tagName!)
+		this.addSlot(SlotType.DynamicComponent, null, null, valueIndices, node)
 	}
 
 	private parseFlowControlTag(node: HTMLNode) {
@@ -249,7 +252,7 @@ export class TreeParser {
 				continue
 			}
 
-			if (type === null && type !== SlotType.Attribute) {
+			if (type !== SlotType.Attribute) {
 				name = name.slice(1)
 			}
 
@@ -327,21 +330,15 @@ export class TreeParser {
 	/** `$slot_0` */
 	getUniqueSlotName(): string {
 		let name = VariableNames.getDoublyUniqueName(VariableNames.slot, this)
-		this.partNames.push(name)
+		this.addPartName(name)
 		return name
 	}
 
 	/** `$binding_0` */
 	getUniqueBindingName(): string {
-		let name = VariableNames.getDoublyUniqueName(VariableNames.binding, this)
-		this.partNames.push(name)
-		return name
-	}
 
-	/** `$latest_0` */
-	getUniqueLatestName(): string {
-		let name = VariableNames.getDoublyUniqueName(VariableNames.latest, this)
-		this.variableNames.push(name)
+		// Only partial binding classes are parts.
+		let name = VariableNames.getDoublyUniqueName(VariableNames.binding, this)
 		return name
 	}
 
@@ -349,6 +346,23 @@ export class TreeParser {
 	getUniqueBlockName(): string {
 		let name = VariableNames.getDoublyUniqueName(VariableNames.block, this)
 		return name
+	}
+
+	/** `$latest_0` */
+	getUniqueLatestName(): string {
+		let name = VariableNames.getDoublyUniqueName(VariableNames.latest, this)
+		this.addPreDeclaredVariableName(name)
+		return name
+	}
+
+	/** Add a variable name to `parts`. */
+	addPartName(name: string) {
+		this.partNames.push(name)
+	}
+
+	/** Add a variable name to `let ..., ...` list. */
+	addPreDeclaredVariableName(name: string) {
+		this.preDeclaredVariableNames.push(name)
 	}
 
 	/** 
@@ -374,7 +388,12 @@ export class TreeParser {
 
 	/** Output contents and interpolate. */
 	output() {
-		this.outputHandler.output(this.slots, this.variableNames, this.partNames)
+		this.outputHandler.output(
+			this.slots,
+			this.preDeclaredVariableNames,
+			this.partNames,
+			this.hasDynamicComponent
+		)
 	}
 }
 

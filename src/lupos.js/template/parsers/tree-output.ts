@@ -28,7 +28,7 @@ export class TreeOutputHandler {
 		this.wrappedByTemplate = this.tree.firstChild?.tagName === 'template'
 	}
 
-	output(slots: SlotParserBase[], varNames: string[], partNames: string[]) {
+	output(slots: SlotParserBase[], varNames: string[], partNames: string[], hasDynamicComponent: boolean) {
 		Modifier.addImport('TemplateMaker', '@pucelle/lupos.js')
 
 		// May modify nodes, must before outputting HTML Maker.
@@ -63,7 +63,7 @@ export class TreeOutputHandler {
 		let templateName = this.parser.getTemplateRefName()
 
 		// TemplateInitResult
-		let initResult = this.outputTemplateInitResult(templatePosition, update, partNames)
+		let initResult = this.outputTemplateInitResult(templatePosition, update, partNames, hasDynamicComponent)
 
 		// const $template_0 = new TemplateMaker((_context: Component) => {
 		//	 let $node = $html_0()
@@ -128,11 +128,11 @@ export class TreeOutputHandler {
 		for (let i = 0; i < slots.length; i++) {
 			let slot = slots[i]
 			let attrInit: OutputNodes[] = []
+			let attrStaticUpdate: OutputNodes[] = []
 
 			if (slot.node.type === HTMLNodeType.Tag
 				&& TemplateSlotPlaceholder.isComponent(slot.node.tagName!)
 			) {
-
 				let j = i + 1
 
 				for (; j < slots.length; j++) {
@@ -142,19 +142,22 @@ export class TreeOutputHandler {
 					}
 
 					attrInit.push(attrSlot.outputInit([]))
+
+					let attrUpdateNodes = attrSlot.outputUpdate()
+
+					if (attrSlot.isValueOutputAsMutable()) {
+						update.push(attrUpdateNodes)
+					}
+					else {
+						attrStaticUpdate.push(attrUpdateNodes)
+					}
 				}
 
 				i = j - 1
 			}
 
-			let attrInitStatements = attrInit.flat().map(n => Helper.pack.toStatement(n))
+			let attrInitStatements = [...attrInit, ...attrStaticUpdate].flat().map(n => Helper.pack.toStatement(n))
 			let initNodes = slot.outputInit(attrInitStatements)
-	
-			init.push(initNodes)
-		}
-
-		for (let i = 0; i < slots.length; i++) {
-			let slot = slots[i]
 			let updateNodes = slot.outputUpdate()
 
 			if (slot.isValueOutputAsMutable()) {
@@ -163,12 +166,14 @@ export class TreeOutputHandler {
 			else {
 				staticUpdate.push(updateNodes)
 			}
+
+			init.push(initNodes)
 		}
 
 		return {
 			init: init.flat(),
 			update: update.flat(),
-			staticUpdate: staticUpdate.flat()
+			staticUpdate: staticUpdate.flat(),
 		}
 	}
 
@@ -262,10 +267,10 @@ export class TreeOutputHandler {
 		for (let {node, visitFromNode, visitSteps} of this.parser.references.output()) {
 
 			// $node_0
-			let nodeName = factory.createIdentifier(this.parser.references.getRefedName(node))
-
+			let nodeName = this.parser.references.getRefedName(node)
+	
 			// $node.firstChild
-			let fromExp: TS.Expression
+			let fromExp: TS.Expression | undefined
 
 			// When visiting template.content.firstChild,
 			// uses `$context.el` to replace it.
@@ -295,8 +300,8 @@ export class TreeOutputHandler {
 
 			// $node_0
 			else {
-				let nodeName = this.parser.references.getRefedName(visitFromNode)
-				fromExp = factory.createIdentifier(nodeName)
+				let fromNodeName = this.parser.references.getRefedName(visitFromNode)
+				fromExp = factory.createIdentifier(fromNodeName)
 			}
 
 			// $node.content.firstChild.lastChild.childNodes[0]
@@ -324,6 +329,13 @@ export class TreeOutputHandler {
 				}
 			}
 
+			// Component node reference will be replaced soon.
+			if (node.type === HTMLNodeType.Tag
+				&& TemplateSlotPlaceholder.isDynamicComponent(node.tagName!)
+			) {
+				fromExp = undefined
+			}
+
 			list.push(factory.createVariableStatement(
 				undefined,
 				factory.createVariableDeclarationList(
@@ -332,8 +344,8 @@ export class TreeOutputHandler {
 						undefined,
 						undefined,
 						fromExp
-				 	)],
-				 	ts.NodeFlags.Let
+					)],
+					ts.NodeFlags.Let
 				)
 			))
 		}
@@ -361,7 +373,12 @@ export class TreeOutputHandler {
 	}
 
 	/** TemplateInitResult, `{el, position, update, parts}`. */
-	private outputTemplateInitResult(position: TS.Expression | null, update: OutputNodeList, partNames: string[]) {
+	private outputTemplateInitResult(
+		position: TS.Expression | null,
+		update: OutputNodeList,
+		partNames: string[],
+		hasDynamicComponent: boolean
+	) {
 		
 		// position part.
 		let positionNode: TS.PropertyAssignment | null = null
@@ -397,15 +414,29 @@ export class TreeOutputHandler {
 			)
 		}
 
-		// `parts` part.
+		// `parts` part, list of all parts.
 		let partsNode: TS.PropertyAssignment | null = null
 		if (partNames.length > 0) {
+			let parts: TS.Expression = factory.createArrayLiteralExpression(
+				partNames.map(n => factory.createIdentifier(n)),
+				false
+			)
+
+			// Becomes `() => [...]`.
+			if (hasDynamicComponent) {
+				parts = factory.createArrowFunction(
+					undefined,
+					undefined,
+					[],
+					undefined,
+					factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
+					parts
+				)  
+			}
+
 			partsNode = factory.createPropertyAssignment(
 				factory.createIdentifier('parts'),
-				factory.createArrayLiteralExpression(
-					partNames.map(n => factory.createIdentifier(n)),
-					false
-				)
+				parts
 			)
 		}
 

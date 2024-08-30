@@ -1,6 +1,8 @@
 import type TS from 'typescript'
 import {SlotParserBase} from './base'
 import {factory, Modifier, ts} from '../../../../base'
+import {HTMLNode, HTMLNodeType} from '../../html-syntax'
+import {SlotPositionType} from '../../enums'
 
 
 export class DynamicComponentSlotParser extends SlotParserBase {
@@ -13,13 +15,50 @@ export class DynamicComponentSlotParser extends SlotParserBase {
 		this.blockVariableName = this.treeParser.getUniqueBlockName()
 	}
 
+	/** Get node name and position parameters for outputting template slot. */
+	protected getTemplateSlotParameters() {
+		let position: number
+		let nextNode = this.node.nextSibling
+		let parent = this.node.parent!
+		let nodeName: string
+
+		// Use next node to locate.
+		if (nextNode && nextNode.isPrecedingPositionStable()) {
+			nodeName = this.treeParser.references.refAsName(nextNode)
+			position = SlotPositionType.Before
+		}
+
+		// Parent is stable enough.
+		// Would be ok although parent is a dynamic component.
+		else if (parent.tagName !== 'tree') {
+			nodeName = this.treeParser.references.refAsName(parent)
+			position = SlotPositionType.AfterContent
+		}
+
+		// Use current node to locate.
+		else {
+			let comment = new HTMLNode(HTMLNodeType.Comment, {})
+			this.node.after(comment)
+			nodeName = this.treeParser.references.refAsName(comment)
+			position = SlotPositionType.Before
+		}
+
+		return {
+			nodeName,
+			position
+		}
+	}
+
 	outputInit(nodeAttrInits: TS.Statement[]) {
 		Modifier.addImport('DynamicComponentBlock', '@pucelle/lupos.js')
 
-		let nodeName = this.getRefedNodeName()
+		let nodeName = this.hasNodeRefed() ? this.getRefedNodeName() : null
 		let comName = this.getRefedComponentName()
 
-		// $block_0 = new DynamicComponentBlock(
+		// let $com_0
+		this.treeParser.addPreDeclaredVariableName(comName)
+
+		// let $block_0 = new DynamicComponentBlock(
 		//   function(com){
 		//     $node_0 = com.el;
 		//	   $com_0 = com;
@@ -45,11 +84,11 @@ export class DynamicComponentSlotParser extends SlotParserBase {
 			undefined,
 			factory.createBlock(
 				[
-					factory.createExpressionStatement(factory.createBinaryExpression(
+					...(nodeName ? [factory.createExpressionStatement(factory.createBinaryExpression(
 						factory.createIdentifier(nodeName),
 						factory.createToken(ts.SyntaxKind.EqualsToken),
 						factory.createPropertyAccessExpression(factory.createIdentifier('com'), 'el')
-					)),
+					))] : []),
 					factory.createExpressionStatement(factory.createBinaryExpression(
 						factory.createIdentifier(comName),
 						factory.createToken(ts.SyntaxKind.EqualsToken),
@@ -62,19 +101,26 @@ export class DynamicComponentSlotParser extends SlotParserBase {
 		)
 
 		let templateSlot = this.outputTemplateSlot(null)
-		let contentRange = this.makeSlotRange()
+		let contentRangeNodes = this.node.children.length > 0 ? [this.makeSlotRange()!] : []
 
-		return factory.createBinaryExpression(
-			factory.createIdentifier(this.blockVariableName),
-			factory.createToken(ts.SyntaxKind.EqualsToken),
-			factory.createNewExpression(
-				factory.createIdentifier('DynamicComponentBlock'),
-				undefined,
-				[
-					binderFn,
-					templateSlot,
-					contentRange,
-				]
+		return factory.createVariableStatement(
+			undefined,
+			factory.createVariableDeclarationList(
+				[factory.createVariableDeclaration(
+					factory.createIdentifier(this.blockVariableName),
+					undefined,
+					undefined,
+					factory.createNewExpression(
+						factory.createIdentifier('DynamicComponentBlock'),
+						undefined,
+						[
+							binderFn,
+							templateSlot,
+							...contentRangeNodes,
+						]
+					)
+				)],
+				ts.NodeFlags.Let
 			)
 		)
 	}

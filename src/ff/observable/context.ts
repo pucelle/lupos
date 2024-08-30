@@ -30,10 +30,10 @@ export class Context {
 	 */
 	readonly closestFunctionLike: Context
 
-	constructor(type: ContextTypeMask, node: TS.Node, parent: Context | null) {
+	constructor(type: ContextTypeMask, rawNode: TS.Node, parent: Context | null) {
 		this.type = type
-		this.visitingIndex = Visiting.current.index
-		this.node = node
+		this.visitingIndex = Visiting.getIndex(rawNode)
+		this.node = rawNode
 		this.parent = parent
 		this.state = new ContextState(this)
 		this.variables = new ContextVariables(this)
@@ -134,13 +134,13 @@ export class Context {
 		// Empty `return`.
 		else if (ts.isReturnStatement(node) && !node.expression) {
 			this.state.unionFlowInterruptionType(FlowInterruptionTypeMask.Return)
-			this.capturer.breakCaptured(Visiting.current.index, FlowInterruptionTypeMask.Return)
+			this.capturer.breakCaptured(this.visitingIndex, FlowInterruptionTypeMask.Return)
 		}
 
 		// `break` or `continue`.
 		else if (ts.isBreakOrContinueStatement(node)) {
 			this.state.unionFlowInterruptionType(FlowInterruptionTypeMask.BreakLike)
-			this.capturer.breakCaptured(Visiting.current.index, FlowInterruptionTypeMask.BreakLike)
+			this.capturer.breakCaptured(this.visitingIndex, FlowInterruptionTypeMask.BreakLike)
 		}
 	}
 

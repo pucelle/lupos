@@ -42,7 +42,7 @@ export class ForFlowControl extends FlowControlBase {
 		// Force render fn to be static.
 		// So this render fn can't be like `a ? this.render1` : `this.render2`.
 		let renderFnNode = this.template.values.outputValue(
-			[this.fnValueIndex], null, true
+			null, [this.fnValueIndex], true
 		) as TS.FunctionExpression
 		
 		let templateSlot = this.slot.outputTemplateSlot(null)
@@ -63,7 +63,7 @@ export class ForFlowControl extends FlowControlBase {
 	}
 
 	outputUpdate() {
-		let ofNode = this.template.values.outputValue([this.ofValueIndex])
+		let ofNode = this.template.values.outputValue(null, [this.ofValueIndex])
 
 		// $block_0.update($values[0])
 		return factory.createCallExpression(

@@ -1,6 +1,6 @@
 import type TS from 'typescript'
 import {SlotParserBase} from './base'
-import {factory, ts} from '../../../../base'
+import {factory} from '../../../../base'
 
 
 export class ComponentSlotParser extends SlotParserBase {
@@ -17,21 +17,13 @@ export class ComponentSlotParser extends SlotParserBase {
 
 		let comVariableName = this.getRefedComponentName()
 
-		// $com_0 = new Com($node_0), after component has been referenced.
-		let comInit = factory.createVariableStatement(
-			undefined,
-			factory.createVariableDeclarationList(
-				[factory.createVariableDeclaration(
-				factory.createIdentifier(comVariableName),
+		// let $com_0 = new Com($node_0), after component has been referenced.
+		let comInit = this.addVariableAssignment(
+			comVariableName,
+			factory.createNewExpression(
+				factory.createIdentifier(ComName),
 				undefined,
-				undefined,
-				factory.createNewExpression(
-					factory.createIdentifier(ComName),
-					undefined,
-					[factory.createIdentifier(nodeName)]
-				)
-				)],
-				ts.NodeFlags.Let
+				[factory.createIdentifier(nodeName)]
 			)
 		)
 
@@ -40,7 +32,7 @@ export class ComponentSlotParser extends SlotParserBase {
 		// )
 		if (hasRestSlotContentExisted) {
 			let comVariableName = this.getRefedComponentName()
-			let contentRange = this.makeSlotRange()
+			let contentRange = this.makeSlotRange()!
 
 			restSlotRangeInit = factory.createCallExpression(
 				factory.createPropertyAccessExpression(

@@ -50,7 +50,7 @@ export namespace HTMLTokenParser {
 	]
 
 	/** RegExp to match each start/end tag, or intermediate contents. */
-	const TagRE = /<!--[\s\S]*?-->|<([\w-\d$:]+)([\s\S]*?)\/?>|<\/[\w-]+>/g
+	const TagRE = /<!--[\s\S]*?-->|<([\w-\d$:]+)([\s\S]*?)\/?>|<\/[\w-]*>/g
 
 	/** RegExp to match attribute string, include Template slot placeholder `$LUPOS_SLOT_INDEX_\d$`. */
 	const AttrRE = /([.:@\w$-]+)\s*(?:=\s*(".*?"|'.*?'|\S*)\s*)?/g

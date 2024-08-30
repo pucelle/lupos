@@ -52,7 +52,7 @@ export namespace Helper {
 		}
 
 		// Declaration of a class or interface, property, method, function name, get or set name.
-		if ((ts.isClassLike(node)
+		if ((ts.isClassDeclaration(node)
 				|| ts.isInterfaceDeclaration(node)
 				|| ts.isVariableDeclaration(node)
 				|| ts.isMethodDeclaration(node)
@@ -255,8 +255,11 @@ export namespace Helper {
 			return false
 		}
 
-		/** Test whether class or super class implements a type with specified name and located at specified module. */
-		export function isImplemented(node: TS.ClassDeclaration, typeName: string, moduleName: string): boolean {
+		/** 
+		 * Test whether class or super class implements a type with specified name and located at specified module.
+		 * If `outerModuleName` specified, and importing from a relative path, it implies import from this module.
+		 */
+		export function isImplemented(node: TS.ClassDeclaration, typeName: string, moduleName: string, outerModuleName?: string): boolean {
 			let implementClauses = node.heritageClauses?.find(h => {
 				return h.token === ts.SyntaxKind.ImplementsKeyword
 			})
@@ -264,7 +267,28 @@ export namespace Helper {
 			if (implementClauses) {
 				let implementModules = implementClauses.types.find(type => {
 					let resolved = symbol.resolveImport(type.expression)
-					return resolved && resolved.memberName === typeName && resolved.moduleName === moduleName
+
+					if (!resolved) {
+						return false
+					}
+
+					if (resolved.memberName !== typeName) {
+						return false
+					}
+					
+					if (resolved.moduleName === moduleName) {
+						return true
+					}
+
+					// Import relative module, try match outer module name/
+					if (outerModuleName
+						&& resolved.moduleName.startsWith('.')
+						&& moduleName === outerModuleName
+					) {
+						return true
+					}
+					
+					return false
 				})
 
 				if (implementModules) {

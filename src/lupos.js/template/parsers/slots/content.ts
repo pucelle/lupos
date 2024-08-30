@@ -58,17 +58,9 @@ export class ContentSlotParser extends SlotParserBase {
 	outputInit() {
 		let templateSLot = this.outputTemplateSlot(this.slotContentType)
 
-		return factory.createVariableStatement(
-			undefined,
-			factory.createVariableDeclarationList(
-				[factory.createVariableDeclaration(
-				factory.createIdentifier(this.slotVariableName),
-				undefined,
-				undefined,
-				templateSLot
-				)],
-				ts.NodeFlags.Let
-			)
+		return this.addVariableAssignment(
+			this.slotVariableName,
+			templateSLot
 		)
 	}
 

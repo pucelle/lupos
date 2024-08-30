@@ -12,9 +12,8 @@ const $template_0 = new TemplateMaker($context => {
         parts: [$binding_0]
     };
 });
-const $html_1 = new HTMLMaker("<div></div>");
 const $template_1 = new TemplateMaker($context => {
-    let $node = $html_1.make();
+    let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $com_0 = new ChildComponent($node_0);
     let $binding_0 = new RefBinding($node_0, $context);
@@ -25,9 +24,8 @@ const $template_1 = new TemplateMaker($context => {
         parts: [$com_0, $binding_0]
     };
 });
-const $html_2 = new HTMLMaker("<div></div>");
 const $template_2 = new TemplateMaker($context => {
-    let $node = $html_2.make();
+    let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $com_0 = new ChildComponent($node_0);
     let $binding_0 = new RefBinding($node_0, $context, ["el"]);
@@ -38,9 +36,8 @@ const $template_2 = new TemplateMaker($context => {
         parts: [$com_0, $binding_0]
     };
 });
-const $html_3 = new HTMLMaker("<div></div>");
 const $template_3 = new TemplateMaker($context => {
-    let $node = $html_3.make();
+    let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $com_0 = new ChildComponent($node_0);
     let $binding_0 = new RefBinding($node_0, $context, ["el"]);

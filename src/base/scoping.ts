@@ -190,35 +190,35 @@ export namespace Scoping {
 	 * `maximumReferencedIndex` means: if you want to move this node,
 	 * it can't be moved before node with visiting index >= this value. 
 	 */
-	function doHashingOfNode<T extends TS.Node>(node: T): HashItem {
+	function doHashingOfNode<T extends TS.Node>(rawNode: T): HashItem {
 		let referenceIndices: number[] = []
 
-		let hashVisited = ts.visitNode(node, (n: TS.Node) => {
+		let hashVisited = ts.visitNode(rawNode, (n: TS.Node) => {
 			return hashVisitNode(n, referenceIndices)
 		})!
 
-		node = Helper.pack.normalize(hashVisited, true) as T
+		rawNode = Helper.pack.normalize(hashVisited, true) as T
 
 		return {
-			name: Helper.getText(node),
+			name: Helper.getText(rawNode),
 			referenceIndices,
 		}
 	}
 
-	function hashVisitNode(node: TS.Node, referenceIndices: number[]): TS.Node | undefined {
-		if (Helper.variable.isVariableIdentifier(node)) {
-			let hashed = hashVariableName(node)
+	function hashVisitNode(rawNode: TS.Node, referenceIndices: number[]): TS.Node | undefined {
+		if (Helper.variable.isVariableIdentifier(rawNode)) {
+			let hashed = hashVariableName(rawNode)
 			addToList(referenceIndices, hashed.suffix)
 
 			return factory.createIdentifier(hashed.name)
 		}
 
 		// `a?.b` -> `a.b`
-		else if (node.kind === ts.SyntaxKind.QuestionDotToken) {
+		else if (rawNode.kind === ts.SyntaxKind.QuestionDotToken) {
 			return undefined
 		}
 
-		return ts.visitEachChild(node, (n: TS.Node) => hashVisitNode(n, referenceIndices), transformContext)
+		return ts.visitEachChild(rawNode, (n: TS.Node) => hashVisitNode(n, referenceIndices), transformContext)
 	}
 
 	/** 
@@ -226,9 +226,9 @@ export namespace Scoping {
 	 * The suffix is normally a scope visiting index,
 	 * then the hashing is unique across whole source file.
 	 */
-	function hashVariableName(node: TS.Identifier): {name: string, suffix: number} {
-		let name = node.text
-		let scope = findDeclaredScope(node) || findClosestScopeOfNode(node)
+	function hashVariableName(rawNode: TS.Identifier): {name: string, suffix: number} {
+		let name = rawNode.text
+		let scope = findDeclaredScope(rawNode) || findClosestScopeOfNode(rawNode)
 		let suffix = scope.visitingIndex
 
 		return {
@@ -239,12 +239,12 @@ export namespace Scoping {
 	
 	
 	/** Check at which scope the specified named variable declared. */
-	export function findDeclaredScope(node: TS.Identifier, fromScope = findClosestScopeOfNode(node)): Scope | null {
-		if (fromScope.hasLocalVariable(node.text)) {
+	export function findDeclaredScope(rawNode: TS.Identifier, fromScope = findClosestScopeOfNode(rawNode)): Scope | null {
+		if (fromScope.hasLocalVariable(rawNode.text)) {
 			return fromScope
 		}
 		else if (fromScope.parent) {
-			return findDeclaredScope(node, fromScope.parent!)
+			return findDeclaredScope(rawNode, fromScope.parent!)
 		}
 		else {
 			return null
@@ -252,42 +252,42 @@ export namespace Scoping {
 	}
 
 	/** Returns whether declared variable at top (source file) scope. */
-	function isDeclaredInTopScope(node: TS.Identifier): boolean {
-		let declaredIn = findDeclaredScope(node)
+	function isDeclaredInTopScope(rawNode: TS.Identifier): boolean {
+		let declaredIn = findDeclaredScope(rawNode)
 		return declaredIn ? declaredIn.isTopmost() : false
 	}
 
 	/** Returns whether declared in a target scope, and descendant scope of target scope. */
-	function isDeclaredWithinScope(node: TS.Identifier, scope: Scope): boolean {
-		let declaredIn = findDeclaredScope(node)
+	function isDeclaredWithinScope(rawNode: TS.Identifier, scope: Scope): boolean {
+		let declaredIn = findDeclaredScope(rawNode)
 		return declaredIn ? scope.isSelfOrAncestorOf(declaredIn) : false
 	}
 
 	/** Returns whether a variable node was declared as const. */
-	function isDeclaredAsConst(node: TS.Identifier): boolean {
-		let scope = findDeclaredScope(node)
-		return scope ? scope.isLocalVariableConst(node.text) : false
+	function isDeclaredAsConstLike(rawNode: TS.Identifier): boolean {
+		let scope = findDeclaredScope(rawNode)
+		return scope ? scope.isLocalVariableConstLike(rawNode.text) : false
 	}
 
 
 	/** Test whether expression represented value is mutable. */
-	export function testMutable(node: TS.Expression): MutableMask {
-		return visitNodeTestMutable(node, false)
+	export function testMutable(rawNode: TS.Expression): MutableMask {
+		return visitNodeTestMutable(rawNode, false)
 	}
 
-	function visitNodeTestMutable(node: TS.Node, inFunction: boolean): MutableMask {
-		let mutable = 0
+	function visitNodeTestMutable(rawNode: TS.Node, inFunction: boolean): MutableMask {
+		let mutable: MutableMask = 0
 
 		// Inside of a function
-		inFunction ||= Helper.isFunctionLike(node)
+		inFunction ||= Helper.isFunctionLike(rawNode)
 
 		// Variable
-		if (Helper.variable.isVariableIdentifier(node)) {
-
+		if (Helper.variable.isVariableIdentifier(rawNode)) {
+	
 			// If in child scope, become mutable only when uses a local variable.
 			// Which means: the variable should not been declared in top scope.
 			if (inFunction) {
-				let declaredInTopmostScope = isDeclaredInTopScope(node)
+				let declaredInTopmostScope = isDeclaredInTopScope(rawNode)
 
 				// Should apply mutable and not applied.
 				if (!declaredInTopmostScope) {
@@ -295,9 +295,9 @@ export namespace Scoping {
 				}
 			}
 
-			// Otherwise become mutable except not const defined.
+			// Otherwise become mutable except defining as non-const.
 			else {
-				let constDeclared = isDeclaredAsConst(node)
+				let constDeclared = isDeclaredAsConstLike(rawNode)
 				if (!constDeclared) {
 					mutable |= MutableMask.Mutable
 					mutable |= MutableMask.CantTurnStatic
@@ -307,13 +307,13 @@ export namespace Scoping {
 
 		// Readonly, or method.
 		// If in a child scope, all property visiting is not mutable.
-		else if (Helper.access.isAccess(node) && !inFunction) {
+		else if (Helper.access.isAccess(rawNode) && !inFunction) {
 
 			// Use method, but not call it.
-			let useNotCalledMethod = Helper.symbol.resolveMethod(node) && !ts.isCallExpression(node.parent)
+			let useNotCalledMethod = Helper.symbol.resolveMethod(rawNode) && !ts.isCallExpression(rawNode.parent)
 
 			// Use readonly property.
-			let useReadonlyProperty = Helper.symbol.resolveProperty(node) && Helper.types.isReadonly(node)
+			let useReadonlyProperty = Helper.symbol.resolveProperty(rawNode) && Helper.types.isReadonly(rawNode)
 
 			if (!(useNotCalledMethod || useReadonlyProperty)) {
 				mutable |= MutableMask.Mutable
@@ -324,7 +324,7 @@ export namespace Scoping {
 			}
 		}
 
-		ts.visitEachChild(node, (node: TS.Node) => {
+		ts.visitEachChild(rawNode, (node: TS.Node) => {
 			mutable |= visitNodeTestMutable(node, inFunction)
 			return node
 		}, transformContext)
@@ -348,7 +348,7 @@ export namespace Scoping {
 	}
 
 	function visitNodeTransferToTopmost(rawNode: TS.Node, scope: Scope, canReplaceThis: boolean, replacer: NodeReplacer): TS.Node {
-
+		
 		// Variable
 		if (Helper.variable.isVariableIdentifier(rawNode)) {
 
@@ -381,7 +381,7 @@ export class Scope {
 	readonly visitingIndex: number
 
 	/** All variables declared here. */
-	private variables: Map<string, TS.Node | null> = new Map()
+	variables: Map<string, TS.Node | null> = new Map()
 
 	constructor(
 		node: TS.FunctionLikeDeclaration | TS.ForStatement | TS.Block | TS.SourceFile,
@@ -424,6 +424,13 @@ export class Scope {
 		else if (ts.isNamespaceImport(node)) {
 			this.variables.set(Helper.getText(node.name), node)
 		}
+
+		// Class or function declaration
+		else if (ts.isClassDeclaration(node) || ts.isFunctionDeclaration(node)) {
+			if (node.name) {
+				this.variables.set(Helper.getText(node.name), node)
+			}
+		}
 	}
 
 	/** Returns whether be top scope. */
@@ -456,7 +463,7 @@ export class Scope {
 	}
 
 	/** Whether declared local variable as const. */
-	isLocalVariableConst(name: string): boolean {
+	isLocalVariableConstLike(name: string): boolean {
 		if (!this.variables.has(name)) {
 			return false
 		}
@@ -473,7 +480,7 @@ export class Scope {
 			return false
 		}
 
-		// Imported
+		// Imported, or function / class declaration
 		else {
 			return true
 		}

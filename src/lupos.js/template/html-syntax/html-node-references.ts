@@ -69,7 +69,7 @@ export class HTMLNodeReferences {
 	}
 
 	/** Whether node has been referenced. */
-	hasReferenced(node: HTMLNode): boolean {
+	hasRefed(node: HTMLNode): boolean {
 		return this.references.has(node)
 	}
 
@@ -132,8 +132,8 @@ export class HTMLNodeReferences {
 			visitSteps = null
 		}
 
-		// Output directly
-		if (this.hasReferenced(item.node)) {
+		// Output directly.
+		if (this.hasRefed(item.node)) {
 
 			yield {
 				node: item.node,
@@ -155,7 +155,7 @@ export class HTMLNodeReferences {
 		// f = a.b.c
 		// f.d
 		// f.e
-		else if (item.children.length > 1) {
+		else if (item.children.length > 1 && item.node !== this.tree) {
 			this.refAsIndex(item.node)
 
 			yield {

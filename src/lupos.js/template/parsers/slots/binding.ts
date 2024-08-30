@@ -69,7 +69,14 @@ export class BindingSlotParser extends SlotParserBase {
 		}
 
 		let bindingClassName = bindingClassImport.name.text
+		let bindingModuleName = Helper.symbol.resolveImport(bindingClassImport)
 		let bindingClass = Helper.symbol.resolveDeclaration(bindingClassImport, ts.isClassDeclaration)!
+
+		console.log(bindingModuleName)
+
+		if (bindingClass && Helper.cls.isImplemented(bindingClass, 'Part', '@pucelle/lupos.js', bindingModuleName?.moduleName)) {
+			this.treeParser.addPartName(this.bindingVariableName)
+		}
 
 		let bindingClassParams = bindingClass ? Helper.cls.getConstructorParameters(bindingClass) : undefined
 		let bindingParams: TS.Expression[] = [factory.createIdentifier(nodeName)]
@@ -88,20 +95,12 @@ export class BindingSlotParser extends SlotParserBase {
 		}
 
 		// let $binding_0 = new ClassBinding($node_0, ?context, ?modifiers)
-		return factory.createVariableStatement(
-			undefined,
-			factory.createVariableDeclarationList(
-				[factory.createVariableDeclaration(
-				factory.createIdentifier(this.bindingVariableName),
+		return this.addVariableAssignment(
+			this.bindingVariableName,
+			factory.createNewExpression(
+				factory.createIdentifier(bindingClassName),
 				undefined,
-				undefined,
-				factory.createNewExpression(
-					factory.createIdentifier(bindingClassName),
-					undefined,
-					bindingParams
-				)
-				)],
-				ts.NodeFlags.Let
+				bindingParams
 			)
 		)
 	}

@@ -34,8 +34,9 @@ export function defineVisitor(visitor: VisitFunction) {
  * Apply defined visitors to a node.
  * Returns a function, which will be called after visited all children.
  */
-export function applyVisitors(node: TS.Node, index: number): () => void {
+export function applyVisitors(node: TS.Node): () => void {
 	let doMoreAfterVisitedChildren: Function[] = []
+	let index = Visiting.getIndex(node)
 
 	for (let visitor of Visitors) {
 		let more = visitor(node, index)
@@ -64,21 +65,17 @@ export function transformer(program: TS.Program, extras: TransformerExtras) {
 			setSourceFile(sourceFile)
 			runPreVisitCallbacks()
 
-			function visit(node: TS.Node): TS.Node {
+			function prepareVisit(node: TS.Node): TS.Node {
 				Visiting.toNext(node)
 				Scoping.toNext(node)
-
-				let doMoreAfterVisitedChildren = applyVisitors(node, Visiting.current.index)
 
 				Visiting.toChild()
 				Scoping.toChild()
 
-				ts.visitEachChild(node, visit, ctx)
+				ts.visitEachChild(node, prepareVisit, ctx)
 				
 				Visiting.toParent()
 				Scoping.toParent()
-
-				doMoreAfterVisitedChildren()
 
 				// Remember import members.
 				if (ts.isImportSpecifier(node)) {
@@ -89,7 +86,17 @@ export function transformer(program: TS.Program, extras: TransformerExtras) {
 				return node
 			}
 
+			function visit(node: TS.Node): TS.Node {
+				let doMoreAfterVisitedChildren = applyVisitors(node)
+				ts.visitEachChild(node, visit, ctx)
+				doMoreAfterVisitedChildren()
+
+				// Returned result has no matter.
+				return node
+			}
+
 			try {
+				ts.visitNode(sourceFile, prepareVisit)
 				ts.visitNode(sourceFile, visit)
 				runPostVisitCallbacks()
 

@@ -33,7 +33,7 @@ export namespace Visiting {
 	/** Node -> Node visiting index. */
 	const IndexMap: Map<TS.Node, number> = new Map()
 
-	export let current: VisitingItem = {
+	let current: VisitingItem = {
 		index: -1,
 	}
 	

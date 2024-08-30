@@ -58,7 +58,7 @@ export class TemplateValues {
 	 * If `forceStatic`, will treat it as static value node,
 	 * must check `isIndexCanTurnStatic()` firstly and ensure it can.
 	 */
-	outputValue(valueIndices: number[] | null, strings: string[] | null = null, forceStatic: boolean = false): TS.Expression {
+	outputValue(strings: string[] | null = null, valueIndices: number[] | null, forceStatic: boolean = false): TS.Expression {
 		if (valueIndices === null) {
 			return factory.createStringLiteral(strings![0])
 		}

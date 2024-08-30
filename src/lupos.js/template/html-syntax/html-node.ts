@@ -102,7 +102,7 @@ export class HTMLNode {
 		removeFromList(this.attrs!, attr)
 	}
 
-	wrapWith(tagName: string, attrs?: HTMLAttribute[]) {
+	wrapWith(tagName: string, attrs: HTMLAttribute[] = []) {
 		let newNode = new HTMLNode(HTMLNodeType.Tag, {tagName, attrs})
 		let index = this.siblingIndex
 
@@ -143,6 +143,12 @@ export class HTMLNode {
 		}
 
 		if (this.type === HTMLNodeType.Tag && this.tagName!.startsWith('lupos:')) {
+			return false
+		}
+
+		if (this.type === HTMLNodeType.Tag
+			&& TemplateSlotPlaceholder.isDynamicComponent(this.tagName!)
+		) {
 			return false
 		}
 

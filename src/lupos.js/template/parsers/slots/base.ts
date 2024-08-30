@@ -1,7 +1,7 @@
 import type TS from 'typescript'
 import {HTMLNode, HTMLNodeType} from '../../html-syntax'
 import {TreeParser} from '../tree'
-import {factory, Modifier} from '../../../../base'
+import {factory, Modifier, TemplateSlotPlaceholder, ts} from '../../../../base'
 import {VariableNames} from '../variable-names'
 import {TemplateParser} from '../template'
 import {SlotPositionType} from '../../enums'
@@ -33,6 +33,9 @@ export abstract class SlotParserBase {
 	/** Template parser current slot belonged to. */
 	readonly template: TemplateParser
 
+	/** Whether slot attach to an dynamic component. */
+	private readonly onDynamicComponent: boolean
+
 	constructor(
 		name: string | null,
 		strings: string[] | null,
@@ -53,6 +56,7 @@ export abstract class SlotParserBase {
 		this.node = node
 		this.treeParser = treeParser
 		this.template = treeParser.template
+		this.onDynamicComponent = !!(this.node.tagName && TemplateSlotPlaceholder.isCompleteSlotIndex(this.node.tagName))
 	}
 
 	/** Returns whether have value indices exist. */
@@ -103,6 +107,11 @@ export abstract class SlotParserBase {
 		return this.treeParser.references.refAsName(this.node)
 	}
 
+	/** Get whether node has been referenced. */
+	protected hasNodeRefed(): boolean {
+		return this.treeParser.references.hasRefed(this.node)
+	}
+
 	/** 
 	 * Reference as a component.
 	 * Can only use it in `init`.
@@ -120,12 +129,39 @@ export abstract class SlotParserBase {
 		return this.treeParser.getRefedComponentName(this.node)
 	}
 
+	/** Add a variable assignment, either declare variable, or pre-declare and assign.  */
+	protected addVariableAssignment(name: string, exp: TS.Expression): TS.Expression | TS.Statement {
+		if (this.onDynamicComponent) {
+			this.treeParser.addPreDeclaredVariableName(name)
+			
+			return factory.createBinaryExpression(
+				factory.createIdentifier(name),
+				factory.createToken(ts.SyntaxKind.EqualsToken),
+				exp
+			) 
+		}
+		else {
+			return factory.createVariableStatement(
+				undefined,
+				factory.createVariableDeclarationList(
+					[factory.createVariableDeclaration(
+						factory.createIdentifier(name),
+						undefined,
+						undefined,
+						exp
+					)],
+					ts.NodeFlags.Let
+				)
+			)
+		}
+	}
+
 	/** 
 	 * Get value node, either `$values[0]`, or `"..."`.
 	 * Can only use it when outputting update.
 	 */
 	outputValue(forceStatic: boolean = false): TS.Expression {
-		return this.template.values.outputValue(this.valueIndices, this.strings, forceStatic)
+		return this.template.values.outputValue(this.strings, this.valueIndices, forceStatic)
 	}
 
 	/** Make `new TemplateSlot(...)`. */
@@ -133,37 +169,7 @@ export abstract class SlotParserBase {
 		Modifier.addImport('TemplateSlot', '@pucelle/lupos.js')
 		Modifier.addImport('SlotPosition', '@pucelle/lupos.js')
 
-		let position: number
-		let nextNode = this.node.nextSibling
-		let parent = this.node.parent!
-		let nodeName: string
-
-		// Use next node to locate.
-		if (nextNode
-			&& nextNode.isPrecedingPositionStable()
-			&& this.canRemoveNode(this.node)
-		) {
-			this.node.remove()
-			nodeName = this.treeParser.references.refAsName(nextNode)
-			position = SlotPositionType.Before
-		}
-
-		// Parent is stable enough.
-		// Would be ok although parent is a dynamic component.
-		else if (parent.tagName !== 'template'
-			&& this.canRemoveNode(this.node)
-		) {
-			nodeName = this.treeParser.references.refAsName(parent)
-			this.node.remove()
-			position = SlotPositionType.AfterContent
-		}
-
-		// Use the comment node to locate.
-		else {
-			nodeName = this.getRefedNodeName()
-			position = SlotPositionType.Before
-		}
-
+		let {nodeName, position} = this.getTemplateSlotParameters()
 
 		// new TemplateSlot(
 		//   new SlotPosition(SlotPositionType.Before / AfterContent, $context),
@@ -193,6 +199,45 @@ export abstract class SlotParserBase {
 		)
 	}
 
+	/** Get node name and position parameters for outputting template slot. */
+	protected getTemplateSlotParameters() {
+		let position: number
+		let nextNode = this.node.nextSibling
+		let parent = this.node.parent!
+		let nodeName: string
+
+		// Use next node to locate.
+		if (nextNode
+			&& nextNode.isPrecedingPositionStable()
+			&& this.canRemoveNode(this.node)
+		) {
+			this.node.remove()
+			nodeName = this.treeParser.references.refAsName(nextNode)
+			position = SlotPositionType.Before
+		}
+
+		// Parent is stable enough.
+		// Would be ok although parent is a dynamic component.
+		else if (parent.tagName !== 'tree'
+			&& this.canRemoveNode(this.node)
+		) {
+			nodeName = this.treeParser.references.refAsName(parent)
+			this.node.remove()
+			position = SlotPositionType.AfterContent
+		}
+
+		// Use current node to locate.
+		else {
+			nodeName = this.getRefedNodeName()
+			position = SlotPositionType.Before
+		}
+
+		return {
+			nodeName,
+			position
+		}
+	}
+
 	/** Whether can remove current node, and will not cause two text node joining. */
 	private canRemoveNode(node: HTMLNode): boolean {
 		let previousBeText = node.previousSibling?.type === HTMLNodeType.Text
@@ -206,9 +251,9 @@ export abstract class SlotParserBase {
 	}
 
 	/** Make `new SlotRange(...)`. */
-	protected makeSlotRange(): TS.Expression {
+	protected makeSlotRange(): TS.Expression | null {
 		if (this.node.children.length === 0) {
-			return factory.createNull()
+			return null
 		}
 
 		Modifier.addImport('SlotRange', '@pucelle/lupos.js')
