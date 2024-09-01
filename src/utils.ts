@@ -15,6 +15,12 @@ export function addToList<T>(list: T[], item: T) {
 }
 
 
+/** Clean list by removing null or undefined values. */
+export function cleanList<T>(list: T[]): NonNullable<T>[] {
+	return list.filter(v => v !== null && v !== undefined) as NonNullable<T>[]
+}
+
+
 /** Convert `string` to camel case type: `a-bc` -> `abc`. */
 export function toCamelCase(string: string): string {
 	return string.replace(/[-_ ][a-z]/gi, m0 => m0[1].toUpperCase())

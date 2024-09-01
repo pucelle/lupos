@@ -142,7 +142,7 @@ export class HTMLNodeReferences {
 			}
 
 			for (let child of item.children) {
-				yield *this.outputItem(child, item.node, [])
+				yield* this.outputItem(child, item.node, [])
 			}
 		}
 
@@ -165,14 +165,14 @@ export class HTMLNodeReferences {
 			}
 
 			for (let child of item.children) {
-				yield *this.outputItem(child, item.node, [])
+				yield* this.outputItem(child, item.node, [])
 			}
 		}
 
 		// Add step to current path
 		else {
 			for (let child of item.children) {
-				yield *this.outputItem(child, visitFromNode, steps)
+				yield* this.outputItem(child, visitFromNode, steps)
 			}
 		}
 	}

@@ -82,7 +82,7 @@ export class HTMLNode {
 				continue
 			}
 
-			yield *child.walk()
+			yield* child.walk()
 		}
 	}
 

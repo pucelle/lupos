@@ -1,6 +1,5 @@
-import type TS from 'typescript'
 import {SlotParserBase} from './base'
-import {factory, Helper, Imports, Modifier, TemplateSlotPlaceholder, ts} from '../../../../base'
+import {factory, Helper, Modifier, TemplateSlotPlaceholder, ts} from '../../../../base'
 import {VariableNames} from '../variable-names'
 
 
@@ -8,6 +7,9 @@ export class EventSlotParser extends SlotParserBase {
 
 	/** Event Name. */
 	declare name: string
+
+	/** For `@@comEvent`. */
+	private forceComponentTargetType: boolean = false
 
 	/** $latest_0 */
 	private latestVariableName: string | null = null
@@ -19,7 +21,12 @@ export class EventSlotParser extends SlotParserBase {
 	private beSimulatedEvents: boolean = false
 
 	init() {
-		this.beSimulatedEvents = this.testSimulatedEvents()
+		if (this.name.startsWith('@')) {
+			this.name = this.name.slice(1)
+			this.forceComponentTargetType = TemplateSlotPlaceholder.isComponent(this.node.tagName!)
+		}
+
+		this.beSimulatedEvents = this.isSimulatedEvents()
 
 		if (this.isValueMutable()) {
 			this.latestVariableName = this.treeParser.getUniqueLatestName()
@@ -32,7 +39,7 @@ export class EventSlotParser extends SlotParserBase {
 		}
 	}
 
-	private testSimulatedEvents(): boolean {
+	private isSimulatedEvents(): boolean {
 		let groupName = this.name.replace(/:.+/, '')
 
 		return [
@@ -46,44 +53,25 @@ export class EventSlotParser extends SlotParserBase {
 	}
 
 	private checkTargetType(): 'component' | 'element' {
-		let tagName = this.node.tagName!
-		let isNamedComponent = TemplateSlotPlaceholder.isNamedComponent(tagName)
-		let isDynamicComponent = TemplateSlotPlaceholder.isDynamicComponent(tagName)
+		if (this.forceComponentTargetType) {
+			return 'component'
+		}
 
-		if (isNamedComponent || isDynamicComponent) {
-			let com: TS.Node | undefined
-			if (isNamedComponent) {
-				com = Imports.getImportByName(tagName)
-			}
-			else {
-				// TODO
-				com = this.outputValue()
-			}
+		let classDeclarations = [...this.resolveComponentDeclarations()]
+		if (classDeclarations.length === 0) {
+			return 'element'
+		}
 
-			if (!com) {
-				return 'element'
-			}
+		for (let classDecl of classDeclarations) {
+			let interfaceDecls = Helper.symbol.resolveExtendedInterfaceLikeTypeParameters(classDecl, 'EventFirer', 0)
+			for (let decl of interfaceDecls) {
+				for (let member of decl.members) {
+					if (!member.name) {
+						continue
+					}
 
-			let classDeclarations: TS.ClassDeclaration[] = []
-
-			if (ts.isUnionTypeNode(com)) {
-				classDeclarations = com.types.map(n => Helper.symbol.resolveDeclaration(n, ts.isClassDeclaration))
-					.filter(v => v) as TS.ClassDeclaration[]
-			}
-			else if (ts.isClassDeclaration(com)) {
-				classDeclarations = [com]
-			}
-
-			for (let classDecl of classDeclarations) {
-				for (let interfaceDecl of Helper.symbol.resolveExtendedInterfaceLikeTypeParameters(classDecl, 'EventFirer', 0)) {
-					for (let member of interfaceDecl.members) {
-						if (!member.name) {
-							continue
-						}
-
-						if (Helper.getText(member.name) === this.name) {
-							return 'component'
-						}
+					if (Helper.getText(member.name) === this.name) {
+						return 'component'
 					}
 				}
 			}

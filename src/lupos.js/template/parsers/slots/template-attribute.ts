@@ -1,6 +1,7 @@
 import {SlotParserBase} from './base'
 import {factory, ts} from '../../../../base'
 import {VariableNames} from '../variable-names'
+import {cleanList} from '../../../../utils'
 
 
 export class TemplateAttributeSlotParser extends SlotParserBase {
@@ -19,7 +20,7 @@ export class TemplateAttributeSlotParser extends SlotParserBase {
 
 		// class="..."
 		if (this.name === 'class') {
-			let classNames = string.split(/\s+/).filter(v => v)
+			let classNames = cleanList(string.split(/\s+/))
 
 			return factory.createCallExpression(
 				factory.createPropertyAccessExpression(

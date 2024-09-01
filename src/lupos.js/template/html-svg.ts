@@ -38,7 +38,7 @@ defineVisitor(function(node: TS.Node, index: number) {
 function parseHTMLTemplate(node: TS.TaggedTemplateExpression, index: number, templateType: 'html' | 'svg') {
 	let string = TemplateSlotPlaceholder.joinTemplateString(node)
 	let values = TemplateSlotPlaceholder.extractTemplateValues(node)
-	let parser = new TemplateParser(templateType, string, values)
+	let parser = new TemplateParser(templateType, string, values, node)
 	let outputted = parser.output()
 	
 	Interpolator.replace(index, InterpolationContentType.Normal, () => outputted)

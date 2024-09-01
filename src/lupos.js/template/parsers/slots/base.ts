@@ -1,7 +1,7 @@
 import type TS from 'typescript'
 import {HTMLNode, HTMLNodeType} from '../../html-syntax'
 import {TreeParser} from '../tree'
-import {factory, Modifier, TemplateSlotPlaceholder, ts} from '../../../../base'
+import {factory, Helper, Modifier, Scoping, TemplateSlotPlaceholder, ts} from '../../../../base'
 import {VariableNames} from '../variable-names'
 import {TemplateParser} from '../template'
 import {SlotPositionType} from '../../enums'
@@ -48,15 +48,26 @@ export abstract class SlotParserBase {
 		this.valueIndices = valueIndices
 
 		if (name !== null) {
-			let splitted = name.split(/[.]/g)
-			this.name = splitted[0]
-			this.modifiers = splitted.slice(1)
+			let splitted = this.splitNameAndModifiers(name)
+			this.name = splitted.mainName
+			this.modifiers = splitted.modifiers
 		}
 
 		this.node = node
 		this.treeParser = treeParser
 		this.template = treeParser.template
 		this.onDynamicComponent = !!(this.node.tagName && TemplateSlotPlaceholder.isCompleteSlotIndex(this.node.tagName))
+	}
+
+	private splitNameAndModifiers(name: string) {
+		// May be `[@]...` or `[.]...`
+		let mainName = name.match(/^.*?\w+/)?.[0] || ''
+		let modifiers = name.slice(mainName.length).split(/[.]/).filter(v => v)
+
+		return {
+			mainName,
+			modifiers,
+		}
 	}
 
 	/** Returns whether have value indices exist. */
@@ -98,8 +109,8 @@ export abstract class SlotParserBase {
 	 * can only use returned node to identify type, cant output.
 	 * If not `hasString()`, this value will always exist.
 	 */
-	protected getFirstRawValueNode(): TS.Expression | null {
-		return this.valueIndices ? this.template.values.getRawNode(this.valueIndices[0]) : null
+	protected getFirstRawValueNode(): TS.Expression | undefined {
+		return this.valueIndices ? this.template.values.getRawNode(this.valueIndices[0]) : undefined
 	}
 
 	/** Get node variable name. */
@@ -234,7 +245,7 @@ export abstract class SlotParserBase {
 
 		return {
 			nodeName,
-			position
+			position,
 		}
 	}
 
@@ -279,6 +290,41 @@ export abstract class SlotParserBase {
 				factory.createIdentifier(lastChildName)
 			]
 		)
+	}
+
+	/** Try resolve component declarations. */
+	protected* resolveComponentDeclarations(): Iterable<TS.ClassDeclaration> {
+		let tagName = this.node.tagName!
+		let isNamedComponent = TemplateSlotPlaceholder.isNamedComponent(tagName)
+		let isDynamicComponent = TemplateSlotPlaceholder.isDynamicComponent(tagName)
+
+		if (!isNamedComponent && !isDynamicComponent) {
+			return
+		}
+
+		// Resolve class declarations directly.
+		if (isNamedComponent) {
+			let ref = Scoping.getNodeByVariableName(this.template.rawNode, tagName)
+			if (!ref) {
+				return
+			}
+
+			let decls = Helper.symbol.resolveDeclarations(ref, ts.isClassDeclaration)
+			if (decls) {
+				yield* decls
+			}
+		}
+
+		// Resolve instance type of constructor interface.
+		else {
+			let ref = this.template.values.getRawNode(TemplateSlotPlaceholder.getUniqueSlotIndex(tagName)!)
+			let typeNode = Helper.types.getTypeNode(ref)
+			if (!typeNode) {
+				return
+			}
+
+			yield* Helper.symbol.resolveInstanceDeclarations(typeNode)
+		}
 	}
 
 	/** Initialize and prepare. */

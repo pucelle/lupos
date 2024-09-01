@@ -1,6 +1,7 @@
 import type TS from 'typescript'
 import {SlotParserBase} from './base'
 import {factory} from '../../../../base'
+import {cleanList} from '../../../../utils'
 
 
 export class ComponentSlotParser extends SlotParserBase {
@@ -9,7 +10,7 @@ export class ComponentSlotParser extends SlotParserBase {
 		this.refAsComponent()
 	}
 
-	outputInit(nodeOtherInits: TS.Statement[]) {
+	outputInit() {
 		let nodeName = this.getRefedNodeName()
 		let ComName = this.node.tagName!
 		let hasRestSlotContentExisted = this.node.children.length > 0
@@ -44,10 +45,9 @@ export class ComponentSlotParser extends SlotParserBase {
 			)			  
 		}
 
-		return [
+		return cleanList([
 			comInit,
 			restSlotRangeInit,
-			...nodeOtherInits,
-		].filter(v => v) as TS.Expression[]
+		])
 	}
 }

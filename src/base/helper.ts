@@ -68,11 +68,18 @@ export namespace Helper {
 			return node.name
 		}
 
-		// Identifier of type node.
+		// Identifier of type reference node.
 		if (ts.isTypeReferenceNode(node)
 			&& ts.isIdentifier(node.typeName)
 		) {
 			return node.typeName
+		}
+
+		// Identifier of type query node.
+		if (ts.isTypeQueryNode(node)
+			&& ts.isIdentifier(node.exprName)
+		) {
+			return node.exprName
 		}
 
 		return undefined
@@ -202,8 +209,8 @@ export namespace Helper {
 			}
 		}
 
-		/** Get super class declaration. */
-		export function getSuper(node: TS.ClassDeclaration): TS.ClassDeclaration | undefined {
+		/** Get extends expression. */
+		export function getExtends(node: TS.ClassDeclaration): TS.ExpressionWithTypeArguments | undefined {
 			let extendHeritageClause = node.heritageClauses?.find(hc => {
 				return hc.token === ts.SyntaxKind.ExtendsKeyword
 			})
@@ -217,7 +224,17 @@ export namespace Helper {
 				return undefined
 			}
 
-			let exp = firstType.expression
+			return firstType
+		}
+
+		/** Get super class declaration. */
+		export function getSuper(node: TS.ClassDeclaration): TS.ClassDeclaration | undefined {
+			let extendsNode = getExtends(node)
+			if (!extendsNode) {
+				return undefined
+			}
+
+			let exp = extendsNode.expression
 			let superClass = symbol.resolveDeclaration(exp, ts.isClassDeclaration)
 
 			return superClass as TS.ClassDeclaration | undefined
@@ -445,13 +462,13 @@ export namespace Helper {
 		function* walkAssignToExpressions(node: TS.Expression): Iterable<TS.Expression> {
 			if (ts.isArrayLiteralExpression(node)) {
 				for (let el of node.elements) {
-					yield *walkAssignToExpressions(el)
+					yield* walkAssignToExpressions(el)
 				}
 			}
 			else if (ts.isObjectLiteralExpression(node)) {
 				for (let prop of node.properties) {
 					if (ts.isPropertyAssignment(prop)) {
-						yield *walkAssignToExpressions(prop.initializer)
+						yield* walkAssignToExpressions(prop.initializer)
 					}
 				}
 			}
@@ -508,10 +525,10 @@ export namespace Helper {
 			if (ts.isObjectBindingPattern(node.name)
 				|| ts.isArrayBindingPattern(node.name)
 			) {
-				yield *walkVariablePatternNames(node.name)
+				yield* walkVariablePatternNames(node.name)
 			}
 			else if (ts.isIdentifier(node.name)) {
-				yield getText(node.name)
+				yield* getText(node.name)
 			}
 		}
 
@@ -521,10 +538,10 @@ export namespace Helper {
 				if (ts.isObjectBindingPattern(element.name)
 					|| ts.isArrayBindingPattern(element.name)
 				) {
-					yield *walkVariablePatternNames(element.name)
+					yield* walkVariablePatternNames(element.name)
 				}
 				else if (ts.isIdentifier(element.name)) {
-					yield getText(element.name)
+					yield* getText(element.name)
 				}
 			}
 		}
@@ -540,14 +557,41 @@ export namespace Helper {
 			return typeChecker.getTypeAtLocation(node)
 		}
 
-		/** Get type node of a node. */
+		/** 
+		 * Get type node of a node.
+		 * Will firstly try to get type node when doing declaration.
+		 */
 		export function getTypeNode(node: TS.Node): TS.TypeNode | undefined {
+			let typeNode: TS.TypeNode | undefined
+
+			// Resolved type node exist in source file, and can be resolve again.
+			if (access.isAccess(node)) {
+				typeNode = symbol.resolvePropertyOrGetAccessor(node)?.type
+			}
+
+			if (variable.isVariableIdentifier(node)) {
+				typeNode = symbol.resolveDeclaration(node, ts.isVariableDeclaration)?.type
+			}
+
+			if (typeNode) {
+				return typeNode
+			}
+
+			// This generated type node can't be resolved.
 			return typeToTypeNode(getType(node))
 		}
 
-		/** Get type node of a type. */
+		/** 
+		 * Get type node of a type.
+		 * Note the returned type node is not in source file, so can't be resolved.
+		 */
 		export function typeToTypeNode(type: TS.Type): TS.TypeNode | undefined {
 			return typeChecker.typeToTypeNode(type, undefined, undefined)
+		}
+
+		/** Get type of a type node. */
+		export function typeOfTypeNode(typeNode: TS.TypeNode): TS.Type | undefined {
+			return typeChecker.getTypeFromTypeNode(typeNode)
 		}
 
 		/** Get full text of a type, all type parameters are included. */
@@ -709,6 +753,27 @@ export namespace Helper {
 			}
 		}
 
+		
+		/** 
+		 * `A & B` -> `[A, B]`
+		 * `Omit<A, B>` -> `[A, B]`
+		 */
+		export function destructTypeNode(node: TS.TypeNode):
+			(TS.TypeReferenceNode | TS.TypeLiteralNode | TS.TypeQueryNode)[]
+		{
+			let list: (TS.TypeReferenceNode | TS.TypeLiteralNode)[] = []
+			ts.visitNode(node, (n: TS.TypeNode) => destructTypeNodeVisitor(n, list))
+
+			return list
+		}
+
+		function destructTypeNodeVisitor(node: TS.Node, list: TS.TypeNode[]): TS.Node {
+			if (ts.isTypeReferenceNode(node) || ts.isTypeLiteralNode(node) || ts.isTypeQueryNode(node)) {
+				list.push(node)
+			}
+
+			return ts.visitEachChild(node, (n: TS.Node) => destructTypeNodeVisitor(n, list), transformContext)
+		}
 	}
 
 
@@ -866,7 +931,7 @@ export namespace Helper {
 			return resolveDeclaration(name, testFn)
 		}
 
-		/** Resolve a method or function declaration or a signature from a calling. */
+		/** Resolve a method or function declaration or a signature from a call expression. */
 		export function resolveCallDeclaration(node: TS.CallExpression):
 			TS.MethodSignature | TS.MethodDeclaration | TS.FunctionDeclaration | TS.ArrowFunction | undefined
 		{
@@ -883,23 +948,19 @@ export namespace Helper {
 
 		/** 
 		 * Resolve interface and all it's extended interfaces,
-		 * and interface like type literal: `type A = {...}`.
+		 * and all the interface like type literals: `type A = {...}`.
 		 */
-		export function* resolveInterfaceLikeChain(node: TS.Node): Iterable<TS.InterfaceDeclaration | TS.TypeLiteralNode> {
+		export function* resolveChainedInterfaces(node: TS.Node): Iterable<TS.InterfaceDeclaration | TS.TypeLiteralNode> {
+			
+			// `{...}`
 			if (ts.isTypeLiteralNode(node)) {
 				yield node
 			}
 
-			if (!ts.isInterfaceDeclaration(node) && !ts.isTypeAliasDeclaration(node)) {
-				let resolved = resolveDeclarations(node, n => ts.isInterfaceDeclaration(n) || ts.isTypeAliasDeclaration(n))
-				if (resolved) {
-					for (let res of resolved) {
-						yield *resolveInterfaceLikeChain(res)
-					}
-				}
-			}
+			// `interface A {...}`
+			else if (ts.isInterfaceDeclaration(node)) {
+				yield node
 
-			if (ts.isInterfaceDeclaration(node)) {
 				let extendHeritageClause = node.heritageClauses?.find(hc => {
 					return hc.token === ts.SyntaxKind.ExtendsKeyword
 				})
@@ -909,83 +970,235 @@ export namespace Helper {
 				}
 				
 				for (let type of extendHeritageClause.types) {
-					let exp = type.expression
-					yield *resolveInterfaceLikeChain(exp)
+					yield* resolveChainedInterfaces(type.expression)
 				}
 			}
+
+			// `type B = A`
 			else if (ts.isTypeAliasDeclaration(node)) {
-				if (ts.isIntersectionTypeNode(node.type) || ts.isUnionTypeNode(node.type)) {
-					for (let type of node.type.types) {
-						yield *resolveInterfaceLikeChain(type)
-					}
+				for (let typeNode of types.destructTypeNode(node.type)) {
+					yield* resolveChainedInterfaces(typeNode)
 				}
-				else if (ts.isTypeLiteralNode(node.type)) {
-					yield node.type
+			}
+
+			// Identifier of type reference.
+			else if (ts.isTypeReferenceNode(node)) {
+				yield* resolveChainedInterfaces(node.typeName)
+			}
+
+			// Resolve and continue.
+			else {
+				let resolved = resolveDeclarations(node, n => ts.isInterfaceDeclaration(n) || ts.isTypeAliasDeclaration(n))
+				if (resolved) {
+					for (let res of resolved) {
+						yield* resolveChainedInterfaces(res)
+					}
 				}
 			}
 		}
 
+
+		/** 
+		 * Resolve class declarations and interface and all it's extended,
+		 * and all the interface like type literals: `type A = {...}`.
+		 */
+		export function* resolveChainedClassesAndInterfaces(node: TS.Node):
+			Iterable<TS.InterfaceDeclaration | TS.TypeLiteralNode | TS.ClassDeclaration | TS.ClassExpression>
+		{
+			
+			// `{...}`
+			if (ts.isTypeLiteralNode(node)) {
+				yield node
+			}
+
+			// `interface A {...}`
+			else if (ts.isInterfaceDeclaration(node)) {
+				yield node
+
+				let extendHeritageClause = node.heritageClauses?.find(hc => {
+					return hc.token === ts.SyntaxKind.ExtendsKeyword
+				})
+	
+				if (!extendHeritageClause) {
+					return
+				}
+				
+				for (let type of extendHeritageClause.types) {
+					yield* resolveChainedClassesAndInterfaces(type.expression)
+				}
+			}
+
+			// `class A {...}` or `class {...}`
+			else if (ts.isClassLike(node)) {
+				yield node
+
+				let extendHeritageClause = node.heritageClauses?.find(hc => {
+					return hc.token === ts.SyntaxKind.ExtendsKeyword
+						|| hc.token === ts.SyntaxKind.ImplementsKeyword
+				})
+	
+				if (!extendHeritageClause) {
+					return
+				}
+				
+				for (let type of extendHeritageClause.types) {
+					yield* resolveChainedClassesAndInterfaces(type.expression)
+				}
+			}
+
+			// `type B = A`
+			else if (ts.isTypeAliasDeclaration(node)) {
+				for (let typeNode of types.destructTypeNode(node.type)) {
+					yield* resolveChainedClassesAndInterfaces(typeNode)
+				}
+			}
+
+			// Identifier of type reference.
+			else if (ts.isTypeReferenceNode(node)) {
+				yield* resolveChainedClassesAndInterfaces(node.typeName)
+			}
+
+			// Resolve and continue.
+			else {
+				let resolved = resolveDeclarations(node, n => {
+					return ts.isInterfaceDeclaration(n)
+						|| ts.isTypeAliasDeclaration(n)
+						|| ts.isClassLike(n)
+				})
+				
+				if (resolved) {
+					for (let res of resolved) {
+						yield* resolveChainedClassesAndInterfaces(res)
+					}
+				}
+			}
+		}
+
+
+		/** 
+		 * Resolve class declarations from type nodes like:
+		 * - `typeof Cls`
+		 * - `{new(): Cls}`
+		 */
+		export function* resolveInstanceDeclarations(typeNode: TS.TypeNode): Iterable<TS.ClassDeclaration> {
+			let typeNodes = Helper.types.destructTypeNode(typeNode)
+			if (typeNodes.length === 0) {
+				return
+			}
+
+			for (let typeNode of typeNodes) {
+	
+				// `typeof Com`, resolve `Com`.
+				if (ts.isTypeQueryNode(typeNode)) {
+					let decls = Helper.symbol.resolveDeclarations(typeNode.exprName, ts.isClassDeclaration)
+					if (decls) {
+						yield* decls
+					}
+				}
+	
+				// Resolve returned type of constructor `{new()...}`.
+				else {
+					for (let decl of Helper.symbol.resolveChainedInterfaces(typeNode)) {
+						let newCons = decl.members.find(m => ts.isConstructSignatureDeclaration(m) || ts.isConstructorDeclaration(m))
+						if (!newCons) {
+							continue
+						}
+	
+						let newTypeNode = newCons.type
+						if (!newTypeNode) {
+							continue
+						}
+	
+						yield* resolveInstanceDeclarationsOfTypeNodeNormally(newTypeNode)
+					}
+				}
+			}
+		}
+		
+		/** Destruct type node, and resolve class declarations of each. */
+		function* resolveInstanceDeclarationsOfTypeNodeNormally(typeNode: TS.TypeNode): Iterable<TS.ClassDeclaration> {
+			let typeNodes = Helper.types.destructTypeNode(typeNode)
+			if (typeNodes.length === 0) {
+				return
+			}
+
+			for (let typeNode of typeNodes) {
+				let decls = Helper.symbol.resolveDeclarations(typeNode, ts.isClassDeclaration)
+				if (decls) {
+					yield* decls
+				}
+			}
+		}
+	
+
 		/** 
 		 * Resolve all the class type parameters,
 		 * which are the extended parameters of a final heritage class,
-		 * and is interface like or type literal like.
+		 * and are interface like or type literal like.
 		 */
 		export function resolveExtendedInterfaceLikeTypeParameters(
 			node: TS.ClassDeclaration, finalHeritageName: string, finalHeritageTypeParameterIndex: number
 		): (TS.InterfaceDeclaration | TS.TypeLiteralNode)[] {
+
 			let classDecl: TS.ClassDeclaration | undefined = node
 
 			// <A & B, C> -> [[A, B], [C]]
-			let referencedTypeParameters: (TS.InterfaceDeclaration | TS.TypeLiteralNode)[][] = []
+			let refedTypeParameters: (TS.InterfaceDeclaration | TS.TypeLiteralNode)[][] = []
+			
+			// Assumes `A<B> extends C<D & B>`
+			while (classDecl) {
 
-			while (true) {
+				// `B`
 				let selfParameters = classDecl.typeParameters
 
-				classDecl = cls.getSuper(classDecl)
-				if (!classDecl) {
+				// `C<D & B>`
+				let extendsNode = cls.getExtends(classDecl)
+				if (!extendsNode) {
 					break
 				}
 
-				let extendHeritageClause = classDecl.heritageClauses?.find(hc => {
-					return hc.token === ts.SyntaxKind.ExtendsKeyword
-				})!
-				
-				
-				let firstType = extendHeritageClause.types[0]
-				let superParameters = firstType.typeArguments
-
-				if (superParameters) {
-					referencedTypeParameters = remapReferencedTypeParameters(referencedTypeParameters, selfParameters, superParameters)
+				// `D & B`
+				let superParameters = extendsNode.typeArguments
+				if (!superParameters) {
+					break
 				}
 
-				if (classDecl.name && getText(classDecl.name) === finalHeritageName) {
-					return referencedTypeParameters[finalHeritageTypeParameterIndex]
+				refedTypeParameters = remapRefedTypeParameters(refedTypeParameters, selfParameters, superParameters)
+
+				// `C`
+				if (getText(extendsNode.expression) === finalHeritageName) {
+					return refedTypeParameters[finalHeritageTypeParameterIndex]
 				}
+
+				classDecl = cls.getSuper(classDecl)
 			}
 			
 			return []
 		}
 
 		/** Analysis type references, and remap type reference from input parameters to super parameters. */
-		function remapReferencedTypeParameters(
-			referenced: (TS.InterfaceDeclaration | TS.TypeLiteralNode)[][],
+		function remapRefedTypeParameters(
+			refed: (TS.InterfaceDeclaration | TS.TypeLiteralNode)[][],
 			selfParameters: TS.NodeArray<TS.TypeParameterDeclaration> | undefined,
-			superParameters: TS.NodeArray<TS.TypeNode>
+			extendsParameters: TS.NodeArray<TS.TypeNode>
 		): (TS.InterfaceDeclaration | TS.TypeLiteralNode)[][] {
 			let selfMap: Map<string, (TS.InterfaceDeclaration | TS.TypeLiteralNode)[]> = new Map()
 			let remapped: (TS.InterfaceDeclaration | TS.TypeLiteralNode)[][] = []
 
+			// Assume `A<B> extends C<D & B>`
+
+			// `B`
 			if (selfParameters) {
 				for (let i = 0; i < selfParameters.length; i++) {
 					let param = selfParameters[i]
-					selfMap.set(param.name.text, referenced[i])
+					selfMap.set(param.name.text, refed[i])
 				}
 			}
 
-			for (let i = 0; i < superParameters.length; i++) {
-				let param = superParameters[i]
-				let destructed = destructTypeNode(param)
-				let paramReferenced: (TS.InterfaceDeclaration | TS.TypeLiteralNode)[] = []
+			for (let i = 0; i < extendsParameters.length; i++) {
+				let param = extendsParameters[i]
+				let destructed = types.destructTypeNode(param)
+				let paramRefed: (TS.InterfaceDeclaration | TS.TypeLiteralNode)[] = []
 
 				for (let ref of destructed) {
 					if (ts.isTypeReferenceNode(ref)) {
@@ -993,34 +1206,21 @@ export namespace Helper {
 
 						// Use input parameter.
 						if (selfMap.has(refName)) {
-							paramReferenced.push(...selfMap.get(refName)!)
+							paramRefed.push(...selfMap.get(refName)!)
 						}
 
 						// Use declared interface, or type literal.
 						else {
-							let chain = resolveInterfaceLikeChain(ref)
-							paramReferenced.push(...chain)
+							let chain = resolveChainedInterfaces(ref)
+							paramRefed.push(...chain)
 						}
 					}
 				}
 
-				remapped.push(paramReferenced)
+				remapped.push(paramRefed)
 			}
 
 			return remapped
-		}
-
-		// `A & B` -> `[A, B]`
-		function destructTypeNode(node: TS.TypeNode): (TS.TypeReferenceNode | TS.TypeLiteralNode)[] {
-			if (ts.isIntersectionTypeNode(node) || ts.isUnionTypeNode(node)) {
-				return node.types.map(n => destructTypeNode(n)).flat()
-			}
-			else if (ts.isTypeReferenceNode(node) || ts.isTypeLiteralNode(node)) {
-				return [node]
-			}
-			else {
-				return []
-			}
 		}
 	}
 
@@ -1049,7 +1249,7 @@ export namespace Helper {
 		/** 
 		 * Get flow interruption type,
 		 * it represents whether flow was interrupted be `return` with content,
-		 * `yield`, `await`, or arrow function with implicit returning.
+		 * `yield* `, `await`, or arrow function with implicit returning.
 		 */
 		export function getFlowInterruptionType(node: TS.Node): FlowInterruptionTypeMask {
 			let type = 0

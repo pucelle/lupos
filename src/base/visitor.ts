@@ -4,7 +4,6 @@ import {Interpolator} from './interpolator'
 import {TransformerExtras} from 'ts-patch'
 import {setGlobal, setSourceFile, setTransformContext} from './global'
 import {Scoping} from './scoping'
-import {Imports} from './imports'
 import {runPostVisitCallbacks, runPreVisitCallbacks} from './visitor-callbacks'
 
 
@@ -65,30 +64,25 @@ export function transformer(program: TS.Program, extras: TransformerExtras) {
 			setSourceFile(sourceFile)
 			runPreVisitCallbacks()
 
-			function prepareVisit(node: TS.Node): TS.Node {
+			function initVisitor(node: TS.Node): TS.Node {
 				Visiting.toNext(node)
 				Scoping.toNext(node)
 
 				Visiting.toChild()
 				Scoping.toChild()
 
-				ts.visitEachChild(node, prepareVisit, ctx)
+				ts.visitEachChild(node, initVisitor, ctx)
 				
 				Visiting.toParent()
 				Scoping.toParent()
-
-				// Remember import members.
-				if (ts.isImportSpecifier(node)) {
-					Imports.add(node)
-				}
 
 				// Returned result has no matter.
 				return node
 			}
 
-			function visit(node: TS.Node): TS.Node {
+			function visitor(node: TS.Node): TS.Node {
 				let doMoreAfterVisitedChildren = applyVisitors(node)
-				ts.visitEachChild(node, visit, ctx)
+				ts.visitEachChild(node, visitor, ctx)
 				doMoreAfterVisitedChildren()
 
 				// Returned result has no matter.
@@ -96,8 +90,8 @@ export function transformer(program: TS.Program, extras: TransformerExtras) {
 			}
 
 			try {
-				ts.visitNode(sourceFile, prepareVisit)
-				ts.visitNode(sourceFile, visit)
+				ts.visitNode(sourceFile, initVisitor)
+				ts.visitNode(sourceFile, visitor)
 				runPostVisitCallbacks()
 
 				return Interpolator.output(0) as TS.SourceFile

@@ -1,12 +1,15 @@
 import type TS from 'typescript'
 import {SlotParserBase} from './base'
-import {factory, Helper, Imports, TemplateSlotPlaceholder, ts, typeChecker} from '../../../../base'
+import {factory, Helper, TemplateSlotPlaceholder, ts} from '../../../../base'
 
 
 export class PropertySlotParser extends SlotParserBase {
 
 	/** Property Name. */
 	declare name: string
+
+	/** For `..comProperty`. */
+	private forceComponentTargetType: boolean = false
 
 	/** $latest_0 */
 	private latestVariableName: string | null = null
@@ -15,6 +18,11 @@ export class PropertySlotParser extends SlotParserBase {
 	private targetType: 'component' | 'element' = 'element'
 
 	init() {
+		if (this.name.startsWith('.')) {
+			this.name = this.name.slice(1)
+			this.forceComponentTargetType = TemplateSlotPlaceholder.isComponent(this.node.tagName!)
+		}
+
 		if (this.isValueMutable()) {
 			this.latestVariableName = this.treeParser.getUniqueLatestName()
 		}
@@ -27,39 +35,33 @@ export class PropertySlotParser extends SlotParserBase {
 	}
 
 	private checkTargetType(): 'component' | 'element' {
-		let tagName = this.node.tagName!
-		let isComponent = TemplateSlotPlaceholder.isNamedComponent(tagName)
-		let isDynamicComponent = TemplateSlotPlaceholder.isDynamicComponent(tagName)
-
-		if (isComponent || isDynamicComponent) {
-			let com: TS.Node | undefined
-			if (isComponent) {
-				com = Imports.getImportByName(tagName)
-			}
-			else {
-				com = this.getFirstRawValueNode()!
-			}
-
-			if (!com) {
-				return 'element'
-			}
-
-			let comType = Helper.types.getType(com)
-
-			// Directly query for declaration member at type.
-			let propertyDeclType = typeChecker.getPropertyOfType(comType, this.name!)
-			if (!propertyDeclType) {
-				return 'element'
-			}
-
-			if (!Helper.symbol.resolveDeclarationBySymbol(propertyDeclType, ts.isPropertyDeclaration)) {
-				return 'element'
-			}
-
+		if (this.forceComponentTargetType) {
 			return 'component'
 		}
 
-		return  'element'
+		let classDeclarations = [...this.resolveComponentDeclarations()]
+		if (classDeclarations.length === 0) {
+			return 'element'
+		}
+
+		for (let classDecl of classDeclarations) {
+
+			let interfaceAndClassDecls = Helper.symbol.resolveChainedClassesAndInterfaces(classDecl)
+
+			for (let decl of interfaceAndClassDecls) {
+				for (let member of decl.members) {
+					if (!member.name) {
+						continue
+					}
+
+					if (Helper.getText(member.name) === this.name) {
+						return 'component'
+					}
+				}
+			}
+		}
+
+		return	'element'
 	}
 
 	outputUpdate() {

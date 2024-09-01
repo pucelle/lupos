@@ -17,12 +17,14 @@ export class TemplateParser {
 
 	readonly type: TemplateType
 	readonly values: TemplateValues
+	readonly rawNode: TS.TaggedTemplateExpression
 
 	private readonly treeParsers: TreeParser[] = []
 
-	constructor(type: TemplateType, string: string, values: TS.Expression[]) {
+	constructor(type: TemplateType, string: string, values: TS.Expression[], rawNode: TS.TaggedTemplateExpression) {
 		this.type = type
 		this.values = new TemplateValues(values)
+		this.rawNode = rawNode
 
 		let tree = HTMLTree.fromString(string)
 		this.addTreeParser(tree, null, null)

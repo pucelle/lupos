@@ -57,8 +57,8 @@ export class ContextVariables {
 
 			// Class type resolved implements `Observed<>`.
 			else if (ts.isTypeReferenceNode(typeNode)) {
-				let clsDecl = Helper.symbol.resolveDeclaration(typeNode.typeName, ts.isClassDeclaration)
-				if (clsDecl && Helper.cls.isImplemented(clsDecl, 'Observed', '@pucelle/ff')) {
+				let classDecl = Helper.symbol.resolveDeclaration(typeNode.typeName, ts.isClassDeclaration)
+				if (classDecl && Helper.cls.isImplemented(classDecl, 'Observed', '@pucelle/ff')) {
 					return true
 				}
 			}

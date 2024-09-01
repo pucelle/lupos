@@ -1,6 +1,6 @@
 import type TS from 'typescript'
 import {SlotParserBase} from './base'
-import {factory, ts, Imports, Helper, TemplateSlotPlaceholder} from '../../../../base'
+import {factory, ts, Helper, TemplateSlotPlaceholder, Scoping} from '../../../../base'
 import {VariableNames} from '../variable-names'
 import {addToList, toCamelCase, toCapitalize} from '../../../../utils'
 
@@ -61,18 +61,24 @@ export class BindingSlotParser extends SlotParserBase {
 		let nodeName = this.getRefedNodeName()
 
 		// :class -> ClassBinding
-		let bindingClassImport = Imports.getImportByName(this.name)
-			|| Imports.getImportByName(toCapitalize(toCamelCase(this.name)) + 'Binding')!
+		let bindingClassRefNode = Scoping.getNodeByVariableName(this.template.rawNode, this.name)
+			|| Scoping.getNodeByVariableName(this.template.rawNode, toCapitalize(toCamelCase(this.name)) + 'Binding')!
 		
-		if (!bindingClassImport) {
-			throw new Error(`Please make sure to import "${this.name}" or "${toCapitalize(toCamelCase(this.name)) + 'Binding'}"`)
+		// `Import ClassBinding`
+		// `class ClassBinding {...}`
+		if (!bindingClassRefNode
+			|| (
+				!ts.isImportSpecifier(bindingClassRefNode)
+				&& !(ts.isClassDeclaration(bindingClassRefNode))
+			)
+			|| !bindingClassRefNode.name
+		) {
+			throw new Error(`Please make sure to import or declare "${this.name}" or "${toCapitalize(toCamelCase(this.name)) + 'Binding'}"`)
 		}
 
-		let bindingClassName = bindingClassImport.name.text
-		let bindingModuleName = Helper.symbol.resolveImport(bindingClassImport)
-		let bindingClass = Helper.symbol.resolveDeclaration(bindingClassImport, ts.isClassDeclaration)!
-
-		console.log(bindingModuleName)
+		let bindingClassName = bindingClassRefNode.name.text
+		let bindingModuleName = Helper.symbol.resolveImport(bindingClassRefNode)
+		let bindingClass = Helper.symbol.resolveDeclaration(bindingClassRefNode, ts.isClassDeclaration)!
 
 		if (bindingClass && Helper.cls.isImplemented(bindingClass, 'Part', '@pucelle/lupos.js', bindingModuleName?.moduleName)) {
 			this.treeParser.addPartName(this.bindingVariableName)

@@ -44,7 +44,7 @@ defineVisitor(function(node: TS.Node, index: number) {
 	) {
 		slotType = 'Text'
 	}
-	else if (/^\w*?(Node|Element)$/.test(typeText)) {
+	else if (/^(?:\w*?Element|Node|Comment|Text)$/.test(typeText)) {
 		slotType = 'Node'
 	}
 

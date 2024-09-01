@@ -194,7 +194,7 @@ export namespace Scoping {
 		let referenceIndices: number[] = []
 
 		let hashVisited = ts.visitNode(rawNode, (n: TS.Node) => {
-			return hashVisitNode(n, referenceIndices)
+			return hashNodeVisitor(n, referenceIndices)
 		})!
 
 		rawNode = Helper.pack.normalize(hashVisited, true) as T
@@ -205,7 +205,7 @@ export namespace Scoping {
 		}
 	}
 
-	function hashVisitNode(rawNode: TS.Node, referenceIndices: number[]): TS.Node | undefined {
+	function hashNodeVisitor(rawNode: TS.Node, referenceIndices: number[]): TS.Node | undefined {
 		if (Helper.variable.isVariableIdentifier(rawNode)) {
 			let hashed = hashVariableName(rawNode)
 			addToList(referenceIndices, hashed.suffix)
@@ -218,7 +218,7 @@ export namespace Scoping {
 			return undefined
 		}
 
-		return ts.visitEachChild(rawNode, (n: TS.Node) => hashVisitNode(n, referenceIndices), transformContext)
+		return ts.visitEachChild(rawNode, (n: TS.Node) => hashNodeVisitor(n, referenceIndices), transformContext)
 	}
 
 	/** 
@@ -235,6 +235,17 @@ export namespace Scoping {
 			name: name + '_' + suffix,
 			suffix,
 		}
+	}
+
+
+	/** Try get raw node by it's variable name. */
+	export function getNodeByVariableName(fromRawNode: TS.Node, name: string): TS.Node | undefined {
+		let scope = findClosestScopeOfNode(fromRawNode)
+		if (!scope) {
+			return undefined
+		}
+
+		return scope.getNodeByVariableName(name)
 	}
 	
 	
@@ -272,10 +283,10 @@ export namespace Scoping {
 
 	/** Test whether expression represented value is mutable. */
 	export function testMutable(rawNode: TS.Expression): MutableMask {
-		return visitNodeTestMutable(rawNode, false)
+		return testMutableVisitor(rawNode, false)
 	}
 
-	function visitNodeTestMutable(rawNode: TS.Node, inFunction: boolean): MutableMask {
+	function testMutableVisitor(rawNode: TS.Node, inFunction: boolean): MutableMask {
 		let mutable: MutableMask = 0
 
 		// Inside of a function
@@ -325,7 +336,7 @@ export namespace Scoping {
 		}
 
 		ts.visitEachChild(rawNode, (node: TS.Node) => {
-			mutable |= visitNodeTestMutable(node, inFunction)
+			mutable |= testMutableVisitor(node, inFunction)
 			return node
 		}, transformContext)
 
@@ -344,10 +355,10 @@ export namespace Scoping {
 	 */
 	export function transferToTopmostScope<T extends TS.Node>(rawNode: T, replacer: NodeReplacer): T {
 		let scope = findClosestScopeOfNode(rawNode)
-		return visitNodeTransferToTopmost(rawNode, scope, true, replacer) as T
+		return transferToTopmostScopeVisitor(rawNode, scope, true, replacer) as T
 	}
 
-	function visitNodeTransferToTopmost(rawNode: TS.Node, scope: Scope, canReplaceThis: boolean, replacer: NodeReplacer): TS.Node {
+	function transferToTopmostScopeVisitor(rawNode: TS.Node, scope: Scope, canReplaceThis: boolean, replacer: NodeReplacer): TS.Node {
 		
 		// Variable
 		if (Helper.variable.isVariableIdentifier(rawNode)) {
@@ -367,7 +378,7 @@ export namespace Scoping {
 		canReplaceThis &&= Helper.isFunctionLike(rawNode) && !ts.isArrowFunction(rawNode)
 
 		return ts.visitEachChild(rawNode, (node: TS.Node) => {
-			return visitNodeTransferToTopmost(node, scope, canReplaceThis, replacer)
+			return transferToTopmostScopeVisitor(node, scope, canReplaceThis, replacer)
 		}, transformContext)
 	}
 }
@@ -497,6 +508,19 @@ export class Scope {
 		}
 		
 		return false
+	}
+
+	/** Try get raw node by it's variable name. */
+	getNodeByVariableName(name: string): TS.Node | undefined {
+		if (this.variables.has(name)) {
+			return this.variables.get(name) ?? undefined
+		}
+
+		if (this.parent) {
+			return this.parent.getNodeByVariableName(name)
+		}
+
+		return undefined
 	}
 
 	/** 

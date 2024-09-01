@@ -118,8 +118,8 @@ export class TreeOutputHandler {
 
 	private outputSlots(slots: SlotParserBase[]): {
 		init: OutputNodeList,
-		update: OutputNodeList,
 		staticUpdate: OutputNodeList
+		update: OutputNodeList,
 	} {
 		let init: OutputNodes[] = []
 		let staticUpdate: OutputNodes[] = []
@@ -127,37 +127,9 @@ export class TreeOutputHandler {
 
 		for (let i = 0; i < slots.length; i++) {
 			let slot = slots[i]
-			let attrInit: OutputNodes[] = []
-			let attrStaticUpdate: OutputNodes[] = []
-
-			if (slot.node.type === HTMLNodeType.Tag
-				&& TemplateSlotPlaceholder.isComponent(slot.node.tagName!)
-			) {
-				let j = i + 1
-
-				for (; j < slots.length; j++) {
-					let attrSlot = slots[j]
-					if (attrSlot.node !== slot.node) {
-						break
-					}
-
-					attrInit.push(attrSlot.outputInit([]))
-
-					let attrUpdateNodes = attrSlot.outputUpdate()
-
-					if (attrSlot.isValueOutputAsMutable()) {
-						update.push(attrUpdateNodes)
-					}
-					else {
-						attrStaticUpdate.push(attrUpdateNodes)
-					}
-				}
-
-				i = j - 1
-			}
-
-			let attrInitStatements = [...attrInit, ...attrStaticUpdate].flat().map(n => Helper.pack.toStatement(n))
-			let initNodes = slot.outputInit(attrInitStatements)
+			let attached = this.outputDynamicComponentAttached(slots, i)
+			let attachedInitStatements = attached.init.flat().map(n => Helper.pack.toStatement(n))
+			let initNodes = slot.outputInit(attachedInitStatements)
 			let updateNodes = slot.outputUpdate()
 
 			if (slot.isValueOutputAsMutable()) {
@@ -167,13 +139,53 @@ export class TreeOutputHandler {
 				staticUpdate.push(updateNodes)
 			}
 
+			i = attached.index
 			init.push(initNodes)
 		}
 
 		return {
 			init: init.flat(),
-			update: update.flat(),
 			staticUpdate: staticUpdate.flat(),
+			update: update.flat(),
+		}
+	}
+
+	private outputDynamicComponentAttached(slots: SlotParserBase[], index: number) {
+		let slot = slots[index]
+		let init: OutputNodes[] = []
+		let staticUpdate: OutputNodes[] = []
+		let update: OutputNodes[] = []
+
+		if (slot.node.type === HTMLNodeType.Tag
+			&& TemplateSlotPlaceholder.isDynamicComponent(slot.node.tagName!)
+		) {
+			let i = index + 1
+
+			for (; i < slots.length; i++) {
+				let attrSlot = slots[i]
+				if (attrSlot.node !== slot.node) {
+					break
+				}
+
+				init.push(attrSlot.outputInit([]))
+
+				let attrUpdateNodes = attrSlot.outputUpdate()
+
+				if (attrSlot.isValueOutputAsMutable()) {
+					update.push(attrUpdateNodes)
+				}
+				else {
+					staticUpdate.push(attrUpdateNodes)
+				}
+			}
+
+			index = i - 1
+		}
+
+		return {
+			index,
+			init: [...init, ...staticUpdate],
+			update,
 		}
 	}
 

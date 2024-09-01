@@ -45,7 +45,7 @@ export enum ContextTypeMask {
 	 */
 	IterationContent = 2 ** 8,
 
-	/** `return`, `break`, `continue`, `yield`, `await`, and with content. */
+	/** `return`, `break`, `continue`, `yield `, `await`, and with content. */
 	FlowInterruption = 2 ** 9,
 }
 
@@ -229,7 +229,7 @@ export namespace ContextTree {
 	 */
 	export function* walkInwardChildFirst(context: Context, filter: (context: Context) => boolean): Iterable<Context> {
 		for (let child of context.children) {
-			yield *walkInwardChildFirst(child, filter)
+			yield* walkInwardChildFirst(child, filter)
 		}
 
 		if (filter(context)) {
@@ -247,7 +247,7 @@ export namespace ContextTree {
 		}
 
 		for (let child of context.children) {
-			yield *walkInwardSelfFirst(child, filter)
+			yield* walkInwardSelfFirst(child, filter)
 		}
 	}
 

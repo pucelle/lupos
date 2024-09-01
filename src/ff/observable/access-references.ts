@@ -66,8 +66,8 @@ export namespace AccessReferences {
 		let nameNode = Helper.access.getNameNode(node)
 		let nameIndex = Visiting.getIndex(nameNode)
 
-		visitAccessChildren(node.expression, expIndex)
-		visitAccessChildren(nameNode, nameIndex)
+		visitAssessVisitor(node.expression, expIndex)
+		visitAssessVisitor(nameNode, nameIndex)
 	}
 
 	/** 
@@ -75,7 +75,7 @@ export namespace AccessReferences {
 	 * and build a map of all the referenced variables/accessing, to current node.
 	 * Later, when one of these nodes assigned, we will reference this access node.
 	 */
-	function visitAccessChildren(node: TS.Node, topIndex: number): TS.Node {
+	function visitAssessVisitor(node: TS.Node, topIndex: number): TS.Node {
 		if (visitedNodes.has(node)) {
 			return node
 		}
@@ -88,7 +88,7 @@ export namespace AccessReferences {
 			referenceMap.add(hashName, topIndex)
 		}
 
-		return ts.visitEachChild(node, (n: TS.Node) => visitAccessChildren(n, topIndex), transformContext)
+		return ts.visitEachChild(node, (n: TS.Node) => visitAssessVisitor(n, topIndex), transformContext)
 	}
 
 
