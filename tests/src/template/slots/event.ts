@@ -5,8 +5,10 @@ class TestEvent extends Component {
 
 	UnionedCom: typeof Com1 | typeof Com2 = Com1
 	ConstructedCom: ComConstructor = Com1
+	booleanValue: boolean = true
 
 	handleEvent() {}
+	handleAnotherEvent() {}
 
 	testComponentEvent() {
 		return html`<Com1 @connected=${this.handleEvent} />`
@@ -40,8 +42,12 @@ class TestEvent extends Component {
 		return html`<div @hold:start=${this.handleEvent} />`
 	}
 
-	testEventModifying() {
+	testEventModifier() {
 		return html`<div @click.prevent=${this.handleEvent} />`
+	}
+
+	testDynamicEventHandler() {
+		return html`<div @click=${this.booleanValue ? this.handleEvent : this.handleAnotherEvent} />`
 	}
 }
 

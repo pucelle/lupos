@@ -34,14 +34,14 @@ export class HTMLNode {
 		return this.parent!.children.indexOf(this)!
 	}
 
-	append(child: HTMLNode) {
-		this.children.push(child)
-		child.setParent(this)
+	append(...children: HTMLNode[]) {
+		this.children.push(...children)
+		children.forEach(c => c.setParent(this))
 	}
 
-	prepend(child: HTMLNode) {
-		this.children.unshift(child)
-		child.setParent(this)
+	prepend(...children: HTMLNode[]) {
+		this.children.unshift(...children)
+		children.forEach(c => c.setParent(this))
 	}
 
 	childAt(index: number): HTMLNode | null {
@@ -79,6 +79,7 @@ export class HTMLNode {
 
 			// May be removed when walking.
 			if (child.parent !== this) {
+				console.log(child.parent)
 				continue
 			}
 
@@ -107,8 +108,17 @@ export class HTMLNode {
 		let index = this.siblingIndex
 
 		this.parent!.children[index] = newNode
-		newNode.setParent(this)
+		newNode.setParent(this.parent)
 		newNode.append(this)
+	}
+
+	/** Append all children to a new node, and append it to self. */
+	wrapChildrenWith(tagName: string, attrs: HTMLAttribute[] = []) {
+		let newNode = new HTMLNode(HTMLNodeType.Tag, {tagName, attrs})
+		newNode.append(...this.children)
+		
+		this.children = []
+		this.append(newNode)
 	}
 
 	replaceWith(...nodes: HTMLNode[]) {

@@ -1,3 +1,4 @@
+import type TS from 'typescript'
 import {SlotParserBase} from './base'
 import {factory, Helper, Modifier, TemplateSlotPlaceholder, ts} from '../../../../base'
 import {VariableNames} from '../variable-names'
@@ -124,37 +125,41 @@ export class EventSlotParser extends SlotParserBase {
 				undefined,
 				[
 					factory.createStringLiteral(this.name),
-					factory.createArrowFunction(
-						undefined,
-						undefined,
-						[factory.createParameterDeclaration(
-							undefined,
-							factory.createToken(ts.SyntaxKind.DotDotDotToken),
-							factory.createIdentifier('args'),
-							undefined,
-							undefined,
-							undefined
-						)],
-						undefined,
-						factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
-						factory.createBlock(
-							[factory.createExpressionStatement(factory.createCallExpression(
-								factory.createPropertyAccessExpression(
-									factory.createIdentifier(this.latestVariableName!),
-									factory.createIdentifier('call')
-								),
-								undefined,
-								[
-									factory.createIdentifier(VariableNames.context),
-									factory.createSpreadElement(factory.createIdentifier('args'))
-								]
-							))],
-							true
-						)
-					)
+					this.outputLatestHandler()
 				]
 			)
 		}
+	}
+
+	private outputLatestHandler(): TS.ArrowFunction {
+		return factory.createArrowFunction(
+			undefined,
+			undefined,
+			[factory.createParameterDeclaration(
+				undefined,
+				factory.createToken(ts.SyntaxKind.DotDotDotToken),
+				factory.createIdentifier('args'),
+				undefined,
+				undefined,
+				undefined
+			)],
+			undefined,
+			factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
+			factory.createBlock(
+				[factory.createExpressionStatement(factory.createCallExpression(
+					factory.createPropertyAccessExpression(
+						factory.createIdentifier(this.latestVariableName!),
+						factory.createIdentifier('call')
+					),
+					undefined,
+					[
+						factory.createIdentifier(VariableNames.context),
+						factory.createSpreadElement(factory.createIdentifier('args'))
+					]
+				))],
+				true
+			)
+		)
 	}
 
 	private outputSimulatedInit() {
@@ -190,34 +195,7 @@ export class EventSlotParser extends SlotParserBase {
 				[
 					factory.createIdentifier(nodeName),
 					factory.createStringLiteral(this.name),
-					factory.createArrowFunction(
-						undefined,
-						undefined,
-						[factory.createParameterDeclaration(
-							undefined,
-							factory.createToken(ts.SyntaxKind.DotDotDotToken),
-							factory.createIdentifier('args'),
-							undefined,
-							undefined,
-							undefined
-						)],
-						undefined,
-						factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
-						factory.createBlock(
-							[factory.createExpressionStatement(factory.createCallExpression(
-								factory.createPropertyAccessExpression(
-									factory.createIdentifier(this.latestVariableName!),
-									factory.createIdentifier('call')
-								),
-								undefined,
-								[
-									factory.createIdentifier(VariableNames.context),
-									factory.createSpreadElement(factory.createIdentifier('args'))
-								]
-							))],
-							true
-						)
-					)
+					this.outputLatestHandler()
 				]
 			)
 		}
@@ -263,34 +241,7 @@ export class EventSlotParser extends SlotParserBase {
 					factory.createIdentifier(nodeName),
 					factory.createStringLiteral(this.name),
 					modifiers,
-					factory.createArrowFunction(
-						undefined,
-						undefined,
-						[factory.createParameterDeclaration(
-							undefined,
-							factory.createToken(ts.SyntaxKind.DotDotDotToken),
-							factory.createIdentifier('args'),
-							undefined,
-							undefined,
-							undefined
-						)],
-						undefined,
-						factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
-						factory.createBlock(
-							[factory.createExpressionStatement(factory.createCallExpression(
-								factory.createPropertyAccessExpression(
-									factory.createIdentifier(this.latestVariableName!),
-									factory.createIdentifier('call')
-								),
-								undefined,
-								[
-									factory.createIdentifier(VariableNames.context),
-									factory.createSpreadElement(factory.createIdentifier('args'))
-								]
-							))],
-							true
-						)
-					)
+					this.outputLatestHandler()
 				]
 			)
 		}
@@ -331,34 +282,7 @@ export class EventSlotParser extends SlotParserBase {
 				undefined,
 				[
 					factory.createStringLiteral(this.name),
-					factory.createArrowFunction(
-						undefined,
-						undefined,
-						[factory.createParameterDeclaration(
-							undefined,
-							factory.createToken(ts.SyntaxKind.DotDotDotToken),
-							factory.createIdentifier('args'),
-							undefined,
-							undefined,
-							undefined
-						)],
-						undefined,
-						factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
-						factory.createBlock(
-							[factory.createExpressionStatement(factory.createCallExpression(
-								factory.createPropertyAccessExpression(
-									factory.createIdentifier(this.latestVariableName!),
-									factory.createIdentifier('call')
-								),
-								undefined,
-								[
-									factory.createIdentifier(VariableNames.context),
-									factory.createSpreadElement(factory.createIdentifier('args'))
-								]
-							))],
-							true
-						)
-					)
+					this.outputLatestHandler()
 				]
 			)
 		}

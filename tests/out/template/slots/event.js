@@ -92,7 +92,7 @@ const $template_6 = new TemplateMaker($context => {
 const $template_7 = new TemplateMaker($context => {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
-    SimulatedEvents.on($node_0, "hold:start", this.handleEvent, $context);
+    SimulatedEvents.on($node_0, "hold", this.handleEvent, $context);
     return {
         el: $node,
         position: new SlotPosition(2, $node_0)
@@ -107,10 +107,27 @@ const $template_8 = new TemplateMaker($context => {
         position: new SlotPosition(2, $node_0)
     };
 });
+const $template_9 = new TemplateMaker($context => {
+    let $latest_0;
+    let $node = $html_0.make();
+    let $node_0 = $node.content.firstChild;
+    $node_0.addEventListener("click", (...args) => {
+        $latest_0.call($context, ...args);
+    });
+    return {
+        el: $node,
+        position: new SlotPosition(2, $node_0),
+        update($values) {
+            $latest_0 = $values[0];
+        }
+    };
+});
 class TestEvent extends Component {
     UnionedCom = Com1;
     ConstructedCom = Com1;
+    booleanValue = true;
     handleEvent() { }
+    handleAnotherEvent() { }
     testComponentEvent() {
         return new CompiledTemplateResult($template_0, []);
     }
@@ -137,8 +154,12 @@ class TestEvent extends Component {
     testSimulatedHoldStartEvent() {
         return new CompiledTemplateResult($template_7, []);
     }
-    testEventModifying() {
+    testEventModifier() {
         return new CompiledTemplateResult($template_8, []);
+    }
+    testDynamicEventHandler() {
+        trackGet(this, "booleanValue");
+        return new CompiledTemplateResult($template_9, [this.booleanValue ? this.handleEvent : this.handleAnotherEvent]);
     }
 }
 class Com1 extends Component {

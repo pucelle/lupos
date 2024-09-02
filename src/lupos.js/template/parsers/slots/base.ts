@@ -60,7 +60,8 @@ export abstract class SlotParserBase {
 	}
 
 	private splitNameAndModifiers(name: string) {
-		// May be `[@]...` or `[.]...`
+
+		// Main name may be `[@]...` or `[.]...`
 		let mainName = name.match(/^.*?\w+/)?.[0] || ''
 		let modifiers = name.slice(mainName.length).split(/[.]/).filter(v => v)
 

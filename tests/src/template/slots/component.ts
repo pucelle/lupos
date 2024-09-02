@@ -5,18 +5,6 @@ class TestComponent extends Component {
 
 	prop: number = 1
 
-	testNamedSlot() {
-		return html`<div><slot name="slotName" /></div>`
-	}
-
-	testNamedSlotWithContent() {
-		return html`<div><slot name="slotName">Content</slot></div>`
-	}
-
-	testRestSlot() {
-		return html`<div><slot /></div>`
-	}
-
 	testComponent() {
 		return html`<ChildComponent
 			:class=${'className'}
@@ -28,7 +16,7 @@ class TestComponent extends Component {
 		return html`<ChildComponent>Rest Content</ChildComponent>`
 	}
 
-	testRestSlotContentWithPrecedingSlot() {
+	testRestSlotContentWithPrecedingTemplateSlot() {
 		return html`<ChildComponent>${this.prop}Rest Content</ChildComponent>`
 	}
 }

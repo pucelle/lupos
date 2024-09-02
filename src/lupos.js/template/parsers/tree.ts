@@ -91,7 +91,7 @@ export class TreeParser {
 		}
 
 		if (inSVG && this.tree.firstChild?.tagName !== 'svg') {
-			this.tree.firstChild!.wrapWith('svg')
+			this.tree.wrapChildrenWith('svg')
 			this.wrappedBySVG = true
 		}
 
@@ -111,7 +111,6 @@ export class TreeParser {
 			switch (node.type) {
 				case HTMLNodeType.Tag:
 					let tagName = node.tagName!
-
 					if (tagName === 'slot') {
 						this.parseSlotTag(node)
 					}

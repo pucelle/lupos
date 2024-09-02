@@ -17,4 +17,8 @@ class TestTemplateOutput extends Component {
 	testSVGContentSeparating() {
 		return svg`<slot name="slotName"><path /></slot>`
 	}
+
+	testHoistingLocalDeclarations() {
+		return html`<div @click= />`
+	}
 }
