@@ -23,7 +23,7 @@ export abstract class FlowControlBase {
 	protected eatNext(...tagNames: string[]): HTMLNode[] {
 		let node = this.node.nextSibling
 		let eaten: HTMLNode[] = []
-		
+
 		while (node && node.type === HTMLNodeType.Tag) {
 			if (tagNames.includes(node.tagName!)) {
 				eaten.push(node)
@@ -61,11 +61,11 @@ export abstract class FlowControlBase {
 		}
 
 		let childNode = node.children.find(n => {
-			return n.type === HTMLNodeType.Tag
-				&& TemplateSlotPlaceholder.isCompleteSlotIndex(n.tagName!)
+			return n.type === HTMLNodeType.Text
+				&& TemplateSlotPlaceholder.isCompleteSlotIndex(n.text!)
 		})
 
-		let index = childNode ? TemplateSlotPlaceholder.getUniqueSlotIndex(childNode.tagName!) : null
+		let index = childNode ? TemplateSlotPlaceholder.getUniqueSlotIndex(childNode.text!) : null
 
 		return index
 	}

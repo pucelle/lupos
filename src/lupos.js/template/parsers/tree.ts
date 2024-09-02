@@ -100,10 +100,6 @@ export class TreeParser {
 
 	init() {
 		this.parseSlots()
-
-		for (let slot of this.slots) {
-			slot.init()
-		}
 	}
 
 	private parseSlots() {
@@ -191,6 +187,7 @@ export class TreeParser {
 				break
 		}
 
+		slot.init()
 		this.slots.push(slot)
 	}
 
@@ -251,7 +248,7 @@ export class TreeParser {
 				continue
 			}
 
-			if (type !== SlotType.Attribute) {
+			if (type !== SlotType.Attribute && type !== SlotType.TemplateAttribute) {
 				name = name.slice(1)
 			}
 

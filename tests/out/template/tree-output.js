@@ -43,6 +43,7 @@ const $template_3 = new TemplateMaker($context => {
 class TestTemplateOutput extends Component {
     prop = 1;
     readonlyProp = 1;
+    handleEvent() { }
     testTemplate() {
         return new CompiledTemplateResult($template_0, []);
     }

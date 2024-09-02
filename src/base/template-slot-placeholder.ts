@@ -8,7 +8,7 @@ export namespace TemplateSlotPlaceholder {
 	 * Get whole string part of a tagged template.
 	 * Template slots have been replaced to placeholder `$LUPOS_SLOT_INDEX_\d$`.
 	 */
-	export function joinTemplateString(tem: TS.TaggedTemplateExpression): string {
+	export function toTemplateString(tem: TS.TaggedTemplateExpression): string {
 		let template = tem.template
 		if (ts.isNoSubstitutionTemplateLiteral(template)) {
 			return template.text
@@ -28,6 +28,17 @@ export namespace TemplateSlotPlaceholder {
 			return ''
 		}
 	}
+
+	/** Replace placeholder `$LUPOS_SLOT_INDEX_\d_ with a replacer. */
+	export function replaceTemplateString(
+		string: string,
+		replacer: (index: number) => string
+	): string {
+		return string.replace(/\$LUPOS_SLOT_INDEX_(\d+)\$/, (_m0, m1) => {
+			return replacer(Number(m1))
+		})
+	}
+
 
 	/** Extract all expression interpolations from a template. */
 	export function extractTemplateValues(tem: TS.TaggedTemplateExpression): TS.Expression[] {

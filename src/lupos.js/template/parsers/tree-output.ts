@@ -6,6 +6,7 @@ import {SlotParserBase} from './slots'
 import {VariableNames} from './variable-names'
 import {SlotPositionType} from '../enums'
 import {HTMLOutputHandler} from './html-output'
+import {TemplateParser} from './template'
 
 
 type OutputNodes = TS.Expression | TS.Statement | (TS.Expression | TS.Statement)[]
@@ -16,6 +17,7 @@ export class TreeOutputHandler {
 
 	readonly parser: TreeParser
 	readonly tree: HTMLTree
+	readonly template: TemplateParser
 
 	private wrappedBySVG: boolean = false
 	private wrappedByTemplate: boolean = false
@@ -23,6 +25,7 @@ export class TreeOutputHandler {
 	constructor(parser: TreeParser, wrappedBySVG: boolean) {
 		this.parser = parser
 		this.tree = parser.tree
+		this.template = parser.template
 
 		this.wrappedBySVG = wrappedBySVG
 		this.wrappedByTemplate = this.tree.firstChild?.tagName === 'template'
@@ -112,6 +115,14 @@ export class TreeOutputHandler {
 				ts.NodeFlags.Const
 			)
 		)
+
+		ts.setSyntheticLeadingComments(templateNode, [{
+			pos: -1,
+			end: -1,
+			hasTrailingNewLine: false,
+			text: '\n' + this.tree.toReadableString(this.template.values.valueNodes) + '\n',
+			kind: ts.SyntaxKind.MultiLineCommentTrivia,
+		}])
 
 		Modifier.addTopmostDeclarations(templateNode)
 	}

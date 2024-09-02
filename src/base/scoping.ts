@@ -268,7 +268,7 @@ export namespace Scoping {
 		return declaredIn ? declaredIn.isTopmost() : false
 	}
 
-	/** Returns whether declared in a target scope, and descendant scope of target scope. */
+	/** Returns whether declared in a target scope, and a descendant scope of target scope. */
 	function isDeclaredWithinScope(rawNode: TS.Identifier, scope: Scope): boolean {
 		let declaredIn = findDeclaredScope(rawNode)
 		return declaredIn ? scope.isSelfOrAncestorOf(declaredIn) : false
@@ -348,37 +348,46 @@ export namespace Scoping {
 	type NodeReplacer = (node: TS.Identifier | TS.ThisExpression) => TS.Expression
 
 	/** 
-	 * Transfer a raw node to top scope,
+	 * Transfer a raw or replaced node to top scope,
 	 * output a new node, and a referenced variable list.
 	 * `replacer` can help to modify node when doing transfer,
 	 * it replace local variables and `this` to some parameters.
 	 */
-	export function transferToTopmostScope<T extends TS.Node>(rawNode: T, replacer: NodeReplacer): T {
-		let scope = findClosestScopeOfNode(rawNode)
-		return transferToTopmostScopeVisitor(rawNode, scope, true, replacer) as T
+	export function transferToTopmostScope<T extends TS.Node>(
+		node: T,
+		topScope: Scope,
+		replacer: NodeReplacer
+	): T {
+		return transferToTopmostScopeVisitor(node, topScope, true, replacer) as T
 	}
 
-	function transferToTopmostScopeVisitor(rawNode: TS.Node, scope: Scope, canReplaceThis: boolean, replacer: NodeReplacer): TS.Node {
+	function transferToTopmostScopeVisitor(
+		node: TS.Node,
+		topScope: Scope,
+		canReplaceThis: boolean,
+		replacer: NodeReplacer
+	): TS.Node {
 		
-		// Variable
-		if (Helper.variable.isVariableIdentifier(rawNode)) {
+		// Raw variable
+		if (Visiting.hasNode(node) && Helper.variable.isVariableIdentifier(node)) {
 
-			// If declared in top scope, or in local scope within transfer content, not replace it.
-			if (!isDeclaredInTopScope(rawNode) && !isDeclaredWithinScope(rawNode, scope)) {
-				return replacer(rawNode)
+			// If declared in top scope, or in local scope within transferring content,
+			// should not replace it.
+			if (!isDeclaredInTopScope(node) && !isDeclaredWithinScope(node, topScope)) {
+				return replacer(node)
 			}
 		}
 
 		// this
-		else if (canReplaceThis && rawNode.kind === ts.SyntaxKind.ThisKeyword) {
-			return replacer(rawNode as TS.ThisExpression)
+		else if (canReplaceThis && node.kind === ts.SyntaxKind.ThisKeyword) {
+			return replacer(node as TS.ThisExpression)
 		}
 
-		// If enters non-arrow function declaration, cant replace this.
-		canReplaceThis &&= Helper.isFunctionLike(rawNode) && !ts.isArrowFunction(rawNode)
+		// If enters non-arrow function declaration, cause can't replace `this`.
+		canReplaceThis &&= !(Helper.isFunctionLike(node) && !ts.isArrowFunction(node))
 
-		return ts.visitEachChild(rawNode, (node: TS.Node) => {
-			return transferToTopmostScopeVisitor(node, scope, canReplaceThis, replacer)
+		return ts.visitEachChild(node, (node: TS.Node) => {
+			return transferToTopmostScopeVisitor(node, topScope, canReplaceThis, replacer)
 		}, transformContext)
 	}
 }
@@ -392,7 +401,7 @@ export class Scope {
 	readonly visitingIndex: number
 
 	/** All variables declared here. */
-	variables: Map<string, TS.Node | null> = new Map()
+	private variables: Map<string, TS.Node | null> = new Map()
 
 	constructor(
 		node: TS.FunctionLikeDeclaration | TS.ForStatement | TS.Block | TS.SourceFile,
@@ -457,14 +466,16 @@ export class Scope {
 
 	/** Test whether current scope is equal or an ancestor of target scope. */
 	isSelfOrAncestorOf(scope: Scope): boolean {
-		if (this === scope) {
-			return true
-		}
+		let s: Scope | null = scope
 
-		if (this.parent) {
-			return this.parent.isSelfOrAncestorOf(scope)
-		}
-		
+		do {
+			if (this === s) {
+				return true
+			}
+
+			s = s.parent
+		} while (s)
+
 		return false
 	}
 	

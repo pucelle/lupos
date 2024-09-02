@@ -203,10 +203,11 @@ export namespace Interpolator {
 
 	/** 
 	 * Output node at index.
-	 * It overwrites all descendant nodes,
-	 * and replace self and inserts all neighbor nodes.
+	 * It may overwrite all descendant nodes,
+	 * and may replace itself.
+	 * If `addNeighbors` is `true`, will output all neighbor nodes.
 	 */
-	export function output(index: number): TS.Node | TS.Node[] | undefined {
+	export function output(index: number, addNeighbors: boolean = true): TS.Node | TS.Node[] | undefined {
 		let items = Interpolations.get(index)
 		if (!items) {
 			return outputChildren(index)
@@ -214,12 +215,6 @@ export namespace Interpolator {
 
 		// Sort by content type.
 		items.sort((a, b) => a.contentType - b.contentType)
-
-		let beforeNodes = items.filter(item => item.position === InterpolationPosition.Before)
-			.map(item => item.exps!()).flat()
-
-		let afterNodes = items.filter(item => item.position === InterpolationPosition.After)
-			.map(item => item.exps!()).flat()
 
 		let prependNodes = items.filter(item => item.position === InterpolationPosition.Prepend)
 			.map(item => item.exps!()).flat()
@@ -250,12 +245,43 @@ export namespace Interpolator {
 			}
 		}
 
-		if (beforeNodes.length > 0 || afterNodes.length > 0) {
-			node = replaceToAddNeighborNodes(index, node, beforeNodes, afterNodes)
+		if (addNeighbors) {
+			let beforeNodes = items.filter(item => item.position === InterpolationPosition.Before)
+				.map(item => item.exps!()).flat()
+
+			let afterNodes = items.filter(item => item.position === InterpolationPosition.After)
+				.map(item => item.exps!()).flat()
+
+			if (beforeNodes.length > 0 || afterNodes.length > 0) {
+				node = replaceToAddNeighborNodes(index, node, beforeNodes, afterNodes)
+			}
 		}
 
 		return node && Array.isArray(node) && node.length === 1 ? node[0] : node
 	}
+
+
+	/** 
+	 * Output raw node.
+	 * It may overwrite all descendant nodes,
+	 * and may replace itself.
+	 * will not output all neighbor nodes.
+	 */
+	export function outputNodeSelf(rawNode: TS.Node): TS.Node {
+		let index = Visiting.getIndex(rawNode)
+		let node = Interpolator.output(index, false)
+
+		if (!node) {
+			throw new Error(`"${Helper.getText(rawNode)}" has been removed!`)
+		}
+
+		if (Array.isArray(node)) {
+			throw new Error(`"${Helper.getText(rawNode)}" has been replaced to several!`)
+		}
+
+		return node
+	}
+
 
 	/** 
 	 * Update child nodes.
@@ -317,7 +343,8 @@ export namespace Interpolator {
 			let list = arrangeNeighborNodes(node, beforeNodes, afterNodes)
 
 			return factory.createBlock(
-				list.map(n => Helper.pack.toStatement(n))
+				list.map(n => Helper.pack.toStatement(n)),
+				true
 			)
 		}
 
@@ -370,20 +397,6 @@ export namespace Interpolator {
 		list = list.map(node => Helper.pack.normalize(node, false) as TS.Expression)
 
 		return list
-	}
-
-	/** 
-	 * Output an node, even the parameter node is an updated node,
-	 * will still test it's all descendant nodes,
-	 * and replace if it's a raw node.
-	 */
-	export function outputPartial<T extends TS.Node>(mayUpdatedNode: T): T {
-		if (Visiting.hasNode(mayUpdatedNode)) {
-			return output(Visiting.getIndex(mayUpdatedNode)) as T
-		}
-		else {
-			return ts.visitEachChild(mayUpdatedNode, outputPartial, transformContext)
-		}
 	}
 }
 

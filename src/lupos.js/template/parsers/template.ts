@@ -2,7 +2,7 @@ import type TS from 'typescript'
 import {HTMLNode, HTMLTree} from '../html-syntax'
 import {TreeParser} from './tree'
 import {TemplateValues} from './template-values'
-import {factory} from '../../../base'
+import {factory, Scope, Scoping} from '../../../base'
 
 
 export type TemplateType = 'html' | 'svg'
@@ -18,13 +18,15 @@ export class TemplateParser {
 	readonly type: TemplateType
 	readonly values: TemplateValues
 	readonly rawNode: TS.TaggedTemplateExpression
+	readonly scope: Scope
 
 	private readonly treeParsers: TreeParser[] = []
 
 	constructor(type: TemplateType, string: string, values: TS.Expression[], rawNode: TS.TaggedTemplateExpression) {
 		this.type = type
-		this.values = new TemplateValues(values)
+		this.values = new TemplateValues(values, this)
 		this.rawNode = rawNode
+		this.scope = Scoping.findClosestScopeOfNode(rawNode)
 
 		let tree = HTMLTree.fromString(string)
 		this.addTreeParser(tree, null, null)

@@ -51,7 +51,6 @@ export class KeyedFlowControl extends FlowControlBase {
 				[
 					maker,
 					templateSlot,
-					factory.createIdentifier(VariableNames.context),
 				]
 			)
 		)

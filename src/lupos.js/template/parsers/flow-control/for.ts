@@ -1,7 +1,6 @@
 import type TS from 'typescript'
 import {factory, Modifier, ts} from '../../../../base'
 import {FlowControlBase} from './base'
-import {VariableNames} from '../variable-names'
 
 
 export class ForFlowControl extends FlowControlBase {
@@ -28,6 +27,9 @@ export class ForFlowControl extends FlowControlBase {
 
 		this.ofValueIndex = ofValueIndex
 		this.fnValueIndex = fnValueIndex
+
+		// Remove child slot.
+		this.node.empty()
 	}
 
 	outputInit() {
@@ -42,7 +44,9 @@ export class ForFlowControl extends FlowControlBase {
 		// Force render fn to be static.
 		// So this render fn can't be like `a ? this.render1` : `this.render2`.
 		let renderFnNode = this.template.values.outputValue(
-			null, [this.fnValueIndex], true
+			null,
+			[this.fnValueIndex],
+			true
 		) as TS.FunctionExpression
 		
 		let templateSlot = this.slot.outputTemplateSlot(null)
@@ -56,7 +60,6 @@ export class ForFlowControl extends FlowControlBase {
 				[
 					renderFnNode,
 					templateSlot,
-					factory.createIdentifier(VariableNames.context),
 				]
 			)
 		)
@@ -65,7 +68,8 @@ export class ForFlowControl extends FlowControlBase {
 	outputUpdate() {
 		let ofNode = this.template.values.outputValue(null, [this.ofValueIndex])
 
-		// $block_0.update($values[0])
+		// $block_0.update(data)
+		// may be data is static, will still update each time
 		return factory.createCallExpression(
 			factory.createPropertyAccessExpression(
 				factory.createIdentifier(this.blockVariableName),

@@ -1,12 +1,14 @@
 import type TS from 'typescript'
 import {factory, Helper, Interpolator, MutableMask, Scoping, ts} from '../../../base'
 import {VariableNames} from './variable-names'
+import {TemplateParser} from './template'
 
 
 /** Help to manage all value nodes. */
 export class TemplateValues {
 
 	readonly valueNodes: TS.Expression[]
+	readonly template: TemplateParser
 
 	private valueHash: Map<string, number> = new Map()
 	private outputNodes: TS.Expression[] = []
@@ -14,8 +16,9 @@ export class TemplateValues {
 	private indicesOutputAsMutable: Map<number, boolean> = new Map()
 	private indicesTransferred: Set<number> = new Set()
 
-	constructor(valueNodes: TS.Expression[]) {
+	constructor(valueNodes: TS.Expression[], template: TemplateParser) {
 		this.valueNodes = valueNodes
+		this.template = template
 		this.checkIndicesMutable()
 	}
 	
@@ -71,10 +74,16 @@ export class TemplateValues {
 			// Output static raw node.
 			if (!mutable || forceStatic && canTurn) {
 				this.indicesOutputAsMutable.set(index, false)
-				let transferred = Scoping.transferToTopmostScope(rawValueNode, this.transferNodeToTopmostScope.bind(this, index))
-				let interpolated = Interpolator.outputPartial(transferred)
 
-				return interpolated
+				let interpolated = Interpolator.outputNodeSelf(rawValueNode)
+
+				let transferred = Scoping.transferToTopmostScope(
+					interpolated,
+					this.template.scope,
+					this.transferNodeToTopmostScope.bind(this, index)
+				)
+
+				return transferred as TS.Expression
 			}
 
 			// Output from value list.
@@ -83,8 +92,6 @@ export class TemplateValues {
 				return this.outputValueNodeOf(rawValueNode, false)
 			}
 		})
-
-		valueNodes = valueNodes
 
 		if (strings) {
 			return this.bundleStringsAndValueNodes(strings, valueIndices, valueNodes)
@@ -125,7 +132,7 @@ export class TemplateValues {
 			valueIndex = this.valueHash.get(hash)!
 		}
 		else {
-			let interpolated = Interpolator.outputPartial(rawNode)
+			let interpolated = Interpolator.outputNodeSelf(rawNode) as TS.Expression
 
 			valueIndex = this.outputNodes.length
 			this.outputNodes.push(interpolated)

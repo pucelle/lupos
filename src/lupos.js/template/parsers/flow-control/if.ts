@@ -78,7 +78,6 @@ export class IfFlowControl extends FlowControlBase {
 					indexFn,
 					makers,
 					templateSlot,
-					factory.createIdentifier(VariableNames.context),
 				]
 			)
 		)
@@ -91,7 +90,14 @@ export class IfFlowControl extends FlowControlBase {
 
 		// Always build else branch.
 		let elseNode: TS.Statement = factory.createBlock(
-			[factory.createReturnStatement(factory.createNumericLiteral(elseIndex))],
+			[factory.createReturnStatement(
+				elseIndex < 0
+					? factory.createPrefixUnaryExpression(
+						ts.SyntaxKind.MinusToken,
+						factory.createNumericLiteral(-elseIndex)
+					)
+					: factory.createNumericLiteral(elseIndex)
+			)],
 			true
 		)
 

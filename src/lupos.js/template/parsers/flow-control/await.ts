@@ -20,17 +20,19 @@ export class AwaitFlowControl extends FlowControlBase {
 		}
 
 		let nextNodes = this.eatNext('lupos:then', 'lupos:catch')
-		let allNodes = [this.node, ...nextNodes]
+		let thenNode = nextNodes.find(n => n.tagName === 'lupos:then')
+		let catchNode = nextNodes.find(n => n.tagName === 'lupos:catch')
+		let allNodes = [this.node, thenNode, catchNode]
 		let templateNames: (string | null)[] = []
-	
+
 		for (let node of allNodes) {
-			if (node.children.length > 0) {
+			if (!node || node.children.length === 0) {
+				templateNames.push(null)
+			}
+			else {
 				let tree = this.treeParser.separateChildrenAsSubTree(node)
 				let templateName = tree.getTemplateRefName()
 				templateNames.push(templateName)
-			}
-			else {
-				templateNames.push(null)
 			}
 		}
 
@@ -59,14 +61,13 @@ export class AwaitFlowControl extends FlowControlBase {
 				[
 					makers,
 					templateSlot,
-					factory.createIdentifier(VariableNames.context),
 				]
 			)
 		)
 	}
 
 	outputUpdate() {
-		// This promise may be static, ignore it.
+		// This promise may be static, will still update each time.
 		let promiseNode = this.template.values.outputValue(null, [this.promiseIndex])
 
 		// $block_0.update(promise, $values)

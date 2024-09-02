@@ -28,13 +28,13 @@ export class SwitchFlowControl extends FlowControlBase {
 		let valueIndices: (number | null)[] = []
 		let templateNames: (string | null)[] = []
 
-		for (let node of childNodes) {
-			let valueIndex = this.getAttrValueIndex(this.node)
-			if (valueIndex === null && node.tagName === 'lupos:case') {
+		for (let child of childNodes) {
+			let valueIndex = this.getAttrValueIndex(child)
+			if (valueIndex === null && child.tagName === 'lupos:case') {
 				throw new Error('<lupos:case ${...}> must accept a parameter as condition!')
 			}
 
-			if (valueIndex !== null && node.tagName === 'lupos:default') {
+			if (valueIndex !== null && child.tagName === 'lupos:default') {
 				throw new Error('<lupos:default> should not accept any parameter!')
 			}
 
@@ -44,8 +44,8 @@ export class SwitchFlowControl extends FlowControlBase {
 
 			valueIndices.push(valueIndex)
 	
-			if (node.children.length > 0) {
-				let tree = this.treeParser.separateChildrenAsSubTree(node)
+			if (child.children.length > 0) {
+				let tree = this.treeParser.separateChildrenAsSubTree(child)
 				let temName = tree.getTemplateRefName()
 				templateNames.push(temName)
 			}
@@ -53,11 +53,12 @@ export class SwitchFlowControl extends FlowControlBase {
 				templateNames.push(null)
 			}
 
-			if (node.tagName === 'lupos:default' || valueIndex === null) {
+			if (child.tagName === 'lupos:default' || valueIndex === null) {
 				break
 			}
 		}
 
+		this.node.empty()
 		this.templateNames = templateNames
 		this.valueIndices = valueIndices
 	}
@@ -91,7 +92,6 @@ export class SwitchFlowControl extends FlowControlBase {
 					indexFn,
 					makers,
 					templateSlot,
-					factory.createIdentifier(VariableNames.context),
 				]
 			)
 		)
@@ -104,7 +104,14 @@ export class SwitchFlowControl extends FlowControlBase {
 
 		// Always build default branch.
 		let defaultNode = factory.createDefaultClause([
-			factory.createReturnStatement(factory.createNumericLiteral(defaultIndex))
+			factory.createReturnStatement(
+				defaultIndex < 0
+					? factory.createPrefixUnaryExpression(
+						ts.SyntaxKind.MinusToken,
+						factory.createNumericLiteral(-defaultIndex)
+					)
+					: factory.createNumericLiteral(defaultIndex)
+			)
 		])
 
 		let switchValueNode = this.template.values.outputValue(null, [switchValueIndex])

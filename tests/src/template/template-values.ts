@@ -1,10 +1,19 @@
 import {Component, html} from '@pucelle/lupos.js'
 
 
+let globalVariable: number = 1
+
+
 class TestTemplateValues extends Component {
 
 	prop: number = 1
 	readonly readonlyProp: number = 1
+
+	getValue() {
+		return ''
+	}
+
+	handleEvent(_value: any) {}
 
 	testStatic() {
 		return html`<div attr="${'className'}"></div>`
@@ -14,20 +23,24 @@ class TestTemplateValues extends Component {
 		return html`<div attr=${this.prop}></div>`
 	}
 
-	testReadonlyPropMutable() {
+	testMutableOfReadonlyProp() {
 		return html`<div attr=${this.readonlyProp}></div>`
 	}
 
-	testMethodMutable() {
+	testMutableOfMethod() {
 		return html`<div .prop=${this.getValue}></div>`
 	}
 
-	testMethodCallingMutable() {
+	testMutableOfCallingMethod() {
 		return html`<div attr=${this.getValue()}></div>`
 	}
 
-	getValue() {
-		return ''
+	testMutableOfReferencingProperty() {
+		return html`<div @click=${() => this.handleEvent(this.prop)} />`
+	}
+
+	testMutableOfReferencingTopmostVariable() {
+		return html`<div @click=${() => this.handleEvent(globalVariable)} />`
 	}
 
 	testBundlingStringAndValues() {

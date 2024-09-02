@@ -1,4 +1,5 @@
-import {TemplateSlotPlaceholder} from '../../../base'
+import type TS from 'typescript'
+import {Helper, TemplateSlotPlaceholder} from '../../../base'
 import {removeFromList} from '../../../utils'
 import {HTMLAttribute, HTMLToken, HTMLTokenParser} from './html-token-parser'
 
@@ -79,12 +80,16 @@ export class HTMLNode {
 
 			// May be removed when walking.
 			if (child.parent !== this) {
-				console.log(child.parent)
 				continue
 			}
 
 			yield* child.walk()
 		}
+	}
+
+	/** Remove all child nodes. */
+	empty() {
+		this.children = []
 	}
 
 	remove() {
@@ -100,7 +105,7 @@ export class HTMLNode {
 	}
 
 	removeAttr(attr: HTMLAttribute) {
-		removeFromList(this.attrs!, attr)
+		attr.removed = true
 	}
 
 	wrapWith(tagName: string, attrs: HTMLAttribute[] = []) {
@@ -116,7 +121,7 @@ export class HTMLNode {
 	wrapChildrenWith(tagName: string, attrs: HTMLAttribute[] = []) {
 		let newNode = new HTMLNode(HTMLNodeType.Tag, {tagName, attrs})
 		newNode.append(...this.children)
-		
+
 		this.children = []
 		this.append(newNode)
 	}
@@ -165,26 +170,41 @@ export class HTMLNode {
 		return true
 	}
 
-	toReadableString(tab = ''): string {
+	toReadableString(rawNodes: TS.Node[], tab = ''): string {
 		if (this.type === HTMLNodeType.Tag) {
-			return tab + `<${this.tagName}${this.toStringOfAttrs()}>`
-				+ this.children.map(child => child.toReadableString(tab + '\t')).map(v => '\n' + v).join('')
-			+ (this.children.length > 0 ? `\n${tab}` : '')
-			+ `</${this.tagName}>`
+			let children = this.children.filter(child => child.type !== HTMLNodeType.Comment)
+
+			let wrap = children.length === 0
+				|| children.length === 1 && this.firstChild!.type === HTMLNodeType.Text
+				? ''
+				: '\n'
+
+			return tab
+				+ TemplateSlotPlaceholder.replaceTemplateString(
+					`<${this.tagName}${this.toStringOfAttrs(true)}${children.length === 0 ? ' /' : ''}>`,
+					(index: number) => '${' + Helper.getText(rawNodes[index]) + '}'
+				)
+				+ children.map(child => child.toReadableString(rawNodes, wrap ? tab + '\t' : ''))
+					.map(v => wrap + v).join('')
+				+ (wrap ? wrap + tab : '')
+				+ (children.length > 0
+					? `</${TemplateSlotPlaceholder.isDynamicComponent(this.tagName!) ? '' : this.tagName}>`
+					: ''
+				)
 		}
 		else if (this.type === HTMLNodeType.Text) {
 			return tab + this.text!
 		}
 		else {
-			return tab + `<!--${this.text}-->\n`
+			return ''
 		}
 	}
 
-	private toStringOfAttrs(): string {
+	private toStringOfAttrs(includeRemoved: boolean): string {
 		let joined: string[] = []
 
-		for (let {name, value} of this.attrs!) {
-			if (/^[.:?@$]/.test(name)) {
+		for (let {name, value, removed} of this.attrs!) {
+			if (!includeRemoved && removed) {
 				continue
 			}
 
@@ -192,7 +212,10 @@ export class HTMLNode {
 				joined.push(name)
 			}
 			else {
-				if (value.includes('"')) {
+				if (TemplateSlotPlaceholder.hasSlotIndex(value)) {
+					joined.push(name + "=" + value)
+				}
+				else if (value.includes('"')) {
 					joined.push(name + "='" + value.replace(/[\\']/g, '\\$&') + "'")
 				}
 				else {
@@ -219,11 +242,11 @@ export class HTMLNode {
 			}
 
 			if (HTMLTokenParser.SelfClosingTags.includes(tagName)) {
-				return `<${tagName}${this.toStringOfAttrs()} />`
+				return `<${tagName}${this.toStringOfAttrs(false)} />`
 			}
 
 			let contents = this.children.map(child => child.toTemplateString()).join('')
-			return `<${tagName}${this.toStringOfAttrs()}>${contents}</${tagName}>`
+			return `<${tagName}${this.toStringOfAttrs(false)}>${contents}</${tagName}>`
 		}
 		else if (this.type === HTMLNodeType.Text) {
 			return this.text!

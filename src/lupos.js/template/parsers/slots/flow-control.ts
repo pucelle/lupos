@@ -7,6 +7,11 @@ export class FlowControlSlotParser extends SlotParserBase {
 
 	private control: FlowControlBase | null = null
 
+	/** Flow control should always be updated dynamically. */
+	isValueOutputAsMutable(): boolean {
+		return true
+	}
+
 	init() {
 		let control: FlowControlBase
 
@@ -32,7 +37,7 @@ export class FlowControlSlotParser extends SlotParserBase {
 				break
 
 			default:
-				throw new Error(`${this.node.toReadableString()} can't be parsed!`)
+				throw new Error(`Can't parse content:\n${this.node.toReadableString(this.template.values.valueNodes)}`)
 		}
 
 		control.init()

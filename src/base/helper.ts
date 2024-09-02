@@ -528,7 +528,7 @@ export namespace Helper {
 				yield* walkVariablePatternNames(node.name)
 			}
 			else if (ts.isIdentifier(node.name)) {
-				yield* getText(node.name)
+				yield getText(node.name)
 			}
 		}
 
@@ -541,7 +541,7 @@ export namespace Helper {
 					yield* walkVariablePatternNames(element.name)
 				}
 				else if (ts.isIdentifier(element.name)) {
-					yield* getText(element.name)
+					yield getText(element.name)
 				}
 			}
 		}
@@ -1249,7 +1249,7 @@ export namespace Helper {
 		/** 
 		 * Get flow interruption type,
 		 * it represents whether flow was interrupted be `return` with content,
-		 * `yield* `, `await`, or arrow function with implicit returning.
+		 * `yield`, `await`, or arrow function with implicit returning.
 		 */
 		export function getFlowInterruptionType(node: TS.Node): FlowInterruptionTypeMask {
 			let type = 0
