@@ -99,12 +99,6 @@ export abstract class SlotParserBase {
 			&& this.valueIndices.some(index => this.template.values.isIndexOutputAsMutable(index))
 	}
 
-	/** Returns whether current value has been transferred to topmost scope. */
-	isValueTransferredToTopmost(): boolean {
-		return this.valueIndices !== null
-			&& this.valueIndices.some(index => this.template.values.isIndexTransferredToTopmost(index))
-	}
-
 	/** 
 	 * Get first of raw value nodes,
 	 * can only use returned node to identify type, cant output.
@@ -230,7 +224,7 @@ export abstract class SlotParserBase {
 
 		// Parent is stable enough.
 		// Would be ok although parent is a dynamic component.
-		else if (parent.tagName !== 'tree'
+		else if (parent.tagName !== 'root'
 			&& this.canRemoveNode(this.node)
 		) {
 			nodeName = this.treeParser.references.refAsName(parent)

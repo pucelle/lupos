@@ -1,6 +1,6 @@
 import type TS from 'typescript'
 import {TreeParser} from './tree'
-import {HTMLNode, HTMLNodeType, HTMLTree} from '../html-syntax'
+import {HTMLNode, HTMLNodeType, HTMLRoot} from '../html-syntax'
 import {factory, Helper, Modifier, TemplateSlotPlaceholder, ts} from '../../../base'
 import {SlotParserBase} from './slots'
 import {VariableNames} from './variable-names'
@@ -16,7 +16,7 @@ type OutputNodeList = (TS.Expression | TS.Statement)[]
 export class TreeOutputHandler {
 
 	readonly parser: TreeParser
-	readonly tree: HTMLTree
+	readonly root: HTMLRoot
 	readonly template: TemplateParser
 
 	private wrappedBySVG: boolean = false
@@ -24,11 +24,11 @@ export class TreeOutputHandler {
 
 	constructor(parser: TreeParser, wrappedBySVG: boolean) {
 		this.parser = parser
-		this.tree = parser.tree
+		this.root = parser.root
 		this.template = parser.template
 
 		this.wrappedBySVG = wrappedBySVG
-		this.wrappedByTemplate = this.tree.firstChild?.tagName === 'template'
+		this.wrappedByTemplate = this.root.firstChild?.tagName === 'template'
 	}
 
 	output(slots: SlotParserBase[], varNames: string[], partNames: string[], hasDynamicComponent: boolean) {
@@ -41,7 +41,7 @@ export class TreeOutputHandler {
 		let {init, staticUpdate, update} = this.outputSlots(slots)
 
 		// Output `$latest_values = $values` if needed.
-		this.outputLatestValues(slots, varNames, update)
+		this.outputLatestValues(varNames, update)
 
 		// let $node = $html_0.make()
 		let rootNode = this.outputRootHTML()
@@ -120,7 +120,7 @@ export class TreeOutputHandler {
 			pos: -1,
 			end: -1,
 			hasTrailingNewLine: false,
-			text: '\n' + this.tree.toReadableString(this.template.values.valueNodes) + '\n',
+			text: '\n' + this.root.toReadableString(this.template.values.valueNodes) + '\n',
 			kind: ts.SyntaxKind.MultiLineCommentTrivia,
 		}])
 
@@ -200,11 +200,10 @@ export class TreeOutputHandler {
 		}
 	}
 
-	private outputLatestValues(slots: SlotParserBase[], varNames: string[], update: OutputNodeList) {
+	private outputLatestValues(varNames: string[], update: OutputNodeList) {
 
 		// Should output `$latest_values = $values`
-		let shouldOutputLatestValues = slots.some(s => s.isValueTransferredToTopmost())
-		if (shouldOutputLatestValues) {
+		if (this.template.values.isAnyIndexTransferredToTopmost()) {
 			varNames.push(VariableNames.latestValues)
 
 			update.unshift(factory.createBinaryExpression(
@@ -220,7 +219,7 @@ export class TreeOutputHandler {
 		Modifier.addImport('SlotPosition', '@pucelle/lupos.js')
 
 		let position = SlotPositionType.Before
-		let container: HTMLNode = this.tree
+		let container: HTMLNode = this.root
 		let firstNode = container.firstChild!
 
 		if (this.wrappedBySVG || this.wrappedByTemplate) {
@@ -307,7 +306,7 @@ export class TreeOutputHandler {
 			}
 
 			// Where the total reference from.
-			else if (visitFromNode === this.tree) {
+			else if (visitFromNode === this.root) {
 
 				// $node.content
 				fromExp = factory.createPropertyAccessExpression(

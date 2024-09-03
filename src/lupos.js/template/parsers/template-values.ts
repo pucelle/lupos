@@ -50,6 +50,11 @@ export class TemplateValues {
 		return this.indicesTransferred.has(index)
 	}
 
+	/** Returns whether the value at any index has been transferred to topmost scope. */
+	isAnyIndexTransferredToTopmost(): boolean {
+		return this.indicesTransferred.size > 0
+	}
+
 	/** Get raw value node at index. */
 	getRawNode(index: number): TS.Expression {
 		return this.valueNodes[index]
@@ -79,7 +84,7 @@ export class TemplateValues {
 
 				let transferred = Scoping.transferToTopmostScope(
 					interpolated,
-					this.template.scope,
+					rawValueNode,
 					this.transferNodeToTopmostScope.bind(this, index)
 				)
 

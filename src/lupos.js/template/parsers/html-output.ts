@@ -23,7 +23,7 @@ export namespace HTMLOutputHandler {
 	export function output(parser: TreeParser, wrapped: boolean): string {
 		Modifier.addImport('HTMLMaker', '@pucelle/lupos.js')
 
-		let htmlString = parser.tree.getContentString()
+		let htmlString = parser.root.getContentString()
 
 		// Cache meet.
 		if (Cache.has(htmlString, wrapped)) {

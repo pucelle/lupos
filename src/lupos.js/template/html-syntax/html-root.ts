@@ -2,11 +2,11 @@ import {HTMLNode, HTMLNodeType} from './html-node'
 import {HTMLTokenParser, HTMLTokenType} from './html-token-parser'
 
 
-export class HTMLTree extends HTMLNode {
+export class HTMLRoot extends HTMLNode {
 
-	static fromString(string: string): HTMLTree {
+	static fromString(string: string): HTMLRoot {
 		let tokens = HTMLTokenParser.parseToTokens(string)
-		let tree = new HTMLTree()
+		let tree = new HTMLRoot()
 		let current: HTMLNode | null = tree
 
 		for (let token of tokens) {
@@ -51,27 +51,27 @@ export class HTMLTree extends HTMLNode {
 		return tree
 	}
 
-	static fromSeparating(node: HTMLNode): HTMLTree {
+	static fromSeparating(node: HTMLNode): HTMLRoot {
 		node.remove()
-		let tree = new HTMLTree()
+		let tree = new HTMLRoot()
 		tree.append(node)
 
 		return tree
 	}
 
-	static fromSeparatingChildren(node: HTMLNode): HTMLTree {
-		let tree = new HTMLTree()
+	static fromSeparatingChildren(node: HTMLNode): HTMLRoot {
+		let root = new HTMLRoot()
 
 		for (let child of node.children) {
 			child.remove()
-			tree.append(child)
+			root.append(child)
 		}
 
-		return tree
+		return root
 	}
 
 	constructor() {
-		super(HTMLNodeType.Tag, {tagName: 'tree', attrs: []})
+		super(HTMLNodeType.Tag, {tagName: 'root', attrs: []})
 	}
 
 	getContentString() {

@@ -196,7 +196,7 @@ export namespace Interpolator {
 
 		let i = -1
 
-		return ts.visitEachChild(node, () => {
+		return ts.visitEachChild(node, (r) => {
 			return output(childIndices![++i])
 		}, transformContext)
 	}
@@ -256,6 +256,10 @@ export namespace Interpolator {
 				node = replaceToAddNeighborNodes(index, node, beforeNodes, afterNodes)
 			}
 		}
+
+		console.log('------')
+		console.log(Helper.getText(Visiting.getNode(index)))
+		console.log(Array.isArray(node) ? node.map(n => Helper.getText(n)) : Helper.getText((node!)))
 
 		return node && Array.isArray(node) && node.length === 1 ? node[0] : node
 	}

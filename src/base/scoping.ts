@@ -268,10 +268,24 @@ export namespace Scoping {
 		return declaredIn ? declaredIn.isTopmost() : false
 	}
 
-	/** Returns whether declared in a target scope, and a descendant scope of target scope. */
-	function isDeclaredWithinScope(rawNode: TS.Identifier, scope: Scope): boolean {
+	/** Returns whether a node is declared within target node. */
+	function isDeclaredWithinNode(rawNode: TS.Identifier, targetNode: TS.Node): boolean {
 		let declaredIn = findDeclaredScope(rawNode)
-		return declaredIn ? scope.isSelfOrAncestorOf(declaredIn) : false
+		if (!declaredIn) {
+			return false
+		}
+
+		let n: TS.Node = declaredIn.node
+
+		do {
+			if (n === targetNode) {
+				return true
+			}
+
+			n = n.parent
+		} while (n)
+
+		return false
 	}
 
 	/** Returns whether a variable node was declared as const. */
@@ -355,15 +369,15 @@ export namespace Scoping {
 	 */
 	export function transferToTopmostScope<T extends TS.Node>(
 		node: T,
-		topScope: Scope,
+		rawNode: TS.Node,
 		replacer: NodeReplacer
 	): T {
-		return transferToTopmostScopeVisitor(node, topScope, true, replacer) as T
+		return transferToTopmostScopeVisitor(node, rawNode, true, replacer) as T
 	}
 
 	function transferToTopmostScopeVisitor(
 		node: TS.Node,
-		topScope: Scope,
+		rawTopNode: TS.Node,
 		canReplaceThis: boolean,
 		replacer: NodeReplacer
 	): TS.Node {
@@ -371,9 +385,15 @@ export namespace Scoping {
 		// Raw variable
 		if (Visiting.hasNode(node) && Helper.variable.isVariableIdentifier(node)) {
 
-			// If declared in top scope, or in local scope within transferring content,
-			// should not replace it.
-			if (!isDeclaredInTopScope(node) && !isDeclaredWithinScope(node, topScope)) {
+			// If declared in top scope, can still visit after transferred,
+			// no need to replace it.
+
+			// If declared in local scope within transferring content,
+			// will be transferred with template together.
+
+			let isDeclaredWithinTransferring = isDeclaredWithinNode(node, rawTopNode)
+			let shouldNotReplace = isDeclaredInTopScope(node) || isDeclaredWithinTransferring
+			if (!shouldNotReplace) {
 				return replacer(node)
 			}
 		}
@@ -387,7 +407,7 @@ export namespace Scoping {
 		canReplaceThis &&= !(Helper.isFunctionLike(node) && !ts.isArrowFunction(node))
 
 		return ts.visitEachChild(node, (node: TS.Node) => {
-			return transferToTopmostScopeVisitor(node, topScope, canReplaceThis, replacer)
+			return transferToTopmostScopeVisitor(node, rawTopNode, canReplaceThis, replacer)
 		}, transformContext)
 	}
 }
@@ -464,21 +484,6 @@ export class Scope {
 			&& !ts.isForStatement(this.node)
 	}
 
-	/** Test whether current scope is equal or an ancestor of target scope. */
-	isSelfOrAncestorOf(scope: Scope): boolean {
-		let s: Scope | null = scope
-
-		do {
-			if (this === s) {
-				return true
-			}
-
-			s = s.parent
-		} while (s)
-
-		return false
-	}
-	
 	/** Whether has declared a specified named local variable. */
 	hasLocalVariable(name: string): boolean {
 		return this.variables.has(name)

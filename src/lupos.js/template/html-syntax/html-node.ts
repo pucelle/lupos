@@ -17,6 +17,9 @@ export class HTMLNode {
 	text: string | undefined
 	attrs: HTMLAttribute[] | undefined
 
+	/** Description for text and comment node. */
+	desc: string | null = null
+
 	children: HTMLNode[] = []
 	parent: HTMLNode | null = null
 
@@ -172,6 +175,7 @@ export class HTMLNode {
 
 	toReadableString(rawNodes: TS.Node[], tab = ''): string {
 		if (this.type === HTMLNodeType.Tag) {
+			let tagName = this.tagName!
 			let children = this.children.filter(child => child.type !== HTMLNodeType.Comment)
 
 			let wrap = children.length === 0
@@ -181,19 +185,22 @@ export class HTMLNode {
 
 			return tab
 				+ TemplateSlotPlaceholder.replaceTemplateString(
-					`<${this.tagName}${this.toStringOfAttrs(true)}${children.length === 0 ? ' /' : ''}>`,
+					`<${tagName}${this.toStringOfAttrs(true)}${children.length === 0 ? ' /' : ''}>`,
 					(index: number) => '${' + Helper.getText(rawNodes[index]) + '}'
 				)
 				+ children.map(child => child.toReadableString(rawNodes, wrap ? tab + '\t' : ''))
 					.map(v => wrap + v).join('')
 				+ (wrap ? wrap + tab : '')
 				+ (children.length > 0
-					? `</${TemplateSlotPlaceholder.isDynamicComponent(this.tagName!) ? '' : this.tagName}>`
+					? `</${TemplateSlotPlaceholder.isDynamicComponent(tagName) ? '' : tagName}>`
 					: ''
 				)
 		}
-		else if (this.type === HTMLNodeType.Text) {
-			return tab + this.text!
+		else if (this.desc) {
+			return TemplateSlotPlaceholder.replaceTemplateString(
+				tab + this.desc,
+				(index: number) => '${' + Helper.getText(rawNodes[index]) + '}'
+			)
 		}
 		else {
 			return ''

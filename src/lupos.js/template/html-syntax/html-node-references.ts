@@ -1,6 +1,6 @@
 import {VariableNames} from '../parsers/variable-names'
 import {HTMLNode} from './html-node'
-import {HTMLTree} from './html-tree'
+import {HTMLRoot} from './html-root'
 
 
 /** A node, and all the children which has any descendant been referenced. */
@@ -28,11 +28,11 @@ export interface ReferenceOutputItem {
 
 export class HTMLNodeReferences {
 
-	readonly tree: HTMLTree
+	readonly root: HTMLRoot
 	private references: Map<HTMLNode, number> = new Map()
 
-	constructor(tree: HTMLTree) {
-		this.tree = tree
+	constructor(root: HTMLRoot) {
+		this.root = root
 	}
 
 	/** 
@@ -80,12 +80,12 @@ export class HTMLNodeReferences {
 			return []
 		}
 
-		return this.outputItem(refTree, this.tree, [])
+		return this.outputItem(refTree, this.root, [])
 	}
 
 	/** Made deep reference tree. */
 	private makeDeepReferenceTree(): DeepReferenceItem | null {
-		return this.makeDeepReferenceItem(this.tree, 0)
+		return this.makeDeepReferenceItem(this.root, 0)
 	}
 
 	private makeDeepReferenceItem(node: HTMLNode, siblingIndex: number): DeepReferenceItem | null {
@@ -121,13 +121,13 @@ export class HTMLNodeReferences {
 		let visitSteps: number[] | null = steps
 
 		// No visit step for tree.
-		if (item.node !== this.tree) {
+		if (item.node !== this.root) {
 			steps.push(item.siblingIndex)
 		}
 
 		// Template tags get removed, no visit steps, but still iterate them.
 		if (item.node.tagName === 'template'
-			&& item.node.parent === this.tree
+			&& item.node.parent === this.root
 		) {
 			visitSteps = null
 		}
@@ -155,7 +155,7 @@ export class HTMLNodeReferences {
 		// f = a.b.c
 		// f.d
 		// f.e
-		else if (item.children.length > 1 && item.node !== this.tree) {
+		else if (item.children.length > 1 && item.node !== this.root) {
 			this.refAsIndex(item.node)
 
 			yield {

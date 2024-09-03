@@ -1,22 +1,30 @@
-import { Component, html, TemplateMaker, SlotPosition, HTMLMaker, DynamicComponentBlock, TemplateSlot } from '@pucelle/lupos.js';
+import { Component, html, CompiledTemplateResult, TemplateMaker, SlotPosition, HTMLMaker, DynamicComponentBlock, TemplateSlot } from '@pucelle/lupos.js';
 import { trackGet, SimulatedEvents, DOMModifiableEvents } from "@pucelle/ff";
 const $html_0 = new HTMLMaker("<div></div>");
-const $template_0 = new TemplateMaker($context => {
+/*
+<root>
+    <Com1 @connected=${this.handleEvent} />
+</root>
+*/ const $template_0 = new TemplateMaker($context => {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $com_0 = new Com1($node_0);
-    $com_0.on("connected", this.handleEvent, $context);
+    $com_0.on("connected", $context.handleEvent, $context);
     return {
         el: $node,
         position: new SlotPosition(2, $node_0),
         parts: [$com_0]
     };
 });
-const $template_1 = new TemplateMaker($context => {
+/*
+<root>
+    <Com1 @eventName=${this.handleEvent} />
+</root>
+*/ const $template_1 = new TemplateMaker($context => {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $com_0 = new Com1($node_0);
-    $com_0.on("eventName", this.handleEvent, $context);
+    $com_0.on("eventName", $context.handleEvent, $context);
     return {
         el: $node,
         position: new SlotPosition(2, $node_0),
@@ -24,14 +32,18 @@ const $template_1 = new TemplateMaker($context => {
     };
 });
 const $html_1 = new HTMLMaker("<!----><div></div><!---->");
-const $template_2 = new TemplateMaker($context => {
+/*
+<root>
+    <${this.UnionedCom} @connected=$LUPOS_SLOT_INDEX_1$ />
+</root>
+*/ const $template_2 = new TemplateMaker($context => {
     let $com_0;
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
     let $block_0 = new DynamicComponentBlock(function (com) {
         $com_0 = com;
-        $com_0.on("connected", this.handleEvent, $context);
+        $com_0.on("connected", $context.handleEvent, $context);
     }, new TemplateSlot(new SlotPosition(2, $node_1), $context));
     return {
         el: $node,
@@ -42,14 +54,18 @@ const $template_2 = new TemplateMaker($context => {
         parts: () => [$com_0]
     };
 });
-const $template_3 = new TemplateMaker($context => {
+/*
+<root>
+    <${this.ConstructedCom} @connected=$LUPOS_SLOT_INDEX_1$ />
+</root>
+*/ const $template_3 = new TemplateMaker($context => {
     let $com_0;
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
     let $block_0 = new DynamicComponentBlock(function (com) {
         $com_0 = com;
-        $com_0.on("connected", this.handleEvent, $context);
+        $com_0.on("connected", $context.handleEvent, $context);
     }, new TemplateSlot(new SlotPosition(2, $node_1), $context));
     return {
         el: $node,
@@ -60,54 +76,78 @@ const $template_3 = new TemplateMaker($context => {
         parts: () => [$com_0]
     };
 });
-const $template_4 = new TemplateMaker($context => {
+/*
+<root>
+    <Com1 @@forceComEvent=${this.handleEvent} />
+</root>
+*/ const $template_4 = new TemplateMaker($context => {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $com_0 = new Com1($node_0);
-    $com_0.on("forceComEvent", this.handleEvent, $context);
+    $com_0.on("forceComEvent", $context.handleEvent, $context);
     return {
         el: $node,
         position: new SlotPosition(2, $node_0),
         parts: [$com_0]
     };
 });
-const $template_5 = new TemplateMaker($context => {
+/*
+<root>
+    <div @click=${this.handleEvent} />
+</root>
+*/ const $template_5 = new TemplateMaker($context => {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
-    $node_0.addEventListener("click", this.handleEvent.bind($context));
+    $node_0.addEventListener("click", $context.handleEvent.bind($context));
     return {
         el: $node,
         position: new SlotPosition(2, $node_0)
     };
 });
-const $template_6 = new TemplateMaker($context => {
+/*
+<root>
+    <div @tap=${this.handleEvent} />
+</root>
+*/ const $template_6 = new TemplateMaker($context => {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
-    SimulatedEvents.on($node_0, "tap", this.handleEvent, $context);
+    SimulatedEvents.on($node_0, "tap", $context.handleEvent, $context);
     return {
         el: $node,
         position: new SlotPosition(2, $node_0)
     };
 });
-const $template_7 = new TemplateMaker($context => {
+/*
+<root>
+    <div @hold:start=${this.handleEvent} />
+</root>
+*/ const $template_7 = new TemplateMaker($context => {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
-    SimulatedEvents.on($node_0, "hold", this.handleEvent, $context);
+    SimulatedEvents.on($node_0, "hold", $context.handleEvent, $context);
     return {
         el: $node,
         position: new SlotPosition(2, $node_0)
     };
 });
-const $template_8 = new TemplateMaker($context => {
+/*
+<root>
+    <div @click.prevent=${this.handleEvent} />
+</root>
+*/ const $template_8 = new TemplateMaker($context => {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
-    DOMModifiableEvents.on($node_0, "click", ["prevent"], this.handleEvent, $context);
+    DOMModifiableEvents.on($node_0, "click", ["prevent"], $context.handleEvent, $context);
     return {
         el: $node,
         position: new SlotPosition(2, $node_0)
     };
 });
-const $template_9 = new TemplateMaker($context => {
+/*
+<root>
+    <div @click=${this.booleanValue ? this.handleEvent : this.handleAnotherEvent} />
+</root>
+*/ const $template_9 = new TemplateMaker($context => {
     let $latest_0;
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;

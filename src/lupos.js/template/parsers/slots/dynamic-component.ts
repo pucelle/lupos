@@ -30,7 +30,7 @@ export class DynamicComponentSlotParser extends SlotParserBase {
 
 		// Parent is stable enough.
 		// Would be ok although parent is a dynamic component.
-		else if (parent.tagName !== 'tree') {
+		else if (parent.tagName !== 'root') {
 			nodeName = this.treeParser.references.refAsName(parent)
 			position = SlotPositionType.AfterContent
 		}

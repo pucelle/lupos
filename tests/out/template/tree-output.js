@@ -1,16 +1,26 @@
-import { Component, html, svg, TemplateMaker, SlotPosition, HTMLMaker, TemplateSlot, CompiledTemplateResult } from '@pucelle/lupos.js';
+import { Component, html, svg, CompiledTemplateResult, TemplateMaker, SlotPosition, HTMLMaker, TemplateSlot } from '@pucelle/lupos.js';
 const $html_0 = new HTMLMaker("<!---->");
-const $template_0 = new TemplateMaker($context => {
+/*
+<root>
+    <template class="className" />
+</root>
+*/ const $template_0 = new TemplateMaker($context => {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
-    $context.el.setAttribute("lass", "className");
+    $context.el.classList.add("className");
     return {
         el: $node,
         position: new SlotPosition(2, $node_0)
     };
 });
 const $html_1 = new HTMLMaker("<svg><path></path></svg>", true);
-const $template_1 = new TemplateMaker($context => {
+/*
+<root>
+    <svg>
+        <path />
+    </svg>
+</root>
+*/ const $template_1 = new TemplateMaker($context => {
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     return {
@@ -19,7 +29,13 @@ const $template_1 = new TemplateMaker($context => {
     };
 });
 const $html_2 = new HTMLMaker("<svg><slot name=\"slotName\"></slot></svg>", true);
-const $template_2 = new TemplateMaker($context => {
+/*
+<root>
+    <svg>
+        <slot name="slotName" />
+    </svg>
+</root>
+*/ const $template_2 = new TemplateMaker($context => {
     let $node = $html_2.make();
     let $node_0 = $node.content.firstChild;
     let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_0), $context);
@@ -32,7 +48,13 @@ const $template_2 = new TemplateMaker($context => {
         parts: [$slot_0]
     };
 });
-const $template_3 = new TemplateMaker($context => {
+/*
+<root>
+    <svg>
+        <path />
+    </svg>
+</root>
+*/ const $template_3 = new TemplateMaker($context => {
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     return {
@@ -43,7 +65,6 @@ const $template_3 = new TemplateMaker($context => {
 class TestTemplateOutput extends Component {
     prop = 1;
     readonlyProp = 1;
-    handleEvent() { }
     testTemplate() {
         return new CompiledTemplateResult($template_0, []);
     }

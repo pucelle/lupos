@@ -1,8 +1,8 @@
-import { Component, html, TemplateMaker, SlotPosition, HTMLMaker, ForBlock, TemplateSlot } from '@pucelle/lupos.js';
+import { Component, html, CompiledTemplateResult, TemplateMaker, SlotPosition, HTMLMaker, ForBlock, TemplateSlot } from '@pucelle/lupos.js';
 import { trackGet } from "@pucelle/ff";
 const $html_0 = new HTMLMaker(" ");
 /*
-<tree> </tree>
+<root>${n + prop}</root>
 */ const $template_0 = new TemplateMaker($context => {
     let $latest_0;
     let $node = $html_0.make();
@@ -19,21 +19,20 @@ const $html_0 = new HTMLMaker(" ");
 });
 const $html_1 = new HTMLMaker("<!----><!---->");
 /*
-<tree>
-    <lupos:for ${[1,2,3]}></lupos:for>
-</tree>
+<root>
+    <lupos:for ${[1,2,3]} />
+</root>
 */ const $template_1 = new TemplateMaker($context => {
+    let $latestValues;
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
-    $block_0 = new ForBlock((n) => {
-        trackGet($context, "prop");
-        return new CompiledTemplateResult($template_0, [n + $context.prop]);
-    }, new TemplateSlot(new SlotPosition(2, $node_1), $context));
+    $block_0 = new ForBlock((n) => new CompiledTemplateResult($template_0, [n + $latestValues[0]]), new TemplateSlot(new SlotPosition(2, $node_1), $context));
     return {
         el: $node,
         position: new SlotPosition(2, $node_0),
         update($values) {
+            $latestValues = $values;
             $block_0.update([1, 2, 3]);
         }
     };
@@ -48,7 +47,16 @@ class TestFor extends Component {
     // 		<lupos:for ${[1,2,3]}>${this.renderItem}</lupos:for>
     // 	`
     // }
-    testFor() {
-        return new CompiledTemplateResult($template_1, []);
+    // testForLocalMapFn() {
+    // 	return html`
+    // 		<lupos:for ${[1,2,3]}>${(n: number) => html`
+    // 			${n + this.prop}
+    // 		`}</lupos:for>
+    // 	`
+    // }
+    testForLocalVariableTransferring() {
+        let prop = this.prop;
+        trackGet(this, "prop");
+        return new CompiledTemplateResult($template_1, [prop]);
     }
 }

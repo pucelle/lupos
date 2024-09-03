@@ -1,8 +1,8 @@
 import type TS from 'typescript'
-import {HTMLNode, HTMLTree} from '../html-syntax'
+import {HTMLNode, HTMLRoot} from '../html-syntax'
 import {TreeParser} from './tree'
 import {TemplateValues} from './template-values'
-import {factory, Scope, Scoping} from '../../../base'
+import {factory, Modifier} from '../../../base'
 
 
 export type TemplateType = 'html' | 'svg'
@@ -18,7 +18,6 @@ export class TemplateParser {
 	readonly type: TemplateType
 	readonly values: TemplateValues
 	readonly rawNode: TS.TaggedTemplateExpression
-	readonly scope: Scope
 
 	private readonly treeParsers: TreeParser[] = []
 
@@ -26,15 +25,14 @@ export class TemplateParser {
 		this.type = type
 		this.values = new TemplateValues(values, this)
 		this.rawNode = rawNode
-		this.scope = Scoping.findClosestScopeOfNode(rawNode)
 
-		let tree = HTMLTree.fromString(string)
-		this.addTreeParser(tree, null, null)
+		let root = HTMLRoot.fromString(string)
+		this.addTreeParser(root, null, null)
 	}
 
-	/** Add a tree and parent. */
-	addTreeParser(tree: HTMLTree, parent: TreeParser | null, fromNode: HTMLNode | null): TreeParser {
-		let parser = new TreeParser(this, tree, parent, fromNode)
+	/** Add a root and parent tree parser. */
+	addTreeParser(root: HTMLRoot, parent: TreeParser | null, fromNode: HTMLNode | null): TreeParser {
+		let parser = new TreeParser(this, root, parent, fromNode)
 		
 		this.treeParsers.push(parser)
 		parser.init()
@@ -55,6 +53,8 @@ export class TemplateParser {
 	 * and returns a expression to replace original template literal.
 	 */
 	output(): TS.Expression {
+		Modifier.addImport('CompiledTemplateResult', '@pucelle/lupos.js')
+		
 		for (let treeParser of this.treeParsers) {
 			treeParser.output()
 		}

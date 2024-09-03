@@ -15,10 +15,20 @@ class TestFor extends Component {
 	// 	`
 	// }
 
-	testFor() {
+	// testForLocalMapFn() {
+	// 	return html`
+	// 		<lupos:for ${[1,2,3]}>${(n: number) => html`
+	// 			${n + this.prop}
+	// 		`}</lupos:for>
+	// 	`
+	// }
+
+	testForLocalVariableTransferring() {
+		let prop = this.prop
+
 		return html`
 			<lupos:for ${[1,2,3]}>${(n: number) => html`
-				${n + this.prop}
+				${n + prop}
 			`}</lupos:for>
 		`
 	}

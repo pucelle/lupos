@@ -1,5 +1,5 @@
 import {Helper, TemplateSlotPlaceholder} from '../../../base'
-import {HTMLNode, HTMLNodeType, HTMLTree, HTMLNodeReferences} from '../html-syntax'
+import {HTMLNode, HTMLNodeType, HTMLRoot, HTMLNodeReferences} from '../html-syntax'
 import {SlotParserBase, DynamicComponentSlotParser, FlowControlSlotParser, PropertySlotParser, BindingSlotParser, EventSlotParser, AttributeSlotParser, TextSlotParser, ContentSlotParser, ComponentSlotParser, SlotTagSlotParser, TemplateAttributeSlotParser} from './slots'
 import {TemplateParser} from './template'
 import {TreeOutputHandler} from './tree-output'
@@ -46,11 +46,12 @@ enum SlotType {
 
 /** 
  * One template may be separated to several trees,
- * This parser parses one tree. */
+ * This parser parses one tree.
+ */
 export class TreeParser {
 
 	readonly template: TemplateParser
-	readonly tree: HTMLTree
+	readonly root: HTMLRoot
 	readonly parent: TreeParser | null
 	readonly fromNode: HTMLNode | null
 	readonly index: number
@@ -65,13 +66,13 @@ export class TreeParser {
 	private refedComponentMap: Map<HTMLNode, string> = new Map()
 	private hasDynamicComponent: boolean = false
 
-	constructor(template: TemplateParser, tree: HTMLTree, parent: TreeParser | null, fromNode: HTMLNode | null) {
+	constructor(template: TemplateParser, root: HTMLRoot, parent: TreeParser | null, fromNode: HTMLNode | null) {
 		this.template = template
-		this.tree = tree
+		this.root = root
 		this.parent = parent
 		this.fromNode = fromNode
 		this.index = VariableNames.getUniqueIndex('tree-index')
-		this.references = new HTMLNodeReferences(this.tree)
+		this.references = new HTMLNodeReferences(this.root)
 
 		this.initSVGWrapping()
 		this.outputHandler = new TreeOutputHandler(this, this.wrappedBySVG)
@@ -90,8 +91,8 @@ export class TreeParser {
 			inSVG = true
 		}
 
-		if (inSVG && this.tree.firstChild?.tagName !== 'svg') {
-			this.tree.wrapChildrenWith('svg')
+		if (inSVG && this.root.firstChild?.tagName !== 'svg') {
+			this.root.wrapChildrenWith('svg')
 			this.wrappedBySVG = true
 		}
 
@@ -103,7 +104,7 @@ export class TreeParser {
 	}
 
 	private parseSlots() {
-		for (let node of this.tree.walk()) {
+		for (let node of this.root.walk()) {
 			switch (node.type) {
 				case HTMLNodeType.Tag:
 					let tagName = node.tagName!
@@ -278,6 +279,7 @@ export class TreeParser {
 		// Whole text of `...${...}...`
 		if (joinAsAWholeText) {
 			this.addSlot(SlotType.Text, null, strings, slotIndices, node)
+			node.desc = TemplateSlotPlaceholder.joinStringsAndValueIndices(strings, slotIndices)
 			node.text = ' '
 		}
 
@@ -293,8 +295,9 @@ export class TreeParser {
 
 				if (i < slotIndices.length) {
 					let comment = new HTMLNode(HTMLNodeType.Comment, {})
-					mixedNodes.push(comment)
+					comment.desc = TemplateSlotPlaceholder.joinStringsAndValueIndices(null, [slotIndices[i]])
 
+					mixedNodes.push(comment)
 					this.addSlot(SlotType.Content, null, null, [slotIndices[i]], comment)
 				}
 			}
@@ -305,6 +308,8 @@ export class TreeParser {
 		// A single content.
 		else {
 			let comment = new HTMLNode(HTMLNodeType.Comment, {})
+			comment.desc = TemplateSlotPlaceholder.joinStringsAndValueIndices(null, slotIndices)
+
 			this.addSlot(SlotType.Content, null, null, slotIndices, comment)
 			node.replaceWith(comment)
 		}
@@ -314,8 +319,8 @@ export class TreeParser {
 
 	/** Separate children of a node to an independent tree. */
 	separateChildrenAsSubTree(node: HTMLNode): TreeParser {
-		let tree = HTMLTree.fromSeparatingChildren(node)
-		return this.template.addTreeParser(tree, this, node)
+		let root = HTMLRoot.fromSeparatingChildren(node)
+		return this.template.addTreeParser(root, this, node)
 	}
 
 	/** Return variable name to reference current template maker, like `$template_0`. */

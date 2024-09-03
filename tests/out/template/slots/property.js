@@ -1,7 +1,11 @@
-import { Component, html, TemplateMaker, SlotPosition, HTMLMaker, DynamicComponentBlock, TemplateSlot } from '@pucelle/lupos.js';
+import { Component, html, CompiledTemplateResult, TemplateMaker, SlotPosition, HTMLMaker, DynamicComponentBlock, TemplateSlot } from '@pucelle/lupos.js';
 import { trackGet } from "@pucelle/ff";
 const $html_0 = new HTMLMaker("<div></div>");
-const $template_0 = new TemplateMaker($context => {
+/*
+<root>
+    <Com1 .comProp=${1} />
+</root>
+*/ const $template_0 = new TemplateMaker($context => {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $com_0 = new Com1($node_0);
@@ -13,7 +17,11 @@ const $template_0 = new TemplateMaker($context => {
     };
 });
 const $html_1 = new HTMLMaker("<!----><div></div><!---->");
-const $template_1 = new TemplateMaker($context => {
+/*
+<root>
+    <${this.UnionedCom} .comProp=$LUPOS_SLOT_INDEX_1$ />
+</root>
+*/ const $template_1 = new TemplateMaker($context => {
     let $com_0;
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
@@ -31,7 +39,11 @@ const $template_1 = new TemplateMaker($context => {
         parts: () => [$com_0]
     };
 });
-const $template_2 = new TemplateMaker($context => {
+/*
+<root>
+    <${this.ConstructedCom} .comProp=$LUPOS_SLOT_INDEX_1$ />
+</root>
+*/ const $template_2 = new TemplateMaker($context => {
     let $com_0;
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
@@ -49,7 +61,11 @@ const $template_2 = new TemplateMaker($context => {
         parts: () => [$com_0]
     };
 });
-const $template_3 = new TemplateMaker($context => {
+/*
+<root>
+    <Com1 ..forceComProp=${1} />
+</root>
+*/ const $template_3 = new TemplateMaker($context => {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $com_0 = new Com1($node_0);
@@ -60,7 +76,11 @@ const $template_3 = new TemplateMaker($context => {
         parts: [$com_0]
     };
 });
-const $template_4 = new TemplateMaker($context => {
+/*
+<root>
+    <div .elProp=${1} />
+</root>
+*/ const $template_4 = new TemplateMaker($context => {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     $node_0.elProp = 1;

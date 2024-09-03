@@ -130,7 +130,6 @@ export namespace Visiting {
 	}
 	
 
-
 	/** Look outward for a visiting index, and the node at where match test fn. */
 	export function findOutwardMatch(fromIndex: number, untilIndex: number | undefined, test: (node: TS.Node) => boolean) : number | undefined {
 		let index: number | undefined = fromIndex

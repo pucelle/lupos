@@ -29,6 +29,27 @@ export namespace TemplateSlotPlaceholder {
 		}
 	}
 
+	/** Join strings and value indices to template string. */
+	export function joinStringsAndValueIndices(strings: string[] | null, valueIndices: number[] | null): string {
+		let joined = ''
+
+		if (strings) {
+			joined += strings![0]
+		}
+
+		if (valueIndices) {
+			for (let i = 0; i < valueIndices.length; i++) {
+				joined += `$LUPOS_SLOT_INDEX_${valueIndices[i]}$`
+
+				if (strings) {
+					joined += strings[i + 1]
+				}
+			}
+		}
+		
+		return joined
+	}
+
 	/** Replace placeholder `$LUPOS_SLOT_INDEX_\d_ with a replacer. */
 	export function replaceTemplateString(
 		string: string,

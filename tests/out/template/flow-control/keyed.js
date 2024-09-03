@@ -1,11 +1,15 @@
-import { Component, html, TemplateMaker, SlotPosition, KeyedBlock, TemplateSlot, HTMLMaker } from '@pucelle/lupos.js';
+import { Component, html, CompiledTemplateResult, TemplateMaker, SlotPosition, KeyedBlock, TemplateSlot, HTMLMaker } from '@pucelle/lupos.js';
 import { trackGet } from "@pucelle/ff";
 const $html_0 = new HTMLMaker("<!----><!---->");
-const $template_0 = new TemplateMaker($context => {
+/*
+<root>
+    <lupos:keyed ${this.key} />
+</root>
+*/ const $template_0 = new TemplateMaker($context => {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
-    $block_0 = new KeyedBlock($template_1, new TemplateSlot(new SlotPosition(2, $node_1), $context), $context);
+    $block_0 = new KeyedBlock($template_1, new TemplateSlot(new SlotPosition(2, $node_1), $context));
     return {
         el: $node,
         position: new SlotPosition(2, $node_0),
@@ -15,7 +19,9 @@ const $template_0 = new TemplateMaker($context => {
     };
 });
 const $html_1 = new HTMLMaker("Keyed Content");
-const $template_1 = new TemplateMaker($context => {
+/*
+<root></root>
+*/ const $template_1 = new TemplateMaker($context => {
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     return {

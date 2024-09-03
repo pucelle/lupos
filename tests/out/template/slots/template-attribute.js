@@ -1,11 +1,9 @@
-import { Component, html, TemplateMaker, SlotPosition, HTMLMaker, TemplateSlot } from '@pucelle/lupos.js';
+import { Component, html, CompiledTemplateResult, TemplateMaker, SlotPosition, HTMLMaker, TemplateSlot } from '@pucelle/lupos.js';
 const $html_0 = new HTMLMaker("<!---->");
 /*
-<tree>
-    <template class="className">
-        <!---->
-    </template>
-</tree>
+<root>
+    <template class="className" />
+</root>
 */ const $template_0 = new TemplateMaker($context => {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
@@ -16,11 +14,9 @@ const $html_0 = new HTMLMaker("<!---->");
     };
 });
 /*
-<tree>
-    <template style="background-color: red">
-        <!---->
-    </template>
-</tree>
+<root>
+    <template style="background-color: red" />
+</root>
 */ const $template_1 = new TemplateMaker($context => {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
@@ -31,11 +27,9 @@ const $html_0 = new HTMLMaker("<!---->");
     };
 });
 /*
-<tree>
-    <template attr="value">
-        <!---->
-    </template>
-</tree>
+<root>
+    <template attr="value" />
+</root>
 */ const $template_2 = new TemplateMaker($context => {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
@@ -47,9 +41,9 @@ const $html_0 = new HTMLMaker("<!---->");
 });
 const $html_1 = new HTMLMaker("<div></div>");
 /*
-<tree>
-    <div></div>
-</tree>
+<root>
+    <div />
+</root>
 */ const $template_3 = new TemplateMaker($context => {
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
@@ -59,11 +53,11 @@ const $html_1 = new HTMLMaker("<div></div>");
     };
 });
 /*
-<tree>
+<root>
     <template attr="value">
-        <div attr='value'></div>
+        <div attr=${'value'} />
     </template>
-</tree>
+</root>
 */ const $template_4 = new TemplateMaker($context => {
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
