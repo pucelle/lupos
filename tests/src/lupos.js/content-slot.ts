@@ -10,25 +10,25 @@ class TestTemplateResult extends L.Component {
 }
 
 
-// class TestTemplateResultList extends Component {
+class TestTemplateResultList extends Component {
 
-// 	render(): TemplateResult[] {
-// 		return null as any
-// 	}
-// }
-
-
-// class TestText extends Component {
-
-// 	render(): string {
-// 		return ''
-// 	}
-// }
+	render(): TemplateResult[] {
+		return null as any
+	}
+}
 
 
-// class TestUnionTypes extends Component {
+class TestText extends Component {
 
-// 	render(): TemplateResult | string {
-// 		return null as any
-// 	}
-// }
+	render(): string {
+		return ''
+	}
+}
+
+
+class TestUnionTypes extends Component {
+
+	render(): TemplateResult | string {
+		return null as any
+	}
+}

@@ -1,5 +1,6 @@
 import type TS from 'typescript'
 import {Helper, defineVisitor, ts, Modifier, factory} from '../base'
+import {SlotContentType} from '../enums'
 
 
 defineVisitor(function(node: TS.Node, index: number) {
@@ -30,39 +31,36 @@ defineVisitor(function(node: TS.Node, index: number) {
 	}
 
 	let typeText = Helper.types.getTypeFullText(renderType)
-	let slotType: 'TemplateResult' | 'TemplateResultList' | 'Text' | 'Node' | null = null
+	let slotType: SlotContentType | null = null
 
 	// Check Slot Type.
 	if (typeText === 'TemplateResult') {
-		slotType = 'TemplateResult'
+		slotType = SlotContentType.TemplateResult
 	}
 	else if (typeText === 'TemplateResult[]') {
-		slotType = 'TemplateResultList'
+		slotType = SlotContentType.TemplateResultList
 	}
 	else if (typeText === 'string' || typeText === 'number'
 		|| Helper.types.isNonNullableValueType(renderType)
 	) {
-		slotType = 'Text'
+		slotType = SlotContentType.Text
 	}
 	else if (/^(?:\w*?Element|Node|Comment|Text)$/.test(typeText)) {
-		slotType = 'Node'
+		slotType = SlotContentType.Node
 	}
 
-	// Add a property `static ContentSlotType = SlotContentType.xxx`.
-	if (slotType) {
+	// Add a property `static SlotContentType = SlotContentType.xxx`.
+	if (slotType !== null) {
 		Modifier.addImport('SlotContentType', '@pucelle/lupos.js')
 
 		let property = factory.createPropertyDeclaration(
 			[
 				factory.createToken(ts.SyntaxKind.StaticKeyword)
 			],
-			factory.createIdentifier('ContentSlotType'),
+			factory.createIdentifier('SlotContentType'),
 			undefined,
 			undefined,
-			factory.createPropertyAccessExpression(
-				factory.createIdentifier('SlotContentType'),
-				factory.createIdentifier(slotType)
-			)
+			factory.createNumericLiteral(slotType)
 		)
 
 		Modifier.addClassMember(index, property, true)

@@ -5,6 +5,8 @@ import {Context} from './context'
 
 export enum ContextTypeMask {
 
+	None = 0,
+
 	/** Source file. */
 	SourceFile = 2 ** 0,
 
@@ -69,7 +71,7 @@ export namespace ContextTree {
 	}
 
 	/** Check Context type of a node. */
-	export function checkContextType(node: TS.Node): ContextTypeMask {
+	export function checkContextType(node: TS.Node): ContextTypeMask | 0 {
 		let parent = node.parent
 		let type = 0
 

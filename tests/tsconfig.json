@@ -19,5 +19,5 @@
 			{"transform": "../src/index.ts"},
 		]
 	},
-	"include": ["src/lupos.js/**/content-slot.ts"],
+	"include": ["src/ff/**/*.ts"],
 }

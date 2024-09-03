@@ -1,21 +1,25 @@
-export {};
-// class TestTemplateResult extends L.Component {
-// 	render(): L.TemplateResult {
-// 		return null as any
-// 	}
-// }
-// class TestTemplateResultList extends Component {
-// 	render(): TemplateResult[] {
-// 		return null as any
-// 	}
-// }
-// class TestText extends Component {
-// 	render(): string {
-// 		return ''
-// 	}
-// }
-// class TestUnionTypes extends Component {
-// 	render(): TemplateResult | string {
-// 		return null as any
-// 	}
-// }
+import * as L from '@pucelle/lupos.js';
+import { Component, TemplateResult, SlotContentType } from '@pucelle/lupos.js';
+class TestTemplateResult extends L.Component {
+    static SlotContentType = 0;
+    render() {
+        return null;
+    }
+}
+class TestTemplateResultList extends Component {
+    static SlotContentType = 1;
+    render() {
+        return null;
+    }
+}
+class TestText extends Component {
+    static SlotContentType = 2;
+    render() {
+        return '';
+    }
+}
+class TestUnionTypes extends Component {
+    render() {
+        return null;
+    }
+}

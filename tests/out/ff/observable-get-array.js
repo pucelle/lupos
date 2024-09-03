@@ -30,7 +30,10 @@ class TestArrayBroadcastingObservedToMapFn extends Component {
     mapArrowFnNoBlocking() {
         trackGet(this, "prop");
         trackGet(this.prop, "");
-        return this.prop.map(v => { trackGet(v, "value"); return v.value; }).join('');
+        return this.prop.map(v => {
+            trackGet(v, "value");
+            return v.value;
+        }).join('');
     }
     mapArrowFn() {
         trackGet(this, "prop");

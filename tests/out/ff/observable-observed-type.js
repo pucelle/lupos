@@ -79,7 +79,10 @@ class TestObservedProperty extends Component {
 class TestArrayMapObservedParameter {
     prop = [{ value: 1 }];
     arrowFnImplicitReturn() {
-        return this.prop.map((v) => { trackGet(v, "value"); return v.value; }).join('');
+        return this.prop.map((v) => {
+            trackGet(v, "value");
+            return v.value;
+        }).join('');
     }
     arrowFnBlockBody() {
         return this.prop.map((v) => { trackGet(v, "value"); return v.value; }).join('');

@@ -2,7 +2,7 @@ import type TS from 'typescript'
 import {SlotParserBase} from './base'
 import {factory, Modifier, ts} from '../../../base'
 import {HTMLNode, HTMLNodeType} from '../../html-syntax'
-import {SlotPositionType} from '../../enums'
+import {SlotPositionType} from '../../../enums'
 
 
 export class DynamicComponentSlotParser extends SlotParserBase {

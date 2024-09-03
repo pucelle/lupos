@@ -80,16 +80,16 @@ export namespace Interpolator {
 		
 		// Not fully replace it.
 		if (item.position === InterpolationPosition.Prepend) {
-			let firstIndex = Visiting.getFirstChildIndex(toIndex)
-			if (firstIndex) {
-				toIndex = firstIndex
+			let siblings = getPendingSiblings(toIndex)
+			if (siblings && siblings.length > 0) {
+				toIndex = Visiting.getIndex(siblings[0])
 				item.position = InterpolationPosition.Before
 			}
 		}
 		else if (item.position === InterpolationPosition.Append) {
-			let lastIndex = Visiting.getLastChildIndex(toIndex)
-			if (lastIndex) {
-				toIndex = lastIndex
+			let siblings = getPendingSiblings(toIndex)
+			if (siblings && siblings.length > 0) {
+				toIndex = Visiting.getIndex(siblings[siblings.length - 1])
 				item.position = InterpolationPosition.After
 			}
 		}
@@ -105,6 +105,66 @@ export namespace Interpolator {
 
 		Interpolations.add(toIndex, item)
 	}
+
+	/** Get sibling nodes array for prepending and appending. */
+	function getPendingSiblings(index: number): TS.NodeArray<TS.Node> | TS.Node[] | undefined {
+		let node = Visiting.getNode(index)!
+
+		if (ts.isNamedImports(node)) {
+			return node.elements
+		}
+		else if (ts.isVariableDeclarationList(node)) {
+			return node.declarations
+		}
+		else if (ts.isClassDeclaration(node)) {
+			return node.members
+		}
+
+		// There are still some other types, like enum, interface.
+		else {
+			return Visiting.getChildNodes(index)
+		}
+	}
+
+	
+	/** 
+	 * Update child nodes when no siblings can be located.
+	 * For only a few type of nodes.
+	 */
+	function updatePending(node: TS.Node, prependNodes: TS.Node[], appendNodes: TS.Node[]): TS.Node {
+		if (ts.isNamedImports(node)) {
+			return factory.updateNamedImports(node, [
+				...prependNodes as TS.ImportSpecifier[],
+				...node.elements,
+				...appendNodes as TS.ImportSpecifier[],
+			])
+		}
+		else if (ts.isVariableDeclarationList(node)) {
+			return factory.updateVariableDeclarationList(node, [
+				...prependNodes as TS.VariableDeclaration[],
+				...node.declarations,
+				...appendNodes as TS.VariableDeclaration[],
+			])
+		}
+		else if (ts.isClassDeclaration(node)) {
+			return factory.updateClassDeclaration(
+				node, 
+				node.modifiers,
+				node.name,
+				node.typeParameters,
+				node.heritageClauses,
+				[
+					...prependNodes as TS.ClassElement[],
+					...node.members,
+					...appendNodes as TS.ClassElement[],
+				]
+			)
+		}
+		else {
+			throw new Error(`Don't know how to add child nodes for "${Helper.getText(node)}"!`)
+		}
+	}
+
 
 
 	/** Move node to another position. */
@@ -228,12 +288,12 @@ export namespace Interpolator {
 		}
 
 		let node: TS.Node | TS.Node[] | undefined
-		let childNodes = [...prependNodes, ...appendNodes]
 
 		if (replace.length > 0) {
 			node = replace[0].replace!()
 
 			if (prependNodes.length > 0 || appendNodes.length > 0) {
+				let childNodes = [...prependNodes, ...appendNodes]
 				console.warn(`Child nodes "${childNodes.map(n => Helper.getText(n)).join(', ')}" have been dropped!`)
 			}
 		}
@@ -241,7 +301,7 @@ export namespace Interpolator {
 			node = outputChildren(index)
 
 			if (prependNodes.length > 0 || appendNodes.length > 0) {
-				node = updateChildNodes(node, prependNodes, appendNodes)
+				node = updatePending(node, prependNodes, appendNodes)
 			}
 		}
 
@@ -257,9 +317,9 @@ export namespace Interpolator {
 			}
 		}
 
-		console.log('------')
-		console.log(Helper.getText(Visiting.getNode(index)))
-		console.log(Array.isArray(node) ? node.map(n => Helper.getText(n)) : Helper.getText((node!)))
+		// console.log('-------------------------------------')
+		// console.log(Helper.getText(Visiting.getNode(index)))
+		// console.log(Array.isArray(node) ? node.map(n => Helper.getText(n)) : Helper.getText((node!)))
 
 		return node && Array.isArray(node) && node.length === 1 ? node[0] : node
 	}
@@ -284,45 +344,6 @@ export namespace Interpolator {
 		}
 
 		return node
-	}
-
-
-	/** 
-	 * Update child nodes.
-	 * For only a few type of nodes.
-	 */
-	function updateChildNodes(node: TS.Node, prependNodes: TS.Node[], appendNodes: TS.Node[]): TS.Node {
-		if (ts.isNamedImports(node)) {
-			return factory.updateNamedImports(node, [
-				...prependNodes as TS.ImportSpecifier[],
-				...node.elements,
-				...appendNodes as TS.ImportSpecifier[],
-			])
-		}
-		else if (ts.isVariableDeclarationList(node)) {
-			return factory.updateVariableDeclarationList(node, [
-				...prependNodes as TS.VariableDeclaration[],
-				...node.declarations,
-				...appendNodes as TS.VariableDeclaration[],
-			])
-		}
-		else if (ts.isClassDeclaration(node)) {
-			return factory.updateClassDeclaration(
-				node, 
-				node.modifiers,
-				node.name,
-				node.typeParameters,
-				node.heritageClauses,
-				[
-					...prependNodes as TS.ClassElement[],
-					...node.members,
-					...appendNodes as TS.ClassElement[],
-				]
-			)
-		}
-		else {
-			throw new Error(`Don't know how to add child nodes for "${Helper.getText(node)}"!`)
-		}
 	}
 
 	/** Try to replace node to make it can contain neighbor nodes. */

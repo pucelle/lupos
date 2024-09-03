@@ -22,7 +22,10 @@ class TestAliasArrayTypeOfProp extends Component {
 class TestArrayBroadcastingObservedToEachFn extends Component {
     prop = [{ value: 1 }];
     eachArrowFnNoBlocking() {
-        this.prop.forEach(v => { trackSet(v, "value"); return v.value += 1; });
+        this.prop.forEach(v => {
+            trackSet(v, "value");
+            return v.value += 1;
+        });
     }
     eachArrowFn() {
         this.prop.forEach(v => { v.value += 1; trackSet(v, "value"); });

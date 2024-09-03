@@ -109,6 +109,16 @@ export namespace Visiting {
 		return ChildMap.get(parentIndex)!
 	}
 
+	/** Get all child visiting indices. */
+	export function getChildNodes(parentIndex: number): TS.Node[] | undefined {
+		let childIndices = ChildMap.get(parentIndex)
+		if (childIndices === undefined) {
+			return undefined
+		}
+
+		return childIndices.map(index => NodeMap.get(index)!)
+	}
+
 	/** Get parent visiting index by child visiting index. */
 	export function getParentIndex(childIndex: number): number | undefined {
 		return ParentMap.get(childIndex)!

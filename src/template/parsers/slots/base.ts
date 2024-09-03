@@ -4,7 +4,7 @@ import {TreeParser} from '../tree'
 import {factory, Helper, Modifier, Scoping, TemplateSlotPlaceholder, ts} from '../../../base'
 import {VariableNames} from '../variable-names'
 import {TemplateParser} from '../template'
-import {SlotPositionType} from '../../enums'
+import {SlotPositionType} from '../../../enums'
 
 
 export abstract class SlotParserBase {

@@ -3,7 +3,7 @@ import {TreeParser} from '../tree'
 import {SlotParserBase} from './base'
 import {factory, Modifier, ts} from '../../../base'
 import {VariableNames} from '../variable-names'
-import {SlotContentType, SlotPositionType} from '../../enums'
+import {SlotContentType, SlotPositionType} from '../../../enums'
 
 
 export class SlotTagSlotParser extends SlotParserBase {

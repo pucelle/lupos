@@ -1,6 +1,6 @@
 import {SlotParserBase} from './base'
 import {factory, Helper, ts} from '../../../base'
-import {SlotContentType} from '../../enums'
+import {SlotContentType} from '../../../enums'
 
 
 export class ContentSlotParser extends SlotParserBase {

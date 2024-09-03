@@ -4,7 +4,7 @@ import {HTMLNode, HTMLNodeType, HTMLRoot} from '../html-syntax'
 import {factory, Helper, Modifier, TemplateSlotPlaceholder, ts} from '../../base'
 import {SlotParserBase} from './slots'
 import {VariableNames} from './variable-names'
-import {SlotPositionType} from '../enums'
+import {SlotPositionType} from '../../enums'
 import {HTMLOutputHandler} from './html-output'
 import {TemplateParser} from './template'
 
