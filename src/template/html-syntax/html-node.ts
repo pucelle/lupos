@@ -210,7 +210,7 @@ export class HTMLNode {
 	private toStringOfAttrs(includeRemoved: boolean): string {
 		let joined: string[] = []
 
-		for (let {name, value, removed} of this.attrs!) {
+		for (let {name, value, removed, quoted} of this.attrs!) {
 			if (!includeRemoved && removed) {
 				continue
 			}
@@ -219,7 +219,7 @@ export class HTMLNode {
 				joined.push(name)
 			}
 			else {
-				if (TemplateSlotPlaceholder.hasSlotIndex(value)) {
+				if (TemplateSlotPlaceholder.isCompleteSlotIndex(value) && !quoted) {
 					joined.push(name + "=" + value)
 				}
 				else if (value.includes('"')) {

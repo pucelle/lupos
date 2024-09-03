@@ -3,7 +3,7 @@ import { trackGet } from "@pucelle/ff";
 const $html_0 = new HTMLMaker("<div></div>");
 /*
 <root>
-    <div :class=${this.className} className2 />
+    <div :class="${this.className} className2" />
 </root>
 */ const $template_0 = new TemplateMaker($context => {
     let $latest_0;
@@ -41,7 +41,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 });
 /*
 <root>
-    <div :class=${this.booleanValue} />
+    <div :class="${this.booleanValue}" />
 </root>
 */ const $template_2 = new TemplateMaker($context => {
     let $latest_0;
@@ -98,7 +98,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 });
 /*
 <root>
-    <div :class.prop=${this.booleanValue} />
+    <div :class.className=${this.booleanValue} />
 </root>
 */ const $template_5 = new TemplateMaker($context => {
     let $latest_0;
@@ -110,7 +110,7 @@ const $html_0 = new HTMLMaker("<div></div>");
         position: new SlotPosition(2, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {
-                $binding_0.updateObject({ prop: $values[0] });
+                $binding_0.updateObject({ className: $values[0] });
                 $latest_0 = $values[0];
             }
         }
@@ -118,7 +118,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 });
 /*
 <root>
-    <div :class=${'className'} className2 />
+    <div :class="${'className'} className2" />
 </root>
 */ const $template_6 = new TemplateMaker($context => {
     let $node = $html_0.make();
@@ -174,13 +174,13 @@ const $html_0 = new HTMLMaker("<div></div>");
 });
 /*
 <root>
-    <div :class.prop=${true} />
+    <div :class.className=${true} />
 </root>
 */ const $template_10 = new TemplateMaker($context => {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $binding_0 = new ClassBinding($node_0);
-    $binding_0.updateObject({ prop: true });
+    $binding_0.updateObject({ className: true });
     return {
         el: $node,
         position: new SlotPosition(2, $node_0)
@@ -201,7 +201,7 @@ class TestClassBinding extends Component {
         trackGet(this, "booleanValue");
         return new CompiledTemplateResult($template_2, [this.booleanValue]);
     }
-    testArray() {
+    testList() {
         trackGet(this, "className");
         return new CompiledTemplateResult($template_3, [[this.className]]);
     }
@@ -221,7 +221,7 @@ class TestStaticClassBinding extends Component {
     testString() {
         return new CompiledTemplateResult($template_7, []);
     }
-    testArray() {
+    testList() {
         return new CompiledTemplateResult($template_8, []);
     }
     testObject() {

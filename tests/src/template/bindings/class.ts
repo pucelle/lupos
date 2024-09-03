@@ -18,7 +18,7 @@ class TestClassBinding extends Component {
 		return html`<div :class="${this.booleanValue}" />`
 	}
 
-	testArray() {
+	testList() {
 		return html`<div :class=${[this.className]} />`
 	}
 
@@ -27,7 +27,7 @@ class TestClassBinding extends Component {
 	}
 
 	testModifier() {
-		return html`<div :class.prop=${this.booleanValue} />`
+		return html`<div :class.className=${this.booleanValue} />`
 	}
 }
 
@@ -42,7 +42,7 @@ class TestStaticClassBinding extends Component {
 		return html`<div :class=${'className'} />`
 	}
 
-	testArray() {
+	testList() {
 		return html`<div :class=${['className']} />`
 	}
 
@@ -51,6 +51,6 @@ class TestStaticClassBinding extends Component {
 	}
 
 	testModifier() {
-		return html`<div :class.prop=${true} />`
+		return html`<div :class.className=${true} />`
 	}
 }

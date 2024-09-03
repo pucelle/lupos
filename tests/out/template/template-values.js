@@ -3,7 +3,7 @@ import { trackGet } from "@pucelle/ff";
 const $html_0 = new HTMLMaker("<div></div>");
 /*
 <root>
-    <div attr=${'className'} />
+    <div attr="${'className'}" />
 </root>
 */ const $template_0 = new TemplateMaker($context => {
     let $node = $html_0.make();
@@ -104,7 +104,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 });
 /*
 <root>
-    <div attr=name1 ${this.prop} name2 $LUPOS_SLOT_INDEX_1$ />
+    <div attr="name1 ${this.prop} name2 $LUPOS_SLOT_INDEX_1$" />
 </root>
 */ const $template_7 = new TemplateMaker($context => {
     let $latest_0;
@@ -122,7 +122,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 });
 /*
 <root>
-    <div attr=${this.prop} attr2=$LUPOS_SLOT_INDEX_1$ />
+    <div attr="${this.prop}" attr2=$LUPOS_SLOT_INDEX_1$ />
 </root>
 */ const $template_8 = new TemplateMaker($context => {
     let $latest_0, $latest_1;

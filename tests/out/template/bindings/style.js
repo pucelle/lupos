@@ -3,7 +3,7 @@ import { trackGet } from "@pucelle/ff";
 const $html_0 = new HTMLMaker("<div></div>");
 /*
 <root>
-    <div :style=color: ${this.styleValue} />
+    <div :style="color: ${this.styleValue}" />
 </root>
 */ const $template_0 = new TemplateMaker($context => {
     let $latest_0;
@@ -41,7 +41,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 });
 /*
 <root>
-    <div :style=${this.numericValue} />
+    <div :style="${this.numericValue}" />
 </root>
 */ const $template_2 = new TemplateMaker($context => {
     let $latest_0;
@@ -159,7 +159,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 });
 /*
 <root>
-    <div :style=color: ${'red'} />
+    <div :style="color: ${'red'}" />
 </root>
 */ const $template_8 = new TemplateMaker($context => {
     let $node = $html_0.make();

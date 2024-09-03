@@ -3,7 +3,7 @@ import { trackGet } from "@pucelle/ff";
 const $html_0 = new HTMLMaker("<div></div>");
 /*
 <root>
-    <div class=${this.className} className2 />
+    <div class="${this.className} className2" />
 </root>
 */ const $template_0 = new TemplateMaker($context => {
     let $latest_0;
