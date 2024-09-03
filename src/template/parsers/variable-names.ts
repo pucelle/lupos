@@ -1,4 +1,4 @@
-import {DoubleKeysMap} from "../../../utils"
+import {DoubleKeysMap} from "../../utils"
 
 export namespace VariableNames {
 

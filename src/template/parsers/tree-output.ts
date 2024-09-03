@@ -1,7 +1,7 @@
 import type TS from 'typescript'
 import {TreeParser} from './tree'
 import {HTMLNode, HTMLNodeType, HTMLRoot} from '../html-syntax'
-import {factory, Helper, Modifier, TemplateSlotPlaceholder, ts} from '../../../base'
+import {factory, Helper, Modifier, TemplateSlotPlaceholder, ts} from '../../base'
 import {SlotParserBase} from './slots'
 import {VariableNames} from './variable-names'
 import {SlotPositionType} from '../enums'

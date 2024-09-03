@@ -1,4 +1,4 @@
-import {factory, Modifier, ts} from '../../../../base'
+import {factory, Modifier, ts} from '../../../base'
 import {FlowControlBase} from './base'
 import {VariableNames} from '../variable-names'
 

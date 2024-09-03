@@ -1,6 +1,6 @@
 import type TS from 'typescript'
-import {Helper, TemplateSlotPlaceholder} from '../../../base'
-import {removeFromList} from '../../../utils'
+import {Helper, TemplateSlotPlaceholder} from '../../base'
+import {removeFromList} from '../../utils'
 import {HTMLAttribute, HTMLToken, HTMLTokenParser} from './html-token-parser'
 
 

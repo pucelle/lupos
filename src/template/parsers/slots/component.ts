@@ -1,7 +1,7 @@
 import type TS from 'typescript'
 import {SlotParserBase} from './base'
-import {factory} from '../../../../base'
-import {cleanList} from '../../../../utils'
+import {factory} from '../../../base'
+import {cleanList} from '../../../utils'
 
 
 export class ComponentSlotParser extends SlotParserBase {

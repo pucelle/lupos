@@ -1,4 +1,4 @@
-import {Helper, TemplateSlotPlaceholder} from '../../../base'
+import {Helper, TemplateSlotPlaceholder} from '../../base'
 import {HTMLNode, HTMLNodeType, HTMLRoot, HTMLNodeReferences} from '../html-syntax'
 import {SlotParserBase, DynamicComponentSlotParser, FlowControlSlotParser, PropertySlotParser, BindingSlotParser, EventSlotParser, AttributeSlotParser, TextSlotParser, ContentSlotParser, ComponentSlotParser, SlotTagSlotParser, TemplateAttributeSlotParser} from './slots'
 import {TemplateParser} from './template'

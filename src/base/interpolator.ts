@@ -196,7 +196,7 @@ export namespace Interpolator {
 
 		let i = -1
 
-		return ts.visitEachChild(node, (r) => {
+		return ts.visitEachChild(node, () => {
 			return output(childIndices![++i])
 		}, transformContext)
 	}

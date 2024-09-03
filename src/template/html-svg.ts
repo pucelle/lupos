@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {Helper, defineVisitor, ts, Interpolator, InterpolationContentType, TemplateSlotPlaceholder} from '../../base'
+import {Helper, defineVisitor, ts, Interpolator, InterpolationContentType, TemplateSlotPlaceholder} from '../base'
 import {TemplateParser} from './parsers'
 import {VariableNames} from './parsers/variable-names'
 

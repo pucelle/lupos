@@ -1,7 +1,7 @@
 import type TS from 'typescript'
-import {definePreVisitCallback, factory, Modifier, ts} from '../../../base'
+import {definePreVisitCallback, factory, Modifier, ts} from '../../base'
 import {TreeParser} from './tree'
-import {DoubleKeysMap} from '../../../utils'
+import {DoubleKeysMap} from '../../utils'
 import {VariableNames} from './variable-names'
 
 

@@ -1,5 +1,5 @@
 import {SlotParserBase} from './base'
-import {factory, Helper, ts} from '../../../../base'
+import {factory, Helper, ts} from '../../../base'
 import {SlotContentType} from '../../enums'
 
 

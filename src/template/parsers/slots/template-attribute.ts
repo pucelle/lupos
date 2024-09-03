@@ -1,7 +1,7 @@
 import {SlotParserBase} from './base'
-import {factory, ts} from '../../../../base'
+import {factory, ts} from '../../../base'
 import {VariableNames} from '../variable-names'
-import {cleanList} from '../../../../utils'
+import {cleanList} from '../../../utils'
 
 
 export class TemplateAttributeSlotParser extends SlotParserBase {

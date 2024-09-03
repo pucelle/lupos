@@ -1,6 +1,6 @@
 import type TS from 'typescript'
 import {SlotParserBase} from './base'
-import {factory, Helper, TemplateSlotPlaceholder, ts} from '../../../../base'
+import {factory, Helper, TemplateSlotPlaceholder, ts} from '../../../base'
 
 
 export class PropertySlotParser extends SlotParserBase {

@@ -2,7 +2,7 @@ import type TS from 'typescript'
 import {HTMLNode, HTMLRoot} from '../html-syntax'
 import {TreeParser} from './tree'
 import {TemplateValues} from './template-values'
-import {factory, Modifier} from '../../../base'
+import {factory, Modifier} from '../../base'
 
 
 export type TemplateType = 'html' | 'svg'

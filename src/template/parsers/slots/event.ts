@@ -1,6 +1,6 @@
 import type TS from 'typescript'
 import {SlotParserBase} from './base'
-import {factory, Helper, Modifier, TemplateSlotPlaceholder, ts} from '../../../../base'
+import {factory, Helper, Modifier, TemplateSlotPlaceholder, ts} from '../../../base'
 import {VariableNames} from '../variable-names'
 
 

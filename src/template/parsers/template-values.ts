@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {factory, Helper, Interpolator, MutableMask, Scoping, ts} from '../../../base'
+import {factory, Helper, Interpolator, MutableMask, Scoping, ts} from '../../base'
 import {VariableNames} from './variable-names'
 import {TemplateParser} from './template'
 

@@ -1,5 +1,5 @@
 import {SlotParserBase} from './base'
-import {factory, ts} from '../../../../base'
+import {factory, ts} from '../../../base'
 
 
 export class TextSlotParser extends SlotParserBase {

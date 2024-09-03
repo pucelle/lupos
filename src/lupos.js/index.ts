@@ -1,3 +1,3 @@
 import './content-slot'
 import './css'
-import './template'
+import '../template'

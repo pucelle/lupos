@@ -1,8 +1,8 @@
 import type TS from 'typescript'
 import {SlotParserBase} from './base'
-import {factory, ts, Helper, TemplateSlotPlaceholder, Scoping} from '../../../../base'
+import {factory, ts, Helper, TemplateSlotPlaceholder, Scoping} from '../../../base'
 import {VariableNames} from '../variable-names'
-import {addToList, toCamelCase, toCapitalize} from '../../../../utils'
+import {addToList, toCamelCase, toCapitalize} from '../../../utils'
 
 
 export class BindingSlotParser extends SlotParserBase {
