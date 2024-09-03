@@ -55,83 +55,11 @@ const $html_0 = new HTMLMaker("<div></div>");
         parts: [$slot_0]
     };
 });
-const $html_1 = new HTMLMaker("<div> </div>");
-/*
-<root>
-    <div>${'abc'}</div>
-</root>
-*/ const $template_4 = new TemplateMaker($context => {
-    let $node = $html_1.make();
-    let $node_0 = $node.content.firstChild;
-    let $node_1 = $node_0.firstChild;
-    $node_1.data = 'abc';
-    return {
-        el: $node,
-        position: new SlotPosition(2, $node_0)
-    };
-});
-/*
-<root>
-    <div>${this.stringProp}</div>
-</root>
-*/ const $template_5 = new TemplateMaker($context => {
-    let $latest_0;
-    let $node = $html_1.make();
-    let $node_0 = $node.content.firstChild;
-    let $node_1 = $node_0.firstChild;
-    return {
-        el: $node,
-        position: new SlotPosition(2, $node_0),
-        update($values) {
-            if ($latest_0 !== $values[0]) {
-                $node_1.data = $latest_0 = $values[0];
-            }
-        }
-    };
-});
-/*
-<root>
-    <div>${this.getStringProp()}</div>
-</root>
-*/ const $template_6 = new TemplateMaker($context => {
-    let $latest_0;
-    let $node = $html_1.make();
-    let $node_0 = $node.content.firstChild;
-    let $node_1 = $node_0.firstChild;
-    return {
-        el: $node,
-        position: new SlotPosition(2, $node_0),
-        update($values) {
-            if ($latest_0 !== $values[0]) {
-                $node_1.data = $latest_0 = $values[0];
-            }
-        }
-    };
-});
-/*
-<root>
-    <div>${this.numericProp}</div>
-</root>
-*/ const $template_7 = new TemplateMaker($context => {
-    let $latest_0;
-    let $node = $html_1.make();
-    let $node_0 = $node.content.firstChild;
-    let $node_1 = $node_0.firstChild;
-    return {
-        el: $node,
-        position: new SlotPosition(2, $node_0),
-        update($values) {
-            if ($latest_0 !== $values[0]) {
-                $node_1.data = $latest_0 = $values[0];
-            }
-        }
-    };
-});
 /*
 <root>
     <div />
 </root>
-*/ const $template_8 = new TemplateMaker($context => {
+*/ const $template_4 = new TemplateMaker($context => {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     return {
@@ -143,7 +71,7 @@ const $html_1 = new HTMLMaker("<div> </div>");
 <root>
     <div />
 </root>
-*/ const $template_9 = new TemplateMaker($context => {
+*/ const $template_5 = new TemplateMaker($context => {
     let $latest_0;
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
@@ -161,7 +89,7 @@ const $html_1 = new HTMLMaker("<div> </div>");
 <root>
     <div />
 </root>
-*/ const $template_10 = new TemplateMaker($context => {
+*/ const $template_6 = new TemplateMaker($context => {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     return {
@@ -169,25 +97,24 @@ const $html_1 = new HTMLMaker("<div> </div>");
         position: new SlotPosition(2, $node_0)
     };
 });
-const $html_2 = new HTMLMaker("<div> <!----> <!----> </div>");
+const $html_1 = new HTMLMaker("<div> <!----> </div>");
 /*
 <root>
     <div>
 
 
-
     </div>
 </root>
-*/ const $template_11 = new TemplateMaker($context => {
-    let $node = $html_2.make();
+*/ const $template_7 = new TemplateMaker($context => {
+    let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
-    let $node_1 = $node_0.childNodes[1];
-    let $node_2 = $node_0.childNodes[3];
+    let $node_1 = $node_0.firstChild;
+    let $node_2 = $node_0.childNodes[1];
     let $slot_0 = new TemplateSlot(new SlotPosition(2, $node_1), $context, 2);
     let $slot_1 = new TemplateSlot(new SlotPosition(2, $node_2), $context, 0);
     let $slot_2 = new TemplateSlot(new SlotPosition(1, $node_0), $context, 2);
     $slot_0.update('1');
-    $slot_1.update(new CompiledTemplateResult($template_10, []));
+    $slot_1.update(new CompiledTemplateResult($template_6, []));
     $slot_2.update('1');
     return {
         el: $node,
@@ -199,35 +126,17 @@ class TestContent extends Component {
     stringProp = '1';
     numericProp = 1;
     booleanProp = true;
-    getStringProp() {
-        trackGet(this, "stringProp");
-        return this.stringProp;
-    }
     testTemplateResultContent() {
         return new CompiledTemplateResult($template_1, []);
     }
     testTemplateResultListContent() {
         return new CompiledTemplateResult($template_3, []);
     }
-    testTextContent() {
-        return new CompiledTemplateResult($template_4, []);
-    }
-    testStringContent() {
-        trackGet(this, "stringProp");
-        return new CompiledTemplateResult($template_5, [this.stringProp]);
-    }
-    testStringMethodContent() {
-        return new CompiledTemplateResult($template_6, [this.getStringProp()]);
-    }
-    testNumericContent() {
-        trackGet(this, "numericProp");
-        return new CompiledTemplateResult($template_7, [this.numericProp]);
-    }
     testMixedContent() {
         trackGet(this, "booleanProp");
-        return new CompiledTemplateResult($template_9, [this.booleanProp ? '1' : new CompiledTemplateResult($template_8, [])]);
+        return new CompiledTemplateResult($template_5, [this.booleanProp ? '1' : new CompiledTemplateResult($template_4, [])]);
     }
     testMultipleContents() {
-        return new CompiledTemplateResult($template_11, []);
+        return new CompiledTemplateResult($template_7, []);
     }
 }

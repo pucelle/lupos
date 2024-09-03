@@ -64,8 +64,6 @@ export namespace HTMLTokenParser {
 	 * Automatically transform `<tag />` to `<tag></tag>` for not self close tags.
 	 */
 	export function parseToTokens(string: string): HTMLToken[] {
-		string = trimText(string)
-
 		let lastIndex = 0
 		let tokens: HTMLToken[] = []
 		let match: RegExpExecArray | null
@@ -75,7 +73,7 @@ export namespace HTMLTokenParser {
 
 			// Intermediate Text
 			if (match.index > lastIndex) {
-				let text = string.slice(lastIndex, match.index)
+				let text = trimText(string.slice(lastIndex, match.index))
 				if (text) {
 					tokens.push({
 						type: HTMLTokenType.Text,
@@ -124,11 +122,11 @@ export namespace HTMLTokenParser {
 		}
 
 		if (lastIndex < string.length) {
-			let text = string.slice(lastIndex)
+			let text = trimText(string.slice(lastIndex))
 			if (text) {
 				tokens.push({
 					type: HTMLTokenType.Text,
-					text: string.slice(lastIndex),
+					text,
 				})
 			}
 		}

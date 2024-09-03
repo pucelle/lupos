@@ -1,22 +1,29 @@
-import {Component, html, ClassBinding} from '@pucelle/lupos.js'
+import {Component, html} from '@pucelle/lupos.js'
 
 
 class TestText extends Component {
 
-	prop: number = 1
+	stringProp: string = '1'
+	numericProp: number = 1
+	booleanProp: boolean = true
 
-	testComponent() {
-		return html`<ChildComponent
-			:class=${'className'}
-			.prop=${this.prop}
-		/>`
+	getStringProp() {
+		return this.stringProp
 	}
 
-	testRestSlotContent() {
-		return html`<ChildComponent>Rest Content</ChildComponent>`
+	testStaticText() {
+		return html`<div>${'abc'}</div>`
 	}
 
-	testRestSlotContentWithPrecedingSlot() {
-		return html`<ChildComponent>${this.prop}Rest Content</ChildComponent>`
+	testStringProp() {
+		return html`<div>${this.stringProp}</div>`
+	}
+
+	testStringMethod() {
+		return html`<div>${this.getStringProp()}</div>`
+	}
+
+	testNumericProp() {
+		return html`<div>${this.numericProp}</div>`
 	}
 }

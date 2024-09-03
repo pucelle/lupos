@@ -3,19 +3,21 @@ import { trackGet } from "@pucelle/ff";
 const $html_0 = new HTMLMaker("<div></div>");
 /*
 <root>
-    <ChildComponent:class ${'className'}.prop=$LUPOS_SLOT_INDEX_1$ />
+    <ChildComponent :class=${'className'} .prop=$LUPOS_SLOT_INDEX_1$ />
 </root>
 */ const $template_0 = new TemplateMaker($context => {
     let $latest_0;
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
-    let $com_0 = new ChildComponent:class($node_0);
+    let $com_0 = new ChildComponent($node_0);
+    let $binding_0 = new ClassBinding($node_0);
+    $binding_0.updateString('className');
     return {
         el: $node,
         position: new SlotPosition(2, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {
-                $node_0.setAttribute("", $latest_0 = $values[0]);
+                $com_0.prop = $latest_0 = $values[0];
             }
         },
         parts: [$com_0]
