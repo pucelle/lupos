@@ -20,7 +20,7 @@ const $html_0 = new HTMLMaker("<!----><!---->");
 });
 const $html_1 = new HTMLMaker("Pending Content");
 /*
-<root></root>
+<root>Pending Content</root>
 */ const $template_1 = new TemplateMaker($context => {
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
@@ -31,7 +31,7 @@ const $html_1 = new HTMLMaker("Pending Content");
 });
 const $html_2 = new HTMLMaker("Then Content");
 /*
-<root></root>
+<root>Then Content</root>
 */ const $template_2 = new TemplateMaker($context => {
     let $node = $html_2.make();
     let $node_0 = $node.content.firstChild;
@@ -58,7 +58,7 @@ const $html_2 = new HTMLMaker("Then Content");
     };
 });
 /*
-<root></root>
+<root>Pending Content</root>
 */ const $template_4 = new TemplateMaker($context => {
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
@@ -69,7 +69,7 @@ const $html_2 = new HTMLMaker("Then Content");
 });
 const $html_3 = new HTMLMaker("Catch Content");
 /*
-<root></root>
+<root>Catch Content</root>
 */ const $template_5 = new TemplateMaker($context => {
     let $node = $html_3.make();
     let $node_0 = $node.content.firstChild;
@@ -96,7 +96,7 @@ const $html_3 = new HTMLMaker("Catch Content");
     };
 });
 /*
-<root></root>
+<root>Pending Content</root>
 */ const $template_7 = new TemplateMaker($context => {
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
@@ -106,7 +106,7 @@ const $html_3 = new HTMLMaker("Catch Content");
     };
 });
 /*
-<root></root>
+<root>Then Content</root>
 */ const $template_8 = new TemplateMaker($context => {
     let $node = $html_2.make();
     let $node_0 = $node.content.firstChild;
@@ -116,7 +116,7 @@ const $html_3 = new HTMLMaker("Catch Content");
     };
 });
 /*
-<root></root>
+<root>Catch Content</root>
 */ const $template_9 = new TemplateMaker($context => {
     let $node = $html_3.make();
     let $node_0 = $node.content.firstChild;

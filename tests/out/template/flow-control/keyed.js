@@ -20,7 +20,7 @@ const $html_0 = new HTMLMaker("<!----><!---->");
 });
 const $html_1 = new HTMLMaker("Keyed Content");
 /*
-<root></root>
+<root>Keyed Content</root>
 */ const $template_1 = new TemplateMaker($context => {
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;

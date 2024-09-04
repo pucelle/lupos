@@ -26,7 +26,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 const $html_1 = new HTMLMaker("<div>Rest Content</div>");
 /*
 <root>
-    <ChildComponent></ChildComponent>
+    <ChildComponent>Rest Content</ChildComponent>
 </root>
 */ const $template_1 = new TemplateMaker($context => {
     let $node = $html_1.make();

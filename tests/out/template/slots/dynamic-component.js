@@ -23,7 +23,7 @@ const $html_0 = new HTMLMaker("<!----><div></div><!---->");
 const $html_1 = new HTMLMaker("<!----><div>Content</div><!---->");
 /*
 <root>
-    <${ChildComponent}></>
+    <${ChildComponent}>Content</>
 </root>
 */ const $template_1 = new TemplateMaker($context => {
     let $com_0;

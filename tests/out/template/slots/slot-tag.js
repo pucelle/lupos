@@ -42,7 +42,7 @@ const $html_0 = new HTMLMaker("<div><slot name=\"slotName\"></slot></div>");
 });
 const $html_1 = new HTMLMaker("Content");
 /*
-<root></root>
+<root>Content</root>
 */ const $template_2 = new TemplateMaker($context => {
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;

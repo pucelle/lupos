@@ -178,7 +178,7 @@ export class HTMLNode {
 	toReadableString(rawNodes: TS.Node[], tab = ''): string {
 		if (this.type === HTMLNodeType.Tag) {
 			let tagName = this.tagName!
-			let children = this.children.filter(child => child.type !== HTMLNodeType.Comment || child.desc)
+			let children = this.children.filter(child => child.type === HTMLNodeType.Tag || child.desc || child.text)
 
 			let wrap = children.length === 0
 				|| children.length === 1 && this.firstChild!.type === HTMLNodeType.Text
@@ -203,6 +203,9 @@ export class HTMLNode {
 				tab + this.desc,
 				(index: number) => '${' + Helper.getText(rawNodes[index]) + '}'
 			)
+		}
+		else if (this.type === HTMLNodeType.Text && this.text) {
+			return this.text
 		}
 		else {
 			return ''
