@@ -52,12 +52,14 @@ export class HTMLNode {
 		return index >= 0 && index < this.children.length ? this.children[index] : null
 	}
 
-	before(sibling: HTMLNode) {
-		this.parent!.children.splice(this.siblingIndex, 0, sibling)
+	before(...siblings: HTMLNode[]) {
+		this.parent!.children.splice(this.siblingIndex, 0, ...siblings)
+		siblings.forEach(s => s.setParent(this.parent))
 	}
 
-	after(sibling: HTMLNode) {
-		this.parent!.children.splice(this.siblingIndex + 1, 0, sibling)
+	after(...siblings: HTMLNode[]) {
+		this.parent!.children.splice(this.siblingIndex + 1, 0, ...siblings)
+		siblings.forEach(s => s.setParent(this.parent))
 	}
 
 	get previousSibling() {
@@ -176,7 +178,7 @@ export class HTMLNode {
 	toReadableString(rawNodes: TS.Node[], tab = ''): string {
 		if (this.type === HTMLNodeType.Tag) {
 			let tagName = this.tagName!
-			let children = this.children.filter(child => child.type !== HTMLNodeType.Comment)
+			let children = this.children.filter(child => child.type !== HTMLNodeType.Comment || child.desc)
 
 			let wrap = children.length === 0
 				|| children.length === 1 && this.firstChild!.type === HTMLNodeType.Text

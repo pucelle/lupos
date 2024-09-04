@@ -3,8 +3,6 @@ import {Component, html} from '@pucelle/lupos.js'
 
 class TestContent extends Component {
 
-	stringProp: string = '1'
-	numericProp: number = 1
 	booleanProp: boolean = true
 
 	testTemplateResultContent() {

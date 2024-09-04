@@ -101,8 +101,9 @@ const $html_1 = new HTMLMaker("<div> <!----> </div>");
 /*
 <root>
     <div>
-
-
+        ${'1'}
+        ${html`<div></div>`}
+         ${'1'}
     </div>
 </root>
 */ const $template_7 = new TemplateMaker($context => {
@@ -110,21 +111,18 @@ const $html_1 = new HTMLMaker("<div> <!----> </div>");
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node_0.firstChild;
     let $node_2 = $node_0.childNodes[1];
-    let $slot_0 = new TemplateSlot(new SlotPosition(2, $node_1), $context, 2);
-    let $slot_1 = new TemplateSlot(new SlotPosition(2, $node_2), $context, 0);
-    let $slot_2 = new TemplateSlot(new SlotPosition(1, $node_0), $context, 2);
-    $slot_0.update('1');
-    $slot_1.update(new CompiledTemplateResult($template_6, []));
-    $slot_2.update('1');
+    let $node_3 = $node_0.lastChild;
+    let $slot_0 = new TemplateSlot(new SlotPosition(2, $node_2), $context, 0);
+    $node_1.data = '1' + " ";
+    $slot_0.update(new CompiledTemplateResult($template_6, []));
+    $node_3.data = " " + '1';
     return {
         el: $node,
         position: new SlotPosition(2, $node_0),
-        parts: [$slot_0, $slot_1, $slot_2]
+        parts: [$slot_0]
     };
 });
 class TestContent extends Component {
-    stringProp = '1';
-    numericProp = 1;
     booleanProp = true;
     testTemplateResultContent() {
         return new CompiledTemplateResult($template_1, []);

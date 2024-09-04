@@ -220,7 +220,7 @@ export class TreeParser {
 			// `<tag ...=${...}>
 			// `<tag ...="...${...}...">
 			let strings = value !== null ? TemplateSlotPlaceholder.parseTemplateStrings(value, quoted) : null
-			let slotIndices = value !== null ? TemplateSlotPlaceholder.getSlotIndices(value) : null
+			let valueIndices = value !== null ? TemplateSlotPlaceholder.getSlotIndices(value) : null
 
 			switch (name[0]) {
 				case '.':
@@ -236,7 +236,7 @@ export class TreeParser {
 					break
 
 				default:
-					if (slotIndices) {
+					if (valueIndices) {
 						type = SlotType.Attribute
 					}
 			}
@@ -253,7 +253,7 @@ export class TreeParser {
 				name = name.slice(1)
 			}
 
-			this.addSlot(type, name, strings, slotIndices, node)
+			this.addSlot(type, name, strings, valueIndices, node)
 			node.removeAttr(attr)
 		}
 	}
@@ -267,54 +267,138 @@ export class TreeParser {
 			return
 		}
 
-		let strings = TemplateSlotPlaceholder.parseTemplateStrings(text)
-		let slotIndices = TemplateSlotPlaceholder.getSlotIndices(text)!
-
-		// `>{textValue}<` or
-		// `>${html`...`}<`
-		let joinAsAWholeText = slotIndices.every(index => {
-			return Helper.types.isValueType(Helper.types.getType(this.template.values.getRawNode(index)))
-		})
+		// Joins all string parts.
+		let group = this.groupTextContent(text)
 
 		// Whole text of `...${...}...`
-		if (joinAsAWholeText) {
-			this.addSlot(SlotType.Text, null, strings, slotIndices, node)
-			node.desc = TemplateSlotPlaceholder.joinStringsAndValueIndices(strings, slotIndices)
+		if (group.length === 1 && group[0].beText) {
+			let {strings, valueIndices} = group[0]
+
+			node.desc = TemplateSlotPlaceholder.joinStringsAndValueIndices(strings, valueIndices)
 			node.text = ' '
+			this.addSlot(SlotType.Text, null, strings, valueIndices, node)
 		}
 
-		// Text, Comment, Text, Comment...
-		else if (strings) {
-			let mixedNodes: HTMLNode[] = []
+		// `${html`...`}`
+		else if (group.length === 1 && group[0].beText) {
+			let {valueIndices} = group[0]
 
-			for (let i = 0; i < strings.length; i++) {
-				let string = strings[i]
-				if (string) {
-					mixedNodes.push(new HTMLNode(HTMLNodeType.Text, {text: string}))
+			let comment = new HTMLNode(HTMLNodeType.Comment, {})
+			comment.desc = TemplateSlotPlaceholder.joinStringsAndValueIndices(null, valueIndices)
+			node.replaceWith(comment)
+
+			this.addSlot(SlotType.Content, null, null, valueIndices, comment)
+		}
+
+		// Mixture of Text, Comment, Text, Comment...
+		else {
+			for (let item of group) {
+				let {strings, valueIndices, beText} = item
+
+				// Text, with dynamic content.
+				if (beText && valueIndices) {
+					let textNode = new HTMLNode(HTMLNodeType.Text, {text: ' '})
+					textNode.desc = TemplateSlotPlaceholder.joinStringsAndValueIndices(strings, valueIndices)
+					node.before(textNode)
+
+					this.addSlot(SlotType.Text, null, strings, valueIndices, textNode)
 				}
 
-				if (i < slotIndices.length) {
-					let comment = new HTMLNode(HTMLNodeType.Comment, {})
-					comment.desc = TemplateSlotPlaceholder.joinStringsAndValueIndices(null, [slotIndices[i]])
+				// Static text.
+				else if (beText) {
+					let textNode = new HTMLNode(HTMLNodeType.Text, {text: strings![0]})
+					textNode.desc = strings![0]
+					node.before(textNode)
+				}
 
-					mixedNodes.push(comment)
-					this.addSlot(SlotType.Content, null, null, [slotIndices[i]], comment)
+				// Dynamic content.
+				else {
+					let comment = new HTMLNode(HTMLNodeType.Comment, {})
+					comment.desc = TemplateSlotPlaceholder.joinStringsAndValueIndices(null, valueIndices)
+					node.before(comment)
+
+					this.addSlot(SlotType.Content, null, null, valueIndices, comment)
 				}
 			}
 
-			node.replaceWith(...mixedNodes)
+			node.remove()
+		}
+	}
+	
+	/** Group to get bundling text part, and content part. */
+	private groupTextContent(text: string) {
+
+		interface TextContentGroupedItem {
+			strings: string[] | null
+			valueIndices: number[] | null
+			beText: boolean | null
 		}
 
-		// A single content.
-		else {
-			let comment = new HTMLNode(HTMLNodeType.Comment, {})
-			comment.desc = TemplateSlotPlaceholder.joinStringsAndValueIndices(null, slotIndices)
+		let strings = TemplateSlotPlaceholder.parseTemplateStrings(text)
+		let valueIndices = TemplateSlotPlaceholder.getSlotIndices(text)!
 
-			this.addSlot(SlotType.Content, null, null, slotIndices, comment)
-			node.replaceWith(comment)
+		// If a value index represents a value type of node, it attracts all neighbor strings.
+		let current: TextContentGroupedItem = {strings: [], valueIndices: [], beText: true}
+		let group: TextContentGroupedItem[] = [current]
+
+		if (!strings) {
+			current.strings = null
+			current.valueIndices = valueIndices
+			current.beText = this.isValueIndexValueType(valueIndices[0])
+
+			return group
 		}
 
-		return text
+		for (let i = 0; i < strings.length; i++) {
+			let string = strings[i]
+			current.strings!.push(string)
+
+			if (i === valueIndices.length) {
+				break
+			}
+
+			let index = valueIndices[i]
+			let beText = this.isValueIndexValueType(index)
+
+			if (beText) {
+				current.valueIndices!.push(index)
+			}
+			else {
+				group.push({strings: null, valueIndices: [index], beText: false})
+				current = {strings: [], valueIndices: [], beText: true}
+				group.push(current)
+			}
+		}
+
+		for (let item of group) {
+			if (item.valueIndices!.length === 0) {
+				item.valueIndices = null
+			}
+			
+			if (item.strings && item.strings.length === 0) {
+				item.strings = null
+			}
+
+			if (item.valueIndices === null
+				&& item.strings
+				&& item.strings.length > 0
+				&& item.strings[0].length === 0
+			) {
+				item.strings = null
+			}
+		}
+
+		return group.filter(item => {
+			return item.strings !== null || item.valueIndices !== null
+		})
+	}
+
+	/** Check whether a value index represents a value type of node. */
+	private isValueIndexValueType(index: number): boolean {
+		let rawNode = this.template.values.getRawNode(index)
+		let type = Helper.types.getType(rawNode)
+
+		return Helper.types.isValueType(type)
 	}
 
 	/** Separate children of a node to an independent tree. */

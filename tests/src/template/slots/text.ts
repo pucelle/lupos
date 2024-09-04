@@ -5,7 +5,6 @@ class TestText extends Component {
 
 	stringProp: string = '1'
 	numericProp: number = 1
-	booleanProp: boolean = true
 
 	getStringProp() {
 		return this.stringProp

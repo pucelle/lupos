@@ -75,7 +75,6 @@ const $html_0 = new HTMLMaker("<div> </div>");
 class TestText extends Component {
     stringProp = '1';
     numericProp = 1;
-    booleanProp = true;
     getStringProp() {
         trackGet(this, "stringProp");
         return this.stringProp;
