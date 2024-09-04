@@ -16,10 +16,6 @@
 		"prepublish": "tsc -b",
 		"test": "cd tests && tspc && echo Compare git changes to get test result!"
 	},
-	"dependencies": {
-		"@pucelle/ff": "^2.0.0",
-		"@pucelle/lupos.js": "^1.0.0"
-	},
 	"devDependencies": {
 		"ts-node": "^10.9.2",
 		"ts-patch": "^3.2.1",
