@@ -52,17 +52,21 @@ const $html_1 = new HTMLMaker("<div></div>");
         position: new SlotPosition(2, $node_0)
     };
 });
+const $html_2 = new HTMLMaker("<div><!----></div>");
 /*
 <root>
     <template attr="value">
-        <div attr=${'value'} />
+        <div attr=${'value'}>
+            ${html`<div />`}
+        </div>
     </template>
 </root>
 */ const $template_4 = new TemplateMaker($context => {
-    let $node = $html_1.make();
+    let $node = $html_2.make();
     let $node_0 = $node.content.firstChild;
+    let $node_1 = $node_0.firstChild;
     $context.el.setAttribute("attr", "value");
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_0), $context, 0);
+    let $slot_0 = new TemplateSlot(new SlotPosition(2, $node_1), $context, 0);
     $node_0.setAttribute("attr", 'value');
     $slot_0.update(new CompiledTemplateResult($template_3, []));
     return {

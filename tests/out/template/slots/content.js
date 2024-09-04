@@ -13,14 +13,18 @@ const $html_0 = new HTMLMaker("<div></div>");
         position: new SlotPosition(2, $node_0)
     };
 });
+const $html_1 = new HTMLMaker("<div><!----></div>");
 /*
 <root>
-    <div />
+    <div>
+        ${html`<div></div>`}
+    </div>
 </root>
 */ const $template_1 = new TemplateMaker($context => {
-    let $node = $html_0.make();
+    let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_0), $context, 0);
+    let $node_1 = $node_0.firstChild;
+    let $slot_0 = new TemplateSlot(new SlotPosition(2, $node_1), $context, 0);
     $slot_0.update(new CompiledTemplateResult($template_0, []));
     return {
         el: $node,
@@ -42,12 +46,15 @@ const $html_0 = new HTMLMaker("<div></div>");
 });
 /*
 <root>
-    <div />
+    <div>
+        ${[html`<div></div>`]}
+    </div>
 </root>
 */ const $template_3 = new TemplateMaker($context => {
-    let $node = $html_0.make();
+    let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_0), $context, 1);
+    let $node_1 = $node_0.firstChild;
+    let $slot_0 = new TemplateSlot(new SlotPosition(2, $node_1), $context, 1);
     $slot_0.update([new CompiledTemplateResult($template_2, [])]);
     return {
         el: $node,
@@ -69,13 +76,16 @@ const $html_0 = new HTMLMaker("<div></div>");
 });
 /*
 <root>
-    <div />
+    <div>
+        ${this.booleanProp ? '1' : html`<div></div>`}
+    </div>
 </root>
 */ const $template_5 = new TemplateMaker($context => {
     let $latest_0;
-    let $node = $html_0.make();
+    let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_0), $context);
+    let $node_1 = $node_0.firstChild;
+    let $slot_0 = new TemplateSlot(new SlotPosition(2, $node_1), $context);
     return {
         el: $node,
         position: new SlotPosition(2, $node_0),
@@ -97,7 +107,7 @@ const $html_0 = new HTMLMaker("<div></div>");
         position: new SlotPosition(2, $node_0)
     };
 });
-const $html_1 = new HTMLMaker("<div> <!----> </div>");
+const $html_2 = new HTMLMaker("<div> <!----> </div>");
 /*
 <root>
     <div>
@@ -107,7 +117,7 @@ const $html_1 = new HTMLMaker("<div> <!----> </div>");
     </div>
 </root>
 */ const $template_7 = new TemplateMaker($context => {
-    let $node = $html_1.make();
+    let $node = $html_2.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node_0.firstChild;
     let $node_2 = $node_0.childNodes[1];

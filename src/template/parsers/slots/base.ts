@@ -209,7 +209,6 @@ export abstract class SlotParserBase {
 	protected getTemplateSlotParameters() {
 		let position: number
 		let nextNode = this.node.nextSibling
-		let parent = this.node.parent!
 		let nodeName: string
 
 		// Use next node to locate.
@@ -220,16 +219,6 @@ export abstract class SlotParserBase {
 			this.node.remove()
 			nodeName = this.treeParser.references.refAsName(nextNode)
 			position = SlotPositionType.Before
-		}
-
-		// Parent is stable enough.
-		// Would be ok although parent is a dynamic component.
-		else if (parent.tagName !== 'root'
-			&& this.canRemoveNode(this.node)
-		) {
-			nodeName = this.treeParser.references.refAsName(parent)
-			this.node.remove()
-			position = SlotPositionType.AfterContent
 		}
 
 		// Use current node to locate.

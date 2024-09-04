@@ -19,20 +19,12 @@ export class DynamicComponentSlotParser extends SlotParserBase {
 	protected getTemplateSlotParameters() {
 		let position: number
 		let nextNode = this.node.nextSibling
-		let parent = this.node.parent!
 		let nodeName: string
 
 		// Use next node to locate.
 		if (nextNode && nextNode.isPrecedingPositionStable()) {
 			nodeName = this.treeParser.references.refAsName(nextNode)
 			position = SlotPositionType.Before
-		}
-
-		// Parent is stable enough.
-		// Would be ok although parent is a dynamic component.
-		else if (parent.tagName !== 'root') {
-			nodeName = this.treeParser.references.refAsName(parent)
-			position = SlotPositionType.AfterContent
 		}
 
 		// Use current node to locate.
