@@ -1,10 +1,10 @@
-import type ts from 'typescript'
+import type TS from 'typescript'
 import type {TransformerExtras, PluginConfig} from 'ts-patch'
+import {transformer} from './base'
 import './ff'
 import './lupos.js'
-import {transformer} from './base'
 
 
-export default function(program: ts.Program, _pluginConfig: PluginConfig, extras: TransformerExtras) {
+export default function(program: TS.Program, _pluginConfig: PluginConfig, extras: TransformerExtras) {
 	return transformer(program, extras)
 }

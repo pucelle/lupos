@@ -900,8 +900,9 @@ export namespace Helper {
 		export function resolveProperty(node: AccessNode): TS.PropertySignature | TS.PropertyDeclaration | undefined {
 			let name = ts.isPropertyAccessExpression(node) ? node.name : node.argumentExpression
 
-			let testFn = ((node: TS.Node) => ts.isPropertySignature(node) || ts.isPropertyDeclaration(node)) as
-				((node: TS.Node) => node is TS.PropertySignature | TS.PropertyDeclaration)
+			let testFn = (node: TS.Node): node is TS.PropertySignature | TS.PropertyDeclaration => {
+				return ts.isPropertySignature(node) || ts.isPropertyDeclaration(node)
+			}
 
 			return resolveDeclaration(name, testFn)
 		}
@@ -912,11 +913,11 @@ export namespace Helper {
 		{
 			let name = ts.isPropertyAccessExpression(node) ? node.name : node.argumentExpression
 
-			let testFn = ((node: TS.Node) => {
+			let testFn = (node: TS.Node): node is TS.PropertySignature | TS.PropertyDeclaration | TS.GetAccessorDeclaration => {
 				return ts.isPropertySignature(node)
 					|| ts.isPropertyDeclaration(node)
 					|| ts.isGetAccessorDeclaration(node)
-			}) as ((node: TS.Node) => node is TS.PropertySignature | TS.PropertyDeclaration | TS.GetAccessorDeclaration)
+			}
 
 			return resolveDeclaration(name, testFn)
 		}
@@ -925,8 +926,9 @@ export namespace Helper {
 		export function resolveMethod(node: AccessNode): TS.MethodSignature | TS.MethodDeclaration | undefined {
 			let name = ts.isPropertyAccessExpression(node) ? node.name : node.argumentExpression
 
-			let testFn = ((node: TS.Node) => ts.isMethodSignature(node) || ts.isMethodDeclaration(node)) as
-				((node: TS.Node) => node is TS.MethodSignature | TS.MethodDeclaration)
+			let testFn = (node: TS.Node): node is TS.MethodSignature | TS.MethodDeclaration => {
+				return ts.isMethodSignature(node) || ts.isMethodDeclaration(node)
+			}
 
 			return resolveDeclaration(name, testFn)
 		}
@@ -935,12 +937,12 @@ export namespace Helper {
 		export function resolveCallDeclaration(node: TS.CallExpression):
 			TS.MethodSignature | TS.MethodDeclaration | TS.FunctionDeclaration | TS.ArrowFunction | undefined
 		{
-			let testFn = (<T extends TS.Node>(node: T) => {
+			let testFn = (node: TS.Node): node is TS.MethodSignature | TS.MethodDeclaration | TS.FunctionDeclaration | TS.ArrowFunction => {
 				return ts.isMethodDeclaration(node)
 					|| ts.isMethodSignature(node)
 					|| ts.isFunctionDeclaration(node)
 					|| ts.isArrowFunction(node)
-			}) as ((node: TS.Node) => node is TS.MethodSignature | TS.MethodDeclaration | TS.FunctionDeclaration | TS.ArrowFunction)
+			}
 
 			return resolveDeclaration(node.expression, testFn)
 		}
@@ -988,7 +990,11 @@ export namespace Helper {
 
 			// Resolve and continue.
 			else {
-				let resolved = resolveDeclarations(node, n => ts.isInterfaceDeclaration(n) || ts.isTypeAliasDeclaration(n))
+				let test = (n: TS.Node): n is TS.InterfaceDeclaration | TS.TypeAliasDeclaration => {
+					return ts.isInterfaceDeclaration(n) || ts.isTypeAliasDeclaration(n)
+				}
+
+				let resolved = resolveDeclarations(node, test)
 				if (resolved) {
 					for (let res of resolved) {
 						yield* resolveChainedInterfaces(res)
@@ -1060,11 +1066,13 @@ export namespace Helper {
 
 			// Resolve and continue.
 			else {
-				let resolved = resolveDeclarations(node, n => {
+				let test = (n: TS.Node): n is TS.InterfaceDeclaration | TS.TypeAliasDeclaration | TS.ClassLikeDeclaration => {
 					return ts.isInterfaceDeclaration(n)
 						|| ts.isTypeAliasDeclaration(n)
 						|| ts.isClassLike(n)
-				})
+				}
+
+				let resolved = resolveDeclarations(node, test)
 				
 				if (resolved) {
 					for (let res of resolved) {
@@ -1099,7 +1107,9 @@ export namespace Helper {
 				// Resolve returned type of constructor `{new()...}`.
 				else {
 					for (let decl of Helper.symbol.resolveChainedInterfaces(typeNode)) {
-						let newCons = decl.members.find(m => ts.isConstructSignatureDeclaration(m) || ts.isConstructorDeclaration(m))
+						let newCons = decl.members.find(m => ts.isConstructSignatureDeclaration(m) || ts.isConstructorDeclaration(m)) as
+							TS.ConstructSignatureDeclaration | TS.ConstructorDeclaration | undefined
+
 						if (!newCons) {
 							continue
 						}
