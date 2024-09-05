@@ -1,4 +1,4 @@
-import {Component, html, SlotBinding} from '@pucelle/lupos.js'
+import {Component, html} from '@pucelle/lupos.js'
 
 
 class TestSlotBinding extends Component {

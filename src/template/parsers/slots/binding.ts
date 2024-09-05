@@ -1,14 +1,27 @@
 import type TS from 'typescript'
 import {SlotParserBase} from './base'
-import {factory, ts, Helper, TemplateSlotPlaceholder, Scoping} from '../../../base'
+import {factory, ts, Helper, TemplateSlotPlaceholder, Scoping, Modifier} from '../../../base'
 import {VariableNames} from '../variable-names'
-import {addToList, toCamelCase, toCapitalize} from '../../../utils'
+import {addToList} from '../../../utils'
+
+
+/** Known bindings from lupos.js. */
+const KnownInternalBindings: Record<string, {name: string, parameterCount: number, implementsPart: boolean}> = {
+	class: {name: 'ClassBinding', parameterCount: 1, implementsPart: false},
+	html: {name: 'HTMLBinding', parameterCount: 1, implementsPart: false},
+	ref: {name: 'RefBinding', parameterCount: 3, implementsPart: true},
+	slot: {name: 'SlotBinding', parameterCount: 1, implementsPart: true},
+	style: {name: 'StyleBinding', parameterCount: 1, implementsPart: false},
+	transition: {name: 'TransitionBinding', parameterCount: 3, implementsPart: true},
+}
 
 
 export class BindingSlotParser extends SlotParserBase {
 
 	declare readonly name: string
 	declare readonly modifiers: string[]
+
+	private bindClassParameterCount: number | null = null
 
 	/** $latest_0 */
 	private latestVariableName: string | null = null
@@ -32,6 +45,54 @@ export class BindingSlotParser extends SlotParserBase {
 		}
 
 		this.bindingVariableName = this.treeParser.getUniqueBindingName()
+		this.initBindingClass()
+	}
+
+	/** Check binding class declaration. */
+	private initBindingClass() {
+		if (KnownInternalBindings[this.name]) {
+			let item = KnownInternalBindings[this.name]
+			
+			// Add as a part.
+			if (item.implementsPart) {
+				this.treeParser.addPartName(this.bindingVariableName)
+			}
+
+			// Import binding class.
+			Modifier.addImport(item.name, '@pucelle/lupos.js') 
+
+			// Remember class parameter count.
+			this.bindClassParameterCount = item.parameterCount
+		}
+
+		else {
+
+			// :bindingName -> bindingName
+			let bindingClassRefNode = Scoping.getNodeByVariableName(this.template.rawNode, this.name)
+
+			// `Import ClassBinding`
+			// `class ClassBinding {...}`
+			if (!bindingClassRefNode
+				|| (
+					!ts.isImportSpecifier(bindingClassRefNode)
+					&& !(ts.isClassDeclaration(bindingClassRefNode))
+				)
+				|| !bindingClassRefNode.name
+			) {
+				throw new Error(`Please make sure to import or declare "${this.name}"!`)
+			}
+
+			let bindingModuleName = Helper.symbol.resolveImport(bindingClassRefNode)
+			let bindingClass = Helper.symbol.resolveDeclaration(bindingClassRefNode, ts.isClassDeclaration)!
+
+			if (bindingClass && Helper.cls.isImplemented(bindingClass, 'Part', '@pucelle/lupos.js', bindingModuleName?.moduleName)) {
+				this.treeParser.addPartName(this.bindingVariableName)
+			}
+
+			let bindingClassParams = bindingClass ? Helper.cls.getConstructorParameters(bindingClass) : null
+
+			this.bindClassParameterCount = bindingClassParams ? bindingClassParams.length : null
+		}
 	}
 
 	private initRef() {
@@ -59,41 +120,17 @@ export class BindingSlotParser extends SlotParserBase {
 
 	outputInit() {
 		let nodeName = this.getRefedNodeName()
-
-		// :class -> ClassBinding
-		let bindingClassRefNode = Scoping.getNodeByVariableName(this.template.rawNode, this.name)
-			|| Scoping.getNodeByVariableName(this.template.rawNode, toCapitalize(toCamelCase(this.name)) + 'Binding')!
-		
-		// `Import ClassBinding`
-		// `class ClassBinding {...}`
-		if (!bindingClassRefNode
-			|| (
-				!ts.isImportSpecifier(bindingClassRefNode)
-				&& !(ts.isClassDeclaration(bindingClassRefNode))
-			)
-			|| !bindingClassRefNode.name
-		) {
-			throw new Error(`Please make sure to import or declare "${this.name}" or "${toCapitalize(toCamelCase(this.name)) + 'Binding'}"`)
-		}
-
-		let bindingClassName = bindingClassRefNode.name.text
-		let bindingModuleName = Helper.symbol.resolveImport(bindingClassRefNode)
-		let bindingClass = Helper.symbol.resolveDeclaration(bindingClassRefNode, ts.isClassDeclaration)!
-
-		if (bindingClass && Helper.cls.isImplemented(bindingClass, 'Part', '@pucelle/lupos.js', bindingModuleName?.moduleName)) {
-			this.treeParser.addPartName(this.bindingVariableName)
-		}
-
-		let bindingClassParams = bindingClass ? Helper.cls.getConstructorParameters(bindingClass) : undefined
+		let bindingParamCount = this.bindClassParameterCount
+		let bindingClassName = KnownInternalBindings[this.name] ? KnownInternalBindings[this.name].name : this.name
 		let bindingParams: TS.Expression[] = [factory.createIdentifier(nodeName)]
 
 		// Need `context` parameter
-		if (!bindingClassParams || bindingClassParams.length > 1) {
+		if (bindingParamCount === null || bindingParamCount > 1) {
 			bindingParams.push(factory.createIdentifier(VariableNames.context))
 		}
 
 		// Need `modifiers` parameter
-		if (!bindingClassParams || bindingClassParams.length > 2 && this.modifiers.length > 0) {
+		if (bindingParamCount === null || bindingParamCount > 2 && this.modifiers.length > 0) {
 			bindingParams.push(factory.createArrayLiteralExpression(
 				this.modifiers.map(m => factory.createStringLiteral(m)),
 				false

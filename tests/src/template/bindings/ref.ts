@@ -1,4 +1,4 @@
-import {Component, html, RefBinding} from '@pucelle/lupos.js'
+import {Component, html} from '@pucelle/lupos.js'
 
 
 class TestRefBinding extends Component {

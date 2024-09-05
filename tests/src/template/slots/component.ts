@@ -1,4 +1,4 @@
-import {Component, html, ClassBinding} from '@pucelle/lupos.js'
+import {Component, html} from '@pucelle/lupos.js'
 
 
 class TestComponent extends Component {
