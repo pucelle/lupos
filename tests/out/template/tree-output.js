@@ -43,7 +43,7 @@ const $html_2 = new HTMLMaker("<svg><slot name=\"slotName\"></slot></svg>", true
         el: $node,
         position: new SlotPosition(2, $node_0),
         update($values) {
-            $slot_0.update($context.__getSlotElement("name") ?? new CompiledTemplateResult($template_3, $values));
+            $slot_0.update($context.__getSlotElement("slotName") ?? new CompiledTemplateResult($template_3, $values));
         },
         parts: [$slot_0]
     };

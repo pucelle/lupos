@@ -15,7 +15,7 @@ const $html_0 = new HTMLMaker("<div><slot name=\"slotName\"></slot></div>");
         el: $node,
         position: new SlotPosition(2, $node_0),
         update($values) {
-            $slot_0.update($context.__getSlotElement("name"));
+            $slot_0.update($context.__getSlotElement("slotName"));
         },
         parts: [$slot_0]
     };
@@ -35,7 +35,7 @@ const $html_0 = new HTMLMaker("<div><slot name=\"slotName\"></slot></div>");
         el: $node,
         position: new SlotPosition(2, $node_0),
         update($values) {
-            $slot_0.update($context.__getSlotElement("name") ?? new CompiledTemplateResult($template_2, $values));
+            $slot_0.update($context.__getSlotElement("slotName") ?? new CompiledTemplateResult($template_2, $values));
         },
         parts: [$slot_0]
     };

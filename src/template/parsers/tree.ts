@@ -194,7 +194,7 @@ export class TreeParser {
 
 	private parseSlotTag(node: HTMLNode) {
 		let nameAttr = node.attrs!.find(a => a.name === 'name')
-		let name = nameAttr?.name || null
+		let name = nameAttr?.value || null
 
 		this.addSlot(SlotType.SlotTag, name, null, null, node)
 	}
