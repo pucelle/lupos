@@ -1,5 +1,5 @@
-import { Observed, trackSet } from '@pucelle/ff';
 import { Component } from '@pucelle/lupos.js';
+import { trackSet } from "@pucelle/ff";
 class TestNormalProp extends Component {
     prop = 1;
     setProp() {
@@ -130,3 +130,9 @@ class TesOperators extends Component {
         trackSet(this, "prop");
     }
 }
+class TestNew extends Component {
+    prop = 1;
+}
+let com = new TestNew();
+com.prop = 2;
+trackSet(com, "prop");

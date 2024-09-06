@@ -119,7 +119,17 @@ export namespace ObservedChecker {
 	}
 
 
-	/** Returns whether an identifier, this, or a property accessing is observed. */
+	/** 
+	 * Returns whether any of following type of node is observed:
+	 * - an identifier
+	 * - this
+	 * - a property accessing
+	 * - a new expression
+	 * - a call expression
+	 * - a binary expression
+	 * - a conditional expression
+	 * - an as expression
+	 */
 	export function isObserved(node: TS.Node, context: Context = ContextTree.current!): node is CanObserveNode {
 
 		// `a.b`
@@ -132,12 +142,7 @@ export namespace ObservedChecker {
 		// `this`
 		// `a`
 		else if (node.kind === ts.SyntaxKind.ThisKeyword
-			|| ts.isIdentifier(node)
-
-			// variable `b`, bot not property part of `a.b`.
-			&& (!Helper.access.isAccess(node.parent)
-				|| Helper.access.getNameNode(node.parent) !== node
-			)
+			|| Helper.variable.isVariableIdentifier(node)
 		) {
 			return isIdentifierObserved(node as TS.Identifier | TS.ThisExpression, context)
 		}
@@ -174,6 +179,15 @@ export namespace ObservedChecker {
 			return isCallObserved(node)
 		}
 
+		// `new a()`
+		else if (ts.isNewExpression(node)
+			&& (ts.isIdentifier(node.expression)
+				|| ts.isClassExpression(node.expression)
+			)
+		) {
+			return isInstanceObserved(node.expression)
+		}
+
 		else {
 			return false
 		}
@@ -185,7 +199,7 @@ export namespace ObservedChecker {
 	 * Node must be the top most property access expression.
 	 * E.g., for `a.b.c`, sub identifier `b` or `c` is not allowed.
 	 */
-	export function isIdentifierObserved(node: TS.Identifier | TS.ThisExpression, context = ContextTree.current!): boolean {
+	function isIdentifierObserved(node: TS.Identifier | TS.ThisExpression, context = ContextTree.current!): boolean {
 		if (node.kind === ts.SyntaxKind.ThisKeyword) {
 			return context.variables.thisObserved
 		}
@@ -278,7 +292,7 @@ export namespace ObservedChecker {
 
 	
 	/** Returns whether a call expression returned result is observed. */
-	export function isCallObserved(node: TS.CallExpression): boolean {
+	function isCallObserved(node: TS.CallExpression): boolean {
 		let decl = Helper.symbol.resolveCallDeclaration(node)
 		if (!decl) {
 			return false
@@ -300,5 +314,16 @@ export namespace ObservedChecker {
 		}
 
 		return isTypeNodeObserved(returnTypeNode)
+	}
+
+
+	/** Returns whether instance of a reference of a class is observed. */
+	function isInstanceObserved(node: TS.Identifier | TS.ClassExpression): boolean {
+		let clsDecl = Helper.symbol.resolveDeclaration(node, ts.isClassDeclaration)
+		if (clsDecl && Helper.cls.isImplemented(clsDecl, 'Observed', '@pucelle/ff')) {
+			return true 
+		}
+
+		return false
 	}
 }

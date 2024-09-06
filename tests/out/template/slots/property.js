@@ -8,7 +8,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 */ const $template_0 = new TemplateMaker($context => {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
-    let $com_0 = new Com1($node_0);
+    let $com_0 = new Com1({}, $node_0);
     $com_0.comProp = 1;
     return {
         el: $node,
@@ -68,7 +68,7 @@ const $html_1 = new HTMLMaker("<!----><div></div><!---->");
 */ const $template_3 = new TemplateMaker($context => {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
-    let $com_0 = new Com1($node_0);
+    let $com_0 = new Com1({}, $node_0);
     $com_0.forceComProp = 1;
     return {
         el: $node,

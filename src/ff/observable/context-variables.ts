@@ -155,7 +155,7 @@ export class ContextVariables {
 			this.context.parent!.variables.visitVariable(node)
 			return
 		}
-
+	
 		let observed = ObservedChecker.isVariableDeclarationObserved(node)
 		let names = Helper.variable.walkDeclarationNames(node)
 

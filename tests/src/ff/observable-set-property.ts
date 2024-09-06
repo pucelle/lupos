@@ -1,4 +1,3 @@
-import {Observed} from '@pucelle/ff'
 import {Component} from '@pucelle/lupos.js'
 
 
@@ -150,3 +149,11 @@ class TesOperators extends Component {
 		this.prop--
 	}
 }
+
+
+class TestNew extends Component {
+	prop: number = 1
+}
+
+let com = new TestNew()
+com.prop = 2

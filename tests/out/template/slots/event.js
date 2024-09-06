@@ -8,7 +8,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 */ const $template_0 = new TemplateMaker($context => {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
-    let $com_0 = new Com1($node_0);
+    let $com_0 = new Com1({}, $node_0);
     $com_0.on("connected", $context.handleEvent, $context);
     return {
         el: $node,
@@ -23,7 +23,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 */ const $template_1 = new TemplateMaker($context => {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
-    let $com_0 = new Com1($node_0);
+    let $com_0 = new Com1({}, $node_0);
     $com_0.on("eventName", $context.handleEvent, $context);
     return {
         el: $node,
@@ -83,7 +83,7 @@ const $html_1 = new HTMLMaker("<!----><div></div><!---->");
 */ const $template_4 = new TemplateMaker($context => {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
-    let $com_0 = new Com1($node_0);
+    let $com_0 = new Com1({}, $node_0);
     $com_0.on("forceComEvent", $context.handleEvent, $context);
     return {
         el: $node,

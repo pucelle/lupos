@@ -23,7 +23,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 */ const $template_1 = new TemplateMaker($context => {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
-    let $com_0 = new ChildComponent($node_0);
+    let $com_0 = new ChildComponent({}, $node_0);
     let $binding_0 = new RefBinding($node_0, $context);
     $binding_0.update(function (refed) { this.refCom = refed; });
     return {
@@ -39,7 +39,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 */ const $template_2 = new TemplateMaker($context => {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
-    let $com_0 = new ChildComponent($node_0);
+    let $com_0 = new ChildComponent({}, $node_0);
     let $binding_0 = new RefBinding($node_0, $context, ["el"]);
     $binding_0.update(function (refed) { this.refEl = refed; });
     return {
@@ -55,7 +55,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 */ const $template_3 = new TemplateMaker($context => {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
-    let $com_0 = new ChildComponent($node_0);
+    let $com_0 = new ChildComponent({}, $node_0);
     let $binding_0 = new RefBinding($node_0, $context, ["el"]);
     $binding_0.update(function (refed) { this.refElByType = refed; });
     return {

@@ -18,13 +18,19 @@ export class ComponentSlotParser extends SlotParserBase {
 
 		let comVariableName = this.getRefedComponentName()
 
-		// let $com_0 = new Com($node_0), after component has been referenced.
+		// let $com_0 = new Com({}, $node_0), after component has been referenced.
 		let comInit = this.addVariableAssignment(
 			comVariableName,
 			factory.createNewExpression(
 				factory.createIdentifier(ComName),
 				undefined,
-				[factory.createIdentifier(nodeName)]
+				[
+					factory.createObjectLiteralExpression(
+						[],
+						false
+					),
+					factory.createIdentifier(nodeName)
+				]
 			)
 		)
 
