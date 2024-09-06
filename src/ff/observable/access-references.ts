@@ -192,7 +192,7 @@ export namespace AccessReferences {
 	 */
 	function reference(index: number, context: Context) {
 		let varDeclListIndex = Visiting.findOutwardMatch(index, context.visitingIndex, ts.isVariableDeclaration)
-		let varScope = Scoping.findClosestScopeToAddVariable(index)
+		let varScope = Scoping.findClosestScope(index)
 		let refName = varScope.makeUniqueVariable('$ref_')
 
 		// Insert one variable declaration to existing declaration list: `var ... $ref_ = ...`
@@ -209,7 +209,7 @@ export namespace AccessReferences {
 		else {
 			varScope.addVariable(refName)
 
-			let refPosition = ContextTree.findClosestPositionToAddStatement(index, context)
+			let refPosition = ContextTree.findClosestPositionToAddStatements(index, context)
 
 			// insert `$ref_ = a.b()` to found position.
 			Modifier.addReferenceAssignment(index, refPosition.index, refName)

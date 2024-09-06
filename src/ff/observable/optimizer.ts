@@ -117,7 +117,7 @@ export namespace Optimizer {
 			return
 		}
 
-		let toPosition = ContextTree.findClosestPositionToAddStatement(
+		let toPosition = ContextTree.findClosestPositionToAddStatements(
 			context.visitingIndex, context
 		)
 

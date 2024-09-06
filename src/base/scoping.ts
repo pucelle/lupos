@@ -1,10 +1,11 @@
 import type TS from 'typescript'
 import {addToList, ListMap} from '../utils'
-import {factory, transformContext, ts} from './global'
+import {factory, sourceFile, transformContext, ts} from './global'
 import {Visiting} from './visiting'
 import {InterpolationContentType, Interpolator} from './interpolator'
 import {Helper} from './helper'
 import {definePostVisitCallback, definePreVisitCallback} from './visitor-callbacks'
+import {Scope} from './scope'
 
 
 interface HashItem {
@@ -85,6 +86,12 @@ export namespace Scoping {
 	export function toParent() {
 		current = stack.pop()!
 	}
+
+
+	/** Get top most scope, the scope of source file. */
+	export function getTopmostScope(): Scope {
+		return ScopeMap.get(Visiting.getIndex(sourceFile))!
+	}
 	
 
 	/** Find closest scope contains node with specified visiting index. */
@@ -106,19 +113,6 @@ export namespace Scoping {
 	}
 
 	
-	/** 
-	 * Find an ancestral scope, and a child visiting index,
-	 * which can insert variable before it.
-	 */
-	export function findClosestScopeToAddVariable(fromIndex: number): Scope {
-		let scope = findClosestScope(fromIndex)
-		while (!scope.canAddStatements()) {
-			scope = scope.parent!
-		}
-
-		return scope
-	}
-	
 	/** Get the leaved scope list when walking from a scope to an ancestral scope. */
 	export function findWalkingOutwardLeaves(fromScope: Scope, toScope: Scope) : Scope[] {
 		let scope: Scope | undefined = fromScope
@@ -135,14 +129,15 @@ export namespace Scoping {
 	
 
 	/** Add a scope and a variable name to insert into the scope later. */
-	export function addVariable(scope: Scope, name: string) {
+	export function addVariableByScope(scope: Scope, name: string) {
 		AddedVariableNames.add(scope, name)
 	}
 
+	
 	/** Add variables to interpolator as declaration statements. */
 	export function applyInterpolation() {
 		for (let [scope, names] of AddedVariableNames.entries()) {
-			let toIndex = scope.getIndexToAddVariable()
+			let toIndex = scope.getIndexToAddStatements()
 
 			let exps = factory.createVariableDeclarationList(
 				names.map(name => 
@@ -156,7 +151,7 @@ export namespace Scoping {
 				ts.NodeFlags.Let
 			)
 
-			Interpolator.before(toIndex, InterpolationContentType.VariableDeclaration, () => exps)
+			Interpolator.before(toIndex, InterpolationContentType.Declaration, () => exps)
 		}
 	}
 
@@ -238,14 +233,17 @@ export namespace Scoping {
 	}
 
 
-	/** Try get raw node by it's variable name. */
-	export function getNodeByVariableName(fromRawNode: TS.Node, name: string): TS.Node | undefined {
+	/** 
+	 * Try get raw node by it's variable name.
+	 * `fromRawNode` specifies where to query the variable from.
+	 */
+	export function getDeclarationByName(name: string, fromRawNode: TS.Node): TS.Node | undefined {
 		let scope = findClosestScopeOfNode(fromRawNode)
 		if (!scope) {
 			return undefined
 		}
 
-		return scope.getNodeByVariableName(name)
+		return scope.getDeclarationByName(name)
 	}
 	
 	
@@ -269,7 +267,7 @@ export namespace Scoping {
 	}
 
 	/** Returns whether a node is declared within target node. */
-	function isDeclaredWithinNode(rawNode: TS.Identifier, targetNode: TS.Node): boolean {
+	function isDeclaredWithinNodeRange(rawNode: TS.Identifier, targetNode: TS.Node): boolean {
 		let declaredIn = findDeclaredScope(rawNode)
 		if (!declaredIn) {
 			return false
@@ -391,7 +389,7 @@ export namespace Scoping {
 			// If declared in local scope within transferring content,
 			// will be transferred with template together.
 
-			let isDeclaredWithinTransferring = isDeclaredWithinNode(node, rawTopNode)
+			let isDeclaredWithinTransferring = isDeclaredWithinNodeRange(node, rawTopNode)
 			let shouldNotReplace = isDeclaredInTopScope(node) || isDeclaredWithinTransferring
 			if (!shouldNotReplace) {
 				return replacer(node)
@@ -409,174 +407,6 @@ export namespace Scoping {
 		return ts.visitEachChild(node, (node: TS.Node) => {
 			return transferToTopmostScopeVisitor(node, rawTopNode, canReplaceThis, replacer)
 		}, transformContext)
-	}
-}
-
-
-/** Mark all variables with a context. */
-export class Scope {
-
-	readonly node: TS.FunctionLikeDeclaration | TS.ForStatement | TS.Block | TS.SourceFile
-	readonly parent: Scope | null
-	readonly visitingIndex: number
-
-	/** All variables declared here. */
-	private variables: Map<string, TS.Node | null> = new Map()
-
-	constructor(
-		node: TS.FunctionLikeDeclaration | TS.ForStatement | TS.Block | TS.SourceFile,
-		index: number,
-		parent: Scope | null
-	) {
-		this.node = node
-		this.parent = parent
-		this.visitingIndex = index
-	}
-
-	/** Visit a descendant node. */
-	visitNode(node: TS.Node) {
-
-		// Variable declaration.
-		if (ts.isVariableDeclaration(node)) {
-			for (let name of Helper.variable.walkDeclarationNames(node)) {
-				this.variables.set(name, node)
-			}
-		}
-
-		// Parameter.
-		else if (ts.isParameter(node)) {
-			this.variables.set(Helper.getText(node.name), node)
-		}
-
-		// `import {a as b}`,  `import {a}`
-		else if (ts.isImportSpecifier(node)) {
-			this.variables.set(Helper.getText(node.name), node)
-		}
-
-		// `import a`
-		else if (ts.isImportClause(node)) {
-			if (node.name) {
-				this.variables.set(Helper.getText(node.name), node)
-			}
-		}
-
-		// `import * as a`
-		else if (ts.isNamespaceImport(node)) {
-			this.variables.set(Helper.getText(node.name), node)
-		}
-
-		// Class or function declaration
-		else if (ts.isClassDeclaration(node) || ts.isFunctionDeclaration(node)) {
-			if (node.name) {
-				this.variables.set(Helper.getText(node.name), node)
-			}
-		}
-	}
-
-	/** Returns whether be top scope. */
-	isTopmost(): boolean {
-		return ts.isSourceFile(this.node)
-	}
-
-	/** Whether can add more statements inside. */
-	canAddStatements(): boolean {
-		return !Helper.isFunctionLike(this.node)
-			&& !ts.isForStatement(this.node)
-	}
-
-	/** Whether has declared a specified named local variable. */
-	hasLocalVariable(name: string): boolean {
-		return this.variables.has(name)
-	}
-
-	/** Whether declared local variable as const. */
-	isLocalVariableConstLike(name: string): boolean {
-		if (!this.variables.has(name)) {
-			return false
-		}
-		
-		let node = this.variables.get(name)
-		if (!node) {
-			return false
-		}
-
-		if (ts.isVariableDeclaration(node)) {
-			return (node.parent.flags & ts.NodeFlags.Const) > 0
-		}
-		else if (ts.isParameter(node)) {
-			return false
-		}
-
-		// Imported, or function / class declaration
-		else {
-			return true
-		}
-	}
-
-	/** Whether can visit a a variable by it's name. */
-	canVisitVariable(name: string): boolean {
-		if (this.variables.has(name)) {
-			return true
-		}
-
-		if (this.parent) {
-			return this.parent.canVisitVariable(name)
-		}
-		
-		return false
-	}
-
-	/** Try get raw node by it's variable name. */
-	getNodeByVariableName(name: string): TS.Node | undefined {
-		if (this.variables.has(name)) {
-			return this.variables.get(name) ?? undefined
-		}
-
-		if (this.parent) {
-			return this.parent.getNodeByVariableName(name)
-		}
-
-		return undefined
-	}
-
-	/** 
-	 * Add a non-repetitive variable name in scope,
-	 * make it have no conflict with current scope, and ancestral scopes.
-	 */
-	makeUniqueVariable(prefix: string): string {
-		let seed = 0
-		let name = prefix + seed++
-
-		while (this.canVisitVariable(name)) {
-			name = prefix + seed++
-		}
-
-		this.variables.set(name, null)
-
-		return name
-	}
-
-	/** 
-	 * Add a variable.
-	 * Several variable declarations will be stacked to a variable statement.
-	 */
-	addVariable(name: string) {
-		Scoping.addVariable(this, name)
-	}
-
-	/** Get best visiting index to add variable before it. */
-	getIndexToAddVariable(): number {
-		let toIndex = Visiting.getFirstChildIndex(this.visitingIndex)!
-
-		// Insert before the first not import statements.
-		if (this.isTopmost()) {
-			let beforeNode = (this.node as TS.SourceFile).statements.findLast(n => !ts.isImportDeclaration(n))
-			if (beforeNode) {
-				toIndex = Visiting.getIndex(beforeNode)
-			}
-		}
-
-		return toIndex
 	}
 }
 

@@ -288,7 +288,7 @@ export abstract class SlotParserBase {
 
 		// Resolve class declarations directly.
 		if (isNamedComponent) {
-			let ref = Scoping.getNodeByVariableName(this.template.rawNode, tagName)
+			let ref = Scoping.getDeclarationByName(tagName, this.template.rawNode)
 			if (!ref) {
 				return
 			}

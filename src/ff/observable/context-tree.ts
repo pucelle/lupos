@@ -258,7 +258,7 @@ export namespace ContextTree {
 	 * Find an ancestral index and context, which can move statements to before it.
 	 * Must before current position, and must not cross any conditional or iteration context.
 	 */
-	export function findClosestPositionToAddStatement(index: number, from: Context): ContextTargetPosition {
+	export function findClosestPositionToAddStatements(index: number, from: Context): ContextTargetPosition {
 		let context = from
 		let parameterIndex = Visiting.findOutwardMatch(index, from.visitingIndex, ts.isParameter)
 

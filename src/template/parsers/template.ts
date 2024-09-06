@@ -2,7 +2,7 @@ import type TS from 'typescript'
 import {HTMLNode, HTMLRoot} from '../html-syntax'
 import {TreeParser} from './tree'
 import {TemplateValues} from './template-values'
-import {factory, Modifier} from '../../base'
+import {factory, Modifier, Scope, Scoping} from '../../base'
 
 
 export type TemplateType = 'html' | 'svg'
@@ -20,6 +20,9 @@ export class TemplateParser {
 	readonly rawNode: TS.TaggedTemplateExpression
 
 	private readonly treeParsers: TreeParser[] = []
+
+	/** Which scope should insert contents. */
+	private innerMostScope: Scope = Scoping.getTopmostScope()
 
 	constructor(type: TemplateType, string: string, values: TS.Expression[], rawNode: TS.TaggedTemplateExpression) {
 		this.type = type
@@ -40,12 +43,22 @@ export class TemplateParser {
 		return parser
 	}
 
-	/** Create a template element with `html` as content. */
-	createTemplateFromHTML(html: string) {
-		let template = document.createElement('template')
-		template.innerHTML = html
+	/** 
+	 * Add a referenced declaration node, normally component or binding class declaration.
+	 * If a template uses a local component,
+	 * then generated codes can't be appended to topmost scope.
+	 */
+	addRefedDeclaration(node: TS.Node) {
+		let scope = Scoping.findClosestScopeOfNode(node)
+		if (!scope) {
+			return
+		}
 
-		return template
+		// Pick scope with larger depth.
+		// One must contain another, so only need to compare visiting index.
+		if (this.innerMostScope.visitingIndex < scope.visitingIndex) {
+			this.innerMostScope = scope
+		}
 	}
 
 	/** 
@@ -56,7 +69,7 @@ export class TemplateParser {
 		Modifier.addImport('CompiledTemplateResult', '@pucelle/lupos.js')
 		
 		for (let treeParser of this.treeParsers) {
-			treeParser.output()
+			treeParser.output(this.innerMostScope)
 		}
 
 		let mainTreeParser = this.treeParsers[0]

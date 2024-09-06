@@ -68,22 +68,24 @@ export class BindingSlotParser extends SlotParserBase {
 		else {
 
 			// :bindingName -> bindingName
-			let bindingClassRefNode = Scoping.getNodeByVariableName(this.template.rawNode, this.name)
+			let bindingClassDecl = Scoping.getDeclarationByName(this.name, this.template.rawNode)
 
 			// `Import ClassBinding`
 			// `class ClassBinding {...}`
-			if (!bindingClassRefNode
+			if (!bindingClassDecl
 				|| (
-					!ts.isImportSpecifier(bindingClassRefNode)
-					&& !(ts.isClassDeclaration(bindingClassRefNode))
+					!ts.isImportSpecifier(bindingClassDecl)
+					&& !(ts.isClassDeclaration(bindingClassDecl))
 				)
-				|| !bindingClassRefNode.name
+				|| !bindingClassDecl.name
 			) {
 				throw new Error(`Please make sure to import or declare "${this.name}"!`)
 			}
 
-			let bindingModuleName = Helper.symbol.resolveImport(bindingClassRefNode)
-			let bindingClass = Helper.symbol.resolveDeclaration(bindingClassRefNode, ts.isClassDeclaration)!
+			let bindingModuleName = Helper.symbol.resolveImport(bindingClassDecl)
+			let bindingClass = Helper.symbol.resolveDeclaration(bindingClassDecl, ts.isClassDeclaration)!
+
+			this.template.addRefedDeclaration(bindingClassDecl)
 
 			if (bindingClass && Helper.cls.isImplemented(bindingClass, 'Part', '@pucelle/lupos.js', bindingModuleName?.moduleName)) {
 				this.treeParser.addPartName(this.bindingVariableName)

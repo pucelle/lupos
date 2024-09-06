@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {definePreVisitCallback, factory, Modifier, ts} from '../../base'
+import {definePreVisitCallback, factory, Modifier, Scoping, ts} from '../../base'
 import {TreeParser} from './tree'
 import {DoubleKeysMap} from '../../utils'
 import {VariableNames} from './variable-names'
@@ -57,7 +57,7 @@ export namespace HTMLOutputHandler {
 			)
 		)
 
-		Modifier.addTopmostDeclarations(htmlNode)
+		Scoping.getTopmostScope().addStatements(htmlNode)
 		Cache.set(htmlString, wrapped, htmlName)
 
 		return htmlName

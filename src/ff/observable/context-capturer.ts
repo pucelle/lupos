@@ -126,7 +126,7 @@ export class ContextCapturer {
 		if (type === 'set' && this.captureType === 'get') {
 			let closest = this.context.closestFunctionLike
 
-			// Broadcast downward from closest function-like context, to all get type.
+			// Broadcast downward from closest function-like context, to all get-type descendants.
 			let walking = ContextTree.walkInwardChildFirst(closest,
 				c => c.closestFunctionLike === closest
 					&& c.capturer.captureType === 'get'

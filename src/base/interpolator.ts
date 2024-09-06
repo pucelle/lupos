@@ -52,7 +52,8 @@ export enum InterpolationPosition {
 }
 
 export enum InterpolationContentType {
-	VariableDeclaration,
+	Import,
+	Declaration,
 	Reference,
 	Normal,
 	Tracking,

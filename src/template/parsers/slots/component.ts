@@ -1,6 +1,6 @@
 import type TS from 'typescript'
 import {SlotParserBase} from './base'
-import {factory} from '../../../base'
+import {factory, Scoping} from '../../../base'
 import {cleanList} from '../../../utils'
 
 
@@ -8,11 +8,17 @@ export class ComponentSlotParser extends SlotParserBase {
 
 	init() {
 		this.refAsComponent()
+
+		let comName = this.node.tagName!
+		let decl = Scoping.getDeclarationByName(comName, this.template.rawNode)
+		if (decl) {
+			this.template.addRefedDeclaration(decl)
+		}
 	}
 
 	outputInit() {
 		let nodeName = this.getRefedNodeName()
-		let ComName = this.node.tagName!
+		let comName = this.node.tagName!
 		let hasRestSlotContentExisted = this.node.children.length > 0
 		let restSlotRangeInit: TS.Expression | null = null
 
@@ -22,7 +28,7 @@ export class ComponentSlotParser extends SlotParserBase {
 		let comInit = this.addVariableAssignment(
 			comVariableName,
 			factory.createNewExpression(
-				factory.createIdentifier(ComName),
+				factory.createIdentifier(comName),
 				undefined,
 				[
 					factory.createObjectLiteralExpression(

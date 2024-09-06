@@ -62,6 +62,7 @@ const $html_2 = new HTMLMaker("<svg><slot name=\"slotName\"></slot></svg>", true
         position: new SlotPosition(2, $node_0)
     };
 });
+const $html_3 = new HTMLMaker("<div></div>");
 class TestTemplateOutput extends Component {
     prop = 1;
     readonlyProp = 1;
@@ -73,5 +74,24 @@ class TestTemplateOutput extends Component {
     }
     testSVGContentSeparating() {
         return new CompiledTemplateResult($template_2, []);
+    }
+    testLocalReference() {
+        /*
+        <root>
+            <Child />
+        </root>
+        */ const $template_4 = new TemplateMaker($context => {
+            let $node = $html_3.make();
+            let $node_0 = $node.content.firstChild;
+            let $com_0 = new Child({}, $node_0);
+            return {
+                el: $node,
+                position: new SlotPosition(2, $node_0),
+                parts: [$com_0]
+            };
+        });
+        class Child extends Component {
+        }
+        return new CompiledTemplateResult($template_4, []);
     }
 }

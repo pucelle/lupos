@@ -17,4 +17,9 @@ class TestTemplateOutput extends Component {
 	testSVGContentSeparating() {
 		return svg`<slot name="slotName"><path /></slot>`
 	}
+
+	testLocalReference() {
+		class Child extends Component {}
+		return html`<Child />`
+	}
 }

@@ -1,10 +1,11 @@
 import {ListMap} from '../utils'
 import type TS from 'typescript'
-import {factory, sourceFile, ts} from './global'
+import {factory, ts} from './global'
 import {Helper} from './helper'
 import {InterpolationContentType, Interpolator} from './interpolator'
 import {Visiting} from './visiting'
 import {definePostVisitCallback, definePreVisitCallback} from './visitor-callbacks'
+import {Scoping} from './scoping'
 
 
 /** 
@@ -19,14 +20,10 @@ export namespace Modifier {
 	/** The visiting indices the node at where will be moved. */
 	const MovedIndices: Set<number> = new Set()
 
-	/** Declarations will be inserted to source file, after import statements. */
-	let topmostDeclarations: (TS.Expression | TS.Statement)[] = []
-
 
 	export function initialize() {
 		Imports.clear()
 		MovedIndices.clear()
-		topmostDeclarations = []
 	}
 
 
@@ -74,7 +71,7 @@ export namespace Modifier {
 	 * `a.b()` -> `var ..., $ref_ = a.b()`, and move it.
 	 */
 	export function addVariableAssignmentToList(fromIndex: number, toIndex: number, varName: string) {
-		Interpolator.before(toIndex, InterpolationContentType.VariableDeclaration, () => {
+		Interpolator.before(toIndex, InterpolationContentType.Declaration, () => {
 			let node = Interpolator.outputChildren(fromIndex) as TS.Expression
 			node = Helper.pack.normalize(node, false) as TS.Expression
 			
@@ -105,16 +102,10 @@ export namespace Modifier {
 	}
 
 
-	/** Add some declarations to the head of source file, bug after import statements. */
-	export function addTopmostDeclarations(...decls: (TS.Expression | TS.Statement)[]) {
-		topmostDeclarations.push(...decls)
-	}
-
 
 	/** Apply imports to do interpolation. */
 	export function applyInterpolation() {
-		let firstNonImportNode = sourceFile.statements.find(st => !ts.isImportDeclaration(st))!
-		let sourceFileIndex = Visiting.getIndex(firstNonImportNode)
+		let sourceFileIndex = Scoping.getTopmostScope().getIndexToAddStatements()
 
 
 		// A ts bug here: if insert some named import identifiers,
@@ -134,7 +125,7 @@ export namespace Modifier {
 			// Add more imports.
 			if (importDecl) {
 				let namedImportsIndex = Visiting.getIndex(importDecl.importClause!.namedBindings!)
-				Interpolator.append(namedImportsIndex, InterpolationContentType.Normal, () => namedImports)
+				Interpolator.append(namedImportsIndex, InterpolationContentType.Import, () => namedImports)
 			}
 
 			// Add an import statement.
@@ -150,13 +141,8 @@ export namespace Modifier {
 					undefined
 				)
 
-				Interpolator.before(sourceFileIndex, InterpolationContentType.Normal, () => importDecl!)
+				Interpolator.before(sourceFileIndex, InterpolationContentType.Import, () => importDecl!)
 			}
-		}
-
-		// Insert declarations after import statements.
-		if (topmostDeclarations.length > 0) {
-			Interpolator.before(sourceFileIndex, InterpolationContentType.Normal, () => topmostDeclarations)
 		}
 	}
 }

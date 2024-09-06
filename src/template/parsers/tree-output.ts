@@ -1,7 +1,7 @@
 import type TS from 'typescript'
 import {TreeParser} from './tree'
 import {HTMLNode, HTMLNodeType, HTMLRoot} from '../html-syntax'
-import {factory, Helper, Modifier, TemplateSlotPlaceholder, ts} from '../../base'
+import {factory, Helper, Modifier, Scope, TemplateSlotPlaceholder, ts} from '../../base'
 import {SlotParserBase} from './slots'
 import {VariableNames} from './variable-names'
 import {SlotPositionType} from '../../enums'
@@ -31,7 +31,12 @@ export class TreeOutputHandler {
 		this.wrappedByTemplate = this.root.firstChild?.tagName === 'template'
 	}
 
-	output(slots: SlotParserBase[], varNames: string[], partNames: string[], hasDynamicComponent: boolean) {
+	output(slots: SlotParserBase[],
+		varNames: string[],
+		partNames: string[],
+		hasDynamicComponent: boolean,
+		scope: Scope
+	) {
 		Modifier.addImport('TemplateMaker', '@pucelle/lupos.js')
 
 		// May modify nodes, must before outputting HTML Maker.
@@ -124,7 +129,7 @@ export class TreeOutputHandler {
 			kind: ts.SyntaxKind.MultiLineCommentTrivia,
 		}])
 
-		Modifier.addTopmostDeclarations(templateNode)
+		scope.addStatements(templateNode)
 	}
 
 	private outputSlots(slots: SlotParserBase[]): {

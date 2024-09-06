@@ -1,4 +1,4 @@
-import {Helper, TemplateSlotPlaceholder} from '../../base'
+import {Helper, Scope, TemplateSlotPlaceholder} from '../../base'
 import {HTMLNode, HTMLNodeType, HTMLRoot, HTMLNodeReferences} from '../html-syntax'
 import {SlotParserBase, DynamicComponentSlotParser, FlowControlSlotParser, PropertySlotParser, BindingSlotParser, EventSlotParser, AttributeSlotParser, TextSlotParser, ContentSlotParser, ComponentSlotParser, SlotTagSlotParser, TemplateAttributeSlotParser} from './slots'
 import {TemplateParser} from './template'
@@ -472,12 +472,13 @@ export class TreeParser {
 	}
 
 	/** Output contents and interpolate. */
-	output() {
+	output(scope: Scope) {
 		this.outputHandler.output(
 			this.slots,
 			this.preDeclaredVariableNames,
 			this.partNames,
-			this.hasDynamicComponent
+			this.hasDynamicComponent,
+			scope
 		)
 	}
 }
