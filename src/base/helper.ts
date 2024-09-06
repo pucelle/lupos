@@ -300,9 +300,10 @@ export namespace Helper {
 					// Import relative module, try match outer module name/
 					if (outerModuleName
 						&& resolved.moduleName.startsWith('.')
-						&& moduleName === outerModuleName
 					) {
-						return true
+						if (moduleName === outerModuleName) {
+							return true
+						}
 					}
 					
 					return false
@@ -798,31 +799,39 @@ export namespace Helper {
 
 		/** Resolve the import name and module. */
 		export function resolveImport(node: TS.Node): ResolvedImportNames | undefined {
+			let memberName: string | null = null
+			let moduleName: string | null = null
 
 			// `import * as M`, and use it's member like `M.member`.
 			if (ts.isPropertyAccessExpression(node)) {
-				let declName = getText(node.name)
+				memberName = getText(node.name)
+
 				let decl = resolveDeclaration(node.expression, ts.isNamespaceImport, false)
 				if (decl) {
 					let moduleNameNode = decl.parent.parent.moduleSpecifier
-					let moduleName = ts.isStringLiteral(moduleNameNode) ? moduleNameNode.text : ''
-
-					return {
-						memberName: declName,
-						moduleName,
-					}
+					moduleName = ts.isStringLiteral(moduleNameNode) ? moduleNameNode.text : ''
 				}
 			}
 			else {
 				let decl = resolveDeclaration(node, ts.isImportSpecifier, false)
 				if (decl) {
 					let moduleNameNode = decl.parent.parent.parent.moduleSpecifier
-					let moduleName = ts.isStringLiteral(moduleNameNode) ? moduleNameNode.text : ''
+					memberName =  (decl.propertyName || decl.name).text
+					moduleName = ts.isStringLiteral(moduleNameNode) ? moduleNameNode.text : ''
+				}
+			}
 
-					return {
-						memberName: (decl.propertyName || decl.name).text,
-						moduleName,
-					}
+			// Compile codes within `lupos.js` library.
+			if (moduleName && moduleName.startsWith('.')
+				&& sourceFile.fileName.includes('/lupos.js/tests/')
+			) {
+				moduleName = '@pucelle/lupos.js'
+			}
+
+			if (moduleName !== null && memberName !== null) {
+				return {
+					memberName,
+					moduleName,
 				}
 			}
 

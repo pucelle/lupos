@@ -374,10 +374,12 @@ export class BindingSlotParser extends SlotParserBase {
 		let rawValueNode = this.getFirstRawValueNode()!
 
 		// this.refName ->
-		// (el) => this.refName = el
+		// function(refed){ this.refName = refed }
 		if (this.forceRefStatic) {
-			return factory.createArrowFunction(
+			return factory.createFunctionExpression(
 				undefined,
+				undefined,
+				factory.createIdentifier(''),
 				undefined,
 				[factory.createParameterDeclaration(
 					undefined,
@@ -388,11 +390,13 @@ export class BindingSlotParser extends SlotParserBase {
 					undefined
 				)],
 				undefined,
-				factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
-				factory.createBinaryExpression(
-					rawValueNode,
-					factory.createToken(ts.SyntaxKind.EqualsToken),
-					factory.createIdentifier('refed')
+				factory.createBlock(
+					[factory.createExpressionStatement(factory.createBinaryExpression(
+						rawValueNode,
+						factory.createToken(ts.SyntaxKind.EqualsToken),
+						factory.createIdentifier('refed')
+					))],
+					false
 				)
 			)
 		}

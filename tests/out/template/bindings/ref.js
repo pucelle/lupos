@@ -9,7 +9,7 @@ const $html_0 = new HTMLMaker("<div></div>");
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $binding_0 = new RefBinding($node_0, $context);
-    $binding_0.update(refed => this.refEl = refed);
+    $binding_0.update(function (refed) { this.refEl = refed; });
     return {
         el: $node,
         position: new SlotPosition(2, $node_0),
@@ -25,7 +25,7 @@ const $html_0 = new HTMLMaker("<div></div>");
     let $node_0 = $node.content.firstChild;
     let $com_0 = new ChildComponent($node_0);
     let $binding_0 = new RefBinding($node_0, $context);
-    $binding_0.update(refed => this.refCom = refed);
+    $binding_0.update(function (refed) { this.refCom = refed; });
     return {
         el: $node,
         position: new SlotPosition(2, $node_0),
@@ -41,7 +41,7 @@ const $html_0 = new HTMLMaker("<div></div>");
     let $node_0 = $node.content.firstChild;
     let $com_0 = new ChildComponent($node_0);
     let $binding_0 = new RefBinding($node_0, $context, ["el"]);
-    $binding_0.update(refed => this.refEl = refed);
+    $binding_0.update(function (refed) { this.refEl = refed; });
     return {
         el: $node,
         position: new SlotPosition(2, $node_0),
@@ -57,7 +57,7 @@ const $html_0 = new HTMLMaker("<div></div>");
     let $node_0 = $node.content.firstChild;
     let $com_0 = new ChildComponent($node_0);
     let $binding_0 = new RefBinding($node_0, $context, ["el"]);
-    $binding_0.update(refed => this.refElByType = refed);
+    $binding_0.update(function (refed) { this.refElByType = refed; });
     return {
         el: $node,
         position: new SlotPosition(2, $node_0),
