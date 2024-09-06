@@ -124,11 +124,12 @@ export class ContextCapturer {
 	/** Every time capture a new index, check type and may toggle capture type. */
 	private addCaptureType(type: 'get' | 'set') {
 		if (type === 'set' && this.captureType === 'get') {
+			let closest = this.context.closestFunctionLike
 
-			// Broadcast to closest function-like context, and broadcast down.
-			let walking = ContextTree.walkInwardChildFirst(
-				this.context.closestFunctionLike,
-				c => c.capturer.captureType === 'get'
+			// Broadcast downward from closest function-like context, to all get type.
+			let walking = ContextTree.walkInwardChildFirst(closest,
+				c => c.closestFunctionLike === closest
+					&& c.capturer.captureType === 'get'
 			)
 			
 			for (let descent of walking) {
