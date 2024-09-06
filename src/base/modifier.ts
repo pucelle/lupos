@@ -114,7 +114,17 @@ export namespace Modifier {
 		// Current process step is: leave them there and wait for package step to eliminate.
 
 		for (let [moduleName, names] of Imports.entries()) {
-			let importDecl = Helper.imports.getImportFromModule(moduleName)
+			let existingImportDecl = getNamedImportDeclaration(moduleName)
+
+			// Removes existing names.
+			if (existingImportDecl) {
+				let existingNames = (existingImportDecl.importClause!.namedBindings as TS.NamedImports).elements.map(e => e.name.text)
+				names = names.filter(name => !existingNames.includes(name))
+			}
+
+			if (names.length === 0) {
+				continue
+			}
 
 			let namedImports = names.map(name => factory.createImportSpecifier(
 				false,
@@ -123,14 +133,14 @@ export namespace Modifier {
 			))
 
 			// Add more imports.
-			if (importDecl) {
-				let namedImportsIndex = Visiting.getIndex(importDecl.importClause!.namedBindings!)
+			if (existingImportDecl) {
+				let namedImportsIndex = Visiting.getIndex(existingImportDecl.importClause!.namedBindings!)
 				Interpolator.append(namedImportsIndex, InterpolationContentType.Import, () => namedImports)
 			}
 
 			// Add an import statement.
 			else {
-				importDecl = factory.createImportDeclaration(
+				existingImportDecl = factory.createImportDeclaration(
 					undefined,
 					factory.createImportClause(
 						false,
@@ -141,9 +151,30 @@ export namespace Modifier {
 					undefined
 				)
 
-				Interpolator.before(sourceFileIndex, InterpolationContentType.Import, () => importDecl!)
+				Interpolator.before(sourceFileIndex, InterpolationContentType.Import, () => existingImportDecl!)
 			}
 		}
+	}
+
+	function getNamedImportDeclaration(moduleName: string): TS.ImportDeclaration | undefined {
+		let importDecl = Helper.imports.getImportFromModule(moduleName)
+		if (!importDecl) {
+			return undefined
+		}
+
+		if (!importDecl.importClause) {
+			return undefined
+		}
+
+		if (!importDecl.importClause.namedBindings) {
+			return undefined
+		}
+
+		if (!ts.isNamedImports(importDecl.importClause.namedBindings)) {
+			return undefined
+		}
+
+		return importDecl
 	}
 }
 
