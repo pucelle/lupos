@@ -65,8 +65,7 @@ const $html_2 = new HTMLMaker("<div><slot></slot></div>");
     $node_1.append(...$context.__getRestSlotNodes());
     return {
         el: $node,
-        position: new SlotPosition(1, $node_0),
-        parts: [$slot_0]
+        position: new SlotPosition(1, $node_0)
     };
 });
 class TestComponent extends Component {
