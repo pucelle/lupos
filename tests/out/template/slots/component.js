@@ -14,7 +14,7 @@ const $html_0 = new HTMLMaker("<div></div>");
     $binding_0.updateString('className');
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0),
+        position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {
                 $com_0.prop = $latest_0 = $values[0];
@@ -36,7 +36,7 @@ const $html_1 = new HTMLMaker("<div>Rest Content</div>");
     $com_0.__applyRestSlotRange(new SlotRange($node_1, $node_1));
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0),
+        position: new SlotPosition(1, $node_0),
         parts: [$com_0]
     };
 });
@@ -54,7 +54,7 @@ const $html_2 = new HTMLMaker("<div> </div>");
     $com_0.__applyRestSlotRange(new SlotRange($node_1, $node_1));
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0),
+        position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== "" + $values[0] + "Rest Content") {
                 $node_1.data = $latest_0 = "" + $values[0] + "Rest Content";

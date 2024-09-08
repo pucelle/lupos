@@ -9,10 +9,10 @@ const $html_0 = new HTMLMaker("<!----><!---->");
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
-    $block_0 = new KeyedBlock($template_1, new TemplateSlot(new SlotPosition(2, $node_1), $context));
+    $block_0 = new KeyedBlock($template_1, new TemplateSlot(new SlotPosition(1, $node_1), $context));
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0),
+        position: new SlotPosition(1, $node_0),
         update($values) {
             $block_0.update($values[0], $values);
         }
@@ -26,7 +26,7 @@ const $html_1 = new HTMLMaker("Keyed Content");
     let $node_0 = $node.content.firstChild;
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0)
+        position: new SlotPosition(1, $node_0)
     };
 });
 class TestKeyed extends Component {

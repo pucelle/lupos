@@ -12,7 +12,7 @@ const $html_0 = new HTMLMaker("<div></div>");
     $com_0.on("connected", $context.handleEvent, $context);
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0),
+        position: new SlotPosition(1, $node_0),
         parts: [$com_0]
     };
 });
@@ -27,7 +27,7 @@ const $html_0 = new HTMLMaker("<div></div>");
     $com_0.on("eventName", $context.handleEvent, $context);
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0),
+        position: new SlotPosition(1, $node_0),
         parts: [$com_0]
     };
 });
@@ -44,10 +44,10 @@ const $html_1 = new HTMLMaker("<!----><div></div><!---->");
     let $block_0 = new DynamicComponentBlock(function (com) {
         $com_0 = com;
         $com_0.on("connected", $context.handleEvent, $context);
-    }, new TemplateSlot(new SlotPosition(2, $node_1), $context));
+    }, new TemplateSlot(new SlotPosition(1, $node_1), $context));
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0),
+        position: new SlotPosition(1, $node_0),
         update($values) {
             $block_0.update($values[0]);
         },
@@ -66,10 +66,10 @@ const $html_1 = new HTMLMaker("<!----><div></div><!---->");
     let $block_0 = new DynamicComponentBlock(function (com) {
         $com_0 = com;
         $com_0.on("connected", $context.handleEvent, $context);
-    }, new TemplateSlot(new SlotPosition(2, $node_1), $context));
+    }, new TemplateSlot(new SlotPosition(1, $node_1), $context));
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0),
+        position: new SlotPosition(1, $node_0),
         update($values) {
             $block_0.update($values[0]);
         },
@@ -87,7 +87,7 @@ const $html_1 = new HTMLMaker("<!----><div></div><!---->");
     $com_0.on("forceComEvent", $context.handleEvent, $context);
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0),
+        position: new SlotPosition(1, $node_0),
         parts: [$com_0]
     };
 });
@@ -101,7 +101,7 @@ const $html_1 = new HTMLMaker("<!----><div></div><!---->");
     $node_0.addEventListener("click", $context.handleEvent.bind($context));
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0)
+        position: new SlotPosition(1, $node_0)
     };
 });
 /*
@@ -114,7 +114,7 @@ const $html_1 = new HTMLMaker("<!----><div></div><!---->");
     SimulatedEvents.on($node_0, "tap", $context.handleEvent, $context);
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0)
+        position: new SlotPosition(1, $node_0)
     };
 });
 /*
@@ -127,7 +127,7 @@ const $html_1 = new HTMLMaker("<!----><div></div><!---->");
     SimulatedEvents.on($node_0, "hold", $context.handleEvent, $context);
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0)
+        position: new SlotPosition(1, $node_0)
     };
 });
 /*
@@ -140,7 +140,7 @@ const $html_1 = new HTMLMaker("<!----><div></div><!---->");
     DOMModifiableEvents.on($node_0, "click", ["prevent"], $context.handleEvent, $context);
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0)
+        position: new SlotPosition(1, $node_0)
     };
 });
 /*
@@ -156,7 +156,7 @@ const $html_1 = new HTMLMaker("<!----><div></div><!---->");
     });
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0),
+        position: new SlotPosition(1, $node_0),
         update($values) {
             $latest_0 = $values[0];
         }

@@ -12,7 +12,7 @@ const $html_0 = new HTMLMaker("<div></div>");
     $binding_0.update(function (refed) { this.refEl = refed; });
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0),
+        position: new SlotPosition(1, $node_0),
         parts: [$binding_0]
     };
 });
@@ -28,7 +28,7 @@ const $html_0 = new HTMLMaker("<div></div>");
     $binding_0.update(function (refed) { this.refCom = refed; });
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0),
+        position: new SlotPosition(1, $node_0),
         parts: [$com_0, $binding_0]
     };
 });
@@ -44,7 +44,7 @@ const $html_0 = new HTMLMaker("<div></div>");
     $binding_0.update(function (refed) { this.refEl = refed; });
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0),
+        position: new SlotPosition(1, $node_0),
         parts: [$com_0, $binding_0]
     };
 });
@@ -60,7 +60,7 @@ const $html_0 = new HTMLMaker("<div></div>");
     $binding_0.update(function (refed) { this.refElByType = refed; });
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0),
+        position: new SlotPosition(1, $node_0),
         parts: [$com_0, $binding_0]
     };
 });

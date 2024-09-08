@@ -12,7 +12,7 @@ const $html_0 = new HTMLMaker("<div></div>");
     let $binding_0 = new StyleBinding($node_0);
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0),
+        position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== "color: " + $values[0]) {
                 $binding_0.updateString($latest_0 = "color: " + $values[0]);
@@ -31,7 +31,7 @@ const $html_0 = new HTMLMaker("<div></div>");
     let $binding_0 = new StyleBinding($node_0);
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0),
+        position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {
                 $binding_0.updateString($latest_0 = $values[0]);
@@ -50,7 +50,7 @@ const $html_0 = new HTMLMaker("<div></div>");
     let $binding_0 = new StyleBinding($node_0);
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0),
+        position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== "" + $values[0]) {
                 $binding_0.updateString($latest_0 = "" + $values[0]);
@@ -69,7 +69,7 @@ const $html_0 = new HTMLMaker("<div></div>");
     let $binding_0 = new StyleBinding($node_0);
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0),
+        position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {
                 $binding_0.updateObject($latest_0 = $values[0]);
@@ -88,7 +88,7 @@ const $html_0 = new HTMLMaker("<div></div>");
     let $binding_0 = new StyleBinding($node_0);
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0),
+        position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {
                 $binding_0.updateObject({ color: $values[0] });
@@ -108,7 +108,7 @@ const $html_0 = new HTMLMaker("<div></div>");
     let $binding_0 = new StyleBinding($node_0);
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0),
+        position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {
                 $binding_0.updateObject({ width: $values[0] + "px" });
@@ -128,7 +128,7 @@ const $html_0 = new HTMLMaker("<div></div>");
     let $binding_0 = new StyleBinding($node_0);
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0),
+        position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {
                 $binding_0.updateObject({ width: $values[0] + "%" });
@@ -148,7 +148,7 @@ const $html_0 = new HTMLMaker("<div></div>");
     let $binding_0 = new StyleBinding($node_0);
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0),
+        position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {
                 $binding_0.updateObject({ background: "url(" + $values[0] + ")" });
@@ -168,7 +168,7 @@ const $html_0 = new HTMLMaker("<div></div>");
     $binding_0.updateString("color: " + 'red');
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0)
+        position: new SlotPosition(1, $node_0)
     };
 });
 /*
@@ -182,7 +182,7 @@ const $html_0 = new HTMLMaker("<div></div>");
     $binding_0.updateString('styleValue');
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0)
+        position: new SlotPosition(1, $node_0)
     };
 });
 /*
@@ -196,7 +196,7 @@ const $html_0 = new HTMLMaker("<div></div>");
     $binding_0.updateObject({ styleName: 'styleValue' });
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0)
+        position: new SlotPosition(1, $node_0)
     };
 });
 /*
@@ -210,7 +210,7 @@ const $html_0 = new HTMLMaker("<div></div>");
     $binding_0.updateObject({ prop: true });
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0)
+        position: new SlotPosition(1, $node_0)
     };
 });
 class TestStyleBinding extends Component {

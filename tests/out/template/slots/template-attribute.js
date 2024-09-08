@@ -10,7 +10,7 @@ const $html_0 = new HTMLMaker("<!---->");
     $context.el.classList.add("className");
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0)
+        position: new SlotPosition(1, $node_0)
     };
 });
 /*
@@ -23,7 +23,7 @@ const $html_0 = new HTMLMaker("<!---->");
     $context.el.style["background-color"] = "red";
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0)
+        position: new SlotPosition(1, $node_0)
     };
 });
 /*
@@ -36,7 +36,7 @@ const $html_0 = new HTMLMaker("<!---->");
     $context.el.setAttribute("attr", "value");
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0)
+        position: new SlotPosition(1, $node_0)
     };
 });
 const $html_1 = new HTMLMaker("<div></div>");
@@ -49,7 +49,7 @@ const $html_1 = new HTMLMaker("<div></div>");
     let $node_0 = $node.content.firstChild;
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0)
+        position: new SlotPosition(1, $node_0)
     };
 });
 const $html_2 = new HTMLMaker("<div><!----></div>");
@@ -66,12 +66,12 @@ const $html_2 = new HTMLMaker("<div><!----></div>");
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node_0.firstChild;
     $context.el.setAttribute("attr", "value");
-    let $slot_0 = new TemplateSlot(new SlotPosition(2, $node_1), $context, 0);
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context, 0);
     $node_0.setAttribute("attr", 'value');
     $slot_0.update(new CompiledTemplateResult($template_3, []));
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0),
+        position: new SlotPosition(1, $node_0),
         parts: [$slot_0]
     };
 });

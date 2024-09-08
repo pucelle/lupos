@@ -172,6 +172,13 @@ export class HTMLNode {
 			return false
 		}
 
+		// Named slot target will be moved.
+		if (this.type === HTMLNodeType.Tag
+			&& this.attrs!.find(attr => attr.name === ':slot')
+		) {
+			return false
+		}
+
 		return true
 	}
 

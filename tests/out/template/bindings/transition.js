@@ -11,7 +11,7 @@ const $html_0 = new HTMLMaker("<div></div>");
     let $binding_0 = new TransitionBinding($node_0, $context);
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0),
+        position: new SlotPosition(1, $node_0),
         update($values) {
             $binding_0.update($values[0]);
         },
@@ -29,7 +29,7 @@ const $html_0 = new HTMLMaker("<div></div>");
     $binding_0.update(fade({ duration: 300 }));
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0),
+        position: new SlotPosition(1, $node_0),
         parts: [$binding_0]
     };
 });

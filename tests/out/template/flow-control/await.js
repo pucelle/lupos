@@ -9,10 +9,10 @@ const $html_0 = new HTMLMaker("<!----><!---->");
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
-    $block_0 = new AwaitBlock([$template_1, $template_2, null], new TemplateSlot(new SlotPosition(2, $node_1), $context));
+    $block_0 = new AwaitBlock([$template_1, $template_2, null], new TemplateSlot(new SlotPosition(1, $node_1), $context));
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0),
+        position: new SlotPosition(1, $node_0),
         update($values) {
             $block_0.update($values[0], $values);
         }
@@ -26,7 +26,7 @@ const $html_1 = new HTMLMaker("Pending Content");
     let $node_0 = $node.content.firstChild;
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0)
+        position: new SlotPosition(1, $node_0)
     };
 });
 const $html_2 = new HTMLMaker("Then Content");
@@ -37,7 +37,7 @@ const $html_2 = new HTMLMaker("Then Content");
     let $node_0 = $node.content.firstChild;
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0)
+        position: new SlotPosition(1, $node_0)
     };
 });
 /*
@@ -48,10 +48,10 @@ const $html_2 = new HTMLMaker("Then Content");
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
-    $block_0 = new AwaitBlock([$template_4, null, $template_5], new TemplateSlot(new SlotPosition(2, $node_1), $context));
+    $block_0 = new AwaitBlock([$template_4, null, $template_5], new TemplateSlot(new SlotPosition(1, $node_1), $context));
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0),
+        position: new SlotPosition(1, $node_0),
         update($values) {
             $block_0.update($values[0], $values);
         }
@@ -64,7 +64,7 @@ const $html_2 = new HTMLMaker("Then Content");
     let $node_0 = $node.content.firstChild;
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0)
+        position: new SlotPosition(1, $node_0)
     };
 });
 const $html_3 = new HTMLMaker("Catch Content");
@@ -75,7 +75,7 @@ const $html_3 = new HTMLMaker("Catch Content");
     let $node_0 = $node.content.firstChild;
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0)
+        position: new SlotPosition(1, $node_0)
     };
 });
 /*
@@ -86,10 +86,10 @@ const $html_3 = new HTMLMaker("Catch Content");
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
-    $block_0 = new AwaitBlock([$template_7, $template_8, $template_9], new TemplateSlot(new SlotPosition(2, $node_1), $context));
+    $block_0 = new AwaitBlock([$template_7, $template_8, $template_9], new TemplateSlot(new SlotPosition(1, $node_1), $context));
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0),
+        position: new SlotPosition(1, $node_0),
         update($values) {
             $block_0.update($values[0], $values);
         }
@@ -102,7 +102,7 @@ const $html_3 = new HTMLMaker("Catch Content");
     let $node_0 = $node.content.firstChild;
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0)
+        position: new SlotPosition(1, $node_0)
     };
 });
 /*
@@ -112,7 +112,7 @@ const $html_3 = new HTMLMaker("Catch Content");
     let $node_0 = $node.content.firstChild;
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0)
+        position: new SlotPosition(1, $node_0)
     };
 });
 /*
@@ -122,7 +122,7 @@ const $html_3 = new HTMLMaker("Catch Content");
     let $node_0 = $node.content.firstChild;
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0)
+        position: new SlotPosition(1, $node_0)
     };
 });
 class TestAwait extends Component {

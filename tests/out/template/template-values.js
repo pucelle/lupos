@@ -11,7 +11,7 @@ const $html_0 = new HTMLMaker("<div></div>");
     $node_0.setAttribute("attr", 'className');
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0)
+        position: new SlotPosition(1, $node_0)
     };
 });
 /*
@@ -24,7 +24,7 @@ const $html_0 = new HTMLMaker("<div></div>");
     let $node_0 = $node.content.firstChild;
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0),
+        position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {
                 $node_0.setAttribute("attr", $latest_0 = $values[0]);
@@ -42,7 +42,7 @@ const $html_0 = new HTMLMaker("<div></div>");
     $node_0.setAttribute("attr", $context.readonlyProp);
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0)
+        position: new SlotPosition(1, $node_0)
     };
 });
 /*
@@ -55,7 +55,7 @@ const $html_0 = new HTMLMaker("<div></div>");
     $node_0.prop = $context.getValue;
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0)
+        position: new SlotPosition(1, $node_0)
     };
 });
 /*
@@ -68,7 +68,7 @@ const $html_0 = new HTMLMaker("<div></div>");
     let $node_0 = $node.content.firstChild;
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0),
+        position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {
                 $node_0.setAttribute("attr", $latest_0 = $values[0]);
@@ -86,7 +86,7 @@ const $html_0 = new HTMLMaker("<div></div>");
     $node_0.addEventListener("click", (() => $context.handleEvent($context.prop)).bind($context));
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0)
+        position: new SlotPosition(1, $node_0)
     };
 });
 /*
@@ -99,7 +99,7 @@ const $html_0 = new HTMLMaker("<div></div>");
     $node_0.addEventListener("click", (() => $context.handleEvent(globalVariable)).bind($context));
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0)
+        position: new SlotPosition(1, $node_0)
     };
 });
 /*
@@ -112,7 +112,7 @@ const $html_0 = new HTMLMaker("<div></div>");
     let $node_0 = $node.content.firstChild;
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0),
+        position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== "name1 " + $values[0] + " name2 " + $values[0]) {
                 $node_0.setAttribute("attr", $latest_0 = "name1 " + $values[0] + " name2 " + $values[0]);
@@ -130,7 +130,7 @@ const $html_0 = new HTMLMaker("<div></div>");
     let $node_0 = $node.content.firstChild;
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0),
+        position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== "" + $values[0]) {
                 $node_0.setAttribute("attr", $latest_0 = "" + $values[0]);

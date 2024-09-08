@@ -12,7 +12,7 @@ const $html_0 = new HTMLMaker("<div></div>");
     $com_0.comProp = 1;
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0),
+        position: new SlotPosition(1, $node_0),
         parts: [$com_0]
     };
 });
@@ -29,10 +29,10 @@ const $html_1 = new HTMLMaker("<!----><div></div><!---->");
     let $block_0 = new DynamicComponentBlock(function (com) {
         $com_0 = com;
         $com_0.comProp = 1;
-    }, new TemplateSlot(new SlotPosition(2, $node_1), $context));
+    }, new TemplateSlot(new SlotPosition(1, $node_1), $context));
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0),
+        position: new SlotPosition(1, $node_0),
         update($values) {
             $block_0.update($values[0]);
         },
@@ -51,10 +51,10 @@ const $html_1 = new HTMLMaker("<!----><div></div><!---->");
     let $block_0 = new DynamicComponentBlock(function (com) {
         $com_0 = com;
         $com_0.comProp = 1;
-    }, new TemplateSlot(new SlotPosition(2, $node_1), $context));
+    }, new TemplateSlot(new SlotPosition(1, $node_1), $context));
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0),
+        position: new SlotPosition(1, $node_0),
         update($values) {
             $block_0.update($values[0]);
         },
@@ -72,7 +72,7 @@ const $html_1 = new HTMLMaker("<!----><div></div><!---->");
     $com_0.forceComProp = 1;
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0),
+        position: new SlotPosition(1, $node_0),
         parts: [$com_0]
     };
 });
@@ -86,7 +86,7 @@ const $html_1 = new HTMLMaker("<!----><div></div><!---->");
     $node_0.elProp = 1;
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0)
+        position: new SlotPosition(1, $node_0)
     };
 });
 class TestProperty extends Component {

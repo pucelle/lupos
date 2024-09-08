@@ -12,7 +12,7 @@ const $html_0 = new HTMLMaker("<div> </div>");
     $node_1.data = 'abc';
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0)
+        position: new SlotPosition(1, $node_0)
     };
 });
 /*
@@ -26,7 +26,7 @@ const $html_0 = new HTMLMaker("<div> </div>");
     let $node_1 = $node_0.firstChild;
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0),
+        position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {
                 $node_1.data = $latest_0 = $values[0];
@@ -45,7 +45,7 @@ const $html_0 = new HTMLMaker("<div> </div>");
     let $node_1 = $node_0.firstChild;
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0),
+        position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {
                 $node_1.data = $latest_0 = $values[0];
@@ -64,7 +64,7 @@ const $html_0 = new HTMLMaker("<div> </div>");
     let $node_1 = $node_0.firstChild;
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0),
+        position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {
                 $node_1.data = $latest_0 = $values[0];

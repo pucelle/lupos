@@ -16,10 +16,10 @@ const $html_0 = new HTMLMaker("<!----><!---->");
         else {
             return -1;
         }
-    }, [$template_1], new TemplateSlot(new SlotPosition(2, $node_1), $context));
+    }, [$template_1], new TemplateSlot(new SlotPosition(1, $node_1), $context));
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0),
+        position: new SlotPosition(1, $node_0),
         update($values) {
             $block_0.update($values);
         }
@@ -33,7 +33,7 @@ const $html_1 = new HTMLMaker("If Content");
     let $node_0 = $node.content.firstChild;
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0)
+        position: new SlotPosition(1, $node_0)
     };
 });
 /*
@@ -51,10 +51,10 @@ const $html_1 = new HTMLMaker("If Content");
         else {
             return -1;
         }
-    }, [$template_3], new TemplateSlot(new SlotPosition(2, $node_1), $context));
+    }, [$template_3], new TemplateSlot(new SlotPosition(1, $node_1), $context));
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0),
+        position: new SlotPosition(1, $node_0),
         update($values) {
             $block_0.update($values);
         }
@@ -67,7 +67,7 @@ const $html_1 = new HTMLMaker("If Content");
     let $node_0 = $node.content.firstChild;
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0)
+        position: new SlotPosition(1, $node_0)
     };
 });
 /*
@@ -85,10 +85,10 @@ const $html_1 = new HTMLMaker("If Content");
         else {
             return -1;
         }
-    }, [$template_5], new TemplateSlot(new SlotPosition(2, $node_1), $context));
+    }, [$template_5], new TemplateSlot(new SlotPosition(1, $node_1), $context));
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0),
+        position: new SlotPosition(1, $node_0),
         update($values) {
             $block_0.update($values);
         }
@@ -103,7 +103,7 @@ const $html_2 = new HTMLMaker(" ");
     let $node_0 = $node.content.firstChild;
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0),
+        position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[1]) {
                 $node_0.data = $latest_0 = $values[1];
@@ -126,10 +126,10 @@ const $html_2 = new HTMLMaker(" ");
         else {
             return 1;
         }
-    }, [$template_7, $template_8], new TemplateSlot(new SlotPosition(2, $node_1), $context));
+    }, [$template_7, $template_8], new TemplateSlot(new SlotPosition(1, $node_1), $context));
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0),
+        position: new SlotPosition(1, $node_0),
         update($values) {
             $block_0.update($values);
         }
@@ -142,7 +142,7 @@ const $html_2 = new HTMLMaker(" ");
     let $node_0 = $node.content.firstChild;
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0)
+        position: new SlotPosition(1, $node_0)
     };
 });
 const $html_3 = new HTMLMaker("Else Content");
@@ -153,7 +153,7 @@ const $html_3 = new HTMLMaker("Else Content");
     let $node_0 = $node.content.firstChild;
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0)
+        position: new SlotPosition(1, $node_0)
     };
 });
 /*
@@ -177,10 +177,10 @@ const $html_3 = new HTMLMaker("Else Content");
         else {
             return 3;
         }
-    }, [$template_10, $template_11, $template_12, $template_13], new TemplateSlot(new SlotPosition(2, $node_1), $context));
+    }, [$template_10, $template_11, $template_12, $template_13], new TemplateSlot(new SlotPosition(1, $node_1), $context));
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0),
+        position: new SlotPosition(1, $node_0),
         update($values) {
             $block_0.update($values);
         }
@@ -193,7 +193,7 @@ const $html_3 = new HTMLMaker("Else Content");
     let $node_0 = $node.content.firstChild;
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0)
+        position: new SlotPosition(1, $node_0)
     };
 });
 const $html_4 = new HTMLMaker("Then Content 1");
@@ -204,7 +204,7 @@ const $html_4 = new HTMLMaker("Then Content 1");
     let $node_0 = $node.content.firstChild;
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0)
+        position: new SlotPosition(1, $node_0)
     };
 });
 const $html_5 = new HTMLMaker("Then Content 2");
@@ -215,7 +215,7 @@ const $html_5 = new HTMLMaker("Then Content 2");
     let $node_0 = $node.content.firstChild;
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0)
+        position: new SlotPosition(1, $node_0)
     };
 });
 const $html_6 = new HTMLMaker("Then Content");
@@ -226,7 +226,7 @@ const $html_6 = new HTMLMaker("Then Content");
     let $node_0 = $node.content.firstChild;
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0)
+        position: new SlotPosition(1, $node_0)
     };
 });
 class TestIf extends Component {

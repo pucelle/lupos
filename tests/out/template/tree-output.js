@@ -10,7 +10,7 @@ const $html_0 = new HTMLMaker("<!---->");
     $context.el.classList.add("className");
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0)
+        position: new SlotPosition(1, $node_0)
     };
 });
 const $html_1 = new HTMLMaker("<svg><path></path></svg>", true);
@@ -25,7 +25,7 @@ const $html_1 = new HTMLMaker("<svg><path></path></svg>", true);
     let $node_0 = $node.content.firstChild;
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0)
+        position: new SlotPosition(1, $node_0)
     };
 });
 const $html_2 = new HTMLMaker("<svg><slot name=\"slotName\"></slot></svg>", true);
@@ -38,10 +38,10 @@ const $html_2 = new HTMLMaker("<svg><slot name=\"slotName\"></slot></svg>", true
 */ const $template_2 = new TemplateMaker($context => {
     let $node = $html_2.make();
     let $node_0 = $node.content.firstChild;
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_0), $context);
+    let $slot_0 = new TemplateSlot(new SlotPosition(0, $node_0), $context);
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0),
+        position: new SlotPosition(1, $node_0),
         update($values) {
             $slot_0.update($context.__getSlotElement("slotName") ?? new CompiledTemplateResult($template_3, $values));
         },
@@ -59,7 +59,7 @@ const $html_2 = new HTMLMaker("<svg><slot name=\"slotName\"></slot></svg>", true
     let $node_0 = $node.content.firstChild;
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0)
+        position: new SlotPosition(1, $node_0)
     };
 });
 const $html_3 = new HTMLMaker("<div></div>");
@@ -86,7 +86,7 @@ class TestTemplateOutput extends Component {
             let $com_0 = new Child({}, $node_0);
             return {
                 el: $node,
-                position: new SlotPosition(2, $node_0),
+                position: new SlotPosition(1, $node_0),
                 parts: [$com_0]
             };
         });

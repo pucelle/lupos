@@ -10,10 +10,10 @@ const $html_0 = new HTMLMaker("<div><slot name=\"slotName\"></slot></div>");
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node_0.firstChild;
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context, 3);
+    let $slot_0 = new TemplateSlot(new SlotPosition(0, $node_1), $context, 3);
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0),
+        position: new SlotPosition(1, $node_0),
         update($values) {
             $slot_0.update($context.__getSlotElement("slotName"));
         },
@@ -30,10 +30,10 @@ const $html_0 = new HTMLMaker("<div><slot name=\"slotName\"></slot></div>");
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node_0.firstChild;
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context);
+    let $slot_0 = new TemplateSlot(new SlotPosition(0, $node_1), $context);
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0),
+        position: new SlotPosition(1, $node_0),
         update($values) {
             $slot_0.update($context.__getSlotElement("slotName") ?? new CompiledTemplateResult($template_2, $values));
         },
@@ -48,7 +48,7 @@ const $html_1 = new HTMLMaker("Content");
     let $node_0 = $node.content.firstChild;
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0)
+        position: new SlotPosition(1, $node_0)
     };
 });
 const $html_2 = new HTMLMaker("<div><slot></slot></div>");
@@ -65,7 +65,7 @@ const $html_2 = new HTMLMaker("<div><slot></slot></div>");
     $node_1.append(...$context.__getRestSlotNodes());
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0),
+        position: new SlotPosition(1, $node_0),
         parts: [$slot_0]
     };
 });

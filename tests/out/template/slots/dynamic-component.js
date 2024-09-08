@@ -12,11 +12,11 @@ const $html_0 = new HTMLMaker("<!----><div></div><!---->");
     let $node_1 = $node.content.lastChild;
     let $block_0 = new DynamicComponentBlock(function (com) {
         $com_0 = com;
-    }, new TemplateSlot(new SlotPosition(2, $node_1), $context));
+    }, new TemplateSlot(new SlotPosition(1, $node_1), $context));
     $block_0.update(ChildComponent);
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0),
+        position: new SlotPosition(1, $node_0),
         parts: () => [$com_0]
     };
 });
@@ -33,11 +33,11 @@ const $html_1 = new HTMLMaker("<!----><div>Content</div><!---->");
     let $node_1 = $node.content.lastChild;
     let $block_0 = new DynamicComponentBlock(function (com) {
         $com_0 = com;
-    }, new TemplateSlot(new SlotPosition(2, $node_1), $context), new SlotRange($node_2, $node_2));
+    }, new TemplateSlot(new SlotPosition(1, $node_1), $context), new SlotRange($node_2, $node_2));
     $block_0.update(ChildComponent);
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0),
+        position: new SlotPosition(1, $node_0),
         parts: () => [$com_0]
     };
 });
@@ -56,11 +56,11 @@ const $html_1 = new HTMLMaker("<!----><div>Content</div><!---->");
         $com_0 = com;
         $binding_0 = new ClassBinding($node_1);
         $binding_0.updateString('className');
-    }, new TemplateSlot(new SlotPosition(2, $node_2), $context));
+    }, new TemplateSlot(new SlotPosition(1, $node_2), $context));
     $block_0.update(ChildComponent);
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0),
+        position: new SlotPosition(1, $node_0),
         parts: () => [$com_0]
     };
 });
@@ -77,11 +77,11 @@ const $html_1 = new HTMLMaker("<!----><div>Content</div><!---->");
     let $block_0 = new DynamicComponentBlock(function (com) {
         $node_1 = com.el;
         $com_0 = com;
-    }, new TemplateSlot(new SlotPosition(2, $node_2), $context));
+    }, new TemplateSlot(new SlotPosition(1, $node_2), $context));
     $block_0.update(ChildComponent);
     return {
         el: $node,
-        position: new SlotPosition(2, $node_0),
+        position: new SlotPosition(1, $node_0),
         parts: () => [$com_0]
     };
 });

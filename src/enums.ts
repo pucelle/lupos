@@ -1,7 +1,6 @@
 export enum SlotPositionType {
-	BeforeContent = 0,
-	AfterContent = 1,
-	Before = 2,
+	AfterContent = 0,
+	Before = 1,
 }
 
 export enum SlotContentType {
