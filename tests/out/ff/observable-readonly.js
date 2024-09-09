@@ -1,5 +1,5 @@
 import { DeepReadonly, trackGet } from '@pucelle/ff';
-import { Component, SlotContentType } from '@pucelle/lupos.js';
+import { Component } from '@pucelle/lupos.js';
 class TestReadonlyModifier extends Component {
     static SlotContentType = 2;
     prop1 = { value: 'Text' };

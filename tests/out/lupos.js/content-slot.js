@@ -1,5 +1,5 @@
 import * as L from '@pucelle/lupos.js';
-import { Component, TemplateResult, SlotContentType } from '@pucelle/lupos.js';
+import { Component } from '@pucelle/lupos.js';
 class TestTemplateResult extends L.Component {
     static SlotContentType = 0;
     render() {

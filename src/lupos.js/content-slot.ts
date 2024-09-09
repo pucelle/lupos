@@ -51,8 +51,6 @@ defineVisitor(function(node: TS.Node, index: number) {
 
 	// Add a property `static SlotContentType = SlotContentType.xxx`.
 	if (slotType !== null) {
-		Modifier.addImport('SlotContentType', '@pucelle/lupos.js')
-
 		let property = factory.createPropertyDeclaration(
 			[
 				factory.createToken(ts.SyntaxKind.StaticKeyword)
