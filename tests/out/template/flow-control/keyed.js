@@ -9,7 +9,7 @@ const $html_0 = new HTMLMaker("<!----><!---->");
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
-    $block_0 = new KeyedBlock($template_1, new TemplateSlot(new SlotPosition(1, $node_1), $context));
+    let $block_0 = new KeyedBlock($template_1, new TemplateSlot(new SlotPosition(1, $node_1), $context));
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),

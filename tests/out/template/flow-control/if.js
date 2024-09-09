@@ -9,7 +9,7 @@ const $html_0 = new HTMLMaker("<!----><!---->");
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
-    $block_0 = new IfBlock(function ($values) {
+    let $block_0 = new IfBlock(function ($values) {
         if ($values[0]) {
             return 0;
         }
@@ -44,7 +44,7 @@ const $html_1 = new HTMLMaker("If Content");
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
-    $block_0 = new CacheableIfBlock(function ($values) {
+    let $block_0 = new CacheableIfBlock(function ($values) {
         if ($values[0]) {
             return 0;
         }
@@ -78,7 +78,7 @@ const $html_1 = new HTMLMaker("If Content");
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
-    $block_0 = new IfBlock(function ($values) {
+    let $block_0 = new IfBlock(function ($values) {
         if ($values[0]) {
             return 0;
         }
@@ -119,7 +119,7 @@ const $html_2 = new HTMLMaker(" ");
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
-    $block_0 = new IfBlock(function ($values) {
+    let $block_0 = new IfBlock(function ($values) {
         if ($values[0]) {
             return 0;
         }
@@ -164,7 +164,7 @@ const $html_3 = new HTMLMaker("Else Content");
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
-    $block_0 = new IfBlock(function ($values) {
+    let $block_0 = new IfBlock(function ($values) {
         if ($values[0]) {
             return 0;
         }

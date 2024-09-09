@@ -9,7 +9,7 @@ const $html_0 = new HTMLMaker("<!----><!---->");
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
-    $block_0 = new SwitchBlock(function ($values) {
+    let $block_0 = new SwitchBlock(function ($values) {
         switch ($values[0]) {
             case 1: return 0;
             case 2: return 1;
@@ -54,7 +54,7 @@ const $html_2 = new HTMLMaker("Case Content 2");
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
-    $block_0 = new SwitchBlock(function ($values) {
+    let $block_0 = new SwitchBlock(function ($values) {
         switch ($values[0]) {
             case 1: return 0;
             case 2: return 1;
