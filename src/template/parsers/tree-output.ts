@@ -208,7 +208,7 @@ export class TreeOutputHandler {
 	private outputLatestValues(varNames: string[], update: OutputNodeList) {
 
 		// Should output `$latest_values = $values`
-		if (this.template.values.isAnyIndexTransferredToTopmost()) {
+		if (this.template.values.isAnyMutableIndexTransferred()) {
 			varNames.push(VariableNames.latestValues)
 
 			update.unshift(factory.createBinaryExpression(

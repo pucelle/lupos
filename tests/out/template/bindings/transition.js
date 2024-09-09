@@ -6,6 +6,7 @@ const $html_0 = new HTMLMaker("<div></div>");
     <div :transition=${fade({duration: this.duration})} />
 </root>
 */ const $template_0 = new TemplateMaker($context => {
+    let $latest_0;
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $binding_0 = new TransitionBinding($node_0, $context);
@@ -13,7 +14,9 @@ const $html_0 = new HTMLMaker("<div></div>");
         el: $node,
         position: new SlotPosition(1, $node_0),
         update($values) {
-            $binding_0.update($values[0]);
+            if ($latest_0 !== $values[0]) {
+                $binding_0.update($latest_0 = $values[0]);
+            }
         },
         parts: [$binding_0]
     };

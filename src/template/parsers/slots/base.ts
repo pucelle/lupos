@@ -81,7 +81,7 @@ export abstract class SlotParserBase {
 		return this.strings !== null
 	}
 
-	/** Returns whether current value node is mutable. */
+	/** Returns whether current raw value node is mutable. */
 	protected isValueMutable(): boolean {
 		return this.valueIndices !== null
 			&& this.valueIndices.some(index => this.template.values.isIndexMutable(index))
@@ -97,6 +97,12 @@ export abstract class SlotParserBase {
 	isValueOutputAsMutable(): boolean {
 		return this.valueIndices !== null
 			&& this.valueIndices.some(index => this.template.values.isIndexOutputAsMutable(index))
+	}
+
+	/** Returns whether current value has been transferred to topmost scope. */
+	isValueTransferred(): boolean {
+		return this.valueIndices !== null
+			&& this.valueIndices.some(index => this.template.values.isIndexTransferred(index))
 	}
 
 	/** 

@@ -3,7 +3,7 @@ import {addToList, ListMap} from '../utils'
 import {factory, sourceFile, transformContext, ts} from './global'
 import {Visiting} from './visiting'
 import {InterpolationContentType, Interpolator} from './interpolator'
-import {Helper} from './helper'
+import {AccessNode, Helper} from './helper'
 import {definePostVisitCallback, definePreVisitCallback} from './visitor-callbacks'
 import {Scope} from './scope'
 
@@ -24,11 +24,19 @@ export enum MutableMask {
 	/** `1`, use `const a`, use `import a`, use global declared `a`, `this.onClick`. */
 	Static = 0,
 
-	/** use local variable `a`. */
+	/** If referenced value is mutable, and need to update for multiple times. */
 	Mutable = 1,
 
-	/** Have some variable using directly, but not use them inside a function. */
-	CantTurnStatic = 2,
+	/** 
+	 * Can (not can't) turn static means can re-declared a local variable,
+	 * normally a local function in top scope, and transfer all of it's
+	 * referenced local variables using parameter values.
+	 * 
+	 * If references any local variable not within a function, this mask byte is 1.
+	 * 
+	 * This mask byte is available only when Mutable byte is 1.
+	 */
+	CantTransfer = 2,
 }
 
 
@@ -260,10 +268,47 @@ export namespace Scoping {
 		}
 	}
 
-	/** Returns whether declared variable at top (source file) scope. */
-	function isDeclaredInTopScope(rawNode: TS.Identifier): boolean {
-		let declaredIn = findDeclaredScope(rawNode)
-		return declaredIn ? declaredIn.isTopmost() : false
+	/** Returns whether declared variable or access node in topmost scope. */
+	function isDeclaredInTopmostScope(rawNode: TS.Identifier | AccessNode | TS.ThisExpression): boolean {
+		if (Helper.access.isAccess(rawNode)) {
+			let exp = rawNode.expression
+			return isDeclaredInTopmostScope(exp as TS.Identifier | AccessNode | TS.ThisExpression)
+		}
+		else if (rawNode.kind === ts.SyntaxKind.ThisKeyword) {
+			return false
+		}
+		else if (ts.isIdentifier(rawNode)) {
+			let declaredIn = findDeclaredScope(rawNode)
+			return declaredIn ? declaredIn.isTopmost() : false
+		}
+		else {
+			return false
+		}
+	}
+
+	/** Returns whether a variable node or an access node was declared as const. */
+	function isDeclaredAsConstLike(rawNode: TS.Identifier | AccessNode | TS.ThisExpression): boolean {
+		if (Helper.access.isAccess(rawNode)) {
+			let readonly = Helper.symbol.resolveProperty(rawNode) && Helper.types.isReadonly(rawNode)
+			let beMethod = Helper.symbol.resolveMethod(rawNode) && !ts.isCallExpression(rawNode.parent)
+
+			if (!readonly && !beMethod) {
+				return false
+			}
+
+			let exp = rawNode.expression
+			return isDeclaredAsConstLike(exp as TS.Identifier | AccessNode | TS.ThisExpression)
+		}
+		else if (rawNode.kind === ts.SyntaxKind.ThisKeyword) {
+			return true
+		}
+		else if (ts.isIdentifier(rawNode)) {
+			let scope = findDeclaredScope(rawNode)
+			return scope ? scope.isLocalVariableConstLike(rawNode.text) : false
+		}
+		else {
+			return false
+		}
 	}
 
 	/** Returns whether a node is declared within target node. */
@@ -286,78 +331,51 @@ export namespace Scoping {
 		return false
 	}
 
-	/** Returns whether a variable node was declared as const. */
-	function isDeclaredAsConstLike(rawNode: TS.Identifier): boolean {
-		let scope = findDeclaredScope(rawNode)
-		return scope ? scope.isLocalVariableConstLike(rawNode.text) : false
-	}
-
 
 	/** Test whether expression represented value is mutable. */
 	export function testMutable(rawNode: TS.Expression): MutableMask {
 		return testMutableVisitor(rawNode, false)
 	}
 
-	function testMutableVisitor(rawNode: TS.Node, inFunction: boolean): MutableMask {
+	function testMutableVisitor(rawNode: TS.Node, insideFunctionScope: boolean): MutableMask {
 		let mutable: MutableMask = 0
 
-		// Inside of a function
-		inFunction ||= Helper.isFunctionLike(rawNode)
+		// Inside of a function scope.
+		insideFunctionScope ||= Helper.isFunctionLike(rawNode)
 
-		// Variable
-		if (Helper.variable.isVariableIdentifier(rawNode)) {
-	
-			// If in child scope, become mutable only when uses a local variable.
-			// Which means: the variable should not been declared in top scope.
-			if (inFunction) {
-				let declaredInTopmostScope = isDeclaredInTopScope(rawNode)
+		// Variable or property accessing
+		if (Helper.variable.isVariableIdentifier(rawNode) || Helper.access.isAccess(rawNode)) {
+			let declaredInTopmostScope = isDeclaredInTopmostScope(rawNode)
+			let declaredAsConst = isDeclaredAsConstLike(rawNode)
 
-				// Should apply mutable and not applied.
-				if (!declaredInTopmostScope) {
-					mutable |= MutableMask.Mutable
-				}
-			}
+			// Declared as const, or reference at a function, not mutable.
+			if (declaredAsConst || insideFunctionScope ) {}
 
-			// Otherwise become mutable except defining as non-const.
-			else {
-				let constDeclared = isDeclaredAsConstLike(rawNode)
-				if (!constDeclared) {
-					mutable |= MutableMask.Mutable
-					mutable |= MutableMask.CantTurnStatic
-				}
-			}
-		}
-
-		// Readonly, or method.
-		// If in a child scope, all property visiting is not mutable.
-		else if (Helper.access.isAccess(rawNode) && !inFunction) {
-
-			// Use method, but not call it.
-			let useNotCalledMethod = Helper.symbol.resolveMethod(rawNode) && !ts.isCallExpression(rawNode.parent)
-
-			// Use readonly property.
-			let useReadonlyProperty = Helper.symbol.resolveProperty(rawNode) && Helper.types.isReadonly(rawNode)
-
-			if (!(useNotCalledMethod || useReadonlyProperty)) {
+			// If reference variable in function scope, become mutable, and can transfer.
+			// If declared in topmost scope, also mutable, and can transfer.
+			else if (declaredInTopmostScope) {
 				mutable |= MutableMask.Mutable
+			}
 
-				if (!inFunction) {
-					mutable |= MutableMask.CantTurnStatic
-				}
+			// Become mutable and can't transfer.
+			else {
+				mutable |= MutableMask.Mutable
+				mutable |= MutableMask.CantTransfer
 			}
 		}
-
-		ts.visitEachChild(rawNode, (node: TS.Node) => {
-			mutable |= testMutableVisitor(node, inFunction)
-			return node
-		}, transformContext)
+		else {
+			ts.visitEachChild(rawNode, (node: TS.Node) => {
+				mutable |= testMutableVisitor(node, insideFunctionScope)
+				return node
+			}, transformContext)
+		}
 
 		return mutable
 	}
 
 
 	/** Replace an identifier or this keyword. */
-	type NodeReplacer = (node: TS.Identifier | TS.ThisExpression) => TS.Expression
+	type NodeReplacer = (node: TS.Identifier | TS.ThisExpression, insideFunctionScope: boolean) => TS.Expression
 
 	/** 
 	 * Transfer a raw or replaced node to top scope,
@@ -370,15 +388,19 @@ export namespace Scoping {
 		rawNode: TS.Node,
 		replacer: NodeReplacer
 	): T {
-		return transferToTopmostScopeVisitor(node, rawNode, true, replacer) as T
+		return transferToTopmostScopeVisitor(node, rawNode, true, replacer, false) as T
 	}
 
 	function transferToTopmostScopeVisitor(
 		node: TS.Node,
 		rawTopNode: TS.Node,
 		canReplaceThis: boolean,
-		replacer: NodeReplacer
+		replacer: NodeReplacer,
+		insideFunctionScope: boolean
 	): TS.Node {
+
+		// Inside of a function scope.
+		insideFunctionScope ||= Helper.isFunctionLike(node)
 		
 		// Raw variable
 		if (Visiting.hasNode(node) && Helper.variable.isVariableIdentifier(node)) {
@@ -390,22 +412,22 @@ export namespace Scoping {
 			// will be transferred with template together.
 
 			let isDeclaredWithinTransferring = isDeclaredWithinNodeRange(node, rawTopNode)
-			let shouldNotReplace = isDeclaredInTopScope(node) || isDeclaredWithinTransferring
+			let shouldNotReplace = isDeclaredInTopmostScope(node) || isDeclaredWithinTransferring
 			if (!shouldNotReplace) {
-				return replacer(node)
+				return replacer(node, insideFunctionScope)
 			}
 		}
 
 		// this
 		else if (canReplaceThis && node.kind === ts.SyntaxKind.ThisKeyword) {
-			return replacer(node as TS.ThisExpression)
+			return replacer(node as TS.ThisExpression, insideFunctionScope)
 		}
 
-		// If enters non-arrow function declaration, cause can't replace `this`.
+		// If enters non-arrow function declaration, cause can't replace `this`, otherwise can't.
 		canReplaceThis &&= !(Helper.isFunctionLike(node) && !ts.isArrowFunction(node))
 
 		return ts.visitEachChild(node, (node: TS.Node) => {
-			return transferToTopmostScopeVisitor(node, rawTopNode, canReplaceThis, replacer)
+			return transferToTopmostScopeVisitor(node, rawTopNode, canReplaceThis, replacer, insideFunctionScope)
 		}, transformContext)
 	}
 }

@@ -39,7 +39,6 @@ export class BindingSlotParser extends SlotParserBase {
 
 		if (this.isValueMutable()
 			&& !this.forceRefStatic
-			&& this.name !== 'transition'	// transition value always change.
 		) {
 			this.latestVariableName = this.treeParser.getUniqueLatestName()
 		}

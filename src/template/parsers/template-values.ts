@@ -37,7 +37,7 @@ export class TemplateValues {
 
 	/** Returns whether the value at specified index can turn from mutable to static. */
 	isIndexCanTurnStatic(index: number): boolean {
-		return (this.indicesMutable.get(index)! & MutableMask.CantTurnStatic) === 0
+		return (this.indicesMutable.get(index)! & MutableMask.CantTransfer) === 0
 	}
 
 	/** Returns whether the value at specified index has been outputted as mutable. */
@@ -46,13 +46,25 @@ export class TemplateValues {
 	}
 
 	/** Returns whether the value at specified index has been transferred to topmost scope. */
-	isIndexTransferredToTopmost(index: number): boolean {
+	isIndexTransferred(index: number): boolean {
 		return this.indicesTransferred.has(index)
 	}
 
-	/** Returns whether the value at any index has been transferred to topmost scope. */
-	isAnyIndexTransferredToTopmost(): boolean {
+	/** Returns whether value at any index has been transferred to topmost scope. */
+	isAnyIndexTransferred(): boolean {
 		return this.indicesTransferred.size > 0
+	}
+
+	/** Returns whether the value at any index has been transferred to topmost scope. */
+	isAnyStaticIndexTransferred(): boolean {
+		return this.isAnyIndexTransferred()
+			&& [...this.indicesTransferred].some(index => !this.isIndexOutputAsMutable(index))
+	}
+
+	/** Returns whether the value at any index has been transferred to topmost scope. */
+	isAnyMutableIndexTransferred(): boolean {
+		return this.isAnyIndexTransferred()
+			&& [...this.indicesTransferred].some(index => this.isIndexOutputAsMutable(index))
 	}
 
 	/** Get raw value node at index. */
