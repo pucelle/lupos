@@ -25,11 +25,12 @@ const $html_1 = new HTMLMaker("<!----><div></div><!---->");
     let $com_0;
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
-    let $node_1 = $node.content.lastChild;
+    let $node_1 = $node.content.childNodes[1];
+    let $node_2 = $node.content.lastChild;
     let $block_0 = new DynamicComponentBlock(function (com) {
         $com_0 = com;
         $com_0.comProp = 1;
-    }, new TemplateSlot(new SlotPosition(1, $node_1), $context));
+    }, $node_1, new TemplateSlot(new SlotPosition(1, $node_2), $context));
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),
@@ -47,11 +48,12 @@ const $html_1 = new HTMLMaker("<!----><div></div><!---->");
     let $com_0;
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
-    let $node_1 = $node.content.lastChild;
+    let $node_1 = $node.content.childNodes[1];
+    let $node_2 = $node.content.lastChild;
     let $block_0 = new DynamicComponentBlock(function (com) {
         $com_0 = com;
         $com_0.comProp = 1;
-    }, new TemplateSlot(new SlotPosition(1, $node_1), $context));
+    }, $node_1, new TemplateSlot(new SlotPosition(1, $node_2), $context));
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),

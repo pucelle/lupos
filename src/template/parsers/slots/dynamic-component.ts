@@ -44,7 +44,8 @@ export class DynamicComponentSlotParser extends SlotParserBase {
 	outputInit(nodeAttrInits: TS.Statement[]) {
 		Modifier.addImport('DynamicComponentBlock', '@pucelle/lupos.js')
 
-		let nodeName = this.hasNodeRefed() ? this.getRefedNodeName() : null
+		let hasNodeRefed = this.hasNodeRefed()
+		let nodeName = this.getRefedNodeName()
 		let comName = this.getRefedComponentName()
 
 		// let $com_0
@@ -76,7 +77,7 @@ export class DynamicComponentSlotParser extends SlotParserBase {
 			undefined,
 			factory.createBlock(
 				[
-					...(nodeName ? [factory.createExpressionStatement(factory.createBinaryExpression(
+					...(hasNodeRefed ? [factory.createExpressionStatement(factory.createBinaryExpression(
 						factory.createIdentifier(nodeName),
 						factory.createToken(ts.SyntaxKind.EqualsToken),
 						factory.createPropertyAccessExpression(factory.createIdentifier('com'), 'el')
@@ -107,6 +108,7 @@ export class DynamicComponentSlotParser extends SlotParserBase {
 						undefined,
 						[
 							binderFn,
+							factory.createIdentifier(nodeName),
 							templateSlot,
 							...contentRangeNodes,
 						]
