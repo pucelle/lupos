@@ -3,7 +3,7 @@ import { trackGet } from "@pucelle/ff";
 const $html_0 = new HTMLMaker(" ");
 /*
 <root>${n + this.prop}</root>
-*/ const $template_0 = new TemplateMaker($context => {
+*/ const $template_0 = new TemplateMaker(function () {
     let $latest_0;
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
@@ -22,7 +22,7 @@ const $html_1 = new HTMLMaker("<!----><!---->");
 <root>
     <lupos:for ${[1,2,3]} />
 </root>
-*/ const $template_1 = new TemplateMaker($context => {
+*/ const $template_1 = new TemplateMaker(function ($context) {
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
@@ -30,14 +30,14 @@ const $html_1 = new HTMLMaker("<!----><!---->");
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),
-        update($values) {
+        update() {
             $block_0.update([1, 2, 3]);
         }
     };
 });
 /*
 <root>${n + this.prop}</root>
-*/ const $template_2 = new TemplateMaker($context => {
+*/ const $template_2 = new TemplateMaker(function () {
     let $latest_0;
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
@@ -55,7 +55,7 @@ const $html_1 = new HTMLMaker("<!----><!---->");
 <root>
     <lupos:for ${[1,2,3]} />
 </root>
-*/ const $template_3 = new TemplateMaker($context => {
+*/ const $template_3 = new TemplateMaker(function ($context) {
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
@@ -66,14 +66,14 @@ const $html_1 = new HTMLMaker("<!----><!---->");
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),
-        update($values) {
+        update() {
             $block_0.update([1, 2, 3]);
         }
     };
 });
 /*
 <root>${n + prop}</root>
-*/ const $template_4 = new TemplateMaker($context => {
+*/ const $template_4 = new TemplateMaker(function () {
     let $latest_0;
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
@@ -91,8 +91,7 @@ const $html_1 = new HTMLMaker("<!----><!---->");
 <root>
     <lupos:for ${[1,2,3]} />
 </root>
-*/ const $template_5 = new TemplateMaker($context => {
-    let $latestValues;
+*/ const $template_5 = new TemplateMaker(function ($context, $latestValues) {
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;

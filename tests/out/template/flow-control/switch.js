@@ -5,7 +5,7 @@ const $html_0 = new HTMLMaker("<!----><!---->");
 <root>
     <lupos:switch ${this.value} />
 </root>
-*/ const $template_0 = new TemplateMaker($context => {
+*/ const $template_0 = new TemplateMaker(function ($context) {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
@@ -27,7 +27,7 @@ const $html_0 = new HTMLMaker("<!----><!---->");
 const $html_1 = new HTMLMaker("Case Content 1");
 /*
 <root>Case Content 1</root>
-*/ const $template_1 = new TemplateMaker($context => {
+*/ const $template_1 = new TemplateMaker(function () {
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     return {
@@ -38,7 +38,7 @@ const $html_1 = new HTMLMaker("Case Content 1");
 const $html_2 = new HTMLMaker("Case Content 2");
 /*
 <root>Case Content 2</root>
-*/ const $template_2 = new TemplateMaker($context => {
+*/ const $template_2 = new TemplateMaker(function () {
     let $node = $html_2.make();
     let $node_0 = $node.content.firstChild;
     return {
@@ -50,7 +50,7 @@ const $html_2 = new HTMLMaker("Case Content 2");
 <root>
     <lupos:switch ${this.value} />
 </root>
-*/ const $template_3 = new TemplateMaker($context => {
+*/ const $template_3 = new TemplateMaker(function ($context) {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
@@ -71,7 +71,7 @@ const $html_2 = new HTMLMaker("Case Content 2");
 });
 /*
 <root>Case Content 1</root>
-*/ const $template_4 = new TemplateMaker($context => {
+*/ const $template_4 = new TemplateMaker(function () {
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     return {
@@ -81,7 +81,7 @@ const $html_2 = new HTMLMaker("Case Content 2");
 });
 /*
 <root>Case Content 2</root>
-*/ const $template_5 = new TemplateMaker($context => {
+*/ const $template_5 = new TemplateMaker(function () {
     let $node = $html_2.make();
     let $node_0 = $node.content.firstChild;
     return {
@@ -92,7 +92,7 @@ const $html_2 = new HTMLMaker("Case Content 2");
 const $html_3 = new HTMLMaker("Case Content 3");
 /*
 <root>Case Content 3</root>
-*/ const $template_6 = new TemplateMaker($context => {
+*/ const $template_6 = new TemplateMaker(function () {
     let $node = $html_3.make();
     let $node_0 = $node.content.firstChild;
     return {

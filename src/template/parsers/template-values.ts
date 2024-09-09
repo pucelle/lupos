@@ -15,6 +15,7 @@ export class TemplateValues {
 	private indicesMutable: Map<number, MutableMask> = new Map()
 	private indicesOutputAsMutable: Map<number, boolean> = new Map()
 	private indicesTransferred: Set<number> = new Set()
+	private anyIndicesTransferredWithinFunctionScope: boolean = false
 
 	constructor(valueNodes: TS.Expression[], template: TemplateParser) {
 		this.valueNodes = valueNodes
@@ -56,15 +57,9 @@ export class TemplateValues {
 	}
 
 	/** Returns whether the value at any index has been transferred to topmost scope. */
-	isAnyStaticIndexTransferred(): boolean {
-		return this.isAnyIndexTransferred()
-			&& [...this.indicesTransferred].some(index => !this.isIndexOutputAsMutable(index))
-	}
-
-	/** Returns whether the value at any index has been transferred to topmost scope. */
-	isAnyMutableIndexTransferred(): boolean {
-		return this.isAnyIndexTransferred()
-			&& [...this.indicesTransferred].some(index => this.isIndexOutputAsMutable(index))
+	isAnyMutableOrFunctionScopeIndexTransferred(): boolean {
+		return this.anyIndicesTransferredWithinFunctionScope
+			|| [...this.indicesTransferred].some(index => this.isIndexOutputAsMutable(index))
 	}
 
 	/** Get raw value node at index. */
@@ -123,10 +118,18 @@ export class TemplateValues {
 	 * `this.onClick` -> `$context.onClick`
 	 * `localVariableName` -> `$values[...]`, and add it to output value list.
 	 */
-	private transferNodeToTopmostScope(index: number, node: TS.Identifier | TS.ThisExpression): TS.Expression {
+	private transferNodeToTopmostScope(
+		index: number,
+		node: TS.Identifier | TS.ThisExpression,
+		insideFunctionScope: boolean
+	): TS.Expression {
 
 		// Move variable name as an item of output value list.
 		if (ts.isIdentifier(node)) {
+			if (insideFunctionScope) {
+				this.anyIndicesTransferredWithinFunctionScope = true
+			}
+
 			this.indicesTransferred.add(index)
 			return this.outputValueNodeOf(node, true)
 		}

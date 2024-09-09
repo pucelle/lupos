@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {factory, Modifier, ts} from '../../../base'
+import {factory, Modifier} from '../../../base'
 import {FlowControlBase} from './base'
 
 
@@ -35,7 +35,7 @@ export class ForFlowControl extends FlowControlBase {
 	outputInit() {
 		Modifier.addImport('ForBlock', '@pucelle/lupos.js')
 
-		// $block_0 = new ForBlock(
+		// let $block_0 = new ForBlock(
 		//   renderFn,
 		//   new TemplateSlot(new SlotPosition(SlotPositionType.Before, nextChild)),
 		//   $context_0,
@@ -51,9 +51,8 @@ export class ForFlowControl extends FlowControlBase {
 		
 		let templateSlot = this.slot.outputTemplateSlot(null)
 
-		return factory.createBinaryExpression(
-			factory.createIdentifier(this.blockVariableName),
-			factory.createToken(ts.SyntaxKind.EqualsToken),
+		return this.slot.addVariableAssignment(
+			this.blockVariableName,
 			factory.createNewExpression(
 				factory.createIdentifier('ForBlock'),
 				undefined,

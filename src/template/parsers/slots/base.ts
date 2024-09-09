@@ -142,7 +142,7 @@ export abstract class SlotParserBase {
 	}
 
 	/** Add a variable assignment, either declare variable, or pre-declare and assign.  */
-	protected addVariableAssignment(name: string, exp: TS.Expression): TS.Expression | TS.Statement {
+	addVariableAssignment(name: string, exp: TS.Expression): TS.Expression | TS.Statement {
 		if (this.onDynamicComponent) {
 			this.treeParser.addPreDeclaredVariableName(name)
 			

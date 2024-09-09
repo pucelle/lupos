@@ -6,7 +6,7 @@ const $html_0 = new HTMLMaker("<div><slot name=\"slotName\"></slot></div>");
         <slot name="slotName" />
     </div>
 </root>
-*/ const $template_0 = new TemplateMaker($context => {
+*/ const $template_0 = new TemplateMaker(function ($context) {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node_0.firstChild;
@@ -14,7 +14,7 @@ const $html_0 = new HTMLMaker("<div><slot name=\"slotName\"></slot></div>");
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),
-        update($values) {
+        update() {
             $slot_0.update($context.__getSlotElement("slotName"));
         },
         parts: [$slot_0]
@@ -26,7 +26,7 @@ const $html_0 = new HTMLMaker("<div><slot name=\"slotName\"></slot></div>");
         <slot name="slotName" />
     </div>
 </root>
-*/ const $template_1 = new TemplateMaker($context => {
+*/ const $template_1 = new TemplateMaker(function ($context) {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node_0.firstChild;
@@ -43,7 +43,7 @@ const $html_0 = new HTMLMaker("<div><slot name=\"slotName\"></slot></div>");
 const $html_1 = new HTMLMaker("Content");
 /*
 <root>Content</root>
-*/ const $template_2 = new TemplateMaker($context => {
+*/ const $template_2 = new TemplateMaker(function () {
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     return {
@@ -58,7 +58,7 @@ const $html_2 = new HTMLMaker("<div><slot></slot></div>");
         <slot />
     </div>
 </root>
-*/ const $template_3 = new TemplateMaker($context => {
+*/ const $template_3 = new TemplateMaker(function ($context) {
     let $node = $html_2.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node_0.firstChild;

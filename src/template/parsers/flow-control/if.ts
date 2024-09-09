@@ -57,7 +57,7 @@ export class IfFlowControl extends FlowControlBase {
 		let blockClassName = this.cacheable ? 'CacheableIfBlock' : 'IfBlock'
 		Modifier.addImport(blockClassName, '@pucelle/lupos.js')
 
-		// $block_0 = new IfBlock / CacheableIfBlock(
+		// let $block_0 = new IfBlock / CacheableIfBlock(
 		//   indexFn,
 		//   makers,
 		//   new TemplateSlot(new SlotPosition(SlotPositionType.Before, nextChild)),
@@ -68,9 +68,8 @@ export class IfFlowControl extends FlowControlBase {
 		let makers = this.outputMakerNodes(this.templateNames)
 		let templateSlot = this.slot.outputTemplateSlot(null)
 
-		return factory.createBinaryExpression(
-			factory.createIdentifier(this.blockVariableName),
-			factory.createToken(ts.SyntaxKind.EqualsToken),
+		return this.slot.addVariableAssignment(
+			this.blockVariableName,
 			factory.createNewExpression(
 				factory.createIdentifier(blockClassName),
 				undefined,

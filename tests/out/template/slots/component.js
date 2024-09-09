@@ -5,7 +5,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 <root>
     <ChildComponent :class=${'className'} .prop=$LUPOS_SLOT_INDEX_1$ />
 </root>
-*/ const $template_0 = new TemplateMaker($context => {
+*/ const $template_0 = new TemplateMaker(function () {
     let $latest_0;
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
@@ -28,7 +28,7 @@ const $html_1 = new HTMLMaker("<div>Rest Content</div>");
 <root>
     <ChildComponent>Rest Content</ChildComponent>
 </root>
-*/ const $template_1 = new TemplateMaker($context => {
+*/ const $template_1 = new TemplateMaker(function () {
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node_0.firstChild;
@@ -45,7 +45,7 @@ const $html_2 = new HTMLMaker("<div> </div>");
 <root>
     <ChildComponent>${this.prop}Rest Content</ChildComponent>
 </root>
-*/ const $template_2 = new TemplateMaker($context => {
+*/ const $template_2 = new TemplateMaker(function () {
     let $latest_0;
     let $node = $html_2.make();
     let $node_0 = $node.content.firstChild;

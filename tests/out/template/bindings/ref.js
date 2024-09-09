@@ -5,7 +5,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 <root>
     <div :ref=${this.refEl} />
 </root>
-*/ const $template_0 = new TemplateMaker($context => {
+*/ const $template_0 = new TemplateMaker(function ($context) {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $binding_0 = new RefBinding($node_0, $context);
@@ -20,7 +20,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 <root>
     <ChildComponent :ref=${this.refCom} />
 </root>
-*/ const $template_1 = new TemplateMaker($context => {
+*/ const $template_1 = new TemplateMaker(function ($context) {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $com_0 = new ChildComponent({}, $node_0);
@@ -36,7 +36,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 <root>
     <ChildComponent :ref.el=${this.refEl} />
 </root>
-*/ const $template_2 = new TemplateMaker($context => {
+*/ const $template_2 = new TemplateMaker(function ($context) {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $com_0 = new ChildComponent({}, $node_0);
@@ -52,7 +52,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 <root>
     <ChildComponent :ref=${this.refElByType} />
 </root>
-*/ const $template_3 = new TemplateMaker($context => {
+*/ const $template_3 = new TemplateMaker(function ($context) {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $com_0 = new ChildComponent({}, $node_0);

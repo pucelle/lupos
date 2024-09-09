@@ -95,6 +95,22 @@ export namespace Helper {
 			|| ts.isArrowFunction(node)
 	}
 
+	/** Visit node and all descendant nodes, find a node match test fn. */
+	export function findNode(node: TS.Node, test: (node: TS.Node) => boolean) : TS.Node | null {
+		if (test(node)) {
+			return node
+		}
+
+		let found: TS.Node | null = null
+
+		ts.visitEachChild(node, (n) => {
+			found ||= findNode(n, test)
+			return n
+		}, transformContext)
+
+		return found
+	}
+
 
 
 	/** Decorator Part */

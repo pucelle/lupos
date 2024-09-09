@@ -5,7 +5,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 <root>
     <div />
 </root>
-*/ const $template_0 = new TemplateMaker($context => {
+*/ const $template_0 = new TemplateMaker(function () {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     return {
@@ -20,7 +20,7 @@ const $html_1 = new HTMLMaker("<div><!----></div>");
         ${html`<div></div>`}
     </div>
 </root>
-*/ const $template_1 = new TemplateMaker($context => {
+*/ const $template_1 = new TemplateMaker(function ($context) {
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node_0.firstChild;
@@ -36,7 +36,7 @@ const $html_1 = new HTMLMaker("<div><!----></div>");
 <root>
     <div />
 </root>
-*/ const $template_2 = new TemplateMaker($context => {
+*/ const $template_2 = new TemplateMaker(function () {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     return {
@@ -50,7 +50,7 @@ const $html_1 = new HTMLMaker("<div><!----></div>");
         ${[html`<div></div>`]}
     </div>
 </root>
-*/ const $template_3 = new TemplateMaker($context => {
+*/ const $template_3 = new TemplateMaker(function ($context) {
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node_0.firstChild;
@@ -66,7 +66,7 @@ const $html_1 = new HTMLMaker("<div><!----></div>");
 <root>
     <div />
 </root>
-*/ const $template_4 = new TemplateMaker($context => {
+*/ const $template_4 = new TemplateMaker(function () {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     return {
@@ -80,7 +80,7 @@ const $html_1 = new HTMLMaker("<div><!----></div>");
         ${this.booleanProp ? '1' : html`<div></div>`}
     </div>
 </root>
-*/ const $template_5 = new TemplateMaker($context => {
+*/ const $template_5 = new TemplateMaker(function ($context) {
     let $latest_0;
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
@@ -99,7 +99,7 @@ const $html_1 = new HTMLMaker("<div><!----></div>");
 <root>
     <div />
 </root>
-*/ const $template_6 = new TemplateMaker($context => {
+*/ const $template_6 = new TemplateMaker(function () {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     return {
@@ -116,7 +116,7 @@ const $html_2 = new HTMLMaker("<div> <!----> </div>");
          ${'1'}
     </div>
 </root>
-*/ const $template_7 = new TemplateMaker($context => {
+*/ const $template_7 = new TemplateMaker(function ($context) {
     let $node = $html_2.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node_0.firstChild;

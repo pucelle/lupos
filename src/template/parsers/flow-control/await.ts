@@ -1,4 +1,4 @@
-import {factory, Modifier, ts} from '../../../base'
+import {factory, Modifier} from '../../../base'
 import {FlowControlBase} from './base'
 import {VariableNames} from '../variable-names'
 
@@ -43,7 +43,7 @@ export class AwaitFlowControl extends FlowControlBase {
 	outputInit() {
 		Modifier.addImport('AwaitBlock', '@pucelle/lupos.js')
 
-		// $block_0 = new AwaitBlock(
+		// let $block_0 = new AwaitBlock(
 		//   makers,
 		//   new TemplateSlot(new SlotPosition(SlotPositionType.Before, nextChild)),
 		//   $context_0,
@@ -52,9 +52,8 @@ export class AwaitFlowControl extends FlowControlBase {
 		let makers = this.outputMakerNodes(this.templateNames)
 		let templateSlot = this.slot.outputTemplateSlot(null)
 
-		return factory.createBinaryExpression(
-			factory.createIdentifier(this.blockVariableName),
-			factory.createToken(ts.SyntaxKind.EqualsToken),
+		return this.slot.addVariableAssignment(
+			this.blockVariableName,
 			factory.createNewExpression(
 				factory.createIdentifier('AwaitBlock'),
 				undefined,

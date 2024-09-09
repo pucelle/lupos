@@ -46,7 +46,7 @@ export class TreeOutputHandler {
 		let {init, staticUpdate, update} = this.outputSlots(slots)
 
 		// Output `$latest_values = $values` if needed.
-		this.outputLatestValues(varNames, update)
+		this.outputLatestValues(update)
 
 		// let $node = $html_0.make()
 		let rootNode = this.outputRootHTML()
@@ -73,7 +73,7 @@ export class TreeOutputHandler {
 		// TemplateInitResult
 		let initResult = this.outputTemplateInitResult(templatePosition, update, partNames, hasDynamicComponent)
 
-		// const $template_0 = new TemplateMaker((_context: Component) => {
+		// const $template_0 = new TemplateMaker(function(?$context, ?$latestValues) {
 		//	 let $node = $html_0()
 		//	 let $node_0 = $node.content.firstElementChild!
 		//	
@@ -84,6 +84,17 @@ export class TreeOutputHandler {
 		//     parts,
 		//	 }
 		// })
+
+		let templateBlock = factory.createBlock(
+			[
+				...initStatements,
+				factory.createReturnStatement(initResult)
+			],
+			true
+		)
+
+		let templateInitParams = this.outputTemplateInitParameters(templateBlock)
+
 		let templateNode = factory.createVariableStatement(
 			undefined,
 			factory.createVariableDeclarationList(
@@ -94,27 +105,16 @@ export class TreeOutputHandler {
 					factory.createNewExpression(
 					factory.createIdentifier('TemplateMaker'),
 					undefined,
-					[factory.createArrowFunction(
-						undefined,
-						undefined,
-						[factory.createParameterDeclaration(
+					[
+						factory.createFunctionExpression(
 							undefined,
 							undefined,
-							factory.createIdentifier(VariableNames.context),
 							undefined,
 							undefined,
-							undefined
-						)],
-						undefined,
-						factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
-						factory.createBlock(
-							[
-								...initStatements,
-								factory.createReturnStatement(initResult)
-							],
-							true
-						)
-					)]
+							templateInitParams,
+							undefined,
+							templateBlock
+						)]
 					)
 				)],
 				ts.NodeFlags.Const
@@ -205,12 +205,10 @@ export class TreeOutputHandler {
 		}
 	}
 
-	private outputLatestValues(varNames: string[], update: OutputNodeList) {
+	private outputLatestValues(update: OutputNodeList) {
 
 		// Should output `$latest_values = $values`
-		if (this.template.values.isAnyMutableIndexTransferred()) {
-			varNames.push(VariableNames.latestValues)
-
+		if (this.template.values.isAnyMutableOrFunctionScopeIndexTransferred()) {
 			update.unshift(factory.createBinaryExpression(
 				factory.createIdentifier(VariableNames.latestValues),
 				factory.createToken(ts.SyntaxKind.EqualsToken),
@@ -416,6 +414,13 @@ export class TreeOutputHandler {
 			)
 		}
 
+		let updateBlock = factory.createBlock(
+			update.map(n => Helper.pack.toStatement(n)),
+			true
+		)
+
+		let updateParameters = this.outputUpdateParameters(updateBlock)
+
 		// `update` part.
 		let updateNode: TS.MethodDeclaration | null = null
 		if (update.length > 0) {
@@ -425,19 +430,9 @@ export class TreeOutputHandler {
 				factory.createIdentifier('update'),
 				undefined,
 				undefined,
-				[factory.createParameterDeclaration(
-					undefined,
-					undefined,
-					factory.createIdentifier(VariableNames.values),
-					undefined,
-					undefined,
-					undefined
-				)],
+				updateParameters,
 				undefined,
-				factory.createBlock(
-					update.map(n => Helper.pack.toStatement(n)),
-					true
-				)
+				updateBlock
 			)
 		}
 
@@ -479,5 +474,54 @@ export class TreeOutputHandler {
 			],
 			true
 		)
+	}
+
+	/** Output parameters `(?$values)` of update function. */
+	private outputUpdateParameters(block: TS.Block): TS.ParameterDeclaration[] {
+		let hasValuesRef = !!Helper.findNode(block, node => ts.isIdentifier(node) && node.text === VariableNames.values)
+		let params: TS.ParameterDeclaration[] = []
+
+		if (hasValuesRef) {
+			params.push(factory.createParameterDeclaration(
+				undefined,
+				undefined,
+				factory.createIdentifier(VariableNames.values),
+				undefined,
+				undefined,
+				undefined
+			))
+		}
+
+		return params
+	}
+
+	/** Output parameters `(?$context, ?$latestValues)` of template maker init function. */
+	private outputTemplateInitParameters(block: TS.Block): TS.ParameterDeclaration[] {
+		let hasContextRef = !!Helper.findNode(block, node => ts.isIdentifier(node) && node.text === VariableNames.context)
+		let params: TS.ParameterDeclaration[] = []
+
+		if (hasContextRef) {
+			params.push(factory.createParameterDeclaration(
+				undefined,
+				undefined,
+				factory.createIdentifier(VariableNames.context),
+				undefined,
+				undefined,
+				undefined
+			))
+		}
+
+		if (this.template.values.isAnyIndexTransferred()) {
+			params.push(factory.createParameterDeclaration(
+				undefined,
+				undefined,
+				factory.createIdentifier(VariableNames.latestValues),
+				undefined,
+				undefined,
+				undefined
+			))
+		}
+
+		return params
 	}
 }

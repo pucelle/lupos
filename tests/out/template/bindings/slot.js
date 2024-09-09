@@ -4,7 +4,7 @@ const $html_0 = new HTMLMaker("<!----><div></div>");
 <root>
     <div :slot="slotName" />
 </root>
-*/ const $template_0 = new TemplateMaker($context => {
+*/ const $template_0 = new TemplateMaker(function () {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;

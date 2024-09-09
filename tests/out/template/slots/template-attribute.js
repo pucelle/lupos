@@ -4,7 +4,7 @@ const $html_0 = new HTMLMaker("<!---->");
 <root>
     <template class="className" />
 </root>
-*/ const $template_0 = new TemplateMaker($context => {
+*/ const $template_0 = new TemplateMaker(function ($context) {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     $context.el.classList.add("className");
@@ -17,7 +17,7 @@ const $html_0 = new HTMLMaker("<!---->");
 <root>
     <template style="background-color: red" />
 </root>
-*/ const $template_1 = new TemplateMaker($context => {
+*/ const $template_1 = new TemplateMaker(function ($context) {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     $context.el.style["background-color"] = "red";
@@ -30,7 +30,7 @@ const $html_0 = new HTMLMaker("<!---->");
 <root>
     <template attr="value" />
 </root>
-*/ const $template_2 = new TemplateMaker($context => {
+*/ const $template_2 = new TemplateMaker(function ($context) {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     $context.el.setAttribute("attr", "value");
@@ -44,7 +44,7 @@ const $html_1 = new HTMLMaker("<div></div>");
 <root>
     <div />
 </root>
-*/ const $template_3 = new TemplateMaker($context => {
+*/ const $template_3 = new TemplateMaker(function () {
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     return {
@@ -61,7 +61,7 @@ const $html_2 = new HTMLMaker("<div><!----></div>");
         </div>
     </template>
 </root>
-*/ const $template_4 = new TemplateMaker($context => {
+*/ const $template_4 = new TemplateMaker(function ($context) {
     let $node = $html_2.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node_0.firstChild;

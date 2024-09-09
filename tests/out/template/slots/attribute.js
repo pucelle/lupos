@@ -5,7 +5,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 <root>
     <div class="${this.className} className2" />
 </root>
-*/ const $template_0 = new TemplateMaker($context => {
+*/ const $template_0 = new TemplateMaker(function () {
     let $latest_0;
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
@@ -23,7 +23,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 <root>
     <div class=${this.className} />
 </root>
-*/ const $template_1 = new TemplateMaker($context => {
+*/ const $template_1 = new TemplateMaker(function () {
     let $latest_0;
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
@@ -41,7 +41,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 <root>
     <div class=${this.nullableClassName} />
 </root>
-*/ const $template_2 = new TemplateMaker($context => {
+*/ const $template_2 = new TemplateMaker(function () {
     let $latest_0;
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;

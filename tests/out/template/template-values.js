@@ -5,7 +5,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 <root>
     <div attr="${'className'}" />
 </root>
-*/ const $template_0 = new TemplateMaker($context => {
+*/ const $template_0 = new TemplateMaker(function () {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     $node_0.setAttribute("attr", 'className');
@@ -18,7 +18,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 <root>
     <div attr=${this.prop} />
 </root>
-*/ const $template_1 = new TemplateMaker($context => {
+*/ const $template_1 = new TemplateMaker(function () {
     let $latest_0;
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
@@ -36,7 +36,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 <root>
     <div attr=${this.readonlyProp} />
 </root>
-*/ const $template_2 = new TemplateMaker($context => {
+*/ const $template_2 = new TemplateMaker(function ($context) {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     $node_0.setAttribute("attr", $context.readonlyProp);
@@ -49,7 +49,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 <root>
     <div .prop=${this.getValue} />
 </root>
-*/ const $template_3 = new TemplateMaker($context => {
+*/ const $template_3 = new TemplateMaker(function ($context) {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     $node_0.prop = $context.getValue;
@@ -62,7 +62,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 <root>
     <div attr=${this.getValue()} />
 </root>
-*/ const $template_4 = new TemplateMaker($context => {
+*/ const $template_4 = new TemplateMaker(function () {
     let $latest_0;
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
@@ -80,7 +80,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 <root>
     <div @click=${() => this.handleEvent(this.prop)} />
 </root>
-*/ const $template_5 = new TemplateMaker($context => {
+*/ const $template_5 = new TemplateMaker(function ($context) {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     $node_0.addEventListener("click", (() => $context.handleEvent($context.prop)).bind($context));
@@ -93,7 +93,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 <root>
     <div @click=${() => this.handleEvent(globalVariable)} />
 </root>
-*/ const $template_6 = new TemplateMaker($context => {
+*/ const $template_6 = new TemplateMaker(function ($context) {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     $node_0.addEventListener("click", (() => $context.handleEvent(globalVariable)).bind($context));
@@ -106,7 +106,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 <root>
     <div attr="name1 ${this.prop} name2 $LUPOS_SLOT_INDEX_1$" />
 </root>
-*/ const $template_7 = new TemplateMaker($context => {
+*/ const $template_7 = new TemplateMaker(function () {
     let $latest_0;
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
@@ -124,7 +124,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 <root>
     <div attr="${this.prop}" attr2=$LUPOS_SLOT_INDEX_1$ />
 </root>
-*/ const $template_8 = new TemplateMaker($context => {
+*/ const $template_8 = new TemplateMaker(function () {
     let $latest_0, $latest_1;
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;

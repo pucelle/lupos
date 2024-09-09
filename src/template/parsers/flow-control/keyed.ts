@@ -1,4 +1,4 @@
-import {factory, Modifier, ts} from '../../../base'
+import {factory, Modifier} from '../../../base'
 import {FlowControlBase} from './base'
 import {VariableNames} from '../variable-names'
 
@@ -33,7 +33,7 @@ export class KeyedFlowControl extends FlowControlBase {
 		let blockClassName = this.cacheable ? 'CacheableKeyedBlock' : 'KeyedBlock'
 		Modifier.addImport(blockClassName, '@pucelle/lupos.js')
 
-		// $block_0 = new KeyedBlock / CacheableKeyedBlock(
+		// let $block_0 = new KeyedBlock / CacheableKeyedBlock(
 		//   maker,
 		//   new TemplateSlot(new SlotPosition(SlotPositionType.Before, nextChild)),
 		//   $context_0,
@@ -42,9 +42,8 @@ export class KeyedFlowControl extends FlowControlBase {
 		let maker = this.outputMakerNode(this.templateName)
 		let templateSlot = this.slot.outputTemplateSlot(null)
 
-		return factory.createBinaryExpression(
-			factory.createIdentifier(this.blockVariableName),
-			factory.createToken(ts.SyntaxKind.EqualsToken),
+		return this.slot.addVariableAssignment(
+			this.blockVariableName,
 			factory.createNewExpression(
 				factory.createIdentifier(blockClassName),
 				undefined,
