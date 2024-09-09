@@ -12,6 +12,8 @@ interface DeepReferenceItem {
 
 export interface ReferenceOutputItem {
 
+	type: ReferenceOutputTypeMask
+
 	/** Visiting node. */
 	node: HTMLNode
 
@@ -23,6 +25,17 @@ export interface ReferenceOutputItem {
 	 * If should ignore node when doing output, like template node, be `null`.
 	 */
 	visitSteps: number[] | null
+}
+
+export enum ReferenceOutputTypeMask {
+
+	None = 0,
+
+	/** Reference node as variable for some binding like. */
+	Reference = 1,
+
+	/** Reference node as temp variable for shorter descendant visiting path. */
+	PassingBy = 2,
 }
 
 
@@ -119,6 +132,7 @@ export class HTMLNodeReferences {
 	private *outputItem(item: DeepReferenceItem, visitFromNode: HTMLNode, parentalSteps: number[]): Iterable<ReferenceOutputItem> {
 		let steps: number[] = [...parentalSteps]
 		let visitSteps: number[] | null = steps
+		let type = ReferenceOutputTypeMask.None
 
 		// No visit step for tree.
 		if (item.node !== this.root) {
@@ -134,15 +148,10 @@ export class HTMLNodeReferences {
 
 		// Output directly.
 		if (this.hasRefed(item.node)) {
+			type |= ReferenceOutputTypeMask.Reference
 
-			yield {
-				node: item.node,
-				visitFromNode,
-				visitSteps,
-			}
-
-			for (let child of item.children) {
-				yield* this.outputItem(child, item.node, [])
+			if (item.children.length > 0) {
+				type |= ReferenceOutputTypeMask.PassingBy
 			}
 		}
 
@@ -155,10 +164,15 @@ export class HTMLNodeReferences {
 		// f = a.b.c
 		// f.d
 		// f.e
-		else if (item.children.length > 1 && item.node !== this.root) {
+		if (item.children.length > 1 && item.node !== this.root) {
+			type |= ReferenceOutputTypeMask.PassingBy
 			this.refAsIndex(item.node)
+		}
 
+		// Output node, and output descendants relative to it.
+		if (type !== ReferenceOutputTypeMask.None) {
 			yield {
+				type,
 				node: item.node,
 				visitFromNode,
 				visitSteps,
@@ -169,7 +183,7 @@ export class HTMLNodeReferences {
 			}
 		}
 
-		// Add step to current path
+		// Add step to current path.
 		else {
 			for (let child of item.children) {
 				yield* this.outputItem(child, visitFromNode, steps)

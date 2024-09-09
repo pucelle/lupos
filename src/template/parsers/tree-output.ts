@@ -1,6 +1,6 @@
 import type TS from 'typescript'
 import {TreeParser} from './tree'
-import {HTMLNode, HTMLNodeType, HTMLRoot} from '../html-syntax'
+import {HTMLNode, HTMLNodeType, HTMLRoot, ReferenceOutputTypeMask} from '../html-syntax'
 import {factory, Helper, Modifier, Scope, TemplateSlotPlaceholder, ts} from '../../base'
 import {SlotParserBase} from './slots'
 import {VariableNames} from './variable-names'
@@ -289,7 +289,7 @@ export class TreeOutputHandler {
 	private outputHTMLReferences(): OutputNodeList {
 		let list: OutputNodeList = []
 
-		for (let {node, visitFromNode, visitSteps} of this.parser.references.output()) {
+		for (let {type, node, visitFromNode, visitSteps} of this.parser.references.output()) {
 
 			// $node_0
 			let nodeName = this.parser.references.getRefedName(node)
@@ -355,8 +355,10 @@ export class TreeOutputHandler {
 			}
 
 			// Component node reference will be replaced soon.
+			// Only when it is not as visiting passing by node.
 			if (node.type === HTMLNodeType.Tag
 				&& TemplateSlotPlaceholder.isDynamicComponent(node.tagName!)
+				&& (type & ReferenceOutputTypeMask.PassingBy) === 0
 			) {
 				fromExp = undefined
 			}

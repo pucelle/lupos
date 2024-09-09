@@ -13,6 +13,10 @@ class TestDynamicComponent extends Component {
 		return html`<${ChildComponent}>Content</>`
 	}
 
+	testChildContentReference() {
+		return html`<${ChildComponent} :class=${'className'}><div :class=${'className'} /></>`
+	}
+
 	testStaticBinding() {
 		return html`<${ChildComponent} :class=${'className'} />`
 	}
