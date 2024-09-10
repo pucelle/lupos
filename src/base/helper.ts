@@ -82,6 +82,22 @@ export namespace Helper {
 			return node.exprName
 		}
 
+		// Decorator name.
+		if (ts.isDecorator(node)) {
+
+			// @decorator
+			if (ts.isIdentifier(node.expression)) {
+				return node.expression
+			}
+
+			// @decorator(...)
+			if (ts.isCallExpression(node.expression)
+				&& ts.isIdentifier(node.expression.expression)
+			) {
+				return node.expression.expression
+			}
+		}
+
 		return undefined
 	}
 

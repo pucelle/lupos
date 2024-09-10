@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {Helper, ts, defineVisitor, factory, Interpolator, InterpolationContentType} from '../base'
+import {Helper, ts, defineVisitor, factory, Interpolator, InterpolationContentType, Modifier} from '../base'
 
 
 defineVisitor(function(node: TS.Node, index: number) {
@@ -18,6 +18,8 @@ defineVisitor(function(node: TS.Node, index: number) {
 	if (!decoName || !['setContext', 'useContext'].includes(decoName)) {
 		return
 	}
+
+	Modifier.removeImportOf(decorator)
 
 	Interpolator.replace(index, InterpolationContentType.Normal, () => {
 		if (decoName === 'setContext') {

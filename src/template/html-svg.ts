@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {Helper, defineVisitor, ts, Interpolator, InterpolationContentType, TemplateSlotPlaceholder} from '../base'
+import {Helper, defineVisitor, ts, Interpolator, InterpolationContentType, TemplateSlotPlaceholder, Modifier} from '../base'
 import {TemplateParser} from './parsers'
 import {VariableNames} from './parsers/variable-names'
 
@@ -26,6 +26,8 @@ defineVisitor(function(node: TS.Node, index: number) {
 	if (nm.memberName !== 'html' && nm.memberName !== 'svg') {
 		return
 	}
+
+	Modifier.removeImportOf(node.tag)
 
 	// Must after all descendant nodes visited.
 	return () => {

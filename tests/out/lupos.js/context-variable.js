@@ -1,4 +1,4 @@
-import { setContext, useContext } from '@pucelle/ff';
+import {} from '@pucelle/ff';
 import { Component } from '@pucelle/lupos.js';
 class Parent extends Component {
     onConnected() {

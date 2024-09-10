@@ -18,23 +18,44 @@ export namespace Modifier {
 	const Imports: ListMap<string, string> = new ListMap()
 
 	/** The visiting indices the node at where will be moved. */
-	const MovedIndices: Set<number> = new Set()
+	const RemovedIndices: Set<number> = new Set()
 
 
 	export function initialize() {
 		Imports.clear()
-		MovedIndices.clear()
+		RemovedIndices.clear()
+	}
+
+
+	/** Remove import node of specified node. */
+	export function removeImportOf(fromNode: TS.Node) {
+		let importNode = Helper.symbol.resolveDeclaration(fromNode, ts.isImportSpecifier, false)
+		if (importNode) {
+			let index = Visiting.getIndex(importNode)
+			removeOnce(index)
+		}
+	}
+
+
+	/** Remove node, only remove for once. */
+	export function removeOnce(fromIndex: number) {
+		if (RemovedIndices.has(fromIndex)) {
+			return
+		}
+
+		Interpolator.remove(fromIndex)
+		RemovedIndices.add(fromIndex)
 	}
 
 
 	/** Move node to another position, for each from index, only move for once. */
 	export function moveOnce(fromIndex: number, toIndex: number) {
-		if (MovedIndices.has(fromIndex)) {
+		if (RemovedIndices.has(fromIndex)) {
 			return
 		}
 
 		Interpolator.move(fromIndex, toIndex)
-		MovedIndices.add(fromIndex)
+		RemovedIndices.add(fromIndex)
 	}
 
 

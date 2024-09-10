@@ -19,6 +19,8 @@ defineVisitor(function(node: TS.Node, index: number) {
 		return
 	}
 
+	Modifier.removeImportOf(decorator)
+
 	Interpolator.replace(index, InterpolationContentType.Normal, () => {
 		if (decoName === 'computed') {
 			return compileComputedDecorator(node)
