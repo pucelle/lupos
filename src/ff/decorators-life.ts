@@ -273,13 +273,13 @@ function compileSetContextDecorator(
 	hasDeletedContextVariables: boolean
 ): [TS.MethodDeclaration | TS.ConstructorDeclaration, TS.MethodDeclaration | undefined] {
 	let propName = Helper.getText(propDecl.name)
-	let superClass = Helper.cls.getSuper(propDecl.parent as TS.ClassDeclaration)!
-	let className = Helper.getText(Helper.getIdentifier(superClass)!)
+	let extended = Helper.cls.getExtends(propDecl.parent as TS.ClassDeclaration)!
+	let classExp = extended.expression
 		
 	if (connect) {
 		let connectStatement = factory.createExpressionStatement(factory.createCallExpression(
 			factory.createPropertyAccessExpression(
-				factory.createIdentifier(className),
+				classExp,
 				factory.createIdentifier('setContextVariable')
 			),
 			undefined,
@@ -295,7 +295,7 @@ function compileSetContextDecorator(
 	if (disconnect && !hasDeletedContextVariables) {
 		let disconnectStatement = factory.createExpressionStatement(factory.createCallExpression(
 			factory.createPropertyAccessExpression(
-				factory.createIdentifier(className),
+				classExp,
 				factory.createIdentifier('deleteContextVariables')
 			),
 			undefined,
@@ -335,8 +335,8 @@ function compileUseContextDecorator(
 	hasDeletedContextVariables: boolean
 ): [TS.MethodDeclaration | TS.ConstructorDeclaration, TS.MethodDeclaration | undefined] {
 	let propName = Helper.getText(propDecl.name)
-	let superClass = Helper.cls.getSuper(propDecl.parent as TS.ClassDeclaration)!
-	let className = Helper.getText(Helper.getIdentifier(superClass)!)
+	let extended = Helper.cls.getExtends(propDecl.parent as TS.ClassDeclaration)!
+	let classExp = extended.expression
 	
 	if (connect) {
 		let connectStatement = factory.createExpressionStatement(factory.createBinaryExpression(
@@ -347,7 +347,7 @@ function compileUseContextDecorator(
 			factory.createToken(ts.SyntaxKind.EqualsToken),
 			factory.createCallExpression(
 				factory.createPropertyAccessExpression(
-					factory.createIdentifier(className),
+					classExp,
 					factory.createIdentifier('getContextVariableDeclared')
 				),
 				undefined,
@@ -378,7 +378,7 @@ function compileUseContextDecorator(
 			disconnectStatements.push(
 				factory.createExpressionStatement(factory.createCallExpression(
 					factory.createPropertyAccessExpression(
-						factory.createIdentifier(className),
+						classExp,
 						factory.createIdentifier('deleteContextVariables')
 					),
 					undefined,
