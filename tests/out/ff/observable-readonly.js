@@ -1,4 +1,4 @@
-import { DeepReadonly, trackGet } from '@pucelle/ff';
+import { trackGet } from '@pucelle/ff';
 import { Component } from '@pucelle/lupos.js';
 class TestReadonlyModifier extends Component {
     static SlotContentType = 2;

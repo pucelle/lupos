@@ -1,4 +1,4 @@
-import { Observed, trackGet } from '@pucelle/ff';
+import { trackGet } from '@pucelle/ff';
 import { Component } from '@pucelle/lupos.js';
 let $ref_0;
 class TestRef extends Component {

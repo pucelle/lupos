@@ -157,11 +157,15 @@ export namespace Modifier {
 			if (existingImportDecl) {
 				let namedImportsIndex = Visiting.getIndex(existingImportDecl.importClause!.namedBindings!)
 				Interpolator.append(namedImportsIndex, InterpolationContentType.Import, () => namedImports)
+				
+				// Because modified whole import node, cause type imports still exist.
+				// Here remove them manually.
+				removeAllTypedImports(existingImportDecl)
 			}
 
 			// Add an import statement.
 			else {
-				existingImportDecl = factory.createImportDeclaration(
+				let newImportDecl = factory.createImportDeclaration(
 					undefined,
 					factory.createImportClause(
 						false,
@@ -172,11 +176,12 @@ export namespace Modifier {
 					undefined
 				)
 
-				Interpolator.before(sourceFileIndex, InterpolationContentType.Import, () => existingImportDecl!)
+				Interpolator.before(sourceFileIndex, InterpolationContentType.Import, () => newImportDecl!)
 			}
 		}
 	}
 
+	/** Get `import {...}` node by module name. */
 	function getNamedImportDeclaration(moduleName: string): TS.ImportDeclaration | undefined {
 		let importDecl = Helper.imports.getImportFromModule(moduleName)
 		if (!importDecl) {
@@ -196,6 +201,18 @@ export namespace Modifier {
 		}
 
 		return importDecl
+	}
+
+	/** Remove all type imports. */
+	function removeAllTypedImports(node: TS.ImportDeclaration) {
+		let specifiers = (node.importClause!.namedBindings as TS.NamedImports).elements
+
+		for (let specifier of specifiers) {
+			let type = Helper.symbol.resolveDeclaration(specifier, ts.isTypeAliasDeclaration)
+			if (type) {
+				removeOnce(Visiting.getIndex(specifier))
+			}
+		}
 	}
 }
 

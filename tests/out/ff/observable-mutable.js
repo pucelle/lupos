@@ -1,4 +1,4 @@
-import { Observed, trackGet, trackSet } from '@pucelle/ff';
+import { trackGet, trackSet } from '@pucelle/ff';
 import { Component } from '@pucelle/lupos.js';
 class TestMutable extends Component {
     prop = [{ value: 1 }, { value: 2 }];
