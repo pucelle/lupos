@@ -55,7 +55,7 @@ export namespace TemplateSlotPlaceholder {
 		string: string,
 		replacer: (index: number) => string
 	): string {
-		return string.replace(/\$LUPOS_SLOT_INDEX_(\d+)\$/, (_m0, m1) => {
+		return string.replace(/\$LUPOS_SLOT_INDEX_(\d+)\$/g, (_m0, m1) => {
 			return replacer(Number(m1))
 		})
 	}

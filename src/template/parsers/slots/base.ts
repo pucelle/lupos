@@ -308,12 +308,17 @@ export abstract class SlotParserBase {
 		// Resolve instance type of constructor interface.
 		else {
 			let ref = this.template.values.getRawNode(TemplateSlotPlaceholder.getUniqueSlotIndex(tagName)!)
-			let typeNode = Helper.types.getTypeNode(ref)
-			if (!typeNode) {
+			let decls = Helper.symbol.resolveDeclarations(ref, ts.isClassDeclaration)
+			if (decls) {
+				yield* decls
 				return
 			}
 
-			yield* Helper.symbol.resolveInstanceDeclarations(typeNode)
+			let typeNode = Helper.types.getTypeNode(ref)
+			if (typeNode) {
+				yield* Helper.symbol.resolveInstanceDeclarations(typeNode)
+				return
+			}
 		}
 	}
 

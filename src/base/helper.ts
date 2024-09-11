@@ -602,6 +602,7 @@ export namespace Helper {
 				typeNode = symbol.resolvePropertyOrGetAccessor(node)?.type
 			}
 
+			// Resolve variable declaration type.
 			if (variable.isVariableIdentifier(node)) {
 				typeNode = symbol.resolveDeclaration(node, ts.isVariableDeclaration)?.type
 			}

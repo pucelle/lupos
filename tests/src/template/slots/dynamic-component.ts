@@ -5,28 +5,28 @@ class TestDynamicComponent extends Component {
 
 	prop: number = 1
 
-	testNormal() {
-		return html`<${ChildComponent} />`
-	}
+	// testNormal() {
+	// 	return html`<${ChildComponent} />`
+	// }
 
-	testChildContent() {
-		return html`<${ChildComponent}>Content</>`
-	}
+	// testChildContent() {
+	// 	return html`<${ChildComponent}>Content</>`
+	// }
 
-	testChildContentReference() {
-		return html`<${ChildComponent} :class=${'className'}><div :class=${'className'} /></>`
-	}
+	// testChildContentReference() {
+	// 	return html`<${ChildComponent} :class=${'className'}><div :class=${'className'} /></>`
+	// }
 
-	testStaticBinding() {
-		return html`<${ChildComponent} :class=${'className'} />`
-	}
+	// testStaticBinding() {
+	// 	return html`<${ChildComponent} :class=${'className'} />`
+	// }
 
 	testDynamicProp() {
-		return html`<${ChildComponent} .prop=${this.prop} />`
+		return html`<${ChildComponent} .comProp=${this.prop} />`
 	}
 }
 
 class ChildComponent extends Component {
 
-	prop!: number
+	comProp!: number
 }

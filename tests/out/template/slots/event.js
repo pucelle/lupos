@@ -34,7 +34,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 const $html_1 = new HTMLMaker("<!----><div></div><!---->");
 /*
 <root>
-    <${this.UnionedCom} @connected=$LUPOS_SLOT_INDEX_1$ />
+    <${this.UnionedCom} @connected=${this.handleEvent} />
 </root>
 */ const $template_2 = new TemplateMaker(function ($context) {
     let $com_0;
@@ -57,7 +57,7 @@ const $html_1 = new HTMLMaker("<!----><div></div><!---->");
 });
 /*
 <root>
-    <${this.ConstructedCom} @connected=$LUPOS_SLOT_INDEX_1$ />
+    <${this.ConstructedCom} @connected=${this.handleEvent} />
 </root>
 */ const $template_3 = new TemplateMaker(function ($context) {
     let $com_0;

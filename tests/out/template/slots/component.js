@@ -1,9 +1,9 @@
 import { Component, ClassBinding, CompiledTemplateResult, TemplateMaker, SlotPosition, HTMLMaker, SlotRange } from '@pucelle/lupos.js';
-import { trackGet } from "@pucelle/ff";
+import { trackSet, trackGet } from "@pucelle/ff";
 const $html_0 = new HTMLMaker("<div></div>");
 /*
 <root>
-    <ChildComponent :class=${'className'} .prop=$LUPOS_SLOT_INDEX_1$ />
+    <ChildComponent :class=${'className'} .prop=${this.prop} />
 </root>
 */ const $template_0 = new TemplateMaker(function () {
     let $latest_0;
@@ -18,6 +18,7 @@ const $html_0 = new HTMLMaker("<div></div>");
         update($values) {
             if ($latest_0 !== $values[0]) {
                 $com_0.prop = $latest_0 = $values[0];
+                trackSet($com_0, "prop");
             }
         },
         parts: [$com_0]

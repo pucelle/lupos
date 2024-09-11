@@ -19,7 +19,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 const $html_1 = new HTMLMaker("<!----><div></div><!---->");
 /*
 <root>
-    <${this.UnionedCom} .comProp=$LUPOS_SLOT_INDEX_1$ />
+    <${this.UnionedCom} .comProp=${1} />
 </root>
 */ const $template_1 = new TemplateMaker(function ($context) {
     let $com_0;
@@ -42,7 +42,7 @@ const $html_1 = new HTMLMaker("<!----><div></div><!---->");
 });
 /*
 <root>
-    <${this.ConstructedCom} .comProp=$LUPOS_SLOT_INDEX_1$ />
+    <${this.ConstructedCom} .comProp=${1} />
 </root>
 */ const $template_2 = new TemplateMaker(function ($context) {
     let $com_0;

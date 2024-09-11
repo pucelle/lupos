@@ -1,6 +1,6 @@
 import type TS from 'typescript'
 import {SlotParserBase} from './base'
-import {factory, Helper, TemplateSlotPlaceholder, ts} from '../../../base'
+import {factory, Helper, Modifier, TemplateSlotPlaceholder, ts} from '../../../base'
 
 
 export class PropertySlotParser extends SlotParserBase {
@@ -45,7 +45,6 @@ export class PropertySlotParser extends SlotParserBase {
 		}
 
 		for (let classDecl of classDeclarations) {
-
 			let interfaceAndClassDecls = Helper.symbol.resolveChainedClassesAndInterfaces(classDecl)
 
 			for (let decl of interfaceAndClassDecls) {
@@ -67,6 +66,11 @@ export class PropertySlotParser extends SlotParserBase {
 	outputUpdate() {
 		let target: TS.Identifier
 
+		// trackSet
+		if (this.targetType === 'component' && this.latestVariableName) {
+			Modifier.addImport('trackSet', '@pucelle/ff')
+		}
+
 		// $com_0
 		if (this.targetType === 'component') {
 			target = factory.createIdentifier(this.getRefedComponentName())
@@ -79,6 +83,18 @@ export class PropertySlotParser extends SlotParserBase {
 
 		// $values[0]
 		let value = this.outputValue()
+
+		// trackSet($com_0, property)
+		let setTracking = this.targetType === 'component' && this.latestVariableName
+			? [factory.createCallExpression(
+				factory.createIdentifier("trackSet"),
+				undefined,
+				[
+					factory.createIdentifier(this.getRefedComponentName()),
+					factory.createStringLiteral(this.name),
+				]
+			)]
+			: []
 
 		// if ($latest_0 !== $values[0]) {
 		//   target[propertyName] = $latest_0 = $values[0]
@@ -103,7 +119,8 @@ export class PropertySlotParser extends SlotParserBase {
 								factory.createToken(ts.SyntaxKind.EqualsToken),
 								value
 							)
-						))
+						)),
+						...setTracking.map(exp => Helper.pack.toStatement(exp)),
 					],
 					true
 				),
@@ -121,6 +138,18 @@ export class PropertySlotParser extends SlotParserBase {
 				factory.createToken(ts.SyntaxKind.EqualsToken),
 				value
 			)
+		}
+	}
+
+	outputSetTracking(): {name: string, property: string}[] {
+		if (this.targetType === 'component') {
+			return [{
+				name: this.getRefedComponentName(),
+				property: this.name,
+			}]
+		}
+		else {
+			return []
 		}
 	}
 }

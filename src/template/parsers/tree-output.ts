@@ -31,7 +31,8 @@ export class TreeOutputHandler {
 		this.wrappedByTemplate = this.root.firstChild?.tagName === 'template'
 	}
 
-	output(slots: SlotParserBase[],
+	output(
+		slots: SlotParserBase[],
 		varNames: string[],
 		partNames: string[],
 		hasDynamicComponent: boolean,
@@ -131,21 +132,18 @@ export class TreeOutputHandler {
 		scope.addStatements(templateNode)
 	}
 
-	private outputSlots(slots: SlotParserBase[]): {
-		init: OutputNodeList,
-		staticUpdate: OutputNodeList
-		update: OutputNodeList,
-	} {
+	private outputSlots(slots: SlotParserBase[]) {
 		let init: OutputNodes[] = []
 		let staticUpdate: OutputNodes[] = []
 		let update: OutputNodes[] = []
 
 		for (let i = 0; i < slots.length; i++) {
 			let slot = slots[i]
-			let attached = this.outputDynamicComponentAttached(slots, i)
+			let attached = this.outputDynamicComponentAttached(slots, i, update)
 			let attachedInitStatements = attached.init.flat().map(n => Helper.pack.toStatement(n))
 			let initNodes = slot.outputInit(attachedInitStatements)
 			let updateNodes = slot.outputUpdate()
+			
 
 			if (slot.isValueOutputAsMutable()) {
 				update.push(updateNodes)
@@ -165,11 +163,14 @@ export class TreeOutputHandler {
 		}
 	}
 
-	private outputDynamicComponentAttached(slots: SlotParserBase[], index: number) {
+	private outputDynamicComponentAttached(
+		slots: SlotParserBase[],
+		index: number,
+		update: OutputNodes[]
+	) {
 		let slot = slots[index]
 		let init: OutputNodes[] = []
 		let staticUpdate: OutputNodes[] = []
-		let update: OutputNodes[] = []
 
 		if (slot.node.type === HTMLNodeType.Tag
 			&& TemplateSlotPlaceholder.isDynamicComponent(slot.node.tagName!)
@@ -200,7 +201,6 @@ export class TreeOutputHandler {
 		return {
 			index,
 			init: [...init, ...staticUpdate],
-			update,
 		}
 	}
 
