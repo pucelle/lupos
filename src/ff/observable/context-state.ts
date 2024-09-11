@@ -12,11 +12,18 @@ export class ContextState {
 
 	/** 
 	 * Whether function has nothing returned.
-	 * If a method returns nothing, we stop tracking it's property getting.
+	 * If a function returns nothing, we stop tracking it's property getting.
 	 * Initialize from a function-like type of context, and broadcast to descendants.
 	 * A generator returns an `Iterable`, so it is not nothing returned.
 	 */
 	readonly nothingReturned: boolean
+
+	/** 
+	 * Whether method has effect decorated.
+	 * If a method returns nothing, but decorated by `@effect`,
+	 * should also do get tracking for it.
+	 */
+	readonly effectDecorated: boolean
 
 	/** How flow inside of a context was interrupted. */
 	flowInterruptionType: number = 0
@@ -24,6 +31,7 @@ export class ContextState {
 	constructor(context: Context) {
 		this.context = context
 		this.nothingReturned = this.checkNothingReturned()
+		this.effectDecorated = this.checkEffectDecorated()
 		
 		if (context.type & ContextTypeMask.FlowInterruption) {
 			this.flowInterruptionType = Helper.pack.getFlowInterruptionType(context.node)
@@ -40,6 +48,18 @@ export class ContextState {
 
 		let type = Helper.types.getReturnType(node as TS.FunctionLikeDeclaration)
 		return !!(type && (type.getFlags() & ts.TypeFlags.Void))
+	}
+
+	private checkEffectDecorated(): boolean {
+		let node = this.context.node
+
+		// Inherit from parent context.
+		if (!ts.isMethodDeclaration(node)) {
+			return this.context.parent?.state.effectDecorated ?? false
+		}
+
+		let decoName = Helper.deco.getFirstName(node)
+		return decoName === 'effect'
 	}
 
 	/** Union with internal contents type. */
@@ -73,6 +93,11 @@ export class ContextState {
 	 */
 	mergeChildContext(child: Context) {
 		this.unionFlowInterruptionType(child.state.flowInterruptionType)
+	}
+
+	/** Whether should ignore get tracking. */
+	shouldIgnoreGetTracking(): boolean {
+		return this.nothingReturned && !this.effectDecorated
 	}
 
 	/** Whether break like, or return, or yield like inside. */

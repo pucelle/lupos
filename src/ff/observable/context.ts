@@ -146,7 +146,7 @@ export class Context {
 
 	/** Add a property access expression. */
 	private mayAddGetTracking(node: AccessNode) {
-		if (this.state.nothingReturned) {
+		if (this.state.shouldIgnoreGetTracking()) {
 			return
 		}
 

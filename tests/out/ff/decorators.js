@@ -48,6 +48,7 @@ class TestEffect extends Component {
         beginTrack(this.#enqueue_onPropChangeEffect, this);
         try {
             console.log(this.prop);
+            trackGet(this, "prop");
         }
         catch (err) {
             console.error(err);
@@ -104,7 +105,7 @@ class TestWatchCallback extends Component {
     }
     prop = 1;
     #property_onPropChange = undefined;
-    #property_get_onPropChange() { return this.prop; }
+    #property_get_onPropChange() { trackGet(this, "prop"); return this.prop; }
     #enqueue_onPropChange() {
         enqueue(this.onPropChange, this);
     }
@@ -138,6 +139,7 @@ class TestObservedImplemented {
         beginTrack(this.#enqueue_onPropChangeEffect, this);
         try {
             console.log(this.prop);
+            trackGet(this, "prop");
         }
         catch (err) {
             console.error(err);

@@ -74,6 +74,7 @@ get prop(): any {
 function compileComputedDecorator(methodDecl: TS.MethodDeclaration): TS.Node[] {
 	let propName = Helper.getText(methodDecl.name)
 	let methodBodyIndex = Visiting.getIndex(methodDecl.body!)
+	let newBody = Interpolator.outputChildren(methodBodyIndex) as TS.Block
 
 	let property = factory.createPropertyDeclaration(
 		undefined,
@@ -99,7 +100,7 @@ function compileComputedDecorator(methodDecl: TS.MethodDeclaration): TS.Node[] {
 		undefined,
 		[],
 		undefined,
-		Interpolator.outputChildren(methodBodyIndex) as TS.Block
+		newBody
 	)
 	
 	let resetMethod = factory.createMethodDeclaration(
@@ -300,6 +301,8 @@ effectFn() {
 */
 function compileEffectDecorator(methodDecl: TS.MethodDeclaration): TS.Node[] {
 	let methodName = Helper.getText(methodDecl.name)
+	let methodBodyIndex = Visiting.getIndex(methodDecl.body!)
+	let newBody = Interpolator.outputChildren(methodBodyIndex) as TS.Block
 
 	let enqueueMethod = factory.createMethodDeclaration(
 		undefined,
@@ -349,7 +352,7 @@ function compileEffectDecorator(methodDecl: TS.MethodDeclaration): TS.Node[] {
 					]
 				)),
 				factory.createTryStatement(
-					methodDecl.body!,
+					newBody,
 					factory.createCatchClause(
 						factory.createVariableDeclaration(
 							factory.createIdentifier('err'),
@@ -477,7 +480,8 @@ function compileWatchDecorator(methodDecl: TS.MethodDeclaration, decorator: TS.D
 		Modifier.addImport('trackGet', '@pucelle/ff')
 	}
 	else if (ts.isFunctionExpression(propertyGetArg)) {
-		propertyGetBlock = propertyGetArg.body
+		let bodyIndex = Visiting.getIndex(propertyGetArg.body)
+		propertyGetBlock = Interpolator.outputChildren(bodyIndex) as TS.Block
 	}
 	else {
 		propertyGetBlock = factory.createBlock(
