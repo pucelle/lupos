@@ -309,7 +309,7 @@ export abstract class SlotParserBase {
 		else {
 			let ref = this.template.values.getRawNode(TemplateSlotPlaceholder.getUniqueSlotIndex(tagName)!)
 			let decls = Helper.symbol.resolveDeclarations(ref, ts.isClassDeclaration)
-			if (decls) {
+			if (decls && decls.length > 0) {
 				yield* decls
 				return
 			}

@@ -4,8 +4,8 @@ import {Helper, ts, defineVisitor, Modifier, factory, Interpolator, Interpolatio
 
 defineVisitor(function(node: TS.Node, index: number) {
 		
-	// Method and decorated.
-	if (!ts.isMethodDeclaration(node)) {
+	// Method or getter and decorated.
+	if (!ts.isMethodDeclaration(node) && !ts.isGetAccessorDeclaration(node)) {
 		return
 	}
 
@@ -23,13 +23,13 @@ defineVisitor(function(node: TS.Node, index: number) {
 
 	Interpolator.replace(index, InterpolationContentType.Normal, () => {
 		if (decoName === 'computed') {
-			return compileComputedDecorator(node)
+			return compileComputedDecorator(node as TS.GetAccessorDeclaration)
 		}
 		else if (decoName === 'effect') {
-			return compileEffectDecorator(node)
+			return compileEffectDecorator(node as TS.MethodDeclaration)
 		}
 		else {
-			return compileWatchDecorator(node, decorator)
+			return compileWatchDecorator(node as TS.MethodDeclaration, decorator)
 		}
 	})
 })
@@ -71,7 +71,7 @@ get prop(): any {
 }
 ```
 */
-function compileComputedDecorator(methodDecl: TS.MethodDeclaration): TS.Node[] {
+function compileComputedDecorator(methodDecl: TS.GetAccessorDeclaration): TS.Node[] {
 	let propName = Helper.getText(methodDecl.name)
 	let methodBodyIndex = Visiting.getIndex(methodDecl.body!)
 	let newBody = Interpolator.outputChildren(methodBodyIndex) as TS.Block

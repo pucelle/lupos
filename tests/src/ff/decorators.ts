@@ -6,7 +6,7 @@ class TestComputed extends Component {
 
 	prop: number = 1
 
-	@computed prop2() {
+	@computed get prop2() {
 		return this.prop + 1
 	}
 }

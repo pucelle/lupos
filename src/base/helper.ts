@@ -133,7 +133,9 @@ export namespace Helper {
 	export namespace deco {
 
 		/** Get the first decorator from a class declaration, a property or method declaration. */
-		export function getFirst(node: TS.ClassDeclaration | TS.MethodDeclaration | TS.PropertyDeclaration): TS.Decorator | undefined {
+		export function getFirst(
+			node: TS.ClassDeclaration | TS.MethodDeclaration | TS.PropertyDeclaration | TS.GetAccessorDeclaration | TS.SetAccessorDeclaration
+		): TS.Decorator | undefined {
 			return node.modifiers?.find(m => ts.isDecorator(m)) as TS.Decorator | undefined
 		}
 
@@ -163,7 +165,9 @@ export namespace Helper {
 		}
 
 		/** Get the first decorator from a class declaration, a property or method declaration. */
-		export function getFirstName(node: TS.ClassDeclaration | TS.MethodDeclaration | TS.PropertyDeclaration): string | undefined {
+		export function getFirstName(
+			node: TS.ClassDeclaration | TS.MethodDeclaration | TS.PropertyDeclaration | TS.GetAccessorDeclaration | TS.SetAccessorDeclaration
+		): string | undefined {
 			let decorator = getFirst(node)
 			let decoName = decorator ? getName(decorator) : undefined
 
