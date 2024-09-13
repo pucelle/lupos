@@ -1,6 +1,7 @@
 import type TS from 'typescript'
 import {factory, Modifier} from '../../../base'
 import {FlowControlBase} from './base'
+import {SlotContentType} from '../../../enums'
 
 
 export class ForFlowControl extends FlowControlBase {
@@ -49,7 +50,7 @@ export class ForFlowControl extends FlowControlBase {
 			true
 		) as TS.FunctionExpression
 		
-		let templateSlot = this.slot.outputTemplateSlot(null)
+		let templateSlot = this.slot.outputTemplateSlot(SlotContentType.TemplateResultList)
 
 		return this.slot.addVariableAssignment(
 			this.blockVariableName,
