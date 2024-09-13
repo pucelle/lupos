@@ -54,7 +54,7 @@ export class BindingSlotParser extends SlotParserBase {
 			
 			// Add as a part.
 			if (item.implementsPart) {
-				this.treeParser.addPartName(this.bindingVariableName)
+				this.treeParser.addPart(this.bindingVariableName, this.node)
 			}
 
 			// Import binding class.
@@ -87,7 +87,7 @@ export class BindingSlotParser extends SlotParserBase {
 			this.template.addRefedDeclaration(bindingClassDecl)
 
 			if (bindingClass && Helper.cls.isImplemented(bindingClass, 'Part', '@pucelle/lupos.js', bindingModuleName?.moduleName)) {
-				this.treeParser.addPartName(this.bindingVariableName)
+				this.treeParser.addPart(this.bindingVariableName, this.node)
 			}
 
 			let bindingClassParams = bindingClass ? Helper.cls.getConstructorParameters(bindingClass) : null

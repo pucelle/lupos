@@ -1,4 +1,5 @@
 import {Helper, Scope, TemplateSlotPlaceholder} from '../../base'
+import {PartPositionType} from '../../enums'
 import {HTMLNode, HTMLNodeType, HTMLRoot, HTMLNodeReferences} from '../html-syntax'
 import {SlotParserBase, DynamicComponentSlotParser, FlowControlSlotParser, PropertySlotParser, BindingSlotParser, EventSlotParser, AttributeSlotParser, TextSlotParser, ContentSlotParser, ComponentSlotParser, SlotTagSlotParser, TemplateAttributeSlotParser} from './slots'
 import {TemplateParser} from './template'
@@ -58,11 +59,15 @@ export class TreeParser {
 	readonly references: HTMLNodeReferences
 
 	private wrappedBySVG: boolean = false
+	private wrappedByTemplate: boolean = false
 	private inSVG: boolean = false
 	private outputHandler: TreeOutputHandler
 	private slots: SlotParserBase[] = []
 	private preDeclaredVariableNames: string[] = []
-	private partNames: string[] = []
+
+	/** Second value is whether direct child of template context. */
+	private parts: [string, PartPositionType][] = []
+
 	private refedComponentMap: Map<HTMLNode, string> = new Map()
 	private hasDynamicComponent: boolean = false
 
@@ -74,11 +79,11 @@ export class TreeParser {
 		this.index = VariableNames.getUniqueIndex('tree-index')
 		this.references = new HTMLNodeReferences(this.root)
 
-		this.initSVGWrapping()
-		this.outputHandler = new TreeOutputHandler(this, this.wrappedBySVG)
+		this.initWrapping()
+		this.outputHandler = new TreeOutputHandler(this, this.wrappedBySVG, this.wrappedByTemplate)
 	}
 
-	private initSVGWrapping() {
+	private initWrapping() {
 		let inSVG = false
 
 		if (this.template.type === 'svg') {
@@ -97,6 +102,7 @@ export class TreeParser {
 		}
 
 		this.inSVG = inSVG
+		this.wrappedByTemplate = this.root.firstChild?.tagName === 'template'
 	}
 
 	init() {
@@ -415,7 +421,6 @@ export class TreeParser {
 	/** `$slot_0` */
 	getUniqueSlotName(): string {
 		let name = VariableNames.getDoublyUniqueName(VariableNames.slot, this)
-		this.addPartName(name)
 		return name
 	}
 
@@ -441,8 +446,34 @@ export class TreeParser {
 	}
 
 	/** Add a variable name to `parts`. */
-	addPartName(name: string) {
-		this.partNames.push(name)
+	addPart(name: string, node: HTMLNode) {
+		let positionType = this.getPartPositionType(node)
+		this.parts.push([name, positionType])
+	}
+
+	/** Whether be the direct child of template content. */
+	private getPartPositionType(node: HTMLNode): PartPositionType {
+		let parent = node.parent!
+
+		if (this.wrappedByTemplate && parent.tagName === 'root') {
+			return PartPositionType.ContextNode
+		}
+		else if (this.wrappedByTemplate || this.wrappedBySVG) {
+			if (parent.parent && parent.parent.tagName === 'root') {
+				return PartPositionType.DirectNode
+			}
+			else {
+				return PartPositionType.Others
+			}
+		}
+		else {
+			if (parent.tagName === 'root') {
+				return PartPositionType.DirectNode
+			}
+			else {
+				return PartPositionType.Others
+			}
+		}
 	}
 
 	/** Add a variable name to `let ..., ...` list. */
@@ -461,7 +492,7 @@ export class TreeParser {
 
 		let comName = VariableNames.getDoublyUniqueName(VariableNames.com, this)
 		this.refedComponentMap.set(node, comName)
-		this.partNames.push(comName)
+		this.addPart(comName, node)
 
 		return comName
 	}
@@ -476,7 +507,7 @@ export class TreeParser {
 		this.outputHandler.output(
 			this.slots,
 			this.preDeclaredVariableNames,
-			this.partNames,
+			this.parts,
 			this.hasDynamicComponent,
 			scope
 		)

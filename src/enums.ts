@@ -9,3 +9,9 @@ export enum SlotContentType {
     Text = 2,
     Node = 3
 }
+
+export enum PartPositionType {
+	DirectNode = 0,
+	ContextNode = 1,
+	Others = 2,
+}

@@ -24,7 +24,7 @@ const $html_0 = new HTMLMaker("<!----><div></div><!---->");
                 trackSet($com_0, "comProp");
             }
         },
-        parts: () => [$com_0]
+        parts: () => [[$com_0, 0]]
     };
 });
 class TestDynamicComponent extends Component {

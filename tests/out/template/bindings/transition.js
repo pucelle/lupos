@@ -18,7 +18,7 @@ const $html_0 = new HTMLMaker("<div></div>");
                 $binding_0.update($latest_0 = $values[0]);
             }
         },
-        parts: [$binding_0]
+        parts: [[$binding_0, 0]]
     };
 });
 /*
@@ -33,7 +33,7 @@ const $html_0 = new HTMLMaker("<div></div>");
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),
-        parts: [$binding_0]
+        parts: [[$binding_0, 0]]
     };
 });
 class TestTransitionBinding extends Component {

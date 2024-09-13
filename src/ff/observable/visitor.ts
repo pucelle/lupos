@@ -1,6 +1,6 @@
 import type TS from 'typescript'
 import {defineVisitor, ts} from '../../base'
-import {ContextTree, ContextTypeMask} from './context-tree'
+import {ContextTree} from './context-tree'
 import {AccessReferences} from './access-references'
 
 
@@ -15,7 +15,7 @@ defineVisitor(function(node: TS.Node) {
 
 	// Check contextual state, must after observable state pushing.
 	let type = ContextTree.checkContextType(node)
-	if (type !== ContextTypeMask.None) {
+	if (type !== 0) {
 		ContextTree.createContext(type, node)
 	}
 
@@ -23,7 +23,7 @@ defineVisitor(function(node: TS.Node) {
 	return () => {
 		ContextTree.visitNode(node)
 
-		if (type !== ContextTypeMask.None) {
+		if (type !== 0) {
 			ContextTree.pop()
 		}
 	}

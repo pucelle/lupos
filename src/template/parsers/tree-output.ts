@@ -4,7 +4,7 @@ import {HTMLNode, HTMLNodeType, HTMLRoot} from '../html-syntax'
 import {factory, Helper, Modifier, Scope, TemplateSlotPlaceholder, ts} from '../../base'
 import {SlotParserBase} from './slots'
 import {VariableNames} from './variable-names'
-import {SlotPositionType} from '../../enums'
+import {PartPositionType, SlotPositionType} from '../../enums'
 import {HTMLOutputHandler} from './html-output'
 import {TemplateParser} from './template'
 
@@ -22,19 +22,19 @@ export class TreeOutputHandler {
 	private wrappedBySVG: boolean = false
 	private wrappedByTemplate: boolean = false
 
-	constructor(parser: TreeParser, wrappedBySVG: boolean) {
+	constructor(parser: TreeParser, wrappedBySVG: boolean, wrappedByTemplate: boolean) {
 		this.parser = parser
 		this.root = parser.root
 		this.template = parser.template
 
 		this.wrappedBySVG = wrappedBySVG
-		this.wrappedByTemplate = this.root.firstChild?.tagName === 'template'
+		this.wrappedByTemplate = wrappedByTemplate
 	}
 
 	output(
 		slots: SlotParserBase[],
 		varNames: string[],
-		partNames: string[],
+		parts: [string, PartPositionType][],
 		hasDynamicComponent: boolean,
 		scope: Scope
 	) {
@@ -72,7 +72,7 @@ export class TreeOutputHandler {
 		let templateName = this.parser.getTemplateRefName()
 
 		// TemplateInitResult
-		let initResult = this.outputTemplateInitResult(templatePosition, update, partNames, hasDynamicComponent)
+		let initResult = this.outputTemplateInitResult(templatePosition, update, parts, hasDynamicComponent)
 
 		// const $template_0 = new TemplateMaker(function(?$context, ?$latestValues) {
 		//	 let $node = $html_0()
@@ -393,7 +393,7 @@ export class TreeOutputHandler {
 	private outputTemplateInitResult(
 		position: TS.Expression | null,
 		update: OutputNodeList,
-		partNames: string[],
+		parts: [string, PartPositionType][],
 		hasDynamicComponent: boolean
 	) {
 		
@@ -430,27 +430,30 @@ export class TreeOutputHandler {
 
 		// `parts` part, list of all parts.
 		let partsNode: TS.PropertyAssignment | null = null
-		if (partNames.length > 0) {
-			let parts: TS.Expression = factory.createArrayLiteralExpression(
-				partNames.map(n => factory.createIdentifier(n)),
+		if (parts.length > 0) {
+			let partExp: TS.Expression = factory.createArrayLiteralExpression(
+				parts.map(part => factory.createArrayLiteralExpression([
+					factory.createIdentifier(part[0]),
+					factory.createNumericLiteral(part[1])
+				], false)),
 				false
 			)
 
 			// Becomes `() => [...]`.
 			if (hasDynamicComponent) {
-				parts = factory.createArrowFunction(
+				partExp = factory.createArrowFunction(
 					undefined,
 					undefined,
 					[],
 					undefined,
 					factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
-					parts
+					partExp
 				)  
 			}
 
 			partsNode = factory.createPropertyAssignment(
 				factory.createIdentifier('parts'),
-				parts
+				partExp
 			)
 		}
 

@@ -17,7 +17,7 @@ const $html_0 = new HTMLMaker("<div><slot name=\"slotName\"></slot></div>");
         update() {
             $slot_0.update($context.__getSlotElement("slotName"));
         },
-        parts: [$slot_0]
+        parts: [[$slot_0, 2]]
     };
 });
 /*
@@ -37,7 +37,7 @@ const $html_0 = new HTMLMaker("<div><slot name=\"slotName\"></slot></div>");
         update($values) {
             $slot_0.update($context.__getSlotElement("slotName") ?? new CompiledTemplateResult($template_2, $values));
         },
-        parts: [$slot_0]
+        parts: [[$slot_0, 2]]
     };
 });
 const $html_1 = new HTMLMaker("Content");

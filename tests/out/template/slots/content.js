@@ -29,7 +29,7 @@ const $html_1 = new HTMLMaker("<div><!----></div>");
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),
-        parts: [$slot_0]
+        parts: [[$slot_0, 2]]
     };
 });
 /*
@@ -59,7 +59,7 @@ const $html_1 = new HTMLMaker("<div><!----></div>");
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),
-        parts: [$slot_0]
+        parts: [[$slot_0, 2]]
     };
 });
 /*
@@ -92,7 +92,7 @@ const $html_1 = new HTMLMaker("<div><!----></div>");
         update($values) {
             $latest_0 !== $values[0] && $slot_0.update($latest_0 = $values[0]);
         },
-        parts: [$slot_0]
+        parts: [[$slot_0, 2]]
     };
 });
 /*
@@ -129,7 +129,7 @@ const $html_2 = new HTMLMaker("<div> <!----> </div>");
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),
-        parts: [$slot_0]
+        parts: [[$slot_0, 2]]
     };
 });
 class TestContent extends Component {

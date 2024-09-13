@@ -29,6 +29,7 @@ export class SlotTagSlotParser extends SlotParserBase {
 		// $slot_0
 		if (this.name) {
 			this.slotVariableName = this.treeParser.getUniqueSlotName()
+			this.treeParser.addPart(this.slotVariableName, this.node)
 		}
 	}
 

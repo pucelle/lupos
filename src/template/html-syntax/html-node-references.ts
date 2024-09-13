@@ -29,8 +29,6 @@ export interface ReferenceOutputItem {
 
 export enum ReferenceOutputTypeMask {
 
-	None = 0,
-
 	/** Reference node as variable for some binding like. */
 	Reference = 1,
 
@@ -132,7 +130,7 @@ export class HTMLNodeReferences {
 	private *outputItem(item: DeepReferenceItem, visitFromNode: HTMLNode, parentalSteps: number[]): Iterable<ReferenceOutputItem> {
 		let steps: number[] = [...parentalSteps]
 		let visitSteps: number[] | null = steps
-		let type = ReferenceOutputTypeMask.None
+		let type: ReferenceOutputTypeMask | 0 = 0
 
 		// No visit step for tree.
 		if (item.node !== this.root) {
@@ -170,7 +168,7 @@ export class HTMLNodeReferences {
 		}
 
 		// Output node, and output descendants relative to it.
-		if (type !== ReferenceOutputTypeMask.None) {
+		if (type !== 0) {
 			yield {
 				type,
 				node: item.node,

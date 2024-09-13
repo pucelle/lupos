@@ -5,8 +5,6 @@ import {Context} from './context'
 
 export enum ContextTypeMask {
 
-	None = 0,
-
 	/** Source file. */
 	SourceFile = 2 ** 0,
 

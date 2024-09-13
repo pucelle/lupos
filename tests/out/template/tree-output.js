@@ -45,7 +45,7 @@ const $html_2 = new HTMLMaker("<svg><slot name=\"slotName\"></slot></svg>", true
         update($values) {
             $slot_0.update($context.__getSlotElement("slotName") ?? new CompiledTemplateResult($template_3, $values));
         },
-        parts: [$slot_0]
+        parts: [[$slot_0, 0]]
     };
 });
 /*
@@ -87,7 +87,7 @@ class TestTemplateOutput extends Component {
             return {
                 el: $node,
                 position: new SlotPosition(1, $node_0),
-                parts: [$com_0]
+                parts: [[$com_0, 0]]
             };
         });
         class Child extends Component {

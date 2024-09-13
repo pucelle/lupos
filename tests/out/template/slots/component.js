@@ -21,7 +21,7 @@ const $html_0 = new HTMLMaker("<div></div>");
                 trackSet($com_0, "prop");
             }
         },
-        parts: [$com_0]
+        parts: [[$com_0, 0]]
     };
 });
 const $html_1 = new HTMLMaker("<div>Rest Content</div>");
@@ -38,7 +38,7 @@ const $html_1 = new HTMLMaker("<div>Rest Content</div>");
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),
-        parts: [$com_0]
+        parts: [[$com_0, 0]]
     };
 });
 const $html_2 = new HTMLMaker("<div> </div>");
@@ -61,7 +61,7 @@ const $html_2 = new HTMLMaker("<div> </div>");
                 $node_1.data = $latest_0 = "" + $values[0] + "Rest Content";
             }
         },
-        parts: [$com_0]
+        parts: [[$com_0, 0]]
     };
 });
 class TestComponent extends Component {

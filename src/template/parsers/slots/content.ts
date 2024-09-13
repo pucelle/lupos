@@ -17,6 +17,7 @@ export class ContentSlotParser extends SlotParserBase {
 	init() {
 		this.slotContentType = this.identifySlotContentType()
 		this.slotVariableName = this.treeParser.getUniqueSlotName()
+		this.treeParser.addPart(this.slotVariableName, this.node)
 
 		if (this.isValueMutable()) {
 
