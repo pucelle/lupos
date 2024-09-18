@@ -20,18 +20,20 @@ defineVisitor(function(node: TS.Node, index: number) {
 	}
 
 	Modifier.removeImportOf(decorator)
+	let replace: () => TS.Node[]
 
-	Interpolator.replace(index, InterpolationContentType.Normal, () => {
-		if (decoName === 'computed') {
-			return compileComputedDecorator(node as TS.GetAccessorDeclaration)
-		}
-		else if (decoName === 'effect') {
-			return compileEffectDecorator(node as TS.MethodDeclaration)
-		}
-		else {
-			return compileWatchDecorator(node as TS.MethodDeclaration, decorator)
-		}
-	})
+	if (decoName === 'computed') {
+		replace = compileComputedDecorator(node as TS.GetAccessorDeclaration)
+	}
+	else if (decoName === 'effect') {
+		replace = compileEffectDecorator(node as TS.MethodDeclaration)
+	}
+	else {
+		replace = compileWatchDecorator(node as TS.MethodDeclaration, decorator)
+	}
+
+
+	Interpolator.replace(index, InterpolationContentType.Normal, replace)
 })
 
 
@@ -71,201 +73,203 @@ get prop(): any {
 }
 ```
 */
-function compileComputedDecorator(methodDecl: TS.GetAccessorDeclaration): TS.Node[] {
-	let propName = Helper.getText(methodDecl.name)
-	let methodBodyIndex = Visiting.getIndex(methodDecl.body!)
-	let newBody = Interpolator.outputChildren(methodBodyIndex) as TS.Block
+function compileComputedDecorator(methodDecl: TS.GetAccessorDeclaration): () => TS.Node[] {
+	Modifier.addImport('beginTrack', '@pucelle/ff')
+	Modifier.addImport('endTrack', '@pucelle/ff')
+	Modifier.addImport('trackSet', '@pucelle/ff')
 
-	let property = factory.createPropertyDeclaration(
-		undefined,
-		factory.createPrivateIdentifier('#' + propName),
-		undefined,
-		factory.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword),
-		factory.createIdentifier('undefined')
-	)
+	return () => {
+		let propName = Helper.getText(methodDecl.name)
+		let methodBodyIndex = Visiting.getIndex(methodDecl.body!)
+		let newBody = Interpolator.outputChildren(methodBodyIndex) as TS.Block
 
-	let needComputeProperty = factory.createPropertyDeclaration(
-		undefined,
-		factory.createPrivateIdentifier('#need_compute_' + propName),
-		undefined,
-		factory.createKeywordTypeNode(ts.SyntaxKind.BooleanKeyword),
-		factory.createIdentifier('true')
-	)
-
-	let computeMethod = factory.createMethodDeclaration(
-		undefined,
-		undefined,
-		factory.createPrivateIdentifier('#compute_' + propName),
-		undefined,
-		undefined,
-		[],
-		undefined,
-		newBody
-	)
-	
-	let resetMethod = factory.createMethodDeclaration(
-		undefined,
-		undefined,
-		factory.createPrivateIdentifier('#reset_' + propName),
-		undefined,
-		undefined,
-		[],
-		undefined,
-		factory.createBlock(
-			[factory.createExpressionStatement(factory.createBinaryExpression(
-				factory.createPropertyAccessExpression(
-					factory.createThis(),
-					factory.createPrivateIdentifier('#need_compute_' + propName)
-				),
-				factory.createToken(ts.SyntaxKind.EqualsToken),
-				factory.createIdentifier('true')
-			))],
-			false
+		let property = factory.createPropertyDeclaration(
+			undefined,
+			factory.createPrivateIdentifier('#' + propName),
+			undefined,
+			factory.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword),
+			factory.createIdentifier('undefined')
 		)
-	)
 
-	let getter = factory.createGetAccessorDeclaration(
-		undefined,
-		factory.createIdentifier(propName),
-		[],
-		factory.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword),
-		factory.createBlock(
-			[
-				factory.createIfStatement(
-					factory.createPrefixUnaryExpression(
-						ts.SyntaxKind.ExclamationToken,
-						factory.createPropertyAccessExpression(
-							factory.createThis(),
-							factory.createPrivateIdentifier('#need_compute_' + propName)
-						)
-					),
-					factory.createBlock(
-						[factory.createReturnStatement(factory.createPropertyAccessExpression(
-							factory.createThis(),
-							factory.createPrivateIdentifier('#' + propName)
-						))],
-						true
-					),
-					undefined
-				),
-				factory.createExpressionStatement(factory.createCallExpression(
-					factory.createIdentifier('beginTrack'),
-					undefined,
-					[
-						factory.createPropertyAccessExpression(
-							factory.createThis(),
-							factory.createPrivateIdentifier('#reset_' + propName)
-						),
-						factory.createThis()
-					]
-				)),
-				factory.createTryStatement(
-					factory.createBlock(
-						[
-							factory.createVariableStatement(
-								undefined,
-								factory.createVariableDeclarationList(
-									[factory.createVariableDeclaration(
-										factory.createIdentifier('newValue'),
-										undefined,
-										undefined,
-										factory.createCallExpression(
-											factory.createPropertyAccessExpression(
-												factory.createThis(),
-												factory.createPrivateIdentifier('#compute_' + propName)
-											),
-											undefined,
-											[]
-										)
-									)],
-									ts.NodeFlags.Let
-								)
-							),
-							factory.createIfStatement(
-								factory.createBinaryExpression(
-									factory.createIdentifier('newValue'),
-									factory.createToken(ts.SyntaxKind.ExclamationEqualsEqualsToken),
-									factory.createPropertyAccessExpression(
-										factory.createThis(),
-										factory.createPrivateIdentifier('#' + propName)
-									)
-								),
-								factory.createBlock(
-									[
-										factory.createExpressionStatement(factory.createBinaryExpression(
-											factory.createPropertyAccessExpression(
-												factory.createThis(),
-												factory.createPrivateIdentifier('#' + propName)
-											),
-											factory.createToken(ts.SyntaxKind.EqualsToken),
-											factory.createIdentifier('newValue')
-										)),
-										factory.createExpressionStatement(factory.createCallExpression(
-											factory.createIdentifier('trackSet'),
-											undefined,
-											[
-												factory.createThis(),
-												factory.createStringLiteral(propName)
-											]
-										))
-									],
-									true
-								),
-								undefined
-							)
-						],
-						true
-					),
-					factory.createCatchClause(
-						factory.createVariableDeclaration(
-							factory.createIdentifier('err'),
-							undefined,
-							undefined,
-							undefined
-						),
-						factory.createBlock(
-							[factory.createExpressionStatement(factory.createCallExpression(
-								factory.createPropertyAccessExpression(
-									factory.createIdentifier('console'),
-									factory.createIdentifier('error')
-								),
-								undefined,
-								[factory.createIdentifier('err')]
-							))],
-							true
-						)
-					),
-					factory.createBlock(
-						[factory.createExpressionStatement(factory.createCallExpression(
-							factory.createIdentifier('endTrack'),
-							undefined,
-							[]
-						))],
-						true
-					)
-				),
-				factory.createExpressionStatement(factory.createBinaryExpression(
+		let needComputeProperty = factory.createPropertyDeclaration(
+			undefined,
+			factory.createPrivateIdentifier('#need_compute_' + propName),
+			undefined,
+			factory.createKeywordTypeNode(ts.SyntaxKind.BooleanKeyword),
+			factory.createIdentifier('true')
+		)
+
+		let computeMethod = factory.createMethodDeclaration(
+			undefined,
+			undefined,
+			factory.createPrivateIdentifier('#compute_' + propName),
+			undefined,
+			undefined,
+			[],
+			undefined,
+			newBody
+		)
+		
+		let resetMethod = factory.createMethodDeclaration(
+			undefined,
+			undefined,
+			factory.createPrivateIdentifier('#reset_' + propName),
+			undefined,
+			undefined,
+			[],
+			undefined,
+			factory.createBlock(
+				[factory.createExpressionStatement(factory.createBinaryExpression(
 					factory.createPropertyAccessExpression(
 						factory.createThis(),
 						factory.createPrivateIdentifier('#need_compute_' + propName)
 					),
 					factory.createToken(ts.SyntaxKind.EqualsToken),
-					factory.createFalse()
-				)),
-				factory.createReturnStatement(factory.createPropertyAccessExpression(
-					factory.createThis(),
-					factory.createPrivateIdentifier('#' + propName)
-				))
-			],
-			true
+					factory.createIdentifier('true')
+				))],
+				false
+			)
 		)
-	)
 
-	Modifier.addImport('beginTrack', '@pucelle/ff')
-	Modifier.addImport('endTrack', '@pucelle/ff')
-	Modifier.addImport('trackSet', '@pucelle/ff')
+		let getter = factory.createGetAccessorDeclaration(
+			undefined,
+			factory.createIdentifier(propName),
+			[],
+			factory.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword),
+			factory.createBlock(
+				[
+					factory.createIfStatement(
+						factory.createPrefixUnaryExpression(
+							ts.SyntaxKind.ExclamationToken,
+							factory.createPropertyAccessExpression(
+								factory.createThis(),
+								factory.createPrivateIdentifier('#need_compute_' + propName)
+							)
+						),
+						factory.createBlock(
+							[factory.createReturnStatement(factory.createPropertyAccessExpression(
+								factory.createThis(),
+								factory.createPrivateIdentifier('#' + propName)
+							))],
+							true
+						),
+						undefined
+					),
+					factory.createExpressionStatement(factory.createCallExpression(
+						factory.createIdentifier('beginTrack'),
+						undefined,
+						[
+							factory.createPropertyAccessExpression(
+								factory.createThis(),
+								factory.createPrivateIdentifier('#reset_' + propName)
+							),
+							factory.createThis()
+						]
+					)),
+					factory.createTryStatement(
+						factory.createBlock(
+							[
+								factory.createVariableStatement(
+									undefined,
+									factory.createVariableDeclarationList(
+										[factory.createVariableDeclaration(
+											factory.createIdentifier('newValue'),
+											undefined,
+											undefined,
+											factory.createCallExpression(
+												factory.createPropertyAccessExpression(
+													factory.createThis(),
+													factory.createPrivateIdentifier('#compute_' + propName)
+												),
+												undefined,
+												[]
+											)
+										)],
+										ts.NodeFlags.Let
+									)
+								),
+								factory.createIfStatement(
+									factory.createBinaryExpression(
+										factory.createIdentifier('newValue'),
+										factory.createToken(ts.SyntaxKind.ExclamationEqualsEqualsToken),
+										factory.createPropertyAccessExpression(
+											factory.createThis(),
+											factory.createPrivateIdentifier('#' + propName)
+										)
+									),
+									factory.createBlock(
+										[
+											factory.createExpressionStatement(factory.createBinaryExpression(
+												factory.createPropertyAccessExpression(
+													factory.createThis(),
+													factory.createPrivateIdentifier('#' + propName)
+												),
+												factory.createToken(ts.SyntaxKind.EqualsToken),
+												factory.createIdentifier('newValue')
+											)),
+											factory.createExpressionStatement(factory.createCallExpression(
+												factory.createIdentifier('trackSet'),
+												undefined,
+												[
+													factory.createThis(),
+													factory.createStringLiteral(propName)
+												]
+											))
+										],
+										true
+									),
+									undefined
+								)
+							],
+							true
+						),
+						factory.createCatchClause(
+							factory.createVariableDeclaration(
+								factory.createIdentifier('err'),
+								undefined,
+								undefined,
+								undefined
+							),
+							factory.createBlock(
+								[factory.createExpressionStatement(factory.createCallExpression(
+									factory.createPropertyAccessExpression(
+										factory.createIdentifier('console'),
+										factory.createIdentifier('error')
+									),
+									undefined,
+									[factory.createIdentifier('err')]
+								))],
+								true
+							)
+						),
+						factory.createBlock(
+							[factory.createExpressionStatement(factory.createCallExpression(
+								factory.createIdentifier('endTrack'),
+								undefined,
+								[]
+							))],
+							true
+						)
+					),
+					factory.createExpressionStatement(factory.createBinaryExpression(
+						factory.createPropertyAccessExpression(
+							factory.createThis(),
+							factory.createPrivateIdentifier('#need_compute_' + propName)
+						),
+						factory.createToken(ts.SyntaxKind.EqualsToken),
+						factory.createFalse()
+					)),
+					factory.createReturnStatement(factory.createPropertyAccessExpression(
+						factory.createThis(),
+						factory.createPrivateIdentifier('#' + propName)
+					))
+				],
+				true
+			)
+		)
 
-	return [property, needComputeProperty, computeMethod, resetMethod, getter]
+		return [property, needComputeProperty, computeMethod, resetMethod, getter]
+	}
 }
 
 
@@ -299,98 +303,100 @@ effectFn() {
 }
 ```
 */
-function compileEffectDecorator(methodDecl: TS.MethodDeclaration): TS.Node[] {
-	let methodName = Helper.getText(methodDecl.name)
-	let methodBodyIndex = Visiting.getIndex(methodDecl.body!)
-	let newBody = Interpolator.outputChildren(methodBodyIndex) as TS.Block
-
-	let enqueueMethod = factory.createMethodDeclaration(
-		undefined,
-		undefined,
-		factory.createPrivateIdentifier('#enqueue_' + methodName),
-		undefined,
-		undefined,
-		[],
-		undefined,
-		factory.createBlock(
-		 	[
-				factory.createExpressionStatement(factory.createCallExpression(
-					factory.createIdentifier('enqueue'),
-					undefined,
-					[
-						factory.createPropertyAccessExpression(
-							factory.createThis(),
-							factory.createIdentifier(methodName)
-						),
-						factory.createThis()
-					]
-				))
-			],
-			true
-		)
-	)
-	
-	let effectMethod = factory.createMethodDeclaration(
-		undefined,
-		undefined,
-		factory.createIdentifier(methodName),
-		undefined,
-		undefined,
-		[],
-		undefined,
-		factory.createBlock(
-			[
-				factory.createExpressionStatement(factory.createCallExpression(
-					factory.createIdentifier('beginTrack'),
-					undefined,
-					[
-						factory.createPropertyAccessExpression(
-							factory.createThis(),
-							factory.createPrivateIdentifier('#enqueue_' + methodName)
-						),
-						factory.createThis()
-					]
-				)),
-				factory.createTryStatement(
-					newBody,
-					factory.createCatchClause(
-						factory.createVariableDeclaration(
-							factory.createIdentifier('err'),
-							undefined,
-							undefined,
-							undefined
-						),
-						factory.createBlock(
-							[factory.createExpressionStatement(factory.createCallExpression(
-								factory.createPropertyAccessExpression(
-									factory.createIdentifier('console'),
-									factory.createIdentifier('error')
-								),
-								undefined,
-								[factory.createIdentifier('err')]
-							))],
-							true
-						)
-					),
-					factory.createBlock(
-						[factory.createExpressionStatement(factory.createCallExpression(
-							factory.createIdentifier('endTrack'),
-							undefined,
-							[]
-						))],
-						true
-					)
-				)
-			],
-			true
-		)
-	)
-
+function compileEffectDecorator(methodDecl: TS.MethodDeclaration): () => TS.Node[] {
 	Modifier.addImport('beginTrack', '@pucelle/ff')
 	Modifier.addImport('endTrack', '@pucelle/ff')
 	Modifier.addImport('enqueue', '@pucelle/ff')
 
-	return [enqueueMethod, effectMethod]
+	return () => {
+		let methodName = Helper.getText(methodDecl.name)
+		let methodBodyIndex = Visiting.getIndex(methodDecl.body!)
+		let newBody = Interpolator.outputChildren(methodBodyIndex) as TS.Block
+
+		let enqueueMethod = factory.createMethodDeclaration(
+			undefined,
+			undefined,
+			factory.createPrivateIdentifier('#enqueue_' + methodName),
+			undefined,
+			undefined,
+			[],
+			undefined,
+			factory.createBlock(
+				[
+					factory.createExpressionStatement(factory.createCallExpression(
+						factory.createIdentifier('enqueue'),
+						undefined,
+						[
+							factory.createPropertyAccessExpression(
+								factory.createThis(),
+								factory.createIdentifier(methodName)
+							),
+							factory.createThis()
+						]
+					))
+				],
+				true
+			)
+		)
+		
+		let effectMethod = factory.createMethodDeclaration(
+			undefined,
+			undefined,
+			factory.createIdentifier(methodName),
+			undefined,
+			undefined,
+			[],
+			undefined,
+			factory.createBlock(
+				[
+					factory.createExpressionStatement(factory.createCallExpression(
+						factory.createIdentifier('beginTrack'),
+						undefined,
+						[
+							factory.createPropertyAccessExpression(
+								factory.createThis(),
+								factory.createPrivateIdentifier('#enqueue_' + methodName)
+							),
+							factory.createThis()
+						]
+					)),
+					factory.createTryStatement(
+						newBody,
+						factory.createCatchClause(
+							factory.createVariableDeclaration(
+								factory.createIdentifier('err'),
+								undefined,
+								undefined,
+								undefined
+							),
+							factory.createBlock(
+								[factory.createExpressionStatement(factory.createCallExpression(
+									factory.createPropertyAccessExpression(
+										factory.createIdentifier('console'),
+										factory.createIdentifier('error')
+									),
+									undefined,
+									[factory.createIdentifier('err')]
+								))],
+								true
+							)
+						),
+						factory.createBlock(
+							[factory.createExpressionStatement(factory.createCallExpression(
+								factory.createIdentifier('endTrack'),
+								undefined,
+								[]
+							))],
+							true
+						)
+					)
+				],
+				true
+			)
+		)
+
+		return [enqueueMethod, effectMethod]
+	}
 }
 
 
@@ -438,205 +444,209 @@ onWatchChange() {
 }
 ```
 */
-function compileWatchDecorator(methodDecl: TS.MethodDeclaration, decorator: TS.Decorator): TS.Node[] {
-	let methodName = Helper.getText(methodDecl.name)
-
-	if (!ts.isCallExpression(decorator.expression)) {
-		return []
-	}
-
-
-	let property = factory.createPropertyDeclaration(
-		undefined,
-		factory.createPrivateIdentifier('#property_' + methodName),
-		undefined,
-		undefined,
-		factory.createIdentifier('undefined')
-	)
-	
-
-	let propertyGetArg = decorator.expression.arguments[0]
-	let propertyGetBlock: TS.Block
-
-	if (ts.isStringLiteral(propertyGetArg)) {
-		propertyGetBlock = factory.createBlock(
-			[
-				factory.createExpressionStatement(factory.createCallExpression(
-					factory.createIdentifier('trackGet'),
-					undefined,
-					[
-						factory.createThis(),
-						factory.createStringLiteral(propertyGetArg.text)
-					]
-				)),
-				factory.createReturnStatement(factory.createPropertyAccessExpression(
-					factory.createThis(),
-					factory.createIdentifier(propertyGetArg.text)
-				))
-			],
-			true
-		)
-
-		Modifier.addImport('trackGet', '@pucelle/ff')
-	}
-	else if (ts.isFunctionExpression(propertyGetArg)) {
-		let bodyIndex = Visiting.getIndex(propertyGetArg.body)
-		propertyGetBlock = Interpolator.outputChildren(bodyIndex) as TS.Block
-	}
-	else {
-		propertyGetBlock = factory.createBlock(
-			[factory.createReturnStatement(factory.createIdentifier('undefined'))],
-			true
-		)
-	}
-
-	let propertyGet = factory.createMethodDeclaration(
-		undefined,
-		undefined,
-		factory.createPrivateIdentifier('#property_get_' + methodName),
-		undefined,
-		undefined,
-		[],
-		undefined,
-		propertyGetBlock
-	)
-	  
-
-	let enqueueMethod = factory.createMethodDeclaration(
-		undefined,
-		undefined,
-		factory.createPrivateIdentifier('#enqueue_' + methodName),
-		undefined,
-		undefined,
-		[],
-		undefined,
-		factory.createBlock(
-			[factory.createExpressionStatement(factory.createCallExpression(
-				factory.createIdentifier('enqueue'),
-				undefined,
-				[
-					factory.createPropertyAccessExpression(
-						factory.createThis(),
-						factory.createIdentifier(methodName)
-					),
-					factory.createThis()
-				]
-			))],
-			true
-		)
-	)
-
-	
-	let watchMethod = factory.createMethodDeclaration(
-		undefined,
-		undefined,
-		factory.createIdentifier(methodName),
-		undefined,
-		undefined,
-		[],
-		undefined,
-		factory.createBlock(
-			[
-				factory.createExpressionStatement(factory.createCallExpression(
-					factory.createIdentifier('beginTrack'),
-					undefined,
-					[
-						factory.createPropertyAccessExpression(
-							factory.createThis(),
-							factory.createPrivateIdentifier('#enqueue_' + methodName)
-						),
-						factory.createThis()
-					]
-				)),
-				factory.createVariableStatement(
-					undefined,
-					factory.createVariableDeclarationList(
-						[factory.createVariableDeclaration(
-							factory.createIdentifier('new_value'),
-							undefined,
-							undefined,
-							factory.createIdentifier('undefined')
-						)],
-						ts.NodeFlags.Let
-					)
-				),
-				factory.createTryStatement(
-					factory.createBlock(
-						[factory.createExpressionStatement(factory.createBinaryExpression(
-							factory.createIdentifier('new_value'),
-							factory.createToken(ts.SyntaxKind.EqualsToken),
-							factory.createCallExpression(
-								factory.createPropertyAccessExpression(
-									factory.createThis(),
-									factory.createPrivateIdentifier('#property_get_' + methodName)
-								),
-								undefined,
-								[]
-							)
-						))],
-						true
-					),
-					factory.createCatchClause(
-						factory.createVariableDeclaration(
-							factory.createIdentifier('err'),
-							undefined,
-							undefined,
-							undefined
-						),
-						factory.createBlock(
-							[factory.createExpressionStatement(factory.createCallExpression(
-								factory.createPropertyAccessExpression(
-									factory.createIdentifier('console'),
-									factory.createIdentifier('error')
-								),
-								undefined,
-								[factory.createIdentifier('err')]
-							))],
-							true
-						)
-					),
-					factory.createBlock(
-						[factory.createExpressionStatement(factory.createCallExpression(
-							factory.createIdentifier('endTrack'),
-							undefined,
-							[]
-						))],
-						true
-					)
-				),
-				factory.createIfStatement(
-					factory.createBinaryExpression(
-						factory.createIdentifier('new_value'),
-						factory.createToken(ts.SyntaxKind.ExclamationEqualsEqualsToken),
-						factory.createPropertyAccessExpression(
-							factory.createThis(),
-							factory.createPrivateIdentifier('#property_' + methodName)
-						)
-					),
-					factory.createBlock(
-						[
-							factory.createExpressionStatement(factory.createBinaryExpression(
-								factory.createPropertyAccessExpression(
-									factory.createThis(),
-									factory.createPrivateIdentifier('#property_' + methodName)
-								),
-								factory.createToken(ts.SyntaxKind.EqualsToken),
-								factory.createIdentifier('new_value')
-							)),
-							...methodDecl.body?.statements || [],
-						],
-						true
-					),
-					undefined
-				)
-			],
-			true
-		)
-	)
-	
+function compileWatchDecorator(methodDecl: TS.MethodDeclaration, decorator: TS.Decorator): () => TS.Node[] {
 	Modifier.addImport('beginTrack', '@pucelle/ff')
 	Modifier.addImport('endTrack', '@pucelle/ff')
 	Modifier.addImport('enqueue', '@pucelle/ff')
 
-	return [property, propertyGet, enqueueMethod, watchMethod]
+	let methodName = Helper.getText(methodDecl.name)
+
+	if (!ts.isCallExpression(decorator.expression)) {
+		return () => []
+	}
+
+
+	let propertyGetArg = decorator.expression.arguments[0]
+	if (ts.isStringLiteral(propertyGetArg)) {
+		Modifier.addImport('trackGet', '@pucelle/ff')
+	}
+
+	return () => {
+		let property = factory.createPropertyDeclaration(
+			undefined,
+			factory.createPrivateIdentifier('#property_' + methodName),
+			undefined,
+			undefined,
+			factory.createIdentifier('undefined')
+		)
+		
+
+		let propertyGetBlock: TS.Block
+
+		if (ts.isStringLiteral(propertyGetArg)) {
+			propertyGetBlock = factory.createBlock(
+				[
+					factory.createExpressionStatement(factory.createCallExpression(
+						factory.createIdentifier('trackGet'),
+						undefined,
+						[
+							factory.createThis(),
+							factory.createStringLiteral(propertyGetArg.text)
+						]
+					)),
+					factory.createReturnStatement(factory.createPropertyAccessExpression(
+						factory.createThis(),
+						factory.createIdentifier(propertyGetArg.text)
+					))
+				],
+				true
+			)
+		}
+		else if (ts.isFunctionExpression(propertyGetArg)) {
+			let bodyIndex = Visiting.getIndex(propertyGetArg.body)
+			propertyGetBlock = Interpolator.outputChildren(bodyIndex) as TS.Block
+		}
+		else {
+			propertyGetBlock = factory.createBlock(
+				[factory.createReturnStatement(factory.createIdentifier('undefined'))],
+				true
+			)
+		}
+
+		let propertyGet = factory.createMethodDeclaration(
+			undefined,
+			undefined,
+			factory.createPrivateIdentifier('#property_get_' + methodName),
+			undefined,
+			undefined,
+			[],
+			undefined,
+			propertyGetBlock
+		)
+		
+
+		let enqueueMethod = factory.createMethodDeclaration(
+			undefined,
+			undefined,
+			factory.createPrivateIdentifier('#enqueue_' + methodName),
+			undefined,
+			undefined,
+			[],
+			undefined,
+			factory.createBlock(
+				[factory.createExpressionStatement(factory.createCallExpression(
+					factory.createIdentifier('enqueue'),
+					undefined,
+					[
+						factory.createPropertyAccessExpression(
+							factory.createThis(),
+							factory.createIdentifier(methodName)
+						),
+						factory.createThis()
+					]
+				))],
+				true
+			)
+		)
+
+		
+		let watchMethod = factory.createMethodDeclaration(
+			undefined,
+			undefined,
+			factory.createIdentifier(methodName),
+			undefined,
+			undefined,
+			[],
+			undefined,
+			factory.createBlock(
+				[
+					factory.createExpressionStatement(factory.createCallExpression(
+						factory.createIdentifier('beginTrack'),
+						undefined,
+						[
+							factory.createPropertyAccessExpression(
+								factory.createThis(),
+								factory.createPrivateIdentifier('#enqueue_' + methodName)
+							),
+							factory.createThis()
+						]
+					)),
+					factory.createVariableStatement(
+						undefined,
+						factory.createVariableDeclarationList(
+							[factory.createVariableDeclaration(
+								factory.createIdentifier('new_value'),
+								undefined,
+								undefined,
+								factory.createIdentifier('undefined')
+							)],
+							ts.NodeFlags.Let
+						)
+					),
+					factory.createTryStatement(
+						factory.createBlock(
+							[factory.createExpressionStatement(factory.createBinaryExpression(
+								factory.createIdentifier('new_value'),
+								factory.createToken(ts.SyntaxKind.EqualsToken),
+								factory.createCallExpression(
+									factory.createPropertyAccessExpression(
+										factory.createThis(),
+										factory.createPrivateIdentifier('#property_get_' + methodName)
+									),
+									undefined,
+									[]
+								)
+							))],
+							true
+						),
+						factory.createCatchClause(
+							factory.createVariableDeclaration(
+								factory.createIdentifier('err'),
+								undefined,
+								undefined,
+								undefined
+							),
+							factory.createBlock(
+								[factory.createExpressionStatement(factory.createCallExpression(
+									factory.createPropertyAccessExpression(
+										factory.createIdentifier('console'),
+										factory.createIdentifier('error')
+									),
+									undefined,
+									[factory.createIdentifier('err')]
+								))],
+								true
+							)
+						),
+						factory.createBlock(
+							[factory.createExpressionStatement(factory.createCallExpression(
+								factory.createIdentifier('endTrack'),
+								undefined,
+								[]
+							))],
+							true
+						)
+					),
+					factory.createIfStatement(
+						factory.createBinaryExpression(
+							factory.createIdentifier('new_value'),
+							factory.createToken(ts.SyntaxKind.ExclamationEqualsEqualsToken),
+							factory.createPropertyAccessExpression(
+								factory.createThis(),
+								factory.createPrivateIdentifier('#property_' + methodName)
+							)
+						),
+						factory.createBlock(
+							[
+								factory.createExpressionStatement(factory.createBinaryExpression(
+									factory.createPropertyAccessExpression(
+										factory.createThis(),
+										factory.createPrivateIdentifier('#property_' + methodName)
+									),
+									factory.createToken(ts.SyntaxKind.EqualsToken),
+									factory.createIdentifier('new_value')
+								)),
+								...methodDecl.body?.statements || [],
+							],
+							true
+						),
+						undefined
+					)
+				],
+				true
+			)
+		)
+
+		return [property, propertyGet, enqueueMethod, watchMethod]
+	}
 }

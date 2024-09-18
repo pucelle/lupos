@@ -1,4 +1,4 @@
-import { trackGet, untrack } from '@pucelle/ff';
+import { beginTrack, endTrack, trackSet, trackGet, untrack, enqueue } from '@pucelle/ff';
 import { Component } from '@pucelle/lupos.js';
 class TestComputed extends Component {
     prop = 1;

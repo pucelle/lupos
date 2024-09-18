@@ -204,14 +204,18 @@ export class ContextCapturer {
 
 		// For function declaration, insert to function body.
 		if (this.context.type & ContextTypeMask.FunctionLike) {
-			let body = (node as TS.FunctionLikeDeclarationBase).body!
-			item.toIndex = Visiting.getIndex(body)
+			let body = (node as TS.FunctionLikeDeclarationBase).body
 
-			if (ts.isBlock(body)) {
-				item.position = InterpolationPosition.Append
-			}
-			else {
-				item.position = InterpolationPosition.After
+			// Abstract function or function type declaration has no body.
+			if (body) {
+				item.toIndex = Visiting.getIndex(body)
+
+				if (ts.isBlock(body)) {
+					item.position = InterpolationPosition.Append
+				}
+				else {
+					item.position = InterpolationPosition.After
+				}
 			}
 		}
 
