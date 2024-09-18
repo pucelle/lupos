@@ -138,6 +138,108 @@ export namespace Visiting {
 	export function getIndex(rawNode: TS.Node): number {
 		return IndexMap.get(rawNode)!
 	}
+
+
+	/** Returns whether `index1` is ancestor of `index2`. */
+	export function isAncestorOf(index1: number, index2: number): boolean {
+		if (index1 >= index2) {
+			return false
+		}
+
+		let index: number | undefined = getParentIndex(index2)
+
+		// Look ancestors.
+		while (index !== undefined) {
+			if (index === index1) {
+				return true
+			}
+
+			index = getParentIndex(index)
+		}
+
+		return false
+	}
+
+	/** Returns whether `index1` is ancestor of `index2`, or equals `index2`. */
+	export function isContains(index1: number, index2: number): boolean {
+		if (index1 === index2) {
+			return true
+		}
+
+		return isAncestorOf(index1, index2)
+	}
+
+	/** Returns whether `index1` is preceding of `index2` in parent-first order. */
+	export function isPrecedingOf(index1: number, index2: number): boolean {
+		return index1 < index2
+	}
+
+	/** 
+	 * Returns whether `index1` is preceding of `index2`,
+	 * or equals `index2` in parent-first order.
+	 */
+	export function isPrecedingOfOrEqual(index1: number, index2: number): boolean {
+		return index1 <= index2
+	}
+
+	/** Returns whether `index1` is preceding of `index2` in child-first order. */
+	export function isPrecedingOfInChildFirstOrder(index1: number, index2: number): boolean {
+		if (index1 === index2) {
+			return false
+		}
+		else if (isAncestorOf(index1, index2)) {
+			return false
+		}
+		else if (isAncestorOf(index2, index1)) {
+			return true
+		}
+		else {
+			return isPrecedingOf(index1, index2)
+		}
+	}
+
+	/** 
+	 * Returns whether `index1` is preceding of `index2`,
+	 * or equals `index2` in child-first order.
+	 */
+	export function isPrecedingOfOrEqualInChildFirstOrder(index1: number, index2: number): boolean {
+		if (index1 === index2) {
+			return true
+		}
+
+		return isPrecedingOfInChildFirstOrder(index1, index2)
+	}
+
+	/** Returns whether `index1` is preceding of `index2` in parent-first order. */
+	export function isFollowingOf(index1: number, index2: number): boolean {
+		return index1 > index2
+	}
+
+	/** 
+	 * Returns whether `index1` is following of `index2`,
+	 * or equals `index2` in parent-first order.
+	 */
+	export function isFollowingOfOrEqual(index1: number, index2: number): boolean {
+		return index1 >= index2
+	}
+
+	/** Returns whether `index1` is following of `index2` in child-first order. */
+	export function isFollowingOfInChildFirstOrder(index1: number, index2: number): boolean {
+		return isPrecedingOfInChildFirstOrder(index2, index1)
+	}
+
+	/** 
+	 * Returns whether `index1` is following of `index2`,
+	 * or equals `index2` in child-first order.
+	 */
+	export function isFollowingOfOrEqualInChildFirstOrder(index1: number, index2: number): boolean {
+		if (index1 === index2) {
+			return true
+		}
+
+		return isFollowingOfInChildFirstOrder(index1, index2)
+	}
+
 	
 
 	/** Look outward for a visiting index, and the node at where match test fn. */
@@ -152,25 +254,6 @@ export namespace Visiting {
 			}
 
 			index = getParentIndex(index)
-		}
-
-		return undefined
-	}
-
-	/** Look outward for a visiting index, which is the sibling of `siblingIndex`. */
-	export function findOutwardSiblingWith(fromIndex: number, siblingIndex: number) : number | undefined {
-		let parentIndex = getParentIndex(siblingIndex)
-		let index: number | undefined = fromIndex
-
-		// Look outward for a variable declaration.
-		while (index !== undefined) {
-			let pi = getParentIndex(index)
-
-			if (pi === parentIndex) {
-				return index
-			}
-
-			index = pi
 		}
 
 		return undefined

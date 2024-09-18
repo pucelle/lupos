@@ -42,7 +42,7 @@ export namespace Optimizer {
 			moveIterationConditionIncreasementOutward(context)
 		}
 
-		// This optimizing has low risk, codes may not run when no looping.
+		// This optimizing has low risk, loop codes may not run when have no looping.
 		if (context.type & ContextTypeMask.IterationContent) {
 			moveIterationContentCapturingOutward(context)
 		}
@@ -53,13 +53,13 @@ export namespace Optimizer {
 	}
 
 
-	/** Move conditional tracking outward. */
+	/** Move flow interruption tracking outward. */
 	function moveFlowInterruptionCapturingOutward(context: Context) {
 		if (!context.capturer.hasCaptured()) {
 			return
 		}
 
-		// parent of conditional.
+		// parent of flow interruption.
 		let targetContext = context.parent!
 
 		context.capturer.moveCapturedOutwardTo(targetContext.capturer)
@@ -91,7 +91,7 @@ export namespace Optimizer {
 			canMerge = true
 		}
 
-		// Must have both two branches .
+		// Must have both two branches.
 		else {
 			canMerge = contentChildren.length >= 2
 		}

@@ -5,8 +5,8 @@ class Parent extends Component {
         super.onConnected();
         Component.setContextVariable(this, "prop");
     }
-    onDisconnected() {
-        super.onDisconnected();
+    onWillDisconnect() {
+        super.onWillDisconnect();
         Component.deleteContextVariables(this);
     }
     prop = 1;
@@ -16,8 +16,8 @@ class Child extends Component {
         super.onConnected();
         this.#prop_declared_by = Component.getContextVariableDeclared(this, "prop");
     }
-    onDisconnected() {
-        super.onDisconnected();
+    onWillDisconnect() {
+        super.onWillDisconnect();
         this.#prop_declared_by = undefined;
         Component.deleteContextVariables(this);
     }

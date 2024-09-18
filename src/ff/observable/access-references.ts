@@ -13,7 +13,7 @@ export namespace AccessReferences {
 
 	/** 
 	 * The referenced expressions like `a`, `a.b` of `a.b.c`,
-	 * and the mapped visiting index of `a.b.c`.
+	 * and the mapped visiting index of original expression `a.b.c`.
 	 */
 	const referenceMap: ListMap<string, number> = new ListMap()
 
@@ -29,7 +29,7 @@ export namespace AccessReferences {
 	 */
 	const visitedNodes: Set<TS.Node> = new Set()
 
-	/** If access as `a.b`, and later assign `a`, then `a` of `a.b` become mutable. */
+	/** If access as `a.b`, and later assign `a`, then node `a` of `a.b` become mutable. */
 	const mutableIndices: Set<number> = new Set()
 
 	/** Indices where access nodes have been referenced. */
@@ -46,7 +46,7 @@ export namespace AccessReferences {
 
 
 	/** Whether any descendant access node has been referenced. */
-	export function isAccessReferencedInternal(index: number): boolean {
+	export function isDescendantAccessReferenced(index: number): boolean {
 		if (referencedAccessIndices.has(index)) {
 			return true
 		}
@@ -56,7 +56,7 @@ export namespace AccessReferences {
 			return false
 		}
 
-		return childIndices.some(i => isAccessReferencedInternal(i))
+		return childIndices.some(i => isDescendantAccessReferenced(i))
 	}
 
 
@@ -110,7 +110,7 @@ export namespace AccessReferences {
 	}
 
 
-	/** Visit an assess node, and determine whether reference it. */
+	/** Visit an assess node, reference after determined should reference. */
 	export function mayReferenceAccess(index: number, context: Context) {
 		if (referencedAccessIndices.has(index)) {
 			return

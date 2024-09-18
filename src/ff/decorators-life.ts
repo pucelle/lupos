@@ -2,7 +2,7 @@ import type TS from 'typescript'
 import {ts, defineVisitor, Modifier, Helper, factory, Interpolator, Visiting} from '../base'
 
 
-// Add some decorator compiled part to `constructor` or `onConnected` and `onDisconnected`.
+// Add some decorator compiled part to `constructor` or `onConnected` and `onWillDisconnect`.
 defineVisitor(function(node: TS.Node, index: number) {
 	if (!ts.isClassDeclaration(node)) {
 		return
@@ -24,9 +24,9 @@ defineVisitor(function(node: TS.Node, index: number) {
 			connect = createCallSuperMethod('onConnected')
 		}
 
-		disconnect = Helper.cls.getMethod(node, 'onDisconnected')
+		disconnect = Helper.cls.getMethod(node, 'onWillDisconnect')
 		if (!disconnect) {
-			disconnect = createCallSuperMethod('onDisconnected')
+			disconnect = createCallSuperMethod('onWillDisconnect')
 		}
 	}
 	else {
@@ -103,7 +103,7 @@ onConnected() {
 	this.#enqueue_effectFn()
 }
 
-onDisconnected() {
+onWillDisconnect() {
 	untrack(this.#enqueue_effectFn, this)
 }
 ```
@@ -117,7 +117,7 @@ onConnected() {
 	this.#enqueue_onWatchChange()
 }
 
-onDisconnected() {
+onWillDisconnect() {
 	untrack(this.#enqueue_onWatchChange, this)
 }
 
@@ -260,8 +260,8 @@ onConnected() {
 	Component.setContextVariable(this, 'prop')
 }
 
-onDisconnected() {
-	super.onDisconnected()
+onWillDisconnect() {
+	super.onWillDisconnect()
 	Component.deleteContextVariables(this)
 }
 ```
@@ -321,8 +321,8 @@ onConnected() {
 	this.#prop_declared = Component.getContextVariableDeclared(this, 'prop')
 }
 
-onDisconnected() {
-	super.onDisconnected()
+onWillDisconnect() {
+	super.onWillDisconnect()
 	this.#prop_declared_by = undefined
 	Component.deleteContextVariables(this)
 }

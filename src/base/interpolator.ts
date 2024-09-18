@@ -318,9 +318,11 @@ export namespace Interpolator {
 			}
 		}
 
-		// console.log('-------------------------------------')
-		// console.log(Helper.getText(Visiting.getNode(index)))
-		// console.log(Array.isArray(node) ? node.map(n => Helper.getText(n)) : Helper.getText((node!)))
+		// if (ts.isVariableDeclaration(Visiting.getNode(Visiting.getParentIndex(index)!))) {
+		// 	console.log('-------------------------------------')
+		// 	console.log('TO', Helper.getText(Visiting.getNode(index)))
+		// 	console.log('ADD', Array.isArray(node) ? node.map(n => Helper.getText(n)) : node ? Helper.getText((node)) : 'NONE')
+		// }
 
 		return node && Array.isArray(node) && node.length === 1 ? node[0] : node
 	}
@@ -374,7 +376,7 @@ export namespace Interpolator {
 			)
 		}
 
-		// Parenthesize it, move returned node to the end.
+		// Parenthesize it, and move returned node to the end part.
 		else if (Helper.pack.shouldBeUnique(rawNode)) {
 			let list = arrangeNeighborNodes(node, beforeNodes, afterNodes, true)
 			return Helper.pack.parenthesizeExpressions(...list)

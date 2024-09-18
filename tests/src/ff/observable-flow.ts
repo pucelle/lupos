@@ -155,11 +155,20 @@ class TestAwaitStatement extends Component {
 	prop1: number = 1
 	prop2: number = 2
 
-	async testAwait() {
+	async testAwaitTrackSplicing() {
 		this.prop1
 		await Promise.resolve()
 		this.prop2
 		return 0
+	}
+
+	async testAwaitVariableTracking() {
+		let prop = await this.asyncGetProp(this.prop1)
+		return prop
+	}
+
+	async asyncGetProp(prop: number) {
+		return prop
 	}
 }
 

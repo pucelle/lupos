@@ -133,13 +133,21 @@ class TestContinueStatement extends Component {
 class TestAwaitStatement extends Component {
     prop1 = 1;
     prop2 = 2;
-    async testAwait() {
+    async testAwaitTrackSplicing() {
         this.prop1;
         trackGet(this, "prop1");
         await Promise.resolve();
         this.prop2;
         trackGet(this, "prop2");
         return 0;
+    }
+    async testAwaitVariableTracking() {
+        trackGet(this, "prop1");
+        let prop = await this.asyncGetProp(this.prop1);
+        return prop;
+    }
+    async asyncGetProp(prop) {
+        return prop;
     }
 }
 class TestYieldStatement extends Component {

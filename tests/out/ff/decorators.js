@@ -36,8 +36,8 @@ class TestEffect extends Component {
         super.onConnected();
         this.#enqueue_onPropChangeEffect();
     }
-    onDisconnected() {
-        super.onDisconnected();
+    onWillDisconnect() {
+        super.onWillDisconnect();
         untrack(this.#enqueue_onPropChangeEffect, this);
     }
     prop = 1;
@@ -63,8 +63,8 @@ class TestWatchProperty extends Component {
         super.onConnected();
         this.#enqueue_onPropChange();
     }
-    onDisconnected() {
-        super.onDisconnected();
+    onWillDisconnect() {
+        super.onWillDisconnect();
         untrack(this.#enqueue_onPropChange, this);
     }
     prop = 1;
@@ -99,8 +99,8 @@ class TestWatchCallback extends Component {
         super.onConnected();
         this.#enqueue_onPropChange();
     }
-    onDisconnected() {
-        super.onDisconnected();
+    onWillDisconnect() {
+        super.onWillDisconnect();
         untrack(this.#enqueue_onPropChange, this);
     }
     prop = 1;

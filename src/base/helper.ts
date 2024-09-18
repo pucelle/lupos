@@ -1339,6 +1339,10 @@ export namespace Helper {
 		export function canExtendToBlock(node: TS.Node): node is TS.Expression | TS.ExpressionStatement {
 			let parent = node.parent
 
+			if (ts.isSourceFile(node)) {
+				return false
+			}
+
 			if (ts.isBlock(node)) {
 				return false
 			}
@@ -1396,6 +1400,13 @@ export namespace Helper {
 				|| ts.isYieldExpression(parent)
 			) {
 				if (parent.expression === node) {
+					return true
+				}
+			}
+
+			// Initializer of variable declaration.
+			if (ts.isVariableDeclaration(parent)) {
+				if (parent.initializer === node) {
 					return true
 				}
 			}

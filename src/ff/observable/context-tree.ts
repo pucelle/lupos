@@ -272,6 +272,11 @@ export namespace ContextTree {
 
 		while (true) {
 
+			// Source file.
+			if (ts.isSourceFile(node)) {
+				break
+			}
+
 			// Can extend from `if()...` to `if(){...}`, insert before node.
 			if (Helper.pack.canExtendToPutStatements(node)) {
 				break

@@ -13,8 +13,11 @@ interface HashItem {
 	/** Unique name. */
 	name: string
 
-	/** The variable visiting indices current node referenced. */
-	referenceIndices: number[]
+	/** The variable declaration scopes that current node used. */
+	usedScopes: Scope[]
+
+	/** The variable declaration visiting indices that current node used. */
+	usedIndices: number[]
 }
 
 
@@ -24,7 +27,7 @@ export enum MutableMask {
 	/** `1`, use `const a`, use `import a`, use global declared `a`, `this.onClick`. */
 	Static = 0,
 
-	/** If referenced value is mutable, and need to update for multiple times. */
+	/** If referenced variable value is mutable, and need to update for multiple times. */
 	Mutable = 1,
 
 	/** 
@@ -188,32 +191,36 @@ export namespace Scoping {
 		return hashed
 	}
 
-	/** 
-	 * Hash a node, normalize and add a unique suffix to all variable nodes.
-	 * `maximumReferencedIndex` means: if you want to move this node,
-	 * it can't be moved before node with visiting index >= this value. 
-	 */
+	/** Hash a node, normalize and add a unique suffix to all variable nodes. */
 	function doHashingOfNode<T extends TS.Node>(rawNode: T): HashItem {
-		let referenceIndices: number[] = []
+		let usedScopes: Scope[] = []
+		let usedIndices: number[] = []
 
 		let hashVisited = ts.visitNode(rawNode, (n: TS.Node) => {
-			return hashNodeVisitor(n, referenceIndices)
+			return hashNodeVisitor(n, usedScopes, usedIndices)
 		})!
 
 		rawNode = Helper.pack.normalize(hashVisited, true) as T
 
 		return {
 			name: Helper.getText(rawNode),
-			referenceIndices,
+			usedScopes,
+			usedIndices,
 		}
 	}
 
-	function hashNodeVisitor(rawNode: TS.Node, referenceIndices: number[]): TS.Node | undefined {
+	function hashNodeVisitor(rawNode: TS.Node, usedScopes: Scope[], usedIndices: number[]): TS.Node | undefined {
 		if (Helper.variable.isVariableIdentifier(rawNode)) {
-			let hashed = hashVariableName(rawNode)
-			addToList(referenceIndices, hashed.suffix)
+			let {name, scope} = hashVariableName(rawNode)
+			let declNode = scope.getDeclarationByName(rawNode.text)
 
-			return factory.createIdentifier(hashed.name)
+			addToList(usedScopes, scope)
+
+			if (declNode) {
+				usedIndices.push(Visiting.getIndex(declNode))
+			}
+
+			return factory.createIdentifier(name)
 		}
 
 		// `a?.b` -> `a.b`
@@ -221,7 +228,7 @@ export namespace Scoping {
 			return undefined
 		}
 
-		return ts.visitEachChild(rawNode, (n: TS.Node) => hashNodeVisitor(n, referenceIndices), transformContext)
+		return ts.visitEachChild(rawNode, (n: TS.Node) => hashNodeVisitor(n, usedScopes, usedIndices), transformContext)
 	}
 
 	/** 
@@ -229,20 +236,20 @@ export namespace Scoping {
 	 * The suffix is normally a scope visiting index,
 	 * then the hashing is unique across whole source file.
 	 */
-	function hashVariableName(rawNode: TS.Identifier): {name: string, suffix: number} {
+	function hashVariableName(rawNode: TS.Identifier): {name: string, scope: Scope} {
 		let name = rawNode.text
 		let scope = findDeclaredScope(rawNode) || findClosestScopeOfNode(rawNode)
 		let suffix = scope.visitingIndex
 
 		return {
 			name: name + '_' + suffix,
-			suffix,
+			scope,
 		}
 	}
 
 
 	/** 
-	 * Try get raw node by it's variable name.
+	 * Try get raw node by variable name.
 	 * `fromRawNode` specifies where to query the variable from.
 	 */
 	export function getDeclarationByName(name: string, fromRawNode: TS.Node): TS.Node | undefined {

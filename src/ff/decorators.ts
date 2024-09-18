@@ -277,7 +277,7 @@ onConnected() {
 	this.#enqueue_effectFn()
 }
 
-onDisconnected() {
+onWillDisconnect() {
 	untrack(this.#enqueue_effectFn, this)
 }
 
@@ -402,7 +402,7 @@ onConnected() {
 	this.#enqueue_onWatchChange()
 }
 
-onDisconnected() {
+onWillDisconnect() {
 	untrack(this.#enqueue_onWatchChange, this)
 }
 
