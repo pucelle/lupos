@@ -32,7 +32,6 @@ defineVisitor(function(node: TS.Node, index: number) {
 		replace = compileWatchDecorator(node as TS.MethodDeclaration, decorator)
 	}
 
-
 	Interpolator.replace(index, InterpolationContentType.Normal, replace)
 })
 
@@ -43,14 +42,14 @@ defineVisitor(function(node: TS.Node, index: number) {
 Compile `@computed prop(){...}` to:
 
 #prop: any = undefined
-#need_compute_prop: boolean = true
+#needs_compute_prop: boolean = true
 
 #compute_prop() {...}
 
 #reset_prop() {this.#prop = undefined}
 
 get prop(): any {
-    if (!this.#need_compute_prop) {
+    if (!this.#needs_compute_prop) {
         return this.#prop
     }
     
@@ -69,7 +68,7 @@ get prop(): any {
         endTrack()
     }
 
-	this.#need_compute_prop = false
+	this.#needs_compute_prop = false
 }
 ```
 */
@@ -93,7 +92,7 @@ function compileComputedDecorator(methodDecl: TS.GetAccessorDeclaration): () => 
 
 		let needComputeProperty = factory.createPropertyDeclaration(
 			undefined,
-			factory.createPrivateIdentifier('#need_compute_' + propName),
+			factory.createPrivateIdentifier('#needs_compute_' + propName),
 			undefined,
 			factory.createKeywordTypeNode(ts.SyntaxKind.BooleanKeyword),
 			factory.createIdentifier('true')
@@ -122,7 +121,7 @@ function compileComputedDecorator(methodDecl: TS.GetAccessorDeclaration): () => 
 				[factory.createExpressionStatement(factory.createBinaryExpression(
 					factory.createPropertyAccessExpression(
 						factory.createThis(),
-						factory.createPrivateIdentifier('#need_compute_' + propName)
+						factory.createPrivateIdentifier('#needs_compute_' + propName)
 					),
 					factory.createToken(ts.SyntaxKind.EqualsToken),
 					factory.createIdentifier('true')
@@ -143,7 +142,7 @@ function compileComputedDecorator(methodDecl: TS.GetAccessorDeclaration): () => 
 							ts.SyntaxKind.ExclamationToken,
 							factory.createPropertyAccessExpression(
 								factory.createThis(),
-								factory.createPrivateIdentifier('#need_compute_' + propName)
+								factory.createPrivateIdentifier('#needs_compute_' + propName)
 							)
 						),
 						factory.createBlock(
@@ -254,7 +253,7 @@ function compileComputedDecorator(methodDecl: TS.GetAccessorDeclaration): () => 
 					factory.createExpressionStatement(factory.createBinaryExpression(
 						factory.createPropertyAccessExpression(
 							factory.createThis(),
-							factory.createPrivateIdentifier('#need_compute_' + propName)
+							factory.createPrivateIdentifier('#needs_compute_' + propName)
 						),
 						factory.createToken(ts.SyntaxKind.EqualsToken),
 						factory.createFalse()

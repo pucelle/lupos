@@ -36,9 +36,13 @@ defineVisitor(function(node: TS.Node, index: number) {
 		}
 	}
 
+	let rawConnect = connect
+	let rawDisconnect = disconnect
+
 	for (let member of node.members) {
 		if (!ts.isMethodDeclaration(member)
 			&& !ts.isPropertyDeclaration(member)
+			&& !ts.isGetAccessorDeclaration(member)
 		) {
 			continue
 		}
@@ -53,8 +57,10 @@ defineVisitor(function(node: TS.Node, index: number) {
 			continue
 		}
 
-		if (['effect', 'watch'].includes(decoName) && ts.isMethodDeclaration(member)) {
-			[connect, disconnect] = compileEffectOrWatchDecorator(member, connect, disconnect)
+		if (['effect', 'watch', 'computed'].includes(decoName)
+			&& (ts.isMethodDeclaration(member) || ts.isGetAccessorDeclaration(member))
+		) {
+			[connect, disconnect] = compileComputedEffectWatchDecorator(decoName, member, connect, disconnect)
 		}
 		else if (decoName === 'setContext' && ts.isPropertyDeclaration(member)) {
 			[connect, disconnect] = compileSetContextDecorator(member, connect, disconnect, hasDeletedContextVariables)
@@ -65,6 +71,14 @@ defineVisitor(function(node: TS.Node, index: number) {
 			[connect, disconnect] = compileUseContextDecorator(member, connect, disconnect, hasDeletedContextVariables)
 			hasDeletedContextVariables = true
 		}
+	}
+
+	if (connect === rawConnect) {
+		connect = undefined
+	}
+
+	if (disconnect === rawDisconnect) {
+		disconnect = undefined
 	}
 
 	for (let member of [connect, disconnect]) {
@@ -81,12 +95,13 @@ function hasLifeDecorators(node: TS.ClassDeclaration) {
 	return node.members.some(member => {
 		if (!ts.isMethodDeclaration(member)
 			&& !ts.isPropertyDeclaration(member)
+			&& !ts.isGetAccessorDeclaration(member)
 		) {
 			return false
 		}
 
 		let decoName = Helper.deco.getFirstName(member)
-		if (decoName && ['effect', 'watch', 'useContext', 'setContext'].includes(decoName)) {
+		if (decoName && ['effect', 'watch', 'computed', 'useContext', 'setContext'].includes(decoName)) {
 			return true
 		}
 
@@ -123,18 +138,20 @@ onWillDisconnect() {
 
 ```
 */
-function compileEffectOrWatchDecorator(
-	methodDecl: TS.MethodDeclaration,
+function compileComputedEffectWatchDecorator(
+	decoName: string,
+	decl: TS.MethodDeclaration | TS.GetAccessorDeclaration,
 	connect: TS.MethodDeclaration | TS.ConstructorDeclaration,
 	disconnect: TS.MethodDeclaration | undefined
 ): [TS.MethodDeclaration | TS.ConstructorDeclaration, TS.MethodDeclaration | undefined] {
-	let methodName = Helper.getText(methodDecl.name)
+	let methodName = Helper.getText(decl.name)
+	let enqueueName = decoName === 'computed' ? '#reset_' + methodName : '#enqueue_' + methodName
 
-	if (connect) {
+	if (connect && decoName !== 'computed') {
 		let connectStatement = factory.createExpressionStatement(factory.createCallExpression(
 			factory.createPropertyAccessExpression(
 				factory.createThis(),
-				factory.createPrivateIdentifier('#enqueue_' + methodName)
+				factory.createPrivateIdentifier(enqueueName)
 			),
 			undefined,
 			[]
@@ -150,7 +167,7 @@ function compileEffectOrWatchDecorator(
 			[
 				factory.createPropertyAccessExpression(
 					factory.createThis(),
-					factory.createPrivateIdentifier('#enqueue_' + methodName)
+					factory.createPrivateIdentifier(enqueueName)
 				),
 				factory.createThis()
 			]

@@ -1,16 +1,20 @@
-import { beginTrack, endTrack, trackSet, trackGet, untrack, enqueue } from '@pucelle/ff';
+import { untrack, beginTrack, endTrack, trackSet, trackGet, enqueue } from '@pucelle/ff';
 import { Component } from '@pucelle/lupos.js';
 class TestComputed extends Component {
+    onWillDisconnect() {
+        super.onWillDisconnect();
+        untrack(this.#reset_prop2, this);
+    }
     prop = 1;
     #prop2 = undefined;
-    #need_compute_prop2 = true;
+    #needs_compute_prop2 = true;
     #compute_prop2() {
         trackGet(this, "prop");
         return this.prop + 1;
     }
-    #reset_prop2() { this.#need_compute_prop2 = true; }
+    #reset_prop2() { this.#needs_compute_prop2 = true; }
     get prop2() {
-        if (!this.#need_compute_prop2) {
+        if (!this.#needs_compute_prop2) {
             return this.#prop2;
         }
         beginTrack(this.#reset_prop2, this);
@@ -27,7 +31,7 @@ class TestComputed extends Component {
         finally {
             endTrack();
         }
-        this.#need_compute_prop2 = false;
+        this.#needs_compute_prop2 = false;
         return this.#prop2;
     }
 }
