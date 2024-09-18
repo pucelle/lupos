@@ -220,14 +220,26 @@ function combineNestedNames(oldNames: string[], parentNames: string[]): string[]
 
 /** Minify CSS string, eliminate useless whitespace. */
 function minifyCSSString(string: string) {
-	return string.replace(/(["']).*?\1|.+?/gm, (m0, m1) => {
-		if (m1) {
-			return m0
+	let re = /(["']).*?\1/g
+	let output = ''
+	let lastIndex = 0
+	let match = re.exec(string)
+
+	while (true) {
+		output += string.slice(lastIndex, match ? re.lastIndex - match[0].length : undefined)
+			.replace(/^(\s*[\w-]+:)\s*/gm, '$1')
+			.replace(/([,;])\s+/g, '$1')
+			.replace(/\s*\n\s*/g, '')
+
+		if (match) {
+			output += match[0]
 		}
 		else {
-			return m0.replace(/^(\s*[\w-]+:)\s*/gm, '$1')
-				.replace(/([,;])\s+/gm, '$1')
-				.replace(/\s*?\n\s*/g, '')
+			break
 		}
-	})
+
+		match = re.exec(string)
+	}
+
+	return output
 }
