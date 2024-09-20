@@ -48,15 +48,16 @@ class TestEffect extends Component {
         super.onWillDisconnect();
         untrack(this.#enqueue_onPropChangeEffect, this);
     }
-    prop = 1;
+    propRead = 1;
+    propWrite = 1;
     #enqueue_onPropChangeEffect() {
         enqueue(this.onPropChangeEffect, this);
     }
     onPropChangeEffect() {
         beginTrack(this.#enqueue_onPropChangeEffect, this);
         try {
-            console.log(this.prop);
-            trackGet(this, "prop");
+            this.propWrite = this.propRead;
+            trackSet(this, "propWrite");
         }
         catch (err) {
             console.error(err);

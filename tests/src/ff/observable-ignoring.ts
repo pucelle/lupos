@@ -77,3 +77,33 @@ class TestIgnoringNothingReturnedMethod extends Component {
 	}
 }
 
+
+class TestIgnoringConstructor extends Component {
+
+	prop: number
+
+	constructor() {
+		super()
+		this.prop = 2
+	}
+}
+
+
+class TestIgnoringReadonlyPrivate extends Component {
+
+	private prop: number = 1
+
+	readMethod() {
+		return this.prop
+	}
+}
+
+
+class TestIgnoringWriteonlyPrivate extends Component {
+
+	private prop: number = 1
+
+	readMethod() {
+		this.prop = 2
+	}
+}

@@ -16,6 +16,10 @@ class TestMap extends Component {
 	size() {
 		return this.map.size
 	}
+
+	clear() {
+		this.map.clear()
+	}
 }
 
 
@@ -29,5 +33,9 @@ class TestSet extends Component {
 
 	size() {
 		return this.set.size
+	}
+
+	clear() {
+		this.set.clear()
 	}
 }

@@ -16,6 +16,7 @@ defineVisitor(function(node: TS.Node, index: number) {
 	let connect: TS.MethodDeclaration | TS.ConstructorDeclaration | undefined = undefined
 	let disconnect: TS.MethodDeclaration | undefined = undefined
 	let hasDeletedContextVariables = false
+	let repetitiveConnect = false
 
 	// Be a component.
 	if (Helper.cls.isDerivedOf(node, 'Component', '@pucelle/lupos.js')) {
@@ -28,6 +29,8 @@ defineVisitor(function(node: TS.Node, index: number) {
 		if (!disconnect) {
 			disconnect = createCallSuperMethod('onWillDisconnect')
 		}
+
+		repetitiveConnect = true
 	}
 	else {
 		connect = Helper.cls.getConstructor(node)
@@ -60,7 +63,7 @@ defineVisitor(function(node: TS.Node, index: number) {
 		if (['computed', 'effect', 'watch', 'immediateWatch'].includes(decoName)
 			&& (ts.isMethodDeclaration(member) || ts.isGetAccessorDeclaration(member))
 		) {
-			[connect, disconnect] = compileComputedEffectWatchDecorator(decoName, member, connect, disconnect)
+			[connect, disconnect] = compileComputedEffectWatchDecorator(decoName, member, connect, disconnect, repetitiveConnect)
 		}
 		else if (decoName === 'setContext' && ts.isPropertyDeclaration(member)) {
 			[connect, disconnect] = compileSetContextDecorator(member, connect, disconnect, hasDeletedContextVariables)
@@ -142,7 +145,8 @@ function compileComputedEffectWatchDecorator(
 	decoName: string,
 	decl: TS.MethodDeclaration | TS.GetAccessorDeclaration,
 	connect: TS.MethodDeclaration | TS.ConstructorDeclaration,
-	disconnect: TS.MethodDeclaration | undefined
+	disconnect: TS.MethodDeclaration | undefined,
+	repetitiveConnect: boolean
 ): [TS.MethodDeclaration | TS.ConstructorDeclaration, TS.MethodDeclaration | undefined] {
 	let methodName = Helper.getText(decl.name)
 	let connectCallName = decoName === 'computed' ? '#reset_' + methodName
@@ -152,7 +156,10 @@ function compileComputedEffectWatchDecorator(
 		
 	let disconnectCallName = decoName === 'computed' ? '#reset_' + methodName : '#enqueue_' + methodName
 
-	if (connect) {
+	// No need to reset in constructor function
+	let ignoreConnect = !repetitiveConnect && decoName === 'computed'
+
+	if (connect && !ignoreConnect) {
 		let connectStatement = factory.createExpressionStatement(factory.createCallExpression(
 			factory.createPropertyAccessExpression(
 				factory.createThis(),

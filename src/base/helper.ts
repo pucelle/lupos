@@ -781,10 +781,10 @@ export namespace Helper {
 			let propName = access.getNameText(node)
 
 			if (objName === 'Map') {
-				return propName === 'set'
+				return propName === 'set' || propName === 'clear'
 			}
 			else if (objName === 'Set') {
-				return propName === 'add'
+				return propName === 'add' || propName === 'clear'
 			}
 			else {
 				return false

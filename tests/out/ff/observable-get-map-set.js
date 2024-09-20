@@ -1,5 +1,5 @@
 import { Component } from '@pucelle/lupos.js';
-import { trackGet } from "@pucelle/ff";
+import { trackGet, trackSet } from "@pucelle/ff";
 class TestMap extends Component {
     map = new Map();
     has() {
@@ -17,6 +17,10 @@ class TestMap extends Component {
         trackGet(this.map, "");
         return this.map.size;
     }
+    clear() {
+        this.map.clear();
+        trackSet(this.map, "");
+    }
 }
 class TestSet extends Component {
     set = new Set();
@@ -29,5 +33,9 @@ class TestSet extends Component {
         trackGet(this, "set");
         trackGet(this.set, "");
         return this.set.size;
+    }
+    clear() {
+        this.set.clear();
+        trackSet(this.set, "");
     }
 }

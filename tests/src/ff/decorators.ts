@@ -14,10 +14,11 @@ class TestComputed extends Component {
 
 class TestEffect extends Component {
 
-	prop: number = 1
+	propRead: number = 1
+	propWrite: number = 1
 
 	@effect onPropChangeEffect() {
-		console.log(this.prop)
+		this.propWrite = this.propRead
 	}
 }
 

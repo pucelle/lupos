@@ -1,5 +1,5 @@
 import { Component } from '@pucelle/lupos.js';
-import { trackGet } from "@pucelle/ff";
+import { trackGet, trackSet } from "@pucelle/ff";
 class TestIgnoringStringIndex extends Component {
     prop = '1';
     ignoreStringIndex() {
@@ -51,5 +51,26 @@ class TestIgnoringNothingReturnedMethod extends Component {
     prop = 1;
     nothingReturnedMethod() {
         this.prop;
+    }
+}
+class TestIgnoringConstructor extends Component {
+    prop;
+    constructor() {
+        super();
+        this.prop = 2;
+    }
+}
+class TestIgnoringReadonlyPrivate extends Component {
+    prop = 1;
+    readMethod() {
+        trackGet(this, "prop");
+        return this.prop;
+    }
+}
+class TestIgnoringWriteonlyPrivate extends Component {
+    prop = 1;
+    readMethod() {
+        this.prop = 2;
+        trackSet(this, "prop");
     }
 }
