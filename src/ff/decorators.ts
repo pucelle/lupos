@@ -1,5 +1,6 @@
 import type TS from 'typescript'
 import {Helper, ts, defineVisitor, Modifier, factory, Interpolator, InterpolationContentType, Visiting} from '../base'
+import {addToList} from '../utils'
 
 
 defineVisitor(function(node: TS.Node, index: number) {
@@ -84,8 +85,7 @@ function compileComputedDecorator(methodDecl: TS.GetAccessorDeclaration): () => 
 
 	return () => {
 		let propName = Helper.getText(methodDecl.name)
-		let methodBodyIndex = Visiting.getIndex(methodDecl.body!)
-		let newBody = Interpolator.outputChildren(methodBodyIndex) as TS.Block
+		let newBody = Interpolator.outputChildren(Visiting.getIndex(methodDecl.body!)) as TS.Block
 
 		let property = factory.createPropertyDeclaration(
 			undefined,
@@ -281,10 +281,6 @@ function compileComputedDecorator(methodDecl: TS.GetAccessorDeclaration): () => 
 ```ts
 Compile `@effect effectFn(){...}` to:
 
-onConnected() {
-	this.#enqueue_effectFn()
-}
-
 onWillDisconnect() {
 	untrack(this.#enqueue_effectFn, this)
 }
@@ -314,8 +310,7 @@ function compileEffectDecorator(methodDecl: TS.MethodDeclaration): () => TS.Node
 
 	return () => {
 		let methodName = Helper.getText(methodDecl.name)
-		let methodBodyIndex = Visiting.getIndex(methodDecl.body!)
-		let newBody = Interpolator.outputChildren(methodBodyIndex) as TS.Block
+		let newBody = Interpolator.outputChildren(Visiting.getIndex(methodDecl.body!)) as TS.Block
 
 		let enqueueMethod = factory.createMethodDeclaration(
 			undefined,
@@ -469,6 +464,7 @@ function compileWatchDecorator(decoName: string, methodDecl: TS.MethodDeclaratio
 	}
 
 	return () => {
+		let newBody = Interpolator.outputChildren(Visiting.getIndex(methodDecl.body!)) as TS.Block
 
 		// [] / undefined
 		let valueInit = immediateWatch
@@ -489,21 +485,14 @@ function compileWatchDecorator(decoName: string, methodDecl: TS.MethodDeclaratio
 		)
 		
 
-		let trackExps: TS.Expression[] = []
+		let trackNames: string[] = []
 		let propertyGetters: TS.Expression[] = []
 
 		for (let arg of propertyGetArgs) {
 			if (ts.isStringLiteral(arg)) {
 
-				// trackGet(this, 'prop)
-				trackExps.push(factory.createCallExpression(
-					factory.createIdentifier('trackGet'),
-					undefined,
-					[
-						factory.createThis(),
-						factory.createStringLiteral(arg.text)
-					]
-				))
+				// 'prop'
+				addToList(trackNames, arg.text)
 
 				// this.prop
 				propertyGetters.push(factory.createPropertyAccessExpression(
@@ -531,6 +520,18 @@ function compileWatchDecorator(decoName: string, methodDecl: TS.MethodDeclaratio
 			}
 		}
 
+		// trackGet(this, 'prop1', 'prop2')
+		let trackExps = trackNames.length > 0
+			? [
+				factory.createCallExpression(
+				factory.createIdentifier('trackGet'),
+				undefined,
+				[
+					factory.createThis(),
+					...trackNames.map(name => factory.createStringLiteral(name))
+				]
+			)]
+		 	: []
 
 		let enqueueMethod = factory.createMethodDeclaration(
 			undefined,
@@ -740,9 +741,9 @@ function compileWatchDecorator(decoName: string, methodDecl: TS.MethodDeclaratio
 			factory.createIdentifier(methodName),
 			undefined,
 			undefined,
-			[],
+			methodDecl.parameters,
 			undefined,
-			methodDecl.body
+			newBody
 		)
 
 		return [valueDecl, enqueueMethod, compareMethod, newMethodDecl]

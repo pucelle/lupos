@@ -145,13 +145,20 @@ function compileComputedEffectWatchDecorator(
 	disconnect: TS.MethodDeclaration | undefined
 ): [TS.MethodDeclaration | TS.ConstructorDeclaration, TS.MethodDeclaration | undefined] {
 	let methodName = Helper.getText(decl.name)
-	let enqueueName = decoName === 'computed' ? '#reset_' + methodName : '#enqueue_' + methodName
+	let connectCallName = decoName === 'computed' ? '#reset_' + methodName
+		: decoName === 'effect'
+		? methodName
+		: '#compare_' + methodName
+		
+	let disconnectCallName = decoName === 'computed' ? '#reset_' + methodName : '#enqueue_' + methodName
 
 	if (connect) {
 		let connectStatement = factory.createExpressionStatement(factory.createCallExpression(
 			factory.createPropertyAccessExpression(
 				factory.createThis(),
-				factory.createPrivateIdentifier(enqueueName)
+				connectCallName.startsWith('#')
+					? factory.createPrivateIdentifier(connectCallName)
+					: factory.createIdentifier(connectCallName)
 			),
 			undefined,
 			[]
@@ -167,7 +174,7 @@ function compileComputedEffectWatchDecorator(
 			[
 				factory.createPropertyAccessExpression(
 					factory.createThis(),
-					factory.createPrivateIdentifier(enqueueName)
+					factory.createPrivateIdentifier(disconnectCallName)
 				),
 				factory.createThis()
 			]

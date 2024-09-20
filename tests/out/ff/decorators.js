@@ -42,7 +42,7 @@ class TestComputed extends Component {
 class TestEffect extends Component {
     onConnected() {
         super.onConnected();
-        this.#enqueue_onPropChangeEffect();
+        this.onPropChangeEffect();
     }
     onWillDisconnect() {
         super.onWillDisconnect();
@@ -69,8 +69,8 @@ class TestEffect extends Component {
 class TestWatchProperty extends Component {
     onConnected() {
         super.onConnected();
-        this.#enqueue_onPropChange();
-        this.#enqueue_onImmediatePropChange();
+        this.#compare_onPropChange();
+        this.#compare_onImmediatePropChange();
     }
     onWillDisconnect() {
         super.onWillDisconnect();
@@ -106,9 +106,8 @@ class TestWatchProperty extends Component {
             this.onPropChange(values_0, values_1);
         }
         trackGet(this, "prop");
-        trackGet(this, "prop");
     }
-    onPropChange() {
+    onPropChange(prop) {
         console.log(prop);
     }
     #values_onImmediatePropChange = new Array(1);
@@ -133,15 +132,15 @@ class TestWatchProperty extends Component {
         }
         trackGet(this, "prop");
     }
-    onImmediatePropChange() {
+    onImmediatePropChange(prop) {
         console.log(prop);
     }
 }
 class TestWatchCallback extends Component {
     onConnected() {
         super.onConnected();
-        this.#enqueue_onPropChange();
-        this.#enqueue_onImmediatePropChange();
+        this.#compare_onPropChange();
+        this.#compare_onImmediatePropChange();
     }
     onWillDisconnect() {
         super.onWillDisconnect();
@@ -174,7 +173,7 @@ class TestWatchCallback extends Component {
             this.onPropChange(values_0);
         }
     }
-    onPropChange() {
+    onPropChange(prop) {
         console.log(prop);
     }
     #values_onImmediatePropChange = new Array(1);
@@ -198,13 +197,13 @@ class TestWatchCallback extends Component {
             this.onImmediatePropChange(values_0);
         }
     }
-    onImmediatePropChange() {
+    onImmediatePropChange(prop) {
         console.log(prop);
     }
 }
 class TestObservedImplemented {
     constructor() {
-        this.#enqueue_onPropChangeEffect();
+        this.onPropChangeEffect();
     }
     prop = 1;
     #enqueue_onPropChangeEffect() {
