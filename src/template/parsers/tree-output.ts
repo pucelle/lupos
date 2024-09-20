@@ -60,13 +60,13 @@ export class TreeOutputHandler {
 		// Must after others.
 		let varStatements = this.outputVarNames(varNames)
 
-		let initStatements = [
+		let initStatements = Helper.pack.toStatements([
 			varStatements,
 			rootNode,
 			nodeRefs,
 			init,
 			staticUpdate,
-		].flat().map(n => Helper.pack.toStatement(n))
+		].flat())
 
 		// $template_0
 		let templateName = this.parser.getTemplateRefName()
@@ -140,7 +140,7 @@ export class TreeOutputHandler {
 		for (let i = 0; i < slots.length; i++) {
 			let slot = slots[i]
 			let attached = this.outputDynamicComponentAttached(slots, i, update)
-			let attachedInitStatements = attached.init.flat().map(n => Helper.pack.toStatement(n))
+			let attachedInitStatements = Helper.pack.toStatements(attached.init.flat())
 			let initNodes = slot.outputInit(attachedInitStatements)
 			let updateNodes = slot.outputUpdate()
 			
@@ -407,7 +407,7 @@ export class TreeOutputHandler {
 		}
 
 		let updateBlock = factory.createBlock(
-			update.map(n => Helper.pack.toStatement(n)),
+			Helper.pack.toStatements(update),
 			true
 		)
 

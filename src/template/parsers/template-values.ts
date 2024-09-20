@@ -198,18 +198,8 @@ export class TemplateValues {
 			parts.unshift(factory.createStringLiteral(''))
 		}
 
-
-		let value = parts[0]
-
-		for (let i = 1; i < parts.length; i++) {
-			value = factory.createBinaryExpression(
-				value,
-				factory.createToken(ts.SyntaxKind.PlusToken),
-				parts[i]
-			)
-		}
-
-		return value
+		
+		return Helper.pack.joinBinaryExpressions(parts, ts.SyntaxKind.PlusToken)
 	}
 
 	/** Output all values to an array. */

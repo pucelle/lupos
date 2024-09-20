@@ -1,4 +1,4 @@
-import {Observed, computed, effect, watch} from '@pucelle/ff'
+import {Observed, computed, effect, immediateWatch, watch} from '@pucelle/ff'
 import {Component} from '@pucelle/lupos.js'
 
 
@@ -26,7 +26,11 @@ class TestWatchProperty extends Component {
 
 	prop: number = 1
 
-	@watch('prop') onPropChange(prop: number) {
+	@watch('prop', 'prop') onPropChange(prop: number) {
+		console.log(prop)
+	}
+
+	@immediateWatch('prop') onImmediatePropChange(prop: number) {
 		console.log(prop)
 	}
 }
@@ -37,6 +41,10 @@ class TestWatchCallback extends Component {
 	prop: number = 1
 
 	@watch(function(this: TestWatchCallback){return this.prop}) onPropChange(prop: number) {
+		console.log(prop)
+	}
+
+	@immediateWatch(function(this: TestWatchCallback){return this.prop}) onImmediatePropChange(prop: number) {
 		console.log(prop)
 	}
 }

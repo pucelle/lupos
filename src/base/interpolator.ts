@@ -360,7 +360,7 @@ export namespace Interpolator {
 		// Insert statements.
 		if (Helper.pack.canPutStatements(rawParent)) {
 			let list = arrangeNeighborNodes(node, beforeNodes, afterNodes)
-			return list.map(n => Helper.pack.toStatement(n))
+			return Helper.pack.toStatements(list)
 		}
 
 		// Extend to block and insert statements.
@@ -371,7 +371,7 @@ export namespace Interpolator {
 			let list = arrangeNeighborNodes(node, beforeNodes, afterNodes)
 
 			return factory.createBlock(
-				list.map(n => Helper.pack.toStatement(n)),
+				Helper.pack.toStatements(list),
 				true
 			)
 		}

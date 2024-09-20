@@ -15,7 +15,7 @@ defineVisitor(function(node: TS.Node, index: number) {
 	}
 
 	let decoName = Helper.deco.getName(decorator)
-	if (!decoName || !['computed', 'effect', 'watch'].includes(decoName)) {
+	if (!decoName || !['computed', 'effect', 'watch', 'immediateWatch'].includes(decoName)) {
 		return
 	}
 
@@ -29,7 +29,7 @@ defineVisitor(function(node: TS.Node, index: number) {
 		replace = compileEffectDecorator(node as TS.MethodDeclaration)
 	}
 	else {
-		replace = compileWatchDecorator(node as TS.MethodDeclaration, decorator)
+		replace = compileWatchDecorator(decoName, node as TS.MethodDeclaration, decorator)
 	}
 
 	Interpolator.replace(index, InterpolationContentType.Normal, replace)
@@ -40,6 +40,11 @@ defineVisitor(function(node: TS.Node, index: number) {
 /*
 ```ts
 Compile `@computed prop(){...}` to:
+
+onWillDisconnect() {
+	this.#reset_prop2()
+	untrack(this.#reset_prop, this)
+}
 
 #prop: any = undefined
 #needs_compute_prop: boolean = true
@@ -90,7 +95,7 @@ function compileComputedDecorator(methodDecl: TS.GetAccessorDeclaration): () => 
 			factory.createIdentifier('undefined')
 		)
 
-		let needComputeProperty = factory.createPropertyDeclaration(
+		let needsComputeProperty = factory.createPropertyDeclaration(
 			undefined,
 			factory.createPrivateIdentifier('#needs_compute_' + propName),
 			undefined,
@@ -267,7 +272,7 @@ function compileComputedDecorator(methodDecl: TS.GetAccessorDeclaration): () => 
 			)
 		)
 
-		return [property, needComputeProperty, computeMethod, resetMethod, getter]
+		return [property, needsComputeProperty, computeMethod, resetMethod, getter]
 	}
 }
 
@@ -413,21 +418,16 @@ onWillDisconnect() {
 
 #property_onWatchChange = undefined
 
-#property_get_onWatchChange() {
-	this.prop
-	// or
-	...
-}
-
 #enqueue_onWatchChange() {
 	enqueue(this.onWatchChange, this)
 }
 
-onWatchChange() {
-    beginTrack(this.#enqueue_onWatchChange, this)
-	let new_value_onWatchChange = undefined
+#compare_onWatchChange() {
+	beginTrack(this.#enqueue_onWatchChange, this)
+	let new_value = undefined
     try {
-        new_value_onWatchChange = this.#property_get_onWatchChange()
+        new_value = this.prop
+		trackGet(this, 'prop')
     }
     catch (err) {
         console.error(err)
@@ -436,18 +436,24 @@ onWatchChange() {
         endTrack()
     }
 
-	if (new_value_onWatchChange !== this.#property_onWatchChange) {
-		this.#property_onWatchChange = new_value_onWatchChange
+	if (new_value !== this.#property_onWatchChange) {
+		this.#property_onWatchChange = new_value
 		...
+		this.onWatchChange(new_value)
 	}
+}
+
+onWatchChange(prop) {
+   ...
 }
 ```
 */
-function compileWatchDecorator(methodDecl: TS.MethodDeclaration, decorator: TS.Decorator): () => TS.Node[] {
+function compileWatchDecorator(decoName: string, methodDecl: TS.MethodDeclaration, decorator: TS.Decorator): () => TS.Node[] {
 	Modifier.addImport('beginTrack', '@pucelle/ff')
 	Modifier.addImport('endTrack', '@pucelle/ff')
 	Modifier.addImport('enqueue', '@pucelle/ff')
 
+	let immediateWatch = decoName === 'immediateWatch'
 	let methodName = Helper.getText(methodDecl.name)
 
 	if (!ts.isCallExpression(decorator.expression)) {
@@ -455,64 +461,76 @@ function compileWatchDecorator(methodDecl: TS.MethodDeclaration, decorator: TS.D
 	}
 
 
-	let propertyGetArg = decorator.expression.arguments[0]
-	if (ts.isStringLiteral(propertyGetArg)) {
-		Modifier.addImport('trackGet', '@pucelle/ff')
+	let propertyGetArgs = decorator.expression.arguments
+	for (let arg of propertyGetArgs) {
+		if (ts.isStringLiteral(arg)) {
+			Modifier.addImport('trackGet', '@pucelle/ff')
+		}
 	}
 
 	return () => {
-		let property = factory.createPropertyDeclaration(
+
+		// [] / undefined
+		let valueInit = immediateWatch
+			? factory.createNewExpression(
+				factory.createIdentifier('Array'),
+				undefined,
+				[factory.createNumericLiteral(propertyGetArgs.length)]
+			)
+			: undefined
+
+		// #values_XXX = [] / undefined
+		let valueDecl = factory.createPropertyDeclaration(
 			undefined,
-			factory.createPrivateIdentifier('#property_' + methodName),
+			factory.createPrivateIdentifier('#values_' + methodName),
 			undefined,
 			undefined,
-			factory.createIdentifier('undefined')
+			valueInit	  
 		)
 		
 
-		let propertyGetBlock: TS.Block
+		let trackExps: TS.Expression[] = []
+		let propertyGetters: TS.Expression[] = []
 
-		if (ts.isStringLiteral(propertyGetArg)) {
-			propertyGetBlock = factory.createBlock(
-				[
-					factory.createExpressionStatement(factory.createCallExpression(
-						factory.createIdentifier('trackGet'),
-						undefined,
-						[
-							factory.createThis(),
-							factory.createStringLiteral(propertyGetArg.text)
-						]
-					)),
-					factory.createReturnStatement(factory.createPropertyAccessExpression(
+		for (let arg of propertyGetArgs) {
+			if (ts.isStringLiteral(arg)) {
+
+				// trackGet(this, 'prop)
+				trackExps.push(factory.createCallExpression(
+					factory.createIdentifier('trackGet'),
+					undefined,
+					[
 						factory.createThis(),
-						factory.createIdentifier(propertyGetArg.text)
-					))
-				],
-				true
-			)
-		}
-		else if (ts.isFunctionExpression(propertyGetArg)) {
-			let bodyIndex = Visiting.getIndex(propertyGetArg.body)
-			propertyGetBlock = Interpolator.outputChildren(bodyIndex) as TS.Block
-		}
-		else {
-			propertyGetBlock = factory.createBlock(
-				[factory.createReturnStatement(factory.createIdentifier('undefined'))],
-				true
-			)
+						factory.createStringLiteral(arg.text)
+					]
+				))
+
+				// this.prop
+				propertyGetters.push(factory.createPropertyAccessExpression(
+					factory.createThis(),
+					factory.createIdentifier(arg.text)
+				))
+			}
+
+			// (function(){}).call(this)
+			else if (ts.isFunctionExpression(arg)) {
+				let fnIndex = Visiting.getIndex(arg)
+				let fn = Interpolator.outputChildren(fnIndex) as TS.FunctionExpression
+
+				propertyGetters.push(factory.createCallExpression(
+					factory.createPropertyAccessExpression(
+						fn,
+					  	factory.createIdentifier('call')
+					),
+					undefined,
+					[factory.createThis()]
+				))
+			}
+			else {
+				propertyGetters.push(factory.createIdentifier('undefined'))
+			}
 		}
 
-		let propertyGet = factory.createMethodDeclaration(
-			undefined,
-			undefined,
-			factory.createPrivateIdentifier('#property_get_' + methodName),
-			undefined,
-			undefined,
-			[],
-			undefined,
-			propertyGetBlock
-		)
-		
 
 		let enqueueMethod = factory.createMethodDeclaration(
 			undefined,
@@ -529,7 +547,7 @@ function compileWatchDecorator(methodDecl: TS.MethodDeclaration, decorator: TS.D
 					[
 						factory.createPropertyAccessExpression(
 							factory.createThis(),
-							factory.createIdentifier(methodName)
+							factory.createIdentifier('#compare_' + methodName)
 						),
 						factory.createThis()
 					]
@@ -538,11 +556,119 @@ function compileWatchDecorator(methodDecl: TS.MethodDeclaration, decorator: TS.D
 			)
 		)
 
-		
-		let watchMethod = factory.createMethodDeclaration(
+
+		// let values_0, values_1
+		let valueDecls = propertyGetters.map((_getter: TS.Expression, index: number) =>
+			factory.createVariableDeclaration(
+				factory.createIdentifier('values_' + index),
+				undefined,
+				undefined,
+				undefined
+			)
+		)
+
+		// values_0 = ...; values_1 = ...
+		let valueAssignExps = propertyGetters.map((getter: TS.Expression, index: number) =>
+			factory.createBinaryExpression(
+				factory.createIdentifier('values_' + index),
+				factory.createToken(ts.SyntaxKind.EqualsToken),
+				getter
+			)
+		)
+
+		// values_0 !== this.values_XXX[0] && ...
+		let compareExps: TS.Expression[] = []
+
+		// this.values_XXX[0] = values_0, ...
+		let valuePropAssignExps: TS.Expression[] = []
+
+		for (let i = 0; i < propertyGetters.length; i++) {
+			compareExps.push(factory.createBinaryExpression(
+				factory.createIdentifier('values_' + i),
+				factory.createToken(ts.SyntaxKind.ExclamationEqualsEqualsToken),
+				factory.createElementAccessExpression(
+					factory.createPropertyAccessExpression(
+						factory.createThis(),
+						factory.createIdentifier('#values_' + methodName)
+					),
+					factory.createNumericLiteral(i)
+				),
+			))
+
+			valuePropAssignExps.push(
+				factory.createBinaryExpression(
+					factory.createElementAccessExpression(
+						factory.createPropertyAccessExpression(
+							factory.createThis(),
+							factory.createIdentifier('#values_' + methodName)
+						),
+						factory.createNumericLiteral(i)
+					),
+					factory.createToken(ts.SyntaxKind.EqualsToken),
+					factory.createIdentifier('values_' + i)
+				)
+			)
+		}
+
+		// if (value_0 !== this.#values_XXX) {...}
+		let compareStatement = factory.createIfStatement(
+			Helper.pack.joinBinaryExpressions(compareExps, ts.SyntaxKind.BarBarToken),
+			factory.createBlock(
+				[
+					...Helper.pack.toStatements(valuePropAssignExps),
+					Helper.pack.toStatement(factory.createCallExpression(
+						factory.createPropertyAccessExpression(
+							factory.createThis(),
+							factory.createIdentifier(methodName)
+						),
+						undefined,
+						propertyGetters.map((_getter: any, index: number) => 
+							factory.createIdentifier('values_' + index),
+						)
+					)),
+				],
+				true
+			),
+			undefined
+		)
+
+		// if (!this.#value_XXX) {...} else 
+		if (!immediateWatch) {
+			compareStatement = factory.createIfStatement(
+				factory.createPrefixUnaryExpression(
+					ts.SyntaxKind.ExclamationToken,
+					factory.createPropertyAccessExpression(
+						factory.createThis(),
+						factory.createPrivateIdentifier('#values_' + methodName)
+					)
+				),
+				factory.createBlock(
+				  	Helper.pack.toStatements([
+						factory.createBinaryExpression(
+							factory.createPropertyAccessExpression(
+								factory.createThis(),
+								factory.createPrivateIdentifier('#values_' + methodName)
+							),
+							factory.createToken(ts.SyntaxKind.EqualsToken),
+							factory.createNewExpression(
+								factory.createIdentifier('Array'),
+								undefined,
+								[factory.createNumericLiteral(propertyGetters.length)]
+							)
+						),
+						...valuePropAssignExps,		  
+					]),
+				  	true
+				),
+				compareStatement
+			)			  
+		}
+
+		// #compare_XXX() {...}
+		let compareMethod = factory.createMethodDeclaration(
 			undefined,
 			undefined,
-			factory.createIdentifier(methodName),
+			factory.createIdentifier('#compare_' + methodName),
 			undefined,
 			undefined,
 			[],
@@ -563,29 +689,13 @@ function compileWatchDecorator(methodDecl: TS.MethodDeclaration, decorator: TS.D
 					factory.createVariableStatement(
 						undefined,
 						factory.createVariableDeclarationList(
-							[factory.createVariableDeclaration(
-								factory.createIdentifier('new_value'),
-								undefined,
-								undefined,
-								factory.createIdentifier('undefined')
-							)],
+							valueDecls,
 							ts.NodeFlags.Let
 						)
 					),
 					factory.createTryStatement(
 						factory.createBlock(
-							[factory.createExpressionStatement(factory.createBinaryExpression(
-								factory.createIdentifier('new_value'),
-								factory.createToken(ts.SyntaxKind.EqualsToken),
-								factory.createCallExpression(
-									factory.createPropertyAccessExpression(
-										factory.createThis(),
-										factory.createPrivateIdentifier('#property_get_' + methodName)
-									),
-									undefined,
-									[]
-								)
-							))],
+							Helper.pack.toStatements(valueAssignExps),
 							true
 						),
 						factory.createCatchClause(
@@ -616,36 +726,25 @@ function compileWatchDecorator(methodDecl: TS.MethodDeclaration, decorator: TS.D
 							true
 						)
 					),
-					factory.createIfStatement(
-						factory.createBinaryExpression(
-							factory.createIdentifier('new_value'),
-							factory.createToken(ts.SyntaxKind.ExclamationEqualsEqualsToken),
-							factory.createPropertyAccessExpression(
-								factory.createThis(),
-								factory.createPrivateIdentifier('#property_' + methodName)
-							)
-						),
-						factory.createBlock(
-							[
-								factory.createExpressionStatement(factory.createBinaryExpression(
-									factory.createPropertyAccessExpression(
-										factory.createThis(),
-										factory.createPrivateIdentifier('#property_' + methodName)
-									),
-									factory.createToken(ts.SyntaxKind.EqualsToken),
-									factory.createIdentifier('new_value')
-								)),
-								...methodDecl.body?.statements || [],
-							],
-							true
-						),
-						undefined
-					)
+					compareStatement,
+					...Helper.pack.toStatements(trackExps),
 				],
 				true
 			)
 		)
 
-		return [property, propertyGet, enqueueMethod, watchMethod]
+		// Original method.
+		let newMethodDecl = factory.createMethodDeclaration(
+			undefined,
+			undefined,
+			factory.createIdentifier(methodName),
+			undefined,
+			undefined,
+			[],
+			undefined,
+			methodDecl.body
+		)
+
+		return [valueDecl, enqueueMethod, compareMethod, newMethodDecl]
 	}
 }

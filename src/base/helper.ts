@@ -1329,6 +1329,7 @@ export namespace Helper {
 			return type
 		}
 
+
 		/** Whether be a block or a source file. */
 		export function canBlock(node: TS.Node): node is TS.SourceFile | TS.Block {
 			return ts.isSourceFile(node)
@@ -1472,6 +1473,7 @@ export namespace Helper {
 			return false
 		}
 
+
 		/** 
 		 * Bundle expressions to a parenthesized expression.
 		 * `a, b -> (a, b)`
@@ -1483,18 +1485,32 @@ export namespace Helper {
 				return exps[0]
 			}
 
+			let exp = joinBinaryExpressions(exps, ts.SyntaxKind.CommaToken)
+			return factory.createParenthesizedExpression(exp)
+		}
+
+		/** 
+		 * Bundle expressions to a single binary expression.
+		 * `a, b -> a && b`
+		 */
+		export function joinBinaryExpressions(exps: TS.Expression[], operator: TS.BinaryOperator): TS.Expression {
+
+			// Only one expression, returns it.
+			if (exps.length === 1) {
+				return exps[0]
+			}
+
 			let exp = exps[0]
 
-			// `a, b, c...`
 			for (let i = 1; i < exps.length; i++) {
 				exp = factory.createBinaryExpression(
 					exp,
-					factory.createToken(ts.SyntaxKind.CommaToken),
+					operator,
 					exps[i]
 				)
 			}
 
-			return factory.createParenthesizedExpression(exp)
+			return exp
 		}
 
 		/** 
@@ -1511,6 +1527,7 @@ export namespace Helper {
 
 			return ts.visitEachChild(node, extractFinalParenthesized as any, transformContext)
 		}
+
 
 		/** Remove comments from a property or element access node. */
 		export function removeAccessComments<T extends TS.Node>(node: T): T {
@@ -1562,24 +1579,6 @@ export namespace Helper {
 			return node
 		}
 
-		/** 
-		 * Replace property access node to a reference.
-		 * `a.b().c -> $ref_.c`
-		 */
-		export function replaceReferencedAccess(node: AccessNode, exp: TS.Expression): AccessNode {
-			if (ts.isPropertyAccessExpression(node)) {
-				return factory.createPropertyAccessExpression(
-					exp,
-					node.name
-				)
-			}
-			else {
-				return factory.createElementAccessExpression(
-					exp,
-					node.argumentExpression
-				)
-			}
-		}
 
 		/** Wrap by a statement if not yet. */
 		export function toStatement(node: TS.Node): TS.Statement {
@@ -1596,6 +1595,12 @@ export namespace Helper {
 				throw new Error(`Don't know how to pack "${getText(node)}" to a statement!`)
 			}
 		}
+
+		/** Wrap each node by a statement if not yet. */
+		export function toStatements(nodes: TS.Node[]): TS.Statement[] {
+			return nodes.map(n => toStatement(n))
+		}
+
 
 		/** 
 		 * Try to clean a node to remove all not-necessary nodes,

@@ -120,7 +120,7 @@ export class PropertySlotParser extends SlotParserBase {
 								value
 							)
 						)),
-						...setTracking.map(exp => Helper.pack.toStatement(exp)),
+						...Helper.pack.toStatements(setTracking),
 					],
 					true
 				),

@@ -1,6 +1,10 @@
 import { untrack, beginTrack, endTrack, trackSet, trackGet, enqueue } from '@pucelle/ff';
 import { Component } from '@pucelle/lupos.js';
 class TestComputed extends Component {
+    onConnected() {
+        super.onConnected();
+        this.#reset_prop2();
+    }
     onWillDisconnect() {
         super.onWillDisconnect();
         untrack(this.#reset_prop2, this);
@@ -66,25 +70,24 @@ class TestWatchProperty extends Component {
     onConnected() {
         super.onConnected();
         this.#enqueue_onPropChange();
+        this.#enqueue_onImmediatePropChange();
     }
     onWillDisconnect() {
         super.onWillDisconnect();
         untrack(this.#enqueue_onPropChange, this);
+        untrack(this.#enqueue_onImmediatePropChange, this);
     }
     prop = 1;
-    #property_onPropChange = undefined;
-    #property_get_onPropChange() {
-        trackGet(this, "prop");
-        return this.prop;
-    }
+    #values_onPropChange;
     #enqueue_onPropChange() {
-        enqueue(this.onPropChange, this);
+        enqueue(this.#compare_onPropChange, this);
     }
-    onPropChange() {
+    #compare_onPropChange() {
         beginTrack(this.#enqueue_onPropChange, this);
-        let new_value = undefined;
+        let values_0, values_1;
         try {
-            new_value = this.#property_get_onPropChange();
+            values_0 = this.prop;
+            values_1 = this.prop;
         }
         catch (err) {
             console.error(err);
@@ -92,32 +95,69 @@ class TestWatchProperty extends Component {
         finally {
             endTrack();
         }
-        if (new_value !== this.#property_onPropChange) {
-            this.#property_onPropChange = new_value;
-            console.log(prop);
+        if (!this.#values_onPropChange) {
+            this.#values_onPropChange = new Array(2);
+            this.#values_onPropChange[0] = values_0;
+            this.#values_onPropChange[1] = values_1;
         }
+        else if (values_0 !== this.#values_onPropChange[0] || values_1 !== this.#values_onPropChange[1]) {
+            this.#values_onPropChange[0] = values_0;
+            this.#values_onPropChange[1] = values_1;
+            this.onPropChange(values_0, values_1);
+        }
+        trackGet(this, "prop");
+        trackGet(this, "prop");
+    }
+    onPropChange() {
+        console.log(prop);
+    }
+    #values_onImmediatePropChange = new Array(1);
+    #enqueue_onImmediatePropChange() {
+        enqueue(this.#compare_onImmediatePropChange, this);
+    }
+    #compare_onImmediatePropChange() {
+        beginTrack(this.#enqueue_onImmediatePropChange, this);
+        let values_0;
+        try {
+            values_0 = this.prop;
+        }
+        catch (err) {
+            console.error(err);
+        }
+        finally {
+            endTrack();
+        }
+        if (values_0 !== this.#values_onImmediatePropChange[0]) {
+            this.#values_onImmediatePropChange[0] = values_0;
+            this.onImmediatePropChange(values_0);
+        }
+        trackGet(this, "prop");
+    }
+    onImmediatePropChange() {
+        console.log(prop);
     }
 }
 class TestWatchCallback extends Component {
     onConnected() {
         super.onConnected();
         this.#enqueue_onPropChange();
+        this.#enqueue_onImmediatePropChange();
     }
     onWillDisconnect() {
         super.onWillDisconnect();
         untrack(this.#enqueue_onPropChange, this);
+        untrack(this.#enqueue_onImmediatePropChange, this);
     }
     prop = 1;
-    #property_onPropChange = undefined;
-    #property_get_onPropChange() { trackGet(this, "prop"); return this.prop; }
+    #values_onPropChange;
     #enqueue_onPropChange() {
-        enqueue(this.onPropChange, this);
+        enqueue(this.#compare_onPropChange, this);
     }
-    onPropChange() {
+    #compare_onPropChange() {
         beginTrack(this.#enqueue_onPropChange, this);
-        let new_value = undefined;
+        let values_0;
         try {
-            new_value = this.#property_get_onPropChange();
+            values_0 = function () { trackGet(this, "prop"); return this.prop; }.call(this);
         }
         catch (err) {
             console.error(err);
@@ -125,10 +165,41 @@ class TestWatchCallback extends Component {
         finally {
             endTrack();
         }
-        if (new_value !== this.#property_onPropChange) {
-            this.#property_onPropChange = new_value;
-            console.log(prop);
+        if (!this.#values_onPropChange) {
+            this.#values_onPropChange = new Array(1);
+            this.#values_onPropChange[0] = values_0;
         }
+        else if (values_0 !== this.#values_onPropChange[0]) {
+            this.#values_onPropChange[0] = values_0;
+            this.onPropChange(values_0);
+        }
+    }
+    onPropChange() {
+        console.log(prop);
+    }
+    #values_onImmediatePropChange = new Array(1);
+    #enqueue_onImmediatePropChange() {
+        enqueue(this.#compare_onImmediatePropChange, this);
+    }
+    #compare_onImmediatePropChange() {
+        beginTrack(this.#enqueue_onImmediatePropChange, this);
+        let values_0;
+        try {
+            values_0 = function () { trackGet(this, "prop"); return this.prop; }.call(this);
+        }
+        catch (err) {
+            console.error(err);
+        }
+        finally {
+            endTrack();
+        }
+        if (values_0 !== this.#values_onImmediatePropChange[0]) {
+            this.#values_onImmediatePropChange[0] = values_0;
+            this.onImmediatePropChange(values_0);
+        }
+    }
+    onImmediatePropChange() {
+        console.log(prop);
     }
 }
 class TestObservedImplemented {

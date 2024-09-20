@@ -57,7 +57,7 @@ defineVisitor(function(node: TS.Node, index: number) {
 			continue
 		}
 
-		if (['effect', 'watch', 'computed'].includes(decoName)
+		if (['computed', 'effect', 'watch', 'immediateWatch'].includes(decoName)
 			&& (ts.isMethodDeclaration(member) || ts.isGetAccessorDeclaration(member))
 		) {
 			[connect, disconnect] = compileComputedEffectWatchDecorator(decoName, member, connect, disconnect)
@@ -101,7 +101,7 @@ function hasLifeDecorators(node: TS.ClassDeclaration) {
 		}
 
 		let decoName = Helper.deco.getFirstName(member)
-		if (decoName && ['effect', 'watch', 'computed', 'useContext', 'setContext'].includes(decoName)) {
+		if (decoName && ['computed', 'effect', 'watch', 'immediateWatch', 'useContext', 'setContext'].includes(decoName)) {
 			return true
 		}
 
@@ -147,7 +147,7 @@ function compileComputedEffectWatchDecorator(
 	let methodName = Helper.getText(decl.name)
 	let enqueueName = decoName === 'computed' ? '#reset_' + methodName : '#enqueue_' + methodName
 
-	if (connect && decoName !== 'computed') {
+	if (connect) {
 		let connectStatement = factory.createExpressionStatement(factory.createCallExpression(
 			factory.createPropertyAccessExpression(
 				factory.createThis(),
