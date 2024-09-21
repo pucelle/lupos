@@ -35,9 +35,10 @@ export class Context {
 		this.visitingIndex = Visiting.getIndex(rawNode)
 		this.node = rawNode
 		this.parent = parent
+
 		this.state = new ContextState(this)
 		this.variables = new ContextVariables(this)
-		this.capturer = new ContextCapturer(this)
+		this.capturer = new ContextCapturer(this, this.state)
 
 		this.closestFunctionLike = (type & ContextTypeMask.FunctionLike) || (type & ContextTypeMask.SourceFile)
 			? this
@@ -122,6 +123,7 @@ export class Context {
 		// Test and add property assignment nodes.
 		else if (Helper.assign.isAssignment(node)) {
 			let assignTo = Helper.assign.getToExpressions(node)
+			
 			for (let node of assignTo) {
 				if (Helper.access.isAccess(node)) {
 					this.mayAddSetTracking(node, false)

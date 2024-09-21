@@ -11,21 +11,6 @@ class TestIgnoringStringIndex extends Component {
 }
 
 
-// This feature is not implemented.
-// class TestIgnoringNotObservedInstanceAsProperty extends Component {
-
-// 	notObservedInstance = new NotObservedClass()
-
-// 	ignoreNonObservedInstance() {
-// 		return this.notObservedInstance.value
-// 	}
-// }
-
-// class NotObservedClass {
-// 	value: number = 1
-// }
-
-
 class TestIgnoringMethod extends Component {
 
 	ignoreMethod() {

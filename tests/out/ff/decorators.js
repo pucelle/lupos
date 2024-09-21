@@ -57,6 +57,7 @@ class TestEffect extends Component {
         beginTrack(this.#enqueue_onPropChangeEffect, this);
         try {
             this.propWrite = this.propRead;
+            trackGet(this, "propRead");
             trackSet(this, "propWrite");
         }
         catch (err) {

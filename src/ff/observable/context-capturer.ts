@@ -6,14 +6,21 @@ import {AccessGrouper} from './access-grouper'
 import {AccessReferences} from './access-references'
 import {Optimizer} from './optimizer'
 import {removeFromList} from '../../utils'
+import {ContextState} from './context-state'
 
 
 /** Captured item, will be inserted to a position. */
 interface CapturedItem {
 	position: InterpolationPosition
-	indices: number[]
+	indices: CapturedIndex[]
 	toIndex: number
 	flowInterruptedBy: number
+}
+
+/** Each capture indices and capture type. */
+interface CapturedIndex {
+	index: number
+	type: 'get' | 'set'
 }
 
 
@@ -25,7 +32,7 @@ export class ContextCapturer {
 
 	
 	/** Get intersected indices across capturers. */
-	static intersectIndices(capturers: ContextCapturer[]): number[] {
+	static intersectIndices(capturers: ContextCapturer[]): CapturedIndex[] {
 		let map: Map<string, number>
 
 		for (let i = 0; i < capturers.length; i++) {
@@ -33,7 +40,7 @@ export class ContextCapturer {
 			let ownMap: Map<string, number> = new Map()
 
 			// Only codes of the first item is always running.
-			for (let index of capturer.captured[0].indices) {
+			for (let {index} of capturer.captured[0].indices) {
 
 				// Has been referenced, ignore always.
 				if (AccessReferences.isDescendantAccessReferenced(index)) {
@@ -60,7 +67,8 @@ export class ContextCapturer {
 			}
 		}
 
-		return [...map!.values()]
+		let values = [...map!.values()]
+		return capturers[0].captured[0].indices.filter(index => values.includes(index.index))
 	}
 
 
@@ -68,14 +76,14 @@ export class ContextCapturer {
 
 	private captured: CapturedItem[]
 	private latestCaptured!: CapturedItem
-	private captureType: 'get' | 'set' = 'get'
+	private captureType: 'get' | 'set' | 'both' = 'get'
 
-	constructor(context: Context) {
+	constructor(context: Context, state: ContextState) {
 		this.context = context
 
 		this.resetLatestCaptured()
 		this.captured = [this.latestCaptured]
-		this.initFromParent()
+		this.initCaptureType(state)
 	}
 
 	private resetLatestCaptured() {
@@ -88,14 +96,19 @@ export class ContextCapturer {
 	}
 
 	/** Transfer from some captured properties to child. */
-	private initFromParent() {
+	private initCaptureType(state: ContextState) {
 		let parent = this.context.parent
 		if (!parent) {
 			return
 		}
 
-		// Broadcast down capture type within a function-like context.
-		if ((parent.type & ContextTypeMask.FunctionLike) === 0) {
+		// Inside a `@effect method(){...}`.
+		if (state.effectDecorated) {
+			this.captureType = 'both'
+		}
+
+		// Broadcast downward capture type within a function-like context.
+		else if ((parent.type & ContextTypeMask.FunctionLike) === 0) {
 			this.captureType = parent.capturer.captureType
 		}
 	}
@@ -113,7 +126,15 @@ export class ContextCapturer {
 	/** Capture an index. */
 	capture(index: number, type: 'get' | 'set') {
 		this.addCaptureType(type)
-		this.latestCaptured.indices.push(index)
+
+		// Remove repetitive item, normally `a.b = c`,
+		// `a.b` has been captured as get type, and later set type.
+		let repetitiveIndex = this.latestCaptured.indices.find(item => item.index === index)
+		if (repetitiveIndex) {
+			removeFromList(this.latestCaptured.indices, repetitiveIndex)
+		}
+
+		this.latestCaptured.indices.push({index, type})
 	}
 
 	/** Whether has captured some indices. */
@@ -133,16 +154,16 @@ export class ContextCapturer {
 			)
 			
 			for (let descent of walking) {
-				descent.capturer.applySetCaptureType()
+				descent.capturer.applySetCaptureTypeFromGet()
 			}
 		}
 	}
 
-	/** Apply capture type to `set`. */
-	private applySetCaptureType() {
+	/** Apply capture type to `set` from 'get. */
+	private applySetCaptureTypeFromGet() {
 		this.captureType = 'set'
-		this.captured = [this.latestCaptured]
 		this.latestCaptured.indices = []
+		this.captured = [this.latestCaptured]
 	}
 
 	/** Insert captured indices to specified position. */
@@ -262,7 +283,7 @@ export class ContextCapturer {
 	/** Check captured indices and reference if needs. */
 	private checkAccessReferences() {
 		for (let item of this.captured) {
-			for (let index of item.indices) {
+			for (let {index} of item.indices) {
 				AccessReferences.mayReferenceAccess(index, this.context)
 			}
 		}
@@ -288,7 +309,7 @@ export class ContextCapturer {
 	 * `fromCapturer` locates where indices move from.
 	 * Returns residual indices that failed to move.
 	 */
-	moveCapturedIndicesIn(indices: number[], fromCapturer: ContextCapturer): number[] {
+	moveCapturedIndicesIn(indices: CapturedIndex[], fromCapturer: ContextCapturer): CapturedIndex[] {
 
 		// Locate which captured item should move indices to.
 		// Find the first item `toIndex` larger in child-first order..
@@ -299,11 +320,11 @@ export class ContextCapturer {
 		let fromScope = fromCapturer.context.getDeclarationScope()
 		let toScope = this.context.getDeclarationScope()
 		let scopesLeaved = Scoping.findWalkingOutwardLeaves(fromScope, toScope)
-		let residualIndices: number[] = []
+		let residualIndices: CapturedIndex[] = []
 
 		for (let index of indices) {
-			let node = Visiting.getNode(index)
-			let hashed = Scoping.hashIndex(index)
+			let node = Visiting.getNode(index.index)
+			let hashed = Scoping.hashIndex(index.index)
 
 			// `a[i]`, and a is an array, ignore hash of `i`.
 			if (ts.isElementAccessExpression(node)
@@ -334,11 +355,11 @@ export class ContextCapturer {
 			for (let index of [...item.indices]) {
 
 				// Has been referenced, ignore always.
-				if (AccessReferences.isDescendantAccessReferenced(index)) {
+				if (AccessReferences.isDescendantAccessReferenced(index.index)) {
 					continue
 				}
 
-				let hashName = Scoping.hashIndex(index).name
+				let hashName = Scoping.hashIndex(index.index).name
 
 				if (ownHashes.has(hashName)) {
 					removeFromList(item.indices, index)
@@ -389,12 +410,12 @@ export class ContextCapturer {
 	private interpolateCapturedItem(item: CapturedItem) {
 		let oldToIndex = item.toIndex
 		let newToIndex = this.findBetterInsertPosition(oldToIndex)!
-		let indicesInsertToOldPosition: number[] = []
-		let indicesInsertToNewPosition: number[] = []
+		let indicesInsertToOldPosition: CapturedIndex[] = []
+		let indicesInsertToNewPosition: CapturedIndex[] = []
 
 		if (newToIndex !== null) {
 			for (let index of item.indices) {
-				let hashed = Scoping.hashIndex(index)
+				let hashed = Scoping.hashIndex(index.index)
 				let canMove = hashed.usedIndices.every(usedIndex => Visiting.isPrecedingOf(usedIndex, newToIndex))
 
 				if (canMove) {
@@ -425,7 +446,13 @@ export class ContextCapturer {
 			})
 		}
 
-		AccessGrouper.addImport(this.captureType)
+		if (item.indices.some(index => index.type === 'get')) {
+			AccessGrouper.addImport('get')
+		}
+
+		if (item.indices.some(index => index.type === 'set')) {
+			AccessGrouper.addImport('set')
+		}
 	}
 
 	/** Try to find a better position to insert captured, always just below closest scope. */
@@ -449,12 +476,23 @@ export class ContextCapturer {
 	}
 
 	/** Transfer specified indices to specified position. */
-	private outputCaptured(captured: number[]): TS.Expression[] {
-		let exps = captured.map(i => {
-			let node = Interpolator.outputChildren(i)
+	private outputCaptured(indices: CapturedIndex[]): TS.Expression[] {
+		let getIndices = indices.filter(index => index.type === 'get')
+		let setIndices = indices.filter(index => index.type === 'set')
+
+		let getExps = getIndices.map(({index}) => {
+			let node = Interpolator.outputChildren(index)
 			return Helper.pack.extractFinalParenthesized(node)
 		}) as AccessNode[]
 
-		return AccessGrouper.makeExpressions(exps, this.captureType)
+		let setExps = setIndices.map(({index}) => {
+			let node = Interpolator.outputChildren(index)
+			return Helper.pack.extractFinalParenthesized(node)
+		}) as AccessNode[]
+
+		return [
+			...AccessGrouper.makeExpressions(getExps, 'get'),
+			...AccessGrouper.makeExpressions(setExps, 'set'),
+		]
 	}
 }

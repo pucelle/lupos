@@ -495,7 +495,7 @@ export namespace Helper {
 			}
 		}
 
-		/** Walk for  */
+		/** Walk for assign to expressions.  */
 		function* walkAssignToExpressions(node: TS.Expression): Iterable<TS.Expression> {
 			if (ts.isArrayLiteralExpression(node)) {
 				for (let el of node.elements) {
