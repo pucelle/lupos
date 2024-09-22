@@ -38,7 +38,7 @@ export namespace AccessGrouper {
 	/** Make a key by a property accessing node. */
 	function getExpressionKey(node: AccessNode) {
 		let exp = node.expression
-		let key = Helper.getText(exp).trim()
+		let key = Helper.getFullText(exp).trim()
 
 		if (node.questionDotToken) {
 			key += '?.'
@@ -96,11 +96,12 @@ export namespace AccessGrouper {
 	function getNameKey(node: AccessNode, type: 'get' | 'set'): string {
 		let name = getAccessNodeNameProperty(node, type)
 		
+		// 'name' -> "name"
 		if (ts.isStringLiteral(name)) {
 			return `"${name.text}"`
 		}
 
-		return Helper.getText(name)
+		return Helper.getFullText(name)
 	}
 
 
@@ -115,7 +116,7 @@ export namespace AccessGrouper {
 			name = factory.createStringLiteral('')
 		}
 		else if (ts.isPropertyAccessExpression(node)) {
-			name = factory.createStringLiteral(Helper.getText(node.name))
+			name = factory.createStringLiteral(Helper.getFullText(node.name))
 		}
 		else {
 			name = Helper.pack.removeAccessComments(node.argumentExpression)

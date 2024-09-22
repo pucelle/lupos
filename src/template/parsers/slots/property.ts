@@ -53,7 +53,7 @@ export class PropertySlotParser extends SlotParserBase {
 						continue
 					}
 
-					if (Helper.getText(member.name) === this.name) {
+					if (Helper.getFullText(member.name) === this.name) {
 						return 'component'
 					}
 				}

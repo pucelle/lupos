@@ -66,7 +66,7 @@ get prop(): any {
 ```
 */
 function compileUseContextDecorator(propDecl: TS.PropertyDeclaration): TS.Node[] {
-	let propName = Helper.getText(propDecl.name)
+	let propName = Helper.getFullText(propDecl.name)
 
 	let propDeclaredBy = factory.createPropertyDeclaration(
 		undefined,

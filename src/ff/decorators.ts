@@ -84,7 +84,7 @@ function compileComputedDecorator(methodDecl: TS.GetAccessorDeclaration): () => 
 	Modifier.addImport('trackSet', '@pucelle/ff')
 
 	return () => {
-		let propName = Helper.getText(methodDecl.name)
+		let propName = Helper.getFullText(methodDecl.name)
 		let newBody = Interpolator.outputChildren(Visiting.getIndex(methodDecl.body!)) as TS.Block
 
 		let property = factory.createPropertyDeclaration(
@@ -309,7 +309,7 @@ function compileEffectDecorator(methodDecl: TS.MethodDeclaration): () => TS.Node
 	Modifier.addImport('enqueue', '@pucelle/ff')
 
 	return () => {
-		let methodName = Helper.getText(methodDecl.name)
+		let methodName = Helper.getFullText(methodDecl.name)
 		let newBody = Interpolator.outputChildren(Visiting.getIndex(methodDecl.body!)) as TS.Block
 
 		let enqueueMethod = factory.createMethodDeclaration(
@@ -449,7 +449,7 @@ function compileWatchDecorator(decoName: string, methodDecl: TS.MethodDeclaratio
 	Modifier.addImport('enqueue', '@pucelle/ff')
 
 	let immediateWatch = decoName === 'immediateWatch'
-	let methodName = Helper.getText(methodDecl.name)
+	let methodName = Helper.getFullText(methodDecl.name)
 
 	if (!ts.isCallExpression(decorator.expression)) {
 		return () => []

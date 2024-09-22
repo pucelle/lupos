@@ -1,4 +1,5 @@
-import {Modifier, ts} from '../../base'
+import type TS from 'typescript'
+import {Helper, Modifier, ts} from '../../base'
 import {Context} from './context'
 import {ContextCapturer} from './context-capturer'
 import {ContextTree, ContextTypeMask} from './context-tree'
@@ -15,7 +16,7 @@ export namespace Optimizer {
 
 	/** 
 	 * Optimize each context before it will exit.
-	 * All child contexts have been optimized.
+	 * All child contexts must have been optimized.
 	 */
 	export function optimize(context: Context) {
 		if (context.type & ContextTypeMask.FlowInterruption) {
@@ -37,7 +38,7 @@ export namespace Optimizer {
 			moveIterationInitializerCapturingOutward(context)
 		}
 
-		// This optimizing has a low risk, codes may not run when no looping.
+		// This optimizing has low risk, loop codes may not run when have no looping.
 		if (context.type & ContextTypeMask.IterationConditionIncreasement) {
 			moveIterationConditionIncreasementOutward(context)
 		}
@@ -47,8 +48,14 @@ export namespace Optimizer {
 			moveIterationContentCapturingOutward(context)
 		}
 
+		// Eliminate repetitive.
 		if (context.type & ContextTypeMask.FunctionLike) {
 			eliminateRepetitiveCapturingRecursively(context)
+		}
+
+		// Eliminate private and don't have both get and set tracking types.
+		if (context.type & ContextTypeMask.Class) {
+			eliminateUniqueTrackingTypePrivate(context)
 		}
 	}
 
@@ -155,5 +162,72 @@ export namespace Optimizer {
 	/** Eliminate repetitive captured indices that repeat itself or with it's descendants. */
 	function eliminateRepetitiveCapturingRecursively(context: Context) {
 		context.capturer.eliminateRepetitiveRecursively(new Set())
+	}
+
+
+	/** Eliminate private and don't have both get and set tracking types. */
+	function eliminateUniqueTrackingTypePrivate(context: Context) {
+		enum TypeMask {
+			Get = 1,
+			Set = 2,
+		}
+
+		let classNode = context.node as TS.ClassLikeDeclaration
+		let nameMap: Map<string, {indices: number[], typeMask: TypeMask | 0}> = new Map()
+
+
+		// Group captured by property name.
+		for (let {name, index, type} of context.capturer.walkPrivateCaptured(classNode)) {
+			let item = nameMap.get(name)
+			if (!item) {
+				item = {
+					indices: [],
+					typeMask: 0,
+				}
+
+				nameMap.set(name, item)
+			}
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+			item.indices.push(index)
+			item.typeMask |= (type === 'get' ? TypeMask.Get : TypeMask.Set)
+		}
+
+
+		// Visit all private computed, treat it as set type.
+		for (let member of classNode.members) {
+			if (!ts.isGetAccessorDeclaration(member)) {
+				continue
+			}
+
+			let name = Helper.getText(member.name)
+			let nameMapItem = nameMap.get(name)
+			if (!nameMapItem) {
+				continue
+			}
+
+			let decorators = Helper.deco.getDecorators(member)
+			let computed = decorators.find(deco => Helper.deco.getName(deco) === 'computed')
+			if (!computed) {
+				continue
+			}
+
+			nameMapItem.typeMask |= TypeMask.Set
+		}
+
+
+		// Generate indices that should be removed.
+		let removeIndices: Set<number> = new Set()
+
+		for (let {indices, typeMask} of nameMap.values()) {
+			if (typeMask === (TypeMask.Get | TypeMask.Set)) {
+				continue
+			}
+
+			for (let index of indices) {
+				removeIndices.add(index)
+			}
+		}
+
+		context.capturer.removeCapturedIndices(removeIndices)
 	}
 }

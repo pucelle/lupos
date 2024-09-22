@@ -106,7 +106,7 @@ export class ContextVariables {
 					observed = ObservedChecker.isTypeNodeObserved(typeNode)
 				}
 
-				this.variableObserved.set(Helper.getText(param.name), observed)
+				this.variableObserved.set(Helper.getFullText(param.name), observed)
 			}
 		}
 
@@ -137,14 +137,14 @@ export class ContextVariables {
 	private makeParametersObserved(parameters: TS.NodeArray<TS.ParameterDeclaration>) {
 		for (let param of parameters) {
 			let beValue = Helper.types.isValueType(Helper.types.getType(param))
-			this.variableObserved.set(Helper.getText(param.name), !beValue)
+			this.variableObserved.set(Helper.getFullText(param.name), !beValue)
 		}
 	}
 
 	/** Visit a parameter. */
 	visitParameter(node: TS.ParameterDeclaration) {
 		let observed = ObservedChecker.isParameterObserved(node)
-		this.variableObserved.set(Helper.getText(node.name), observed)
+		this.variableObserved.set(Helper.getFullText(node.name), observed)
 	}
 
 	/** Visit a variable. */

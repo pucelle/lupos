@@ -1,4 +1,5 @@
 import {Component} from '@pucelle/lupos.js'
+import {computed} from '@pucelle/ff'
 
 
 class TestIgnoringStringIndex extends Component {
@@ -90,5 +91,19 @@ class TestIgnoringWriteonlyPrivate extends Component {
 
 	readMethod() {
 		this.prop = 2
+	}
+}
+
+
+class TestIgnoringOfPrivateComputedProperty extends Component {
+
+	private prop: number = 1
+
+	readMethod() {
+		return this.computedProp
+	}
+
+	@computed private get computedProp() {
+		return this.prop
 	}
 }

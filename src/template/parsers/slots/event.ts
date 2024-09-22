@@ -71,12 +71,7 @@ export class EventSlotParser extends SlotParserBase {
 						continue
 					}
 
-					if (ts.isStringLiteralLike(member.name)) {
-						if (member.name.text === this.name) {
-							return 'component'
-						}
-					}
-					else if (Helper.getText(member.name) === this.name) {
+					if (Helper.getText(member.name) === this.name) {
 						return 'component'
 					}
 				}

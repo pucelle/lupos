@@ -148,7 +148,7 @@ function compileComputedEffectWatchDecorator(
 	disconnect: TS.MethodDeclaration | undefined,
 	repetitiveConnect: boolean
 ): [TS.MethodDeclaration | TS.ConstructorDeclaration, TS.MethodDeclaration | undefined] {
-	let methodName = Helper.getText(decl.name)
+	let methodName = Helper.getFullText(decl.name)
 	let connectCallName = decoName === 'computed' ? '#reset_' + methodName
 		: decoName === 'effect'
 		? methodName
@@ -171,7 +171,8 @@ function compileComputedEffectWatchDecorator(
 			[]
 		))
 
-		connect = addToMethodDeclaration(connect, [connectStatement])
+		let insertAfterSuper = decoName === 'computed'
+		connect = addToMethodDeclaration(connect, [connectStatement], insertAfterSuper ? 'after-super' : 'end')
 	}
 	
 	if (disconnect) {
@@ -187,7 +188,7 @@ function compileComputedEffectWatchDecorator(
 			]
 		))
 		
-		disconnect = addToMethodDeclaration(disconnect, [disconnectStatement])
+		disconnect = addToMethodDeclaration(disconnect, [disconnectStatement], 'end')
 		Modifier.addImport('untrack', '@pucelle/ff')
 	}
 
@@ -250,7 +251,24 @@ function createConstructor(node: TS.ClassDeclaration): TS.ConstructorDeclaration
 
 
 /** Add a list of statements to a method content end. */
-function addToMethodDeclaration<T extends TS.MethodDeclaration | TS.ConstructorDeclaration>(method: T, statements: TS.Statement[]): T {
+function addToMethodDeclaration<T extends TS.MethodDeclaration | TS.ConstructorDeclaration>(
+	method: T,
+	statements: TS.Statement[],
+	position: 'end' | 'after-super'
+): T {
+	let newStatements = [...method.body!.statements] || []
+
+	if (position === 'end') {
+		newStatements.push(...statements)
+	}
+	else if (position === 'after-super') {
+		if (newStatements.length > 0
+			&& Helper.getFullText(newStatements[0]).startsWith('super')
+		) {
+			newStatements.splice(1, 0, ...statements)
+		}
+	}
+
 	if (ts.isMethodDeclaration(method)) {
 		return factory.updateMethodDeclaration(
 			method,
@@ -261,10 +279,7 @@ function addToMethodDeclaration<T extends TS.MethodDeclaration | TS.ConstructorD
 			method.typeParameters,
 			method.parameters,
 			method.type,
-			factory.createBlock([
-				...(method.body?.statements || []),
-				...statements,
-			], true)
+			factory.createBlock(newStatements, true)
 		) as T
 	}
 	else {
@@ -272,10 +287,7 @@ function addToMethodDeclaration<T extends TS.MethodDeclaration | TS.ConstructorD
 			method,
 			method.modifiers,
 			method.parameters,
-			factory.createBlock([
-				...(method.body?.statements || []),
-				...statements,
-			], true)
+			factory.createBlock(newStatements, true)
 		) as T
 	}
 }
@@ -303,7 +315,7 @@ function compileSetContextDecorator(
 	disconnect: TS.MethodDeclaration | undefined,
 	hasDeletedContextVariables: boolean
 ): [TS.MethodDeclaration | TS.ConstructorDeclaration, TS.MethodDeclaration | undefined] {
-	let propName = Helper.getText(propDecl.name)
+	let propName = Helper.getFullText(propDecl.name)
 	let extended = Helper.cls.getExtends(propDecl.parent as TS.ClassDeclaration)!
 	let classExp = extended.expression
 		
@@ -320,7 +332,7 @@ function compileSetContextDecorator(
 			]
 		))
 
-		connect = addToMethodDeclaration(connect, [connectStatement])
+		connect = addToMethodDeclaration(connect, [connectStatement], 'end')
 	}
 	
 	if (disconnect && !hasDeletedContextVariables) {
@@ -335,7 +347,7 @@ function compileSetContextDecorator(
 			]
 		))
 		
-		disconnect = addToMethodDeclaration(disconnect, [disconnectStatement])
+		disconnect = addToMethodDeclaration(disconnect, [disconnectStatement], 'end')
 	}
 
 	return [connect, disconnect]
@@ -365,7 +377,7 @@ function compileUseContextDecorator(
 	disconnect: TS.MethodDeclaration | undefined,
 	hasDeletedContextVariables: boolean
 ): [TS.MethodDeclaration | TS.ConstructorDeclaration, TS.MethodDeclaration | undefined] {
-	let propName = Helper.getText(propDecl.name)
+	let propName = Helper.getFullText(propDecl.name)
 	let extended = Helper.cls.getExtends(propDecl.parent as TS.ClassDeclaration)!
 	let classExp = extended.expression
 	
@@ -389,7 +401,7 @@ function compileUseContextDecorator(
 			)
 		))
 
-		connect = addToMethodDeclaration(connect, [connectStatement])
+		connect = addToMethodDeclaration(connect, [connectStatement], 'end')
 	}
 	
 	if (disconnect && !hasDeletedContextVariables) {
@@ -420,7 +432,7 @@ function compileUseContextDecorator(
 			)
 		}
 		
-		disconnect = addToMethodDeclaration(disconnect, disconnectStatements)
+		disconnect = addToMethodDeclaration(disconnect, disconnectStatements, 'end')
 	}
 
 	return [connect, disconnect]

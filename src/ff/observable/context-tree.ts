@@ -8,45 +8,48 @@ export enum ContextTypeMask {
 	/** Source file. */
 	SourceFile = 2 ** 0,
 
+	/** Class range. */
+	Class = 2 ** 1,
+
 	/** 
 	 * Normally help to process parameters.
 	 * or for ArrowFunction has no block-type body exist.
 	 */
-	FunctionLike = 2 ** 1,
+	FunctionLike = 2 ** 2,
 
 	/** 
 	 * `if`, `case`, `default`,
 	 * or binary expressions like `a && b`, `a || b`, `a ?? b`.
 	 */
-	Conditional = 2 ** 2,
+	Conditional = 2 ** 3,
 
 	/** 
 	 * Content of `if`, `else`;
 	 * Whole `case ...`, `default ...`.
 	 * Right part of binary expressions like `a && b`, `a || b`, `a ?? b`.
 	 */
-	ConditionalContent = 2 ** 3,
+	ConditionalContent = 2 ** 4,
 
 	/** `case ...: ...`, `default ...` */
-	CaseDefaultContent = 2 ** 4,
+	CaseDefaultContent = 2 ** 5,
 
 	/** Process For iteration initializer, condition, incrementor. */
-	Iteration = 2 ** 5,
+	Iteration = 2 ** 6,
 
 	/** `for (let...)` */
-	IterationInitializer = 2 ** 6,
+	IterationInitializer = 2 ** 7,
 
 	/** `while (...)`, `for (; ...; ...)` */
-	IterationConditionIncreasement = 2 ** 7,
+	IterationConditionIncreasement = 2 ** 8,
 
 	/** 
 	 * `while () ...`, `for () ...`, May run for none, 1 time, multiple times.
 	 * Content itself can be a block, or a normal expression.
 	 */
-	IterationContent = 2 ** 8,
+	IterationContent = 2 ** 9,
 
 	/** `return`, `break`, `continue`, `yield `, `await`, and with content. */
-	FlowInterruption = 2 ** 9,
+	FlowInterruption = 2 ** 10,
 }
 
 /** Content and a visiting index position. */
@@ -76,6 +79,11 @@ export namespace ContextTree {
 		// Source file
 		if (ts.isSourceFile(node)) {
 			type |= ContextTypeMask.SourceFile
+		}
+
+		// Class
+		else if (ts.isClassLike(node)) {
+			type |= ContextTypeMask.Class
 		}
 
 		// Function like
@@ -227,12 +235,12 @@ export namespace ContextTree {
 	 * Walk context itself and descendants.
 	 * Always walk descendants before self.
 	 */
-	export function* walkInwardChildFirst(context: Context, filter: (context: Context) => boolean): Iterable<Context> {
+	export function* walkInwardChildFirst(context: Context, filter?: (context: Context) => boolean): Iterable<Context> {
 		for (let child of context.children) {
 			yield* walkInwardChildFirst(child, filter)
 		}
 
-		if (filter(context)) {
+		if (!filter || filter(context)) {
 			yield context
 		}
 	}
@@ -241,8 +249,8 @@ export namespace ContextTree {
 	 * Walk context itself and descendants.
 	 * Always walk descendants after self.
 	 */
-	export function* walkInwardSelfFirst(context: Context, filter: (context: Context) => boolean): Iterable<Context> {
-		if (filter(context)) {
+	export function* walkInwardSelfFirst(context: Context, filter?: (context: Context) => boolean): Iterable<Context> {
+		if (!filter || filter(context)) {
 			yield context
 		}
 

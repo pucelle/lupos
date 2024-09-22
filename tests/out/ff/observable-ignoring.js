@@ -1,5 +1,5 @@
 import { Component } from '@pucelle/lupos.js';
-import { trackGet, trackSet } from "@pucelle/ff";
+import { untrack, beginTrack, endTrack, trackSet, trackGet } from '@pucelle/ff';
 class TestIgnoringStringIndex extends Component {
     prop = '1';
     ignoreStringIndex() {
@@ -7,16 +7,6 @@ class TestIgnoringStringIndex extends Component {
         return this.prop[0];
     }
 }
-// This feature is not implemented.
-// class TestIgnoringNotObservedInstanceAsProperty extends Component {
-// 	notObservedInstance = new NotObservedClass()
-// 	ignoreNonObservedInstance() {
-// 		return this.notObservedInstance.value
-// 	}
-// }
-// class NotObservedClass {
-// 	value: number = 1
-// }
 class TestIgnoringMethod extends Component {
     ignoreMethod() {
         return this.anyMethod();
@@ -63,7 +53,6 @@ class TestIgnoringConstructor extends Component {
 class TestIgnoringReadonlyPrivate extends Component {
     prop = 1;
     readMethod() {
-        trackGet(this, "prop");
         return this.prop;
     }
 }
@@ -71,6 +60,47 @@ class TestIgnoringWriteonlyPrivate extends Component {
     prop = 1;
     readMethod() {
         this.prop = 2;
-        trackSet(this, "prop");
+    }
+}
+class TestIgnoringOfPrivateComputedProperty extends Component {
+    onConnected() {
+        super.onConnected();
+        this.#reset_computedProp();
+    }
+    onWillDisconnect() {
+        super.onWillDisconnect();
+        untrack(this.#reset_computedProp, this);
+    }
+    prop = 1;
+    readMethod() {
+        trackGet(this, "computedProp");
+        return this.computedProp;
+    }
+    #computedProp = undefined;
+    #needs_compute_computedProp = true;
+    #compute_computedProp() {
+        return this.prop;
+    }
+    #reset_computedProp() { this.#needs_compute_computedProp = true; }
+    get computedProp() {
+        if (!this.#needs_compute_computedProp) {
+            return this.#computedProp;
+        }
+        beginTrack(this.#reset_computedProp, this);
+        try {
+            let newValue = this.#compute_computedProp();
+            if (newValue !== this.#computedProp) {
+                this.#computedProp = newValue;
+                trackSet(this, "computedProp");
+            }
+        }
+        catch (err) {
+            console.error(err);
+        }
+        finally {
+            endTrack();
+        }
+        this.#needs_compute_computedProp = false;
+        return this.#computedProp;
     }
 }

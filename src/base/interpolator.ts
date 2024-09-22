@@ -162,7 +162,7 @@ export namespace Interpolator {
 			)
 		}
 		else {
-			throw new Error(`Don't know how to add child nodes for "${Helper.getText(node)}"!`)
+			throw new Error(`Don't know how to add child nodes for "${Helper.getFullText(node)}"!`)
 		}
 	}
 
@@ -285,7 +285,7 @@ export namespace Interpolator {
 
 		let replace = items.filter(item => item.position === InterpolationPosition.Replace)
 		if (replace.length > 1) {
-			throw new Error(`Only one replace is allowed, happened at position "${Helper.getText(Visiting.getNode(index))}"!`)
+			throw new Error(`Only one replace is allowed, happened at position "${Helper.getFullText(Visiting.getNode(index))}"!`)
 		}
 
 		let node: TS.Node | TS.Node[] | undefined
@@ -295,7 +295,7 @@ export namespace Interpolator {
 
 			if (prependNodes.length > 0 || appendNodes.length > 0) {
 				let childNodes = [...prependNodes, ...appendNodes]
-				console.warn(`Child nodes "${childNodes.map(n => Helper.getText(n)).join(', ')}" have been dropped!`)
+				console.warn(`Child nodes "${childNodes.map(n => Helper.getFullText(n)).join(', ')}" have been dropped!`)
 			}
 		}
 		else {
@@ -339,11 +339,11 @@ export namespace Interpolator {
 		let node = Interpolator.output(index, false)
 
 		if (!node) {
-			throw new Error(`"${Helper.getText(rawNode)}" has been removed!`)
+			throw new Error(`"${Helper.getFullText(rawNode)}" has been removed!`)
 		}
 
 		if (Array.isArray(node)) {
-			throw new Error(`"${Helper.getText(rawNode)}" has been replaced to several!`)
+			throw new Error(`"${Helper.getFullText(rawNode)}" has been replaced to several!`)
 		}
 
 		return node

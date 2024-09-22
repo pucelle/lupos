@@ -38,30 +38,30 @@ export class Scope {
 
 		// Parameter.
 		else if (ts.isParameter(node)) {
-			this.variables.set(Helper.getText(node.name), node)
+			this.variables.set(Helper.getFullText(node.name), node)
 		}
 
 		// `import {a as b}`,  `import {a}`
 		else if (ts.isImportSpecifier(node)) {
-			this.variables.set(Helper.getText(node.name), node)
+			this.variables.set(Helper.getFullText(node.name), node)
 		}
 
 		// `import a`
 		else if (ts.isImportClause(node)) {
 			if (node.name) {
-				this.variables.set(Helper.getText(node.name), node)
+				this.variables.set(Helper.getFullText(node.name), node)
 			}
 		}
 
 		// `import * as a`
 		else if (ts.isNamespaceImport(node)) {
-			this.variables.set(Helper.getText(node.name), node)
+			this.variables.set(Helper.getFullText(node.name), node)
 		}
 
 		// Class or function declaration
 		else if (ts.isClassDeclaration(node) || ts.isFunctionDeclaration(node)) {
 			if (node.name) {
-				this.variables.set(Helper.getText(node.name), node)
+				this.variables.set(Helper.getFullText(node.name), node)
 			}
 		}
 	}

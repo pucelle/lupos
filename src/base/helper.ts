@@ -26,10 +26,10 @@ export enum FlowInterruptionTypeMask {
 export namespace Helper {
 
 
-	//// Global, all node shared
+	//// Global, share
 
-	/** Get node text, can output from a newly created node. */
-	export function getText(node: TS.Node) {
+	/** Get node full text, can output from a newly created node. */
+	export function getFullText(node: TS.Node) {
 		if (node.pos >= 0) {
 			try {
 				return node.getText()
@@ -40,6 +40,16 @@ export namespace Helper {
 		}
 		else {
 			return printer.printNode(ts.EmitHint.Unspecified, node, sourceFile)
+		}
+	}
+
+	/** get text without quoted for string, otherwise get full text. */
+	export function getText(node: TS.Node): string {
+		if (ts.isStringLiteral(node)) {
+			return node.text
+		}
+		else {
+			return getFullText(node)
 		}
 	}
 
@@ -132,11 +142,28 @@ export namespace Helper {
 	/** Decorator Part */
 	export namespace deco {
 
+		/** Get all decorator from a class declaration, a property or method declaration. */
+		export function getDecorators(
+			node: TS.ClassDeclaration | TS.MethodDeclaration | TS.PropertyDeclaration | TS.GetAccessorDeclaration | TS.SetAccessorDeclaration
+		): TS.Decorator[] {
+			return node.modifiers?.filter(m => ts.isDecorator(m)) || []
+		}
+
 		/** Get the first decorator from a class declaration, a property or method declaration. */
 		export function getFirst(
 			node: TS.ClassDeclaration | TS.MethodDeclaration | TS.PropertyDeclaration | TS.GetAccessorDeclaration | TS.SetAccessorDeclaration
 		): TS.Decorator | undefined {
-			return node.modifiers?.find(m => ts.isDecorator(m)) as TS.Decorator | undefined
+			return node.modifiers?.find(m => ts.isDecorator(m))
+		}
+
+		/** Get the first decorator from a class declaration, a property or method declaration. */
+		export function getFirstName(
+			node: TS.ClassDeclaration | TS.MethodDeclaration | TS.PropertyDeclaration | TS.GetAccessorDeclaration | TS.SetAccessorDeclaration
+		): string | undefined {
+			let decorator = getFirst(node)
+			let decoName = decorator ? getName(decorator) : undefined
+
+			return decoName
 		}
 
 		/** Get the first decorator name of a decorator. */
@@ -163,16 +190,6 @@ export namespace Helper {
 
 			return decl.name?.text
 		}
-
-		/** Get the first decorator from a class declaration, a property or method declaration. */
-		export function getFirstName(
-			node: TS.ClassDeclaration | TS.MethodDeclaration | TS.PropertyDeclaration | TS.GetAccessorDeclaration | TS.SetAccessorDeclaration
-		): string | undefined {
-			let decorator = getFirst(node)
-			let decoName = decorator ? getName(decorator) : undefined
-
-			return decoName
-		}
 	}
 
 
@@ -189,7 +206,7 @@ export namespace Helper {
 				return 'constructor'
 			}
 			else {
-				return getText(node.name!)
+				return getFullText(node.name!)
 			}
 		}
 
@@ -424,9 +441,10 @@ export namespace Helper {
 				: node.argumentExpression
 		}
 
-		/** get property accessing name. */
-		export function getNameText(node: AccessNode): string{
-			return getText(getNameNode(node))
+		/** get property accessing name text. */
+		export function getNameText(node: AccessNode): string {
+			let nameNode = getNameNode(node)
+			return getText(nameNode)
 		}
 	}
 
@@ -565,7 +583,7 @@ export namespace Helper {
 				yield* walkVariablePatternNames(node.name)
 			}
 			else if (ts.isIdentifier(node.name)) {
-				yield getText(node.name)
+				yield getFullText(node.name)
 			}
 		}
 
@@ -578,7 +596,7 @@ export namespace Helper {
 					yield* walkVariablePatternNames(element.name)
 				}
 				else if (ts.isIdentifier(element.name)) {
-					yield getText(element.name)
+					yield getFullText(element.name)
 				}
 			}
 		}
@@ -841,7 +859,7 @@ export namespace Helper {
 
 			// `import * as M`, and use it's member like `M.member`.
 			if (ts.isPropertyAccessExpression(node)) {
-				memberName = getText(node.name)
+				memberName = getFullText(node.name)
 
 				let decl = resolveDeclaration(node.expression, ts.isNamespaceImport, false)
 				if (decl) {
@@ -1222,7 +1240,7 @@ export namespace Helper {
 				refedTypeParameters = remapRefedTypeParameters(refedTypeParameters, selfParameters, superParameters)
 
 				// `C`
-				if (getText(extendsNode.expression) === finalHeritageName) {
+				if (getFullText(extendsNode.expression) === finalHeritageName) {
 					return refedTypeParameters[finalHeritageTypeParameterIndex]
 				}
 
@@ -1258,7 +1276,7 @@ export namespace Helper {
 
 				for (let ref of destructed) {
 					if (ts.isTypeReferenceNode(ref)) {
-						let refName = Helper.getText(ref.typeName)
+						let refName = Helper.getFullText(ref.typeName)
 
 						// Use input parameter.
 						if (selfMap.has(refName)) {
@@ -1570,7 +1588,7 @@ export namespace Helper {
 				}
 			}
 			else if (ts.isIdentifier(node)) {
-				return factory.createIdentifier(getText(node)) as TS.Node as T
+				return factory.createIdentifier(getFullText(node)) as TS.Node as T
 			}
 			else if (node.kind === ts.SyntaxKind.ThisKeyword) {
 				return factory.createThis() as TS.Node as T
@@ -1592,7 +1610,7 @@ export namespace Helper {
 				return factory.createExpressionStatement(node)
 			}
 			else {
-				throw new Error(`Don't know how to pack "${getText(node)}" to a statement!`)
+				throw new Error(`Don't know how to pack "${getFullText(node)}" to a statement!`)
 			}
 		}
 

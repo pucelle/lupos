@@ -195,7 +195,7 @@ export class HTMLNode {
 			return tab
 				+ TemplateSlotPlaceholder.replaceTemplateString(
 					`<${tagName}${this.toStringOfAttrs(true)}${children.length === 0 ? ' /' : ''}>`,
-					(index: number) => '${' + Helper.getText(rawNodes[index]) + '}'
+					(index: number) => '${' + Helper.getFullText(rawNodes[index]) + '}'
 				)
 				+ children.map(child => child.toReadableString(rawNodes, wrap ? tab + '\t' : ''))
 					.map(v => wrap + v).join('')
@@ -208,7 +208,7 @@ export class HTMLNode {
 		else if (this.desc) {
 			return TemplateSlotPlaceholder.replaceTemplateString(
 				tab + this.desc,
-				(index: number) => '${' + Helper.getText(rawNodes[index]) + '}'
+				(index: number) => '${' + Helper.getFullText(rawNodes[index]) + '}'
 			)
 		}
 		else if (this.type === HTMLNodeType.Text && this.text) {

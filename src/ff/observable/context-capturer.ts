@@ -186,11 +186,14 @@ export class ContextCapturer {
 	beforeExit() {
 		this.endCapture()
 
-		if (this.context === this.context.closestFunctionLike) {
+		// Optimize child-first, then self.
+		if ((this.context.type & ContextTypeMask.SourceFile) > 0) {
 			for (let descent of this.walkInwardChildFirst()) {
 				descent.preProcessCaptured()
 			}
+		}
 
+		if ((this.context.type & ContextTypeMask.SourceFile) > 0) {
 			for (let descent of this.walkInwardSelfFirst()) {
 				descent.postProcessCaptured()
 			}
@@ -198,19 +201,13 @@ export class ContextCapturer {
 	}
 
 	private* walkInwardChildFirst(): Iterable<ContextCapturer> {
-		for (let context of ContextTree.walkInwardChildFirst(
-			this.context.closestFunctionLike,
-			c => c.closestFunctionLike === this.context
-		)) {
+		for (let context of ContextTree.walkInwardChildFirst(this.context)) {
 			yield context.capturer
 		}
 	}
 
 	private* walkInwardSelfFirst(): Iterable<ContextCapturer> {
-		for (let context of ContextTree.walkInwardSelfFirst(
-			this.context.closestFunctionLike,
-			c => c.closestFunctionLike === this.context
-		)) {
+		for (let context of ContextTree.walkInwardSelfFirst(this.context)) {
 			yield context.capturer
 		}
 	}
@@ -263,7 +260,7 @@ export class ContextCapturer {
 	/** Process current captured, step 1. */
 	private preProcessCaptured() {
 
-		// First order is important, checking references step may
+		// Child-first order is important, checking references step may
 		// add more variables, and adjust captured.
 		this.checkAccessReferences()
 
@@ -394,6 +391,66 @@ export class ContextCapturer {
 		}
 	}
 
+	/** Find private class property declaration from captured. */
+	*walkPrivateCaptured(ofClass: TS.ClassLikeDeclaration): Iterable<{name: string, index: number, type: 'get' | 'set'}> {
+		for (let item of this.captured) {
+			for (let {index, type} of item.indices) {
+				let node = Visiting.getNode(index) as AccessNode
+				let exp = node.expression
+
+				// Must use class instance as access expression.
+				let classDecl = Helper.symbol.resolveDeclaration(exp, ts.isClassLike)
+				if (classDecl !== ofClass) {
+					continue
+				}
+
+				let propDecls = Helper.symbol.resolveDeclarations(node, n => {
+					return ts.isPropertyDeclaration(n)
+						|| ts.isGetAccessorDeclaration(n)
+						|| ts.isSetAccessorDeclaration(n)
+				})
+
+				if (!propDecls || propDecls.length === 0) {
+					continue
+				}
+
+				let allBePrivate = propDecls.every(d => {
+					return d.modifiers
+						&& d.modifiers.find(n => n.kind === ts.SyntaxKind.PrivateKeyword)
+					})
+
+				if (!allBePrivate) {
+					continue
+				}
+				
+				let name = Helper.access.getNameText(node)
+
+				yield {
+					name,
+					index,
+					type,
+				}
+			}
+		}
+
+		for (let child of this.context.children) {
+			yield* child.capturer.walkPrivateCaptured(ofClass)
+		}
+	}
+
+	/** Remove captured indices recursively. */
+	removeCapturedIndices(toRemove: Set<number>) {
+		for (let item of this.captured) {
+			item.indices = item.indices.filter(index => {
+				return !toRemove.has(index.index)
+			})
+		}
+
+		for (let child of this.context.children) {
+			child.capturer.removeCapturedIndices(toRemove)
+		}
+	}
+
 
 	/** Add `captured` as interpolation items. */
 	private interpolateCaptured() {
@@ -455,7 +512,7 @@ export class ContextCapturer {
 		}
 	}
 
-	/** Try to find a better position to insert captured, always just below closest scope. */
+	/** Try to find a better position to insert captured. */
 	private findBetterInsertPosition(index: number): number | null {
 		let position = ContextTree.findClosestPositionToAddStatements(index, this.context)
 		if (!position) {

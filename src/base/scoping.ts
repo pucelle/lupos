@@ -203,7 +203,7 @@ export namespace Scoping {
 		rawNode = Helper.pack.normalize(hashVisited, true) as T
 
 		return {
-			name: Helper.getText(rawNode),
+			name: Helper.getFullText(rawNode),
 			usedScopes,
 			usedIndices,
 		}
