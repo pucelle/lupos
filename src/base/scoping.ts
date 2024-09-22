@@ -105,7 +105,7 @@ export namespace Scoping {
 	}
 	
 
-	/** Find closest scope contains node with specified visiting index. */
+	/** Find closest scope contains or equals node with specified visiting index. */
 	export function findClosestScope(index: number): Scope {
 		let scope = ScopeMap.get(index)
 
@@ -123,7 +123,7 @@ export namespace Scoping {
 		return findClosestScope(Visiting.getIndex(node))
 	}
 
-	
+
 	/** Get the leaved scope list when walking from a scope to an ancestral scope. */
 	export function findWalkingOutwardLeaves(fromScope: Scope, toScope: Scope) : Scope[] {
 		let scope: Scope | undefined = fromScope
@@ -210,6 +210,8 @@ export namespace Scoping {
 	}
 
 	function hashNodeVisitor(rawNode: TS.Node, usedScopes: Scope[], usedIndices: number[]): TS.Node | undefined {
+
+		// a -> a_123
 		if (Helper.variable.isVariableIdentifier(rawNode)) {
 			let {name, scope} = hashVariableName(rawNode)
 			let declNode = scope.getDeclarationByName(rawNode.text)
@@ -223,6 +225,14 @@ export namespace Scoping {
 			return factory.createIdentifier(name)
 		}
 
+		// this -> this_123
+		else if (rawNode.kind === ts.SyntaxKind.ThisKeyword) {
+			let {name, scope} = hashVariableName(rawNode as TS.ThisExpression)
+			addToList(usedScopes, scope)
+
+			return factory.createIdentifier(name)
+		}
+
 		// `a?.b` -> `a.b`
 		else if (rawNode.kind === ts.SyntaxKind.QuestionDotToken) {
 			return undefined
@@ -232,13 +242,21 @@ export namespace Scoping {
 	}
 
 	/** 
-	 * Hash a node by replace variable names `a` to add a suffix.
+	 * Hash a node by replace variable name or `this` to add a suffix.
 	 * The suffix is normally a scope visiting index,
 	 * then the hashing is unique across whole source file.
 	 */
-	function hashVariableName(rawNode: TS.Identifier): {name: string, scope: Scope} {
-		let name = rawNode.text
-		let scope = findDeclaredScope(rawNode) || findClosestScopeOfNode(rawNode)
+	function hashVariableName(rawNode: TS.Identifier | TS.ThisExpression): {name: string, scope: Scope} {
+		let scope: Scope
+
+		if (rawNode.kind === ts.SyntaxKind.ThisKeyword) {
+			scope = findClosestScopeOfNode(rawNode).findClosestThisScope()
+		}
+		else {
+			scope = findDeclaredScope(rawNode) || findClosestScopeOfNode(rawNode)
+		}
+
+		let name = Helper.getFullText(rawNode)
 		let suffix = scope.visitingIndex
 
 		return {

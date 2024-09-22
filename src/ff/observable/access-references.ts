@@ -101,6 +101,7 @@ export namespace AccessReferences {
 		if (Helper.access.isAccess(node) || Helper.variable.isVariableIdentifier(node)) {
 			let hashName = Scoping.hashNode(node).name
 			let indices = referenceMap.get(hashName)
+			
 			if (indices) {
 				for (let index of indices) {
 					mutableIndices.add(index)

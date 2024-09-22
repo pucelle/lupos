@@ -186,29 +186,17 @@ export class ContextCapturer {
 	beforeExit() {
 		this.endCapture()
 
-		// Optimize child-first, then self.
 		if ((this.context.type & ContextTypeMask.SourceFile) > 0) {
-			for (let descent of this.walkInwardChildFirst()) {
-				descent.preProcessCaptured()
+
+			// Do referencing and optimization, ensure child-first then self.
+			for (let descent of ContextTree.walkInwardChildFirst(this.context)) {
+				descent.capturer.preProcessCaptured()
 			}
-		}
 
-		if ((this.context.type & ContextTypeMask.SourceFile) > 0) {
-			for (let descent of this.walkInwardSelfFirst()) {
-				descent.postProcessCaptured()
+			// Do output, either child-first or self-first should be OK.
+			for (let descent of ContextTree.walkInwardSelfFirst(this.context)) {
+				descent.capturer.postProcessCaptured()
 			}
-		}
-	}
-
-	private* walkInwardChildFirst(): Iterable<ContextCapturer> {
-		for (let context of ContextTree.walkInwardChildFirst(this.context)) {
-			yield context.capturer
-		}
-	}
-
-	private* walkInwardSelfFirst(): Iterable<ContextCapturer> {
-		for (let context of ContextTree.walkInwardSelfFirst(this.context)) {
-			yield context.capturer
 		}
 	}
 

@@ -59,10 +59,7 @@ const $html_1 = new HTMLMaker("<!----><!---->");
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
-    let $block_0 = new ForBlock((n) => {
-        trackGet($context, "prop");
-        return new CompiledTemplateResult($template_2, [n + $context.prop]);
-    }, new TemplateSlot(new SlotPosition(1, $node_1), $context, 1));
+    let $block_0 = new ForBlock((n) => new CompiledTemplateResult($template_2, [n + $context.prop]), new TemplateSlot(new SlotPosition(1, $node_1), $context, 1));
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),

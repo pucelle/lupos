@@ -164,7 +164,7 @@ export class Scope {
 	 * Find an ancestral scope, and a child visiting index,
 	 * which can insert variable before it.
 	 */
-	private findClosestScopeToAddStatements(): Scope {
+	findClosestScopeToAddStatements(): Scope {
 		let scope: Scope = this
 
 		while (!scope.canAddStatements()) {
@@ -176,7 +176,7 @@ export class Scope {
 	
 	/** 
 	 * Add statement to the beginning position of scope.
-	 * If current scope can't add statements, choose parent scope.
+	 * If current scope can't add statements, try parent scope.
 	 * Several variable declarations will be stacked to a variable statement.
 	 */
 	addStatements(...stats: TS.Statement[]) {
@@ -199,6 +199,17 @@ export class Scope {
 		}
 
 		return toIndex
+	}
+
+	/** Find closest scope which `this` specified, normally function-like, or source file. */
+	findClosestThisScope(): Scope {
+		let scope: Scope = this
+
+		while (!Helper.isFunctionLike(scope.node) && !ts.isSourceFile(scope.node)) {
+			scope = scope.parent!
+		}
+
+		return scope
 	}
 }
 
