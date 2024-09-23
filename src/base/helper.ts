@@ -111,18 +111,9 @@ export namespace Helper {
 		return undefined
 	}
 
-	/** Whether be function, method, or get/set accessor. */
-	export function isFunctionLike(node: TS.Node): node is TS.FunctionLikeDeclaration {
-		return ts.isMethodDeclaration(node)
-			|| ts.isFunctionDeclaration(node)
-			|| ts.isFunctionExpression(node)
-			|| ts.isGetAccessorDeclaration(node)
-			|| ts.isSetAccessorDeclaration(node)
-			|| ts.isArrowFunction(node)
-	}
 
 	/** Visit node and all descendant nodes, find a node match test fn. */
-	export function findNode(node: TS.Node, test: (node: TS.Node) => boolean) : TS.Node | null {
+	export function findInward(node: TS.Node, test: (node: TS.Node) => boolean) : TS.Node | null {
 		if (test(node)) {
 			return node
 		}
@@ -130,11 +121,52 @@ export namespace Helper {
 		let found: TS.Node | null = null
 
 		ts.visitEachChild(node, (n) => {
-			found ||= findNode(n, test)
+			found ||= findInward(n, test)
 			return n
 		}, transformContext)
 
 		return found
+	}
+
+
+	/** Whether be function, method, or get/set accessor. */
+	export function isFunctionLike(node: TS.Node): node is TS.FunctionLikeDeclaration {
+		return ts.isMethodDeclaration(node)
+			|| ts.isMethodSignature(node)
+			|| ts.isFunctionDeclaration(node)
+			|| ts.isFunctionExpression(node)
+			|| ts.isGetAccessorDeclaration(node)
+			|| ts.isSetAccessorDeclaration(node)
+			|| ts.isArrowFunction(node)
+	}
+
+	/** Whether be a property declaration or signature. */
+	export function isPropertyLike(node: TS.Node): node is TS.PropertySignature | TS.PropertyDeclaration {
+		return ts.isPropertySignature(node) || ts.isPropertyDeclaration(node)
+	}
+
+	/** Whether be property or signature, or get accessor. */
+	export function isPropertyOrGetAccessor(node: TS.Node):
+		node is TS.PropertySignature | TS.PropertyDeclaration | TS.GetAccessorDeclaration
+	{
+		return ts.isPropertySignature(node)
+			|| ts.isPropertyDeclaration(node)
+			|| ts.isGetAccessorDeclaration(node)
+	}
+
+	/** Whether be property or signature, get/set accessor. */
+	export function isPropertyOrGetSetAccessor(node: TS.Node):
+		node is TS.PropertySignature | TS.PropertyDeclaration | TS.GetAccessorDeclaration | TS.SetAccessorDeclaration
+	{
+		return ts.isPropertySignature(node)
+			|| ts.isPropertyDeclaration(node)
+			|| ts.isGetAccessorDeclaration(node)
+			|| ts.isSetAccessorDeclaration(node)
+	}
+
+	/** Whether be a method declaration or signature. */
+	export function isMethodLike(node: TS.Node): node is TS.MethodSignature | TS.MethodDeclaration {
+		return ts.isMethodSignature(node) || ts.isMethodDeclaration(node)
 	}
 
 
@@ -146,14 +178,14 @@ export namespace Helper {
 		export function getDecorators(
 			node: TS.ClassDeclaration | TS.MethodDeclaration | TS.PropertyDeclaration | TS.GetAccessorDeclaration | TS.SetAccessorDeclaration
 		): TS.Decorator[] {
-			return node.modifiers?.filter(m => ts.isDecorator(m)) || []
+			return (node.modifiers?.filter((m: TS.ModifierLike) => ts.isDecorator(m)) || []) as TS.Decorator[]
 		}
 
 		/** Get the first decorator from a class declaration, a property or method declaration. */
 		export function getFirst(
 			node: TS.ClassDeclaration | TS.MethodDeclaration | TS.PropertyDeclaration | TS.GetAccessorDeclaration | TS.SetAccessorDeclaration
 		): TS.Decorator | undefined {
-			return node.modifiers?.find(m => ts.isDecorator(m))
+			return node.modifiers?.find((m: TS.ModifierLike) => ts.isDecorator(m)) as TS.Decorator | undefined
 		}
 
 		/** Get the first decorator from a class declaration, a property or method declaration. */
@@ -621,7 +653,7 @@ export namespace Helper {
 
 			// Resolved type node exist in source file, and can be resolve again.
 			if (access.isAccess(node)) {
-				typeNode = symbol.resolvePropertyOrGetAccessor(node)?.type
+				typeNode = symbol.resolveDeclaration(node, isPropertyOrGetAccessor)?.type
 			}
 
 			// Resolve variable declaration type.
@@ -679,6 +711,19 @@ export namespace Helper {
 			return signature.getReturnType()
 		}
 
+		/** Whether returned `void` or `Promise<void>`. */
+		export function isVoidReturned(node: TS.FunctionLikeDeclaration): boolean {
+			let type = Helper.types.getReturnType(node)
+			if (!type) {
+				return false
+			}
+
+			let typeText = getTypeFullText(type)
+			
+			return typeText === 'void' || typeText === 'Promise<void>'
+		}
+
+
 		/** Test whether type is object. */
 		export function isObjectType(type: TS.Type): boolean {
 			if (type.isUnionOrIntersection()) {
@@ -735,12 +780,13 @@ export namespace Helper {
 			return typeChecker.isArrayType(type)
 		}
 
+
 		/** Analysis whether a property access expression is readonly. */
 		export function isReadonly(node: AccessNode): boolean {
 
 			// `class A{readonly p}` -> `p` and `this['p']` are readonly.
 			// `interface A{readonly p}` -> `p` and `this['p']` are readonly.
-			let nameDecl = symbol.resolveProperty(node)
+			let nameDecl = symbol.resolveDeclaration(node, isPropertyLike)
 			if (nameDecl && nameDecl.modifiers?.find(m => m.kind === ts.SyntaxKind.ReadonlyKeyword)) {
 				return true
 			}
@@ -935,7 +981,7 @@ export namespace Helper {
 				decls = decls.filter(decl => test(decl))
 			}
 
-			return decls as T[]
+			return decls as T[] | undefined
 		}
 
 		/** Resolves the first declaration from a node. */
@@ -948,67 +994,20 @@ export namespace Helper {
 			return (test ? decls?.find(test) : decls?.[0]) as T | undefined
 		}
 
-		/** Resolves the first declaration from specified type. */
-		export function resolveDeclarationByType<T extends TS.Node>(type: TS.Type, test: (node: TS.Node) => node is T): T | undefined {
-			let symbol = type.getSymbol()
-			return symbol ? resolveDeclarationBySymbol(symbol, test) : undefined
+		/** Resolves all declarations from a symbol. */
+		export function resolveDeclarationsBySymbol<T extends TS.Node>(symbol: TS.Symbol, test?: (node: TS.Node) => node is T): T[] | undefined {
+			let decls = symbol.getDeclarations()
+			if (test && decls) {
+				decls = decls.filter(decl => test(decl))
+			}
+
+			return decls as T[] | undefined
 		}
 
 		/** Resolves the first declaration from a symbol. */
-		export function resolveDeclarationBySymbol<T extends TS.Node>(symbol: TS.Symbol, test: (node: TS.Node) => node is T): T | undefined {
+		export function resolveDeclarationBySymbol<T extends TS.Node>(symbol: TS.Symbol, test?: (node: TS.Node) => node is T): T | undefined {
 			let decls = symbol.getDeclarations()
-			return decls?.find(test) as T | undefined
-		}
-
-		/** Resolve a property declaration or signature. */
-		export function resolveProperty(node: AccessNode): TS.PropertySignature | TS.PropertyDeclaration | undefined {
-			let name = ts.isPropertyAccessExpression(node) ? node.name : node.argumentExpression
-
-			let testFn = (node: TS.Node): node is TS.PropertySignature | TS.PropertyDeclaration => {
-				return ts.isPropertySignature(node) || ts.isPropertyDeclaration(node)
-			}
-
-			return resolveDeclaration(name, testFn)
-		}
-
-		/** Resolve get accessor declaration or signature. */
-		export function resolvePropertyOrGetAccessor(node: AccessNode):
-			TS.PropertySignature | TS.PropertyDeclaration | TS.GetAccessorDeclaration | undefined
-		{
-			let name = ts.isPropertyAccessExpression(node) ? node.name : node.argumentExpression
-
-			let testFn = (node: TS.Node): node is TS.PropertySignature | TS.PropertyDeclaration | TS.GetAccessorDeclaration => {
-				return ts.isPropertySignature(node)
-					|| ts.isPropertyDeclaration(node)
-					|| ts.isGetAccessorDeclaration(node)
-			}
-
-			return resolveDeclaration(name, testFn)
-		}
-
-		/** Resolve a method declaration or signature. */
-		export function resolveMethod(node: AccessNode): TS.MethodSignature | TS.MethodDeclaration | undefined {
-			let name = ts.isPropertyAccessExpression(node) ? node.name : node.argumentExpression
-
-			let testFn = (node: TS.Node): node is TS.MethodSignature | TS.MethodDeclaration => {
-				return ts.isMethodSignature(node) || ts.isMethodDeclaration(node)
-			}
-
-			return resolveDeclaration(name, testFn)
-		}
-
-		/** Resolve a method or function declaration or a signature from a call expression. */
-		export function resolveCallDeclaration(node: TS.CallExpression):
-			TS.MethodSignature | TS.MethodDeclaration | TS.FunctionDeclaration | TS.ArrowFunction | undefined
-		{
-			let testFn = (node: TS.Node): node is TS.MethodSignature | TS.MethodDeclaration | TS.FunctionDeclaration | TS.ArrowFunction => {
-				return ts.isMethodDeclaration(node)
-					|| ts.isMethodSignature(node)
-					|| ts.isFunctionDeclaration(node)
-					|| ts.isArrowFunction(node)
-			}
-
-			return resolveDeclaration(node.expression, testFn)
+			return (test ? decls?.find(test) : decls?.[0]) as T | undefined
 		}
 
 

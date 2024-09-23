@@ -46,8 +46,7 @@ export class ContextState {
 			return this.context.parent?.state.nothingReturned ?? false
 		}
 
-		let type = Helper.types.getReturnType(node as TS.FunctionLikeDeclaration)
-		return !!(type && (type.getFlags() & ts.TypeFlags.Void))
+		return Helper.types.isVoidReturned(node as TS.FunctionLikeDeclaration)
 	}
 
 	private checkEffectDecorated(): boolean {

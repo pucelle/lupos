@@ -314,8 +314,8 @@ export namespace Scoping {
 	/** Returns whether a variable node or an access node was declared as const. */
 	function isDeclaredAsConstLike(rawNode: TS.Identifier | AccessNode | TS.ThisExpression): boolean {
 		if (Helper.access.isAccess(rawNode)) {
-			let readonly = Helper.symbol.resolveProperty(rawNode) && Helper.types.isReadonly(rawNode)
-			let beMethod = Helper.symbol.resolveMethod(rawNode) && !ts.isCallExpression(rawNode.parent)
+			let readonly = Helper.symbol.resolveDeclaration(rawNode, Helper.isPropertyLike) && Helper.types.isReadonly(rawNode)
+			let beMethod = Helper.symbol.resolveDeclaration(rawNode, Helper.isMethodLike) && !ts.isCallExpression(rawNode.parent)
 
 			if (!readonly && !beMethod) {
 				return false

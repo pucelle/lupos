@@ -473,7 +473,7 @@ export class TreeOutputHandler {
 
 	/** Output parameters `(?$values)` of update function. */
 	private outputUpdateParameters(block: TS.Block): TS.ParameterDeclaration[] {
-		let hasValuesRef = !!Helper.findNode(block, node => ts.isIdentifier(node) && node.text === VariableNames.values)
+		let hasValuesRef = !!Helper.findInward(block, node => ts.isIdentifier(node) && node.text === VariableNames.values)
 		let params: TS.ParameterDeclaration[] = []
 
 		if (hasValuesRef) {
@@ -492,7 +492,7 @@ export class TreeOutputHandler {
 
 	/** Output parameters `(?$context, ?$latestValues)` of template maker init function. */
 	private outputTemplateInitParameters(block: TS.Block): TS.ParameterDeclaration[] {
-		let hasContextRef = !!Helper.findNode(block, node => ts.isIdentifier(node) && node.text === VariableNames.context)
+		let hasContextRef = !!Helper.findInward(block, node => ts.isIdentifier(node) && node.text === VariableNames.context)
 		let params: TS.ParameterDeclaration[] = []
 
 		if (hasContextRef) {

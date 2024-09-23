@@ -392,20 +392,15 @@ export class ContextCapturer {
 					continue
 				}
 
-				let propDecls = Helper.symbol.resolveDeclarations(node, n => {
-					return ts.isPropertyDeclaration(n)
-						|| ts.isGetAccessorDeclaration(n)
-						|| ts.isSetAccessorDeclaration(n)
-				})
-
+				let propDecls = Helper.symbol.resolveDeclarations(node, Helper.isPropertyOrGetSetAccessor)
 				if (!propDecls || propDecls.length === 0) {
 					continue
 				}
 
 				let allBePrivate = propDecls.every(d => {
 					return d.modifiers
-						&& d.modifiers.find(n => n.kind === ts.SyntaxKind.PrivateKeyword)
-					})
+						&& d.modifiers.find((n: TS.ModifierLike) => n.kind === ts.SyntaxKind.PrivateKeyword)
+				})
 
 				if (!allBePrivate) {
 					continue

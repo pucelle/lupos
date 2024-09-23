@@ -239,7 +239,7 @@ export namespace ObservedChecker {
 
 		// Method declarations will always not been observed, except few,
 		// like map or set, which will be processed by outer logic.
-		if (Helper.symbol.resolveMethod(node)
+		if (Helper.symbol.resolveDeclaration(node, Helper.isMethodLike)
 			&& !Helper.types.isArrayType(type)
 		) {
 			return false
@@ -266,7 +266,7 @@ export namespace ObservedChecker {
 
 		// `class A{p: Observed}` -> `this.p` and `this['p']` is observed.
 		// `interface A{p: Observed}` -> `this.p` and `this['p']` is observed.
-		let nameDecl = Helper.symbol.resolvePropertyOrGetAccessor(node)
+		let nameDecl = Helper.symbol.resolveDeclaration(node, Helper.isPropertyOrGetAccessor)
 		if (!nameDecl) {
 			return false
 		}
@@ -293,7 +293,7 @@ export namespace ObservedChecker {
 	
 	/** Returns whether a call expression returned result is observed. */
 	function isCallObserved(node: TS.CallExpression): boolean {
-		let decl = Helper.symbol.resolveCallDeclaration(node)
+		let decl = Helper.symbol.resolveDeclaration(node.expression, Helper.isFunctionLike)
 		if (!decl) {
 			return false
 		}
@@ -301,7 +301,8 @@ export namespace ObservedChecker {
 		// Directly return an observed object, which implemented `Observed<>`.
 		let returnType = Helper.types.getReturnType(decl)
 		if (returnType) {
-			let clsDecl = Helper.symbol.resolveDeclarationByType(returnType, ts.isClassDeclaration)
+			let symbol = returnType.getSymbol()
+			let clsDecl = symbol ? Helper.symbol.resolveDeclarationBySymbol(symbol, ts.isClassDeclaration) : undefined
 			if (clsDecl && Helper.cls.isImplemented(clsDecl, 'Observed', '@pucelle/ff')) {
 				return true
 			}

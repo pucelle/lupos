@@ -7,6 +7,13 @@ class TestIgnoringStringIndex extends Component {
         return this.prop[0];
     }
 }
+class TestIgnoringConstructor extends Component {
+    prop;
+    constructor() {
+        super();
+        this.prop = 2;
+    }
+}
 class TestIgnoringMethod extends Component {
     ignoreMethod() {
         return this.anyMethod();
@@ -42,12 +49,8 @@ class TestIgnoringNothingReturnedMethod extends Component {
     nothingReturnedMethod() {
         this.prop;
     }
-}
-class TestIgnoringConstructor extends Component {
-    prop;
-    constructor() {
-        super();
-        this.prop = 2;
+    async nothingReturnedAsyncMethod() {
+        this.prop;
     }
 }
 class TestIgnoringReadonlyPrivate extends Component {
