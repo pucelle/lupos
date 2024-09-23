@@ -297,7 +297,7 @@ export class TreeOutputHandler {
 			let fromExp: TS.Expression | undefined
 
 			// When visiting template.content.firstChild,
-			// uses `$context.el` to replace it.
+			// uses `$context.el` to represent it.
 			if (!visitSteps) {
 				fromExp = factory.createPropertyAccessExpression(
 					factory.createIdentifier(VariableNames.context),
@@ -307,7 +307,7 @@ export class TreeOutputHandler {
 				visitSteps = []
 			}
 
-			// Where the total reference from.
+			// Where the reference from.
 			else if (visitFromNode === this.root) {
 
 				// $node.content

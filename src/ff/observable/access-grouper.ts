@@ -3,6 +3,7 @@ import {AccessNode, factory, Helper, Modifier, ts} from '../../base'
 import {groupBy} from '../../utils'
 
 
+/** Data items pass to access grouper. */
 export interface AccessGrouperToMakeItem {
 	node: AccessNode
 	emptyKey: boolean

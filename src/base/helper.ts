@@ -622,7 +622,11 @@ export namespace Helper {
 
 		/** Get all declared variable name from a variable pattern. */
 		function* walkVariablePatternNames(node: TS.ObjectBindingPattern | TS.ArrayBindingPattern): Iterable<string> {
-			for (let element of node.elements as TS.NodeArray<TS.BindingElement>) {
+			for (let element of node.elements as TS.NodeArray<TS.BindingElement | TS.OmittedExpression>) {
+				if (ts.isOmittedExpression(element)) {
+					continue
+				}
+
 				if (ts.isObjectBindingPattern(element.name)
 					|| ts.isArrayBindingPattern(element.name)
 				) {
@@ -1629,6 +1633,17 @@ export namespace Helper {
 			}
 			else {
 				return node
+			}
+		}
+
+
+		/** Make a property name node by property name string. */
+		export function toPropertyName(name: string): TS.PropertyName {
+			if (/^\w+\d\$/.test(name)) {
+				return factory.createIdentifier(name)
+			}
+			else {
+				return factory.createStringLiteral(name)
 			}
 		}
 	}

@@ -175,9 +175,14 @@ export class HTMLNodeReferences {
 				visitFromNode,
 				visitSteps,
 			}
-
+			
 			for (let child of item.children) {
-				yield* this.outputItem(child, item.node, [])
+				if (visitSteps) {
+					yield* this.outputItem(child, item.node, [])
+				}
+				else {
+					yield* this.outputItem(child, visitFromNode, steps)
+				}
 			}
 		}
 
