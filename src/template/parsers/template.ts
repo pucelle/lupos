@@ -2,7 +2,7 @@ import type TS from 'typescript'
 import {HTMLNode, HTMLRoot} from '../html-syntax'
 import {TreeParser} from './tree'
 import {TemplateValues} from './template-values'
-import {factory, Modifier, Scope, Scoping} from '../../base'
+import {factory, Modifier, Scope, ScopeTree} from '../../base'
 
 
 export type TemplateType = 'html' | 'svg'
@@ -22,7 +22,7 @@ export class TemplateParser {
 	private readonly treeParsers: TreeParser[] = []
 
 	/** Which scope should insert contents. */
-	private innerMostScope: Scope = Scoping.getTopmostScope()
+	private innerMostScope: Scope = ScopeTree.getTopmost()
 
 	constructor(type: TemplateType, string: string, values: TS.Expression[], rawNode: TS.TaggedTemplateExpression) {
 		this.type = type
@@ -49,14 +49,14 @@ export class TemplateParser {
 	 * then generated codes can't be appended to topmost scope.
 	 */
 	addRefedDeclaration(node: TS.Node) {
-		let scope = Scoping.findClosestScopeOfNode(node)
+		let scope = ScopeTree.findClosestByNode(node)
 		if (!scope) {
 			return
 		}
 
 		// Pick scope with larger depth.
-		// One must contain another, so only need to compare visiting index.
-		if (this.innerMostScope.visitingIndex < scope.visitingIndex) {
+		// One must contain another, so only need to compare visit index.
+		if (this.innerMostScope.visitIndex < scope.visitIndex) {
 			this.innerMostScope = scope
 		}
 	}

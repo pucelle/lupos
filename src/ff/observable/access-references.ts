@@ -1,4 +1,4 @@
-import {AccessNode, factory, Helper, InterpolationContentType, Interpolator, Modifier, transformContext, ts, Visiting, Scoping} from '../../base'
+import {AccessNode, factory, Helper, InterpolationContentType, Interpolator, Modifier, transformContext, ts, VisitTree, ScopeTree} from '../../base'
 import type TS from 'typescript'
 import {ContextTree} from './context-tree'
 import {Context} from './context'
@@ -13,7 +13,7 @@ export namespace AccessReferences {
 
 	/** 
 	 * The referenced expressions like `a`, `a.b` of `a.b.c`,
-	 * and the mapped visiting index of original expression `a.b.c`.
+	 * and the mapped visit index of original expression `a.b.c`.
 	 */
 	const referenceMap: ListMap<string, number> = new ListMap()
 
@@ -51,7 +51,7 @@ export namespace AccessReferences {
 			return true
 		}
 
-		let childIndices = Visiting.getChildIndices(index)
+		let childIndices = VisitTree.getChildIndices(index)
 		if (!childIndices) {
 			return false
 		}
@@ -62,9 +62,9 @@ export namespace AccessReferences {
 
 	/** Visit an assess node, and it may make several reference items. */
 	export function visitAssess(node: AccessNode) {
-		let expIndex = Visiting.getIndex(node.expression)!
+		let expIndex = VisitTree.getIndex(node.expression)!
 		let nameNode = Helper.access.getNameNode(node)
-		let nameIndex = Visiting.getIndex(nameNode)
+		let nameIndex = VisitTree.getIndex(nameNode)
 
 		visitAssessVisitor(node.expression, expIndex)
 		visitAssessVisitor(nameNode, nameIndex)
@@ -84,7 +84,7 @@ export namespace AccessReferences {
 
 		// `a?.b` has been replaced to `a.b`
 		if (Helper.access.isAccess(node) || Helper.variable.isVariableIdentifier(node)) {
-			let hashName = Scoping.hashNode(node).name
+			let hashName = ScopeTree.hashNode(node).name
 			referenceMap.add(hashName, topIndex)
 		}
 
@@ -99,7 +99,7 @@ export namespace AccessReferences {
 	 */
 	export function visitAssignment(node: TS.Expression) {
 		if (Helper.access.isAccess(node) || Helper.variable.isVariableIdentifier(node)) {
-			let hashName = Scoping.hashNode(node).name
+			let hashName = ScopeTree.hashNode(node).name
 			let indices = referenceMap.get(hashName)
 			
 			if (indices) {
@@ -117,10 +117,10 @@ export namespace AccessReferences {
 			return
 		}
 
-		let node = Visiting.getNode(index) as AccessNode
-		let expIndex = Visiting.getIndex(node.expression)!
+		let node = VisitTree.getNode(index) as AccessNode
+		let expIndex = VisitTree.getIndex(node.expression)!
 		let nameNode = Helper.access.getNameNode(node)
-		let nameIndex = Visiting.getIndex(nameNode)
+		let nameIndex = VisitTree.getIndex(nameNode)
 		let referenced = false
 
 		// Use a reference variable to replace expression.
@@ -192,8 +192,8 @@ export namespace AccessReferences {
 	 *     `a[b++]` -> `$ref_ = b++; ... a[$ref_]`
 	 */
 	function reference(index: number, context: Context) {
-		let varDeclListIndex = Visiting.findOutwardMatch(index, context.visitingIndex, ts.isVariableDeclaration)
-		let varScope = Scoping.findClosestScope(index)
+		let varDeclListIndex = VisitTree.findOutwardMatch(index, context.visitIndex, ts.isVariableDeclaration)
+		let varScope = ScopeTree.findClosest(index)
 		let refName = varScope.makeUniqueVariable('$ref_')
 
 		// Insert one variable declaration to existing declaration list: `var ... $ref_ = ...`

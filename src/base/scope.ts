@@ -1,8 +1,8 @@
 import type TS from 'typescript'
 import {ts} from './global'
-import {Visiting} from './visiting'
+import {VisitTree} from './visite-tree'
 import {Helper} from './helper'
-import {Scoping} from './scoping'
+import {ScopeTree} from './scope-tree'
 import {InterpolationContentType, Interpolator} from './interpolator'
 
 
@@ -11,7 +11,7 @@ export class Scope {
 
 	readonly node: TS.FunctionLikeDeclaration | TS.ForStatement | TS.Block | TS.SourceFile
 	readonly parent: Scope | null
-	readonly visitingIndex: number
+	readonly visitIndex: number
 
 	/** All variables declared here. */
 	private variables: Map<string, TS.Node | null> = new Map()
@@ -23,7 +23,7 @@ export class Scope {
 	) {
 		this.node = node
 		this.parent = parent
-		this.visitingIndex = index
+		this.visitIndex = index
 	}
 
 	/** Visit a descendant node. */
@@ -157,11 +157,11 @@ export class Scope {
 	 */
 	addVariable(name: string) {
 		let scope = this.findClosestScopeToAddStatements()
-		Scoping.addVariableByScope(scope, name)
+		ScopeTree.addVariableToScope(scope, name)
 	}
 
 	/** 
-	 * Find an ancestral scope, and a child visiting index,
+	 * Find an ancestral scope, and a child visit index,
 	 * which can insert variable before it.
 	 */
 	findClosestScopeToAddStatements(): Scope {
@@ -186,15 +186,15 @@ export class Scope {
 		Interpolator.before(toIndex, InterpolationContentType.Declaration, () => stats)
 	}
 
-	/** Get best visiting index to add variable before it. */
+	/** Get best visit index to add variable before it. */
 	getIndexToAddStatements(): number {
-		let toIndex = Visiting.getFirstChildIndex(this.visitingIndex)!
+		let toIndex = VisitTree.getFirstChildIndex(this.visitIndex)!
 
 		// Insert before the first not import statements.
 		if (this.isTopmost()) {
 			let beforeNode = (this.node as TS.SourceFile).statements.find(n => !ts.isImportDeclaration(n))
 			if (beforeNode) {
-				toIndex = Visiting.getIndex(beforeNode)
+				toIndex = VisitTree.getIndex(beforeNode)
 			}
 		}
 

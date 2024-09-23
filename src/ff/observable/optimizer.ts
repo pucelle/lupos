@@ -125,10 +125,10 @@ export namespace Optimizer {
 		}
 
 		let toPosition = ContextTree.findClosestPositionToAddStatements(
-			context.visitingIndex, context
+			context.visitIndex, context
 		)
 
-		Modifier.moveOnce(context.visitingIndex, toPosition.index)
+		Modifier.moveOnce(context.visitIndex, toPosition.index)
 		context.capturer.moveCapturedOutwardTo(toPosition.context.capturer)
 	}
 

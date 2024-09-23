@@ -5,6 +5,7 @@ class TestReadonlyModifier extends Component {
     prop1 = { value: 'Text' };
     prop2 = { value: 'Text' };
     render() {
+        trackGet(this.prop1, "value");
         trackGet(this, "prop2");
         return this.prop1.value
             + this.prop2.value;

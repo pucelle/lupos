@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {factory, Helper, Interpolator, MutableMask, Scoping, ts} from '../../base'
+import {factory, Helper, Interpolator, MutableMask, ScopeTree, ts} from '../../base'
 import {VariableNames} from './variable-names'
 import {TemplateParser} from './template'
 
@@ -27,7 +27,7 @@ export class TemplateValues {
 	private checkIndicesMutable() {
 		for (let i = 0; i < this.valueNodes.length; i++) {
 			let node = this.valueNodes[i]
-			this.indicesMutable.set(i, Scoping.testMutable(node))
+			this.indicesMutable.set(i, ScopeTree.testMutable(node))
 		}
 	}
 
@@ -89,7 +89,7 @@ export class TemplateValues {
 
 				let interpolated = Interpolator.outputNodeSelf(rawValueNode)
 
-				let transferred = Scoping.transferToTopmostScope(
+				let transferred = ScopeTree.transferToTopmostScope(
 					interpolated,
 					rawValueNode,
 					this.transferNodeToTopmostScope.bind(this, index)
@@ -145,7 +145,7 @@ export class TemplateValues {
 	 * and returns it's reference node.
 	 */
 	private outputValueNodeOf(rawNode: TS.Expression, transferringToTopmostScope: boolean): TS.Expression {
-		let hash = Scoping.hashNode(rawNode).name
+		let hash = ScopeTree.hashNode(rawNode).name
 		let valueIndex: number
 
 		if (this.valueHash.has(hash)) {

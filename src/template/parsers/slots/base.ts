@@ -1,7 +1,7 @@
 import type TS from 'typescript'
 import {HTMLNode, HTMLNodeType} from '../../html-syntax'
 import {TreeParser} from '../tree'
-import {factory, Helper, Modifier, Scoping, TemplateSlotPlaceholder, ts} from '../../../base'
+import {factory, Helper, Modifier, ScopeTree, TemplateSlotPlaceholder, ts} from '../../../base'
 import {VariableNames} from '../variable-names'
 import {TemplateParser} from '../template'
 import {SlotPositionType} from '../../../enums'
@@ -294,7 +294,7 @@ export abstract class SlotParserBase {
 
 		// Resolve class declarations directly.
 		if (isNamedComponent) {
-			let ref = Scoping.getDeclarationByName(tagName, this.template.rawNode)
+			let ref = ScopeTree.getDeclarationByName(tagName, this.template.rawNode)
 			if (!ref) {
 				return
 			}

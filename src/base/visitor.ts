@@ -1,9 +1,9 @@
 import type TS from 'typescript'
-import {Visiting} from './visiting'
+import {VisitTree} from './visite-tree'
 import {Interpolator} from './interpolator'
 import {TransformerExtras} from 'ts-patch'
 import {setGlobal, setSourceFile, setTransformContext} from './global'
-import {Scoping} from './scoping'
+import {ScopeTree} from './scope-tree'
 import {runPostVisitCallbacks, runPreVisitCallbacks} from './visitor-callbacks'
 
 
@@ -35,7 +35,7 @@ export function defineVisitor(visitor: VisitFunction) {
  */
 export function applyVisitors(node: TS.Node): () => void {
 	let doMoreAfterVisitedChildren: Function[] = []
-	let index = Visiting.getIndex(node)
+	let index = VisitTree.getIndex(node)
 
 	for (let visitor of Visitors) {
 		let more = visitor(node, index)
@@ -65,16 +65,16 @@ export function transformer(program: TS.Program, extras: TransformerExtras) {
 			runPreVisitCallbacks()
 
 			function initVisitor(node: TS.Node): TS.Node {
-				Visiting.toNext(node)
-				Scoping.toNext(node)
+				VisitTree.toNext(node)
+				ScopeTree.toNext(node)
 
-				Visiting.toChild()
-				Scoping.toChild()
+				VisitTree.toChild()
+				ScopeTree.toChild()
 
 				ts.visitEachChild(node, initVisitor, ctx)
 				
-				Visiting.toParent()
-				Scoping.toParent()
+				VisitTree.toParent()
+				ScopeTree.toParent()
 
 				// Returned result has no matter.
 				return node

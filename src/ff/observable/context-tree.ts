@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {Helper, ts, Visiting} from '../../base'
+import {Helper, ts, VisitTree} from '../../base'
 import {Context} from './context'
 
 
@@ -52,7 +52,7 @@ export enum ContextTypeMask {
 	FlowInterruption = 2 ** 10,
 }
 
-/** Content and a visiting index position. */
+/** Content and a visit index position. */
 export interface ContextTargetPosition{
 	context: Context
 	index: number
@@ -62,13 +62,17 @@ export interface ContextTargetPosition{
 export namespace ContextTree {
 
 	let contextStack: (Context | null)[] = []
-	export let current: Context | null = null
+	let current: Context | null = null
+
+	/** Visit index -> Context. */
+	const ContextMap: Map<number, Context> = new Map()
 
 
 	/** Initialize before visiting a new source file. */
 	export function init() {
 		contextStack = []
 		current = null
+		ContextMap.clear()
 	}
 
 	/** Check Context type of a node. */
@@ -208,7 +212,10 @@ export namespace ContextTree {
 	
 	/** Create a context from node and push to stack. */
 	export function createContext(type: ContextTypeMask, node: TS.Node): Context {
-		let context = new Context(type, node, current)
+		let index = VisitTree.getIndex(node)
+		let context = new Context(type, node, index, current)
+
+		ContextMap.set(index, context)
 		contextStack.push(current)
 
 		return current = context
@@ -230,6 +237,23 @@ export namespace ContextTree {
 		}
 	}
 
+
+	/** Find closest Context contains or equals node with specified visit index. */
+	export function findClosest(index: number): Context {
+		let context = ContextMap.get(index)
+
+		while (!context) {
+			index = VisitTree.getParentIndex(index)!
+			context = ContextMap.get(index)
+		}
+
+		return context
+	}
+
+	/** Find closest context contains or equals node. */
+	export function findClosestByNode(node: TS.Node): Context {
+		return findClosest(VisitTree.getIndex(node))
+	}
 
 	/** 
 	 * Walk context itself and descendants.
@@ -266,7 +290,7 @@ export namespace ContextTree {
 	 */
 	export function findClosestPositionToAddStatements(index: number, from: Context): ContextTargetPosition {
 		let context = from
-		let parameterIndex = Visiting.findOutwardMatch(index, from.visitingIndex, ts.isParameter)
+		let parameterIndex = VisitTree.findOutwardMatch(index, from.visitIndex, ts.isParameter)
 
 		// Parameter initializer, no place to insert statements, returns position itself.
 		if (parameterIndex !== undefined) {
@@ -276,7 +300,7 @@ export namespace ContextTree {
 			}
 		}
 
-		let node = Visiting.getNode(index)
+		let node = VisitTree.getNode(index)
 
 		while (true) {
 
@@ -319,7 +343,7 @@ export namespace ContextTree {
 
 		return {
 			context,
-			index: Visiting.getIndex(node),
+			index: VisitTree.getIndex(node),
 		}
 	}
 }

@@ -18,7 +18,7 @@ export class ContextVariables {
 
 	/** 
 	 * Whether `this` is observed.
-	 * Only available for function-like type of context.
+	 * Broadcast to descendant non-function contexts.
 	 */
 	readonly thisObserved: boolean
 
@@ -74,7 +74,10 @@ export class ContextVariables {
 		return false
 	}
 
-	/** Get whether has observed a declared variable by name. */
+	/** 
+	 * Get whether has observed a declared variable by name.
+	 * If current context has no specified variable declared, try find parent context.
+	 */
 	isVariableObserved(name: string): boolean {
 		if (this.variableObserved.has(name)) {
 			return this.variableObserved.get(name)!

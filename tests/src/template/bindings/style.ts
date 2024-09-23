@@ -23,7 +23,7 @@ class TestStyleBinding extends Component {
 	}
 
 	testModifier() {
-		return html`<div :style.color=${this.styleValue} />`
+		return html`<div :style.background-color=${this.styleValue} />`
 	}
 
 	testPxModifier() {

@@ -3,9 +3,9 @@ import type TS from 'typescript'
 import {factory, ts} from './global'
 import {Helper} from './helper'
 import {InterpolationContentType, Interpolator} from './interpolator'
-import {Visiting} from './visiting'
+import {VisitTree} from './visite-tree'
 import {definePostVisitCallback, definePreVisitCallback} from './visitor-callbacks'
-import {Scoping} from './scoping'
+import {ScopeTree} from './scope-tree'
 
 
 /** 
@@ -31,7 +31,7 @@ export namespace Modifier {
 	export function removeImportOf(fromNode: TS.Node) {
 		let importNode = Helper.symbol.resolveDeclaration(fromNode, ts.isImportSpecifier, false)
 		if (importNode) {
-			let index = Visiting.getIndex(importNode)
+			let index = VisitTree.getIndex(importNode)
 			removeOnce(index)
 		}
 	}
@@ -61,12 +61,12 @@ export namespace Modifier {
 
 	/** Add a member to a class declaration. */
 	export function addClassMember(classIndex: number, member: TS.ClassElement, preferInsertToHead: boolean = false) {
-		let node = Visiting.getNode(classIndex) as TS.ClassDeclaration
+		let node = VisitTree.getNode(classIndex) as TS.ClassDeclaration
 		let name = Helper.cls.getMemberName(member)
 		let existing = node.members.find(m => Helper.cls.getMemberName(m) === name)
 
 		if (existing) {
-			let toIndex = Visiting.getIndex(existing)
+			let toIndex = VisitTree.getIndex(existing)
 			Interpolator.replace(toIndex, InterpolationContentType.Normal, () => member)
 		}
 		else if (preferInsertToHead) {
@@ -126,7 +126,7 @@ export namespace Modifier {
 
 	/** Apply imports to do interpolation. */
 	export function applyInterpolation() {
-		let sourceFileIndex = Scoping.getTopmostScope().getIndexToAddStatements()
+		let sourceFileIndex = ScopeTree.getTopmost().getIndexToAddStatements()
 
 
 		// A ts bug here: if insert some named import identifiers,
@@ -155,7 +155,7 @@ export namespace Modifier {
 
 			// Add more imports.
 			if (existingImportDecl) {
-				let namedImportsIndex = Visiting.getIndex(existingImportDecl.importClause!.namedBindings!)
+				let namedImportsIndex = VisitTree.getIndex(existingImportDecl.importClause!.namedBindings!)
 				Interpolator.append(namedImportsIndex, InterpolationContentType.Import, () => namedImports)
 				
 				// Because modified whole import node, cause type imports still exist.
@@ -210,7 +210,7 @@ export namespace Modifier {
 		for (let specifier of specifiers) {
 			let type = Helper.symbol.resolveDeclaration(specifier, ts.isTypeAliasDeclaration)
 			if (type) {
-				removeOnce(Visiting.getIndex(specifier))
+				removeOnce(VisitTree.getIndex(specifier))
 			}
 		}
 	}

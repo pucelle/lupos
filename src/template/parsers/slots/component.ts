@@ -1,6 +1,6 @@
 import type TS from 'typescript'
 import {SlotParserBase} from './base'
-import {factory, Scoping} from '../../../base'
+import {factory, ScopeTree} from '../../../base'
 import {cleanList} from '../../../utils'
 
 
@@ -10,7 +10,7 @@ export class ComponentSlotParser extends SlotParserBase {
 		this.refAsComponent()
 
 		let comName = this.node.tagName!
-		let decl = Scoping.getDeclarationByName(comName, this.template.rawNode)
+		let decl = ScopeTree.getDeclarationByName(comName, this.template.rawNode)
 		if (decl) {
 			this.template.addRefedDeclaration(decl)
 		}

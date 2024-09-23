@@ -1,6 +1,6 @@
 import type TS from 'typescript'
 import {SlotParserBase} from './base'
-import {factory, ts, Helper, TemplateSlotPlaceholder, Scoping, Modifier} from '../../../base'
+import {factory, ts, Helper, TemplateSlotPlaceholder, ScopeTree, Modifier} from '../../../base'
 import {VariableNames} from '../variable-names'
 import {addToList} from '../../../utils'
 
@@ -67,7 +67,7 @@ export class BindingSlotParser extends SlotParserBase {
 		else {
 
 			// :bindingName -> bindingName
-			let bindingClassDecl = Scoping.getDeclarationByName(this.name, this.template.rawNode)
+			let bindingClassDecl = ScopeTree.getDeclarationByName(this.name, this.template.rawNode)
 
 			// `Import ClassBinding`
 			// `class ClassBinding {...}`

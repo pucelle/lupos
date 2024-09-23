@@ -2,7 +2,6 @@ import type TS from 'typescript'
 import {AccessNode} from '../../base/helper'
 import {ts, Helper, typeChecker} from '../../base'
 import {ContextTree} from './context-tree'
-import {Context} from './context'
 
 
 /** 
@@ -68,17 +67,17 @@ export namespace ObservedChecker {
 
 
 	/** Whether parameter declaration should be observed. */
-	export function isParameterObserved(rawNode: TS.ParameterDeclaration, context: Context = ContextTree.current!): boolean {
+	export function isParameterObserved(rawNode: TS.ParameterDeclaration): boolean {
 		let typeNode = rawNode.type
 		if (typeNode && isTypeNodeObserved(typeNode)) {
 			return true
 		}
 
-		if (isParameterObservedByCallingBroadcasted(rawNode, context)) {
+		if (isParameterObservedByCallingBroadcasted(rawNode)) {
 			return true
 		}
 
-		if (rawNode.initializer && isObserved(rawNode.initializer, context)) {
+		if (rawNode.initializer && isObserved(rawNode.initializer)) {
 			return true
 		}
 
@@ -87,7 +86,7 @@ export namespace ObservedChecker {
 
 	
 	/** Broadcast observed from parent calling expression to all parameters. */
-	function isParameterObservedByCallingBroadcasted(rawNode: TS.ParameterDeclaration, context: Context = ContextTree.current!): boolean {
+	function isParameterObservedByCallingBroadcasted(rawNode: TS.ParameterDeclaration): boolean {
 
 		// `a.b.map((item) => {return item.value})`
 		// `a.b.map(item => item.value)`
@@ -115,7 +114,7 @@ export namespace ObservedChecker {
 		let callFrom = exp.expression
 
 		// Must use parent context.
-		return isObserved(callFrom, context.parent!)
+		return isObserved(callFrom)
 	}
 
 
@@ -130,13 +129,13 @@ export namespace ObservedChecker {
 	 * - a conditional expression
 	 * - an as expression
 	 */
-	export function isObserved(rawNode: TS.Node, context: Context = ContextTree.current!): rawNode is CanObserveNode {
+	export function isObserved(rawNode: TS.Node): rawNode is CanObserveNode {
 
 		// `a.b`
 		// `(a ? b : c).d`
 		// `(a ?? b).b`
 		if (Helper.access.isAccess(rawNode)) {
-			return isAccessingObserved(rawNode, context)
+			return isAccessObserved(rawNode)
 		}
 
 		// `this`
@@ -144,7 +143,7 @@ export namespace ObservedChecker {
 		else if (rawNode.kind === ts.SyntaxKind.ThisKeyword
 			|| Helper.variable.isVariableIdentifier(rawNode)
 		) {
-			return isIdentifierObserved(rawNode as TS.Identifier | TS.ThisExpression, context)
+			return isIdentifierObserved(rawNode as TS.Identifier | TS.ThisExpression)
 		}
 
 		// `a && b`, `a || b`, `a ?? b`, can observe only if both a & b can observe.
@@ -199,7 +198,9 @@ export namespace ObservedChecker {
 	 * Node must be the top most property access expression.
 	 * E.g., for `a.b.c`, sub identifier `b` or `c` is not allowed.
 	 */
-	function isIdentifierObserved(rawNode: TS.Identifier | TS.ThisExpression, context = ContextTree.current!): boolean {
+	function isIdentifierObserved(rawNode: TS.Identifier | TS.ThisExpression): boolean {
+		let context = ContextTree.findClosestByNode(rawNode)
+
 		if (rawNode.kind === ts.SyntaxKind.ThisKeyword) {
 			return context.variables.thisObserved
 		}
@@ -210,27 +211,40 @@ export namespace ObservedChecker {
 
 
 	/** Returns whether a property accessing should be observed. */
-	export function isAccessingObserved(rawNode: AccessNode, context: Context = ContextTree.current!): boolean {
+	export function isAccessObserved(rawNode: AccessNode): boolean {
+		return isAccessObservedInternalUse(rawNode, true)
+	}
+
+	/** Returns whether a property accessing should be observed, ignores readonly testing. */
+	export function isParentalAccessObserved(rawNode: AccessNode): boolean {
+		return isAccessObservedInternalUse(rawNode, false)
+	}
+
+
+	/** Returns whether a property accessing should be observed, for internally use only. */
+	function isAccessObservedInternalUse(rawNode: AccessNode, considerReadonly: boolean): boolean {
 
 		// Will never observe private identifier like `a.#b`.
 		if (ts.isPropertyAccessExpression(rawNode) && ts.isPrivateIdentifier(rawNode.name)) {
 			return false
 		}
 
-		// Property declaration has specified as observed type or observed initializer.
-		if (checkPropertyOrGetAccessorObserved(rawNode)) {
-			return true
-		}
-
 		// `[]`, `Map`, `Set`.
 		if (isStruct(rawNode.expression)) {
-			return isObserved(rawNode.expression, context)
+			return isObserved(rawNode.expression)
 		}
 
 		// Readonly properties are always not been observed.
-		let readonly = Helper.types.isReadonly(rawNode)
-		if (readonly) {
-			return false
+		if (considerReadonly) {
+			let readonly = Helper.types.isReadonly(rawNode)
+			if (readonly) {
+				return false
+			}
+		}
+
+		// Property declaration has specified as observed type or observed initializer.
+		if (checkPropertyOrGetAccessorObserved(rawNode)) {
+			return true
 		}
 
 		// Take `node = a.b.c` as example, exp is `a.b`.
@@ -259,7 +273,11 @@ export namespace ObservedChecker {
 		// 	return false
 		// }
 
-		return isObserved(exp, context)
+		if (Helper.access.isAccess(exp)) {
+			return isParentalAccessObserved(exp)
+		}
+
+		return isObserved(exp)
 	}
 
 

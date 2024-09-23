@@ -1,6 +1,6 @@
 import type TS from 'typescript'
 import {ObservedChecker} from './observed-checker'
-import {Helper, AccessNode, ts, Visiting, FlowInterruptionTypeMask, Scoping} from '../../base'
+import {Helper, AccessNode, ts, VisitTree, FlowInterruptionTypeMask, ScopeTree} from '../../base'
 import {ContextState} from './context-state'
 import {ContextTypeMask} from './context-tree'
 import {ContextVariables} from './context-variables'
@@ -16,7 +16,7 @@ import {AccessReferences} from './access-references'
 export class Context {
 
 	readonly type: ContextTypeMask
-	readonly visitingIndex: number
+	readonly visitIndex: number
 	readonly node: TS.Node
 	readonly parent: Context | null
 	readonly children: Context[] = []
@@ -30,9 +30,9 @@ export class Context {
 	 */
 	readonly closestFunctionLike: Context
 
-	constructor(type: ContextTypeMask, rawNode: TS.Node, parent: Context | null) {
+	constructor(type: ContextTypeMask, rawNode: TS.Node, index: number, parent: Context | null) {
 		this.type = type
-		this.visitingIndex = Visiting.getIndex(rawNode)
+		this.visitIndex = index
 		this.node = rawNode
 		this.parent = parent
 
@@ -55,10 +55,10 @@ export class Context {
 	 */
 	getDeclarationScope() {
 		if (Helper.isFunctionLike(this.node) && this.node.body) {
-			return Scoping.findClosestScopeOfNode(this.node.body)
+			return ScopeTree.findClosestByNode(this.node.body)
 		}
 		else {
-			return Scoping.findClosestScopeOfNode(this.node)
+			return ScopeTree.findClosestByNode(this.node)
 		}
 	}
 
@@ -84,7 +84,7 @@ export class Context {
 		this.state.mergeChildContext(child)
 
 		if (child.state.isFlowInterrupted()) {
-			this.capturer.breakCaptured(child.visitingIndex, child.state.flowInterruptionType)
+			this.capturer.breakCaptured(child.visitIndex, child.state.flowInterruptionType)
 		}
 	}
 
@@ -136,13 +136,13 @@ export class Context {
 		// Empty `return`.
 		else if (ts.isReturnStatement(node) && !node.expression) {
 			this.state.unionFlowInterruptionType(FlowInterruptionTypeMask.Return)
-			this.capturer.breakCaptured(this.visitingIndex, FlowInterruptionTypeMask.Return)
+			this.capturer.breakCaptured(this.visitIndex, FlowInterruptionTypeMask.Return)
 		}
 
 		// `break` or `continue`.
 		else if (ts.isBreakOrContinueStatement(node)) {
 			this.state.unionFlowInterruptionType(FlowInterruptionTypeMask.BreakLike)
-			this.capturer.breakCaptured(this.visitingIndex, FlowInterruptionTypeMask.BreakLike)
+			this.capturer.breakCaptured(this.visitIndex, FlowInterruptionTypeMask.BreakLike)
 		}
 	}
 
@@ -156,8 +156,8 @@ export class Context {
 			return
 		}
 
-		if (ObservedChecker.isAccessingObserved(node)) {
-			this.capturer.capture(Visiting.getIndex(node), 'get')
+		if (ObservedChecker.isAccessObserved(node)) {
+			this.capturer.capture(VisitTree.getIndex(node), 'get')
 		}
 	}
 
@@ -171,8 +171,8 @@ export class Context {
 			return
 		}
 
-		if (ObservedChecker.isAccessingObserved(node)) {
-			this.capturer.capture(Visiting.getIndex(node), 'set')
+		if (ObservedChecker.isAccessObserved(node)) {
+			this.capturer.capture(VisitTree.getIndex(node), 'set')
 		}
 	}
 }

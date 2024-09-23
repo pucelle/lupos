@@ -5,32 +5,32 @@ import {definePreVisitCallback} from './visitor-callbacks'
 
 interface VisitingItem {
 
-	/** Visiting index unique among whole source file. */
+	/** Visit index unique among whole source file. */
 	index: number
 }
 
 
 /** 
- * Indicate node global visiting index when visiting.
+ * Indicate node global visit index when visiting.
  * It applies an unique index to each node,
  * and use this index to do operations,
  * which can avoid confusing with raw node and made node.
  */
-export namespace Visiting {
+export namespace VisitTree {
 
 	let stack: VisitingItem[] = []
 	let indexSeed: number = -1
 
-	/** Parent visiting index -> child visiting indices. */
+	/** Parent visit index -> child visiting indices. */
 	const ChildMap: ListMap<number, number> = new ListMap()
 
-	/** Child visiting index -> parent visiting index. */
+	/** Child visit index -> parent visit index. */
 	const ParentMap: Map<number, number> = new Map()
 
-	/** Node visiting index -> Node. */
+	/** Node visit index -> Node. */
 	const NodeMap: Map<number, TS.Node> = new Map()
 
-	/** Node -> Node visiting index. */
+	/** Node -> Node visit index. */
 	const IndexMap: Map<TS.Node, number> = new Map()
 
 	let current: VisitingItem = {
@@ -82,18 +82,18 @@ export namespace Visiting {
 	}
 
 
-	/** Get child visiting index, by parent index and child sibling index. */
+	/** Get child visit index, by parent index and child sibling index. */
 	export function getChildIndex(parentIndex: number, siblingIndex: number): number | undefined {
 		return ChildMap.get(parentIndex)![siblingIndex]
 	}
 
-	/** Get first child visiting index, by parent index. */
+	/** Get first child visit index, by parent index. */
 	export function getFirstChildIndex(parentIndex: number): number | undefined {
 		let list = ChildMap.get(parentIndex)
 		return list ? list[0] : undefined
 	}
 
-	/** Get last child visiting index, by parent index. */
+	/** Get last child visit index, by parent index. */
 	export function getLastChildIndex(parentIndex: number): number | undefined {
 		let list = ChildMap.get(parentIndex)
 		return list ? list[list.length - 1] : undefined
@@ -119,22 +119,22 @@ export namespace Visiting {
 		return childIndices.map(index => NodeMap.get(index)!)
 	}
 
-	/** Get parent visiting index by child visiting index. */
+	/** Get parent visit index by child visit index. */
 	export function getParentIndex(childIndex: number): number | undefined {
 		return ParentMap.get(childIndex)!
 	}
 
-	/** Test whether have raw node by visiting index. */
+	/** Test whether have raw node by visit index. */
 	export function hasNode(node: TS.Node): boolean {
 		return IndexMap.has(node)
 	}
 
-	/** Get raw node by visiting index. */
+	/** Get raw node by visit index. */
 	export function getNode(index: number): TS.Node {
 		return NodeMap.get(index)!
 	}
 
-	/** Get visiting index by a raw node. */
+	/** Get visit index by a raw node. */
 	export function getIndex(rawNode: TS.Node): number {
 		return IndexMap.get(rawNode)!
 	}
@@ -242,7 +242,7 @@ export namespace Visiting {
 
 	
 
-	/** Look outward for a visiting index, and the node at where match test fn. */
+	/** Look outward for a visit index, and the node at where match test fn. */
 	export function findOutwardMatch(fromIndex: number, untilIndex: number | undefined, test: (node: TS.Node) => boolean) : number | undefined {
 		let index: number | undefined = fromIndex
 
@@ -260,4 +260,4 @@ export namespace Visiting {
 	}
 }
 
-definePreVisitCallback(Visiting.initialize)
+definePreVisitCallback(VisitTree.initialize)

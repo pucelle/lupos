@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {InterpolationContentType, AccessNode, Helper, Interpolator, InterpolationPosition, Visiting, ts, FlowInterruptionTypeMask, Scoping} from '../../base'
+import {InterpolationContentType, AccessNode, Helper, Interpolator, InterpolationPosition, VisitTree, ts, FlowInterruptionTypeMask, ScopeTree} from '../../base'
 import {Context} from './context'
 import {ContextTree, ContextTypeMask} from './context-tree'
 import {AccessGrouper, AccessGrouperToMakeItem} from './access-grouper'
@@ -48,7 +48,7 @@ export class ContextCapturer {
 					continue
 				}
 
-				let hashName = Scoping.hashIndex(index).name
+				let hashName = ScopeTree.hashIndex(index).name
 				ownMap.set(hashName, index)
 			}
 
@@ -204,7 +204,7 @@ export class ContextCapturer {
 	/** Prepare latest captured item. */
 	private endCapture() {
 		let item = this.latestCaptured
-		let index = this.context.visitingIndex
+		let index = this.context.visitIndex
 		let node = this.context.node
 
 		item.toIndex = index
@@ -215,7 +215,7 @@ export class ContextCapturer {
 
 			// Abstract function or function type declaration has no body.
 			if (body) {
-				item.toIndex = Visiting.getIndex(body)
+				item.toIndex = VisitTree.getIndex(body)
 
 				if (ts.isBlock(body)) {
 					item.position = InterpolationPosition.Append
@@ -300,24 +300,24 @@ export class ContextCapturer {
 		// Locate which captured item should move indices to.
 		// Find the first item `toIndex` larger in child-first order..
 		let item = this.captured.find(item => {
-			return Visiting.isFollowingOfOrEqualInChildFirstOrder(item.toIndex, fromCapturer.context.visitingIndex)
+			return VisitTree.isFollowingOfOrEqualInChildFirstOrder(item.toIndex, fromCapturer.context.visitIndex)
 		}) ?? this.latestCaptured
 
 		let fromScope = fromCapturer.context.getDeclarationScope()
 		let toScope = this.context.getDeclarationScope()
-		let scopesLeaved = Scoping.findWalkingOutwardLeaves(fromScope, toScope)
+		let scopesLeaved = ScopeTree.findWalkingOutwardLeaves(fromScope, toScope)
 		let residualIndices: CapturedIndex[] = []
 
 		for (let index of indices) {
-			let node = Visiting.getNode(index.index)
-			let hashed = Scoping.hashIndex(index.index)
+			let node = VisitTree.getNode(index.index)
+			let hashed = ScopeTree.hashIndex(index.index)
 
 			// `a[i]`, and a is an array, ignore hash of `i`.
 			if (ts.isElementAccessExpression(node)
 				&& ts.isIdentifier(node.argumentExpression)
 				&& Helper.types.isArrayType(Helper.types.getType(node.expression))
 			) {
-				hashed = Scoping.hashNode(node.expression)
+				hashed = ScopeTree.hashNode(node.expression)
 			}
 
 			// Leave contexts contain any referenced variable.
@@ -345,7 +345,7 @@ export class ContextCapturer {
 					continue
 				}
 
-				let hashName = Scoping.hashIndex(index.index).name
+				let hashName = ScopeTree.hashIndex(index.index).name
 
 				if (ownHashes.has(hashName)) {
 					removeFromList(item.indices, index)
@@ -365,7 +365,7 @@ export class ContextCapturer {
 			for (; startChildIndex < this.context.children.length; startChildIndex++) {
 				let child = this.context.children[startChildIndex]
 
-				if (!Visiting.isPrecedingOfOrEqual(child.visitingIndex, item.toIndex)) {
+				if (!VisitTree.isPrecedingOfOrEqual(child.visitIndex, item.toIndex)) {
 					break
 				}
 
@@ -384,7 +384,7 @@ export class ContextCapturer {
 	*walkPrivateCaptured(ofClass: TS.ClassLikeDeclaration): Iterable<{name: string, index: number, type: 'get' | 'set'}> {
 		for (let item of this.captured) {
 			for (let {index, type} of item.indices) {
-				let node = Visiting.getNode(index) as AccessNode
+				let node = VisitTree.getNode(index) as AccessNode
 				let exp = node.expression
 
 				// Must use class instance as access expression.
@@ -456,8 +456,8 @@ export class ContextCapturer {
 
 		if (newToIndex !== null) {
 			for (let index of item.indices) {
-				let hashed = Scoping.hashIndex(index.index)
-				let canMove = hashed.usedIndices.every(usedIndex => Visiting.isPrecedingOf(usedIndex, newToIndex))
+				let hashed = ScopeTree.hashIndex(index.index)
+				let canMove = hashed.usedIndices.every(usedIndex => VisitTree.isPrecedingOf(usedIndex, newToIndex))
 
 				if (canMove) {
 					indicesInsertToNewPosition.push(index)
@@ -522,7 +522,7 @@ export class ContextCapturer {
 		let setIndices = indices.filter(index => index.type === 'set')
 
 		let getItems: AccessGrouperToMakeItem[] = getIndices.map(({index}) => {
-			let rawNode = Visiting.getNode(index) as AccessNode
+			let rawNode = VisitTree.getNode(index) as AccessNode
 			let emptyKey = ObservedChecker.isStructReadingAccess(rawNode)
 
 			let node = Interpolator.outputChildren(index) as AccessNode
@@ -532,7 +532,7 @@ export class ContextCapturer {
 		})
 
 		let setItems: AccessGrouperToMakeItem[] = setIndices.map(({index}) => {
-			let rawNode = Visiting.getNode(index) as AccessNode
+			let rawNode = VisitTree.getNode(index) as AccessNode
 			let emptyKey = ObservedChecker.isStructWritingAccess(rawNode)
 
 			let node = Interpolator.outputChildren(index) as AccessNode

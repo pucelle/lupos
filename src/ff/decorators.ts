@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {Helper, ts, defineVisitor, Modifier, factory, Interpolator, InterpolationContentType, Visiting} from '../base'
+import {Helper, ts, defineVisitor, Modifier, factory, Interpolator, InterpolationContentType, VisitTree} from '../base'
 import {addToList} from '../utils'
 
 
@@ -85,7 +85,7 @@ function compileComputedDecorator(methodDecl: TS.GetAccessorDeclaration): () => 
 
 	return () => {
 		let propName = Helper.getFullText(methodDecl.name)
-		let newBody = Interpolator.outputChildren(Visiting.getIndex(methodDecl.body!)) as TS.Block
+		let newBody = Interpolator.outputChildren(VisitTree.getIndex(methodDecl.body!)) as TS.Block
 
 		let property = factory.createPropertyDeclaration(
 			undefined,
@@ -310,7 +310,7 @@ function compileEffectDecorator(methodDecl: TS.MethodDeclaration): () => TS.Node
 
 	return () => {
 		let methodName = Helper.getFullText(methodDecl.name)
-		let newBody = Interpolator.outputChildren(Visiting.getIndex(methodDecl.body!)) as TS.Block
+		let newBody = Interpolator.outputChildren(VisitTree.getIndex(methodDecl.body!)) as TS.Block
 
 		let enqueueMethod = factory.createMethodDeclaration(
 			undefined,
@@ -464,7 +464,7 @@ function compileWatchDecorator(decoName: string, methodDecl: TS.MethodDeclaratio
 	}
 
 	return () => {
-		let newBody = Interpolator.outputChildren(Visiting.getIndex(methodDecl.body!)) as TS.Block
+		let newBody = Interpolator.outputChildren(VisitTree.getIndex(methodDecl.body!)) as TS.Block
 
 		// [] / undefined
 		let valueInit = immediateWatch
@@ -503,7 +503,7 @@ function compileWatchDecorator(decoName: string, methodDecl: TS.MethodDeclaratio
 
 			// (function(){}).call(this)
 			else if (ts.isFunctionExpression(arg)) {
-				let fnIndex = Visiting.getIndex(arg)
+				let fnIndex = VisitTree.getIndex(arg)
 				let fn = Interpolator.outputChildren(fnIndex) as TS.FunctionExpression
 
 				propertyGetters.push(factory.createCallExpression(

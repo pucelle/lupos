@@ -1639,7 +1639,7 @@ export namespace Helper {
 
 		/** Make a property name node by property name string. */
 		export function toPropertyName(name: string): TS.PropertyName {
-			if (/^\w+\d\$/.test(name)) {
+			if (/^[\w+\d\$]$/.test(name)) {
 				return factory.createIdentifier(name)
 			}
 			else {

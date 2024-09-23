@@ -1,7 +1,7 @@
 import type TS from 'typescript'
 import {addToList, ListMap} from '../utils'
 import {factory, sourceFile, transformContext, ts} from './global'
-import {Visiting} from './visiting'
+import {VisitTree} from './visite-tree'
 import {InterpolationContentType, Interpolator} from './interpolator'
 import {AccessNode, Helper} from './helper'
 import {definePostVisitCallback, definePreVisitCallback} from './visitor-callbacks'
@@ -43,15 +43,15 @@ export enum MutableMask {
 }
 
 
-export namespace Scoping {
+export namespace ScopeTree {
 
 	let stack: Scope[] = []
-	export let current: Scope | null = null
+	let current: Scope | null = null
 
-	/** Visiting index -> scope. */
+	/** Visit index -> scope. */
 	const ScopeMap: Map<number, Scope> = new Map()
 
-	/** Visiting index -> node hash result. */
+	/** Visit index -> node hash result. */
 	const HashMap: Map<number, HashItem> = new Map()
 
 	/** All added variable names, via scope. */
@@ -70,17 +70,14 @@ export namespace Scoping {
 
 	/** To next sibling. */
 	export function toNext(node: TS.Node) {
-		let index = Visiting.getIndex(node)
+		let index = VisitTree.getIndex(node)
 
-		if (ts.isSourceFile(node)) {
-			current = new Scope(node, index, null)
-			ScopeMap.set(index, current)
-		}
-		else if (Helper.isFunctionLike(node)
+		if (ts.isSourceFile(node)
+			|| Helper.isFunctionLike(node)
 			|| ts.isForStatement(node)
 			|| ts.isBlock(node)
 		) {
-			current = new Scope(node, index, stack[stack.length - 1])
+			current = new Scope(node, index, stack.length > 0 ? stack[stack.length - 1] : null)
 			ScopeMap.set(index, current)
 		}
 		else {
@@ -100,17 +97,17 @@ export namespace Scoping {
 
 
 	/** Get top most scope, the scope of source file. */
-	export function getTopmostScope(): Scope {
-		return ScopeMap.get(Visiting.getIndex(sourceFile))!
+	export function getTopmost(): Scope {
+		return ScopeMap.get(VisitTree.getIndex(sourceFile))!
 	}
 	
 
-	/** Find closest scope contains or equals node with specified visiting index. */
-	export function findClosestScope(index: number): Scope {
+	/** Find closest scope contains or equals node with specified visit index. */
+	export function findClosest(index: number): Scope {
 		let scope = ScopeMap.get(index)
 
 		while (!scope) {
-			index = Visiting.getParentIndex(index)!
+			index = VisitTree.getParentIndex(index)!
 			scope = ScopeMap.get(index)
 		}
 
@@ -118,9 +115,9 @@ export namespace Scoping {
 	}
 
 
-	/** Find closest scope contains node. */
-	export function findClosestScopeOfNode(node: TS.Node): Scope {
-		return findClosestScope(Visiting.getIndex(node))
+	/** Find closest scope contains or equals node. */
+	export function findClosestByNode(node: TS.Node): Scope {
+		return findClosest(VisitTree.getIndex(node))
 	}
 
 
@@ -140,7 +137,7 @@ export namespace Scoping {
 	
 
 	/** Add a scope and a variable name to insert into the scope later. */
-	export function addVariableByScope(scope: Scope, name: string) {
+	export function addVariableToScope(scope: Scope, name: string) {
 		AddedVariableNames.add(scope, name)
 	}
 
@@ -168,16 +165,16 @@ export namespace Scoping {
 
 
 	/** 
-	 * Get hash of raw node, which has a visiting index.
+	 * Get hash of raw node, which has a visit index.
 	 * Note hashing will transform `a?.b` -> `a.b`.
 	 */
 	export function hashNode(rawNode: TS.Node): HashItem {
-		let index = Visiting.getIndex(rawNode)
+		let index = VisitTree.getIndex(rawNode)
 		return hashIndex(index)
 	}
 
 	/** 
-	 * Get hash of node at the specified visiting index.
+	 * Get hash of node at the specified visit index.
 	 * Note hashing will transform `a?.b` -> `a.b`.
 	 */
 	export function hashIndex(index: number): HashItem {
@@ -185,7 +182,7 @@ export namespace Scoping {
 			return HashMap.get(index)!
 		}
 
-		let hashed = doHashingOfNode(Visiting.getNode(index))
+		let hashed = doHashingOfNode(VisitTree.getNode(index))
 		HashMap.set(index, hashed)
 
 		return hashed
@@ -219,7 +216,7 @@ export namespace Scoping {
 			addToList(usedScopes, scope)
 
 			if (declNode) {
-				usedIndices.push(Visiting.getIndex(declNode))
+				usedIndices.push(VisitTree.getIndex(declNode))
 			}
 
 			return factory.createIdentifier(name)
@@ -243,21 +240,21 @@ export namespace Scoping {
 
 	/** 
 	 * Hash a node by replace variable name or `this` to add a suffix.
-	 * The suffix is normally a scope visiting index,
+	 * The suffix is normally a scope visit index,
 	 * then the hashing is unique across whole source file.
 	 */
 	function hashVariableName(rawNode: TS.Identifier | TS.ThisExpression): {name: string, scope: Scope} {
 		let scope: Scope
 
 		if (rawNode.kind === ts.SyntaxKind.ThisKeyword) {
-			scope = findClosestScopeOfNode(rawNode).findClosestThisScope()
+			scope = findClosestByNode(rawNode).findClosestThisScope()
 		}
 		else {
-			scope = findDeclaredScope(rawNode) || findClosestScopeOfNode(rawNode)
+			scope = findDeclaredScope(rawNode) || findClosestByNode(rawNode)
 		}
 
 		let name = Helper.getFullText(rawNode)
-		let suffix = scope.visitingIndex
+		let suffix = scope.visitIndex
 
 		return {
 			name: name + '_' + suffix,
@@ -271,7 +268,7 @@ export namespace Scoping {
 	 * `fromRawNode` specifies where to query the variable from.
 	 */
 	export function getDeclarationByName(name: string, fromRawNode: TS.Node): TS.Node | undefined {
-		let scope = findClosestScopeOfNode(fromRawNode)
+		let scope = findClosestByNode(fromRawNode)
 		if (!scope) {
 			return undefined
 		}
@@ -281,7 +278,7 @@ export namespace Scoping {
 	
 	
 	/** Check at which scope the specified named variable declared. */
-	export function findDeclaredScope(rawNode: TS.Identifier, fromScope = findClosestScopeOfNode(rawNode)): Scope | null {
+	export function findDeclaredScope(rawNode: TS.Identifier, fromScope = findClosestByNode(rawNode)): Scope | null {
 		if (fromScope.hasLocalVariable(rawNode.text)) {
 			return fromScope
 		}
@@ -428,7 +425,7 @@ export namespace Scoping {
 		insideFunctionScope ||= Helper.isFunctionLike(node)
 		
 		// Raw variable
-		if (Visiting.hasNode(node) && Helper.variable.isVariableIdentifier(node)) {
+		if (VisitTree.hasNode(node) && Helper.variable.isVariableIdentifier(node)) {
 
 			// If declared in top scope, can still visit after transferred,
 			// no need to replace it.
@@ -458,5 +455,5 @@ export namespace Scoping {
 }
 
 
-definePreVisitCallback(Scoping.initialize)
-definePostVisitCallback(Scoping.applyInterpolation)
+definePreVisitCallback(ScopeTree.initialize)
+definePostVisitCallback(ScopeTree.applyInterpolation)

@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {ts, defineVisitor, Modifier, Helper, factory, Interpolator, Visiting} from '../base'
+import {ts, defineVisitor, Modifier, Helper, factory, Interpolator, VisitTree} from '../base'
 
 
 // Add some decorator compiled part to `constructor` or `onConnected` and `onWillDisconnect`.
@@ -67,7 +67,7 @@ defineVisitor(function(node: TS.Node, index: number) {
 		}
 		else if (decoName === 'setContext' && ts.isPropertyDeclaration(member)) {
 			[connect, disconnect] = compileSetContextDecorator(member, connect, disconnect, hasDeletedContextVariables)
-			Interpolator.remove(Visiting.getIndex(deco))
+			Interpolator.remove(VisitTree.getIndex(deco))
 			hasDeletedContextVariables = true
 		}
 		else if (decoName === 'useContext' && ts.isPropertyDeclaration(member)) {
