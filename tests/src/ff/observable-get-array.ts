@@ -27,6 +27,12 @@ class TestArrayMethods extends Component {
 	filter(fn: any) {
 		return this.prop.filter(fn)
 	}
+
+	refedFilter(fn: any) {
+		let prop = this.prop
+		prop = prop.filter(fn)
+		return prop
+	}
 }
 
 

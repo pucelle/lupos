@@ -25,16 +25,16 @@ export type CanObserveNode = AccessNode
 export namespace ObservedChecker {
 
 	/** Whether should observe node by it's type node. */
-	export function isTypeNodeObserved(node: TS.TypeNode): boolean {
+	export function isTypeNodeObserved(rawNode: TS.TypeNode): boolean {
 
 		// `Observed<>`, must use it directly, type extending is now working.
-		if (Helper.symbol.isImportedFrom(node, 'Observed', '@pucelle/ff')) {
+		if (Helper.symbol.isImportedFrom(rawNode, 'Observed', '@pucelle/ff')) {
 			return true
 		}
 
 		// `Component` like.
 		else {
-			let clsDecl = Helper.symbol.resolveDeclaration(node, ts.isClassDeclaration)
+			let clsDecl = Helper.symbol.resolveDeclaration(rawNode, ts.isClassDeclaration)
 			if (clsDecl && Helper.cls.isImplemented(clsDecl, 'Observed', '@pucelle/ff')) {
 				return true 
 			}
@@ -45,13 +45,13 @@ export namespace ObservedChecker {
 
 
 	/** Whether variable declaration should be observed. */
-	export function isVariableDeclarationObserved(node: TS.VariableDeclaration): boolean {
+	export function isVariableDeclarationObserved(rawNode: TS.VariableDeclaration): boolean {
 
 		// `var a = {b:1} as Observed<{b: number}>`, observed.
 		// `var a: Observed<{b: number}> = {b:1}`, observed.
 		// Note here: `Observed` must appear directly, reference or alias is not working.
 
-		let typeNode = node.type 
+		let typeNode = rawNode.type 
 		let observed = false
 
 		if (typeNode) {
@@ -59,8 +59,8 @@ export namespace ObservedChecker {
 		}
 
 		// `var a = b.c`.
-		if (!observed && node.initializer) {
-			observed = isObserved(node.initializer)
+		if (!observed && rawNode.initializer) {
+			observed = isObserved(rawNode.initializer)
 		}
 
 		return observed
@@ -68,17 +68,17 @@ export namespace ObservedChecker {
 
 
 	/** Whether parameter declaration should be observed. */
-	export function isParameterObserved(node: TS.ParameterDeclaration, context: Context = ContextTree.current!): boolean {
-		let typeNode = node.type
+	export function isParameterObserved(rawNode: TS.ParameterDeclaration, context: Context = ContextTree.current!): boolean {
+		let typeNode = rawNode.type
 		if (typeNode && isTypeNodeObserved(typeNode)) {
 			return true
 		}
 
-		if (isParameterObservedByCallingBroadcasted(node, context)) {
+		if (isParameterObservedByCallingBroadcasted(rawNode, context)) {
 			return true
 		}
 
-		if (node.initializer && isObserved(node.initializer, context)) {
+		if (rawNode.initializer && isObserved(rawNode.initializer, context)) {
 			return true
 		}
 
@@ -87,13 +87,13 @@ export namespace ObservedChecker {
 
 	
 	/** Broadcast observed from parent calling expression to all parameters. */
-	function isParameterObservedByCallingBroadcasted(node: TS.ParameterDeclaration, context: Context = ContextTree.current!): boolean {
+	function isParameterObservedByCallingBroadcasted(rawNode: TS.ParameterDeclaration, context: Context = ContextTree.current!): boolean {
 
 		// `a.b.map((item) => {return item.value})`
 		// `a.b.map(item => item.value)`
 		// `a.b.map(function(item){return item.value})`
 		
-		let fn = node.parent
+		let fn = rawNode.parent
 		if (!(ts.isFunctionExpression(fn)
 			|| ts.isArrowFunction(fn)
 		)) {
@@ -130,62 +130,62 @@ export namespace ObservedChecker {
 	 * - a conditional expression
 	 * - an as expression
 	 */
-	export function isObserved(node: TS.Node, context: Context = ContextTree.current!): node is CanObserveNode {
+	export function isObserved(rawNode: TS.Node, context: Context = ContextTree.current!): rawNode is CanObserveNode {
 
 		// `a.b`
 		// `(a ? b : c).d`
 		// `(a ?? b).b`
-		if (Helper.access.isAccess(node)) {
-			return isAccessingObserved(node, context)
+		if (Helper.access.isAccess(rawNode)) {
+			return isAccessingObserved(rawNode, context)
 		}
 
 		// `this`
 		// `a`
-		else if (node.kind === ts.SyntaxKind.ThisKeyword
-			|| Helper.variable.isVariableIdentifier(node)
+		else if (rawNode.kind === ts.SyntaxKind.ThisKeyword
+			|| Helper.variable.isVariableIdentifier(rawNode)
 		) {
-			return isIdentifierObserved(node as TS.Identifier | TS.ThisExpression, context)
+			return isIdentifierObserved(rawNode as TS.Identifier | TS.ThisExpression, context)
 		}
 
 		// `a && b`, `a || b`, `a ?? b`, can observe only if both a & b can observe.
-		else if (ts.isBinaryExpression(node)) {
-			return (node.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken
-					|| node.operatorToken.kind === ts.SyntaxKind.BarBarToken
-					|| node.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken
+		else if (ts.isBinaryExpression(rawNode)) {
+			return (rawNode.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken
+					|| rawNode.operatorToken.kind === ts.SyntaxKind.BarBarToken
+					|| rawNode.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken
 				)
-				&& isObserved(node.left)
-				&& isObserved(node.right)
+				&& isObserved(rawNode.left)
+				&& isObserved(rawNode.right)
 		}
 
 		// `(...)`
-		else if (ts.isParenthesizedExpression(node)) {
-			return isObserved(node.expression)
+		else if (ts.isParenthesizedExpression(rawNode)) {
+			return isObserved(rawNode.expression)
 		}
 
 		// `(a as Observed<{b: number}>).b`
-		else if (ts.isAsExpression(node)) {
-			let typeNode = node.type
+		else if (ts.isAsExpression(rawNode)) {
+			let typeNode = rawNode.type
 			return typeNode && Helper.symbol.isImportedFrom(typeNode, 'Observed', '@pucelle/ff')
 		}
 
 		// `a ? b : c`, can observe only if both b & c can observe.
-		else if (ts.isConditionalExpression(node)) {
-			return isObserved(node.whenTrue)
-				&& isObserved(node.whenFalse)
+		else if (ts.isConditionalExpression(rawNode)) {
+			return isObserved(rawNode.whenTrue)
+				&& isObserved(rawNode.whenFalse)
 		}
 
 		// `a.b()`
-		else if (ts.isCallExpression(node)) {
-			return isCallObserved(node)
+		else if (ts.isCallExpression(rawNode)) {
+			return isCallObserved(rawNode)
 		}
 
 		// `new a()`
-		else if (ts.isNewExpression(node)
-			&& (ts.isIdentifier(node.expression)
-				|| ts.isClassExpression(node.expression)
+		else if (ts.isNewExpression(rawNode)
+			&& (ts.isIdentifier(rawNode.expression)
+				|| ts.isClassExpression(rawNode.expression)
 			)
 		) {
-			return isInstanceObserved(node.expression)
+			return isInstanceObserved(rawNode.expression)
 		}
 
 		else {
@@ -199,42 +199,42 @@ export namespace ObservedChecker {
 	 * Node must be the top most property access expression.
 	 * E.g., for `a.b.c`, sub identifier `b` or `c` is not allowed.
 	 */
-	function isIdentifierObserved(node: TS.Identifier | TS.ThisExpression, context = ContextTree.current!): boolean {
-		if (node.kind === ts.SyntaxKind.ThisKeyword) {
+	function isIdentifierObserved(rawNode: TS.Identifier | TS.ThisExpression, context = ContextTree.current!): boolean {
+		if (rawNode.kind === ts.SyntaxKind.ThisKeyword) {
 			return context.variables.thisObserved
 		}
 
-		let name = node.text
+		let name = rawNode.text
 		return context.variables.isVariableObserved(name)
 	}
 
 
 	/** Returns whether a property accessing should be observed. */
-	export function isAccessingObserved(node: AccessNode, context: Context = ContextTree.current!): boolean {
+	export function isAccessingObserved(rawNode: AccessNode, context: Context = ContextTree.current!): boolean {
 
 		// Will never observe private identifier like `a.#b`.
-		if (ts.isPropertyAccessExpression(node) && ts.isPrivateIdentifier(node.name)) {
+		if (ts.isPropertyAccessExpression(rawNode) && ts.isPrivateIdentifier(rawNode.name)) {
 			return false
 		}
 
 		// Property declaration has specified as observed type or observed initializer.
-		if (checkPropertyOrGetAccessorObserved(node)) {
+		if (checkPropertyOrGetAccessorObserved(rawNode)) {
 			return true
 		}
 
 		// `[]`, `Map`, `Set`.
-		if (isStruct(node.expression)) {
-			return isObserved(node.expression, context)
+		if (isStruct(rawNode.expression)) {
+			return isObserved(rawNode.expression, context)
 		}
 
 		// Readonly properties are always not been observed.
-		let readonly = Helper.types.isReadonly(node)
+		let readonly = Helper.types.isReadonly(rawNode)
 		if (readonly) {
 			return false
 		}
 
 		// Take `node = a.b.c` as example, exp is `a.b`.
-		let exp = node.expression
+		let exp = rawNode.expression
 		let expType = typeChecker.getTypeAtLocation(exp)
 
 		// Visiting like string index will not get observed.
@@ -243,7 +243,7 @@ export namespace ObservedChecker {
 		}
 
 		// Method declarations will always not been observe.
-		if (Helper.symbol.resolveDeclaration(node, Helper.isMethodLike)) {
+		if (Helper.symbol.resolveDeclaration(rawNode, Helper.isMethodLike)) {
 			return false
 		}
 
@@ -264,11 +264,11 @@ export namespace ObservedChecker {
 
 
 	/** Check whether a property or get accessor declaration, or a property declaration is observed. */
-	function checkPropertyOrGetAccessorObserved(node: AccessNode): boolean {
+	function checkPropertyOrGetAccessorObserved(rawNode: AccessNode): boolean {
 
 		// `class A{p: Observed}` -> `this.p` and `this['p']` is observed.
 		// `interface A{p: Observed}` -> `this.p` and `this['p']` is observed.
-		let nameDecl = Helper.symbol.resolveDeclaration(node, Helper.isPropertyOrGetAccessor)
+		let nameDecl = Helper.symbol.resolveDeclaration(rawNode, Helper.isPropertyOrGetAccessor)
 		if (!nameDecl) {
 			return false
 		}
@@ -294,8 +294,8 @@ export namespace ObservedChecker {
 
 	
 	/** Returns whether a call expression returned result should be observed. */
-	function isCallObserved(node: TS.CallExpression): boolean {
-		let decl = Helper.symbol.resolveDeclaration(node.expression, Helper.isFunctionLike)
+	function isCallObserved(rawNode: TS.CallExpression): boolean {
+		let decl = Helper.symbol.resolveDeclaration(rawNode.expression, Helper.isFunctionLike)
 		if (!decl) {
 			return false
 		}
@@ -321,8 +321,8 @@ export namespace ObservedChecker {
 
 
 	/** Returns whether instance of a reference of a class is observed. */
-	function isInstanceObserved(node: TS.Identifier | TS.ClassExpression): boolean {
-		let clsDecl = Helper.symbol.resolveDeclaration(node, ts.isClassDeclaration)
+	function isInstanceObserved(rawNode: TS.Identifier | TS.ClassExpression): boolean {
+		let clsDecl = Helper.symbol.resolveDeclaration(rawNode, ts.isClassDeclaration)
 		if (clsDecl && Helper.cls.isImplemented(clsDecl, 'Observed', '@pucelle/ff')) {
 			return true 
 		}
@@ -332,9 +332,9 @@ export namespace ObservedChecker {
 
 
 	/** Test whether be `Map` or `Set`, or of `Array` type. */
-	export function isStruct(node: TS.Node) {
-		let type = Helper.types.getType(node)
-		let typeNode = Helper.types.getTypeNode(node)
+	export function isStruct(rawNode: TS.Node) {
+		let type = Helper.types.getType(rawNode)
+		let typeNode = Helper.types.getTypeNode(rawNode)
 		let objName = typeNode ? Helper.types.getTypeNodeReferenceName(typeNode) : undefined
 
 		return objName === 'Map'
@@ -343,11 +343,11 @@ export namespace ObservedChecker {
 	}
 
 	/** Test whether calls reading process of `Map`, `Set`, `Array`. */
-	export function isStructReadingAccess(node: AccessNode): boolean {
-		let expType = Helper.types.getType(node.expression)
-		let expTypeNode = Helper.types.getTypeNode(node.expression)
+	export function isStructReadingAccess(rawNode: AccessNode): boolean {
+		let expType = Helper.types.getType(rawNode.expression)
+		let expTypeNode = Helper.types.getTypeNode(rawNode.expression)
 		let objName = expTypeNode ? Helper.types.getTypeNodeReferenceName(expTypeNode) : undefined
-		let propName = Helper.access.getNameText(node)
+		let propName = Helper.access.getNameText(rawNode)
 
 		if (objName === 'Map') {
 			return propName === 'has' || propName === 'get' || propName === 'size'
@@ -356,7 +356,7 @@ export namespace ObservedChecker {
 			return propName === 'has' || propName === 'size'
 		}
 		else if (Helper.types.isArrayType(expType)) {
-			let methodDecl = Helper.symbol.resolveDeclaration(node, Helper.isMethodLike)
+			let methodDecl = Helper.symbol.resolveDeclaration(rawNode, Helper.isMethodLike)
 
 			return !methodDecl || !(
 				propName === 'push'
@@ -371,11 +371,11 @@ export namespace ObservedChecker {
 	}
 
 	/** Test whether calls `Map.set`, or `Set.set`. */
-	export function isStructWritingAccess(node: AccessNode) {
-		let expType = Helper.types.getType(node.expression)
-		let expTypeNode = Helper.types.getTypeNode(node.expression)
+	export function isStructWritingAccess(rawNode: AccessNode) {
+		let expType = Helper.types.getType(rawNode.expression)
+		let expTypeNode = Helper.types.getTypeNode(rawNode.expression)
 		let objName = expTypeNode ? Helper.types.getTypeNodeReferenceName(expTypeNode) : undefined
-		let propName = Helper.access.getNameText(node)
+		let propName = Helper.access.getNameText(rawNode)
 
 		if (objName === 'Map') {
 			return propName === 'set' || propName === 'clear'
@@ -384,7 +384,7 @@ export namespace ObservedChecker {
 			return propName === 'add' || propName === 'clear'
 		}
 		else if (Helper.types.isArrayType(expType)) {
-			let methodDecl = Helper.symbol.resolveDeclaration(node, Helper.isMethodLike)
+			let methodDecl = Helper.symbol.resolveDeclaration(rawNode, Helper.isMethodLike)
 
 			return !!methodDecl && (
 				propName === 'push'

@@ -27,6 +27,15 @@ class TestArrayMethods extends Component {
         trackGet(this.prop, "");
         return this.prop.filter(fn);
     }
+    refedFilter(fn) {
+        let $ref_0;
+        let prop = this.prop;
+        $ref_0 = prop;
+        prop = $ref_0.filter(fn);
+        trackGet(this, "prop");
+        trackGet($ref_0, "");
+        return prop;
+    }
 }
 class TestAliasArrayTypeOfProp extends Component {
     prop = [{ value: 1 }];

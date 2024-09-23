@@ -2,11 +2,12 @@ import type TS from 'typescript'
 import {InterpolationContentType, AccessNode, Helper, Interpolator, InterpolationPosition, Visiting, ts, FlowInterruptionTypeMask, Scoping} from '../../base'
 import {Context} from './context'
 import {ContextTree, ContextTypeMask} from './context-tree'
-import {AccessGrouper} from './access-grouper'
+import {AccessGrouper, AccessGrouperToMakeItem} from './access-grouper'
 import {AccessReferences} from './access-references'
 import {Optimizer} from './optimizer'
 import {removeFromList} from '../../utils'
 import {ContextState} from './context-state'
+import {ObservedChecker} from './observed-checker'
 
 
 /** Captured item, will be inserted to a position. */
@@ -520,19 +521,29 @@ export class ContextCapturer {
 		let getIndices = indices.filter(index => index.type === 'get')
 		let setIndices = indices.filter(index => index.type === 'set')
 
-		let getExps = getIndices.map(({index}) => {
-			let node = Interpolator.outputChildren(index)
-			return Helper.pack.extractFinalParenthesized(node)
-		}) as AccessNode[]
+		let getItems: AccessGrouperToMakeItem[] = getIndices.map(({index}) => {
+			let rawNode = Visiting.getNode(index) as AccessNode
+			let emptyKey = ObservedChecker.isStructReadingAccess(rawNode)
 
-		let setExps = setIndices.map(({index}) => {
-			let node = Interpolator.outputChildren(index)
-			return Helper.pack.extractFinalParenthesized(node)
-		}) as AccessNode[]
+			let node = Interpolator.outputChildren(index) as AccessNode
+			node = Helper.pack.extractFinalParenthesized(node) as AccessNode
+
+			return {node, emptyKey}
+		})
+
+		let setItems: AccessGrouperToMakeItem[] = setIndices.map(({index}) => {
+			let rawNode = Visiting.getNode(index) as AccessNode
+			let emptyKey = ObservedChecker.isStructWritingAccess(rawNode)
+
+			let node = Interpolator.outputChildren(index) as AccessNode
+			node = Helper.pack.extractFinalParenthesized(node) as AccessNode
+
+			return {node, emptyKey}
+		})
 
 		return [
-			...AccessGrouper.makeExpressions(getExps, 'get'),
-			...AccessGrouper.makeExpressions(setExps, 'set'),
+			...AccessGrouper.makeExpressions(getItems, 'get'),
+			...AccessGrouper.makeExpressions(setItems, 'set'),
 		]
 	}
 }
