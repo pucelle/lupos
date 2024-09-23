@@ -819,43 +819,7 @@ export namespace Helper {
 
 			return false
 		}
-
-			
-		/** Test whether calls `Map.has`, `Map.get` or `Set.has` */
-		export function isMapOrSetReading(node: AccessNode) {
-			let typeNode = getTypeNode(node.expression)
-			let objName = typeNode ? getTypeNodeReferenceName(typeNode) : undefined
-			let propName = access.getNameText(node)
-
-			if (objName === 'Map') {
-				return propName === 'has' || propName === 'get' || propName === 'size'
-			}
-			else if (objName === 'Set') {
-				return propName === 'has' || propName === 'size'
-			}
-			else {
-				return false
-			}
-		}
-
-
-		/** Test whether calls `Map.set`, or `Set.set`. */
-		export function isMapOrSetWriting(node: AccessNode) {
-			let typeNode = getTypeNode(node.expression)
-			let objName = typeNode ? getTypeNodeReferenceName(typeNode) : undefined
-			let propName = access.getNameText(node)
-
-			if (objName === 'Map') {
-				return propName === 'set' || propName === 'clear'
-			}
-			else if (objName === 'Set') {
-				return propName === 'add' || propName === 'clear'
-			}
-			else {
-				return false
-			}
-		}
-
+		
 		
 		/** 
 		 * `A & B` -> `[A, B]`

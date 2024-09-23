@@ -1,7 +1,7 @@
 import {Component} from '@pucelle/lupos.js'
 
 
-class TestArrayProp extends Component {
+class TestArrayIndex extends Component {
 
 	prop: {value: number}[] = [{value:1}]
 
@@ -12,6 +12,20 @@ class TestArrayProp extends Component {
 	dynamicIndex() {
 		let i = 0
 		return this.prop[i].value
+	}
+}
+
+
+class TestArrayMethods extends Component {
+
+	prop: number[] = [1]
+
+	push() {
+		this.prop.push(1)
+	}
+
+	filter(fn: any) {
+		return this.prop.filter(fn)
 	}
 }
 

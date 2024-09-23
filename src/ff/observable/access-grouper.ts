@@ -1,6 +1,7 @@
 import type TS from 'typescript'
 import {AccessNode, factory, Helper, Modifier, ts} from '../../base'
 import {groupBy} from '../../utils'
+import {ObservedChecker} from './observed-checker'
 
 
 export namespace AccessGrouper {
@@ -109,9 +110,8 @@ export namespace AccessGrouper {
 	function getAccessNodeNameProperty(node: AccessNode, type: 'get' | 'set'): TS.Expression {
 		let name: TS.Expression
 
-		if (Helper.types.isArrayType(Helper.types.getType(node.expression)) 
-			|| type === 'get' && Helper.types.isMapOrSetReading(node)
-			|| type === 'set' && Helper.types.isMapOrSetWriting(node)
+		if (type === 'get' && ObservedChecker.isStructReadingAccess(node)
+			|| type === 'set' && ObservedChecker.isStructWritingAccess(node)
 		) {
 			name = factory.createStringLiteral('')
 		}

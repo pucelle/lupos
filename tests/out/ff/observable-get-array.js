@@ -1,6 +1,6 @@
 import { Component } from '@pucelle/lupos.js';
-import { trackGet } from "@pucelle/ff";
-class TestArrayProp extends Component {
+import { trackGet, trackSet } from "@pucelle/ff";
+class TestArrayIndex extends Component {
     prop = [{ value: 1 }];
     fixedIndex() {
         trackGet(this, "prop");
@@ -14,6 +14,18 @@ class TestArrayProp extends Component {
         trackGet(this.prop, "");
         trackGet(this.prop[i], "value");
         return this.prop[i].value;
+    }
+}
+class TestArrayMethods extends Component {
+    prop = [1];
+    push() {
+        this.prop.push(1);
+        trackSet(this.prop, "");
+    }
+    filter(fn) {
+        trackGet(this, "prop");
+        trackGet(this.prop, "");
+        return this.prop.filter(fn);
     }
 }
 class TestAliasArrayTypeOfProp extends Component {

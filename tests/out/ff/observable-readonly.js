@@ -23,6 +23,7 @@ class TestReadonlyArrayProp extends Component {
     prop = [{ value: 'Text1' }];
     render() {
         trackGet(this, "prop");
+        trackGet(this.prop, "");
         return this.prop.map(item => {
             trackGet(item, "value");
             return item.value;

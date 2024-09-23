@@ -59,7 +59,9 @@ class TestIgnoringInternalMethods extends Component {
 	prop2: Map<number, number> = new Map([[1, 2]])
 
 	ignoreArrayMethods() {
-		return this.prop1.join('')!
+		let prop1 = this.prop1
+
+		return prop1.join('')!
 			+ this.prop2.get(1)!
 	}
 }

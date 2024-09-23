@@ -37,10 +37,11 @@ class TestIgnoringInternalMethods extends Component {
     prop1 = [1, 2];
     prop2 = new Map([[1, 2]]);
     ignoreArrayMethods() {
+        let prop1 = this.prop1;
         trackGet(this, "prop1", "prop2");
-        trackGet(this.prop1, "");
+        trackGet(prop1, "");
         trackGet(this.prop2, "");
-        return this.prop1.join('')
+        return prop1.join('')
             + this.prop2.get(1);
     }
 }

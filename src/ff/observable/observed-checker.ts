@@ -44,7 +44,7 @@ export namespace ObservedChecker {
 	}
 
 
-	/** Whether variable declaration is observed. */
+	/** Whether variable declaration should be observed. */
 	export function isVariableDeclarationObserved(node: TS.VariableDeclaration): boolean {
 
 		// `var a = {b:1} as Observed<{b: number}>`, observed.
@@ -67,7 +67,7 @@ export namespace ObservedChecker {
 	}
 
 
-	/** Whether parameter declaration is observed. */
+	/** Whether parameter declaration should be observed. */
 	export function isParameterObserved(node: TS.ParameterDeclaration, context: Context = ContextTree.current!): boolean {
 		let typeNode = node.type
 		if (typeNode && isTypeNodeObserved(typeNode)) {
@@ -120,7 +120,7 @@ export namespace ObservedChecker {
 
 
 	/** 
-	 * Returns whether any of following type of node is observed:
+	 * Returns whether any of following type of node should be observed:
 	 * - an identifier
 	 * - this
 	 * - a property accessing
@@ -195,7 +195,7 @@ export namespace ObservedChecker {
 
 
 	/** 
-	 * Check whether an identifier or `this` is observed.
+	 * Check whether an identifier or `this` should be observed.
 	 * Node must be the top most property access expression.
 	 * E.g., for `a.b.c`, sub identifier `b` or `c` is not allowed.
 	 */
@@ -209,7 +209,7 @@ export namespace ObservedChecker {
 	}
 
 
-	/** Returns whether a property accessing is observed. */
+	/** Returns whether a property accessing should be observed. */
 	export function isAccessingObserved(node: AccessNode, context: Context = ContextTree.current!): boolean {
 
 		// Will never observe private identifier like `a.#b`.
@@ -222,6 +222,11 @@ export namespace ObservedChecker {
 			return true
 		}
 
+		// `[]`, `Map`, `Set`.
+		if (isStruct(node.expression)) {
+			return isObserved(node.expression, context)
+		}
+
 		// Readonly properties are always not been observed.
 		let readonly = Helper.types.isReadonly(node)
 		if (readonly) {
@@ -230,18 +235,15 @@ export namespace ObservedChecker {
 
 		// Take `node = a.b.c` as example, exp is `a.b`.
 		let exp = node.expression
-		let type = typeChecker.getTypeAtLocation(exp)
+		let expType = typeChecker.getTypeAtLocation(exp)
 
 		// Visiting like string index will not get observed.
-		if (Helper.types.isValueType(type)) {
+		if (Helper.types.isValueType(expType)) {
 			return false
 		}
 
-		// Method declarations will always not been observed, except few,
-		// like map or set, which will be processed by outer logic.
-		if (Helper.symbol.resolveDeclaration(node, Helper.isMethodLike)
-			&& !Helper.types.isArrayType(type)
-		) {
+		// Method declarations will always not been observe.
+		if (Helper.symbol.resolveDeclaration(node, Helper.isMethodLike)) {
 			return false
 		}
 
@@ -291,7 +293,7 @@ export namespace ObservedChecker {
 	}
 
 	
-	/** Returns whether a call expression returned result is observed. */
+	/** Returns whether a call expression returned result should be observed. */
 	function isCallObserved(node: TS.CallExpression): boolean {
 		let decl = Helper.symbol.resolveDeclaration(node.expression, Helper.isFunctionLike)
 		if (!decl) {
@@ -326,5 +328,73 @@ export namespace ObservedChecker {
 		}
 
 		return false
+	}
+
+
+	/** Test whether be `Map` or `Set`, or of `Array` type. */
+	export function isStruct(node: TS.Node) {
+		let type = Helper.types.getType(node)
+		let typeNode = Helper.types.getTypeNode(node)
+		let objName = typeNode ? Helper.types.getTypeNodeReferenceName(typeNode) : undefined
+
+		return objName === 'Map'
+			|| objName === 'Set'
+			|| Helper.types.isArrayType(type)
+	}
+
+	/** Test whether calls reading process of `Map`, `Set`, `Array`. */
+	export function isStructReadingAccess(node: AccessNode): boolean {
+		let expType = Helper.types.getType(node.expression)
+		let expTypeNode = Helper.types.getTypeNode(node.expression)
+		let objName = expTypeNode ? Helper.types.getTypeNodeReferenceName(expTypeNode) : undefined
+		let propName = Helper.access.getNameText(node)
+
+		if (objName === 'Map') {
+			return propName === 'has' || propName === 'get' || propName === 'size'
+		}
+		else if (objName === 'Set') {
+			return propName === 'has' || propName === 'size'
+		}
+		else if (Helper.types.isArrayType(expType)) {
+			let methodDecl = Helper.symbol.resolveDeclaration(node, Helper.isMethodLike)
+
+			return !methodDecl || !(
+				propName === 'push'
+				|| propName === 'unshift'
+				|| propName === 'sort'
+				|| propName === 'splice'
+			)
+		}
+		else {
+			return false
+		}
+	}
+
+	/** Test whether calls `Map.set`, or `Set.set`. */
+	export function isStructWritingAccess(node: AccessNode) {
+		let expType = Helper.types.getType(node.expression)
+		let expTypeNode = Helper.types.getTypeNode(node.expression)
+		let objName = expTypeNode ? Helper.types.getTypeNodeReferenceName(expTypeNode) : undefined
+		let propName = Helper.access.getNameText(node)
+
+		if (objName === 'Map') {
+			return propName === 'set' || propName === 'clear'
+		}
+		else if (objName === 'Set') {
+			return propName === 'add' || propName === 'clear'
+		}
+		else if (Helper.types.isArrayType(expType)) {
+			let methodDecl = Helper.symbol.resolveDeclaration(node, Helper.isMethodLike)
+
+			return !!methodDecl && (
+				propName === 'push'
+				|| propName === 'unshift'
+				|| propName === 'sort'
+				|| propName === 'splice'
+			)
+		}
+		else {
+			return false
+		}
 	}
 }
