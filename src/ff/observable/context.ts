@@ -168,6 +168,10 @@ export class Context {
 
 	/** Add a property assignment expression. */
 	private mayAddSetTracking(node: AccessNode, fromMapOrSet: boolean) {
+		if (this.state.shouldIgnoreSetTracking()) {
+			return
+		}
+
 		if (!this.capturer.shouldCapture('set')) {
 			return
 		}

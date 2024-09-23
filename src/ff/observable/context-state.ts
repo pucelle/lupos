@@ -10,6 +10,9 @@ export class ContextState {
 
 	readonly context: Context
 
+	/** Whether be included in a constructor function */
+	readonly withinConstructor: boolean
+
 	/** 
 	 * Whether function has nothing returned.
 	 * If a function returns nothing, we stop tracking it's property getting.
@@ -26,16 +29,28 @@ export class ContextState {
 	readonly effectDecorated: boolean
 
 	/** How flow inside of a context was interrupted. */
-	flowInterruptionType: number = 0
+	flowInterruptionType: FlowInterruptionTypeMask | 0 = 0
 
 	constructor(context: Context) {
 		this.context = context
+		this.withinConstructor = this.checkWithinConstructor()
 		this.nothingReturned = this.checkNothingReturned()
 		this.effectDecorated = this.checkEffectDecorated()
 		
 		if (context.type & ContextTypeMask.FlowInterruption) {
 			this.flowInterruptionType = Helper.pack.getFlowInterruptionType(context.node)
 		}
+	}
+
+	private checkWithinConstructor(): boolean {
+		let node = this.context.node
+
+		// Inherit from parent context.
+		if ((this.context.type & ContextTypeMask.FunctionLike) === 0) {
+			return this.context.parent?.state.withinConstructor ?? false
+		}
+
+		return ts.isConstructorDeclaration(node)
 	}
 
 	private checkNothingReturned(): boolean {
@@ -62,7 +77,7 @@ export class ContextState {
 	}
 
 	/** Union with internal contents type. */
-	unionFlowInterruptionType(type: FlowInterruptionTypeMask) {
+	unionFlowInterruptionType(type: FlowInterruptionTypeMask | 0) {
 		if (this.context.type & ContextTypeMask.FunctionLike) {
 			return 
 		}
@@ -94,9 +109,26 @@ export class ContextState {
 		this.unionFlowInterruptionType(child.state.flowInterruptionType)
 	}
 
+	/** Whether should ignore set tracking. */
+	shouldIgnoreSetTracking(): boolean {
+		if (this.withinConstructor) {
+			return true
+		}
+
+		return false
+	}
+
 	/** Whether should ignore get tracking. */
 	shouldIgnoreGetTracking(): boolean {
-		return this.nothingReturned && !this.effectDecorated
+		if (this.withinConstructor) {
+			return true
+		}
+
+		if (this.nothingReturned && !this.effectDecorated) {
+			return true
+		}
+
+		return false
 	}
 
 	/** Whether break like, or return, or yield like inside. */

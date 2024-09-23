@@ -138,6 +138,7 @@ export namespace Helper {
 			|| ts.isGetAccessorDeclaration(node)
 			|| ts.isSetAccessorDeclaration(node)
 			|| ts.isArrowFunction(node)
+			|| ts.isConstructorDeclaration(node)
 	}
 
 	/** Whether be a property declaration or signature. */
