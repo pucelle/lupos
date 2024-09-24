@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {VisitTree} from './visite-tree'
+import {VisitTree} from './visit-tree'
 import {Interpolator} from './interpolator'
 import {TransformerExtras} from 'ts-patch'
 import {setGlobal, setSourceFile, setTransformContext} from './global'

@@ -3,7 +3,7 @@ import type TS from 'typescript'
 import {factory, ts} from './global'
 import {Helper} from './helper'
 import {InterpolationContentType, Interpolator} from './interpolator'
-import {VisitTree} from './visite-tree'
+import {VisitTree} from './visit-tree'
 import {definePostVisitCallback, definePreVisitCallback} from './visitor-callbacks'
 import {ScopeTree} from './scope-tree'
 

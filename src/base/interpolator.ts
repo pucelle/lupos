@@ -1,7 +1,7 @@
 import type TS from 'typescript'
 import {ListMap} from '../utils'
 import {factory, transformContext, ts} from './global'
-import {VisitTree} from './visite-tree'
+import {VisitTree} from './visit-tree'
 import {Helper} from './helper'
 import {definePreVisitCallback} from './visitor-callbacks'
 

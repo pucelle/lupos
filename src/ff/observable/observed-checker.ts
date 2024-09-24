@@ -128,14 +128,16 @@ export namespace ObservedChecker {
 	 * - a binary expression
 	 * - a conditional expression
 	 * - an as expression
+	 * 
+	 * `parental` specifies whether are visiting parent node of original to determine observed.
 	 */
-	export function isObserved(rawNode: TS.Node): rawNode is CanObserveNode {
+	export function isObserved(rawNode: TS.Node, parental: boolean = false): rawNode is CanObserveNode {
 
 		// `a.b`
 		// `(a ? b : c).d`
 		// `(a ?? b).b`
 		if (Helper.access.isAccess(rawNode)) {
-			return isAccessObserved(rawNode)
+			return isAccessObserved(rawNode, parental)
 		}
 
 		// `this`
@@ -152,13 +154,13 @@ export namespace ObservedChecker {
 					|| rawNode.operatorToken.kind === ts.SyntaxKind.BarBarToken
 					|| rawNode.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken
 				)
-				&& isObserved(rawNode.left)
-				&& isObserved(rawNode.right)
+				&& isObserved(rawNode.left, parental)
+				&& isObserved(rawNode.right, parental)
 		}
 
 		// `(...)`
 		else if (ts.isParenthesizedExpression(rawNode)) {
-			return isObserved(rawNode.expression)
+			return isObserved(rawNode.expression, parental)
 		}
 
 		// `(a as Observed<{b: number}>).b`
@@ -169,8 +171,8 @@ export namespace ObservedChecker {
 
 		// `a ? b : c`, can observe only if both b & c can observe.
 		else if (ts.isConditionalExpression(rawNode)) {
-			return isObserved(rawNode.whenTrue)
-				&& isObserved(rawNode.whenFalse)
+			return isObserved(rawNode.whenTrue, parental)
+				&& isObserved(rawNode.whenFalse, parental)
 		}
 
 		// `a.b()`
@@ -209,20 +211,11 @@ export namespace ObservedChecker {
 		return context.variables.isVariableObserved(name)
 	}
 
-
-	/** Returns whether a property accessing should be observed. */
-	export function isAccessObserved(rawNode: AccessNode): boolean {
-		return isAccessObservedInternalUse(rawNode, true)
-	}
-
-	/** Returns whether a property accessing should be observed, ignores readonly testing. */
-	export function isParentalAccessObserved(rawNode: AccessNode): boolean {
-		return isAccessObservedInternalUse(rawNode, false)
-	}
-
-
-	/** Returns whether a property accessing should be observed, for internally use only. */
-	function isAccessObservedInternalUse(rawNode: AccessNode, considerReadonly: boolean): boolean {
+	/** 
+	 * Returns whether a property accessing should be observed, for internal use only.
+	 * `parental` specifies whether are visiting parent node of original to determine observed.
+	 */
+	export function isAccessObserved(rawNode: AccessNode, parental: boolean = false): boolean {
 
 		// Will never observe private identifier like `a.#b`.
 		if (ts.isPropertyAccessExpression(rawNode) && ts.isPrivateIdentifier(rawNode.name)) {
@@ -231,11 +224,11 @@ export namespace ObservedChecker {
 
 		// `[]`, `Map`, `Set`.
 		if (isStruct(rawNode.expression)) {
-			return isObserved(rawNode.expression)
+			return isObserved(rawNode.expression, true)
 		}
 
 		// Readonly properties are always not been observed.
-		if (considerReadonly) {
+		if (!parental) {
 			let readonly = Helper.types.isReadonly(rawNode)
 			if (readonly) {
 				return false
@@ -273,11 +266,7 @@ export namespace ObservedChecker {
 		// 	return false
 		// }
 
-		if (Helper.access.isAccess(exp)) {
-			return isParentalAccessObserved(exp)
-		}
-
-		return isObserved(exp)
+		return isObserved(exp, true)
 	}
 
 

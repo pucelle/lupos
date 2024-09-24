@@ -1,6 +1,6 @@
 import type TS from 'typescript'
 import {ts} from './global'
-import {VisitTree} from './visite-tree'
+import {VisitTree} from './visit-tree'
 import {Helper} from './helper'
 import {ScopeTree} from './scope-tree'
 import {InterpolationContentType, Interpolator} from './interpolator'
