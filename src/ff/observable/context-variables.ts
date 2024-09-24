@@ -171,7 +171,7 @@ export class ContextVariables {
 	private checkVariableObserved(node: TS.VariableDeclaration, fromContext: Context | null = null): boolean {
 		if (fromContext && (fromContext.type & ContextTypeMask.IterationInitializer) > 0) {
 			if (ts.isForOfStatement(this.context.node)) {
-				return ObservedChecker.isObserved(this.context.node.expression)
+				return ObservedChecker.isObserved(this.context.node.expression, true)
 			}
 		}
 

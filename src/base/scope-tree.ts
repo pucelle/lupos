@@ -215,8 +215,6 @@ export namespace ScopeTree {
 			let {name, scope} = hashVariableName(rawNode)
 			let declNode = scope.getDeclarationByName(rawNode.text)
 
-			console.log(name, Helper.getText(scope.node))
-
 			addToList(usedScopes, scope)
 
 			if (declNode) {
