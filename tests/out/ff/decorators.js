@@ -1,14 +1,6 @@
 import { untrack, beginTrack, endTrack, trackSet, enqueue, trackGet } from '@pucelle/ff';
 import { Component } from '@pucelle/lupos.js';
 class TestComputed extends Component {
-    onConnected() {
-        super.onConnected();
-        this.#reset_prop2();
-    }
-    onWillDisconnect() {
-        super.onWillDisconnect();
-        untrack(this.#reset_prop2, this);
-    }
     prop = 1;
     #prop2 = undefined;
     #needs_compute_prop2 = true;
@@ -38,8 +30,18 @@ class TestComputed extends Component {
         this.#needs_compute_prop2 = false;
         return this.#prop2;
     }
+    onConnected() {
+        super.onConnected();
+        this.#reset_prop2();
+    }
+    onWillDisconnect() {
+        super.onWillDisconnect();
+        untrack(this.#reset_prop2, this);
+    }
 }
 class TestEffect extends Component {
+    propRead = 1;
+    propWrite = 1;
     onConnected() {
         super.onConnected();
         this.onPropChangeEffect();
@@ -48,8 +50,6 @@ class TestEffect extends Component {
         super.onWillDisconnect();
         untrack(this.#enqueue_onPropChangeEffect, this);
     }
-    propRead = 1;
-    propWrite = 1;
     #enqueue_onPropChangeEffect() {
         enqueue(this.onPropChangeEffect, this);
     }
@@ -69,6 +69,7 @@ class TestEffect extends Component {
     }
 }
 class TestWatchProperty extends Component {
+    prop = 1;
     onConnected() {
         super.onConnected();
         this.#compare_onPropChange();
@@ -79,7 +80,6 @@ class TestWatchProperty extends Component {
         untrack(this.#enqueue_onPropChange, this);
         untrack(this.#enqueue_onImmediatePropChange, this);
     }
-    prop = 1;
     #values_onPropChange;
     #enqueue_onPropChange() {
         enqueue(this.#compare_onPropChange, this);
@@ -139,6 +139,7 @@ class TestWatchProperty extends Component {
     }
 }
 class TestWatchCallback extends Component {
+    prop = 1;
     onConnected() {
         super.onConnected();
         this.#compare_onPropChange();
@@ -149,7 +150,6 @@ class TestWatchCallback extends Component {
         untrack(this.#enqueue_onPropChange, this);
         untrack(this.#enqueue_onImmediatePropChange, this);
     }
-    prop = 1;
     #values_onPropChange;
     #enqueue_onPropChange() {
         enqueue(this.#compare_onPropChange, this);
@@ -204,10 +204,10 @@ class TestWatchCallback extends Component {
     }
 }
 class TestObservedImplemented {
+    prop = 1;
     constructor() {
         this.onPropChangeEffect();
     }
-    prop = 1;
     #enqueue_onPropChangeEffect() {
         enqueue(this.onPropChangeEffect, this);
     }

@@ -59,7 +59,7 @@ export namespace Modifier {
 	}
 
 
-	/** Add a member to a class declaration. */
+	/** Add or replace a member to a class declaration. */
 	export function addClassMember(classIndex: number, member: TS.ClassElement, preferInsertToHead: boolean = false) {
 		let node = VisitTree.getNode(classIndex) as TS.ClassDeclaration
 		let name = Helper.cls.getMemberName(member)

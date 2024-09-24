@@ -1,6 +1,7 @@
 import {} from '@pucelle/ff';
 import { Component } from '@pucelle/lupos.js';
 class Parent extends Component {
+    prop = 1;
     onConnected() {
         super.onConnected();
         Component.setContextVariable(this, "prop");
@@ -9,9 +10,12 @@ class Parent extends Component {
         super.onWillDisconnect();
         Component.deleteContextVariables(this);
     }
-    prop = 1;
 }
 class Child extends Component {
+    #prop_declared_by = undefined;
+    get prop() {
+        return this.#prop_declared_by?.["prop"];
+    }
     onConnected() {
         super.onConnected();
         this.#prop_declared_by = Component.getContextVariableDeclared(this, "prop");
@@ -20,9 +24,5 @@ class Child extends Component {
         super.onWillDisconnect();
         this.#prop_declared_by = undefined;
         Component.deleteContextVariables(this);
-    }
-    #prop_declared_by = undefined;
-    get prop() {
-        return this.#prop_declared_by?.["prop"];
     }
 }

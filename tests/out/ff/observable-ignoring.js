@@ -67,6 +67,7 @@ class TestIgnoringWriteonlyPrivate extends Component {
     }
 }
 class TestIgnoringOfPrivateComputedProperty extends Component {
+    prop = 1;
     onConnected() {
         super.onConnected();
         this.#reset_computedProp();
@@ -75,7 +76,6 @@ class TestIgnoringOfPrivateComputedProperty extends Component {
         super.onWillDisconnect();
         untrack(this.#reset_computedProp, this);
     }
-    prop = 1;
     readMethod() {
         trackGet(this, "computedProp");
         return this.computedProp;
