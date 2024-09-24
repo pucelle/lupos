@@ -18,6 +18,7 @@ export type CanObserveNode = AccessNode
 	| TS.Identifier | TS.ThisExpression
 	| TS.CallExpression | TS.ParenthesizedExpression
 	| TS.BinaryExpression | TS.ConditionalExpression
+	| TS.AsExpression
 
 	
 /** Help to check observed state. */

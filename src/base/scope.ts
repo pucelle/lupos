@@ -6,10 +6,13 @@ import {ScopeTree} from './scope-tree'
 import {InterpolationContentType, Interpolator} from './interpolator'
 
 
+type ScopeNode = TS.FunctionLikeDeclaration | TS.ForStatement | TS.ForOfStatement | TS.ForInStatement | TS.Block | TS.SourceFile
+
+
 /** Mark all variables with a context. */
 export class Scope {
 
-	readonly node: TS.FunctionLikeDeclaration | TS.ForStatement | TS.Block | TS.SourceFile
+	readonly node: ScopeNode
 	readonly parent: Scope | null
 	readonly visitIndex: number
 
@@ -17,7 +20,7 @@ export class Scope {
 	private variables: Map<string, TS.Node | null> = new Map()
 
 	constructor(
-		node: TS.FunctionLikeDeclaration | TS.ForStatement | TS.Block | TS.SourceFile,
+		node: ScopeNode,
 		index: number,
 		parent: Scope | null
 	) {
@@ -75,6 +78,8 @@ export class Scope {
 	canAddStatements(): boolean {
 		return !Helper.isFunctionLike(this.node)
 			&& !ts.isForStatement(this.node)
+			&& !ts.isForOfStatement(this.node)
+			&& !ts.isForInStatement(this.node)
 	}
 
 	/** Whether has declared a specified named local variable. */

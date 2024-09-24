@@ -193,10 +193,23 @@ export namespace ContextTree {
 			}
 		}
 
-		// `for ... in`, `for ... of`, `while ...`, `do ...`
+		// `for ... in`, `for ... of`
 		else if (ts.isForOfStatement(parent)
 			|| ts.isForInStatement(parent)
-			|| ts.isWhileStatement(parent)
+		) {
+			if (node === parent.initializer) {
+				type |= ContextTypeMask.IterationInitializer
+			}
+			else if (node === parent.expression) {
+				type |= ContextTypeMask.IterationConditionIncreasement
+			}
+			else if (node === parent.statement) {
+				type |= ContextTypeMask.IterationContent
+			}
+		}
+
+		// `while ...`, `do ...`
+		else if (ts.isWhileStatement(parent)
 			|| ts.isDoStatement(parent)
 		) {
 			if (node === parent.expression) {

@@ -75,6 +75,8 @@ export namespace ScopeTree {
 		if (ts.isSourceFile(node)
 			|| Helper.isFunctionLike(node)
 			|| ts.isForStatement(node)
+			|| ts.isForOfStatement(node)
+			|| ts.isForInStatement(node)
 			|| ts.isBlock(node)
 		) {
 			current = new Scope(node, index, stack.length > 0 ? stack[stack.length - 1] : null)
@@ -212,6 +214,8 @@ export namespace ScopeTree {
 		if (Helper.variable.isVariableIdentifier(rawNode)) {
 			let {name, scope} = hashVariableName(rawNode)
 			let declNode = scope.getDeclarationByName(rawNode.text)
+
+			console.log(name, Helper.getText(scope.node))
 
 			addToList(usedScopes, scope)
 

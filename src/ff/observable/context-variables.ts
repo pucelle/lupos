@@ -151,19 +151,30 @@ export class ContextVariables {
 	}
 
 	/** Visit a variable. */
-	visitVariable(node: TS.VariableDeclaration) {
+	visitVariable(node: TS.VariableDeclaration, fromContext: Context | null = null) {
 
 		// For Initializer registers variables for whole For Iteration can visit.
 		if (this.context.type & ContextTypeMask.IterationInitializer) {
-			this.context.parent!.variables.visitVariable(node)
+			this.context.parent!.variables.visitVariable(node, this.context)
 			return
 		}
 	
-		let observed = ObservedChecker.isVariableDeclarationObserved(node)
+		let observed = this.checkVariableObserved(node, fromContext)
 		let names = Helper.variable.walkDeclarationNames(node)
 
 		for (let name of names) {
 			this.variableObserved.set(name, observed)
 		}
+	}
+
+	/** Check whether a variable declaration node should be observed. */
+	private checkVariableObserved(node: TS.VariableDeclaration, fromContext: Context | null = null): boolean {
+		if (fromContext && (fromContext.type & ContextTypeMask.IterationInitializer) > 0) {
+			if (ts.isForOfStatement(this.context.node)) {
+				return ObservedChecker.isObserved(this.context.node.expression)
+			}
+		}
+
+		return ObservedChecker.isVariableDeclarationObserved(node)
 	}
 }

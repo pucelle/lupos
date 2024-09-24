@@ -1,5 +1,5 @@
+import { trackGet } from '@pucelle/ff';
 import { Component } from '@pucelle/lupos.js';
-import { trackGet } from "@pucelle/ff";
 class TestIfStatement extends Component {
     prop1 = 0;
     prop2 = 0;
@@ -64,6 +64,14 @@ class TestForBlock extends Component {
             this.prop;
         }
         trackGet(this, "prop");
+        return 0;
+    }
+    testForInitializerObserved() {
+        let list = [{ value: 1 }];
+        for (let item of list) {
+            item.value;
+            trackGet(item, "value");
+        }
         return 0;
     }
     testForCondition() {

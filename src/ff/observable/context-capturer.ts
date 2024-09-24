@@ -187,7 +187,7 @@ export class ContextCapturer {
 	beforeExit() {
 		this.endCapture()
 
-		if ((this.context.type & ContextTypeMask.SourceFile) > 0) {
+		if (this.context.type & ContextTypeMask.SourceFile) {
 
 			// Do referencing and optimization, ensure child-first then self.
 			for (let descent of ContextTree.walkInwardChildFirst(this.context)) {

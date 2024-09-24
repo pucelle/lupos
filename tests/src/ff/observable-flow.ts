@@ -1,3 +1,4 @@
+import {Observed} from '@pucelle/ff'
 import {Component} from '@pucelle/lupos.js'
 
 
@@ -68,6 +69,16 @@ class TestForBlock extends Component {
 	testForInitializer() {
 		for (let i = this.prop; i < 1; i++) {
 			this.prop
+		}
+
+		return 0
+	}
+
+	testForInitializerObserved() {
+		let list: Observed<{value: number}[]> = [{value: 1}]
+
+		for (let item of list) {
+			item.value
 		}
 
 		return 0

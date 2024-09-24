@@ -20,22 +20,23 @@ export namespace Optimizer {
 	 */
 	export function optimize(context: Context) {
 		if (context.type & ContextTypeMask.FlowInterruption) {
-			moveFlowInterruptionCapturingOutward(context)
+			moveFlowInterruptionCapturedOutward(context)
 		}
 
 		if (context.type & ContextTypeMask.Conditional) {
-			mergeConditionalContentCapturingBranches(context)
+			mergeConditionalContentCapturedBranches(context)
 
 			// Must after merging.
 			// For `ConditionalContent`, if moving to outer Conditional,
 			// later it will be moved outer again, until out-most Non-Conditional.
 			if ((context.type & ContextTypeMask.ConditionalContent) === 0) {
-				moveConditionalCapturingOutward(context)
+				moveConditionalCapturedOutward(context)
 			}
 		}
 
+		// Move tracking codes of `for(let xxx;)` outward.
 		if (context.type & ContextTypeMask.IterationInitializer) {
-			moveIterationInitializerCapturingOutward(context)
+			moveIterationInitializerCapturedOutward(context)
 		}
 
 		// This optimizing has low risk, loop codes may not run when have no looping.
@@ -45,12 +46,12 @@ export namespace Optimizer {
 
 		// This optimizing has low risk, loop codes may not run when have no looping.
 		if (context.type & ContextTypeMask.IterationContent) {
-			moveIterationContentCapturingOutward(context)
+			moveIterationContentCapturedOutward(context)
 		}
 
 		// Eliminate repetitive.
 		if (context.type & ContextTypeMask.FunctionLike) {
-			eliminateRepetitiveCapturingRecursively(context)
+			eliminateRepetitiveCapturedRecursively(context)
 		}
 
 		// Eliminate private and don't have both get and set tracking types.
@@ -61,7 +62,7 @@ export namespace Optimizer {
 
 
 	/** Move flow interruption tracking outward. */
-	function moveFlowInterruptionCapturingOutward(context: Context) {
+	function moveFlowInterruptionCapturedOutward(context: Context) {
 		if (!context.capturer.hasCaptured()) {
 			return
 		}
@@ -74,7 +75,7 @@ export namespace Optimizer {
 
 
 	/** Move conditional tracking outward. */
-	function moveConditionalCapturingOutward(context: Context) {
+	function moveConditionalCapturedOutward(context: Context) {
 		if (!context.capturer.hasCaptured()) {
 			return
 		}
@@ -86,7 +87,7 @@ export namespace Optimizer {
 
 
 	/** Merge all branches tracking and move outward. */
-	function mergeConditionalContentCapturingBranches(context: Context) {
+	function mergeConditionalContentCapturedBranches(context: Context) {
 		let contentChildren = context.children.filter(child => {
 			return child.type & ContextTypeMask.ConditionalContent
 		})
@@ -119,7 +120,7 @@ export namespace Optimizer {
 
 
 	/** Move whole content of iteration initializer outward. */
-	function moveIterationInitializerCapturingOutward(context: Context) {
+	function moveIterationInitializerCapturedOutward(context: Context) {
 		if (!context.capturer.hasCaptured()) {
 			return
 		}
@@ -147,7 +148,7 @@ export namespace Optimizer {
 
 
 	/** Move iteration content tracking outward. */
-	function moveIterationContentCapturingOutward(context: Context) {
+	function moveIterationContentCapturedOutward(context: Context) {
 		if (!context.capturer.hasCaptured()) {
 			return
 		}
@@ -160,7 +161,7 @@ export namespace Optimizer {
 
 
 	/** Eliminate repetitive captured indices that repeat itself or with it's descendants. */
-	function eliminateRepetitiveCapturingRecursively(context: Context) {
+	function eliminateRepetitiveCapturedRecursively(context: Context) {
 		context.capturer.eliminateRepetitiveRecursively(new Set())
 	}
 
