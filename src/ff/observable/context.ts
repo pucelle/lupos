@@ -148,7 +148,7 @@ export class Context {
 
 	/** Add a property access expression. */
 	private mayAddGetTracking(node: AccessNode) {
-		if (this.state.shouldIgnoreGetTracking()) {
+		if (this.state.shouldIgnoreGetTracking(node)) {
 			return
 		}
 
@@ -163,7 +163,7 @@ export class Context {
 
 	/** Add a property assignment expression. */
 	private mayAddSetTracking(node: AccessNode) {
-		if (this.state.shouldIgnoreSetTracking()) {
+		if (this.state.shouldIgnoreSetTracking(node)) {
 			return
 		}
 

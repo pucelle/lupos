@@ -1,7 +1,7 @@
 import type TS from 'typescript'
 import {Context} from './context'
 import {ContextTypeMask} from './context-tree'
-import {FlowInterruptionTypeMask, Helper, ts} from '../../base'
+import {AccessNode, FlowInterruptionTypeMask, Helper, ts} from '../../base'
 
 
 
@@ -11,7 +11,7 @@ export class ContextState {
 	readonly context: Context
 
 	/** Whether be included in a constructor function */
-	readonly withinConstructor: boolean
+	readonly withinLifeFunction: boolean
 
 	/** 
 	 * Whether function has nothing returned.
@@ -33,7 +33,7 @@ export class ContextState {
 
 	constructor(context: Context) {
 		this.context = context
-		this.withinConstructor = this.checkWithinConstructor()
+		this.withinLifeFunction = this.checkWithinLifeFunction()
 		this.nothingReturned = this.checkNothingReturned()
 		this.effectDecorated = this.checkEffectDecorated()
 		
@@ -42,15 +42,33 @@ export class ContextState {
 		}
 	}
 
-	private checkWithinConstructor(): boolean {
+	private checkWithinLifeFunction(): boolean {
 		let node = this.context.node
 
 		// Inherit from parent context.
 		if ((this.context.type & ContextTypeMask.FunctionLike) === 0) {
-			return this.context.parent?.state.withinConstructor ?? false
+			return this.context.parent?.state.withinLifeFunction ?? false
 		}
 
-		return ts.isConstructorDeclaration(node)
+		if (ts.isConstructorDeclaration(node)) {
+			return true
+		}
+
+		if (!ts.isMethodDeclaration(node)) {
+			return false
+		}
+
+		let classNode = node.parent
+		if (!ts.isClassDeclaration(classNode)) {
+			return false
+		}
+
+		if (!Helper.cls.isDerivedOf(classNode, 'Component', '@pucelle/lupos.js')) {
+			return false
+		}
+
+		let methodName = Helper.getText(node.name)
+		return ['onCreated', 'onConnected', 'onWillDisconnect'].includes(methodName)
 	}
 
 	private checkNothingReturned(): boolean {
@@ -110,18 +128,22 @@ export class ContextState {
 	}
 
 	/** Whether should ignore set tracking. */
-	shouldIgnoreSetTracking(): boolean {
-		if (this.withinConstructor) {
-			return true
+	shouldIgnoreSetTracking(node: AccessNode): boolean {
+		if (this.withinLifeFunction) {
+			if (node.expression.kind === ts.SyntaxKind.ThisKeyword) {
+				return true
+			}
 		}
 
 		return false
 	}
 
 	/** Whether should ignore get tracking. */
-	shouldIgnoreGetTracking(): boolean {
-		if (this.withinConstructor) {
-			return true
+	shouldIgnoreGetTracking(node: AccessNode): boolean {
+		if (this.withinLifeFunction) {
+			if (node.expression.kind === ts.SyntaxKind.ThisKeyword) {
+				return true
+			}
 		}
 
 		if (this.nothingReturned && !this.effectDecorated) {

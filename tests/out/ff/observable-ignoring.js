@@ -7,10 +7,16 @@ class TestIgnoringStringIndex extends Component {
         return this.prop[0];
     }
 }
-class TestIgnoringConstructor extends Component {
+class TestIgnoringLifeFunction extends Component {
     prop;
     constructor() {
         super();
+        this.prop = 0;
+    }
+    onConnected() {
+        this.prop = 1;
+    }
+    onWillDisconnect() {
         this.prop = 2;
     }
 }

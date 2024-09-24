@@ -12,12 +12,20 @@ class TestIgnoringStringIndex extends Component {
 }
 
 
-class TestIgnoringConstructor extends Component {
+class TestIgnoringLifeFunction extends Component {
 
 	prop: number
 
 	constructor() {
 		super()
+		this.prop = 0
+	}
+
+	protected onConnected() {
+		this.prop = 1
+	}
+
+	protected onWillDisconnect() {
 		this.prop = 2
 	}
 }
