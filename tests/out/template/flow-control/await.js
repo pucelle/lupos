@@ -3,7 +3,7 @@ import { trackGet } from "@pucelle/ff";
 const $html_0 = new HTMLMaker("<!----><!---->");
 /*
 <root>
-    <lupos:await ${this.promise} />
+    <lu:await ${this.promise} />
 </root>
 */ const $template_0 = new TemplateMaker(function ($context) {
     let $node = $html_0.make();
@@ -42,7 +42,7 @@ const $html_2 = new HTMLMaker("Then Content");
 });
 /*
 <root>
-    <lupos:await ${this.promise} />
+    <lu:await ${this.promise} />
 </root>
 */ const $template_3 = new TemplateMaker(function ($context) {
     let $node = $html_0.make();
@@ -80,7 +80,7 @@ const $html_3 = new HTMLMaker("Catch Content");
 });
 /*
 <root>
-    <lupos:await ${this.promise} />
+    <lu:await ${this.promise} />
 </root>
 */ const $template_6 = new TemplateMaker(function ($context) {
     let $node = $html_0.make();

@@ -17,7 +17,7 @@ export class IfFlowControl extends FlowControlBase {
 		this.blockVariableName = this.treeParser.getUniqueBlockName()
 		this.cacheable = this.hasAttrValue(this.node, 'cache')
 
-		let nextNodes = this.eatNext('lupos:elseif', 'lupos:else')
+		let nextNodes = this.eatNext('lu:elseif', 'lu:else')
 		let allNodes = [this.node, ...nextNodes]
 		let valueIndices: (number | null)[] = []
 		let templateNames: (string | null)[] = []
@@ -25,16 +25,16 @@ export class IfFlowControl extends FlowControlBase {
 		for (let node of allNodes) {
 			let valueIndex = this.getAttrValueIndex(node)
 			
-			if (valueIndex === null && node.tagName !== 'lupos:else') {
+			if (valueIndex === null && node.tagName !== 'lu:else') {
 				throw new Error('<' + node.tagName + ' ${...}> must accept a parameter as condition!')
 			}
 
-			if (valueIndex !== null && node.tagName === 'lupos:else') {
+			if (valueIndex !== null && node.tagName === 'lu:else') {
 				throw new Error('<' + node.tagName + '> should not accept any parameter!')
 			}
 
 			if (valueIndex === null && valueIndices[valueIndices.length - 1] === null) {
-				throw new Error('<lupos:else> is allowed only one to exist on the tail!')
+				throw new Error('<lu:else> is allowed only one to exist on the tail!')
 			}
 
 			valueIndices.push(valueIndex)

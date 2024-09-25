@@ -11,15 +11,15 @@ class TestFor extends Component {
 
 	testForMapFn() {
 		return html`
-			<lupos:for ${[1,2,3]}>${this.renderItem}</lupos:for>
+			<lu:for ${[1,2,3]}>${this.renderItem}</lu:for>
 		`
 	}
 
 	testForLocalMapFn() {
 		return html`
-			<lupos:for ${[1,2,3]}>${(n: number) => html`
+			<lu:for ${[1,2,3]}>${(n: number) => html`
 				${n + this.prop}
-			`}</lupos:for>
+			`}</lu:for>
 		`
 	}
 
@@ -27,9 +27,9 @@ class TestFor extends Component {
 		let prop = this.prop
 
 		return html`
-			<lupos:for ${[1,2,3]}>${(n: number) => html`
+			<lu:for ${[1,2,3]}>${(n: number) => html`
 				${n + prop}
-			`}</lupos:for>
+			`}</lu:for>
 		`
 	}
 }

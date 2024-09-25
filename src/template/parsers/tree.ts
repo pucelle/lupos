@@ -25,7 +25,7 @@ enum SlotType {
 	/** `<${} ...>` */
 	DynamicComponent,
 
-	/** `<lupos:if>`, ... */
+	/** `<lu:if>`, ... */
 	FlowControl,
 
 	/** `<tag attr=...>` */
@@ -123,7 +123,7 @@ export class TreeParser {
 					else if (TemplateSlotPlaceholder.isDynamicComponent(tagName)) {
 						this.parseDynamicTag(node)
 					}
-					else if (tagName.startsWith('lupos:')) {
+					else if (tagName.startsWith('lu:')) {
 						this.parseFlowControlTag(node)
 					}
 

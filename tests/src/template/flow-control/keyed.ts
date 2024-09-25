@@ -7,7 +7,7 @@ class TestKeyed extends Component {
 
 	testKeyed() {
 		return html`
-			<lupos:keyed ${this.key}>Keyed Content</lupos:keyed>
+			<lu:keyed ${this.key}>Keyed Content</lu:keyed>
 		`
 	}
 }

@@ -16,12 +16,12 @@ export class AwaitFlowControl extends FlowControlBase {
 
 		let promiseIndex = this.getAttrValueIndex(this.node)
 		if (promiseIndex === null) {
-			throw new Error('<lupos:await ${...}> must accept a parameter as promise to await!')
+			throw new Error('<lu:await ${...}> must accept a parameter as promise to await!')
 		}
 
-		let nextNodes = this.eatNext('lupos:then', 'lupos:catch')
-		let thenNode = nextNodes.find(n => n.tagName === 'lupos:then')
-		let catchNode = nextNodes.find(n => n.tagName === 'lupos:catch')
+		let nextNodes = this.eatNext('lu:then', 'lu:catch')
+		let thenNode = nextNodes.find(n => n.tagName === 'lu:then')
+		let catchNode = nextNodes.find(n => n.tagName === 'lu:catch')
 		let allNodes = [this.node, thenNode, catchNode]
 		let templateNames: (string | null)[] = []
 

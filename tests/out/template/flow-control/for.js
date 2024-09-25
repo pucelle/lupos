@@ -20,7 +20,7 @@ const $html_0 = new HTMLMaker(" ");
 const $html_1 = new HTMLMaker("<!----><!---->");
 /*
 <root>
-    <lupos:for ${[1,2,3]} />
+    <lu:for ${[1,2,3]} />
 </root>
 */ const $template_1 = new TemplateMaker(function ($context) {
     let $node = $html_1.make();
@@ -53,7 +53,7 @@ const $html_1 = new HTMLMaker("<!----><!---->");
 });
 /*
 <root>
-    <lupos:for ${[1,2,3]} />
+    <lu:for ${[1,2,3]} />
 </root>
 */ const $template_3 = new TemplateMaker(function ($context) {
     let $node = $html_1.make();
@@ -86,7 +86,7 @@ const $html_1 = new HTMLMaker("<!----><!---->");
 });
 /*
 <root>
-    <lupos:for ${[1,2,3]} />
+    <lu:for ${[1,2,3]} />
 </root>
 */ const $template_5 = new TemplateMaker(function ($context, $latestValues) {
     let $node = $html_1.make();

@@ -46,7 +46,7 @@ export abstract class FlowControlBase {
 		return !!node.attrs?.find(attr => attr.name === name)
 	}
 
-	/** Get value index of slot `<lupos:xx ${...}>`. */
+	/** Get value index of slot `<lu:xx ${...}>`. */
 	protected getAttrValueIndex(node: HTMLNode): number | null {
 		let attrName = node.attrs?.find(attr => TemplateSlotPlaceholder.isCompleteSlotIndex(attr.name))?.name
 		let index = attrName ? TemplateSlotPlaceholder.getUniqueSlotIndex(attrName) : null
@@ -54,7 +54,7 @@ export abstract class FlowControlBase {
 		return index
 	}
 
-	/** Get value index of slot `<lupos:xx>${...}<>`. */
+	/** Get value index of slot `<lu:xx>${...}<>`. */
 	protected getUniqueChildValueIndex(node: HTMLNode): number | null {
 		if (node.children.length === 0) {
 			return null

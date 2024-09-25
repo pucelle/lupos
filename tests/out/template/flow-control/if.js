@@ -3,7 +3,7 @@ import { trackGet } from "@pucelle/ff";
 const $html_0 = new HTMLMaker("<!----><!---->");
 /*
 <root>
-    <lupos:if ${this.prop} />
+    <lu:if ${this.prop} />
 </root>
 */ const $template_0 = new TemplateMaker(function ($context) {
     let $node = $html_0.make();
@@ -38,7 +38,7 @@ const $html_1 = new HTMLMaker("If Content");
 });
 /*
 <root>
-    <lupos:if ${this.prop} cache />
+    <lu:if ${this.prop} cache />
 </root>
 */ const $template_2 = new TemplateMaker(function ($context) {
     let $node = $html_0.make();
@@ -72,7 +72,7 @@ const $html_1 = new HTMLMaker("If Content");
 });
 /*
 <root>
-    <lupos:if ${this.prop} />
+    <lu:if ${this.prop} />
 </root>
 */ const $template_4 = new TemplateMaker(function ($context) {
     let $node = $html_0.make();
@@ -113,7 +113,7 @@ const $html_2 = new HTMLMaker(" ");
 });
 /*
 <root>
-    <lupos:if ${this.prop} />
+    <lu:if ${this.prop} />
 </root>
 */ const $template_6 = new TemplateMaker(function ($context) {
     let $node = $html_0.make();
@@ -158,7 +158,7 @@ const $html_3 = new HTMLMaker("Else Content");
 });
 /*
 <root>
-    <lupos:if ${this.prop} />
+    <lu:if ${this.prop} />
 </root>
 */ const $template_9 = new TemplateMaker(function ($context) {
     let $node = $html_0.make();

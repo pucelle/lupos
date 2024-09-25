@@ -162,7 +162,7 @@ export class HTMLNode {
 			return false
 		}
 
-		if (this.type === HTMLNodeType.Tag && this.tagName!.startsWith('lupos:')) {
+		if (this.type === HTMLNodeType.Tag && this.tagName!.startsWith('lu:')) {
 			return false
 		}
 
@@ -251,7 +251,7 @@ export class HTMLNode {
 			let tagName = this.tagName!
 
 			// Flow control
-			if (tagName.startsWith('lupos:')) {
+			if (tagName.startsWith('lu:')) {
 				return `<!---->`
 			}
 

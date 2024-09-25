@@ -20,7 +20,7 @@ export class SwitchFlowControl extends FlowControlBase {
 
 		let switchValueIndex = this.getAttrValueIndex(this.node)
 		if (switchValueIndex === null) {
-			throw new Error('<lupos:switch ${...}> must accept a parameter as condition!')
+			throw new Error('<lu:switch ${...}> must accept a parameter as condition!')
 		}
 		this.switchValueIndex = switchValueIndex
 
@@ -30,16 +30,16 @@ export class SwitchFlowControl extends FlowControlBase {
 
 		for (let child of childNodes) {
 			let valueIndex = this.getAttrValueIndex(child)
-			if (valueIndex === null && child.tagName === 'lupos:case') {
-				throw new Error('<lupos:case ${...}> must accept a parameter as condition!')
+			if (valueIndex === null && child.tagName === 'lu:case') {
+				throw new Error('<lu:case ${...}> must accept a parameter as condition!')
 			}
 
-			if (valueIndex !== null && child.tagName === 'lupos:default') {
-				throw new Error('<lupos:default> should not accept any parameter!')
+			if (valueIndex !== null && child.tagName === 'lu:default') {
+				throw new Error('<lu:default> should not accept any parameter!')
 			}
 
 			if (valueIndex === null && valueIndices[valueIndices.length - 1] === null) {
-				throw new Error('<lupos:default> is allowed only one to exist on the tail!')
+				throw new Error('<lu:default> is allowed only one to exist on the tail!')
 			}
 
 			valueIndices.push(valueIndex)
@@ -53,7 +53,7 @@ export class SwitchFlowControl extends FlowControlBase {
 				templateNames.push(null)
 			}
 
-			if (child.tagName === 'lupos:default' || valueIndex === null) {
+			if (child.tagName === 'lu:default' || valueIndex === null) {
 				break
 			}
 		}

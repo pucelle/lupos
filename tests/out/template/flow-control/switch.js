@@ -3,7 +3,7 @@ import { trackGet } from "@pucelle/ff";
 const $html_0 = new HTMLMaker("<!----><!---->");
 /*
 <root>
-    <lupos:switch ${this.value} />
+    <lu:switch ${this.value} />
 </root>
 */ const $template_0 = new TemplateMaker(function ($context) {
     let $node = $html_0.make();
@@ -48,7 +48,7 @@ const $html_2 = new HTMLMaker("Case Content 2");
 });
 /*
 <root>
-    <lupos:switch ${this.value} />
+    <lu:switch ${this.value} />
 </root>
 */ const $template_3 = new TemplateMaker(function ($context) {
     let $node = $html_0.make();

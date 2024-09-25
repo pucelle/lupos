@@ -8,35 +8,35 @@ class TestIf extends Component {
 
 	testIf() {
 		return html`
-			<lupos:if ${this.prop}>If Content</lupos:if>
+			<lu:if ${this.prop}>If Content</lu:if>
 		`
 	}
 
 	testIfCacheable() {
 		return html`
-			<lupos:if ${this.prop} cache>If Content</lupos:if>
+			<lu:if ${this.prop} cache>If Content</lu:if>
 		`
 	}
 
 	testDynamicIfContent() {
 		return html`
-			<lupos:if ${this.prop}>${this.content}</lupos:if>
+			<lu:if ${this.prop}>${this.content}</lu:if>
 		`
 	}
 
 	testIfElse() {
 		return html`
-			<lupos:if ${this.prop}>If Content</lupos:if>
-			<lupos:else>Else Content</lupos:else>
+			<lu:if ${this.prop}>If Content</lu:if>
+			<lu:else>Else Content</lu:else>
 		`
 	}
 
 	testIfElseIfElse() {
 		return html`
-			<lupos:if ${this.prop}>If Content</lupos:if>
-			<lupos:elseif ${this.prop}>Then Content 1</lupos:elseif>
-			<lupos:elseif ${this.prop}>Then Content 2</lupos:elseif>
-			<lupos:else>Then Content</lupos:else>
+			<lu:if ${this.prop}>If Content</lu:if>
+			<lu:elseif ${this.prop}>Then Content 1</lu:elseif>
+			<lu:elseif ${this.prop}>Then Content 2</lu:elseif>
+			<lu:else>Then Content</lu:else>
 		`
 	}
 }

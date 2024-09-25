@@ -16,23 +16,23 @@ export class FlowControlSlotParser extends SlotParserBase {
 		let control: FlowControlBase
 
 		switch (this.node.tagName) {
-			case 'lupos:await':
+			case 'lu:await':
 				control = new AwaitFlowControl(this)
 				break
 
-			case 'lupos:for':
+			case 'lu:for':
 				control = new ForFlowControl(this)
 				break
 
-			case 'lupos:if':
+			case 'lu:if':
 				control = new IfFlowControl(this)
 				break
 
-			case 'lupos:keyed':
+			case 'lu:keyed':
 				control = new KeyedFlowControl(this)
 				break
 
-			case 'lupos:switch':
+			case 'lu:switch':
 				control = new SwitchFlowControl(this)
 				break
 

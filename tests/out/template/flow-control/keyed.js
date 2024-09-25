@@ -3,7 +3,7 @@ import { trackGet } from "@pucelle/ff";
 const $html_0 = new HTMLMaker("<!----><!---->");
 /*
 <root>
-    <lupos:keyed ${this.key} />
+    <lu:keyed ${this.key} />
 </root>
 */ const $template_0 = new TemplateMaker(function ($context) {
     let $node = $html_0.make();

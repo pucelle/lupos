@@ -7,23 +7,23 @@ class TestAwait extends Component {
 
 	testAwaitThen() {
 		return html`
-			<lupos:await ${this.promise}>Pending Content</lupos:await>
-			<lupos:then>Then Content</lupos:then>
+			<lu:await ${this.promise}>Pending Content</lu:await>
+			<lu:then>Then Content</lu:then>
 		`
 	}
 
 	testAwaitCatch() {
 		return html`
-			<lupos:await ${this.promise}>Pending Content</lupos:await>
-			<lupos:catch>Catch Content</lupos:catch>
+			<lu:await ${this.promise}>Pending Content</lu:await>
+			<lu:catch>Catch Content</lu:catch>
 		`
 	}
 
 	testAwaitThenCatch() {
 		return html`
-			<lupos:await ${this.promise}>Pending Content</lupos:await>
-			<lupos:then>Then Content</lupos:then>
-			<lupos:catch>Catch Content</lupos:catch>
+			<lu:await ${this.promise}>Pending Content</lu:await>
+			<lu:then>Then Content</lu:then>
+			<lu:catch>Catch Content</lu:catch>
 		`
 	}
 }
