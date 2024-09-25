@@ -132,6 +132,8 @@ export class EventSlotParser extends SlotParserBase {
 	}
 
 	private outputLatestHandler(): TS.ArrowFunction {
+
+		// (...args) => {$latest_0.call($context, ...args)}
 		return factory.createArrowFunction(
 			undefined,
 			undefined,

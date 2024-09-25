@@ -72,27 +72,32 @@ export class ContentSlotParser extends SlotParserBase {
 
 		// $latest_0 !== $values[0] && $slot_0.update($latest_0 = $values[0])
 		if (this.latestVariableName) {
-			return factory.createBinaryExpression(
+			return factory.createIfStatement(
 				factory.createBinaryExpression(
 					factory.createIdentifier(this.latestVariableName),
 					factory.createToken(ts.SyntaxKind.ExclamationEqualsEqualsToken),
 					value
 				),
-				factory.createToken(ts.SyntaxKind.AmpersandAmpersandToken),
-				factory.createCallExpression(
-					factory.createPropertyAccessExpression(
-						factory.createIdentifier(this.slotVariableName),
-						factory.createIdentifier('update')
-					),
-					undefined,
+				factory.createBlock(
 					[
-						factory.createBinaryExpression(
-							factory.createIdentifier(this.latestVariableName),
-							factory.createToken(ts.SyntaxKind.EqualsToken),
-							value
-						)
-					]
+						factory.createExpressionStatement(factory.createCallExpression(
+							factory.createPropertyAccessExpression(
+								factory.createIdentifier(this.slotVariableName),
+								factory.createIdentifier('update')
+							),
+							undefined,
+							[
+								factory.createBinaryExpression(
+									factory.createIdentifier(this.latestVariableName),
+									factory.createToken(ts.SyntaxKind.EqualsToken),
+									value
+								)
+							]
+						)),
+					],
+					true
 				),
+				undefined
 			)
 		}
 

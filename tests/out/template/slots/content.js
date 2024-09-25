@@ -90,7 +90,9 @@ const $html_1 = new HTMLMaker("<div><!----></div>");
         el: $node,
         position: new SlotPosition(1, $node_0),
         update($values) {
-            $latest_0 !== $values[0] && $slot_0.update($latest_0 = $values[0]);
+            if ($latest_0 !== $values[0]) {
+                $slot_0.update($latest_0 = $values[0]);
+            }
         },
         parts: [[$slot_0, 2]]
     };

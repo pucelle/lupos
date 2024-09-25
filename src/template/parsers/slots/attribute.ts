@@ -96,6 +96,7 @@ export class AttributeSlotParser extends SlotParserBase {
 
 		// $values[0]
 		let value = this.outputValue()
+		let compareValue = this.outputValueForComparing()
 
 		// if ($latest_0 === $values[0]) { 
 		// 	 $values[0] === null ? $node_0.removeAttribute(attrName) : $node_0.setAttribute(attrName, $values[0])
@@ -106,7 +107,7 @@ export class AttributeSlotParser extends SlotParserBase {
 				factory.createBinaryExpression(
 					factory.createIdentifier(this.latestVariableName),
 					factory.createToken(ts.SyntaxKind.EqualsEqualsEqualsToken),
-					value
+					compareValue
 				),
 				factory.createBlock(
 					[
@@ -141,7 +142,7 @@ export class AttributeSlotParser extends SlotParserBase {
 						factory.createExpressionStatement(factory.createBinaryExpression(
 							factory.createIdentifier(this.latestVariableName),
 							factory.createToken(ts.SyntaxKind.EqualsToken),
-							value
+							compareValue
 						))
 					],
 					true

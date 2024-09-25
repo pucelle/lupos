@@ -176,6 +176,20 @@ export abstract class SlotParserBase {
 		return this.template.values.outputValue(this.strings, this.valueIndices, forceStatic)
 	}
 
+	/** Get value node, it will reduce string items in the tail. */
+	outputValueForComparing(forceStatic: boolean = false): TS.Expression {
+		let {strings, valueIndices} = this
+
+		if (valueIndices && valueIndices.length === 1) {
+			strings = null
+		}
+		else if (strings) {
+			strings = ['', ...strings.slice(1, -1), '']
+		}
+
+		return this.template.values.outputValue(strings, valueIndices, forceStatic)
+	}
+
 	/** Make `new TemplateSlot(...)`. */
 	outputTemplateSlot(slotContentType: number | null): TS.Expression {
 		Modifier.addImport('TemplateSlot', '@pucelle/lupos.js')

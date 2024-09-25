@@ -173,11 +173,13 @@ export class BindingSlotParser extends SlotParserBase {
 		//	 $latest_0 = $values[0]
 		// }
 		if (this.latestVariableName && callValue !== value) {
+			let compareValue = this.outputValueForComparing()
+
 			return factory.createIfStatement(
 				factory.createBinaryExpression(
 					factory.createIdentifier(this.latestVariableName),
 					factory.createToken(ts.SyntaxKind.ExclamationEqualsEqualsToken),
-					value!
+					compareValue
 				),
 				factory.createBlock(
 					[
@@ -192,7 +194,7 @@ export class BindingSlotParser extends SlotParserBase {
 						factory.createExpressionStatement(factory.createBinaryExpression(
 							factory.createIdentifier(this.latestVariableName),
 							factory.createToken(ts.SyntaxKind.EqualsToken),
-							value!
+							compareValue
 						))
 					],
 					true
