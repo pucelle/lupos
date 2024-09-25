@@ -251,7 +251,7 @@ export class BindingSlotParser extends SlotParserBase {
 				method: 'updateObject',
 				value: factory.createObjectLiteralExpression(
 					[factory.createPropertyAssignment(
-						Helper.pack.toPropertyName(this.modifiers[0]),
+						Helper.createPropertyName(this.modifiers[0]),
 						value
 					)],
 					false
@@ -334,7 +334,7 @@ export class BindingSlotParser extends SlotParserBase {
 				method: 'updateObject',
 				value: factory.createObjectLiteralExpression(
 					[factory.createPropertyAssignment(
-						Helper.pack.toPropertyName(this.modifiers[0]),
+						Helper.createPropertyName(this.modifiers[0]),
 						value
 					)],
 					false

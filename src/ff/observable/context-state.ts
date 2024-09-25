@@ -128,9 +128,11 @@ export class ContextState {
 	}
 
 	/** Whether should ignore set tracking. */
-	shouldIgnoreSetTracking(node: AccessNode): boolean {
+	shouldIgnoreSetTracking(node: AccessNode | TS.Identifier): boolean {
 		if (this.withinLifeFunction) {
-			if (node.expression.kind === ts.SyntaxKind.ThisKeyword) {
+			if (Helper.access.isAccess(node)
+				&& node.expression.kind === ts.SyntaxKind.ThisKeyword
+			) {
 				return true
 			}
 		}
@@ -139,9 +141,11 @@ export class ContextState {
 	}
 
 	/** Whether should ignore get tracking. */
-	shouldIgnoreGetTracking(node: AccessNode): boolean {
+	shouldIgnoreGetTracking(node: AccessNode | TS.Identifier): boolean {
 		if (this.withinLifeFunction) {
-			if (node.expression.kind === ts.SyntaxKind.ThisKeyword) {
+			if (Helper.access.isAccess(node)
+				&& node.expression.kind === ts.SyntaxKind.ThisKeyword
+			) {
 				return true
 			}
 		}

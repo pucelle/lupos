@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {factory, Modifier, ts} from '../../../base'
+import {factory, Helper, Modifier} from '../../../base'
 import {FlowControlBase} from './base'
 import {VariableNames} from '../variable-names'
 
@@ -90,12 +90,7 @@ export class IfFlowControl extends FlowControlBase {
 		// Always build else branch.
 		let elseNode: TS.Statement = factory.createBlock(
 			[factory.createReturnStatement(
-				elseIndex < 0
-					? factory.createPrefixUnaryExpression(
-						ts.SyntaxKind.MinusToken,
-						factory.createNumericLiteral(-elseIndex)
-					)
-					: factory.createNumericLiteral(elseIndex)
+				Helper.createNumeric(elseIndex)
 			)],
 			true
 		)

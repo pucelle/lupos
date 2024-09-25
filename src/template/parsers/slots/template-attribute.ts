@@ -1,5 +1,5 @@
 import {SlotParserBase} from './base'
-import {factory, ts} from '../../../base'
+import {factory, Helper, ts} from '../../../base'
 import {VariableNames} from '../variable-names'
 import {cleanList} from '../../../utils'
 
@@ -53,26 +53,14 @@ export class TemplateAttributeSlotParser extends SlotParserBase {
 			)
 			
 			return styles.map(([name, value]) => {
-				if (name.includes('-')) {
-					return factory.createBinaryExpression(
-						factory.createElementAccessExpression(
-							styleNode,
-							factory.createStringLiteral(name)
-						),
-						factory.createToken(ts.SyntaxKind.EqualsToken),
-						factory.createStringLiteral(value || '')
-					)
-				}
-				else {
-					return factory.createBinaryExpression(
-						factory.createPropertyAccessExpression(
-							styleNode,
-							factory.createIdentifier(name)
-						),
-						factory.createToken(ts.SyntaxKind.EqualsToken),
-						factory.createStringLiteral(value || '')
-					)
-				}
+				return factory.createBinaryExpression(
+					Helper.createAccessNode(
+						styleNode,
+						name
+					),
+					factory.createToken(ts.SyntaxKind.EqualsToken),
+					factory.createStringLiteral(value || '')
+				)
 			})
 		}
 

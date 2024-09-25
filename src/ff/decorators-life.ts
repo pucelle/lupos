@@ -131,12 +131,7 @@ function compileComputedEffectWatchDecorator(
 
 	if (connect && !ignoreConnect) {
 		let connectStatement = factory.createExpressionStatement(factory.createCallExpression(
-			factory.createPropertyAccessExpression(
-				factory.createThis(),
-				connectCallName.startsWith('#')
-					? factory.createPrivateIdentifier(connectCallName)
-					: factory.createIdentifier(connectCallName)
-			),
+			Helper.createAccessNode(factory.createThis(), connectCallName),
 			undefined,
 			[]
 		))

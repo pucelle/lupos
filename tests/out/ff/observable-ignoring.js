@@ -65,6 +65,11 @@ class TestIgnoringReadonlyPrivate extends Component {
     readMethod() {
         return this.prop;
     }
+    destructedReadMethod() {
+        let { prop } = this;
+        trackGet(this, "prop");
+        return prop;
+    }
 }
 class TestIgnoringWriteonlyPrivate extends Component {
     prop = 1;

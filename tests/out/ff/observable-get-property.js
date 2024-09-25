@@ -1,10 +1,15 @@
-import { trackGet } from '@pucelle/ff';
 import { Component } from '@pucelle/lupos.js';
+import { trackGet } from "@pucelle/ff";
 class TestNormalProp extends Component {
     prop = 1;
     getProp() {
         trackGet(this, "prop");
         return this.prop;
+    }
+    destructedGetProp() {
+        let { prop } = this;
+        trackGet(this, "prop");
+        return prop;
     }
 }
 class TestElementProp extends Component {
@@ -22,6 +27,12 @@ class TestObjectProp extends Component {
         trackGet(this, "prop");
         trackGet(this.prop, "value");
         return this.prop.value;
+    }
+    destructedGetProp() {
+        let { prop: { value } } = this;
+        trackGet(this, "prop");
+        trackGet(this.prop, "value");
+        return value;
     }
 }
 class TestRepetitiveProp extends Component {

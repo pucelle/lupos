@@ -172,6 +172,71 @@ export namespace Helper {
 
 
 
+	
+	/** 
+	 * Make a property name node by property name string.
+	 * If name is numeric, it must `>=0`.
+	 */
+	export function createPropertyName(name: string | number): TS.PropertyName {
+		if (typeof name === 'string' && /^[\w$]+$/.test(name)) {
+			return factory.createIdentifier(name)
+		}
+		else if (typeof name === 'string' && /^#[\w$]+$/.test(name)) {
+			return factory.createPrivateIdentifier(name)
+		}
+		else if (typeof name === 'string') {
+			return factory.createStringLiteral(name)
+		}
+		else {
+			return factory.createNumericLiteral(name)
+		}
+	}
+
+	
+	/** Make a numeric literal or expression by number. */
+	export function createNumeric(number: number): TS.PrefixUnaryExpression | TS.NumericLiteral {
+		if (number < 0) {
+			return factory.createPrefixUnaryExpression(
+				ts.SyntaxKind.MinusToken,
+				factory.createNumericLiteral(-number)
+			)
+		}
+		else {
+			return factory.createNumericLiteral(number)
+		}
+	}
+
+
+	/** Create an access node by expression and property name. */
+	export function createAccessNode(exp: TS.Expression, name: string | number): AccessNode {
+		if (typeof name === 'string' && /^[\w$]+$/.test(name)) {
+			return factory.createPropertyAccessExpression(
+				exp,
+				factory.createIdentifier(name)
+			)
+		}
+		else if (typeof name === 'string' && /^#[\w$]+$/.test(name)) {
+			return factory.createPropertyAccessExpression(
+				exp,
+				factory.createPrivateIdentifier(name)
+			)
+		}
+		else if (typeof name === 'string') {
+			return factory.createElementAccessExpression(
+				exp,
+				factory.createStringLiteral(name)
+			)
+		}
+		else {
+			return factory.createElementAccessExpression(
+				exp,
+				createNumeric(name)
+			)
+		}
+	}
+
+
+
 	/** Decorator Part */
 	export namespace deco {
 
@@ -601,39 +666,56 @@ export namespace Helper {
 			return true
 		}
 
+
+		/**
+		 * `let {a: b} = c` =>
+		 * - name: b
+		 * - keys: ['a']
+		 */
+		interface VariableDeclarationName {
+			node: TS.Identifier
+			name: string
+			keys: (string | number)[]
+		}
+
 		/** 
 		 * Walk for all declared variable names from a variable declaration.
 		 * `let [a, b]` = ... -> `[a, b]`
 		 * `let {a, b}` = ... -> `[a, b]`
 		 */
-		export function* walkDeclarationNames(node: TS.VariableDeclaration): Iterable<string> {
-
-			// `{a} = ...`
-			// `[a] = ...`
-			if (ts.isObjectBindingPattern(node.name)
-				|| ts.isArrayBindingPattern(node.name)
-			) {
-				yield* walkVariablePatternNames(node.name)
-			}
-			else if (ts.isIdentifier(node.name)) {
-				yield getFullText(node.name)
-			}
+		export function* walkDeclarationNames(node: TS.VariableDeclaration): Iterable<VariableDeclarationName> {
+			return yield* walkVariablePatternElement(node.name, [])
 		}
 
 		/** Get all declared variable name from a variable pattern. */
-		function* walkVariablePatternNames(node: TS.ObjectBindingPattern | TS.ArrayBindingPattern): Iterable<string> {
-			for (let element of node.elements as TS.NodeArray<TS.BindingElement | TS.OmittedExpression>) {
-				if (ts.isOmittedExpression(element)) {
-					continue
-				}
+		function* walkVariablePatternElement(
+			node: TS.BindingName | TS.BindingElement | TS.ObjectBindingPattern | TS.ArrayBindingPattern | TS.OmittedExpression,
+			keys: (string | number)[]
+		): Iterable<VariableDeclarationName> {
+			if (ts.isOmittedExpression(node)) {
+				return
+			}
 
-				if (ts.isObjectBindingPattern(element.name)
-					|| ts.isArrayBindingPattern(element.name)
-				) {
-					yield* walkVariablePatternNames(element.name)
+			if (ts.isObjectBindingPattern(node)) {
+				for (let element of node.elements) {
+					let key = getText(element.propertyName ?? element.name)
+					yield* walkVariablePatternElement(element, [...keys, key])
 				}
-				else if (ts.isIdentifier(element.name)) {
-					yield getFullText(element.name)
+			}
+			else if (ts.isArrayBindingPattern(node)) {
+				for (let i = 0; i < node.elements.length; i++) {
+					let element = node.elements[i]
+					yield* walkVariablePatternElement(element, [...keys, i])
+				}
+			}
+			else if (ts.isBindingElement(node)) {
+				yield* walkVariablePatternElement(node.name, keys)
+			}
+			else if (ts.isIdentifier(node)) {
+				yield {
+					node,
+					name: getFullText(node),
+					keys,
 				}
 			}
 		}
@@ -780,19 +862,22 @@ export namespace Helper {
 			)) > 0
 		}
 
-		/** Test whether type of a node extends `Array<any>`. */
+		/** 
+		 * Test whether type of a node extends `Array<any>`.
+		 * Note array tuple like `[number, number]` is not included.
+		 */
 		export function isArrayType(type: TS.Type): boolean {
 			return typeChecker.isArrayType(type)
 		}
 
 
-		/** Analysis whether a property access expression is readonly. */
-		export function isReadonly(node: AccessNode): boolean {
+		/** Analysis whether the property declaration resolve from a node is readonly. */
+		export function isReadonly(node: TS.Node): boolean {
 
 			// `class A{readonly p}` -> `p` and `this['p']` are readonly.
 			// `interface A{readonly p}` -> `p` and `this['p']` are readonly.
-			let nameDecl = symbol.resolveDeclaration(node, isPropertyLike)
-			if (nameDecl && nameDecl.modifiers?.find(m => m.kind === ts.SyntaxKind.ReadonlyKeyword)) {
+			let propDecl = symbol.resolveDeclaration(node, isPropertyLike)
+			if (propDecl && propDecl.modifiers?.find(m => m.kind === ts.SyntaxKind.ReadonlyKeyword)) {
 				return true
 			}
 
@@ -800,24 +885,26 @@ export namespace Helper {
 			// `a: ReadonlyArray<...>` -> `a.?` is readonly, not observe.
 			// `a: DeepReadonly<...>` -> `a.?` and `d.?.?` are readonly, not observe.
 			// `readonly {...}` -> it may not 100% strict.
-			let exp = node.expression
+			if (access.isAccess(node)) {
+				let exp = node.expression
 
-			let typeNode = getTypeNode(exp)
-			if (!typeNode) {
-				return false
-			}
-
-			if (ts.isTypeReferenceNode(typeNode)) {
-				let name = getTypeNodeReferenceName(typeNode)
-				if (name === 'Readonly' || name === 'ReadonlyArray') {
-					return true
+				let expTypeNode = getTypeNode(exp)
+				if (!expTypeNode) {
+					return false
 				}
-			}
 
-			// Type was expanded and removed alias.
-			else if (ts.isTypeOperatorNode(typeNode)) {
-				if (typeNode.operator === ts.SyntaxKind.ReadonlyKeyword) {
-					return true
+				if (ts.isTypeReferenceNode(expTypeNode)) {
+					let name = getTypeNodeReferenceName(expTypeNode)
+					if (name === 'Readonly' || name === 'ReadonlyArray') {
+						return true
+					}
+				}
+
+				// Type was expanded and removed alias.
+				else if (ts.isTypeOperatorNode(expTypeNode)) {
+					if (expTypeNode.operator === ts.SyntaxKind.ReadonlyKeyword) {
+						return true
+					}
 				}
 			}
 
@@ -1602,7 +1689,7 @@ export namespace Helper {
 			// a['prop'] -> a.prop
 			else if (ts.isElementAccessExpression(node)
 				&& ts.isStringLiteral(node.argumentExpression)
-				&& /^[\w\$_][\w\$_\d]*$/.test(node.argumentExpression.text)
+				&& /^[a-z_$][\w$_]*$/i.test(node.argumentExpression.text)
 			) {
 
 				// `a?.b`
@@ -1633,17 +1720,6 @@ export namespace Helper {
 			}
 			else {
 				return node
-			}
-		}
-
-
-		/** Make a property name node by property name string. */
-		export function toPropertyName(name: string): TS.PropertyName {
-			if (/^[\w+\d\$]$/.test(name)) {
-				return factory.createIdentifier(name)
-			}
-			else {
-				return factory.createStringLiteral(name)
 			}
 		}
 	}

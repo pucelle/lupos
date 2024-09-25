@@ -1,4 +1,3 @@
-import {Observed} from '@pucelle/ff'
 import {Component} from '@pucelle/lupos.js'
 
 
@@ -8,6 +7,11 @@ class TestNormalProp extends Component {
 
 	getProp() {
 		return this.prop
+	}
+
+	destructedGetProp() {
+		let {prop} = this
+		return prop
 	}
 }
 
@@ -31,6 +35,11 @@ class TestObjectProp extends Component {
 
 	getProp() {
 		return this.prop.value
+	}
+
+	destructedGetProp() {
+		let {prop: {value}} = this
+		return value
 	}
 }
 

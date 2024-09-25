@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {factory, Modifier, ts} from '../../../base'
+import {factory, Helper, Modifier} from '../../../base'
 import {FlowControlBase} from './base'
 import {VariableNames} from '../variable-names'
 
@@ -104,12 +104,7 @@ export class SwitchFlowControl extends FlowControlBase {
 		// Always build default branch.
 		let defaultNode = factory.createDefaultClause([
 			factory.createReturnStatement(
-				defaultIndex < 0
-					? factory.createPrefixUnaryExpression(
-						ts.SyntaxKind.MinusToken,
-						factory.createNumericLiteral(-defaultIndex)
-					)
-					: factory.createNumericLiteral(defaultIndex)
+				Helper.createNumeric(defaultIndex)
 			)
 		])
 

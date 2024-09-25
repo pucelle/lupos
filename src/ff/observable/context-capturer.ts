@@ -2,26 +2,34 @@ import type TS from 'typescript'
 import {InterpolationContentType, AccessNode, Helper, Interpolator, InterpolationPosition, VisitTree, ts, FlowInterruptionTypeMask, ScopeTree} from '../../base'
 import {Context} from './context'
 import {ContextTree, ContextTypeMask} from './context-tree'
-import {AccessGrouper, AccessGrouperToMakeItem} from './access-grouper'
+import {AccessGrouper} from './access-grouper'
 import {AccessReferences} from './access-references'
 import {Optimizer} from './optimizer'
 import {removeFromList} from '../../utils'
 import {ContextState} from './context-state'
 import {ObservedChecker} from './observed-checker'
+import {ContextCapturerOperator} from './context-capturer-operator'
 
 
 /** Captured item, will be inserted to a position. */
-interface CapturedItem {
+export interface CapturedGroup {
 	position: InterpolationPosition
-	indices: CapturedIndex[]
+	items: CapturedItem[]
 	toIndex: number
-	flowInterruptedBy: number
+	flowInterruptedBy: FlowInterruptionTypeMask | 0
 }
 
-/** Each capture indices and capture type. */
-interface CapturedIndex {
+/** Each capture index and capture type. */
+export interface CapturedItem {
 	index: number
 	type: 'get' | 'set'
+
+	/** 
+	 * If `expIndex` and `paths` provided,
+	 * they overwrites `index`.
+	 */
+	expIndex?: number
+	keys?: (string | number)[]
 }
 
 
@@ -31,56 +39,17 @@ interface CapturedIndex {
  */
 export class ContextCapturer {
 
-	
-	/** Get intersected indices across capturers. */
-	static intersectIndices(capturers: ContextCapturer[]): CapturedIndex[] {
-		let map: Map<string, number>
-
-		for (let i = 0; i < capturers.length; i++) {
-			let capturer = capturers[i]
-			let ownMap: Map<string, number> = new Map()
-
-			// Only codes of the first item is always running.
-			for (let {index} of capturer.captured[0].indices) {
-
-				// Has been referenced, ignore always.
-				if (AccessReferences.isDescendantAccessReferenced(index)) {
-					continue
-				}
-
-				let hashName = ScopeTree.hashIndex(index).name
-				ownMap.set(hashName, index)
-			}
-
-			if (i === 0) {
-				map = ownMap
-			}
-			else {
-				for (let key of [...map!.keys()]) {
-					if (!ownMap.has(key)) {
-						map!.delete(key)
-					}
-				}
-			}
-
-			if (map!.size === 0) {
-				break
-			}
-		}
-
-		let values = [...map!.values()]
-		return capturers[0].captured[0].indices.filter(index => values.includes(index.index))
-	}
-
-
 	readonly context: Context
+	readonly operator: ContextCapturerOperator
 
-	private captured: CapturedItem[]
-	private latestCaptured!: CapturedItem
-	private captureType: 'get' | 'set' | 'both' = 'get'
+	/** These properties can only be visited outside by `ContextCapturerOperator`. */
+	captured: CapturedGroup[]
+	latestCaptured!: CapturedGroup
+	captureType: 'get' | 'set' | 'both' = 'get'
 
 	constructor(context: Context, state: ContextState) {
 		this.context = context
+		this.operator = new ContextCapturerOperator(this)
 
 		this.resetLatestCaptured()
 		this.captured = [this.latestCaptured]
@@ -90,7 +59,7 @@ export class ContextCapturer {
 	private resetLatestCaptured() {
 		this.latestCaptured = {
 			position: InterpolationPosition.Before,
-			indices: [],
+			items: [],
 			toIndex: -1,
 			flowInterruptedBy: 0,
 		}
@@ -124,23 +93,47 @@ export class ContextCapturer {
 		}
 	}
 
-	/** Capture an index. */
-	capture(index: number, type: 'get' | 'set') {
+	/** Capture a node. */
+	capture(
+		node: AccessNode | TS.Identifier,
+		exp: TS.Expression | undefined,
+		keys: (string | number)[] | undefined, type: 'get' | 'set'
+	) {
+		let index = VisitTree.getIndex(node)
+		let expIndex = exp ? VisitTree.getIndex(exp) : undefined
+
 		this.addCaptureType(type)
 
 		// Remove repetitive item, normally `a.b = c`,
 		// `a.b` has been captured as get type, and later set type.
-		let repetitiveIndex = this.latestCaptured.indices.find(item => item.index === index)
+		let repetitiveIndex = this.latestCaptured.items.find(item => item.index === index)
 		if (repetitiveIndex) {
-			removeFromList(this.latestCaptured.indices, repetitiveIndex)
+			removeFromList(this.latestCaptured.items, repetitiveIndex)
 		}
 
-		this.latestCaptured.indices.push({index, type})
+		let item: CapturedItem = {
+			index,
+			type,
+			expIndex,
+			keys,
+		}
+
+		// `a[0]` -> `trackGet(a, '')`
+		if (Helper.access.isAccess(node) && !exp) {
+			if (type === 'get' && ObservedChecker.isListStructReadingAccess(node)
+				|| type === 'set' && ObservedChecker.isListStructWritingAccess(node)
+			) {
+				item.expIndex = VisitTree.getIndex(node.expression)
+				item.keys = ['']
+			}
+		}
+
+		this.latestCaptured.items.push(item)
 	}
 
 	/** Whether has captured some indices. */
 	hasCaptured(): boolean {
-		return this.captured.some(item => item.indices.length > 0)
+		return this.captured.some(item => item.items.length > 0)
 	}
 
 	/** Every time capture a new index, check type and may toggle capture type. */
@@ -163,7 +156,7 @@ export class ContextCapturer {
 	/** Apply capture type to `set` from 'get. */
 	private applySetCaptureTypeFromGet() {
 		this.captureType = 'set'
-		this.latestCaptured.indices = []
+		this.latestCaptured.items = []
 		this.captured = [this.latestCaptured]
 	}
 
@@ -269,229 +262,68 @@ export class ContextCapturer {
 	/** Check captured indices and reference if needs. */
 	private checkAccessReferences() {
 		for (let item of this.captured) {
-			for (let {index} of item.indices) {
+			for (let {index} of item.items) {
 				AccessReferences.mayReferenceAccess(index, this.context)
 			}
 		}
 	}
 
-
-	/** 
-	 * Move captured indices to an ancestral, target capturer.
-	 * If a node with captured index use local variables and can't be moved, leave it.
-	 */
-	moveCapturedOutwardTo(toCapturer: ContextCapturer) {
-		let indices = this.captured[0].indices
-		if (indices.length === 0) {
-			return
-		}
-
-		let residualIndices = toCapturer.moveCapturedIndicesIn(indices, this)
-		this.captured[0].indices = residualIndices
-	}
-
-	/** 
-	 * Try to move captured indices to self.
-	 * `fromCapturer` locates where indices move from.
-	 * Returns residual indices that failed to move.
-	 */
-	moveCapturedIndicesIn(indices: CapturedIndex[], fromCapturer: ContextCapturer): CapturedIndex[] {
-
-		// Locate which captured item should move indices to.
-		// Find the first item `toIndex` larger in child-first order..
-		let item = this.captured.find(item => {
-			return VisitTree.isFollowingOfOrEqualInChildFirstOrder(item.toIndex, fromCapturer.context.visitIndex)
-		}) ?? this.latestCaptured
-
-		let fromScope = fromCapturer.context.getDeclarationScope()
-		let toScope = this.context.getDeclarationScope()
-		let scopesLeaved = ScopeTree.findWalkingOutwardLeaves(fromScope, toScope)
-		let residualIndices: CapturedIndex[] = []
-
-		for (let index of indices) {
-			let node = VisitTree.getNode(index.index)
-			let hashed = ScopeTree.hashIndex(index.index)
-
-			// `a[i]`, and a is an array, ignore hash of `i`.
-			if (ts.isElementAccessExpression(node)
-				&& ts.isIdentifier(node.argumentExpression)
-				&& Helper.types.isArrayType(Helper.types.getType(node.expression))
-			) {
-				hashed = ScopeTree.hashNode(node.expression)
-			}
-
-			// Leave contexts contain any referenced variable.
-			if (hashed.usedScopes.some(i => scopesLeaved.includes(i))) {
-				residualIndices.push(index)
-			}
-			else {
-				item.indices.push(index)
-			}
-		}
-
-		return residualIndices
-	}
-
-	/** Eliminate repetitive captured with an outer hash. */
-	eliminateRepetitiveRecursively(hashSet: Set<string>) {
-		let ownHashes = new Set(hashSet)
-		let startChildIndex = 0
-
-		for (let item of this.captured) {
-			for (let index of [...item.indices]) {
-
-				// Has been referenced, ignore always.
-				if (AccessReferences.isDescendantAccessReferenced(index.index)) {
-					continue
-				}
-
-				let hashName = ScopeTree.hashIndex(index.index).name
-
-				if (ownHashes.has(hashName)) {
-					removeFromList(item.indices, index)
-				}
-				else {
-					ownHashes.add(hashName)
-				}
-
-				// Has yield like.
-				if ((item.flowInterruptedBy & FlowInterruptionTypeMask.YieldLike) > 0) {
-					ownHashes.clear()
-				}
-			}
-
-			// Every time after update hash set,
-			// recursively eliminating not processed child contexts in the preceding.
-			for (; startChildIndex < this.context.children.length; startChildIndex++) {
-				let child = this.context.children[startChildIndex]
-
-				if (!VisitTree.isPrecedingOfOrEqual(child.visitIndex, item.toIndex)) {
-					break
-				}
-
-				child.capturer.eliminateRepetitiveRecursively(ownHashes)
-			}
-		}
-
-		// Last captured item may have wrong `toIndex`, here ensure to visit all child contexts.
-		for (; startChildIndex < this.context.children.length; startChildIndex++) {
-			let child = this.context.children[startChildIndex]
-			child.capturer.eliminateRepetitiveRecursively(ownHashes)
-		}
-	}
-
-	/** Find private class property declaration from captured. */
-	*walkPrivateCaptured(ofClass: TS.ClassLikeDeclaration): Iterable<{name: string, index: number, type: 'get' | 'set'}> {
-		for (let item of this.captured) {
-			for (let {index, type} of item.indices) {
-				let node = VisitTree.getNode(index) as AccessNode
-				let exp = node.expression
-
-				// Must use class instance as access expression.
-				let classDecl = Helper.symbol.resolveDeclaration(exp, ts.isClassLike)
-				if (classDecl !== ofClass) {
-					continue
-				}
-
-				let propDecls = Helper.symbol.resolveDeclarations(node, Helper.isPropertyOrGetSetAccessor)
-				if (!propDecls || propDecls.length === 0) {
-					continue
-				}
-
-				let allBePrivate = propDecls.every(d => {
-					return d.modifiers
-						&& d.modifiers.find((n: TS.ModifierLike) => n.kind === ts.SyntaxKind.PrivateKeyword)
-				})
-
-				if (!allBePrivate) {
-					continue
-				}
-				
-				let name = Helper.access.getNameText(node)
-
-				yield {
-					name,
-					index,
-					type,
-				}
-			}
-		}
-
-		for (let child of this.context.children) {
-			yield* child.capturer.walkPrivateCaptured(ofClass)
-		}
-	}
-
-	/** Remove captured indices recursively. */
-	removeCapturedIndices(toRemove: Set<number>) {
-		for (let item of this.captured) {
-			item.indices = item.indices.filter(index => {
-				return !toRemove.has(index.index)
-			})
-		}
-
-		for (let child of this.context.children) {
-			child.capturer.removeCapturedIndices(toRemove)
-		}
-	}
-
-
 	/** Add `captured` as interpolation items. */
 	private interpolateCaptured() {
 		for (let item of this.captured) {
-			if (item.indices.length === 0) {
+			if (item.items.length === 0) {
 				continue
 			}
 
-			this.interpolateCapturedItem(item)
+			this.interpolateCapturedGroup(item)
 		}
 	}
 
-	/** Add each `captured` item. */
-	private interpolateCapturedItem(item: CapturedItem) {
-		let oldToIndex = item.toIndex
+	/** Add each `captured` group. */
+	private interpolateCapturedGroup(group: CapturedGroup) {
+		let oldToIndex = group.toIndex
 		let newToIndex = this.findBetterInsertPosition(oldToIndex)!
-		let indicesInsertToOldPosition: CapturedIndex[] = []
-		let indicesInsertToNewPosition: CapturedIndex[] = []
+		let itemsInsertToOldPosition: CapturedItem[] = []
+		let itemsInsertToNewPosition: CapturedItem[] = []
 
 		if (newToIndex !== null) {
-			for (let index of item.indices) {
+			for (let index of group.items) {
 				let hashed = ScopeTree.hashIndex(index.index)
 				let canMove = hashed.usedIndices.every(usedIndex => VisitTree.isPrecedingOf(usedIndex, newToIndex))
 
 				if (canMove) {
-					indicesInsertToNewPosition.push(index)
+					itemsInsertToNewPosition.push(index)
 				}
 				else {
-					indicesInsertToOldPosition.push(index)
+					itemsInsertToOldPosition.push(index)
 				}
 			}
 		}
 		else {
-			indicesInsertToOldPosition = item.indices
+			itemsInsertToOldPosition = group.items
 		}
 
-		if (indicesInsertToNewPosition.length > 0) {
+		if (itemsInsertToNewPosition.length > 0) {
 			Interpolator.add(newToIndex, {
-				position: item.position,
+				position: group.position,
 				contentType: InterpolationContentType.Tracking,
-				exps: () => this.outputCaptured(indicesInsertToNewPosition),
+				exps: () => this.outputCaptured(itemsInsertToNewPosition),
 			})
 		}
 
-		if (indicesInsertToOldPosition.length > 0) {
+		if (itemsInsertToOldPosition.length > 0) {
 			Interpolator.add(oldToIndex, {
-				position: item.position,
+				position: group.position,
 				contentType: InterpolationContentType.Tracking,
-				exps: () => this.outputCaptured(indicesInsertToOldPosition),
+				exps: () => this.outputCaptured(itemsInsertToOldPosition),
 			})
 		}
 
-		if (item.indices.some(index => index.type === 'get')) {
+		if (group.items.some(index => index.type === 'get')) {
 			AccessGrouper.addImport('get')
 		}
 
-		if (item.indices.some(index => index.type === 'set')) {
+		if (group.items.some(index => index.type === 'set')) {
 			AccessGrouper.addImport('set')
 		}
 	}
@@ -517,33 +349,42 @@ export class ContextCapturer {
 	}
 
 	/** Transfer specified indices to specified position. */
-	private outputCaptured(indices: CapturedIndex[]): TS.Expression[] {
-		let getIndices = indices.filter(index => index.type === 'get')
-		let setIndices = indices.filter(index => index.type === 'set')
+	private outputCaptured(items: CapturedItem[]): TS.Expression[] {
+		let getItems = items.filter(index => index.type === 'get')
+		let setItems = items.filter(index => index.type === 'set')
 
-		let getItems: AccessGrouperToMakeItem[] = getIndices.map(({index}) => {
-			let rawNode = VisitTree.getNode(index) as AccessNode
-			let emptyKey = ObservedChecker.isStructReadingAccess(rawNode)
-
-			let node = Interpolator.outputChildren(index) as AccessNode
-			node = Helper.pack.extractFinalParenthesized(node) as AccessNode
-
-			return {node, emptyKey}
-		})
-
-		let setItems: AccessGrouperToMakeItem[] = setIndices.map(({index}) => {
-			let rawNode = VisitTree.getNode(index) as AccessNode
-			let emptyKey = ObservedChecker.isStructWritingAccess(rawNode)
-
-			let node = Interpolator.outputChildren(index) as AccessNode
-			node = Helper.pack.extractFinalParenthesized(node) as AccessNode
-
-			return {node, emptyKey}
-		})
+		let getNodes = getItems.map(item => this.makeAccessNodes(item)).flat()
+		let setNodes = setItems.map(item => this.makeAccessNodes(item)).flat()
 
 		return [
-			...AccessGrouper.makeExpressions(getItems, 'get'),
-			...AccessGrouper.makeExpressions(setItems, 'set'),
+			...AccessGrouper.makeExpressions(getNodes, 'get'),
+			...AccessGrouper.makeExpressions(setNodes, 'set'),
 		]
+	}
+
+	/** Make an access node by a captured item. */
+	private makeAccessNodes(item: CapturedItem): AccessNode[] {
+		if (item.expIndex !== undefined) {
+			let nodes: AccessNode[] = []
+
+			// Expression of an access node may be totally replaced after been referenced as `$ref_0`.
+			let node = Interpolator.output(item.expIndex) as TS.Expression
+			let keys = item.keys!
+
+			node = Helper.pack.extractFinalParenthesized(node) as AccessNode
+
+			for (let key of keys) {
+				node = Helper.createAccessNode(node, key)
+				nodes.push(node as AccessNode)
+			}
+
+			return nodes
+		}
+		else {
+			let node = Interpolator.outputChildren(item.index) as AccessNode
+			node = Helper.pack.extractFinalParenthesized(node) as AccessNode
+			
+			return [node]
+		}
 	}
 }

@@ -34,7 +34,7 @@ export class Scope {
 
 		// Variable declaration.
 		if (ts.isVariableDeclaration(node)) {
-			for (let name of Helper.variable.walkDeclarationNames(node)) {
+			for (let {name} of Helper.variable.walkDeclarationNames(node)) {
 				this.variables.set(name, node)
 			}
 		}

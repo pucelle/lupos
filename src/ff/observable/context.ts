@@ -1,6 +1,6 @@
 import type TS from 'typescript'
 import {ObservedChecker} from './observed-checker'
-import {Helper, AccessNode, ts, VisitTree, FlowInterruptionTypeMask, ScopeTree} from '../../base'
+import {Helper, AccessNode, ts, FlowInterruptionTypeMask, ScopeTree} from '../../base'
 import {ContextState} from './context-state'
 import {ContextTypeMask} from './context-tree'
 import {ContextVariables} from './context-variables'
@@ -102,13 +102,22 @@ export class Context {
 		// Check each variable declarations.
 		else if (ts.isVariableDeclaration(node)) {
 			this.variables.visitVariable(node)
+
+			// let {a} = b
+			if (node.initializer) {
+				let names = Helper.variable.walkDeclarationNames(node)
+
+				for (let {node: nameNode, keys} of names) {
+					this.mayAddGetTracking(nameNode, node.initializer, keys)
+				}
+			}
 		}
 
 		// Test and add property access nodes.
 		else if (Helper.access.isAccess(node)) {
 	
 			// `[].push`, `map.set`, `set.set`
-			if (ObservedChecker.isStructWritingAccess(node)) {
+			if (ObservedChecker.isListStructWritingAccess(node)) {
 				this.mayAddSetTracking(node)
 			}
 
@@ -147,7 +156,7 @@ export class Context {
 	}
 
 	/** Add a property access expression. */
-	private mayAddGetTracking(node: AccessNode) {
+	private mayAddGetTracking(node: AccessNode | TS.Identifier, exp?: TS.Expression, keys?: (string | number)[]) {
 		if (this.state.shouldIgnoreGetTracking(node)) {
 			return
 		}
@@ -156,13 +165,13 @@ export class Context {
 			return
 		}
 
-		if (ObservedChecker.isAccessObserved(node)) {
-			this.capturer.capture(VisitTree.getIndex(node), 'get')
+		if (ObservedChecker.isObserved(node)) {
+			this.capturer.capture(node, exp, keys, 'get')
 		}
 	}
 
 	/** Add a property assignment expression. */
-	private mayAddSetTracking(node: AccessNode) {
+	private mayAddSetTracking(node: AccessNode | TS.Identifier, exp?: TS.Expression, keys?: (string | number)[]) {
 		if (this.state.shouldIgnoreSetTracking(node)) {
 			return
 		}
@@ -171,8 +180,8 @@ export class Context {
 			return
 		}
 
-		if (ObservedChecker.isAccessObserved(node)) {
-			this.capturer.capture(VisitTree.getIndex(node), 'set')
+		if (ObservedChecker.isObserved(node)) {
+			this.capturer.capture(node, exp, keys, 'set')
 		}
 	}
 }

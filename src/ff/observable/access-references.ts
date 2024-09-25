@@ -117,7 +117,11 @@ export namespace AccessReferences {
 			return
 		}
 
-		let node = VisitTree.getNode(index) as AccessNode
+		let node = VisitTree.getNode(index)
+		if (!Helper.access.isAccess(node)) {
+			return
+		}
+		
 		let expIndex = VisitTree.getIndex(node.expression)!
 		let nameNode = Helper.access.getNameNode(node)
 		let nameIndex = VisitTree.getIndex(nameNode)

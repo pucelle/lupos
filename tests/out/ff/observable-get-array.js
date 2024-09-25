@@ -16,6 +16,14 @@ class TestArrayIndex extends Component {
         return this.prop[i].value;
     }
 }
+class TestArrayTuple extends Component {
+    prop = [1, 1];
+    fixedIndex() {
+        trackGet(this, "prop");
+        trackGet(this.prop, 0, 1);
+        return this.prop[0] + this.prop[1];
+    }
+}
 class TestArrayMethods extends Component {
     prop = [1];
     push() {

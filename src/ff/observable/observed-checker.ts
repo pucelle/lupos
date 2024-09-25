@@ -24,27 +24,32 @@ export type CanObserveNode = AccessNode
 /** Help to check observed state. */
 export namespace ObservedChecker {
 
-	/** Whether should observe node by it's type node. */
-	export function isTypeNodeObserved(rawNode: TS.TypeNode): boolean {
+	/** Whether a type node represented node should be observed. */
+	export function isTypeNodeObserved(typeNode: TS.TypeNode): boolean {
 
 		// `Observed<>`, must use it directly, type extending is now working.
-		if (Helper.symbol.isImportedFrom(rawNode, 'Observed', '@pucelle/ff')) {
+		if (Helper.symbol.isImportedFrom(typeNode, 'Observed', '@pucelle/ff')) {
 			return true
+		}
+		
+		let resolveFrom: TS.Node = typeNode
+
+		// Resolve type reference.
+		if (ts.isTypeReferenceNode(typeNode)) {
+			resolveFrom = typeNode.typeName
 		}
 
 		// `Component` like.
-		else {
-			let clsDecl = Helper.symbol.resolveDeclaration(rawNode, ts.isClassDeclaration)
-			if (clsDecl && Helper.cls.isImplemented(clsDecl, 'Observed', '@pucelle/ff')) {
-				return true 
-			}
+		let clsDecl = Helper.symbol.resolveDeclaration(resolveFrom, ts.isClassDeclaration)
+		if (clsDecl && Helper.cls.isImplemented(clsDecl, 'Observed', '@pucelle/ff')) {
+			return true 
 		}
 
 		return false
 	}
 
 
-	/** Whether variable declaration should be observed. */
+	/** Whether a variable declaration should be observed. */
 	export function isVariableDeclarationObserved(rawNode: TS.VariableDeclaration): boolean {
 
 		// `var a = {b:1} as Observed<{b: number}>`, observed.
@@ -67,18 +72,50 @@ export namespace ObservedChecker {
 	}
 
 
-	/** Whether parameter declaration should be observed. */
-	export function isParameterObserved(rawNode: TS.ParameterDeclaration): boolean {
-		let typeNode = rawNode.type
+	/** Whether destructed variable declaration should be observed. */
+	export function isDestructedVariableDeclarationObserved(node: TS.Node, initializerObserved: boolean): boolean {
+
+		// Readonly properties are always not been observed.
+		let readonly = Helper.types.isReadonly(node)
+		if (readonly) {
+			return false
+		}
+
+		// Property declaration has specified as observed type or has observed initializer.
+		if (isPropertyOrGetAccessorDeclaredAsObserved(node)) {
+			return true
+		}
+		
+		return initializerObserved
+	}
+
+
+	/** 
+	 * Check whether a property or get accessor resolve from node has been declared as observed.
+	 * It ignores modifiers, only check declaration type.
+	 */
+	function isPropertyOrGetAccessorDeclaredAsObserved(rawNode: TS.Node): boolean {
+
+		// `class A{p: Observed}` -> `this.p` and `this['p']` is observed.
+		// `interface A{p: Observed}` -> `this.p` and `this['p']` is observed.
+		let nameDecl = Helper.symbol.resolveDeclaration(rawNode, Helper.isPropertyOrGetAccessor)
+		if (!nameDecl) {
+			return false
+		}
+
+		let typeNode = nameDecl.type
+
+		// `class A{p: Observed<...>}`
 		if (typeNode && isTypeNodeObserved(typeNode)) {
 			return true
 		}
 
-		if (isParameterObservedByCallingBroadcasted(rawNode)) {
-			return true
-		}
-
-		if (rawNode.initializer && isObserved(rawNode.initializer)) {
+		// `class A{p = {} as Observed}`, must not specified property type.
+		if (!typeNode
+			&& ts.isPropertyDeclaration(nameDecl)
+			&& nameDecl.initializer
+			&& isObserved(nameDecl.initializer)
+		) {
 			return true
 		}
 
@@ -106,6 +143,7 @@ export namespace ObservedChecker {
 			return false
 		}
 
+		// `a.b.map`
 		let exp = calling.expression
 		if (!Helper.access.isAccess(exp)) {
 			return false
@@ -113,12 +151,34 @@ export namespace ObservedChecker {
 
 		// `a.b`
 		let callFrom = exp.expression
+		if (!isListStruct(callFrom)) {
+			return false
+		}
 
 		// Must use parent context.
 		return isObserved(callFrom)
 	}
 
 
+	/** Whether parameter declaration should be observed. */
+	export function isParameterObserved(rawNode: TS.ParameterDeclaration): boolean {
+		let typeNode = rawNode.type
+		if (typeNode && isTypeNodeObserved(typeNode)) {
+			return true
+		}
+
+		if (isParameterObservedByCallingBroadcasted(rawNode)) {
+			return true
+		}
+
+		if (rawNode.initializer && isObserved(rawNode.initializer)) {
+			return true
+		}
+
+		return false
+	}
+
+	
 	/** 
 	 * Returns whether any of following type of node should be observed:
 	 * - an identifier
@@ -197,22 +257,6 @@ export namespace ObservedChecker {
 
 
 	/** 
-	 * Check whether an identifier or `this` should be observed.
-	 * Node must be the top most property access expression.
-	 * E.g., for `a.b.c`, sub identifier `b` or `c` is not allowed.
-	 */
-	function isIdentifierObserved(rawNode: TS.Identifier | TS.ThisExpression): boolean {
-		let context = ContextTree.findClosestByNode(rawNode)
-
-		if (rawNode.kind === ts.SyntaxKind.ThisKeyword) {
-			return context.variables.thisObserved
-		}
-
-		let name = rawNode.text
-		return context.variables.isVariableObserved(name)
-	}
-
-	/** 
 	 * Returns whether a property accessing should be observed, for internal use only.
 	 * `parental` specifies whether are visiting parent node of original to determine observed.
 	 */
@@ -224,7 +268,7 @@ export namespace ObservedChecker {
 		}
 
 		// `[]`, `Map`, `Set`.
-		if (isStruct(rawNode.expression)) {
+		if (isListStruct(rawNode.expression)) {
 			return isObserved(rawNode.expression, true)
 		}
 
@@ -237,7 +281,7 @@ export namespace ObservedChecker {
 		}
 
 		// Property declaration has specified as observed type or observed initializer.
-		if (checkPropertyOrGetAccessorObserved(rawNode)) {
+		if (isPropertyOrGetAccessorDeclaredAsObserved(rawNode)) {
 			return true
 		}
 
@@ -271,33 +315,20 @@ export namespace ObservedChecker {
 	}
 
 
-	/** Check whether a property or get accessor declaration, or a property declaration is observed. */
-	function checkPropertyOrGetAccessorObserved(rawNode: AccessNode): boolean {
+	/** 
+	 * Check whether an identifier or `this` should be observed.
+	 * Node must be the top most property access expression.
+	 * E.g., for `a.b.c`, sub identifier `b` or `c` is not allowed.
+	 */
+	export function isIdentifierObserved(rawNode: TS.Identifier | TS.ThisExpression): boolean {
+		let context = ContextTree.findClosestByNode(rawNode)
 
-		// `class A{p: Observed}` -> `this.p` and `this['p']` is observed.
-		// `interface A{p: Observed}` -> `this.p` and `this['p']` is observed.
-		let nameDecl = Helper.symbol.resolveDeclaration(rawNode, Helper.isPropertyOrGetAccessor)
-		if (!nameDecl) {
-			return false
+		if (rawNode.kind === ts.SyntaxKind.ThisKeyword) {
+			return context.variables.thisObserved
 		}
 
-		let typeNode = nameDecl.type
-
-		// `class A{p: Observed<...>}`
-		if (typeNode && isTypeNodeObserved(typeNode)) {
-			return true
-		}
-
-		// `class A{p = {} as Observed}`, must not specified property type.
-		if (!typeNode
-			&& ts.isPropertyDeclaration(nameDecl)
-			&& nameDecl.initializer
-			&& isObserved(nameDecl.initializer)
-		) {
-			return true
-		}
-
-		return false
+		let name = rawNode.text
+		return context.variables.isVariableObserved(name)
 	}
 
 	
@@ -340,7 +371,7 @@ export namespace ObservedChecker {
 
 
 	/** Test whether be `Map` or `Set`, or of `Array` type. */
-	export function isStruct(rawNode: TS.Node) {
+	export function isListStruct(rawNode: TS.Node) {
 		let type = Helper.types.getType(rawNode)
 		let typeNode = Helper.types.getTypeNode(rawNode)
 		let objName = typeNode ? Helper.types.getTypeNodeReferenceName(typeNode) : undefined
@@ -351,7 +382,7 @@ export namespace ObservedChecker {
 	}
 
 	/** Test whether calls reading process of `Map`, `Set`, `Array`. */
-	export function isStructReadingAccess(rawNode: AccessNode): boolean {
+	export function isListStructReadingAccess(rawNode: AccessNode): boolean {
 		let expType = Helper.types.getType(rawNode.expression)
 		let expTypeNode = Helper.types.getTypeNode(rawNode.expression)
 		let objName = expTypeNode ? Helper.types.getTypeNodeReferenceName(expTypeNode) : undefined
@@ -379,7 +410,7 @@ export namespace ObservedChecker {
 	}
 
 	/** Test whether calls `Map.set`, or `Set.set`. */
-	export function isStructWritingAccess(rawNode: AccessNode) {
+	export function isListStructWritingAccess(rawNode: AccessNode) {
 		let expType = Helper.types.getType(rawNode.expression)
 		let expTypeNode = Helper.types.getTypeNode(rawNode.expression)
 		let objName = expTypeNode ? Helper.types.getTypeNodeReferenceName(expTypeNode) : undefined

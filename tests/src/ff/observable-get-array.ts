@@ -16,6 +16,16 @@ class TestArrayIndex extends Component {
 }
 
 
+class TestArrayTuple extends Component {
+
+	prop: [number, number] = [1, 1]
+
+	fixedIndex() {
+		return this.prop[0] + this.prop[1]
+	}
+}
+
+
 class TestArrayMethods extends Component {
 
 	prop: number[] = [1]

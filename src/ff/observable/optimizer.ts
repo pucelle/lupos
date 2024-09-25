@@ -1,8 +1,8 @@
 import type TS from 'typescript'
 import {Helper, Modifier, ts} from '../../base'
 import {Context} from './context'
-import {ContextCapturer} from './context-capturer'
 import {ContextTree, ContextTypeMask} from './context-tree'
+import {ContextCapturerOperator} from './context-capturer-operator'
 
 
 /**
@@ -70,7 +70,7 @@ export namespace Optimizer {
 		// parent of flow interruption.
 		let targetContext = context.parent!
 
-		context.capturer.moveCapturedOutwardTo(targetContext.capturer)
+		context.capturer.operator.moveCapturedOutwardTo(targetContext.capturer)
 	}
 
 
@@ -82,7 +82,7 @@ export namespace Optimizer {
 
 		// parent of conditional.
 		let targetContext = context.parent!
-		context.capturer.moveCapturedOutwardTo(targetContext.capturer)
+		context.capturer.operator.moveCapturedOutwardTo(targetContext.capturer)
 	}
 
 
@@ -109,13 +109,13 @@ export namespace Optimizer {
 		}
 
 		let capturers = contentChildren.map(c => c.capturer)
-		let shared = ContextCapturer.intersectIndices(capturers)
+		let shared = ContextCapturerOperator.intersectCapturedItems(capturers)
 
 		if (shared.length === 0) {
 			return
 		}
 
-		context.capturer.moveCapturedIndicesIn(shared, contentChildren[0].capturer)
+		context.capturer.operator.moveCapturedFrom(shared, contentChildren[0].capturer)
 	}
 
 
@@ -130,7 +130,7 @@ export namespace Optimizer {
 		)
 
 		Modifier.moveOnce(context.visitIndex, toPosition.index)
-		context.capturer.moveCapturedOutwardTo(toPosition.context.capturer)
+		context.capturer.operator.moveCapturedOutwardTo(toPosition.context.capturer)
 	}
 
 
@@ -143,7 +143,7 @@ export namespace Optimizer {
 		// parent of iteration.
 		let targetContext = context.parent!.parent!
 
-		context.capturer.moveCapturedOutwardTo(targetContext.capturer)
+		context.capturer.operator.moveCapturedOutwardTo(targetContext.capturer)
 	}
 
 
@@ -156,13 +156,13 @@ export namespace Optimizer {
 		// parent of iteration.
 		let targetContext = context.parent!.parent!
 
-		context.capturer.moveCapturedOutwardTo(targetContext.capturer)
+		context.capturer.operator.moveCapturedOutwardTo(targetContext.capturer)
 	}
 
 
 	/** Eliminate repetitive captured indices that repeat itself or with it's descendants. */
 	function eliminateRepetitiveCapturedRecursively(context: Context) {
-		context.capturer.eliminateRepetitiveRecursively(new Set())
+		context.capturer.operator.eliminateRepetitiveRecursively(new Set())
 	}
 
 
@@ -178,7 +178,7 @@ export namespace Optimizer {
 
 
 		// Group captured by property name.
-		for (let {name, index, type} of context.capturer.walkPrivateCaptured(classNode)) {
+		for (let {name, index, type} of context.capturer.operator.walkPrivateCaptured(classNode)) {
 			let item = nameMap.get(name)
 			if (!item) {
 				item = {
@@ -229,6 +229,6 @@ export namespace Optimizer {
 			}
 		}
 
-		context.capturer.removeCapturedIndices(removeIndices)
+		context.capturer.operator.removeCapturedIndicesRecursively(removeIndices)
 	}
 }

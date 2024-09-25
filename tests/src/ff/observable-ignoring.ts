@@ -96,6 +96,11 @@ class TestIgnoringReadonlyPrivate extends Component {
 	readMethod() {
 		return this.prop
 	}
+
+	destructedReadMethod() {
+		let {prop} = this
+		return prop
+	}
 }
 
 
