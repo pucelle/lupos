@@ -14,10 +14,21 @@ const $html_0 = new HTMLMaker("<div><slot name=\"slotName\"></slot></div>");
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),
-        update() {
-            $slot_0.update($context.__getSlotElement("slotName"));
+        update($values) {
+            $slot_0.update($values[0]);
         },
         parts: [[$slot_0, 2]]
+    };
+});
+const $html_1 = new HTMLMaker("Content");
+/*
+<root>Content</root>
+*/ const $template_2 = new TemplateMaker(function () {
+    let $node = $html_1.make();
+    let $node_0 = $node.content.firstChild;
+    return {
+        el: $node,
+        position: new SlotPosition(1, $node_0)
     };
 });
 /*
@@ -35,20 +46,9 @@ const $html_0 = new HTMLMaker("<div><slot name=\"slotName\"></slot></div>");
         el: $node,
         position: new SlotPosition(1, $node_0),
         update($values) {
-            $slot_0.update($context.__getSlotElement("slotName") ?? new CompiledTemplateResult($template_2, $values));
+            $slot_0.update($values[0]);
         },
         parts: [[$slot_0, 2]]
-    };
-});
-const $html_1 = new HTMLMaker("Content");
-/*
-<root>Content</root>
-*/ const $template_2 = new TemplateMaker(function () {
-    let $node = $html_1.make();
-    let $node_0 = $node.content.firstChild;
-    return {
-        el: $node,
-        position: new SlotPosition(1, $node_0)
     };
 });
 const $html_2 = new HTMLMaker("<div><slot></slot></div>");
@@ -71,10 +71,10 @@ const $html_2 = new HTMLMaker("<div><slot></slot></div>");
 class TestComponent extends Component {
     prop = 1;
     testNamedSlot() {
-        return new CompiledTemplateResult($template_0, []);
+        return new CompiledTemplateResult($template_0, [this.__getSlotElement("slotName")]);
     }
     testNamedSlotWithContent() {
-        return new CompiledTemplateResult($template_1, []);
+        return new CompiledTemplateResult($template_1, [this.__getSlotElement("slotName") ?? new CompiledTemplateResult($template_2, [])]);
     }
     testRestSlot() {
         return new CompiledTemplateResult($template_3, []);

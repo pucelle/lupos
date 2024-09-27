@@ -10,13 +10,13 @@ export abstract class FlowControlBase {
 
 	readonly slot: FlowControlSlotParser
 	readonly node: HTMLNode
-	readonly treeParser: TreeParser
+	readonly tree: TreeParser
 	readonly template: TemplateParser
 
 	constructor(slot: FlowControlSlotParser) {
 		this.slot = slot
 		this.node = slot.node
-		this.treeParser = slot.treeParser
+		this.tree = slot.treeParser
 		this.template = slot.template
 	}
 

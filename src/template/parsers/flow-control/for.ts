@@ -9,11 +9,15 @@ export class ForFlowControl extends FlowControlBase {
 	/** $block_0 */
 	private blockVariableName: string = ''
 
+	/** $slot_0 */
+	private slotVariableName: string = ''
+
 	private ofValueIndex: number = -1
 	private fnValueIndex: number = -1
 
 	init() {
-		this.blockVariableName = this.treeParser.getUniqueBlockName()
+		this.blockVariableName = this.tree.getUniqueBlockName()
+		this.slotVariableName = this.slot.getSlotName()
 
 		let ofValueIndex = this.getAttrValueIndex(this.node)
 		let fnValueIndex = this.getUniqueChildValueIndex(this.node)
@@ -52,17 +56,25 @@ export class ForFlowControl extends FlowControlBase {
 		
 		let templateSlot = this.slot.outputTemplateSlot(SlotContentType.TemplateResultList)
 
-		return this.slot.addVariableAssignment(
-			this.blockVariableName,
-			factory.createNewExpression(
-				factory.createIdentifier('ForBlock'),
-				undefined,
-				[
-					renderFnNode,
-					templateSlot,
-				]
-			)
+		let slotInit = this.slot.createVariableAssignment(
+			this.slotVariableName,
+			templateSlot
 		)
+
+		return [
+			slotInit,
+			this.slot.createVariableAssignment(
+				this.blockVariableName,
+				factory.createNewExpression(
+					factory.createIdentifier('ForBlock'),
+					undefined,
+					[
+						renderFnNode,
+						factory.createIdentifier(this.slotVariableName),
+					]
+				)
+			)
+		]
 	}
 
 	outputUpdate() {

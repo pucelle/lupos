@@ -16,8 +16,7 @@ export class ContentSlotParser extends SlotParserBase {
 
 	init() {
 		this.slotContentType = this.identifySlotContentType()
-		this.slotVariableName = this.treeParser.getUniqueSlotName()
-		this.treeParser.addPart(this.slotVariableName, this.node)
+		this.slotVariableName = this.getSlotName()
 
 		if (this.isValueMutable()) {
 
@@ -59,7 +58,7 @@ export class ContentSlotParser extends SlotParserBase {
 	outputInit() {
 		let templateSLot = this.outputTemplateSlot(this.slotContentType)
 
-		return this.addVariableAssignment(
+		return this.createVariableAssignment(
 			this.slotVariableName,
 			templateSLot
 		)

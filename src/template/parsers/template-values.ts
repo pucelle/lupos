@@ -1,14 +1,12 @@
 import type TS from 'typescript'
 import {factory, Helper, Interpolator, MutableMask, ScopeTree, ts} from '../../base'
 import {VariableNames} from './variable-names'
-import {TemplateParser} from './template'
 
 
 /** Help to manage all value nodes. */
 export class TemplateValues {
 
 	readonly valueNodes: TS.Expression[]
-	readonly template: TemplateParser
 
 	private valueHash: Map<string, number> = new Map()
 	private outputNodes: TS.Expression[] = []
@@ -17,9 +15,8 @@ export class TemplateValues {
 	private indicesTransferred: Set<number> = new Set()
 	private anyIndicesTransferredWithinFunctionScope: boolean = false
 
-	constructor(valueNodes: TS.Expression[], template: TemplateParser) {
+	constructor(valueNodes: TS.Expression[]) {
 		this.valueNodes = valueNodes
-		this.template = template
 		this.checkIndicesMutable()
 	}
 	
@@ -63,7 +60,7 @@ export class TemplateValues {
 	}
 
 	/** Get raw value node at index. */
-	getRawNode(index: number): TS.Expression {
+	getRawValue(index: number): TS.Expression {
 		return this.valueNodes[index]
 	}
 
@@ -142,7 +139,7 @@ export class TemplateValues {
 
 	/** 
 	 * Output a node, append it to output value node list,
-	 * and returns it's reference node.
+	 * and returns it's reference value item.
 	 */
 	private outputValueNodeOf(rawNode: TS.Expression, transferringToTopmostScope: boolean): TS.Expression {
 		let hash = ScopeTree.hashNode(rawNode).name
@@ -170,6 +167,20 @@ export class TemplateValues {
 	}
 
 	/** 
+	 * Add a custom value to value list,
+	 * and return reference of this value item.
+	 */
+	outputCustomValue(node: TS.Expression): TS.Expression {
+		let valueIndex = this.outputNodes.length
+		this.outputNodes.push(node)
+
+		return factory.createElementAccessExpression(
+			factory.createIdentifier(VariableNames.values),
+			factory.createNumericLiteral(valueIndex)
+		)
+	}
+
+	/** 
 	 * Bundle a interpolation strings and value indices to a new expression.
 	 * It uses `indices[0]` as new index.
 	 * `...${value}...` -> `${'...' + value + '...'}`
@@ -189,7 +200,7 @@ export class TemplateValues {
 		}
 
 		
-		let firstRawNode = this.getRawNode(valueIndices[0])
+		let firstRawNode = this.getRawValue(valueIndices[0])
 
 		// '' + ... if it's not a string type of value.
 		if (!ts.isStringLiteral(parts[0])
@@ -203,7 +214,7 @@ export class TemplateValues {
 	}
 
 	/** Output all values to an array. */
-	output(): TS.Expression {
+	output(): TS.ArrayLiteralExpression {
 		return factory.createArrayLiteralExpression(
 			this.outputNodes,
 			false

@@ -139,7 +139,7 @@ export class BindingSlotParser extends SlotParserBase {
 		}
 
 		// let $binding_0 = new ClassBinding($node_0, ?context, ?modifiers)
-		return this.addVariableAssignment(
+		return this.createVariableAssignment(
 			this.bindingVariableName,
 			factory.createNewExpression(
 				factory.createIdentifier(bindingClassName),

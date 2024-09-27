@@ -9,13 +9,15 @@ const $html_0 = new HTMLMaker("<!----><!---->");
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
-    let $block_0 = new AwaitBlock([$template_1, $template_2, null], new TemplateSlot(new SlotPosition(1, $node_1), $context));
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context);
+    let $block_0 = new AwaitBlock([$template_1, $template_2, null], $slot_0);
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),
         update($values) {
             $block_0.update($values[0], $values);
-        }
+        },
+        parts: [[$slot_0, 0]]
     };
 });
 const $html_1 = new HTMLMaker("Pending Content");
@@ -48,13 +50,15 @@ const $html_2 = new HTMLMaker("Then Content");
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
-    let $block_0 = new AwaitBlock([$template_4, null, $template_5], new TemplateSlot(new SlotPosition(1, $node_1), $context));
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context);
+    let $block_0 = new AwaitBlock([$template_4, null, $template_5], $slot_0);
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),
         update($values) {
             $block_0.update($values[0], $values);
-        }
+        },
+        parts: [[$slot_0, 0]]
     };
 });
 /*
@@ -86,13 +90,15 @@ const $html_3 = new HTMLMaker("Catch Content");
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
-    let $block_0 = new AwaitBlock([$template_7, $template_8, $template_9], new TemplateSlot(new SlotPosition(1, $node_1), $context));
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context);
+    let $block_0 = new AwaitBlock([$template_7, $template_8, $template_9], $slot_0);
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),
         update($values) {
             $block_0.update($values[0], $values);
-        }
+        },
+        parts: [[$slot_0, 0]]
     };
 });
 /*

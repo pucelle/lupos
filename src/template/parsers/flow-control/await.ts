@@ -8,11 +8,15 @@ export class AwaitFlowControl extends FlowControlBase {
 	/** $block_0 */
 	private blockVariableName: string = ''
 
+	/** $slot_0 */
+	private slotVariableName: string = ''
+
 	private templateNames: (string | null)[] = []
 	private promiseIndex: number = -1
 
 	init() {
-		this.blockVariableName = this.treeParser.getUniqueBlockName()
+		this.blockVariableName = this.tree.getUniqueBlockName()
+		this.slotVariableName = this.slot.getSlotName()
 
 		let promiseIndex = this.getAttrValueIndex(this.node)
 		if (promiseIndex === null) {
@@ -30,7 +34,13 @@ export class AwaitFlowControl extends FlowControlBase {
 				templateNames.push(null)
 			}
 			else {
-				let tree = this.treeParser.separateChildrenAsSubTree(node)
+
+				// Separate as sub tree, not sub template.
+				// So it generates all the values required to render all three branches.
+				// Later inside AwaitBlock, it has no need to compute values after
+				// promise state get changed.
+				let tree = this.tree.separateChildrenAsSubTree(node)
+
 				let templateName = tree.getTemplateRefName()
 				templateNames.push(templateName)
 			}
@@ -52,17 +62,25 @@ export class AwaitFlowControl extends FlowControlBase {
 		let makers = this.outputMakerNodes(this.templateNames)
 		let templateSlot = this.slot.outputTemplateSlot(null)
 
-		return this.slot.addVariableAssignment(
-			this.blockVariableName,
-			factory.createNewExpression(
-				factory.createIdentifier('AwaitBlock'),
-				undefined,
-				[
-					makers,
-					templateSlot,
-				]
-			)
+		let slotInit = this.slot.createVariableAssignment(
+			this.slotVariableName,
+			templateSlot
 		)
+
+		return [
+			slotInit,
+			this.slot.createVariableAssignment(
+				this.blockVariableName,
+				factory.createNewExpression(
+					factory.createIdentifier('AwaitBlock'),
+					undefined,
+					[
+						makers,
+						factory.createIdentifier(this.slotVariableName),
+					]
+				)
+			)
+		]
 	}
 
 	outputUpdate() {

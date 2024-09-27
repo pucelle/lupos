@@ -1,7 +1,7 @@
 import type TS from 'typescript'
 import {factory, Helper, Modifier} from '../../../base'
 import {FlowControlBase} from './base'
-import {VariableNames} from '../variable-names'
+import {TemplateParser} from '../template'
 
 
 export class IfFlowControl extends FlowControlBase {
@@ -9,18 +9,23 @@ export class IfFlowControl extends FlowControlBase {
 	/** $block_0 */
 	private blockVariableName: string = ''
 
+	/** $slot_0 */
+	private slotVariableName: string = ''
+
 	private cacheable: boolean = false
 	private valueIndices: (number | null)[] = []
-	private templateNames: (string | null)[] = []
+	private templates: (TemplateParser | null)[] = []
 
 	init() {
-		this.blockVariableName = this.treeParser.getUniqueBlockName()
+		this.blockVariableName = this.tree.getUniqueBlockName()
+		this.slotVariableName = this.slot.getSlotName()
 		this.cacheable = this.hasAttrValue(this.node, 'cache')
 
 		let nextNodes = this.eatNext('lu:elseif', 'lu:else')
 		let allNodes = [this.node, ...nextNodes]
+		let lastValueIndex: number | null = null
 		let valueIndices: (number | null)[] = []
-		let templateNames: (string | null)[] = []
+		let templates: (TemplateParser | null)[] = []
 
 		for (let node of allNodes) {
 			let valueIndex = this.getAttrValueIndex(node)
@@ -33,23 +38,23 @@ export class IfFlowControl extends FlowControlBase {
 				throw new Error('<' + node.tagName + '> should not accept any parameter!')
 			}
 
-			if (valueIndex === null && valueIndices[valueIndices.length - 1] === null) {
+			if (valueIndex === null && lastValueIndex === null) {
 				throw new Error('<lu:else> is allowed only one to exist on the tail!')
 			}
 
 			valueIndices.push(valueIndex)
+			lastValueIndex = valueIndex
 	
 			if (node.children.length > 0) {
-				let tree = this.treeParser.separateChildrenAsSubTree(node)
-				let temName = tree.getTemplateRefName()
-				templateNames.push(temName)
+				let template = this.template.separateChildrenAsTemplate(node)
+				templates.push(template)
 			}
 			else {
-				templateNames.push(null)
+				templates.push(null)
 			}
 		}
 
-		this.templateNames = templateNames
+		this.templates = templates
 		this.valueIndices = valueIndices
 	}
 
@@ -58,81 +63,32 @@ export class IfFlowControl extends FlowControlBase {
 		Modifier.addImport(blockClassName, '@pucelle/lupos.js')
 
 		// let $block_0 = new IfBlock / CacheableIfBlock(
-		//   indexFn,
-		//   makers,
 		//   new TemplateSlot(new SlotPosition(SlotPositionType.Before, nextChild)),
-		//   $context_0,
 		// )
-
-		let indexFn = this.outputIfIndexFn(this.valueIndices)
-		let makers = this.outputMakerNodes(this.templateNames)
 		let templateSlot = this.slot.outputTemplateSlot(null)
 
-		return this.slot.addVariableAssignment(
-			this.blockVariableName,
-			factory.createNewExpression(
-				factory.createIdentifier(blockClassName),
-				undefined,
-				[
-					indexFn,
-					makers,
-					templateSlot,
-				]
-			)
-		)
-	}
-
-	/** Make an index output function by an if condition value index sequence. */
-	private outputIfIndexFn(valueIndices: (number | null)[]): TS.FunctionExpression {
-		let hasElse = valueIndices[valueIndices.length - 1] === null
-		let elseIndex = hasElse ? valueIndices.length - 1 : -1
-
-		// Always build else branch.
-		let elseNode: TS.Statement = factory.createBlock(
-			[factory.createReturnStatement(
-				Helper.createNumeric(elseIndex)
-			)],
-			true
+		let slotInit = this.slot.createVariableAssignment(
+			this.slotVariableName,
+			templateSlot
 		)
 
-		for (let i = hasElse ? valueIndices.length - 2 : valueIndices.length - 1; i >= 0; i--) {
-			let valueIndex = valueIndices[i]!
-			let conditionNode = this.template.values.outputValue(null, [valueIndex])
-
-			let thenNode = factory.createBlock(
-				[factory.createReturnStatement(factory.createNumericLiteral(i))],
-				true
+		return [
+			slotInit,
+			this.slot.createVariableAssignment(
+				this.blockVariableName,
+				factory.createNewExpression(
+					factory.createIdentifier(blockClassName),
+					undefined,
+					[
+						factory.createIdentifier(this.slotVariableName),
+					]
+				)
 			)
-
-			elseNode = factory.createIfStatement(
-				conditionNode,
-				thenNode,
-				elseNode
-			)
-		}
-
-		return factory.createFunctionExpression(
-			undefined,
-			undefined,
-			undefined,
-			undefined,
-			[factory.createParameterDeclaration(
-				undefined,
-				undefined,
-				factory.createIdentifier(VariableNames.values),
-				undefined,
-				undefined,
-				undefined
-			)],
-			undefined,
-			factory.createBlock(
-				[elseNode],
-				true
-			)
-		)	
+		]
 	}
 
 	outputUpdate() {
+		let toValue = this.outputIf()
 
 		// $block_0.update($values)
 		return factory.createCallExpression(
@@ -141,9 +97,35 @@ export class IfFlowControl extends FlowControlBase {
 				factory.createIdentifier('update')
 			),
 			undefined,
-			[
-				factory.createIdentifier(VariableNames.values)
-			]
+			[toValue]
 		)
+	}
+
+	/** Make an index output function by an if condition value index sequence. */
+	private outputIf(): TS.Expression {
+		let conditions = this.valueIndices.map(index => {
+			if (index === null) {
+				return factory.createNull()
+			}
+			else {
+				return this.template.values.getRawValue(index)
+			}
+		})
+
+		let contents = this.templates.map(template => {
+			if (template === null) {
+				return factory.createNull()
+			}
+			else {
+				return template.output()
+			}
+		})
+
+		let value = Helper.pack.toConditionalExpression(conditions, contents)
+
+		// Add it as a value item to original template, and returned it's reference.
+		let toValue = this.template.values.outputCustomValue(value)
+
+		return toValue
 	}
 }

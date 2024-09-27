@@ -11,9 +11,10 @@ const $html_0 = new HTMLMaker("<!----><div></div><!---->");
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.childNodes[1];
     let $node_2 = $node.content.lastChild;
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_2), $context);
     let $block_0 = new DynamicComponentBlock(function (com) {
         $com_0 = com;
-    }, $node_1, new TemplateSlot(new SlotPosition(1, $node_2), $context));
+    }, $node_1, $slot_0);
     $block_0.update(ChildComponent);
     return {
         el: $node,
@@ -24,7 +25,7 @@ const $html_0 = new HTMLMaker("<!----><div></div><!---->");
                 trackSet($com_0, "comProp");
             }
         },
-        parts: () => [[$com_0, 0]]
+        parts: [[$slot_0, 0]]
     };
 });
 class TestDynamicComponent extends Component {

@@ -1722,5 +1722,59 @@ export namespace Helper {
 				return node
 			}
 		}
+
+
+		/** Create `if (...) {return ...}`. */
+		export function toIfElseStatement(condExps: TS.Expression[], exps: TS.Expression[]): TS.Statement {
+
+			// Last branch.
+			let last: TS.Statement = factory.createBlock(
+				[factory.createReturnStatement(
+					exps[exps.length - 1]
+				)],
+				true
+			)
+
+			for (let i = exps.length - 2; i >= 0; i--) {
+				let conditionNode = condExps[i]
+
+				let thenNode = factory.createBlock(
+					[factory.createReturnStatement(exps[i])],
+					true
+				)
+
+				last = factory.createIfStatement(
+					conditionNode,
+					thenNode,
+					last
+				)
+			}
+
+			return last
+		}
+
+
+		/** Create `cond1 ? exp1 : cond2 ? exp2 ...`. */
+		export function toConditionalExpression(condExps: TS.Expression[], exps: TS.Expression[]): TS.Expression {
+
+			// Last expression.
+			let last: TS.Expression = exps[exps.length - 1]
+
+			for (let i = exps.length - 2; i >= 0; i--) {
+				let conditionNode = condExps[i]
+
+				let thenNode = exps[i]
+
+				last = factory.createConditionalExpression(
+					conditionNode,
+					factory.createToken(ts.SyntaxKind.QuestionToken),
+					thenNode,
+					factory.createToken(ts.SyntaxKind.ColonToken),
+					last
+				)				  
+			}
+
+			return last
+		}
 	}
 }

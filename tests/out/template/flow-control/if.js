@@ -1,35 +1,40 @@
 import { Component, CompiledTemplateResult, TemplateMaker, SlotPosition, IfBlock, TemplateSlot, HTMLMaker, CacheableIfBlock } from '@pucelle/lupos.js';
 import { trackGet } from "@pucelle/ff";
-const $html_0 = new HTMLMaker("<!----><!---->");
+const $html_0 = new HTMLMaker("If Content");
+/*
+<root>If Content</root>
+*/ const $template_1 = new TemplateMaker(function () {
+    let $node = $html_0.make();
+    let $node_0 = $node.content.firstChild;
+    return {
+        el: $node,
+        position: new SlotPosition(1, $node_0)
+    };
+});
+const $html_1 = new HTMLMaker("<!----><!---->");
 /*
 <root>
     <lu:if ${this.prop} />
 </root>
 */ const $template_0 = new TemplateMaker(function ($context) {
-    let $node = $html_0.make();
+    let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
-    let $block_0 = new IfBlock(function ($values) {
-        if ($values[0]) {
-            return 0;
-        }
-        else {
-            return -1;
-        }
-    }, [$template_1], new TemplateSlot(new SlotPosition(1, $node_1), $context));
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context);
+    let $block_0 = new IfBlock($slot_0);
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),
         update($values) {
-            $block_0.update($values);
-        }
+            $block_0.update($values[0]);
+        },
+        parts: [[$slot_0, 0]]
     };
 });
-const $html_1 = new HTMLMaker("If Content");
 /*
 <root>If Content</root>
-*/ const $template_1 = new TemplateMaker(function () {
-    let $node = $html_1.make();
+*/ const $template_3 = new TemplateMaker(function () {
+    let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     return {
         el: $node,
@@ -41,57 +46,18 @@ const $html_1 = new HTMLMaker("If Content");
     <lu:if ${this.prop} cache />
 </root>
 */ const $template_2 = new TemplateMaker(function ($context) {
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
-    let $node_1 = $node.content.lastChild;
-    let $block_0 = new CacheableIfBlock(function ($values) {
-        if ($values[0]) {
-            return 0;
-        }
-        else {
-            return -1;
-        }
-    }, [$template_3], new TemplateSlot(new SlotPosition(1, $node_1), $context));
-    return {
-        el: $node,
-        position: new SlotPosition(1, $node_0),
-        update($values) {
-            $block_0.update($values);
-        }
-    };
-});
-/*
-<root>If Content</root>
-*/ const $template_3 = new TemplateMaker(function () {
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
-    return {
-        el: $node,
-        position: new SlotPosition(1, $node_0)
-    };
-});
-/*
-<root>
-    <lu:if ${this.prop} />
-</root>
-*/ const $template_4 = new TemplateMaker(function ($context) {
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
-    let $block_0 = new IfBlock(function ($values) {
-        if ($values[0]) {
-            return 0;
-        }
-        else {
-            return -1;
-        }
-    }, [$template_5], new TemplateSlot(new SlotPosition(1, $node_1), $context));
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context);
+    let $block_0 = new CacheableIfBlock($slot_0);
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),
         update($values) {
-            $block_0.update($values);
-        }
+            $block_0.update($values[0]);
+        },
+        parts: [[$slot_0, 0]]
     };
 });
 const $html_2 = new HTMLMaker(" ");
@@ -105,8 +71,8 @@ const $html_2 = new HTMLMaker(" ");
         el: $node,
         position: new SlotPosition(1, $node_0),
         update($values) {
-            if ($latest_0 !== $values[1]) {
-                $node_0.data = $latest_0 = $values[1];
+            if ($latest_0 !== $values[0]) {
+                $node_0.data = $latest_0 = $values[0];
             }
         }
     };
@@ -115,30 +81,25 @@ const $html_2 = new HTMLMaker(" ");
 <root>
     <lu:if ${this.prop} />
 </root>
-*/ const $template_6 = new TemplateMaker(function ($context) {
-    let $node = $html_0.make();
+*/ const $template_4 = new TemplateMaker(function ($context) {
+    let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
-    let $block_0 = new IfBlock(function ($values) {
-        if ($values[0]) {
-            return 0;
-        }
-        else {
-            return 1;
-        }
-    }, [$template_7, $template_8], new TemplateSlot(new SlotPosition(1, $node_1), $context));
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context);
+    let $block_0 = new IfBlock($slot_0);
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),
         update($values) {
-            $block_0.update($values);
-        }
+            $block_0.update($values[0]);
+        },
+        parts: [[$slot_0, 0]]
     };
 });
 /*
 <root>If Content</root>
 */ const $template_7 = new TemplateMaker(function () {
-    let $node = $html_1.make();
+    let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     return {
         el: $node,
@@ -160,36 +121,25 @@ const $html_3 = new HTMLMaker("Else Content");
 <root>
     <lu:if ${this.prop} />
 </root>
-*/ const $template_9 = new TemplateMaker(function ($context) {
-    let $node = $html_0.make();
+*/ const $template_6 = new TemplateMaker(function ($context) {
+    let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
-    let $block_0 = new IfBlock(function ($values) {
-        if ($values[0]) {
-            return 0;
-        }
-        else if ($values[0]) {
-            return 1;
-        }
-        else if ($values[0]) {
-            return 2;
-        }
-        else {
-            return 3;
-        }
-    }, [$template_10, $template_11, $template_12, $template_13], new TemplateSlot(new SlotPosition(1, $node_1), $context));
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context);
+    let $block_0 = new IfBlock($slot_0);
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),
         update($values) {
-            $block_0.update($values);
-        }
+            $block_0.update($values[0]);
+        },
+        parts: [[$slot_0, 0]]
     };
 });
 /*
 <root>If Content</root>
 */ const $template_10 = new TemplateMaker(function () {
-    let $node = $html_1.make();
+    let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     return {
         el: $node,
@@ -229,27 +179,46 @@ const $html_6 = new HTMLMaker("Then Content");
         position: new SlotPosition(1, $node_0)
     };
 });
+/*
+<root>
+    <lu:if ${this.prop} />
+</root>
+*/ const $template_9 = new TemplateMaker(function ($context) {
+    let $node = $html_1.make();
+    let $node_0 = $node.content.firstChild;
+    let $node_1 = $node.content.lastChild;
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context);
+    let $block_0 = new IfBlock($slot_0);
+    return {
+        el: $node,
+        position: new SlotPosition(1, $node_0),
+        update($values) {
+            $block_0.update($values[0]);
+        },
+        parts: [[$slot_0, 0]]
+    };
+});
 class TestIf extends Component {
     prop = 1;
     content = '';
     testIf() {
         trackGet(this, "prop");
-        return new CompiledTemplateResult($template_0, [this.prop]);
+        return new CompiledTemplateResult($template_0, [new CompiledTemplateResult($template_1, [])]);
     }
     testIfCacheable() {
         trackGet(this, "prop");
-        return new CompiledTemplateResult($template_2, [this.prop]);
+        return new CompiledTemplateResult($template_2, [new CompiledTemplateResult($template_3, [])]);
     }
     testDynamicIfContent() {
         trackGet(this, "prop", "content");
-        return new CompiledTemplateResult($template_4, [this.prop, this.content]);
+        return new CompiledTemplateResult($template_4, [new CompiledTemplateResult($template_5, [this.content])]);
     }
     testIfElse() {
         trackGet(this, "prop");
-        return new CompiledTemplateResult($template_6, [this.prop]);
+        return new CompiledTemplateResult($template_6, [this.prop ? new CompiledTemplateResult($template_7, []) : new CompiledTemplateResult($template_8, [])]);
     }
     testIfElseIfElse() {
         trackGet(this, "prop");
-        return new CompiledTemplateResult($template_9, [this.prop]);
+        return new CompiledTemplateResult($template_9, [this.prop ? new CompiledTemplateResult($template_10, []) : this.prop ? new CompiledTemplateResult($template_11, []) : this.prop ? new CompiledTemplateResult($template_12, []) : new CompiledTemplateResult($template_13, [])]);
     }
 }

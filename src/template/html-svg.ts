@@ -2,6 +2,7 @@ import type TS from 'typescript'
 import {Helper, defineVisitor, ts, Interpolator, InterpolationContentType, TemplateSlotPlaceholder, Modifier} from '../base'
 import {TemplateParser} from './parsers'
 import {VariableNames} from './parsers/variable-names'
+import {HTMLRoot} from './html-syntax'
 
 
 defineVisitor(function(node: TS.Node, index: number) {
@@ -40,7 +41,8 @@ defineVisitor(function(node: TS.Node, index: number) {
 function parseHTMLTemplate(node: TS.TaggedTemplateExpression, index: number, templateType: 'html' | 'svg') {
 	let string = TemplateSlotPlaceholder.toTemplateString(node)
 	let values = TemplateSlotPlaceholder.extractTemplateValues(node)
-	let parser = new TemplateParser(templateType, string, values, node)
+	let root = HTMLRoot.fromString(string)
+	let parser = new TemplateParser(templateType, root, values, node)
 	let outputted = parser.output()
 	
 	Interpolator.replace(index, InterpolationContentType.Normal, () => outputted)

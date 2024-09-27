@@ -17,19 +17,17 @@ export class TemplateParser {
 
 	readonly type: TemplateType
 	readonly values: TemplateValues
-	readonly rawNode: TS.TaggedTemplateExpression
+	readonly rawNode: TS.Node
 
 	private readonly treeParsers: TreeParser[] = []
 
 	/** Which scope should insert contents. */
 	private innerMostScope: Scope = ScopeTree.getTopmost()
 
-	constructor(type: TemplateType, string: string, values: TS.Expression[], rawNode: TS.TaggedTemplateExpression) {
+	constructor(type: TemplateType, root: HTMLRoot, values: TS.Expression[], rawNode: TS.Node) {
 		this.type = type
-		this.values = new TemplateValues(values, this)
+		this.values = new TemplateValues(values)
 		this.rawNode = rawNode
-
-		let root = HTMLRoot.fromString(string)
 		this.addTreeParser(root, null, null)
 	}
 
@@ -43,6 +41,15 @@ export class TemplateParser {
 		return parser
 	}
 
+	/** 
+	 * Separate children of a node to an independent sub template,
+	 * it uses it's own value list.
+	 * */
+	separateChildrenAsTemplate(node: HTMLNode): TemplateParser {
+		let root = HTMLRoot.fromSeparatingChildren(node)
+		return new TemplateParser(this.type, root, this.values.valueNodes, this.rawNode)
+	}
+	
 	/** 
 	 * Add a referenced declaration node, normally component or binding class declaration.
 	 * If a template uses a local component,

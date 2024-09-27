@@ -9,13 +9,17 @@ export class SwitchFlowControl extends FlowControlBase {
 	/** $block_0 */
 	private blockVariableName: string = ''
 
+	/** $slot_0 */
+	private slotVariableName: string = ''
+
 	private cacheable: boolean = false
 	private switchValueIndex: number = -1
 	private valueIndices: (number | null)[] = []
 	private templateNames: (string | null)[] = []
 
 	init() {
-		this.blockVariableName = this.treeParser.getUniqueBlockName()
+		this.blockVariableName = this.tree.getUniqueBlockName()
+		this.slotVariableName = this.slot.getSlotName()
 		this.cacheable = this.hasAttrValue(this.node, 'cache')
 
 		let switchValueIndex = this.getAttrValueIndex(this.node)
@@ -45,7 +49,7 @@ export class SwitchFlowControl extends FlowControlBase {
 			valueIndices.push(valueIndex)
 	
 			if (child.children.length > 0) {
-				let tree = this.treeParser.separateChildrenAsSubTree(child)
+				let tree = this.tree.separateChildrenAsSubTree(child)
 				let temName = tree.getTemplateRefName()
 				templateNames.push(temName)
 			}
@@ -82,18 +86,26 @@ export class SwitchFlowControl extends FlowControlBase {
 		let makers = this.outputMakerNodes(this.templateNames)
 		let templateSlot = this.slot.outputTemplateSlot(null)
 
-		return this.slot.addVariableAssignment(
-			this.blockVariableName,
-			factory.createNewExpression(
-				factory.createIdentifier(blockClassName),
-				undefined,
-				[
-					indexFn,
-					makers,
-					templateSlot,
-				]
-			)
+		let slotInit = this.slot.createVariableAssignment(
+			this.slotVariableName,
+			templateSlot
 		)
+
+		return [
+			slotInit,
+			this.slot.createVariableAssignment(
+				this.blockVariableName,
+				factory.createNewExpression(
+					factory.createIdentifier(blockClassName),
+					undefined,
+					[
+						indexFn,
+						makers,
+						factory.createIdentifier(this.slotVariableName),
+					]
+				)
+			)
+		]
 	}
 
 	/** Make an index output function by a switch condition value index list. */

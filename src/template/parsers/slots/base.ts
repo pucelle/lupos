@@ -111,7 +111,7 @@ export abstract class SlotParserBase {
 	 * If not `hasString()`, this value will always exist.
 	 */
 	protected getFirstRawValueNode(): TS.Expression | undefined {
-		return this.valueIndices ? this.template.values.getRawNode(this.valueIndices[0]) : undefined
+		return this.valueIndices ? this.template.values.getRawValue(this.valueIndices[0]) : undefined
 	}
 
 	/** Get node variable name. */
@@ -141,9 +141,20 @@ export abstract class SlotParserBase {
 		return this.treeParser.getRefedComponentName(this.node)
 	}
 
-	/** Add a variable assignment, either declare variable, or pre-declare and assign.  */
-	addVariableAssignment(name: string, exp: TS.Expression): TS.Expression | TS.Statement {
-		if (this.onDynamicComponent) {
+	/** 
+	 * Get a unique slot name `$slot_0`.
+	 * Otherwise will add the slot name to `parts`.
+	 */
+	getSlotName(): string {
+		let name = this.treeParser.getUniqueSlotName()
+		this.treeParser.addPart(name, this.node)
+
+		return name
+	}	
+
+	/** Create a variable assignment, either declare variable, or pre-declare and assign.  */
+	createVariableAssignment(name: string, exp: TS.Expression, preDeclare = this.onDynamicComponent): TS.Expression | TS.Statement {
+		if (preDeclare) {
 			this.treeParser.addPreDeclaredVariableName(name)
 			
 			return factory.createBinaryExpression(
@@ -205,23 +216,21 @@ export abstract class SlotParserBase {
 
 		let slotContentTypeNodes = slotContentType !== null ? [factory.createNumericLiteral(slotContentType)] : []
 
-		let templateSlotParams: TS.Expression[] = [
-			factory.createNewExpression(
-				factory.createIdentifier('SlotPosition'),
-				undefined,
-				[
-					factory.createNumericLiteral(position),
-					factory.createIdentifier(nodeName)
-				]
-			),
-			factory.createIdentifier(VariableNames.context),
-			...slotContentTypeNodes
-		]
-
 		return factory.createNewExpression(
 			factory.createIdentifier('TemplateSlot'),
 			undefined,
-			templateSlotParams
+			[
+				factory.createNewExpression(
+					factory.createIdentifier('SlotPosition'),
+					undefined,
+					[
+						factory.createNumericLiteral(position),
+						factory.createIdentifier(nodeName)
+					]
+				),
+				factory.createIdentifier(VariableNames.context),
+				...slotContentTypeNodes
+			]
 		)
 	}
 
@@ -321,7 +330,7 @@ export abstract class SlotParserBase {
 
 		// Resolve instance type of constructor interface.
 		else {
-			let ref = this.template.values.getRawNode(TemplateSlotPlaceholder.getUniqueSlotIndex(tagName)!)
+			let ref = this.template.values.getRawValue(TemplateSlotPlaceholder.getUniqueSlotIndex(tagName)!)
 			let decls = Helper.symbol.resolveDeclarations(ref, ts.isClassDeclaration)
 			if (decls && decls.length > 0) {
 				yield* decls

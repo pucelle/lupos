@@ -35,7 +35,6 @@ export class TreeOutputHandler {
 		slots: SlotParserBase[],
 		varNames: string[],
 		parts: [string, PartPositionType][],
-		hasDynamicComponent: boolean,
 		scope: Scope
 	) {
 		Modifier.addImport('TemplateMaker', '@pucelle/lupos.js')
@@ -72,7 +71,7 @@ export class TreeOutputHandler {
 		let templateName = this.parser.getTemplateRefName()
 
 		// TemplateInitResult
-		let initResult = this.outputTemplateInitResult(templatePosition, update, parts, hasDynamicComponent)
+		let initResult = this.outputTemplateInitResult(templatePosition, update, parts)
 
 		// const $template_0 = new TemplateMaker(function(?$context, ?$latestValues) {
 		//	 let $node = $html_0()
@@ -393,8 +392,7 @@ export class TreeOutputHandler {
 	private outputTemplateInitResult(
 		position: TS.Expression | null,
 		update: OutputNodeList,
-		parts: [string, PartPositionType][],
-		hasDynamicComponent: boolean
+		parts: [string, PartPositionType][]
 	) {
 		
 		// position part.
@@ -438,18 +436,6 @@ export class TreeOutputHandler {
 				], false)),
 				false
 			)
-
-			// Becomes `() => [...]`.
-			if (hasDynamicComponent) {
-				partExp = factory.createArrowFunction(
-					undefined,
-					undefined,
-					[],
-					undefined,
-					factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
-					partExp
-				)  
-			}
 
 			partsNode = factory.createPropertyAssignment(
 				factory.createIdentifier('parts'),

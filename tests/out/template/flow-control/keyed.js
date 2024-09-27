@@ -9,13 +9,15 @@ const $html_0 = new HTMLMaker("<!----><!---->");
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
-    let $block_0 = new KeyedBlock($template_1, new TemplateSlot(new SlotPosition(1, $node_1), $context));
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context);
+    let $block_0 = new KeyedBlock($template_1, $slot_0);
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),
         update($values) {
             $block_0.update($values[0], $values);
-        }
+        },
+        parts: [[$slot_0, 0]]
     };
 });
 const $html_1 = new HTMLMaker("Keyed Content");

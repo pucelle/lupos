@@ -1,15 +1,15 @@
 import type TS from 'typescript'
-import {TreeParser} from '../tree'
 import {SlotParserBase} from './base'
 import {factory, Modifier, ts} from '../../../base'
 import {VariableNames} from '../variable-names'
 import {SlotContentType, SlotPositionType} from '../../../enums'
+import {TemplateParser} from '../template'
 
 
 export class SlotTagSlotParser extends SlotParserBase {
 
 	/** To parse content of `<slot>...</slot>` */
-	private defaultContentParser: TreeParser | null = null
+	private defaultContentParser: TemplateParser | null = null
 
 	/** $slot_0 */
 	private slotVariableName: string = ''
@@ -23,13 +23,12 @@ export class SlotTagSlotParser extends SlotParserBase {
 
 		// Slot default content.
 		if (this.name && this.node.children.length > 0) {
-			this.defaultContentParser = this.treeParser.separateChildrenAsSubTree(this.node)
+			this.defaultContentParser = this.template.separateChildrenAsTemplate(this.node)
 		}
 
 		// $slot_0
 		if (this.name) {
-			this.slotVariableName = this.treeParser.getUniqueSlotName()
-			this.treeParser.addPart(this.slotVariableName, this.node)
+			this.slotVariableName = this.getSlotName()
 		}
 	}
 
@@ -50,30 +49,32 @@ export class SlotTagSlotParser extends SlotParserBase {
 		let slotContentType = this.defaultContentParser ? null : SlotContentType.Node
 		let slotContentTypeNodes = slotContentType ? [factory.createNumericLiteral(slotContentType)] : []
 
+		let templateSlot = factory.createNewExpression(
+			factory.createIdentifier('TemplateSlot'),
+			[factory.createLiteralTypeNode(factory.createNull())],
+			[
+				factory.createNewExpression(
+					factory.createIdentifier('SlotPosition'),
+					undefined,
+					[
+						factory.createNumericLiteral(SlotPositionType.AfterContent),
+						factory.createIdentifier(nodeName)
+					]
+				),
+				factory.createIdentifier(VariableNames.context),
+				...slotContentTypeNodes
+			]
+		)
+
 		// `let $slot_0 = new TemplateSlot<null>(
 		// 	 new SlotPosition(SlotPositionType.AfterContent, s),
 		// 	 $context
 		// )`
 		// It's not a known content type slot, slot elements may be empty,
 		// and then we would use default content.
-		return this.addVariableAssignment(
+		return this.createVariableAssignment(
 			this.slotVariableName,
-			factory.createNewExpression(
-				factory.createIdentifier('TemplateSlot'),
-				[factory.createLiteralTypeNode(factory.createNull())],
-				[
-					factory.createNewExpression(
-						factory.createIdentifier('SlotPosition'),
-						undefined,
-						[
-							factory.createNumericLiteral(SlotPositionType.AfterContent),
-							factory.createIdentifier(nodeName)
-						]
-					),
-					factory.createIdentifier(VariableNames.context),
-					...slotContentTypeNodes
-				]
-			)
+			templateSlot
 		)
 	}
 
@@ -111,9 +112,9 @@ export class SlotTagSlotParser extends SlotParserBase {
 		Modifier.addImport('TemplateSlot', '@pucelle/lupos.js')
 
 		// `this.__getSlotElement(slotName)`
-		let toValue: TS.Expression = factory.createCallExpression(
+		let value: TS.Expression = factory.createCallExpression(
 			factory.createPropertyAccessExpression(
-				factory.createIdentifier(VariableNames.context),
+				factory.createThis(),
 				factory.createIdentifier('__getSlotElement')
 			),
 			undefined,
@@ -124,22 +125,17 @@ export class SlotTagSlotParser extends SlotParserBase {
 		if (this.defaultContentParser) {
 			Modifier.addImport('CompiledTemplateResult', '@pucelle/lupos.js')
 
-			toValue = factory.createBinaryExpression(
-				toValue,
+			value = factory.createBinaryExpression(
+				value,
 				factory.createToken(ts.SyntaxKind.QuestionQuestionToken),
-				factory.createNewExpression(
-					factory.createIdentifier('CompiledTemplateResult'),
-					undefined,
-					[
-						factory.createIdentifier(this.defaultContentParser.getTemplateRefName()),
-						factory.createIdentifier(VariableNames.values)
-					]
-				)
+				this.defaultContentParser.output()
 			)
 		}
 
-		// $slot_0.update(this.__getSlotElement(slotName))
-		// $slot_0.update(this.__getSlotElement(slotName) || new CompiledTemplateResult($maker_0, $values))
+		// Add it as a value item to original template, and returned it's reference.
+		let toValue = this.template.values.outputCustomValue(value)
+
+		// $slot_0.update($values[0])
 		return factory.createCallExpression(
 			factory.createPropertyAccessExpression(
 				factory.createIdentifier(this.slotVariableName),

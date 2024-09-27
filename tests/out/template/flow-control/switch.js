@@ -9,19 +9,21 @@ const $html_0 = new HTMLMaker("<!----><!---->");
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context);
     let $block_0 = new SwitchBlock(function ($values) {
         switch ($values[0]) {
             case 1: return 0;
             case 2: return 1;
             default: return -1;
         }
-    }, [$template_1, $template_2], new TemplateSlot(new SlotPosition(1, $node_1), $context));
+    }, [$template_1, $template_2], $slot_0);
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),
         update($values) {
             $block_0.update($values);
-        }
+        },
+        parts: [[$slot_0, 0]]
     };
 });
 const $html_1 = new HTMLMaker("Case Content 1");
@@ -54,19 +56,21 @@ const $html_2 = new HTMLMaker("Case Content 2");
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context);
     let $block_0 = new SwitchBlock(function ($values) {
         switch ($values[0]) {
             case 1: return 0;
             case 2: return 1;
             default: return 2;
         }
-    }, [$template_4, $template_5, $template_6], new TemplateSlot(new SlotPosition(1, $node_1), $context));
+    }, [$template_4, $template_5, $template_6], $slot_0);
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),
         update($values) {
             $block_0.update($values);
-        }
+        },
+        parts: [[$slot_0, 0]]
     };
 });
 /*

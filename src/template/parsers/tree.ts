@@ -47,6 +47,7 @@ enum SlotType {
 
 /** 
  * One template may be separated to several trees,
+ * all trees share an unique value list.
  * This parser parses one tree.
  */
 export class TreeParser {
@@ -69,7 +70,6 @@ export class TreeParser {
 	private parts: [string, PartPositionType][] = []
 
 	private refedComponentMap: Map<HTMLNode, string> = new Map()
-	private hasDynamicComponent: boolean = false
 
 	constructor(template: TemplateParser, root: HTMLRoot, parent: TreeParser | null, fromNode: HTMLNode | null) {
 		this.template = template
@@ -157,7 +157,6 @@ export class TreeParser {
 				break
 
 			case SlotType.DynamicComponent:
-				this.hasDynamicComponent = true
 				slot = new DynamicComponentSlotParser(name, strings, valueIndices, node, this)
 				break
 
@@ -401,17 +400,22 @@ export class TreeParser {
 
 	/** Check whether a value index represents a value type of node. */
 	private isValueIndexValueType(index: number): boolean {
-		let rawNode = this.template.values.getRawNode(index)
+		let rawNode = this.template.values.getRawValue(index)
 		let type = Helper.types.getType(rawNode)
 
 		return Helper.types.isValueType(type)
 	}
 
-	/** Separate children of a node to an independent tree. */
+	/** 
+	 * Separate children of a node to an independent tree,
+	 * which share an unique value list.
+	 * */
 	separateChildrenAsSubTree(node: HTMLNode): TreeParser {
 		let root = HTMLRoot.fromSeparatingChildren(node)
 		return this.template.addTreeParser(root, this, node)
 	}
+
+	
 
 	/** Return variable name to reference current template maker, like `$template_0`. */
 	getTemplateRefName(): string {
@@ -492,7 +496,11 @@ export class TreeParser {
 
 		let comName = VariableNames.getDoublyUniqueName(VariableNames.com, this)
 		this.refedComponentMap.set(node, comName)
-		this.addPart(comName, node)
+
+		// For dynamic component, uses a slot to reference component as part.
+		if (!TemplateSlotPlaceholder.isDynamicComponent(node.tagName!)) {
+			this.addPart(comName, node)
+		}
 
 		return comName
 	}
@@ -508,7 +516,6 @@ export class TreeParser {
 			this.slots,
 			this.preDeclaredVariableNames,
 			this.parts,
-			this.hasDynamicComponent,
 			scope
 		)
 	}

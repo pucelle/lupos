@@ -10,9 +10,13 @@ export class DynamicComponentSlotParser extends SlotParserBase {
 	/** $block_0 */
 	private blockVariableName: string = ''
 
+	/** $slot_0 */
+	private slotVariableName: string = ''
+
 	init() {
 		this.refAsComponent()
 		this.blockVariableName = this.treeParser.getUniqueBlockName()
+		this.slotVariableName = this.getSlotName()
 	}
 
 	/** Get node name and position parameters for outputting template slot. */
@@ -93,30 +97,43 @@ export class DynamicComponentSlotParser extends SlotParserBase {
 			)
 		)
 
-		let templateSlot = this.outputTemplateSlot(null)
-		let contentRangeNodes = this.node.children.length > 0 ? [this.makeSlotRange()!] : []
 
-		return factory.createVariableStatement(
-			undefined,
-			factory.createVariableDeclarationList(
-				[factory.createVariableDeclaration(
-					factory.createIdentifier(this.blockVariableName),
-					undefined,
-					undefined,
-					factory.createNewExpression(
-						factory.createIdentifier('DynamicComponentBlock'),
-						undefined,
-						[
-							binderFn,
-							factory.createIdentifier(nodeName),
-							templateSlot,
-							...contentRangeNodes,
-						]
-					)
-				)],
-				ts.NodeFlags.Let
-			)
+		let templateSlot = this.outputTemplateSlot(null)
+
+		// Must not pre-declare.
+		let slotInit = this.createVariableAssignment(
+			this.slotVariableName,
+			templateSlot,
+			false
 		)
+
+
+		let contentRangeNodes = this.node.children.length > 0 ? [this.makeSlotRange()!] : []
+		
+		return [
+			slotInit,
+			factory.createVariableStatement(
+				undefined,
+				factory.createVariableDeclarationList(
+					[factory.createVariableDeclaration(
+						factory.createIdentifier(this.blockVariableName),
+						undefined,
+						undefined,
+						factory.createNewExpression(
+							factory.createIdentifier('DynamicComponentBlock'),
+							undefined,
+							[
+								binderFn,
+								factory.createIdentifier(nodeName),
+								factory.createIdentifier(this.slotVariableName),
+								...contentRangeNodes,
+							]
+						)
+					)],
+					ts.NodeFlags.Let
+				)
+			)
+		]
 	}
 
 	outputUpdate() {
