@@ -208,7 +208,7 @@ export namespace Modifier {
 		let specifiers = (node.importClause!.namedBindings as TS.NamedImports).elements
 
 		for (let specifier of specifiers) {
-			let type = Helper.symbol.resolveDeclaration(specifier, ts.isTypeAliasDeclaration)
+			let type = Helper.symbol.resolveDeclaration(specifier, Helper.isTypeDeclaration)
 			if (type) {
 				removeOnce(VisitTree.getIndex(specifier))
 			}

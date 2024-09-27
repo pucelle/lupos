@@ -170,6 +170,11 @@ export namespace Helper {
 		return ts.isMethodSignature(node) || ts.isMethodDeclaration(node)
 	}
 
+	/** Whether node represents a type-only node. */
+	export function isTypeDeclaration(node: TS.Node): node is TS.TypeAliasDeclaration | TS.InterfaceDeclaration {
+		return ts.isTypeAliasDeclaration(node) || ts.isInterfaceDeclaration(node)
+	}
+
 
 
 	

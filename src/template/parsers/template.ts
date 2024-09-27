@@ -72,7 +72,10 @@ export class TemplateParser {
 		}
 	}
 
-	/** Output whole template compiled contents. */
+	/** 
+	 * Output whole template compiled contents.
+	 * Not, only primary templates can output compiled, sub template can't. 
+	 */
 	outputCompiled() {
 		Modifier.addImport('CompiledTemplateResult', '@pucelle/lupos.js')
 		
