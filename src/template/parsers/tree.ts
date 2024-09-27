@@ -123,7 +123,7 @@ export class TreeParser {
 					else if (TemplateSlotPlaceholder.isDynamicComponent(tagName)) {
 						this.parseDynamicTag(node)
 					}
-					else if (tagName.startsWith('lu:')) {
+					else if (tagName.startsWith('lu:') && tagName !== 'lu:portal') {
 						this.parseFlowControlTag(node)
 					}
 

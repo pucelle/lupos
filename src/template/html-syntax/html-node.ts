@@ -162,10 +162,17 @@ export class HTMLNode {
 			return false
 		}
 
+		// Will insert more nodes before.
 		if (this.type === HTMLNodeType.Tag && this.tagName!.startsWith('lu:')) {
 			return false
 		}
 
+		// All nodes may be removed from portal.
+		if (this.parent?.type === HTMLNodeType.Tag && this.parent.tagName === 'lu:portal') {
+			return false
+		}
+
+		// Will move nodes before.
 		if (this.type === HTMLNodeType.Tag
 			&& TemplateSlotPlaceholder.isDynamicComponent(this.tagName!)
 		) {
@@ -251,12 +258,17 @@ export class HTMLNode {
 			let tagName = this.tagName!
 
 			// Flow control
-			if (tagName.startsWith('lu:')) {
+			if (tagName.startsWith('lu:') && tagName !== 'lu:portal') {
 				return `<!---->`
 			}
 
+			// Portal
+			if (tagName === 'lu:portal') {
+				tagName = 'template'
+			}
+
 			// Component
-			if (TemplateSlotPlaceholder.isComponent(tagName)) {
+			else if (TemplateSlotPlaceholder.isComponent(tagName)) {
 				tagName = 'div'
 			}
 
