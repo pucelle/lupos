@@ -2,6 +2,7 @@ import type TS from 'typescript'
 import {factory, Helper, Modifier} from '../../../base'
 import {FlowControlBase} from './base'
 import {TemplateParser} from '../template'
+import {SlotContentType} from '../../../enums'
 
 
 export class IfFlowControl extends FlowControlBase {
@@ -14,7 +15,7 @@ export class IfFlowControl extends FlowControlBase {
 
 	private cacheable: boolean = false
 	private valueIndices: (number | null)[] = []
-	private templates: (TemplateParser | null)[] = []
+	private contentTemplates: (TemplateParser | null)[] = []
 
 	init() {
 		this.blockVariableName = this.tree.getUniqueBlockName()
@@ -23,9 +24,9 @@ export class IfFlowControl extends FlowControlBase {
 
 		let nextNodes = this.eatNext('lu:elseif', 'lu:else')
 		let allNodes = [this.node, ...nextNodes]
-		let lastValueIndex: number | null = null
 		let valueIndices: (number | null)[] = []
-		let templates: (TemplateParser | null)[] = []
+		let lastValueIndex: number | null = null
+		let contentTemplates: (TemplateParser | null)[] = []
 
 		for (let node of allNodes) {
 			let valueIndex = this.getAttrValueIndex(node)
@@ -47,14 +48,19 @@ export class IfFlowControl extends FlowControlBase {
 	
 			if (node.children.length > 0) {
 				let template = this.template.separateChildrenAsTemplate(node)
-				templates.push(template)
+				contentTemplates.push(template)
 			}
 			else {
-				templates.push(null)
+				contentTemplates.push(null)
 			}
 		}
 
-		this.templates = templates
+		// Ensure always have an `else` branch.
+		if (lastValueIndex !== null) {
+			contentTemplates.push(null)
+		}
+
+		this.contentTemplates = contentTemplates
 		this.valueIndices = valueIndices
 	}
 
@@ -65,7 +71,9 @@ export class IfFlowControl extends FlowControlBase {
 		// let $block_0 = new IfBlock / CacheableIfBlock(
 		//   new TemplateSlot(new SlotPosition(SlotPositionType.Before, nextChild)),
 		// )
-		let templateSlot = this.slot.outputTemplateSlot(null)
+		let allBeResult = this.contentTemplates.every(t => t)
+		let slotContentType = allBeResult ? SlotContentType.TemplateResult : null
+		let templateSlot = this.slot.outputTemplateSlot(slotContentType)
 
 		let slotInit = this.slot.createVariableAssignment(
 			this.slotVariableName,
@@ -88,9 +96,9 @@ export class IfFlowControl extends FlowControlBase {
 	}
 
 	outputUpdate() {
-		let toValue = this.outputIf()
+		let toValue = this.outputConditionalExpression()
 
-		// $block_0.update($values)
+		// $block_0.update($values[0])
 		return factory.createCallExpression(
 			factory.createPropertyAccessExpression(
 				factory.createIdentifier(this.blockVariableName),
@@ -102,7 +110,7 @@ export class IfFlowControl extends FlowControlBase {
 	}
 
 	/** Make an index output function by an if condition value index sequence. */
-	private outputIf(): TS.Expression {
+	private outputConditionalExpression(): TS.Expression {
 		let conditions = this.valueIndices.map(index => {
 			if (index === null) {
 				return factory.createNull()
@@ -112,7 +120,7 @@ export class IfFlowControl extends FlowControlBase {
 			}
 		})
 
-		let contents = this.templates.map(template => {
+		let contents = this.contentTemplates.map(template => {
 			if (template === null) {
 				return factory.createNull()
 			}
@@ -121,6 +129,7 @@ export class IfFlowControl extends FlowControlBase {
 			}
 		})
 
+		// Make a new expression: `cond1 ? content1 : cond2 ? content2 : ...`
 		let value = Helper.pack.toConditionalExpression(conditions, contents)
 
 		// Add it as a value item to original template, and returned it's reference.

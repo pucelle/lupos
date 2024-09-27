@@ -1,7 +1,8 @@
 import type TS from 'typescript'
-import {factory, Helper, Modifier} from '../../../base'
+import {factory, Helper, Modifier, ts} from '../../../base'
 import {FlowControlBase} from './base'
-import {VariableNames} from '../variable-names'
+import {TemplateParser} from '../template'
+import {SlotContentType} from '../../../enums'
 
 
 export class SwitchFlowControl extends FlowControlBase {
@@ -15,7 +16,7 @@ export class SwitchFlowControl extends FlowControlBase {
 	private cacheable: boolean = false
 	private switchValueIndex: number = -1
 	private valueIndices: (number | null)[] = []
-	private templateNames: (string | null)[] = []
+	private contentTemplates: (TemplateParser | null)[] = []
 
 	init() {
 		this.blockVariableName = this.tree.getUniqueBlockName()
@@ -30,7 +31,8 @@ export class SwitchFlowControl extends FlowControlBase {
 
 		let childNodes = this.node.children
 		let valueIndices: (number | null)[] = []
-		let templateNames: (string | null)[] = []
+		let lastValueIndex: number | null = null
+		let contentTemplates: (TemplateParser | null)[] = []
 
 		for (let child of childNodes) {
 			let valueIndex = this.getAttrValueIndex(child)
@@ -42,19 +44,19 @@ export class SwitchFlowControl extends FlowControlBase {
 				throw new Error('<lu:default> should not accept any parameter!')
 			}
 
-			if (valueIndex === null && valueIndices[valueIndices.length - 1] === null) {
+			if (valueIndex === null && lastValueIndex === null) {
 				throw new Error('<lu:default> is allowed only one to exist on the tail!')
 			}
 
 			valueIndices.push(valueIndex)
+			lastValueIndex = valueIndex
 	
 			if (child.children.length > 0) {
-				let tree = this.tree.separateChildrenAsSubTree(child)
-				let temName = tree.getTemplateRefName()
-				templateNames.push(temName)
+				let template = this.template.separateChildrenAsTemplate(child)
+				contentTemplates.push(template)
 			}
 			else {
-				templateNames.push(null)
+				contentTemplates.push(null)
 			}
 
 			if (child.tagName === 'lu:default' || valueIndex === null) {
@@ -62,8 +64,13 @@ export class SwitchFlowControl extends FlowControlBase {
 			}
 		}
 
+		// Ensure always have an `else` branch.
+		if (lastValueIndex !== null) {
+			contentTemplates.push(null)
+		}
+
 		this.node.empty()
-		this.templateNames = templateNames
+		this.contentTemplates = contentTemplates
 		this.valueIndices = valueIndices
 	}
 
@@ -76,15 +83,11 @@ export class SwitchFlowControl extends FlowControlBase {
 		Modifier.addImport(blockClassName, '@pucelle/lupos.js')
 
 		// $block_0 = new SwitchBlock / CacheableSwitchBlock(
-		//   indexFn,
-		//   makers,
 		//   new TemplateSlot(new SlotPosition(SlotPositionType.Before, nextChild)),
-		//   $context_0,
 		// )
-
-		let indexFn = this.outputSwitchIndexFn(this.switchValueIndex, this.valueIndices)
-		let makers = this.outputMakerNodes(this.templateNames)
-		let templateSlot = this.slot.outputTemplateSlot(null)
+		let allBeResult = this.contentTemplates.every(t => t)
+		let slotContentType = allBeResult ? SlotContentType.TemplateResult : null
+		let templateSlot = this.slot.outputTemplateSlot(slotContentType)
 
 		let slotInit = this.slot.createVariableAssignment(
 			this.slotVariableName,
@@ -99,8 +102,6 @@ export class SwitchFlowControl extends FlowControlBase {
 					factory.createIdentifier(blockClassName),
 					undefined,
 					[
-						indexFn,
-						makers,
 						factory.createIdentifier(this.slotVariableName),
 					]
 				)
@@ -108,66 +109,14 @@ export class SwitchFlowControl extends FlowControlBase {
 		]
 	}
 
-	/** Make an index output function by a switch condition value index list. */
-	private outputSwitchIndexFn(switchValueIndex: number, valueIndices: (number | null)[]): TS.FunctionExpression {
-		let hasDefault = valueIndices[valueIndices.length - 1] === null
-		let defaultIndex = hasDefault ? valueIndices.length - 1 : -1
-
-		// Always build default branch.
-		let defaultNode = factory.createDefaultClause([
-			factory.createReturnStatement(
-				Helper.createNumeric(defaultIndex)
-			)
-		])
-
-		let switchValueNode = this.template.values.outputValue(null, [switchValueIndex])
-		let caseNodes: TS.CaseClause[] = []
-
-		for (let i = 0; i < (hasDefault ? valueIndices.length - 1 : valueIndices.length); i++) {
-			let valueIndex = valueIndices[i]!
-			let caseValueNode = this.template.values.outputValue(null, [valueIndex])
-			
-			let caseNode = factory.createCaseClause(
-				caseValueNode,
-				[factory.createReturnStatement(factory.createNumericLiteral(i))]
-			)
-
-			caseNodes.push(caseNode)
-		}
-
-		return factory.createFunctionExpression(
-			undefined,
-			undefined,
-			undefined,
-			undefined,
-			[factory.createParameterDeclaration(
-				undefined,
-				undefined,
-				factory.createIdentifier(VariableNames.values),
-				undefined,
-				undefined,
-				undefined
-			)],
-			undefined,
-			factory.createBlock(
-				[factory.createSwitchStatement(
-					switchValueNode,
-					factory.createCaseBlock([
-						...caseNodes,
-						defaultNode
-					])
-				)],
-				true
-			)
-		)
-	}
-
 	outputUpdate() {
 		if (this.switchValueIndex === null) {
 			return []
 		}
 
-		// $block_0.update($values)
+		let toValue = this.outputConditionalExpression()
+
+		// $block_0.update($values[0])
 		return factory.createCallExpression(
 			factory.createPropertyAccessExpression(
 				factory.createIdentifier(this.blockVariableName),
@@ -175,8 +124,43 @@ export class SwitchFlowControl extends FlowControlBase {
 			),
 			undefined,
 			[
-				factory.createIdentifier(VariableNames.values)
+				toValue
 			]
 		)
+	}
+
+	/** Make an index output function by an if condition value index sequence. */
+	private outputConditionalExpression(): TS.Expression {
+		let switchValue = this.template.values.getRawValue(this.switchValueIndex)
+
+		let conditions = this.valueIndices.map(index => {
+			if (index === null) {
+				return factory.createNull()
+			}
+			else {
+				return factory.createBinaryExpression(
+					switchValue,
+					factory.createToken(ts.SyntaxKind.EqualsEqualsEqualsToken),
+					this.template.values.getRawValue(index)
+				)
+			}
+		})
+
+		let contents = this.contentTemplates.map(template => {
+			if (template === null) {
+				return factory.createNull()
+			}
+			else {
+				return template.output()
+			}
+		})
+
+		// Make a new expression: `cond1 ? content1 : cond2 ? content2 : ...`
+		let value = Helper.pack.toConditionalExpression(conditions, contents)
+
+		// Add it as a value item to original template, and returned it's reference.
+		let toValue = this.template.values.outputCustomValue(value)
+
+		return toValue
 	}
 }

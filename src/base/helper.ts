@@ -1754,7 +1754,10 @@ export namespace Helper {
 		}
 
 
-		/** Create `cond1 ? exp1 : cond2 ? exp2 ...`. */
+		/**
+		 * Create `cond1 ? exp1 : cond2 ? exp2 ...`.
+		 * Must ensure `condExps.length` equals `exps.length - 1`
+		 */
 		export function toConditionalExpression(condExps: TS.Expression[], exps: TS.Expression[]): TS.Expression {
 
 			// Last expression.

@@ -125,7 +125,7 @@ const $html_3 = new HTMLMaker("Else Content");
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context);
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context, 0);
     let $block_0 = new IfBlock($slot_0);
     return {
         el: $node,
@@ -187,7 +187,7 @@ const $html_6 = new HTMLMaker("Then Content");
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context);
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context, 0);
     let $block_0 = new IfBlock($slot_0);
     return {
         el: $node,
@@ -203,15 +203,15 @@ class TestIf extends Component {
     content = '';
     testIf() {
         trackGet(this, "prop");
-        return new CompiledTemplateResult($template_0, [new CompiledTemplateResult($template_1, [])]);
+        return new CompiledTemplateResult($template_0, [this.prop ? new CompiledTemplateResult($template_1, []) : null]);
     }
     testIfCacheable() {
         trackGet(this, "prop");
-        return new CompiledTemplateResult($template_2, [new CompiledTemplateResult($template_3, [])]);
+        return new CompiledTemplateResult($template_2, [this.prop ? new CompiledTemplateResult($template_3, []) : null]);
     }
     testDynamicIfContent() {
         trackGet(this, "prop", "content");
-        return new CompiledTemplateResult($template_4, [new CompiledTemplateResult($template_5, [this.content])]);
+        return new CompiledTemplateResult($template_4, [this.prop ? new CompiledTemplateResult($template_5, [this.content]) : null]);
     }
     testIfElse() {
         trackGet(this, "prop");
