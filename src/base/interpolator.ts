@@ -258,7 +258,7 @@ export namespace Interpolator {
 		let i = -1
 
 		return ts.visitEachChild(node, () => {
-			return output(childIndices![++i])
+			return outputSelf(childIndices![++i])
 		}, transformContext)
 	}
 
@@ -268,7 +268,7 @@ export namespace Interpolator {
 	 * and may replace itself.
 	 * If `addNeighbors` is `true`, will output all neighbor nodes.
 	 */
-	export function output(index: number, addNeighbors: boolean = true): TS.Node | TS.Node[] | undefined {
+	export function outputSelf(index: number, addNeighbors: boolean = true): TS.Node | TS.Node[] | undefined {
 		let items = Interpolations.get(index)
 		if (!items) {
 			return outputChildren(index)
@@ -336,7 +336,7 @@ export namespace Interpolator {
 	 */
 	export function outputNodeSelf(rawNode: TS.Node): TS.Node {
 		let index = VisitTree.getIndex(rawNode)
-		let node = Interpolator.output(index, false)
+		let node = Interpolator.outputSelf(index, false)
 
 		if (!node) {
 			throw new Error(`"${Helper.getFullText(rawNode)}" has been removed!`)

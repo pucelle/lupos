@@ -1,23 +1,12 @@
 import { Component, CompiledTemplateResult, TemplateMaker, SlotPosition, IfBlock, TemplateSlot, HTMLMaker, CacheableIfBlock } from '@pucelle/lupos.js';
 import { trackGet } from "@pucelle/ff";
-const $html_0 = new HTMLMaker("If Content");
-/*
-<root>If Content</root>
-*/ const $template_1 = new TemplateMaker(function () {
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
-    return {
-        el: $node,
-        position: new SlotPosition(1, $node_0)
-    };
-});
-const $html_1 = new HTMLMaker("<!----><!---->");
+const $html_0 = new HTMLMaker("<!----><!---->");
 /*
 <root>
     <lu:if ${this.prop} />
 </root>
 */ const $template_0 = new TemplateMaker(function ($context) {
-    let $node = $html_1.make();
+    let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
     let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context);
@@ -31,10 +20,11 @@ const $html_1 = new HTMLMaker("<!----><!---->");
         parts: [[$slot_0, 0]]
     };
 });
+const $html_1 = new HTMLMaker("If Content");
 /*
 <root>If Content</root>
-*/ const $template_3 = new TemplateMaker(function () {
-    let $node = $html_0.make();
+*/ const $template_1 = new TemplateMaker(function () {
+    let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     return {
         el: $node,
@@ -46,11 +36,40 @@ const $html_1 = new HTMLMaker("<!----><!---->");
     <lu:if ${this.prop} cache />
 </root>
 */ const $template_2 = new TemplateMaker(function ($context) {
-    let $node = $html_1.make();
+    let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
     let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context);
     let $block_0 = new CacheableIfBlock($slot_0);
+    return {
+        el: $node,
+        position: new SlotPosition(1, $node_0),
+        update($values) {
+            $block_0.update($values[0]);
+        },
+        parts: [[$slot_0, 0]]
+    };
+});
+/*
+<root>If Content</root>
+*/ const $template_3 = new TemplateMaker(function () {
+    let $node = $html_1.make();
+    let $node_0 = $node.content.firstChild;
+    return {
+        el: $node,
+        position: new SlotPosition(1, $node_0)
+    };
+});
+/*
+<root>
+    <lu:if ${this.prop} />
+</root>
+*/ const $template_4 = new TemplateMaker(function ($context) {
+    let $node = $html_0.make();
+    let $node_0 = $node.content.firstChild;
+    let $node_1 = $node.content.lastChild;
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context);
+    let $block_0 = new IfBlock($slot_0);
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),
@@ -81,11 +100,11 @@ const $html_2 = new HTMLMaker(" ");
 <root>
     <lu:if ${this.prop} />
 </root>
-*/ const $template_4 = new TemplateMaker(function ($context) {
-    let $node = $html_1.make();
+*/ const $template_6 = new TemplateMaker(function ($context) {
+    let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context);
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context, 0);
     let $block_0 = new IfBlock($slot_0);
     return {
         el: $node,
@@ -99,7 +118,7 @@ const $html_2 = new HTMLMaker(" ");
 /*
 <root>If Content</root>
 */ const $template_7 = new TemplateMaker(function () {
-    let $node = $html_0.make();
+    let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     return {
         el: $node,
@@ -121,8 +140,8 @@ const $html_3 = new HTMLMaker("Else Content");
 <root>
     <lu:if ${this.prop} />
 </root>
-*/ const $template_6 = new TemplateMaker(function ($context) {
-    let $node = $html_1.make();
+*/ const $template_9 = new TemplateMaker(function ($context) {
+    let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
     let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context, 0);
@@ -139,7 +158,7 @@ const $html_3 = new HTMLMaker("Else Content");
 /*
 <root>If Content</root>
 */ const $template_10 = new TemplateMaker(function () {
-    let $node = $html_0.make();
+    let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     return {
         el: $node,
@@ -177,25 +196,6 @@ const $html_6 = new HTMLMaker("Then Content");
     return {
         el: $node,
         position: new SlotPosition(1, $node_0)
-    };
-});
-/*
-<root>
-    <lu:if ${this.prop} />
-</root>
-*/ const $template_9 = new TemplateMaker(function ($context) {
-    let $node = $html_1.make();
-    let $node_0 = $node.content.firstChild;
-    let $node_1 = $node.content.lastChild;
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context, 0);
-    let $block_0 = new IfBlock($slot_0);
-    return {
-        el: $node,
-        position: new SlotPosition(1, $node_0),
-        update($values) {
-            $block_0.update($values[0]);
-        },
-        parts: [[$slot_0, 0]]
     };
 });
 class TestIf extends Component {

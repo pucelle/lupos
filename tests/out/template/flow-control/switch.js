@@ -1,34 +1,12 @@
 import { Component, CompiledTemplateResult, TemplateMaker, SlotPosition, SwitchBlock, TemplateSlot, HTMLMaker } from '@pucelle/lupos.js';
 import { trackGet } from "@pucelle/ff";
-const $html_0 = new HTMLMaker("Case Content 1");
-/*
-<root>Case Content 1</root>
-*/ const $template_1 = new TemplateMaker(function () {
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
-    return {
-        el: $node,
-        position: new SlotPosition(1, $node_0)
-    };
-});
-const $html_1 = new HTMLMaker("Case Content 2");
-/*
-<root>Case Content 2</root>
-*/ const $template_2 = new TemplateMaker(function () {
-    let $node = $html_1.make();
-    let $node_0 = $node.content.firstChild;
-    return {
-        el: $node,
-        position: new SlotPosition(1, $node_0)
-    };
-});
-const $html_2 = new HTMLMaker("<!----><!---->");
+const $html_0 = new HTMLMaker("<!----><!---->");
 /*
 <root>
     <lu:switch ${this.value} />
 </root>
 */ const $template_0 = new TemplateMaker(function ($context) {
-    let $node = $html_2.make();
+    let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
     let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context);
@@ -42,10 +20,51 @@ const $html_2 = new HTMLMaker("<!----><!---->");
         parts: [[$slot_0, 0]]
     };
 });
+const $html_1 = new HTMLMaker("Case Content 1");
+/*
+<root>Case Content 1</root>
+*/ const $template_1 = new TemplateMaker(function () {
+    let $node = $html_1.make();
+    let $node_0 = $node.content.firstChild;
+    return {
+        el: $node,
+        position: new SlotPosition(1, $node_0)
+    };
+});
+const $html_2 = new HTMLMaker("Case Content 2");
+/*
+<root>Case Content 2</root>
+*/ const $template_2 = new TemplateMaker(function () {
+    let $node = $html_2.make();
+    let $node_0 = $node.content.firstChild;
+    return {
+        el: $node,
+        position: new SlotPosition(1, $node_0)
+    };
+});
+/*
+<root>
+    <lu:switch ${this.value} />
+</root>
+*/ const $template_3 = new TemplateMaker(function ($context) {
+    let $node = $html_0.make();
+    let $node_0 = $node.content.firstChild;
+    let $node_1 = $node.content.lastChild;
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context, 0);
+    let $block_0 = new SwitchBlock($slot_0);
+    return {
+        el: $node,
+        position: new SlotPosition(1, $node_0),
+        update($values) {
+            $block_0.update($values[0]);
+        },
+        parts: [[$slot_0, 0]]
+    };
+});
 /*
 <root>Case Content 1</root>
 */ const $template_4 = new TemplateMaker(function () {
-    let $node = $html_0.make();
+    let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     return {
         el: $node,
@@ -55,7 +74,7 @@ const $html_2 = new HTMLMaker("<!----><!---->");
 /*
 <root>Case Content 2</root>
 */ const $template_5 = new TemplateMaker(function () {
-    let $node = $html_1.make();
+    let $node = $html_2.make();
     let $node_0 = $node.content.firstChild;
     return {
         el: $node,
@@ -71,25 +90,6 @@ const $html_3 = new HTMLMaker("Case Content 3");
     return {
         el: $node,
         position: new SlotPosition(1, $node_0)
-    };
-});
-/*
-<root>
-    <lu:switch ${this.value} />
-</root>
-*/ const $template_3 = new TemplateMaker(function ($context) {
-    let $node = $html_2.make();
-    let $node_0 = $node.content.firstChild;
-    let $node_1 = $node.content.lastChild;
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context, 0);
-    let $block_0 = new SwitchBlock($slot_0);
-    return {
-        el: $node,
-        position: new SlotPosition(1, $node_0),
-        update($values) {
-            $block_0.update($values[0]);
-        },
-        parts: [[$slot_0, 0]]
     };
 });
 class TestSwitch extends Component {

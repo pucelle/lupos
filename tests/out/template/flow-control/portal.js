@@ -15,8 +15,6 @@ const $html_0 = new HTMLMaker("<!----><template><div>Portal Content</div></templ
     };
 });
 class TestPortal extends Component {
-    prop = 1;
-    content = '';
     testPortal() {
         return new CompiledTemplateResult($template_0, []);
     }

@@ -94,7 +94,7 @@ export function transformer(program: TS.Program, extras: TransformerExtras) {
 				ts.visitNode(sourceFile, visitor)
 				runPostVisitCallbacks()
 
-				return Interpolator.output(0) as TS.SourceFile
+				return Interpolator.outputSelf(0) as TS.SourceFile
 			}
 			catch (err) {
 				console.warn(`Failed to transform source file "${sourceFile.fileName}"!`)

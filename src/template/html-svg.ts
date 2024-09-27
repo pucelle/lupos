@@ -43,7 +43,9 @@ function parseHTMLTemplate(node: TS.TaggedTemplateExpression, index: number, tem
 	let values = TemplateSlotPlaceholder.extractTemplateValues(node)
 	let root = HTMLRoot.fromString(string)
 	let parser = new TemplateParser(templateType, root, values, node)
-	let outputted = parser.output()
+
+	parser.outputCompiled()
+	let outputted = parser.outputReplaced()
 	
 	Interpolator.replace(index, InterpolationContentType.Normal, () => outputted)
 }

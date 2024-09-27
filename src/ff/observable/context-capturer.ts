@@ -368,7 +368,7 @@ export class ContextCapturer {
 			let nodes: AccessNode[] = []
 
 			// Expression of an access node may be totally replaced after been referenced as `$ref_0`.
-			let node = Interpolator.output(item.expIndex) as TS.Expression
+			let node = Interpolator.outputSelf(item.expIndex) as TS.Expression
 			let keys = item.keys!
 
 			node = Helper.pack.extractFinalParenthesized(node) as AccessNode

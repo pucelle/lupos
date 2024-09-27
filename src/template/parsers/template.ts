@@ -20,6 +20,7 @@ export class TemplateParser {
 	readonly rawNode: TS.Node
 
 	private readonly treeParsers: TreeParser[] = []
+	private readonly subTemplates: TemplateParser[] = []
 
 	/** Which scope should insert contents. */
 	private innerMostScope: Scope = ScopeTree.getTopmost()
@@ -47,7 +48,10 @@ export class TemplateParser {
 	 * */
 	separateChildrenAsTemplate(node: HTMLNode): TemplateParser {
 		let root = HTMLRoot.fromSeparatingChildren(node)
-		return new TemplateParser(this.type, root, this.values.valueNodes, this.rawNode)
+		let template = new TemplateParser(this.type, root, this.values.valueNodes, this.rawNode)
+		this.subTemplates.push(template)
+
+		return template
 	}
 	
 	/** 
@@ -68,17 +72,21 @@ export class TemplateParser {
 		}
 	}
 
-	/** 
-	 * Output whole template compiled,
-	 * and returns a expression to replace original template literal.
-	 */
-	output(): TS.Expression {
+	/** Output whole template compiled contents. */
+	outputCompiled() {
 		Modifier.addImport('CompiledTemplateResult', '@pucelle/lupos.js')
 		
 		for (let treeParser of this.treeParsers) {
 			treeParser.output(this.innerMostScope)
 		}
 
+		for (let template of this.subTemplates) {
+			template.outputCompiled()
+		}
+	}
+
+	/** Returns a expression to replace original template literal. */
+	outputReplaced(): TS.Expression {
 		let mainTreeParser = this.treeParsers[0]
 		let makerName = mainTreeParser.getTemplateRefName()
 		let valuesNodes = this.values.output()

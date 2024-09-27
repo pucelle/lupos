@@ -1,6 +1,7 @@
 import {factory, Modifier} from '../../../base'
 import {FlowControlBase} from './base'
-import {VariableNames} from '../variable-names'
+import {TemplateParser} from '../template'
+import {SlotContentType} from '../../../enums'
 
 
 export class KeyedFlowControl extends FlowControlBase {
@@ -11,14 +12,12 @@ export class KeyedFlowControl extends FlowControlBase {
 	/** $slot_0 */
 	private slotVariableName: string = ''
 
-	private cacheable: boolean = false
-	private templateName: string | null = null
+	private contentTemplate: TemplateParser | null = null
 	private valueIndex: number = 1
 
 	init() {
 		this.blockVariableName = this.tree.getUniqueBlockName()
 		this.slotVariableName = this.slot.getSlotName()
-		this.cacheable = this.hasAttrValue(this.node, 'cache')
 
 		let valueIndex = this.getAttrValueIndex(this.node)
 		if (valueIndex === null) {
@@ -28,23 +27,20 @@ export class KeyedFlowControl extends FlowControlBase {
 		this.valueIndex = valueIndex
 
 		if (this.node.children.length > 0) {
-			let tree = this.tree.separateChildrenAsSubTree(this.node)
-			this.templateName = tree.getTemplateRefName()
+			let template = this.template.separateChildrenAsTemplate(this.node)
+			this.contentTemplate = template
 		}
 	}
 
 	outputInit() {
-		let blockClassName = this.cacheable ? 'CacheableKeyedBlock' : 'KeyedBlock'
-		Modifier.addImport(blockClassName, '@pucelle/lupos.js')
+		Modifier.addImport('KeyedBlock', '@pucelle/lupos.js')
 
 		// let $block_0 = new KeyedBlock / CacheableKeyedBlock(
-		//   maker,
 		//   new TemplateSlot(new SlotPosition(SlotPositionType.Before, nextChild)),
-		//   $context_0,
 		// )
 
-		let maker = this.outputMakerNode(this.templateName)
-		let templateSlot = this.slot.outputTemplateSlot(null)
+		let slotContentType = this.contentTemplate ? SlotContentType.TemplateResult : null
+		let templateSlot = this.slot.outputTemplateSlot(slotContentType)
 
 		let slotInit = this.slot.createVariableAssignment(
 			this.slotVariableName,
@@ -56,10 +52,9 @@ export class KeyedFlowControl extends FlowControlBase {
 			this.slot.createVariableAssignment(
 				this.blockVariableName,
 				factory.createNewExpression(
-					factory.createIdentifier(blockClassName),
+					factory.createIdentifier('KeyedBlock'),
 					undefined,
 					[
-						maker,
 						factory.createIdentifier(this.slotVariableName),
 					]
 				)
@@ -68,9 +63,15 @@ export class KeyedFlowControl extends FlowControlBase {
 	}
 
 	outputUpdate() {
-		let keyedNode = this.template.values.outputValue(null, [this.valueIndex])
+		let keyedValue = this.template.values.outputValue(null, [this.valueIndex])
+		let resultValue = this.contentTemplate ? this.contentTemplate.outputReplaced() : null
 
-		// $block_0.update(newKey, $values)
+		// Add it as a value item to original template, and returned it's reference.
+		let toResultValue = resultValue
+			? this.template.values.outputCustomValue(resultValue)
+			: factory.createNull()
+
+		// $block_0.update(newKey, $values[i])
 		return factory.createCallExpression(
 			factory.createPropertyAccessExpression(
 				factory.createIdentifier(this.blockVariableName),
@@ -78,8 +79,8 @@ export class KeyedFlowControl extends FlowControlBase {
 			),
 			undefined,
 			[
-				keyedNode,
-				factory.createIdentifier(VariableNames.values)
+				keyedValue,
+				toResultValue
 			]
 		)
 	}

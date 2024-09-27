@@ -125,7 +125,7 @@ export class IfFlowControl extends FlowControlBase {
 				return factory.createNull()
 			}
 			else {
-				return template.output()
+				return template.outputReplaced()
 			}
 		})
 

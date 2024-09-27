@@ -128,7 +128,7 @@ export class SlotTagSlotParser extends SlotParserBase {
 			value = factory.createBinaryExpression(
 				value,
 				factory.createToken(ts.SyntaxKind.QuestionQuestionToken),
-				this.defaultContentParser.output()
+				this.defaultContentParser.outputReplaced()
 			)
 		}
 
