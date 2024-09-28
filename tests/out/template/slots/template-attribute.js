@@ -1,4 +1,5 @@
-import { Component, fade, CompiledTemplateResult, TemplateMaker, SlotPosition, HTMLMaker, TransitionBinding, TemplateSlot } from '@pucelle/lupos.js';
+import { fade } from '@pucelle/ff';
+import { Component, CompiledTemplateResult, TemplateMaker, SlotPosition, HTMLMaker, TransitionBinding, TemplateSlot } from '@pucelle/lupos.js';
 const $html_0 = new HTMLMaker("<!---->");
 /*
 <root>
@@ -91,8 +92,27 @@ const $html_2 = new HTMLMaker("<div><!----></div>");
         parts: [[$slot_0, 2]]
     };
 });
+const $html_3 = new HTMLMaker("<div></div><div></div>");
+/*
+<root>
+    <template class="className">
+        <div attr=${'value'} />
+        <div attr=${'value'} />
+    </template>
+</root>
+*/ const $template_6 = new TemplateMaker(function ($context) {
+    let $node = $html_3.make();
+    let $node_0 = $node.content.firstChild;
+    let $node_1 = $node.content.lastChild;
+    $context.el.classList.add("className");
+    $node_0.setAttribute("attr", 'value');
+    $node_1.setAttribute("attr", 'value');
+    return {
+        el: $node,
+        position: new SlotPosition(1, $node_0)
+    };
+});
 class TestAttribute extends Component {
-    className = '';
     testClass() {
         return new CompiledTemplateResult($template_0, []);
     }
@@ -107,5 +127,8 @@ class TestAttribute extends Component {
     }
     testContent() {
         return new CompiledTemplateResult($template_5, []);
+    }
+    testContents() {
+        return new CompiledTemplateResult($template_6, []);
     }
 }

@@ -1,9 +1,8 @@
-import {Component, fade, html} from '@pucelle/lupos.js'
+import {fade} from '@pucelle/ff'
+import {Component, html} from '@pucelle/lupos.js'
 
 
 class TestAttribute extends Component {
-
-	className: string = ''
 
 	testClass() {
 		return html`<template class="className" />`
@@ -22,6 +21,20 @@ class TestAttribute extends Component {
 	}
 
 	testContent() {
-		return html`<template attr="value"><div attr=${'value'}>${html`<div />`}</div></template>`
+		return html`
+			<template attr="value">
+				<div attr=${'value'}>
+					${html`<div />`}
+				</div>
+			</template>`
+	}
+
+	testContents() {
+		return html`
+			<template class="className">
+				<div attr=${'value'}></div>
+				<div attr=${'value'}></div>
+			</template>
+		`
 	}
 }

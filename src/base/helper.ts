@@ -176,7 +176,6 @@ export namespace Helper {
 	}
 
 
-
 	
 	/** 
 	 * Make a property name node by property name string.

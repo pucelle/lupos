@@ -147,10 +147,6 @@ export class HTMLNodeReferences {
 		// Output directly.
 		if (this.hasRefed(item.node)) {
 			type |= ReferenceOutputTypeMask.Reference
-
-			if (item.children.length > 0) {
-				type |= ReferenceOutputTypeMask.PassingBy
-			}
 		}
 
 		// When more than one descendant nodes get referenced,
@@ -162,7 +158,7 @@ export class HTMLNodeReferences {
 		// f = a.b.c
 		// f.d
 		// f.e
-		if (item.children.length > 1 && item.node !== this.root) {
+		if (item.children.length > 1 && item.node !== this.root && visitSteps !== null) {
 			type |= ReferenceOutputTypeMask.PassingBy
 			this.refAsIndex(item.node)
 		}
