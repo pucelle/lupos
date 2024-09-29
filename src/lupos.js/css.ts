@@ -21,55 +21,56 @@ function parseCSSTemplate(node: TS.TaggedTemplateExpression, index: number) {
 	let parsed = minifyCSSString(parseStyleString(string))
 	let parts = TemplateSlotPlaceholder.parseTemplateStrings(parsed)!
 	let template = node.template
-	let replaced: TS.TaggedTemplateExpression | null = null
+	
+	Interpolator.replace(index, InterpolationContentType.Normal, () => {
+		let replaced: TS.TaggedTemplateExpression | null = null
 
-	if (ts.isNoSubstitutionTemplateLiteral(template)) {
-		replaced = factory.createTaggedTemplateExpression(
-			node.tag,
-			undefined,
-			factory.createNoSubstitutionTemplateLiteral(
-				parts[0],
-				parts[0]
-			)
-		)
-	}
-	else if (ts.isTemplateExpression(template)) {
-		let oldSpans = template.templateSpans
-
-		let newSpans = oldSpans.map((span, index) => {
-			let inEnd = index === oldSpans.length - 1
-			let middleOrTail = inEnd ?
-				factory.createTemplateTail(
-					parts[index + 1] || '',
-					parts[index + 1] || ''
-				) :
-				factory.createTemplateMiddle(
-					parts[index + 1] || '',
-					parts[index + 1] || ''
-				)
-
-			return factory.createTemplateSpan(
-				span.expression,
-				middleOrTail
-			)
-		})
-
-		replaced = factory.createTaggedTemplateExpression(
-			node.tag,
-			undefined,
-			factory.createTemplateExpression(
-				factory.createTemplateHead(
+		if (ts.isNoSubstitutionTemplateLiteral(template)) {
+			replaced = factory.createTaggedTemplateExpression(
+				node.tag,
+				undefined,
+				factory.createNoSubstitutionTemplateLiteral(
 					parts[0],
 					parts[0]
-				),
-				newSpans
+				)
 			)
-		)
-	}
+		}
+		else {
+			let oldSpans = template.templateSpans
 
-	if (replaced) {
-		Interpolator.replace(index, InterpolationContentType.Normal, () => replaced!)
-	}
+			let newSpans = oldSpans.map((span, index) => {
+				let inEnd = index === oldSpans.length - 1
+				let middleOrTail = inEnd ?
+					factory.createTemplateTail(
+						parts[index + 1] || '',
+						parts[index + 1] || ''
+					) :
+					factory.createTemplateMiddle(
+						parts[index + 1] || '',
+						parts[index + 1] || ''
+					)
+
+				return factory.createTemplateSpan(
+					Interpolator.outputNodeSelf(span.expression) as TS.Expression,
+					middleOrTail
+				)
+			})
+
+			replaced = factory.createTaggedTemplateExpression(
+				node.tag,
+				undefined,
+				factory.createTemplateExpression(
+					factory.createTemplateHead(
+						parts[0],
+						parts[0]
+					),
+					newSpans
+				)
+			)
+		}
+
+		return replaced
+	})
 }
 
 
