@@ -126,3 +126,17 @@ class TestIgnoringOfPrivateComputedProperty extends Component {
 		return this.prop
 	}
 }
+
+
+class TestIgnoringNonPrimitiveObject extends Component {
+
+	el: HTMLElement = document.body
+
+	read() {
+		return this.el.style.display
+	}
+
+	write() {
+		this.el.style.display = ''
+	}
+}

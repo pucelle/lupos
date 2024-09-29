@@ -119,3 +119,13 @@ class TestIgnoringOfPrivateComputedProperty extends Component {
         return this.#computedProp;
     }
 }
+class TestIgnoringNonPrimitiveObject extends Component {
+    el = document.body;
+    read() {
+        trackGet(this, "el");
+        return this.el.style.display;
+    }
+    write() {
+        this.el.style.display = '';
+    }
+}

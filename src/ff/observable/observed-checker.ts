@@ -49,6 +49,18 @@ export namespace ObservedChecker {
 	}
 
 
+	/** Whether a type should be observed. */
+	export function isTypeObserved(type: TS.Type): boolean {
+		let symbol = type.getSymbol()
+		let clsDecl = symbol ? Helper.symbol.resolveDeclarationBySymbol(symbol, ts.isClassDeclaration) : undefined
+		if (clsDecl && Helper.cls.isImplemented(clsDecl, 'Observed', '@pucelle/ff')) {
+			return true
+		}
+
+		return false
+	}
+
+
 	/** Whether a variable declaration should be observed. */
 	export function isVariableDeclarationObserved(rawNode: TS.VariableDeclaration): boolean {
 
@@ -73,17 +85,22 @@ export namespace ObservedChecker {
 
 
 	/** Whether destructed variable declaration should be observed. */
-	export function isDestructedVariableDeclarationObserved(node: TS.Node, initializerObserved: boolean): boolean {
+	export function isDestructedVariableDeclarationObserved(rawNode: TS.Node, initializerObserved: boolean): boolean {
 
 		// Readonly properties are always not been observed.
-		let readonly = Helper.types.isReadonly(node)
+		let readonly = Helper.types.isReadonly(rawNode)
 		if (readonly) {
 			return false
 		}
 
 		// Property declaration has specified as observed type or has observed initializer.
-		if (isPropertyOrGetAccessorDeclaredAsObserved(node)) {
+		if (isPropertyDeclaredAsObserved(rawNode)) {
 			return true
+		}
+
+		// Typescript lib.
+		if (isPropertyOfTypescriptLib(rawNode)) {
+			return false
 		}
 		
 		return initializerObserved
@@ -94,16 +111,16 @@ export namespace ObservedChecker {
 	 * Check whether a property or get accessor resolve from node has been declared as observed.
 	 * It ignores modifiers, only check declaration type.
 	 */
-	function isPropertyOrGetAccessorDeclaredAsObserved(rawNode: TS.Node): boolean {
+	function isPropertyDeclaredAsObserved(rawNode: TS.Node): boolean {
 
 		// `class A{p: Observed}` -> `this.p` and `this['p']` is observed.
 		// `interface A{p: Observed}` -> `this.p` and `this['p']` is observed.
-		let nameDecl = Helper.symbol.resolveDeclaration(rawNode, Helper.isPropertyOrGetAccessor)
-		if (!nameDecl) {
+		let propDecl = Helper.symbol.resolveDeclaration(rawNode, Helper.isPropertyOrGetAccessor)
+		if (!propDecl) {
 			return false
 		}
 
-		let typeNode = nameDecl.type
+		let typeNode = propDecl.type
 
 		// `class A{p: Observed<...>}`
 		if (typeNode && isTypeNodeObserved(typeNode)) {
@@ -112,14 +129,38 @@ export namespace ObservedChecker {
 
 		// `class A{p = {} as Observed}`, must not specified property type.
 		if (!typeNode
-			&& ts.isPropertyDeclaration(nameDecl)
-			&& nameDecl.initializer
-			&& isObserved(nameDecl.initializer)
+			&& ts.isPropertyDeclaration(propDecl)
+			&& propDecl.initializer
+			&& isObserved(propDecl.initializer)
 		) {
 			return true
 		}
 
+		// Directly return an observed object, which implemented `Observed<>`.
+		if (!typeNode
+			&& ts.isGetAccessorDeclaration(propDecl)
+		) {
+			let returnType = Helper.types.getReturnType(propDecl)
+			if (returnType && isTypeObserved(returnType)) {
+				return true
+			}
+		}
+
 		return false
+	}
+
+
+	/** Check whether a property or get accessor declare in typescript library. */
+	function isPropertyOfTypescriptLib(rawNode: TS.Node): boolean {
+
+		// `this.el.style.display`
+		let propDecl = Helper.symbol.resolveDeclaration(rawNode, Helper.isPropertyOrGetAccessor)
+		if (!propDecl) {
+			return false
+		}
+
+		let fileName = propDecl.getSourceFile().fileName
+  		return /\/typescript\/lib\//.test(fileName)
 	}
 
 	
@@ -281,8 +322,13 @@ export namespace ObservedChecker {
 		}
 
 		// Property declaration has specified as observed type or observed initializer.
-		if (isPropertyOrGetAccessorDeclaredAsObserved(rawNode)) {
+		if (isPropertyDeclaredAsObserved(rawNode)) {
 			return true
+		}
+
+		// Typescript lib.
+		if (isPropertyOfTypescriptLib(rawNode)) {
+			return false
 		}
 
 		// Take `node = a.b.c` as example, exp is `a.b`.
@@ -341,12 +387,8 @@ export namespace ObservedChecker {
 
 		// Directly return an observed object, which implemented `Observed<>`.
 		let returnType = Helper.types.getReturnType(decl)
-		if (returnType) {
-			let symbol = returnType.getSymbol()
-			let clsDecl = symbol ? Helper.symbol.resolveDeclarationBySymbol(symbol, ts.isClassDeclaration) : undefined
-			if (clsDecl && Helper.cls.isImplemented(clsDecl, 'Observed', '@pucelle/ff')) {
-				return true
-			}
+		if (returnType && isTypeObserved(returnType)) {
+			return true
 		}
 
 		// Declare the returned type as `Observed<>`.
