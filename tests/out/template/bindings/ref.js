@@ -82,6 +82,21 @@ const $html_0 = new HTMLMaker("<div></div>");
         parts: [[$com_0, 0], [$binding_1, 0]]
     };
 });
+/*
+<root>
+    <div :ref=${this.refElMethod.bind(this)} />
+</root>
+*/ const $template_5 = new TemplateMaker(function ($context) {
+    let $node = $html_0.make();
+    let $node_0 = $node.content.firstChild;
+    let $binding_0 = new RefBinding($node_0, $context);
+    $binding_0.update($context.refElMethod.bind($context));
+    return {
+        el: $node,
+        position: new SlotPosition(1, $node_0),
+        parts: [[$binding_0, 0]]
+    };
+});
 class TestRefBinding extends Component {
     refEl;
     refCom;
@@ -102,6 +117,10 @@ class TestRefBinding extends Component {
     testRefBinding() {
         return new CompiledTemplateResult($template_4, []);
     }
+    testRefElMethod() {
+        return new CompiledTemplateResult($template_5, []);
+    }
+    refElMethod(_el) { }
 }
 class ChildComponent extends Component {
 }

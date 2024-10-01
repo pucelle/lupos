@@ -33,7 +33,7 @@ export class BindingSlotParser extends SlotParserBase {
 	/** $binding_0 */
 	private bindingVariableName: string = ''
 
-	/** :ref=${access}. */
+	/** :ref=${access | variable}. */
 	private refAccess: boolean = false
 
 	init() {
@@ -388,7 +388,7 @@ export class BindingSlotParser extends SlotParserBase {
 
 		// this.refName ->
 		// function(){ this.refName = previousBinding }
-		if (this.modifiers.includes('binding')) {
+		if (this.modifiers.includes('binding') && this.refAccess) {
 			return factory.createFunctionExpression(
 				undefined,
 				undefined,

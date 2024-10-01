@@ -27,6 +27,12 @@ class TestRefBinding extends Component {
 	testRefBinding() {
 		return html`<ChildComponent :class="className" :ref.binding=${this.refBinding} />`
 	}
+
+	testRefElMethod() {
+		return html`<div :ref=${this.refElMethod.bind(this)} />`
+	}
+
+	refElMethod(_el: HTMLElement) {}
 }
 
 class ChildComponent extends Component {}

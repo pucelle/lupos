@@ -804,7 +804,7 @@ export namespace Helper {
 
 		/** Whether returned `void` or `Promise<void>`. */
 		export function isVoidReturned(node: TS.FunctionLikeDeclaration): boolean {
-			let type = Helper.types.getReturnType(node)
+			let type = types.getReturnType(node)
 			if (!type) {
 				return false
 			}
@@ -1212,7 +1212,7 @@ export namespace Helper {
 		 * - `{new(): Cls}`
 		 */
 		export function* resolveInstanceDeclarations(typeNode: TS.TypeNode): Iterable<TS.ClassDeclaration> {
-			let typeNodes = Helper.types.destructTypeNode(typeNode)
+			let typeNodes = types.destructTypeNode(typeNode)
 			if (typeNodes.length === 0) {
 				return
 			}
@@ -1221,7 +1221,7 @@ export namespace Helper {
 	
 				// `typeof Com`, resolve `Com`.
 				if (ts.isTypeQueryNode(typeNode)) {
-					let decls = Helper.symbol.resolveDeclarations(typeNode.exprName, ts.isClassDeclaration)
+					let decls = symbol.resolveDeclarations(typeNode.exprName, ts.isClassDeclaration)
 					if (decls) {
 						yield* decls
 					}
@@ -1229,7 +1229,7 @@ export namespace Helper {
 	
 				// Resolve returned type of constructor `{new()...}`.
 				else {
-					for (let decl of Helper.symbol.resolveChainedInterfaces(typeNode)) {
+					for (let decl of symbol.resolveChainedInterfaces(typeNode)) {
 						let newCons = decl.members.find(m => ts.isConstructSignatureDeclaration(m) || ts.isConstructorDeclaration(m)) as
 							TS.ConstructSignatureDeclaration | TS.ConstructorDeclaration | undefined
 
@@ -1250,13 +1250,13 @@ export namespace Helper {
 		
 		/** Destruct type node, and resolve class declarations of each. */
 		function* resolveInstanceDeclarationsOfTypeNodeNormally(typeNode: TS.TypeNode): Iterable<TS.ClassDeclaration> {
-			let typeNodes = Helper.types.destructTypeNode(typeNode)
+			let typeNodes = types.destructTypeNode(typeNode)
 			if (typeNodes.length === 0) {
 				return
 			}
 
 			for (let typeNode of typeNodes) {
-				let decls = Helper.symbol.resolveDeclarations(typeNode, ts.isClassDeclaration)
+				let decls = symbol.resolveDeclarations(typeNode, ts.isClassDeclaration)
 				if (decls) {
 					yield* decls
 				}
@@ -1335,7 +1335,7 @@ export namespace Helper {
 
 				for (let ref of destructed) {
 					if (ts.isTypeReferenceNode(ref)) {
-						let refName = Helper.getFullText(ref.typeName)
+						let refName = getFullText(ref.typeName)
 
 						// Use input parameter.
 						if (selfMap.has(refName)) {
@@ -1354,6 +1354,20 @@ export namespace Helper {
 			}
 
 			return remapped
+		}
+
+
+		/** Check whether a property or get accessor declare in typescript library. */
+		export function isOfTypescriptLib(rawNode: TS.Node): boolean {
+
+			// Like `this.el.style.display`
+			let decl = resolveDeclaration(rawNode)
+			if (!decl) {
+				return false
+			}
+
+			let fileName = decl.getSourceFile().fileName
+			return /\/typescript\/lib\//.test(fileName)
 		}
 	}
 

@@ -99,7 +99,7 @@ export namespace ObservedChecker {
 		}
 
 		// Typescript lib.
-		if (isPropertyOfTypescriptLib(rawNode)) {
+		if (Helper.symbol.isOfTypescriptLib(rawNode)) {
 			return false
 		}
 		
@@ -150,20 +150,6 @@ export namespace ObservedChecker {
 	}
 
 
-	/** Check whether a property or get accessor declare in typescript library. */
-	function isPropertyOfTypescriptLib(rawNode: TS.Node): boolean {
-
-		// `this.el.style.display`
-		let propDecl = Helper.symbol.resolveDeclaration(rawNode, Helper.isPropertyOrGetAccessor)
-		if (!propDecl) {
-			return false
-		}
-
-		let fileName = propDecl.getSourceFile().fileName
-  		return /\/typescript\/lib\//.test(fileName)
-	}
-
-	
 	/** Broadcast observed from parent calling expression to all parameters. */
 	function isParameterObservedByCallingBroadcasted(rawNode: TS.ParameterDeclaration): boolean {
 
@@ -327,7 +313,7 @@ export namespace ObservedChecker {
 		}
 
 		// Typescript lib.
-		if (isPropertyOfTypescriptLib(rawNode)) {
+		if (Helper.symbol.isOfTypescriptLib(rawNode)) {
 			return false
 		}
 

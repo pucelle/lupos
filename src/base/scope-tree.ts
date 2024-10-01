@@ -367,8 +367,11 @@ export namespace ScopeTree {
 		// Inside of a function scope.
 		insideFunctionScope ||= Helper.isFunctionLike(rawNode)
 
+		// Com from typescript library.
+		if (Helper.symbol.isOfTypescriptLib(rawNode)) {}
+
 		// Variable or property accessing
-		if (Helper.variable.isVariableIdentifier(rawNode) || Helper.access.isAccess(rawNode)) {
+		else if (Helper.variable.isVariableIdentifier(rawNode) || Helper.access.isAccess(rawNode)) {
 			let declaredInTopmostScope = isDeclaredInTopmostScope(rawNode)
 			let declaredAsConst = isDeclaredAsConstLike(rawNode)
 
