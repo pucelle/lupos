@@ -26,7 +26,7 @@ export class ContentSlotParser extends SlotParserBase {
 				&& this.slotContentType !== SlotContentType.TemplateResultList
 				&& this.slotContentType !== SlotContentType.Node
 			) {
-				this.latestVariableName = this.treeParser.getUniqueLatestName()
+				this.latestVariableName = this.tree.getUniqueLatestName()
 			}
 		}
 	}

@@ -9,7 +9,7 @@ export class TextSlotParser extends SlotParserBase {
 
 	init() {
 		if (this.isValueMutable()) {
-			this.latestVariableName = this.treeParser.getUniqueLatestName()
+			this.latestVariableName = this.tree.getUniqueLatestName()
 		}
 	}
 

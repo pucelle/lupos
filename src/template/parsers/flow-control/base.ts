@@ -16,7 +16,7 @@ export abstract class FlowControlBase {
 	constructor(slot: FlowControlSlotParser) {
 		this.slot = slot
 		this.node = slot.node
-		this.tree = slot.treeParser
+		this.tree = slot.tree
 		this.template = slot.template
 	}
 

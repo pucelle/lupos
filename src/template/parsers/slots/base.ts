@@ -28,7 +28,7 @@ export abstract class SlotParserBase {
 	readonly node: HTMLNode
 
 	/** Tree parser current slot belonged to. */
-	readonly treeParser: TreeParser
+	readonly tree: TreeParser
 
 	/** Template parser current slot belonged to. */
 	readonly template: TemplateParser
@@ -54,7 +54,7 @@ export abstract class SlotParserBase {
 		}
 
 		this.node = node
-		this.treeParser = treeParser
+		this.tree = treeParser
 		this.template = treeParser.template
 		this.onDynamicComponent = !!(this.node.tagName && TemplateSlotPlaceholder.isCompleteSlotIndex(this.node.tagName))
 	}
@@ -116,12 +116,12 @@ export abstract class SlotParserBase {
 
 	/** Get node variable name. */
 	protected getRefedNodeName(): string {
-		return this.treeParser.references.refAsName(this.node)
+		return this.tree.references.refAsName(this.node)
 	}
 
 	/** Get whether node has been referenced. */
 	protected hasNodeRefed(): boolean {
-		return this.treeParser.references.hasRefed(this.node)
+		return this.tree.references.hasRefed(this.node)
 	}
 
 	/** 
@@ -129,7 +129,7 @@ export abstract class SlotParserBase {
 	 * Can only use it in `init`.
 	 */
 	protected refAsComponent() {
-		this.treeParser.refAsComponent(this.node)
+		this.tree.refAsComponent(this.node)
 	}
 
 	/**
@@ -138,7 +138,7 @@ export abstract class SlotParserBase {
 	 * Can only use it in `outputInit` or `outputUpdate`.
 	 */
 	protected getRefedComponentName(): string {
-		return this.treeParser.getRefedComponentName(this.node)
+		return this.tree.getRefedComponentName(this.node)
 	}
 
 	/** 
@@ -146,8 +146,8 @@ export abstract class SlotParserBase {
 	 * Otherwise will add the slot name to `parts`.
 	 */
 	getSlotName(): string {
-		let name = this.treeParser.getUniqueSlotName()
-		this.treeParser.addPart(name, this.node)
+		let name = this.tree.getUniqueSlotName()
+		this.tree.addPart(name, this.node)
 
 		return name
 	}	
@@ -155,7 +155,7 @@ export abstract class SlotParserBase {
 	/** Create a variable assignment, either declare variable, or pre-declare and assign.  */
 	createVariableAssignment(name: string, exp: TS.Expression, preDeclare = this.onDynamicComponent): TS.Expression | TS.Statement {
 		if (preDeclare) {
-			this.treeParser.addPreDeclaredVariableName(name)
+			this.tree.addPreDeclaredVariableName(name)
 			
 			return factory.createBinaryExpression(
 				factory.createIdentifier(name),
@@ -246,7 +246,7 @@ export abstract class SlotParserBase {
 			&& this.canRemoveNode(this.node)
 		) {
 			this.node.remove()
-			nodeName = this.treeParser.references.refAsName(nextNode)
+			nodeName = this.tree.references.refAsName(nextNode)
 			position = SlotPositionType.Before
 		}
 
@@ -292,8 +292,8 @@ export abstract class SlotParserBase {
 			firstChild = comment
 		}
 
-		let firstChildName = this.treeParser.references.refAsName(firstChild)
-		let lastChildName = this.treeParser.references.refAsName(lastChild)
+		let firstChildName = this.tree.references.refAsName(firstChild)
+		let lastChildName = this.tree.references.refAsName(lastChild)
 
 		return factory.createNewExpression(
 			factory.createIdentifier('SlotRange'),

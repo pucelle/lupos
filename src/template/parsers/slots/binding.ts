@@ -27,6 +27,9 @@ export class BindingSlotParser extends SlotParserBase {
 	private latestVariableName: string | null = null
 
 	/** $binding_0 */
+	private previousBindingName: string | null = null
+
+	/** $binding_0 */
 	private bindingVariableName: string = ''
 
 	/** Force output value node for ref binding. */
@@ -40,10 +43,10 @@ export class BindingSlotParser extends SlotParserBase {
 		if (this.isValueMutable()
 			&& !this.forceRefStatic
 		) {
-			this.latestVariableName = this.treeParser.getUniqueLatestName()
+			this.latestVariableName = this.tree.getUniqueLatestName()
 		}
 
-		this.bindingVariableName = this.treeParser.getUniqueBindingName()
+		this.bindingVariableName = this.tree.getUniqueBindingName()
 		this.initBindingClass()
 	}
 
@@ -54,7 +57,7 @@ export class BindingSlotParser extends SlotParserBase {
 			
 			// Add as a part.
 			if (item.implementsPart) {
-				this.treeParser.addPart(this.bindingVariableName, this.node)
+				this.tree.addPart(this.bindingVariableName, this.node)
 			}
 
 			// Import binding class.
@@ -87,7 +90,7 @@ export class BindingSlotParser extends SlotParserBase {
 			this.template.addRefedDeclaration(bindingClassDecl)
 
 			if (bindingClass && Helper.cls.isImplemented(bindingClass, 'Part', '@pucelle/lupos.js', bindingModuleName?.moduleName)) {
-				this.treeParser.addPart(this.bindingVariableName, this.node)
+				this.tree.addPart(this.bindingVariableName, this.node)
 			}
 
 			let bindingClassParams = bindingClass ? Helper.cls.getConstructorParameters(bindingClass) : null
@@ -116,6 +119,11 @@ export class BindingSlotParser extends SlotParserBase {
 			)
 		) {
 			this.forceRefStatic = true
+		}
+
+		// Remember latest binding name, must before getting current binding name.
+		if (this.modifiers.includes('binding')) {
+			this.previousBindingName = this.tree.getLatestBindingName()
 		}
 	}
 
@@ -375,6 +383,27 @@ export class BindingSlotParser extends SlotParserBase {
 
 	private getRefUpdateCallWithValue(value: TS.Expression | null): TS.Expression {
 		let rawValueNode = this.getFirstRawValueNode()!
+
+		// this.refName ->
+		// function(){ this.refName = previousBinding }
+		if (this.modifiers.includes('binding')) {
+			return factory.createFunctionExpression(
+				undefined,
+				undefined,
+				factory.createIdentifier(''),
+				undefined,
+				[],
+				undefined,
+				factory.createBlock(
+					[factory.createExpressionStatement(factory.createBinaryExpression(
+						rawValueNode,
+						factory.createToken(ts.SyntaxKind.EqualsToken),
+						factory.createIdentifier(this.previousBindingName!)
+					))],
+					false
+				)
+			)
+		}
 
 		// this.refName ->
 		// function(refed){ this.refName = refed }

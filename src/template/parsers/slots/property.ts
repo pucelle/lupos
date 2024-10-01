@@ -24,7 +24,7 @@ export class PropertySlotParser extends SlotParserBase {
 		}
 
 		if (this.isValueMutable()) {
-			this.latestVariableName = this.treeParser.getUniqueLatestName()
+			this.latestVariableName = this.tree.getUniqueLatestName()
 		}
 
 		this.targetType = this.checkTargetType()

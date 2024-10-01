@@ -1,4 +1,4 @@
-import {Component, html} from '@pucelle/lupos.js'
+import {ClassBinding, Component, html} from '@pucelle/lupos.js'
 
 
 class TestRefBinding extends Component {
@@ -6,6 +6,7 @@ class TestRefBinding extends Component {
 	refEl: any
 	refCom: any
 	refElByType!: HTMLElement
+	refBinding!: ClassBinding
 
 	testRefEl() {
 		return html`<div :ref=${this.refEl} />`
@@ -21,6 +22,10 @@ class TestRefBinding extends Component {
 
 	testRefElByDeclarationType() {
 		return html`<ChildComponent :ref=${this.refElByType} />`
+	}
+
+	testRefBinding() {
+		return html`<ChildComponent :class="className" :ref.binding=${this.refBinding} />`
 	}
 }
 

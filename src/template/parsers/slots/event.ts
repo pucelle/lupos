@@ -30,7 +30,7 @@ export class EventSlotParser extends SlotParserBase {
 		this.beSimulatedEvents = this.isSimulatedEvents()
 
 		if (this.isValueMutable()) {
-			this.latestVariableName = this.treeParser.getUniqueLatestName()
+			this.latestVariableName = this.tree.getUniqueLatestName()
 		}
 
 		this.targetType = this.checkTargetType()
@@ -97,7 +97,7 @@ export class EventSlotParser extends SlotParserBase {
 	}
 
 	private outputComponentInit() {
-		let comVariableName = this.treeParser.getRefedComponentName(this.node)
+		let comVariableName = this.tree.getRefedComponentName(this.node)
 
 		// $com_0.on('comEventName', eventHandler, $context)
 		if (!this.isValueMutable() || this.isValueCanTurnStatic()) {

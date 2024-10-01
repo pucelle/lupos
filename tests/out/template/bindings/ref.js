@@ -1,4 +1,4 @@
-import { Component, RefBinding, CompiledTemplateResult, TemplateMaker, SlotPosition, HTMLMaker } from '@pucelle/lupos.js';
+import { ClassBinding, Component, RefBinding, CompiledTemplateResult, TemplateMaker, SlotPosition, HTMLMaker } from '@pucelle/lupos.js';
 import { trackGet } from "@pucelle/ff";
 const $html_0 = new HTMLMaker("<div></div>");
 /*
@@ -64,10 +64,29 @@ const $html_0 = new HTMLMaker("<div></div>");
         parts: [[$com_0, 0], [$binding_0, 0]]
     };
 });
+/*
+<root>
+    <ChildComponent :class="className" :ref.binding=${this.refBinding} />
+</root>
+*/ const $template_4 = new TemplateMaker(function ($context) {
+    let $node = $html_0.make();
+    let $node_0 = $node.content.firstChild;
+    let $com_0 = new ChildComponent({}, $node_0);
+    let $binding_0 = new ClassBinding($node_0);
+    let $binding_1 = new RefBinding($node_0, $context, ["binding"]);
+    $binding_0.updateString("className");
+    $binding_1.update(function () { this.refBinding = $binding_0; });
+    return {
+        el: $node,
+        position: new SlotPosition(1, $node_0),
+        parts: [[$com_0, 0], [$binding_1, 0]]
+    };
+});
 class TestRefBinding extends Component {
     refEl;
     refCom;
     refElByType;
+    refBinding;
     testRefEl() {
         trackGet(this, "refEl");
         return new CompiledTemplateResult($template_0, []);
@@ -83,6 +102,10 @@ class TestRefBinding extends Component {
     testRefElByDeclarationType() {
         trackGet(this, "refElByType");
         return new CompiledTemplateResult($template_3, []);
+    }
+    testRefBinding() {
+        trackGet(this, "refBinding");
+        return new CompiledTemplateResult($template_4, []);
     }
 }
 class ChildComponent extends Component {

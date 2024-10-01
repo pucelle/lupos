@@ -70,6 +70,7 @@ export class TreeParser {
 	private parts: [string, PartPositionType][] = []
 
 	private refedComponentMap: Map<HTMLNode, string> = new Map()
+	private latestBindingName: string | null = ''
 
 	constructor(template: TemplateParser, root: HTMLRoot, parent: TreeParser | null, fromNode: HTMLNode | null) {
 		this.template = template
@@ -433,7 +434,13 @@ export class TreeParser {
 
 		// Only partial binding classes are parts.
 		let name = VariableNames.getDoublyUniqueName(VariableNames.binding, this)
-		return name
+
+		return this.latestBindingName = name
+	}
+
+	/** `$binding_0` */
+	getLatestBindingName(): string | null {
+		return this.latestBindingName
 	}
 
 	/** `$block_0` */

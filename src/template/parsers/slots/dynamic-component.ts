@@ -15,7 +15,7 @@ export class DynamicComponentSlotParser extends SlotParserBase {
 
 	init() {
 		this.refAsComponent()
-		this.blockVariableName = this.treeParser.getUniqueBlockName()
+		this.blockVariableName = this.tree.getUniqueBlockName()
 		this.slotVariableName = this.getSlotName()
 	}
 
@@ -27,7 +27,7 @@ export class DynamicComponentSlotParser extends SlotParserBase {
 
 		// Use next node to locate.
 		if (nextNode && nextNode.isPrecedingPositionStable()) {
-			nodeName = this.treeParser.references.refAsName(nextNode)
+			nodeName = this.tree.references.refAsName(nextNode)
 			position = SlotPositionType.Before
 		}
 
@@ -35,7 +35,7 @@ export class DynamicComponentSlotParser extends SlotParserBase {
 		else {
 			let comment = new HTMLNode(HTMLNodeType.Comment, {})
 			this.node.after(comment)
-			nodeName = this.treeParser.references.refAsName(comment)
+			nodeName = this.tree.references.refAsName(comment)
 			position = SlotPositionType.Before
 		}
 
@@ -53,7 +53,7 @@ export class DynamicComponentSlotParser extends SlotParserBase {
 		let comName = this.getRefedComponentName()
 
 		// let $com_0
-		this.treeParser.addPreDeclaredVariableName(comName)
+		this.tree.addPreDeclaredVariableName(comName)
 
 		// let $block_0 = new DynamicComponentBlock(
 		//   function(com){
