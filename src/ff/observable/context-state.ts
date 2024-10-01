@@ -1,7 +1,7 @@
 import type TS from 'typescript'
 import {Context} from './context'
 import {ContextTypeMask} from './context-tree'
-import {AccessNode, FlowInterruptionTypeMask, Helper, ts, VisitTree} from '../../base'
+import {AccessNode, FlowInterruptionTypeMask, Helper, ts} from '../../base'
 
 
 
@@ -152,46 +152,6 @@ export class ContextState {
 
 		if (this.nothingReturned && !this.effectDecorated) {
 			return true
-		}
-
-		if (this.isWithinRefBinding(node)) {
-			return true
-		}
-
-		return false
-	}
-
-	/** :ref=${this.prop}, should ignore get tracking. */
-	private isWithinRefBinding(node: AccessNode | TS.Identifier) {
-		let parent = node.parent
-
-		while (parent) {
-			if (ts.isTemplateSpan(parent)) {
-				let previousIndex = VisitTree.getPreviousIndex(VisitTree.getIndex(parent))
-				if (previousIndex === undefined) {
-					break
-				}
-
-				let previousPart = VisitTree.getNode(previousIndex) as TS.TemplateHead | TS.TemplateSpan
-
-				let previousText = ts.isTemplateHead(previousPart)
-					? previousPart.text
-					: ts.isTemplateSpan(previousPart)
-					? previousPart.literal.text
-					: null
-
-				if (!previousText) {
-					break
-				}
-
-				return /\s+:ref(\.\w+)?\s*=\s*$/.test(previousText)
-			}
-			else if (Helper.access.isAccess(parent)) {
-				parent = parent.parent
-			}
-			else {
-				break
-			}
 		}
 
 		return false

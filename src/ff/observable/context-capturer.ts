@@ -9,6 +9,7 @@ import {removeFromList} from '../../utils'
 import {ContextState} from './context-state'
 import {ObservedChecker} from './observed-checker'
 import {ContextCapturerOperator} from './context-capturer-operator'
+import {TrackingPatch} from './tracking-patch'
 
 
 /** Captured item, will be inserted to a position. */
@@ -286,8 +287,17 @@ export class ContextCapturer {
 		let itemsInsertToOldPosition: CapturedItem[] = []
 		let itemsInsertToNewPosition: CapturedItem[] = []
 
+		let items = group.items.filter(item => {
+			if (item.expIndex !== undefined) {
+				return !TrackingPatch.ignoredIndex(item.expIndex)
+			}
+			else {
+				return !TrackingPatch.ignoredIndex(item.index)
+			}
+		})
+
 		if (newToIndex !== null) {
-			for (let index of group.items) {
+			for (let index of items) {
 				let hashed = ScopeTree.hashIndex(index.index)
 				let canMove = hashed.usedIndices.every(usedIndex => VisitTree.isPrecedingOf(usedIndex, newToIndex))
 
@@ -300,7 +310,7 @@ export class ContextCapturer {
 			}
 		}
 		else {
-			itemsInsertToOldPosition = group.items
+			itemsInsertToOldPosition = items
 		}
 
 		if (itemsInsertToNewPosition.length > 0) {
@@ -319,11 +329,11 @@ export class ContextCapturer {
 			})
 		}
 
-		if (group.items.some(index => index.type === 'get')) {
+		if (items.some(index => index.type === 'get')) {
 			AccessGrouper.addImport('get')
 		}
 
-		if (group.items.some(index => index.type === 'set')) {
+		if (items.some(index => index.type === 'set')) {
 			AccessGrouper.addImport('set')
 		}
 	}
