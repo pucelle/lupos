@@ -1,5 +1,4 @@
 import { ClassBinding, Component, RefBinding, CompiledTemplateResult, TemplateMaker, SlotPosition, HTMLMaker } from '@pucelle/lupos.js';
-import { trackGet } from "@pucelle/ff";
 const $html_0 = new HTMLMaker("<div></div>");
 /*
 <root>
@@ -9,7 +8,7 @@ const $html_0 = new HTMLMaker("<div></div>");
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $binding_0 = new RefBinding($node_0, $context);
-    $binding_0.update(function (refed) { this.refEl = refed; });
+    $binding_0.update(function (refed) { this.refEl = refed; trackSet(this, "refEl"); });
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),
@@ -25,7 +24,7 @@ const $html_0 = new HTMLMaker("<div></div>");
     let $node_0 = $node.content.firstChild;
     let $com_0 = new ChildComponent({}, $node_0);
     let $binding_0 = new RefBinding($node_0, $context);
-    $binding_0.update(function (refed) { this.refCom = refed; });
+    $binding_0.update(function (refed) { this.refCom = refed; trackSet(this, "refCom"); });
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),
@@ -41,7 +40,7 @@ const $html_0 = new HTMLMaker("<div></div>");
     let $node_0 = $node.content.firstChild;
     let $com_0 = new ChildComponent({}, $node_0);
     let $binding_0 = new RefBinding($node_0, $context, ["el"]);
-    $binding_0.update(function (refed) { this.refEl = refed; });
+    $binding_0.update(function (refed) { this.refEl = refed; trackSet(this, "refEl"); });
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),
@@ -57,7 +56,7 @@ const $html_0 = new HTMLMaker("<div></div>");
     let $node_0 = $node.content.firstChild;
     let $com_0 = new ChildComponent({}, $node_0);
     let $binding_0 = new RefBinding($node_0, $context, ["el"]);
-    $binding_0.update(function (refed) { this.refElByType = refed; });
+    $binding_0.update(function (refed) { this.refElByType = refed; trackSet(this, "refElByType"); });
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),
@@ -75,7 +74,7 @@ const $html_0 = new HTMLMaker("<div></div>");
     let $binding_0 = new ClassBinding($node_0);
     let $binding_1 = new RefBinding($node_0, $context, ["binding"]);
     $binding_0.updateString("className");
-    $binding_1.update(function () { this.refBinding = $binding_0; });
+    $binding_1.update(function () { this.refBinding = $binding_0; trackSet(this, "refBinding"); });
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),
@@ -88,23 +87,18 @@ class TestRefBinding extends Component {
     refElByType;
     refBinding;
     testRefEl() {
-        trackGet(this, "refEl");
         return new CompiledTemplateResult($template_0, []);
     }
     testRefCom() {
-        trackGet(this, "refCom");
         return new CompiledTemplateResult($template_1, []);
     }
     testRefElModifier() {
-        trackGet(this, "refEl");
         return new CompiledTemplateResult($template_2, []);
     }
     testRefElByDeclarationType() {
-        trackGet(this, "refElByType");
         return new CompiledTemplateResult($template_3, []);
     }
     testRefBinding() {
-        trackGet(this, "refBinding");
         return new CompiledTemplateResult($template_4, []);
     }
 }

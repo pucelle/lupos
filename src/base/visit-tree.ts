@@ -124,6 +124,40 @@ export namespace VisitTree {
 		return ParentMap.get(childIndex)!
 	}
 
+	/** Get previous visit index by sibling visit index. */
+	export function getPreviousIndex(siblingIndex: number): number | undefined {
+		let parentIndex = ParentMap.get(siblingIndex)
+		if (parentIndex === undefined) {
+			return undefined
+		}
+
+		let siblingIndices = ChildMap.get(parentIndex)!
+		let index = siblingIndices.indexOf(siblingIndex)
+
+		if (index > 0) {
+			return siblingIndices[index - 1]
+		}
+
+		return undefined
+	}
+
+	/** Get next visit index by sibling visit index. */
+	export function getNextIndex(siblingIndex: number): number | undefined {
+		let parentIndex = ParentMap.get(siblingIndex)
+		if (parentIndex === undefined) {
+			return undefined
+		}
+
+		let siblingIndices = ChildMap.get(parentIndex)!
+		let index = siblingIndices.indexOf(siblingIndex)
+
+		if (index < siblingIndices.length - 1) {
+			return siblingIndices[index + 1]
+		}
+
+		return undefined
+	}
+
 	/** Test whether have raw node by visit index. */
 	export function hasNode(node: TS.Node): boolean {
 		return IndexMap.has(node)

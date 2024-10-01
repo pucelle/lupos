@@ -3,6 +3,7 @@ import {SlotParserBase} from './base'
 import {factory, ts, Helper, TemplateSlotPlaceholder, ScopeTree, Modifier} from '../../../base'
 import {VariableNames} from '../variable-names'
 import {addToList} from '../../../utils'
+import {AccessGrouper, ObservedChecker} from '../../../ff'
 
 
 /** Known bindings from lupos.js. */
@@ -32,8 +33,8 @@ export class BindingSlotParser extends SlotParserBase {
 	/** $binding_0 */
 	private bindingVariableName: string = ''
 
-	/** Force output value node for ref binding. */
-	private forceRefStatic: boolean = false
+	/** :ref=${access}. */
+	private referenceAccess: boolean = false
 
 	init() {
 		if (this.name === 'ref') {
@@ -41,7 +42,7 @@ export class BindingSlotParser extends SlotParserBase {
 		}
 
 		if (this.isValueMutable()
-			&& !this.forceRefStatic
+			&& !this.referenceAccess
 		) {
 			this.latestVariableName = this.tree.getUniqueLatestName()
 		}
@@ -118,7 +119,7 @@ export class BindingSlotParser extends SlotParserBase {
 				|| Helper.variable.isVariableIdentifier(rawValueNode)
 			)
 		) {
-			this.forceRefStatic = true
+			this.referenceAccess = true
 		}
 
 		// Remember latest binding name, must before getting current binding name.
@@ -160,7 +161,7 @@ export class BindingSlotParser extends SlotParserBase {
 	outputUpdate() {
 
 		// $values[0], or '...'
-		let value = this.forceRefStatic ? null : this.outputValue()
+		let value = this.referenceAccess ? null : this.outputValue()
 
 		let callWith: {method: string, value: TS.Expression} = {method: 'update', value: value!}
 		if (this.name === 'class') {
@@ -395,11 +396,14 @@ export class BindingSlotParser extends SlotParserBase {
 				[],
 				undefined,
 				factory.createBlock(
-					[factory.createExpressionStatement(factory.createBinaryExpression(
-						rawValueNode,
-						factory.createToken(ts.SyntaxKind.EqualsToken),
-						factory.createIdentifier(this.previousBindingName!)
-					))],
+					[
+						factory.createExpressionStatement(factory.createBinaryExpression(
+							rawValueNode,
+							factory.createToken(ts.SyntaxKind.EqualsToken),
+							factory.createIdentifier(this.previousBindingName!)
+						)),
+						...Helper.pack.toStatements(this.outputAccessTracking(rawValueNode))
+					],
 					false
 				)
 			)
@@ -407,7 +411,7 @@ export class BindingSlotParser extends SlotParserBase {
 
 		// this.refName ->
 		// function(refed){ this.refName = refed }
-		if (this.forceRefStatic) {
+		if (this.referenceAccess) {
 			return factory.createFunctionExpression(
 				undefined,
 				undefined,
@@ -423,11 +427,14 @@ export class BindingSlotParser extends SlotParserBase {
 				)],
 				undefined,
 				factory.createBlock(
-					[factory.createExpressionStatement(factory.createBinaryExpression(
-						rawValueNode,
-						factory.createToken(ts.SyntaxKind.EqualsToken),
-						factory.createIdentifier('refed')
-					))],
+					[
+						factory.createExpressionStatement(factory.createBinaryExpression(
+							rawValueNode,
+							factory.createToken(ts.SyntaxKind.EqualsToken),
+							factory.createIdentifier('refed')
+						)),
+						...Helper.pack.toStatements(this.outputAccessTracking(rawValueNode))
+					],
 					false
 				)
 			)
@@ -435,5 +442,17 @@ export class BindingSlotParser extends SlotParserBase {
 
 		// () => {...}
 		return value!
+	}
+
+	private outputAccessTracking(rawValueNode: TS.Expression): TS.Expression[] {
+		if (!Helper.access.isAccess(rawValueNode)) {
+			return []
+		}
+
+		if (!ObservedChecker.isAccessObserved(rawValueNode)) {
+			return []
+		}
+
+		return AccessGrouper.makeExpressions([rawValueNode], 'set')
 	}
 }
