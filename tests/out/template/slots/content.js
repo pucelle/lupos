@@ -109,7 +109,7 @@ const $html_1 = new HTMLMaker("<div><!----></div>");
         position: new SlotPosition(1, $node_0)
     };
 });
-const $html_2 = new HTMLMaker("<div> <!----> </div>");
+const $html_7 = new HTMLMaker("<div> <!----> </div>");
 /*
 <root>
     <div>
@@ -119,7 +119,7 @@ const $html_2 = new HTMLMaker("<div> <!----> </div>");
     </div>
 </root>
 */ const $template_7 = new TemplateMaker(function ($context) {
-    let $node = $html_2.make();
+    let $node = $html_7.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node_0.firstChild;
     let $node_2 = $node_0.childNodes[1];

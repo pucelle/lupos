@@ -1,4 +1,4 @@
-import { Component, CompiledTemplateResult, TemplateMaker, SlotPosition, SwitchBlock, TemplateSlot, HTMLMaker } from '@pucelle/lupos.js';
+import { Component, CompiledTemplateResult, TemplateMaker, SlotPosition, HTMLMaker, SwitchBlock, TemplateSlot } from '@pucelle/lupos.js';
 import { trackGet } from "@pucelle/ff";
 const $html_0 = new HTMLMaker("<!----><!---->");
 /*
@@ -81,11 +81,11 @@ const $html_2 = new HTMLMaker("Case Content 2");
         position: new SlotPosition(1, $node_0)
     };
 });
-const $html_3 = new HTMLMaker("Case Content 3");
+const $html_6 = new HTMLMaker("Case Content 3");
 /*
 <root>Case Content 3</root>
 */ const $template_6 = new TemplateMaker(function () {
-    let $node = $html_3.make();
+    let $node = $html_6.make();
     let $node_0 = $node.content.firstChild;
     return {
         el: $node,

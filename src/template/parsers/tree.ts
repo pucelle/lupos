@@ -81,7 +81,7 @@ export class TreeParser {
 		this.references = new HTMLNodeReferences(this.root)
 
 		this.initWrapping()
-		this.outputHandler = new TreeOutputHandler(this, this.wrappedBySVG, this.wrappedByTemplate)
+		this.outputHandler = new TreeOutputHandler(this, this.index, this.wrappedBySVG, this.wrappedByTemplate)
 	}
 
 	private initWrapping() {
@@ -420,7 +420,7 @@ export class TreeParser {
 
 	/** Return variable name to reference current template maker, like `$template_0`. */
 	getTemplateRefName(): string {
-		return VariableNames.template + '_' + this.index
+		return VariableNames.buildName(VariableNames.template, this.index)
 	}
 
 	/** `$slot_0` */
@@ -517,9 +517,12 @@ export class TreeParser {
 		return this.refedComponentMap.get(node)!
 	}
 
-	/** Output contents and interpolate. */
-	output(scope: Scope) {
-		this.outputHandler.output(
+	/** 
+	 * Prepare to output whole tree as expressions,
+	 * Return a callback, call which will finally interpolate to source file.
+	 */
+	prepareToOutput(scope: Scope): () => void {
+		return this.outputHandler.prepareToOutput(
 			this.slots,
 			this.preDeclaredVariableNames,
 			this.parts,

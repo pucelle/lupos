@@ -73,22 +73,40 @@ export class TemplateParser {
 	}
 
 	/** 
-	 * Output whole template compiled contents.
-	 * Not, only primary templates can output compiled, sub template can't. 
+	 * Output whole template compiled contents, and sub templates.
+	 * Return a callback, call which will finally interpolate to source file.
 	 */
-	outputCompiled() {
+	prepareToOutputCompiled(): () => void {
 		Modifier.addImport('CompiledTemplateResult', '@pucelle/lupos.js')
 		
-		for (let treeParser of this.treeParsers) {
-			treeParser.output(this.innerMostScope)
+		let outputSub: (() => void)[] = []
+		let outputSelf: (() => void)[] = []
+
+		// Sub templates prepare earlier, but output later.
+		for (let template of this.subTemplates) {
+			outputSub.push(template.prepareToOutputCompiled())
 		}
 
-		for (let template of this.subTemplates) {
-			template.outputCompiled()
+		// Self contents prepare later, but output earlier.
+		for (let treeParser of this.treeParsers) {
+			outputSelf.push(treeParser.prepareToOutput(this.innerMostScope))
+		}
+
+		return () => {
+			for (let output of outputSelf) {
+				output()
+			}
+
+			for (let output of outputSub) {
+				output()
+			}
 		}
 	}
 
-	/** Returns a expression to replace original template literal. */
+	/** 
+	 * Returns a expression to replace original template literal.
+	 * Must after `outputCompiled`.
+	 */
 	outputReplaced(): TS.Expression {
 		let mainTreeParser = this.treeParsers[0]
 		let makerName = mainTreeParser.getTemplateRefName()

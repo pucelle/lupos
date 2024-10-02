@@ -62,7 +62,7 @@ const $html_2 = new HTMLMaker("<svg><slot name=\"slotName\"></slot></svg>", true
         position: new SlotPosition(1, $node_0)
     };
 });
-const $html_3 = new HTMLMaker("<div></div>");
+const $html_4 = new HTMLMaker("<div></div>");
 class TestTemplateOutput extends Component {
     prop = 1;
     readonlyProp = 1;
@@ -81,7 +81,7 @@ class TestTemplateOutput extends Component {
             <Child />
         </root>
         */ const $template_4 = new TemplateMaker(function () {
-            let $node = $html_3.make();
+            let $node = $html_4.make();
             let $node_0 = $node.content.firstChild;
             let $com_0 = new Child({}, $node_0);
             return {

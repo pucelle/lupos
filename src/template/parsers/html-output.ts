@@ -2,7 +2,6 @@ import type TS from 'typescript'
 import {definePreVisitCallback, factory, Modifier, ScopeTree, ts} from '../../base'
 import {TreeParser} from './tree'
 import {DoubleKeysMap} from '../../utils'
-import {VariableNames} from './variable-names'
 
 
 export namespace HTMLOutputHandler {
@@ -20,18 +19,22 @@ export namespace HTMLOutputHandler {
 	 * Output html nodes from a tree parser.
 	 * Returns html maker name.
 	 */
-	export function output(parser: TreeParser, wrapped: boolean): string {
+	export function prepareOutput(parser: TreeParser, wrapped: boolean, htmlName: string):
+		{name: string, output: () => void}
+	{
 		Modifier.addImport('HTMLMaker', '@pucelle/lupos.js')
 
 		let htmlString = parser.root.getContentString()
 
 		// Cache meet.
 		if (Cache.has(htmlString, wrapped)) {
-			return Cache.get(htmlString, wrapped)!
+			return {
+				name: Cache.get(htmlString, wrapped)!,
+				output: () => {},
+			}
 		}
 
 		// $html_0
-		let htmlName = VariableNames.getUniqueName(VariableNames.html)
 		let parameters: TS.Expression[] = [factory.createStringLiteral(htmlString)]
 
 		// Template get wrapped.
@@ -57,10 +60,16 @@ export namespace HTMLOutputHandler {
 			)
 		)
 
-		ScopeTree.getTopmost().addStatements(htmlNode)
 		Cache.set(htmlString, wrapped, htmlName)
 
-		return htmlName
+		let output = () => {
+			ScopeTree.getTopmost().addStatements(htmlNode)
+		}
+
+		return {
+			name: htmlName,
+			output,
+		}
 	}
 }
 

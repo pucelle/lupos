@@ -32,8 +32,12 @@ export namespace VariableNames {
 		return index
 	}
 
+	export function buildName(prefix: string, index: number) {
+		return prefix + '_' + index
+	}
+
 	export function getUniqueName(prefix: string) {
-		return prefix + '_' + getUniqueIndex(prefix)
+		return buildName(prefix, getUniqueIndex(prefix))
 	}
 
 	export function getDoublyUniqueIndex(innerArea: string, outerArea: any) {
@@ -45,6 +49,6 @@ export namespace VariableNames {
 	}
 
 	export function getDoublyUniqueName(prefix: string, area: any) {
-		return prefix + '_' + getDoublyUniqueIndex(prefix, area)
+		return buildName(prefix, getDoublyUniqueIndex(prefix, area))
 	}
 }

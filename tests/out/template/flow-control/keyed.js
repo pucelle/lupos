@@ -1,4 +1,4 @@
-import { Component, CompiledTemplateResult, TemplateMaker, SlotPosition, KeyedBlock, TemplateSlot, HTMLMaker } from '@pucelle/lupos.js';
+import { Component, CompiledTemplateResult, TemplateMaker, SlotPosition, HTMLMaker, KeyedBlock, TemplateSlot } from '@pucelle/lupos.js';
 import { trackGet } from "@pucelle/ff";
 const $html_0 = new HTMLMaker("<!----><!---->");
 /*

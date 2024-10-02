@@ -31,14 +31,14 @@ const $html_0 = new HTMLMaker("<div></div>");
         parts: [[$com_0, 0]]
     };
 });
-const $html_1 = new HTMLMaker("<!----><div></div><!---->");
+const $html_2 = new HTMLMaker("<!----><div></div><!---->");
 /*
 <root>
     <${this.UnionedCom} @connected=${this.handleEvent} />
 </root>
 */ const $template_2 = new TemplateMaker(function ($context) {
     let $com_0;
-    let $node = $html_1.make();
+    let $node = $html_2.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.childNodes[1];
     let $node_2 = $node.content.lastChild;
@@ -62,7 +62,7 @@ const $html_1 = new HTMLMaker("<!----><div></div><!---->");
 </root>
 */ const $template_3 = new TemplateMaker(function ($context) {
     let $com_0;
-    let $node = $html_1.make();
+    let $node = $html_2.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.childNodes[1];
     let $node_2 = $node.content.lastChild;

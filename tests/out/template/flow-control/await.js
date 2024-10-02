@@ -71,11 +71,11 @@ const $html_2 = new HTMLMaker("Then Content");
         position: new SlotPosition(1, $node_0)
     };
 });
-const $html_3 = new HTMLMaker("Catch Content");
+const $html_5 = new HTMLMaker("Catch Content");
 /*
 <root>Catch Content</root>
 */ const $template_5 = new TemplateMaker(function () {
-    let $node = $html_3.make();
+    let $node = $html_5.make();
     let $node_0 = $node.content.firstChild;
     return {
         el: $node,
@@ -124,7 +124,7 @@ const $html_3 = new HTMLMaker("Catch Content");
 /*
 <root>Catch Content</root>
 */ const $template_9 = new TemplateMaker(function () {
-    let $node = $html_3.make();
+    let $node = $html_5.make();
     let $node_0 = $node.content.firstChild;
     return {
         el: $node,

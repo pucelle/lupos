@@ -21,22 +21,28 @@ export class TreeOutputHandler {
 
 	private wrappedBySVG: boolean = false
 	private wrappedByTemplate: boolean = false
+	private htmlName: string
 
-	constructor(parser: TreeParser, wrappedBySVG: boolean, wrappedByTemplate: boolean) {
+	constructor(parser: TreeParser, treeIndex: number, wrappedBySVG: boolean, wrappedByTemplate: boolean) {
 		this.parser = parser
 		this.root = parser.root
 		this.template = parser.template
 
 		this.wrappedBySVG = wrappedBySVG
 		this.wrappedByTemplate = wrappedByTemplate
+		this.htmlName = VariableNames.buildName(VariableNames.html, treeIndex)
 	}
 
-	output(
+	/** 
+	 * Prepare to output whole tree as expressions,
+	 * Return a callback, call which will finally interpolate to source file.
+	 */
+	prepareToOutput(
 		slots: SlotParserBase[],
 		varNames: string[],
 		parts: [string, PartPositionType][],
 		scope: Scope
-	) {
+	): () => void {
 		Modifier.addImport('TemplateMaker', '@pucelle/lupos.js')
 
 		// May modify nodes, must before outputting HTML Maker.
@@ -49,7 +55,7 @@ export class TreeOutputHandler {
 		this.outputLatestValues(update)
 
 		// let $node = $html_0.make()
-		let rootNode = this.outputRootHTML()
+		let {node: rootNode, output: outputHTML} = this.outputRootHTML()
 
 		// let $node_1 = $node.firstChild
 		// Must after others.
@@ -128,7 +134,10 @@ export class TreeOutputHandler {
 			kind: ts.SyntaxKind.MultiLineCommentTrivia,
 		}])
 
-		scope.addStatements(templateNode)
+		return () => {
+			outputHTML()
+			scope.addStatements(templateNode)
+		}
 	}
 
 	private outputSlots(slots: SlotParserBase[]) {
@@ -254,16 +263,16 @@ export class TreeOutputHandler {
 		)
 	}
 
-	private outputRootHTML(): OutputNodes {
+	private outputRootHTML(): {node: OutputNodes, output: () => void} {
 
 		// $html_0
-		let htmlName = HTMLOutputHandler.output(this.parser, this.wrappedBySVG)
+		let {name: htmlName, output} = HTMLOutputHandler.prepareOutput(this.parser, this.wrappedBySVG, this.htmlName)
 
 		// $node
 		let rootNodeName = VariableNames.node
 
 		// $node = $html_0.make()
-		return factory.createVariableStatement(
+		let node = factory.createVariableStatement(
 			undefined,
 			factory.createVariableDeclarationList(
 				[factory.createVariableDeclaration(
@@ -282,6 +291,11 @@ export class TreeOutputHandler {
 				ts.NodeFlags.Let
 			)
 		)
+
+		return {
+			node,
+			output,
+		}
 	}
 
 	private outputHTMLReferences(): OutputNodeList {

@@ -40,18 +40,18 @@ const $html_0 = new HTMLMaker("<div><slot name=\"slotName\"></slot></div>");
         parts: [[$slot_0, 2]]
     };
 });
-const $html_1 = new HTMLMaker("Content");
+const $html_2 = new HTMLMaker("Content");
 /*
 <root>Content</root>
 */ const $template_2 = new TemplateMaker(function () {
-    let $node = $html_1.make();
+    let $node = $html_2.make();
     let $node_0 = $node.content.firstChild;
     return {
         el: $node,
         position: new SlotPosition(1, $node_0)
     };
 });
-const $html_2 = new HTMLMaker("<div><slot></slot></div>");
+const $html_3 = new HTMLMaker("<div><slot></slot></div>");
 /*
 <root>
     <div>
@@ -59,7 +59,7 @@ const $html_2 = new HTMLMaker("<div><slot></slot></div>");
     </div>
 </root>
 */ const $template_3 = new TemplateMaker(function ($context) {
-    let $node = $html_2.make();
+    let $node = $html_3.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node_0.firstChild;
     $node_1.append(...$context.__getRestSlotNodes());

@@ -50,7 +50,10 @@ class TestTernaryConditionalOperator extends Component {
             ? (trackGet(this.prop2, "value"), this.prop2.value) : '');
     }
     byParenthesizedProp() {
+        let $ref_0;
+        $ref_0 = this.prop1 ? this.prop1 : (trackGet(this, "prop2"), this.prop2);
+        trackGet($ref_0, "value");
         trackGet(this, "prop1");
-        return (this.prop1 ? this.prop1 : (trackGet(this, "prop2"), this.prop2)).value;
+        return $ref_0.value;
     }
 }
