@@ -62,7 +62,9 @@ const $html_1 = new HTMLMaker("<!----><!---->");
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
     let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context, 1);
-    let $block_0 = new ForBlock((n) => new CompiledTemplateResult($template_2, [n + $context.prop]), $slot_0);
+    let $block_0 = new ForBlock((n) => new CompiledTemplateResult($template_2, [
+        n + $context.prop
+    ]), $slot_0);
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),
@@ -97,7 +99,9 @@ const $html_1 = new HTMLMaker("<!----><!---->");
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
     let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context, 1);
-    let $block_0 = new ForBlock((n) => new CompiledTemplateResult($template_4, [n + $latestValues[0]]), $slot_0);
+    let $block_0 = new ForBlock((n) => new CompiledTemplateResult($template_4, [
+        n + $latestValues[0]
+    ]), $slot_0);
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),
@@ -112,7 +116,9 @@ class TestFor extends Component {
     prop = 1;
     renderItem(n) {
         trackGet(this, "prop");
-        return new CompiledTemplateResult($template_0, [n + this.prop]);
+        return new CompiledTemplateResult($template_0, [
+            n + this.prop
+        ]);
     }
     testForMapFn() {
         return new CompiledTemplateResult($template_1, []);
@@ -123,6 +129,8 @@ class TestFor extends Component {
     testForLocalVariableTransferring() {
         let prop = this.prop;
         trackGet(this, "prop");
-        return new CompiledTemplateResult($template_5, [prop]);
+        return new CompiledTemplateResult($template_5, [
+            prop
+        ]);
     }
 }

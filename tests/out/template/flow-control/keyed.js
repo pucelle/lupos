@@ -35,6 +35,9 @@ class TestKeyed extends Component {
     key = 1;
     testKeyed() {
         trackGet(this, "key");
-        return new CompiledTemplateResult($template_0, [this.key, new CompiledTemplateResult($template_1, [])]);
+        return new CompiledTemplateResult($template_0, [
+            this.key,
+            new CompiledTemplateResult($template_1, [])
+        ]);
     }
 }

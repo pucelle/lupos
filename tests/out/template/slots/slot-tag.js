@@ -71,10 +71,14 @@ const $html_3 = new HTMLMaker("<div><slot></slot></div>");
 class TestComponent extends Component {
     prop = 1;
     testNamedSlot() {
-        return new CompiledTemplateResult($template_0, [this.__getSlotElement("slotName")]);
+        return new CompiledTemplateResult($template_0, [
+            this.__getSlotElement("slotName")
+        ]);
     }
     testNamedSlotWithContent() {
-        return new CompiledTemplateResult($template_1, [this.__getSlotElement("slotName") ?? new CompiledTemplateResult($template_2, [])]);
+        return new CompiledTemplateResult($template_1, [
+            this.__getSlotElement("slotName") ?? new CompiledTemplateResult($template_2, [])
+        ]);
     }
     testRestSlot() {
         return new CompiledTemplateResult($template_3, []);

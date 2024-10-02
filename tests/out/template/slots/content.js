@@ -144,7 +144,9 @@ class TestContent extends Component {
     }
     testMixedContent() {
         trackGet(this, "booleanProp");
-        return new CompiledTemplateResult($template_5, [this.booleanProp ? '1' : new CompiledTemplateResult($template_4, [])]);
+        return new CompiledTemplateResult($template_5, [
+            this.booleanProp ? '1' : new CompiledTemplateResult($template_4, [])
+        ]);
     }
     testMultipleContents() {
         return new CompiledTemplateResult($template_7, []);

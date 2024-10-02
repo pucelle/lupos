@@ -62,14 +62,20 @@ class TestAttribute extends Component {
     nullableClassName;
     testInterpolatedString() {
         trackGet(this, "className");
-        return new CompiledTemplateResult($template_0, [this.className]);
+        return new CompiledTemplateResult($template_0, [
+            this.className
+        ]);
     }
     testString() {
         trackGet(this, "className");
-        return new CompiledTemplateResult($template_1, [this.className]);
+        return new CompiledTemplateResult($template_1, [
+            this.className
+        ]);
     }
     testNullableAttr() {
         trackGet(this, "nullableClassName");
-        return new CompiledTemplateResult($template_2, [this.nullableClassName]);
+        return new CompiledTemplateResult($template_2, [
+            this.nullableClassName
+        ]);
     }
 }

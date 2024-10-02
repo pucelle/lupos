@@ -135,14 +135,20 @@ class TestAwait extends Component {
     promise = Promise.resolve();
     testAwaitThen() {
         trackGet(this, "promise");
-        return new CompiledTemplateResult($template_0, [this.promise]);
+        return new CompiledTemplateResult($template_0, [
+            this.promise
+        ]);
     }
     testAwaitCatch() {
         trackGet(this, "promise");
-        return new CompiledTemplateResult($template_3, [this.promise]);
+        return new CompiledTemplateResult($template_3, [
+            this.promise
+        ]);
     }
     testAwaitThenCatch() {
         trackGet(this, "promise");
-        return new CompiledTemplateResult($template_6, [this.promise]);
+        return new CompiledTemplateResult($template_6, [
+            this.promise
+        ]);
     }
 }

@@ -44,7 +44,9 @@ class TestDynamicComponent extends Component {
     // }
     testDynamicProp() {
         trackGet(this, "prop");
-        return new CompiledTemplateResult($template_0, [this.prop]);
+        return new CompiledTemplateResult($template_0, [
+            this.prop
+        ]);
     }
 }
 class ChildComponent extends Component {

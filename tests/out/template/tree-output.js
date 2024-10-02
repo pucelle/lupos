@@ -73,7 +73,9 @@ class TestTemplateOutput extends Component {
         return new CompiledTemplateResult($template_1, []);
     }
     testSVGContentSeparating() {
-        return new CompiledTemplateResult($template_2, [this.__getSlotElement("slotName") ?? new CompiledTemplateResult($template_3, [])]);
+        return new CompiledTemplateResult($template_2, [
+            this.__getSlotElement("slotName") ?? new CompiledTemplateResult($template_3, [])
+        ]);
     }
     testLocalReference() {
         /*

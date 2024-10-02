@@ -180,11 +180,15 @@ class TestEvent extends Component {
     }
     testUnionedDynamicComponentEvent() {
         trackGet(this, "UnionedCom");
-        return new CompiledTemplateResult($template_2, [this.UnionedCom]);
+        return new CompiledTemplateResult($template_2, [
+            this.UnionedCom
+        ]);
     }
     testConstructedDynamicComponentEvent() {
         trackGet(this, "ConstructedCom");
-        return new CompiledTemplateResult($template_3, [this.ConstructedCom]);
+        return new CompiledTemplateResult($template_3, [
+            this.ConstructedCom
+        ]);
     }
     testForceComponentEvent() {
         return new CompiledTemplateResult($template_4, []);
@@ -203,7 +207,9 @@ class TestEvent extends Component {
     }
     testDynamicEventHandler() {
         trackGet(this, "booleanValue");
-        return new CompiledTemplateResult($template_9, [this.booleanValue ? this.handleEvent : this.handleAnotherEvent]);
+        return new CompiledTemplateResult($template_9, [
+            this.booleanValue ? this.handleEvent : this.handleAnotherEvent
+        ]);
     }
 }
 class Com1 extends Component {

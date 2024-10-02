@@ -203,22 +203,34 @@ class TestIf extends Component {
     content = '';
     testIf() {
         trackGet(this, "prop");
-        return new CompiledTemplateResult($template_0, [this.prop ? new CompiledTemplateResult($template_1, []) : null]);
+        return new CompiledTemplateResult($template_0, [
+            this.prop ? new CompiledTemplateResult($template_1, []) : null
+        ]);
     }
     testIfCacheable() {
         trackGet(this, "prop");
-        return new CompiledTemplateResult($template_2, [this.prop ? new CompiledTemplateResult($template_3, []) : null]);
+        return new CompiledTemplateResult($template_2, [
+            this.prop ? new CompiledTemplateResult($template_3, []) : null
+        ]);
     }
     testDynamicIfContent() {
         trackGet(this, "prop", "content");
-        return new CompiledTemplateResult($template_4, [this.prop ? new CompiledTemplateResult($template_5, [this.content]) : null]);
+        return new CompiledTemplateResult($template_4, [
+            this.prop ? new CompiledTemplateResult($template_5, [
+                this.content
+            ]) : null
+        ]);
     }
     testIfElse() {
         trackGet(this, "prop");
-        return new CompiledTemplateResult($template_6, [this.prop ? new CompiledTemplateResult($template_7, []) : new CompiledTemplateResult($template_8, [])]);
+        return new CompiledTemplateResult($template_6, [
+            this.prop ? new CompiledTemplateResult($template_7, []) : new CompiledTemplateResult($template_8, [])
+        ]);
     }
     testIfElseIfElse() {
         trackGet(this, "prop");
-        return new CompiledTemplateResult($template_9, [this.prop ? new CompiledTemplateResult($template_10, []) : this.prop ? new CompiledTemplateResult($template_11, []) : this.prop ? new CompiledTemplateResult($template_12, []) : new CompiledTemplateResult($template_13, [])]);
+        return new CompiledTemplateResult($template_9, [
+            this.prop ? new CompiledTemplateResult($template_10, []) : this.prop ? new CompiledTemplateResult($template_11, []) : this.prop ? new CompiledTemplateResult($template_12, []) : new CompiledTemplateResult($template_13, [])
+        ]);
     }
 }

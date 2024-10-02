@@ -68,14 +68,18 @@ class TestComponent extends Component {
     prop = 1;
     testComponent() {
         trackGet(this, "prop");
-        return new CompiledTemplateResult($template_0, [this.prop]);
+        return new CompiledTemplateResult($template_0, [
+            this.prop
+        ]);
     }
     testRestSlotContent() {
         return new CompiledTemplateResult($template_1, []);
     }
     testRestSlotContentWithPrecedingTemplateSlot() {
         trackGet(this, "prop");
-        return new CompiledTemplateResult($template_2, [this.prop]);
+        return new CompiledTemplateResult($template_2, [
+            this.prop
+        ]);
     }
 }
 class ChildComponent extends Component {

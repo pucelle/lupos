@@ -154,7 +154,9 @@ class TestTemplateValues extends Component {
     }
     testMutable() {
         trackGet(this, "prop");
-        return new CompiledTemplateResult($template_1, [this.prop]);
+        return new CompiledTemplateResult($template_1, [
+            this.prop
+        ]);
     }
     testMutableOfReadonlyProp() {
         return new CompiledTemplateResult($template_2, []);
@@ -163,7 +165,9 @@ class TestTemplateValues extends Component {
         return new CompiledTemplateResult($template_3, []);
     }
     testMutableOfCallingMethod() {
-        return new CompiledTemplateResult($template_4, [this.getValue()]);
+        return new CompiledTemplateResult($template_4, [
+            this.getValue()
+        ]);
     }
     testMutableOfReferencingProperty() {
         return new CompiledTemplateResult($template_5, []);
@@ -173,10 +177,14 @@ class TestTemplateValues extends Component {
     }
     testBundlingStringAndValues() {
         trackGet(this, "prop");
-        return new CompiledTemplateResult($template_7, [this.prop]);
+        return new CompiledTemplateResult($template_7, [
+            this.prop
+        ]);
     }
     testMergingSameValues() {
         trackGet(this, "prop");
-        return new CompiledTemplateResult($template_8, [this.prop]);
+        return new CompiledTemplateResult($template_8, [
+            this.prop
+        ]);
     }
 }

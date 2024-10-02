@@ -218,35 +218,51 @@ class TestStyleBinding extends Component {
     numericValue = 1;
     testInterpolatedString() {
         trackGet(this, "styleValue");
-        return new CompiledTemplateResult($template_0, [this.styleValue]);
+        return new CompiledTemplateResult($template_0, [
+            this.styleValue
+        ]);
     }
     testString() {
         trackGet(this, "styleValue");
-        return new CompiledTemplateResult($template_1, [`color: ${this.styleValue}`]);
+        return new CompiledTemplateResult($template_1, [
+            `color: ${this.styleValue}`
+        ]);
     }
     testQuoted() {
         trackGet(this, "numericValue");
-        return new CompiledTemplateResult($template_2, [this.numericValue]);
+        return new CompiledTemplateResult($template_2, [
+            this.numericValue
+        ]);
     }
     testObject() {
         trackGet(this, "styleValue");
-        return new CompiledTemplateResult($template_3, [{ color: this.styleValue }]);
+        return new CompiledTemplateResult($template_3, [
+            { color: this.styleValue }
+        ]);
     }
     testModifier() {
         trackGet(this, "styleValue");
-        return new CompiledTemplateResult($template_4, [this.styleValue]);
+        return new CompiledTemplateResult($template_4, [
+            this.styleValue
+        ]);
     }
     testPxModifier() {
         trackGet(this, "numericValue");
-        return new CompiledTemplateResult($template_5, [this.numericValue]);
+        return new CompiledTemplateResult($template_5, [
+            this.numericValue
+        ]);
     }
     testPercentModifier() {
         trackGet(this, "numericValue");
-        return new CompiledTemplateResult($template_6, [this.numericValue]);
+        return new CompiledTemplateResult($template_6, [
+            this.numericValue
+        ]);
     }
     testURLModifier() {
         trackGet(this, "styleValue");
-        return new CompiledTemplateResult($template_7, [this.styleValue]);
+        return new CompiledTemplateResult($template_7, [
+            this.styleValue
+        ]);
     }
 }
 class TestStaticStyleBinding extends Component {

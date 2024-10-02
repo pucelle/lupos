@@ -84,13 +84,19 @@ class TestText extends Component {
     }
     testStringProp() {
         trackGet(this, "stringProp");
-        return new CompiledTemplateResult($template_1, [this.stringProp]);
+        return new CompiledTemplateResult($template_1, [
+            this.stringProp
+        ]);
     }
     testStringMethod() {
-        return new CompiledTemplateResult($template_2, [this.getStringProp()]);
+        return new CompiledTemplateResult($template_2, [
+            this.getStringProp()
+        ]);
     }
     testNumericProp() {
         trackGet(this, "numericProp");
-        return new CompiledTemplateResult($template_3, [this.numericProp]);
+        return new CompiledTemplateResult($template_3, [
+            this.numericProp
+        ]);
     }
 }

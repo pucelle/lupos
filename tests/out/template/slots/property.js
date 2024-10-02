@@ -101,11 +101,15 @@ class TestProperty extends Component {
     }
     testUnionedDynamicComponentProperty() {
         trackGet(this, "UnionedCom");
-        return new CompiledTemplateResult($template_1, [this.UnionedCom]);
+        return new CompiledTemplateResult($template_1, [
+            this.UnionedCom
+        ]);
     }
     testConstructedDynamicComponentProperty() {
         trackGet(this, "ConstructedCom");
-        return new CompiledTemplateResult($template_2, [this.ConstructedCom]);
+        return new CompiledTemplateResult($template_2, [
+            this.ConstructedCom
+        ]);
     }
     testForceComponentProperty() {
         return new CompiledTemplateResult($template_3, []);

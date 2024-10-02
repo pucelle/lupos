@@ -191,27 +191,39 @@ class TestClassBinding extends Component {
     booleanValue = true;
     testInterpolatedString() {
         trackGet(this, "className");
-        return new CompiledTemplateResult($template_0, [this.className]);
+        return new CompiledTemplateResult($template_0, [
+            this.className
+        ]);
     }
     testString() {
         trackGet(this, "className");
-        return new CompiledTemplateResult($template_1, [this.className]);
+        return new CompiledTemplateResult($template_1, [
+            this.className
+        ]);
     }
     testQuoted() {
         trackGet(this, "booleanValue");
-        return new CompiledTemplateResult($template_2, [this.booleanValue]);
+        return new CompiledTemplateResult($template_2, [
+            this.booleanValue
+        ]);
     }
     testList() {
         trackGet(this, "className");
-        return new CompiledTemplateResult($template_3, [[this.className]]);
+        return new CompiledTemplateResult($template_3, [
+            [this.className]
+        ]);
     }
     testObject() {
         trackGet(this, "booleanValue");
-        return new CompiledTemplateResult($template_4, [{ 'className': this.booleanValue }]);
+        return new CompiledTemplateResult($template_4, [
+            { 'className': this.booleanValue }
+        ]);
     }
     testModifier() {
         trackGet(this, "booleanValue");
-        return new CompiledTemplateResult($template_5, [this.booleanValue]);
+        return new CompiledTemplateResult($template_5, [
+            this.booleanValue
+        ]);
     }
 }
 class TestStaticClassBinding extends Component {

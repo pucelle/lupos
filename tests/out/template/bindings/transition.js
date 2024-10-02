@@ -40,7 +40,9 @@ class TestTransitionBinding extends Component {
     duration = 300;
     testTransition() {
         trackGet(this, "duration");
-        return new CompiledTemplateResult($template_0, [fade({ duration: this.duration })]);
+        return new CompiledTemplateResult($template_0, [
+            fade({ duration: this.duration })
+        ]);
     }
     testStaticTransition() {
         return new CompiledTemplateResult($template_1, []);

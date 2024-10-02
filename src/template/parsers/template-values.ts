@@ -217,7 +217,7 @@ export class TemplateValues {
 	output(): TS.ArrayLiteralExpression {
 		return factory.createArrayLiteralExpression(
 			this.outputNodes,
-			false
+			true
 		)  
 	}
 }
