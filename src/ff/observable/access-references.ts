@@ -29,11 +29,17 @@ export namespace AccessReferences {
 	 */
 	const visitedNodes: Set<TS.Node> = new Set()
 
-	/** If access as `a.b`, and later assign `a`, then node `a` of `a.b` become mutable. */
-	const mutableIndices: Set<number> = new Set()
+	/** 
+	 * If access as `a.b`, and later assign `a`, then node `a` of `a.b` become mutable.
+	 * Mutable visiting index -> Assignment visiting index.
+	 */
+	const mutableIndices: Map<number, number> = new Map()
 
 	/** Indices where access nodes have been referenced. */
 	const referencedAccessIndices: Set<number> = new Set()
+
+	/** Node visiting indices that have tested reference. */
+	const referencedTested: Set<number> = new Set()
 
 
 	/** Initialize after enter a new source file. */
@@ -42,6 +48,7 @@ export namespace AccessReferences {
 		visitedNodes.clear()
 		mutableIndices.clear()
 		referencedAccessIndices.clear()
+		referencedTested.clear()
 	}
 
 
@@ -84,7 +91,7 @@ export namespace AccessReferences {
 
 		// `a?.b` has been replaced to `a.b`
 		if (Helper.access.isAccess(node) || Helper.variable.isVariableIdentifier(node)) {
-			let hashName = ScopeTree.hashNode(node).name
+			let hashName = ScopeTree.hashNode(node, true).name
 			referenceMap.add(hashName, topIndex)
 		}
 
@@ -99,12 +106,14 @@ export namespace AccessReferences {
 	 */
 	export function visitAssignment(node: TS.Expression) {
 		if (Helper.access.isAccess(node) || Helper.variable.isVariableIdentifier(node)) {
-			let hashName = ScopeTree.hashNode(node).name
-			let indices = referenceMap.get(hashName)
+			let mutableIndex = VisitTree.getIndex(node)
+			let hashName = ScopeTree.hashNode(node, true).name
+			let refIndices = referenceMap.get(hashName)
 			
-			if (indices) {
-				for (let index of indices) {
-					mutableIndices.add(index)
+			// For all the existing references before current assignment.
+			if (refIndices) {
+				for (let refIndex of refIndices) {
+					mutableIndices.set(refIndex, mutableIndex)
 				}
 			}
 		}
@@ -112,29 +121,30 @@ export namespace AccessReferences {
 
 
 	/** Visit an assess node, reference after determined should reference. */
-	export function mayReferenceAccess(index: number, context: Context) {
-		if (referencedAccessIndices.has(index)) {
-			return
-		}
-
+	export function mayReferenceAccess(index: number, toIndex: number, context: Context) {
 		let node = VisitTree.getNode(index)
 		if (!Helper.access.isAccess(node)) {
 			return
 		}
-		
+
+		// Avoid after tested, move to outer and test again.
+		if (referencedTested.has(index)) {
+			return
+		}
+
 		let expIndex = VisitTree.getIndex(node.expression)!
 		let nameNode = Helper.access.getNameNode(node)
 		let nameIndex = VisitTree.getIndex(nameNode)
 		let referenced = false
 
 		// Use a reference variable to replace expression.
-		if (shouldReference(node.expression) || mutableIndices.has(expIndex)) {
+		if (shouldReference(expIndex, toIndex)) {
 			reference(expIndex, context)
 			referenced = true
 		}
 
 		// Use a reference variable to replace name.
-		if (shouldReference(nameNode) || mutableIndices.has(nameIndex)) {
+		if (shouldReference(nameIndex, toIndex)) {
 			reference(nameIndex, context)
 			referenced = true
 		}
@@ -142,15 +152,40 @@ export namespace AccessReferences {
 		if (referenced) {
 			referencedAccessIndices.add(index)
 		}
+
+		referencedTested.add(index)
+	}
+
+
+	/** 
+	 * After an node visiting has been marked as mutable,
+	 * and before output it's tracking codes,
+	 * test whether it should output as mutable.
+	 */
+	function shouldReference(index: number, toIndex: number): boolean {
+		let node = VisitTree.getNode(index)
+		if (shouldReferenceComplex(node)) {
+			return true
+		}
+
+		if (!mutableIndices.has(index)) {
+			return false
+		}
+
+		// Mutable when output after assignment
+		let assignmentIndex = mutableIndices.get(index)!
+		console.log(Helper.getFullText(VisitTree.getNode(assignmentIndex)))
+		console.log(Helper.getFullText(VisitTree.getNode(toIndex)))
+		return VisitTree.isPrecedingOfInChildFirstOrder(assignmentIndex, toIndex)
 	}
 	
 
 	/** 
-	 * Whether be a complex expression, and should be reference.
+	 * Whether be a complex expression like binary, and should be referenced.
 	 * `a().b` -> `var $ref_; ...; $ref_ = a(); $ref_.b`
 	 * or `a[i++]` -> `var _ref; ... ; $ref_ = i++; a[_ref]`
 	 */
-	function shouldReference(node: TS.Expression): boolean {
+	function shouldReferenceComplex(node: TS.Node): boolean {
 
 		// `a && b`, `a || b`, `a ?? b`, `a + b`, `a, b`.
 		if (ts.isBinaryExpression(node)) {
@@ -164,12 +199,12 @@ export namespace AccessReferences {
 
 		// `(...)`
 		else if (ts.isParenthesizedExpression(node)) {
-			return shouldReference(node.expression)
+			return shouldReferenceComplex(node.expression)
 		}
 
 		// `(a as Observed<{b: number}>).b`
 		else if (ts.isAsExpression(node)) {
-			return shouldReference(node.expression)
+			return shouldReferenceComplex(node.expression)
 		}
 
 		// `a ? b : c`
@@ -215,7 +250,7 @@ export namespace AccessReferences {
 			varScope.addVariable(refName)
 
 			let refPosition = ContextTree.findClosestPositionToAddStatements(index, context)
-
+	
 			// insert `$ref_ = a.b()` to found position.
 			Modifier.addReferenceAssignment(index, refPosition.index, refName)
 

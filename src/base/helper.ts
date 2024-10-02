@@ -176,7 +176,6 @@ export namespace Helper {
 	}
 
 
-	
 	/** 
 	 * Make a property name node by property name string.
 	 * If name is numeric, it must `>=0`.
@@ -196,7 +195,6 @@ export namespace Helper {
 		}
 	}
 
-	
 	/** Make a numeric literal or expression by number. */
 	export function createNumeric(number: number): TS.PrefixUnaryExpression | TS.NumericLiteral {
 		if (number < 0) {
@@ -209,7 +207,6 @@ export namespace Helper {
 			return factory.createNumericLiteral(number)
 		}
 	}
-
 
 	/** Create an access node by expression and property name. */
 	export function createAccessNode(exp: TS.Expression, name: string | number): AccessNode {
@@ -536,6 +533,17 @@ export namespace Helper {
 				|| ts.isElementAccessExpression(node)
 		}
 
+		/** Test whether be `Map` or `Set`, or of `Array` type. */
+		export function isListStruct(rawNode: TS.Node) {
+			let type = Helper.types.getType(rawNode)
+			let typeNode = Helper.types.getTypeNode(rawNode)
+			let objName = typeNode ? Helper.types.getTypeNodeReferenceName(typeNode) : undefined
+
+			return objName === 'Map'
+				|| objName === 'Set'
+				|| Helper.types.isArrayType(type)
+		}
+	
 		/** get accessing name node. */
 		export function getNameNode(node: AccessNode): TS.Expression {
 			return ts.isPropertyAccessExpression(node)
@@ -1324,7 +1332,11 @@ export namespace Helper {
 			if (selfParameters) {
 				for (let i = 0; i < selfParameters.length; i++) {
 					let param = selfParameters[i]
-					selfMap.set(param.name.text, refed[i])
+
+					// May no this parameter inputted.
+					if (refed[i]) {
+						selfMap.set(param.name.text, refed[i])
+					}
 				}
 			}
 

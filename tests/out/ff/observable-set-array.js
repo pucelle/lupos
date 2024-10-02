@@ -34,3 +34,25 @@ class TestArrayBroadcastingObservedToEachFn extends Component {
         this.prop.forEach(function (v) { v.value += 1; trackSet(v, "value"); });
     }
 }
+class TestArrayElementsSet extends Component {
+    list = [];
+    toggleElementSet(item) {
+        if (this.list.includes(item)) {
+            this.list.splice(this.list.indexOf(item), 1);
+        }
+        else {
+            this.list.push(item);
+        }
+        trackSet(this.list, "");
+    }
+    elementAssignment(item) {
+        if (this.list.includes(item)) {
+            this.list.splice(this.list.indexOf(item), 1);
+            trackSet(this.list, "");
+        }
+        else {
+            this.list = [item];
+            trackSet(this, "list");
+        }
+    }
+}

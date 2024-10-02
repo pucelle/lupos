@@ -117,7 +117,7 @@ export class Context {
 		else if (Helper.access.isAccess(node)) {
 	
 			// `[].push`, `map.set`, `set.set`
-			if (ObservedChecker.isListStructWritingAccess(node)) {
+			if (ObservedChecker.isListStructWriteAccess(node)) {
 				this.mayAddSetTracking(node)
 			}
 

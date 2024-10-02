@@ -7,7 +7,6 @@ import {AccessReferences} from './access-references'
 import {Optimizer} from './optimizer'
 import {removeFromList} from '../../utils'
 import {ContextState} from './context-state'
-import {ObservedChecker} from './observed-checker'
 import {ContextCapturerOperator} from './context-capturer-operator'
 import {TrackingPatch} from './tracking-patch'
 
@@ -120,13 +119,12 @@ export class ContextCapturer {
 		}
 
 		// `a[0]` -> `trackGet(a, '')`
-		if (Helper.access.isAccess(node) && !exp) {
-			if (type === 'get' && ObservedChecker.isListStructReadingAccess(node)
-				|| type === 'set' && ObservedChecker.isListStructWritingAccess(node)
-			) {
-				item.expIndex = VisitTree.getIndex(node.expression)
-				item.keys = ['']
-			}
+		if (Helper.access.isAccess(node)
+			&& !exp
+			&& Helper.access.isListStruct(node.expression)
+		) {
+			item.expIndex = VisitTree.getIndex(node.expression)
+			item.keys = ['']
 		}
 
 		this.latestCaptured.items.push(item)
@@ -243,7 +241,7 @@ export class ContextCapturer {
 	/** Process current captured, step 1. */
 	private preProcessCaptured() {
 
-		// Child-first order is important, checking references step may
+		// Run in child-first order is important, checking references step may
 		// add more variables, and adjust captured.
 		this.checkAccessReferences()
 
@@ -264,7 +262,7 @@ export class ContextCapturer {
 	private checkAccessReferences() {
 		for (let item of this.captured) {
 			for (let {index} of item.items) {
-				AccessReferences.mayReferenceAccess(index, this.context)
+				AccessReferences.mayReferenceAccess(index, item.toIndex, this.context)
 			}
 		}
 	}

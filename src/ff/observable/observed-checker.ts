@@ -178,7 +178,7 @@ export namespace ObservedChecker {
 
 		// `a.b`
 		let callFrom = exp.expression
-		if (!isListStruct(callFrom)) {
+		if (!Helper.access.isListStruct(callFrom)) {
 			return false
 		}
 
@@ -295,7 +295,7 @@ export namespace ObservedChecker {
 		}
 
 		// `[]`, `Map`, `Set`.
-		if (isListStruct(rawNode.expression)) {
+		if (Helper.access.isListStruct(rawNode.expression)) {
 			return isObserved(rawNode.expression, true)
 		}
 
@@ -398,19 +398,8 @@ export namespace ObservedChecker {
 	}
 
 
-	/** Test whether be `Map` or `Set`, or of `Array` type. */
-	export function isListStruct(rawNode: TS.Node) {
-		let type = Helper.types.getType(rawNode)
-		let typeNode = Helper.types.getTypeNode(rawNode)
-		let objName = typeNode ? Helper.types.getTypeNodeReferenceName(typeNode) : undefined
-
-		return objName === 'Map'
-			|| objName === 'Set'
-			|| Helper.types.isArrayType(type)
-	}
-
 	/** Test whether calls reading process of `Map`, `Set`, `Array`. */
-	export function isListStructReadingAccess(rawNode: AccessNode): boolean {
+	export function isListStructReadAccess(rawNode: AccessNode): boolean {
 		let expType = Helper.types.getType(rawNode.expression)
 		let expTypeNode = Helper.types.getTypeNode(rawNode.expression)
 		let objName = expTypeNode ? Helper.types.getTypeNodeReferenceName(expTypeNode) : undefined
@@ -438,7 +427,7 @@ export namespace ObservedChecker {
 	}
 
 	/** Test whether calls `Map.set`, or `Set.set`. */
-	export function isListStructWritingAccess(rawNode: AccessNode) {
+	export function isListStructWriteAccess(rawNode: AccessNode) {
 		let expType = Helper.types.getType(rawNode.expression)
 		let expTypeNode = Helper.types.getTypeNode(rawNode.expression)
 		let objName = expTypeNode ? Helper.types.getTypeNodeReferenceName(expTypeNode) : undefined

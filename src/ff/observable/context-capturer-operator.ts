@@ -21,14 +21,14 @@ export class ContextCapturerOperator {
 			let ownMap: Map<string, number> = new Map()
 
 			// Only codes of the first item is always running.
-			for (let {index} of capturer.captured[0].items) {
+			for (let {index, type} of capturer.captured[0].items) {
 
 				// Has been referenced, ignore always.
 				if (AccessReferences.isDescendantAccessReferenced(index)) {
 					continue
 				}
 
-				let hashName = ScopeTree.hashIndex(index).name
+				let hashName = ScopeTree.hashIndex(index, true).name + '_of_capture_type_' + type
 				ownMap.set(hashName, index)
 			}
 
@@ -71,7 +71,7 @@ export class ContextCapturerOperator {
 			return
 		}
 
-		let residualIndices = toCapturer.operator.moveCapturedFrom(indices, this.capturer)
+		let residualIndices = toCapturer.operator.moveCapturedOutwardFrom(indices, this.capturer)
 		this.capturer.captured[0].items = residualIndices
 	}
 
@@ -80,11 +80,11 @@ export class ContextCapturerOperator {
 	 * `fromCapturer` locates where indices move from.
 	 * Returns residual indices that failed to move.
 	 */
-	moveCapturedFrom(items: CapturedItem[], fromCapturer: ContextCapturer): CapturedItem[] {
+	moveCapturedOutwardFrom(items: CapturedItem[], fromCapturer: ContextCapturer): CapturedItem[] {
 
 		// Locate which captured item should move indices to.
-		// Find the first item `toIndex` larger in child-first order..
-		let item = this.capturer.captured.find(item => {
+		// Find the first item `toIndex` larger in child-first order.
+		let group = this.capturer.captured.find(item => {
 			return VisitTree.isFollowingOfOrEqualInChildFirstOrder(item.toIndex, fromCapturer.context.visitIndex)
 		}) ?? this.capturer.latestCaptured
 
@@ -93,28 +93,31 @@ export class ContextCapturerOperator {
 		let scopesLeaved = ScopeTree.findWalkingOutwardLeaves(fromScope, toScope)
 		let residualItems: CapturedItem[] = []
 
-		for (let index of items) {
-			let node = VisitTree.getNode(index.index)
-			let hashed = ScopeTree.hashIndex(index.index)
-
-			// `a[i]`, and a is an array, ignore hash of `i`.
-			if (ts.isElementAccessExpression(node)
-				&& ts.isIdentifier(node.argumentExpression)
-				&& Helper.types.isArrayType(Helper.types.getType(node.expression))
-			) {
-				hashed = ScopeTree.hashNode(node.expression)
-			}
+		for (let item of items) {
+			let hashed = ScopeTree.hashIndex(item.index, true)
 
 			// Leave contexts contain any referenced variable.
 			if (hashed.usedScopes.some(i => scopesLeaved.includes(i))) {
-				residualItems.push(index)
+				residualItems.push(item)
 			}
 			else {
-				item.items.push(index)
+				group.items.push(item)
 			}
 		}
 
 		return residualItems
+	}
+
+	/** Move captured indices to an sibling capturer. */
+	moveCapturedBackwardTo(toCapturer: ContextCapturer) {
+		let indices = this.capturer.captured[0].items
+		if (indices.length === 0) {
+			return
+		}
+
+		let group = this.capturer.latestCaptured
+		toCapturer.captured[0].items.push(...group.items)
+		group.items = []
 	}
 
 	/** Eliminate repetitive captured with an outer hash. */
@@ -130,7 +133,7 @@ export class ContextCapturerOperator {
 					continue
 				}
 
-				let hashName = ScopeTree.hashIndex(index.index).name
+				let hashName = ScopeTree.hashIndex(index.index, true).name
 
 				if (ownHashes.has(hashName)) {
 					removeFromList(item.items, index)

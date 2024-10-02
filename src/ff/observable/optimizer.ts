@@ -40,8 +40,12 @@ export namespace Optimizer {
 		}
 
 		// This optimizing has low risk, loop codes may not run when have no looping.
-		if (context.type & ContextTypeMask.IterationConditionIncreasement) {
-			moveIterationConditionIncreasementOutward(context)
+		if (context.type & ContextTypeMask.IterationCondition
+			|| context.type & ContextTypeMask.IterationIncreasement
+			|| context.type & ContextTypeMask.IterationExpression
+		) {
+			moveIterationConditionIncreasementExpressionOutward(context)
+			moveIterationConditionIncreasementExpressionBackward(context)
 		}
 
 		// This optimizing has low risk, loop codes may not run when have no looping.
@@ -115,7 +119,7 @@ export namespace Optimizer {
 			return
 		}
 
-		context.capturer.operator.moveCapturedFrom(shared, contentChildren[0].capturer)
+		context.capturer.operator.moveCapturedOutwardFrom(shared, contentChildren[0].capturer)
 	}
 
 
@@ -134,8 +138,8 @@ export namespace Optimizer {
 	}
 
 
-	/** Move iteration condition or increasement tracking outward. */
-	function moveIterationConditionIncreasementOutward(context: Context) {
+	/** Move iteration condition or increasement or expression tracking outward. */
+	function moveIterationConditionIncreasementExpressionOutward(context: Context) {
 		if (!context.capturer.hasCaptured()) {
 			return
 		}
@@ -144,6 +148,20 @@ export namespace Optimizer {
 		let targetContext = context.parent!.parent!
 
 		context.capturer.operator.moveCapturedOutwardTo(targetContext.capturer)
+	}
+
+
+	/** Move iteration condition or increasement or expression tracking inward to iteration content. */
+	function moveIterationConditionIncreasementExpressionBackward(context: Context) {
+		if (!context.capturer.hasCaptured()) {
+			return
+		}
+
+		// parent of iteration.
+		let targetContext = context.parent!.children.find(c => c.type & ContextTypeMask.IterationContent)
+		if (targetContext) {
+			context.capturer.operator.moveCapturedBackwardTo(targetContext.capturer)
+		}
 	}
 
 

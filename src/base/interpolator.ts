@@ -161,6 +161,16 @@ export namespace Interpolator {
 				]
 			)
 		}
+		else if (ts.isBlock(node)) {
+			return factory.updateBlock(
+				node, 
+				[
+					...Helper.pack.toStatements(prependNodes),
+					...node.statements,
+					...Helper.pack.toStatements(appendNodes),
+				]
+			)
+		}
 		else {
 			throw new Error(`Don't know how to add child nodes for "${Helper.getFullText(node)}"!`)
 		}

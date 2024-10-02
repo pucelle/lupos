@@ -170,50 +170,64 @@ export namespace ScopeTree {
 	 * Get hash of raw node, which has a visit index.
 	 * Note hashing will transform `a?.b` -> `a.b`.
 	 */
-	export function hashNode(rawNode: TS.Node): HashItem {
+	export function hashNode(rawNode: TS.Node, mergeListStructKey: boolean = false): HashItem {
 		let index = VisitTree.getIndex(rawNode)
-		return hashIndex(index)
+		return hashIndex(index, mergeListStructKey)
 	}
 
 	/** 
 	 * Get hash of node at the specified visit index.
 	 * Note hashing will transform `a?.b` -> `a.b`.
+	 * If `mergeListStructKey` is true
 	 */
-	export function hashIndex(index: number): HashItem {
+	export function hashIndex(index: number, mergeListStructKey: boolean = false): HashItem {
 		if (HashMap.has(index)) {
 			return HashMap.get(index)!
 		}
 
-		let hashed = doHashingOfNode(VisitTree.getNode(index))
+		let hashed = doHashingOfNode(VisitTree.getNode(index), mergeListStructKey)
 		HashMap.set(index, hashed)
 
 		return hashed
 	}
 
 	/** Hash a node, normalize and add a unique suffix to all variable nodes. */
-	function doHashingOfNode<T extends TS.Node>(rawNode: T): HashItem {
+	function doHashingOfNode(rawNode: TS.Node, mergeListStructKey: boolean): HashItem {
 		let usedScopes: Scope[] = []
 		let usedIndices: number[] = []
+		let node = rawNode
 
-		let hashVisited = ts.visitNode(rawNode, (n: TS.Node) => {
+		// `a[0] -> a['']`
+		// `map.get -> map['']`
+		if (mergeListStructKey
+			&& Helper.access.isAccess(rawNode)
+			&& Helper.access.isListStruct(rawNode.expression)
+		) {
+			node = factory.createElementAccessExpression(rawNode.expression, factory.createStringLiteral(''))
+		}
+
+		let hashVisited = ts.visitNode(node, (n: TS.Node) => {
 			return hashNodeVisitor(n, usedScopes, usedIndices)
 		})!
 
-		rawNode = Helper.pack.normalize(hashVisited, true) as T
+		node = Helper.pack.normalize(hashVisited, true)
 
 		return {
-			name: Helper.getFullText(rawNode),
+			name: Helper.getFullText(node),
 			usedScopes,
 			usedIndices,
 		}
 	}
 
-	function hashNodeVisitor(rawNode: TS.Node, usedScopes: Scope[], usedIndices: number[]): TS.Node | undefined {
+	function hashNodeVisitor(node: TS.Node, usedScopes: Scope[], usedIndices: number[]): TS.Node | undefined {
+
+		// Not raw node.
+		if (!VisitTree.hasNode(node)) {}
 
 		// a -> a_123
-		if (Helper.variable.isVariableIdentifier(rawNode)) {
-			let {name, scope} = hashVariableName(rawNode)
-			let declNode = scope.getDeclarationByName(rawNode.text)
+		else if (Helper.variable.isVariableIdentifier(node)) {
+			let {name, scope} = hashVariableName(node)
+			let declNode = scope.getDeclarationByName(node.text)
 
 			addToList(usedScopes, scope)
 
@@ -225,19 +239,19 @@ export namespace ScopeTree {
 		}
 
 		// this -> this_123
-		else if (rawNode.kind === ts.SyntaxKind.ThisKeyword) {
-			let {name, scope} = hashVariableName(rawNode as TS.ThisExpression)
+		else if (node.kind === ts.SyntaxKind.ThisKeyword) {
+			let {name, scope} = hashVariableName(node as TS.ThisExpression)
 			addToList(usedScopes, scope)
 
 			return factory.createIdentifier(name)
 		}
 
 		// `a?.b` -> `a.b`
-		else if (rawNode.kind === ts.SyntaxKind.QuestionDotToken) {
+		else if (node.kind === ts.SyntaxKind.QuestionDotToken) {
 			return undefined
 		}
 
-		return ts.visitEachChild(rawNode, (n: TS.Node) => hashNodeVisitor(n, usedScopes, usedIndices), transformContext)
+		return ts.visitEachChild(node, (n: TS.Node) => hashNodeVisitor(n, usedScopes, usedIndices), transformContext)
 	}
 
 	/** 

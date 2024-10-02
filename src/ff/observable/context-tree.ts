@@ -39,17 +39,23 @@ export enum ContextTypeMask {
 	/** `for (let...)` */
 	IterationInitializer = 2 ** 7,
 
-	/** `while (...)`, `for (; ...; ...)` */
-	IterationConditionIncreasement = 2 ** 8,
+	/** `while (...)`, `for (; ...; )` */
+	IterationCondition = 2 ** 8,
+
+	/** `for (; ; ...)` */
+	IterationIncreasement = 2 ** 9,
+
+	/** `for (let xxx of ...)` */
+	IterationExpression = 2 ** 10,
 
 	/** 
 	 * `while () ...`, `for () ...`, May run for none, 1 time, multiple times.
 	 * Content itself can be a block, or a normal expression.
 	 */
-	IterationContent = 2 ** 9,
+	IterationContent = 2 ** 11,
 
 	/** `return`, `break`, `continue`, `yield `, `await`, and with content. */
-	FlowInterruption = 2 ** 10,
+	FlowInterruption = 2 ** 12,
 }
 
 /** Content and a visit index position. */
@@ -183,10 +189,11 @@ export namespace ContextTree {
 			if (node === parent.initializer) {
 				type |= ContextTypeMask.IterationInitializer
 			}
-			else if (node === parent.condition
-				|| node === parent.incrementor
-			) {
-				type |= ContextTypeMask.IterationConditionIncreasement
+			else if (node === parent.condition) {
+				type |= ContextTypeMask.IterationCondition
+			}
+			else if (node === parent.incrementor) {
+				type |= ContextTypeMask.IterationIncreasement
 			}
 			else if (node === parent.statement) {
 				type |= ContextTypeMask.IterationContent
@@ -201,7 +208,7 @@ export namespace ContextTree {
 				type |= ContextTypeMask.IterationInitializer
 			}
 			else if (node === parent.expression) {
-				type |= ContextTypeMask.IterationConditionIncreasement
+				type |= ContextTypeMask.IterationExpression
 			}
 			else if (node === parent.statement) {
 				type |= ContextTypeMask.IterationContent
@@ -213,7 +220,7 @@ export namespace ContextTree {
 			|| ts.isDoStatement(parent)
 		) {
 			if (node === parent.expression) {
-				type |= ContextTypeMask.IterationConditionIncreasement
+				type |= ContextTypeMask.IterationExpression
 			}
 			else if (node === parent.statement) {
 				type |= ContextTypeMask.IterationContent
@@ -340,9 +347,12 @@ export namespace ContextTree {
 			// To outer context.
 			if (node === context.node) {
 				
-				// Can't cross these types of node, end at the inner start of it.
+				// Can't across these types of node, end at the inner start of it.
 				if (context.type & ContextTypeMask.ConditionalContent
-					|| context.type & ContextTypeMask.IterationConditionIncreasement
+					|| context.type & (ContextTypeMask.IterationCondition
+						| ContextTypeMask.IterationIncreasement
+						| ContextTypeMask.IterationExpression
+					)
 					|| context.type & ContextTypeMask.IterationContent
 				) {
 					break

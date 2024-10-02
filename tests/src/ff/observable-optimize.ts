@@ -191,7 +191,7 @@ class TestOptimizing extends Component {
 	}
 
 	moveIterationIncreasementOutward() {
-		for (let i = 0; i < 1; i+=this.prop.value) {}
+		for (let i = 0; i < 1; i += this.prop.value) {}
 
 		return 0
 	}

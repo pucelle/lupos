@@ -47,3 +47,26 @@ class TestArrayBroadcastingObservedToEachFn extends Component {
 }
 
 
+class TestArrayElementsSet extends Component {
+
+	list: number[] = []
+
+	toggleElementSet(item: number) {
+		if (this.list.includes(item)) {
+			this.list.splice(this.list.indexOf(item), 1)
+		}
+		else {
+			this.list.push(item)
+		}
+	}
+
+	elementAssignment(item: number) {
+		if (this.list.includes(item)) {
+			this.list.splice(this.list.indexOf(item), 1)
+		}
+		else {
+			this.list = [item]
+		}
+	}
+}
+
