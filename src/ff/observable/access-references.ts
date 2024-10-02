@@ -174,8 +174,6 @@ export namespace AccessReferences {
 
 		// Mutable when output after assignment
 		let assignmentIndex = mutableIndices.get(index)!
-		console.log(Helper.getFullText(VisitTree.getNode(assignmentIndex)))
-		console.log(Helper.getFullText(VisitTree.getNode(toIndex)))
 		return VisitTree.isPrecedingOfInChildFirstOrder(assignmentIndex, toIndex)
 	}
 	

@@ -21,7 +21,7 @@ function parseCSSTemplate(node: TS.TaggedTemplateExpression, index: number) {
 	let parsed = minifyCSSString(parseStyleString(string))
 	let parts = TemplateSlotPlaceholder.parseTemplateStrings(parsed)!
 	let template = node.template
-	
+
 	Interpolator.replace(index, InterpolationContentType.Normal, () => {
 		let replaced: TS.TaggedTemplateExpression | null = null
 
@@ -239,6 +239,7 @@ function minifyCSSString(string: string) {
 			break
 		}
 
+		lastIndex = re.lastIndex
 		match = re.exec(string)
 	}
 
