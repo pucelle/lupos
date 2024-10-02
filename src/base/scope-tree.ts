@@ -385,7 +385,10 @@ export namespace ScopeTree {
 		if (Helper.symbol.isOfTypescriptLib(rawNode)) {}
 
 		// Variable or property accessing
-		else if (Helper.variable.isVariableIdentifier(rawNode) || Helper.access.isAccess(rawNode)) {
+		else if (Helper.variable.isVariableIdentifier(rawNode)
+			|| Helper.access.isAccess(rawNode)
+		) {
+
 			let declaredInTopmostScope = isDeclaredInTopmostScope(rawNode)
 			let declaredAsConst = isDeclaredAsConstLike(rawNode)
 
@@ -404,12 +407,11 @@ export namespace ScopeTree {
 				mutable |= MutableMask.CantTransfer
 			}
 		}
-		else {
-			ts.visitEachChild(rawNode, (node: TS.Node) => {
-				mutable |= testMutableVisitor(node, insideFunctionScope)
-				return node
-			}, transformContext)
-		}
+
+		ts.visitEachChild(rawNode, (node: TS.Node) => {
+			mutable |= testMutableVisitor(node, insideFunctionScope)
+			return node
+		}, transformContext)
 
 		return mutable
 	}

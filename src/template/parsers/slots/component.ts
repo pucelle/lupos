@@ -54,7 +54,7 @@ export class ComponentSlotParser extends SlotParserBase {
 				),
 				undefined,
 				[contentRange]
-			)			  
+			)  
 		}
 
 		return cleanList([

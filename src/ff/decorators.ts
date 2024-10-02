@@ -662,7 +662,7 @@ function compileWatchDecorator(decoName: string, methodDecl: TS.MethodDeclaratio
 				  	true
 				),
 				compareStatement
-			)			  
+			)  
 		}
 
 		// #compare_XXX() {...}

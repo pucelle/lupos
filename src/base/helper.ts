@@ -1712,7 +1712,10 @@ export namespace Helper {
 		 * `deeply` determines whether simplify all descendants.
 		 */
 		export function normalize(node: TS.Node, deeply: boolean): TS.Node {
-			if (ts.isAsExpression(node) || ts.isParenthesizedExpression(node)) {
+			if (ts.isAsExpression(node)
+				|| ts.isParenthesizedExpression(node)
+				|| ts.isNonNullExpression(node)
+			) {
 				return normalize(node.expression, deeply)
 			}
 
@@ -1804,7 +1807,7 @@ export namespace Helper {
 					thenNode,
 					factory.createToken(ts.SyntaxKind.ColonToken),
 					last
-				)				  
+				)  
 			}
 
 			return last

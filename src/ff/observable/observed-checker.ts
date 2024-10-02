@@ -251,6 +251,11 @@ export namespace ObservedChecker {
 			return isObserved(rawNode.expression, parental)
 		}
 
+		// `...!`
+		else if (ts.isNonNullExpression(rawNode)) {
+			return isObserved(rawNode.expression, parental)
+		}
+
 		// `(a as Observed<{b: number}>).b`
 		else if (ts.isAsExpression(rawNode)) {
 			let typeNode = rawNode.type

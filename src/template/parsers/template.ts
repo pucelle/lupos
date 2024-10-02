@@ -101,6 +101,6 @@ export class TemplateParser {
 				factory.createIdentifier(makerName),
 				valuesNodes
 			]
-		)	
+		)
 	}
 }

@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {factory, Helper, Modifier} from '../../../base'
+import {factory, Helper, Interpolator, Modifier} from '../../../base'
 import {FlowControlBase} from './base'
 import {TemplateParser} from '../template'
 import {SlotContentType} from '../../../enums'
@@ -116,7 +116,8 @@ export class IfFlowControl extends FlowControlBase {
 				return factory.createNull()
 			}
 			else {
-				return this.template.values.getRawValue(index)
+				let rawNode = this.template.values.getRawValue(index)
+				return Interpolator.outputNodeSelf(rawNode) as TS.Expression
 			}
 		})
 
