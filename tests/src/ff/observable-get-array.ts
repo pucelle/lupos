@@ -13,6 +13,14 @@ class TestArrayIndex extends Component {
 		let i = 0
 		return this.prop[i].value
 	}
+
+	getLast() {
+		if (this.prop.length > 0) {
+			return this.prop[this.prop.length - 1].value
+		}
+
+		return undefined
+	}
 }
 
 

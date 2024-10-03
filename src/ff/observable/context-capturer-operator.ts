@@ -24,7 +24,7 @@ export class ContextCapturerOperator {
 			for (let {index, type} of capturer.captured[0].items) {
 
 				// Has been referenced, ignore always.
-				if (AccessReferences.isDescendantAccessReferenced(index)) {
+				if (AccessReferences.isDescendantAccessReferenced(index, true)) {
 					continue
 				}
 
@@ -125,25 +125,25 @@ export class ContextCapturerOperator {
 		let ownHashes = new Set(hashSet)
 		let startChildIndex = 0
 
-		for (let item of this.capturer.captured) {
-			for (let index of [...item.items]) {
+		for (let group of this.capturer.captured) {
+			for (let item of [...group.items]) {
 
 				// Has been referenced, ignore always.
-				if (AccessReferences.isDescendantAccessReferenced(index.index)) {
+				if (AccessReferences.isDescendantAccessReferenced(item.index, true)) {
 					continue
 				}
 
-				let hashName = ScopeTree.hashIndex(index.index, true).name
+				let hashName = ScopeTree.hashIndex(item.index, true).name
 
 				if (ownHashes.has(hashName)) {
-					removeFromList(item.items, index)
+					removeFromList(group.items, item)
 				}
 				else {
 					ownHashes.add(hashName)
 				}
 
 				// Break by yield or await.
-				if ((item.flowInterruptedBy & FlowInterruptionTypeMask.YieldLike) > 0) {
+				if ((group.flowInterruptedBy & FlowInterruptionTypeMask.YieldLike) > 0) {
 					ownHashes.clear()
 				}
 			}
@@ -153,7 +153,7 @@ export class ContextCapturerOperator {
 			for (; startChildIndex < this.context.children.length; startChildIndex++) {
 				let child = this.context.children[startChildIndex]
 
-				if (!VisitTree.isPrecedingOfOrEqual(child.visitIndex, item.toIndex)) {
+				if (!VisitTree.isPrecedingOfOrEqual(child.visitIndex, group.toIndex)) {
 					break
 				}
 

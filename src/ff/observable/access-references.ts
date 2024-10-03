@@ -36,7 +36,7 @@ export namespace AccessReferences {
 	const mutableIndices: Map<number, number> = new Map()
 
 	/** Indices where access nodes have been referenced. */
-	const referencedAccessIndices: Set<number> = new Set()
+	const referencedIndices: Set<number> = new Set()
 
 	/** Node visiting indices that have tested reference. */
 	const referencedTested: Set<number> = new Set()
@@ -47,15 +47,24 @@ export namespace AccessReferences {
 		referenceMap.clear()
 		visitedNodes.clear()
 		mutableIndices.clear()
-		referencedAccessIndices.clear()
+		referencedIndices.clear()
 		referencedTested.clear()
 	}
 
 
 	/** Whether any descendant access node has been referenced. */
-	export function isDescendantAccessReferenced(index: number): boolean {
-		if (referencedAccessIndices.has(index)) {
+	export function isDescendantAccessReferenced(index: number, ignoreListStructKey: boolean): boolean {
+		if (referencedIndices.has(index)) {
 			return true
+		}
+
+		let node = VisitTree.getNode(index)
+
+		if (ignoreListStructKey
+			&& Helper.access.isAccess(node)
+			&& Helper.access.isListStruct(node.expression)
+		) {
+			return isDescendantAccessReferenced(VisitTree.getIndex(node.expression), false)
 		}
 
 		let childIndices = VisitTree.getChildIndices(index)
@@ -63,7 +72,7 @@ export namespace AccessReferences {
 			return false
 		}
 
-		return childIndices.some(i => isDescendantAccessReferenced(i))
+		return childIndices.some(i => isDescendantAccessReferenced(i, false))
 	}
 
 
@@ -135,22 +144,17 @@ export namespace AccessReferences {
 		let expIndex = VisitTree.getIndex(node.expression)!
 		let nameNode = Helper.access.getNameNode(node)
 		let nameIndex = VisitTree.getIndex(nameNode)
-		let referenced = false
 
 		// Use a reference variable to replace expression.
 		if (shouldReference(expIndex, toIndex)) {
 			reference(expIndex, context)
-			referenced = true
+			referencedIndices.add(expIndex)
 		}
 
 		// Use a reference variable to replace name.
 		if (shouldReference(nameIndex, toIndex)) {
 			reference(nameIndex, context)
-			referenced = true
-		}
-
-		if (referenced) {
-			referencedAccessIndices.add(index)
+			referencedIndices.add(nameIndex)
 		}
 
 		referencedTested.add(index)

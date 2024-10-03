@@ -15,6 +15,16 @@ class TestArrayIndex extends Component {
         trackGet(this.prop[i], "value");
         return this.prop[i].value;
     }
+    getLast() {
+        trackGet(this, "prop");
+        trackGet(this.prop, "");
+        if (this.prop.length > 0) {
+            let $ref_0 = this.prop.length - 1;
+            trackGet(this.prop[$ref_0], "value");
+            return this.prop[$ref_0].value;
+        }
+        return undefined;
+    }
 }
 class TestArrayTuple extends Component {
     prop = [1, 1];
