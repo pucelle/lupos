@@ -225,34 +225,44 @@ export namespace AccessReferences {
 	 * Reference a complex expression to become a reference variable.
 	 * 
 	 * e.g.:
-	 * 	   `a.b().c`-> `$ref_ = a.b(); ... $ref_`
-	 *     `a[b++]` -> `$ref_ = b++; ... a[$ref_]`
+	 * 	   `a.b().c`-> `$ref_0 = a.b(); ... $ref_`
+	 *     `a[b++]` -> `$ref_0 = b++; ... a[$ref_0]`
 	 */
 	function reference(index: number, context: Context) {
 		let varDeclListIndex = VisitTree.findOutwardMatch(index, context.visitIndex, ts.isVariableDeclaration)
-		let varScope = ScopeTree.findClosest(index)
+		let varScope = ScopeTree.findClosest(index).findClosestToAddStatements()
 		let refName = varScope.makeUniqueVariable('$ref_')
 
-		// Insert one variable declaration to existing declaration list: `var ... $ref_ = ...`
+		// Insert one variable declaration to existing declaration list: `var ... $ref_0 = ...`
 		if (varDeclListIndex !== undefined) {
 			
-			// insert `var $ref_ = a.b()` to found position.
+			// insert `var $ref_0 = a.b()` to found position.
 			Modifier.addVariableAssignmentToList(index, varDeclListIndex, refName)
 
-			// replace `a.b()` -> `$ref_`.
+			// replace `a.b()` -> `$ref_0`.
 			Interpolator.replace(index, InterpolationContentType.Reference, () => factory.createIdentifier(refName))
 		}
 
-		// Insert two: `var $ref_`, and `$ref_ = ...`
+		// Insert two: `var $ref_0`, and `$ref_0 = ...`
 		else {
-			varScope.addVariable(refName)
-
+			
 			let refPosition = ContextTree.findClosestPositionToAddStatements(index, context)
-	
-			// insert `$ref_ = a.b()` to found position.
-			Modifier.addReferenceAssignment(index, refPosition.index, refName)
+			let declAssignTogether = varScope.node === refPosition.context.node
 
-			// replace `a.b()` -> `$ref_`.
+			if (declAssignTogether) {
+
+				// insert `let $ref_0 = a.b()` to found position.
+				Modifier.addVariableAssignment(index, refPosition.index, refName)
+			}
+			else {
+				// let $ref_0 
+				varScope.addVariable(refName)
+				
+				// insert `$ref_0 = a.b()` to found position.
+				Modifier.addReferenceAssignment(index, refPosition.index, refName)
+			}
+
+			// replace `a.b()` -> `$ref_0`.
 			Interpolator.replace(index, InterpolationContentType.Reference, () => factory.createIdentifier(refName))
 		}
 	}

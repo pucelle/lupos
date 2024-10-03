@@ -142,7 +142,7 @@ export class Scope {
 	 * make it have no conflict with current scope, and ancestral scopes.
 	 */
 	makeUniqueVariable(prefix: string): string {
-		let scope = this.findClosestScopeToAddStatements()
+		let scope = this.findClosestToAddStatements()
 		let seed = 0
 		let name = prefix + seed++
 
@@ -155,21 +155,16 @@ export class Scope {
 		return name
 	}
 
-	/** 
-	 * Add a variable to scope.
-	 * If current scope can't add variables, choose parent scope.
-	 * Several variable declarations will be stacked to a variable statement.
-	 */
+	/** Add a variable to current scope. */
 	addVariable(name: string) {
-		let scope = this.findClosestScopeToAddStatements()
-		ScopeTree.addVariableToScope(scope, name)
+		ScopeTree.addVariableToScope(this, name)
 	}
 
 	/** 
 	 * Find an ancestral scope, and a child visit index,
 	 * which can insert variable before it.
 	 */
-	findClosestScopeToAddStatements(): Scope {
+	findClosestToAddStatements(): Scope {
 		let scope: Scope = this
 
 		while (!scope.canAddStatements()) {
@@ -180,14 +175,12 @@ export class Scope {
 	}
 	
 	/** 
-	 * Add statement to the beginning position of scope.
-	 * If current scope can't add statements, try parent scope.
+	 * Add statement to the beginning position of current scope.
+	 * If current scope can't add statements, will try parent scope.
 	 * Several variable declarations will be stacked to a variable statement.
 	 */
 	addStatements(...stats: TS.Statement[]) {
-		let scope = this.findClosestScopeToAddStatements()
-		let toIndex = scope.getIndexToAddStatements()
-
+		let toIndex = this.getIndexToAddStatements()
 		Interpolator.before(toIndex, InterpolationContentType.Declaration, () => stats)
 	}
 

@@ -136,7 +136,7 @@ export class TreeOutputHandler {
 
 		return () => {
 			outputHTML()
-			scope.addStatements(templateNode)
+			scope.findClosestToAddStatements().addStatements(templateNode)
 		}
 	}
 

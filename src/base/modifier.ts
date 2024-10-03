@@ -89,7 +89,7 @@ export namespace Modifier {
 	
 	/** 
 	 * Insert a variable assignment from a position to an existing variable list.
-	 * `a.b()` -> `var ..., $ref_ = a.b()`, and move it.
+	 * `a.b()` -> `let ..., $ref_ = a.b()`, and move it.
 	 */
 	export function addVariableAssignmentToList(fromIndex: number, toIndex: number, varName: string) {
 		Interpolator.before(toIndex, InterpolationContentType.Declaration, () => {
@@ -101,6 +101,27 @@ export namespace Modifier {
 				undefined,
 				undefined,
 				node
+			)
+		})
+	}
+
+	/** 
+	 * Insert a variable assignment from a position to an existing variable list.
+	 * `a.b()` -> let $ref_ = a.b()`, and move it.
+	 */
+	export function addVariableAssignment(fromIndex: number, toIndex: number, varName: string) {
+		Interpolator.before(toIndex, InterpolationContentType.Declaration, () => {
+			let node = Interpolator.outputChildren(fromIndex) as TS.Expression
+			node = Helper.pack.normalize(node, false) as TS.Expression
+			
+			return factory.createVariableDeclarationList(
+				[factory.createVariableDeclaration(
+					factory.createIdentifier(varName),
+					undefined,
+					undefined,
+					node
+				)],
+				ts.NodeFlags.Let
 			)
 		})
 	}
