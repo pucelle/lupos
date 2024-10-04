@@ -16,8 +16,8 @@ export class ForFlowControl extends FlowControlBase {
 	private fnValueIndex: number = -1
 
 	init() {
-		this.blockVariableName = this.tree.getUniqueBlockName()
-		this.slotVariableName = this.slot.getSlotName()
+		this.blockVariableName = this.tree.makeUniqueBlockName()
+		this.slotVariableName = this.slot.makeSlotName()
 
 		let ofValueIndex = this.getAttrValueIndex(this.node)
 		let fnValueIndex = this.getUniqueChildValueIndex(this.node)
@@ -52,7 +52,7 @@ export class ForFlowControl extends FlowControlBase {
 			null,
 			[this.fnValueIndex],
 			true
-		) as TS.FunctionExpression
+		).joint as TS.FunctionExpression
 		
 		let templateSlot = this.slot.outputTemplateSlot(SlotContentType.TemplateResultList)
 
@@ -78,7 +78,7 @@ export class ForFlowControl extends FlowControlBase {
 	}
 
 	outputUpdate() {
-		let ofNode = this.template.values.outputValue(null, [this.ofValueIndex])
+		let ofNode = this.template.values.outputValue(null, [this.ofValueIndex]).joint
 
 		// $block_0.update(data)
 		// may be data is static, will still update each time

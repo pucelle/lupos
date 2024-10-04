@@ -15,8 +15,8 @@ export class AwaitFlowControl extends FlowControlBase {
 	private promiseIndex: number = -1
 
 	init() {
-		this.blockVariableName = this.tree.getUniqueBlockName()
-		this.slotVariableName = this.slot.getSlotName()
+		this.blockVariableName = this.tree.makeUniqueBlockName()
+		this.slotVariableName = this.slot.makeSlotName()
 
 		let promiseIndex = this.getAttrValueIndex(this.node)
 		if (promiseIndex === null) {
@@ -41,7 +41,7 @@ export class AwaitFlowControl extends FlowControlBase {
 				// promise state get changed.
 				let tree = this.tree.separateChildrenAsSubTree(node)
 
-				let templateName = tree.getTemplateRefName()
+				let templateName = tree.makeTemplateRefName()
 				templateNames.push(templateName)
 			}
 		}
@@ -85,7 +85,7 @@ export class AwaitFlowControl extends FlowControlBase {
 
 	outputUpdate() {
 		// This promise may be static, will still update each time.
-		let promiseNode = this.template.values.outputValue(null, [this.promiseIndex])
+		let promiseNode = this.template.values.outputValue(null, [this.promiseIndex]).joint
 
 		// $block_0.update(promise, $values)
 		return factory.createCallExpression(

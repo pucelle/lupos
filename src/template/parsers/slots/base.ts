@@ -82,27 +82,21 @@ export abstract class SlotParserBase {
 	}
 
 	/** Returns whether current raw value node is mutable. */
-	protected isValueMutable(): boolean {
+	protected isAnyValueMutable(): boolean {
 		return this.valueIndices !== null
 			&& this.valueIndices.some(index => this.template.values.isIndexMutable(index))
 	}
 
 	/** Returns whether current value node can turn from mutable to static. */
-	protected isValueCanTurnStatic(): boolean {
+	protected isAllValueCanTurnStatic(): boolean {
 		return this.valueIndices !== null
 			&& this.valueIndices.every(index => this.template.values.isIndexCanTurnStatic(index))
 	}
 
 	/** Returns whether current value has been outputted as mutable. */
-	isValueOutputAsMutable(): boolean {
+	isAnyValueOutputAsMutable(): boolean {
 		return this.valueIndices !== null
 			&& this.valueIndices.some(index => this.template.values.isIndexOutputAsMutable(index))
-	}
-
-	/** Returns whether current value has been transferred to topmost scope. */
-	isValueTransferred(): boolean {
-		return this.valueIndices !== null
-			&& this.valueIndices.some(index => this.template.values.isIndexTransferred(index))
 	}
 
 	/** 
@@ -114,14 +108,39 @@ export abstract class SlotParserBase {
 		return this.valueIndices ? this.template.values.getRawValue(this.valueIndices[0]) : undefined
 	}
 
-	/** Get node variable name. */
-	protected getRefedNodeName(): string {
-		return this.tree.references.refAsName(this.node)
+	/** 
+	 * Make a unique slot name `$slot_0`.
+	 * Otherwise will add the slot name to `parts`.
+	 */
+	makeSlotName(): string {
+		let name = this.tree.makeUniqueSlotName()
+		this.tree.addPart(name, this.node)
+
+		return name
+	}	
+
+	/** Get a group of latest names. */
+	protected makeGroupOfLatestNames(): (string | null)[] {
+		let names = this.valueIndices!.map(valueIndex => {
+			if (this.template.values.isIndexMutable(valueIndex)) {
+				return this.tree.makeUniqueLatestName()
+			}
+			else {
+				return null
+			}
+		})
+
+		return names
 	}
 
 	/** Get whether node has been referenced. */
 	protected hasNodeRefed(): boolean {
 		return this.tree.references.hasRefed(this.node)
+	}
+
+	/** Get node variable name. */
+	protected getRefedNodeName(): string {
+		return this.tree.references.refAsName(this.node)
 	}
 
 	/** 
@@ -140,17 +159,6 @@ export abstract class SlotParserBase {
 	protected getRefedComponentName(): string {
 		return this.tree.getRefedComponentName(this.node)
 	}
-
-	/** 
-	 * Get a unique slot name `$slot_0`.
-	 * Otherwise will add the slot name to `parts`.
-	 */
-	getSlotName(): string {
-		let name = this.tree.getUniqueSlotName()
-		this.tree.addPart(name, this.node)
-
-		return name
-	}	
 
 	/** Create a variable assignment, either declare variable, or pre-declare and assign.  */
 	createVariableAssignment(name: string, exp: TS.Expression, preDeclare = this.onDynamicComponent): TS.Expression | TS.Statement {
@@ -183,22 +191,55 @@ export abstract class SlotParserBase {
 	 * Get value node, either `$values[0]`, or `"..."`.
 	 * Can only use it when outputting update.
 	 */
-	outputValue(forceStatic: boolean = false): TS.Expression {
+	outputValue(forceStatic: boolean = false): {
+		joint: TS.Expression,
+		valueNodes: TS.Expression[],
+	} {
 		return this.template.values.outputValue(this.strings, this.valueIndices, forceStatic)
 	}
 
-	/** Get value node, it will reduce string items in the tail. */
-	outputValueForComparing(forceStatic: boolean = false): TS.Expression {
-		let {strings, valueIndices} = this
+	/** `$latest_0 !== $values[0], ...` */
+	outputLatestComparison(latestVariableNames: (string | null)[], valueNodes: TS.Expression[]):  TS.Expression {
+		let exps: TS.Expression[] = []
 
-		if (valueIndices && valueIndices.length === 1) {
-			strings = null
-		}
-		else if (strings) {
-			strings = ['', ...strings.slice(1, -1), '']
+		for (let i = 0; i < latestVariableNames.length; i++) {
+			let name = latestVariableNames[i]
+			let valueNode = valueNodes[i]
+
+			if (!name) {
+				continue
+			}
+
+			exps.push(factory.createBinaryExpression(
+				factory.createIdentifier(name),
+				factory.createToken(ts.SyntaxKind.ExclamationEqualsEqualsToken),
+				valueNode
+			))
 		}
 
-		return this.template.values.outputValue(strings, valueIndices, forceStatic)
+		return Helper.pack.bundleBinaryExpressions(exps, ts.SyntaxKind.BarBarToken)
+	}
+
+	/** `$latest_0 = $values[0], ...` */
+	outputLatestAssignments(latestVariableNames: (string | null)[], valueNodes: TS.Expression[]):  TS.Statement[] {
+		let exps: TS.Expression[] = []
+
+		for (let i = 0; i < latestVariableNames.length; i++) {
+			let name = latestVariableNames[i]
+			let valueNode = valueNodes[i]
+
+			if (!name) {
+				continue
+			}
+
+			exps.push(factory.createBinaryExpression(
+				factory.createIdentifier(name),
+				factory.createToken(ts.SyntaxKind.EqualsToken),
+				valueNode
+			))
+		}
+
+		return Helper.pack.toStatements(exps)
 	}
 
 	/** Make `new TemplateSlot(...)`. */

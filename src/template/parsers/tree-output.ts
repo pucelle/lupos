@@ -74,7 +74,7 @@ export class TreeOutputHandler {
 		].flat())
 
 		// $template_0
-		let templateName = this.parser.getTemplateRefName()
+		let templateName = this.parser.makeTemplateRefName()
 
 		// TemplateInitResult
 		let initResult = this.outputTemplateInitResult(templatePosition, update, parts)
@@ -153,7 +153,7 @@ export class TreeOutputHandler {
 			let updateNodes = slot.outputUpdate()
 			
 
-			if (slot.isValueOutputAsMutable()) {
+			if (slot.isAnyValueOutputAsMutable()) {
 				update.push(updateNodes)
 			}
 			else {
@@ -195,7 +195,7 @@ export class TreeOutputHandler {
 
 				let attrUpdateNodes = attrSlot.outputUpdate()
 
-				if (attrSlot.isValueOutputAsMutable()) {
+				if (attrSlot.isAnyValueOutputAsMutable()) {
 					update.push(attrUpdateNodes)
 				}
 				else {
@@ -215,7 +215,7 @@ export class TreeOutputHandler {
 	private outputLatestValues(update: OutputNodeList) {
 
 		// Should output `$latest_values = $values`
-		if (this.template.values.isAnyMutableOrFunctionScopeIndexTransferred()) {
+		if (this.template.values.isAnyIndexTransferredWithinFunction()) {
 			update.unshift(factory.createBinaryExpression(
 				factory.createIdentifier(VariableNames.latestValues),
 				factory.createToken(ts.SyntaxKind.EqualsToken),
@@ -506,7 +506,7 @@ export class TreeOutputHandler {
 			))
 		}
 
-		if (this.template.values.isAnyIndexTransferred()) {
+		if (this.template.values.isAnyIndexTransferredWithinFunction()) {
 			params.push(factory.createParameterDeclaration(
 				undefined,
 				undefined,

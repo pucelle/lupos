@@ -5,11 +5,11 @@ import {factory, ts} from '../../../base'
 export class TextSlotParser extends SlotParserBase {
 
 	/** $latest_0 */
-	private latestVariableName: string | null = null
+	private latestVariableNames: (string | null)[] | null = null
 
 	init() {
-		if (this.isValueMutable()) {
-			this.latestVariableName = this.tree.getUniqueLatestName()
+		if (this.isAnyValueMutable()) {
+			this.latestVariableNames = this.makeGroupOfLatestNames()
 		}
 	}
 
@@ -22,13 +22,9 @@ export class TextSlotParser extends SlotParserBase {
 		// if ($latest_0 !== $values[0]) {
 		//   $node_0.data = $latest_0 = $values[0]
 		// }
-		if (this.latestVariableName) {
+		if (this.latestVariableNames) {
 			return factory.createIfStatement(
-				factory.createBinaryExpression(
-					factory.createIdentifier(this.latestVariableName),
-					factory.createToken(ts.SyntaxKind.ExclamationEqualsEqualsToken),
-					value
-				),
+				this.outputLatestComparison(this.latestVariableNames, value.valueNodes),
 				factory.createBlock(
 					[
 						factory.createExpressionStatement(factory.createBinaryExpression(
@@ -37,12 +33,9 @@ export class TextSlotParser extends SlotParserBase {
 								factory.createIdentifier('data')
 							),
 							factory.createToken(ts.SyntaxKind.EqualsToken),
-							factory.createBinaryExpression(
-								factory.createIdentifier(this.latestVariableName),
-								factory.createToken(ts.SyntaxKind.EqualsToken),
-								value
-							)
-						))
+							value.joint
+						)),
+						...this.outputLatestAssignments(this.latestVariableNames, value.valueNodes),
 					],
 					true
 				),
@@ -58,7 +51,7 @@ export class TextSlotParser extends SlotParserBase {
 					factory.createIdentifier('data')
 				),
 				factory.createToken(ts.SyntaxKind.EqualsToken),
-				value
+				value.joint
 			)
 		}
 	}

@@ -15,8 +15,8 @@ export class DynamicComponentSlotParser extends SlotParserBase {
 
 	init() {
 		this.refAsComponent()
-		this.blockVariableName = this.tree.getUniqueBlockName()
-		this.slotVariableName = this.getSlotName()
+		this.blockVariableName = this.tree.makeUniqueBlockName()
+		this.slotVariableName = this.makeSlotName()
 	}
 
 	/** Get node name and position parameters for outputting template slot. */
@@ -146,7 +146,7 @@ export class DynamicComponentSlotParser extends SlotParserBase {
 				factory.createIdentifier('update')
 			),
 			undefined,
-			[value]
+			[value.joint]
 		)
 	}
 }

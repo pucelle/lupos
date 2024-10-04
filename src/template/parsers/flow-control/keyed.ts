@@ -16,8 +16,8 @@ export class KeyedFlowControl extends FlowControlBase {
 	private valueIndex: number = 1
 
 	init() {
-		this.blockVariableName = this.tree.getUniqueBlockName()
-		this.slotVariableName = this.slot.getSlotName()
+		this.blockVariableName = this.tree.makeUniqueBlockName()
+		this.slotVariableName = this.slot.makeSlotName()
 
 		let valueIndex = this.getAttrValueIndex(this.node)
 		if (valueIndex === null) {
@@ -63,7 +63,7 @@ export class KeyedFlowControl extends FlowControlBase {
 	}
 
 	outputUpdate() {
-		let keyedValue = this.template.values.outputValue(null, [this.valueIndex])
+		let keyedValue = this.template.values.outputValue(null, [this.valueIndex]).joint
 		let resultValue = this.contentTemplate ? this.contentTemplate.outputReplaced() : null
 
 		// Add it as a value item to original template, and returned it's reference.

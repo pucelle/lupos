@@ -15,7 +15,7 @@ export class SlotTagSlotParser extends SlotParserBase {
 	private slotVariableName: string = ''
 
 	/** Named slot should be updated dynamically. */
-	isValueOutputAsMutable(): boolean {
+	isAnyValueOutputAsMutable(): boolean {
 		return !!this.name
 	}
 
@@ -28,7 +28,7 @@ export class SlotTagSlotParser extends SlotParserBase {
 
 		// $slot_0
 		if (this.name) {
-			this.slotVariableName = this.getSlotName()
+			this.slotVariableName = this.makeSlotName()
 		}
 	}
 

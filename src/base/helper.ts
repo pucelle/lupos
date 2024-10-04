@@ -1588,7 +1588,7 @@ export namespace Helper {
 				return exps[0]
 			}
 
-			let exp = joinBinaryExpressions(exps, ts.SyntaxKind.CommaToken)
+			let exp = bundleBinaryExpressions(exps, ts.SyntaxKind.CommaToken)
 			return factory.createParenthesizedExpression(exp)
 		}
 
@@ -1596,7 +1596,7 @@ export namespace Helper {
 		 * Bundle expressions to a single binary expression.
 		 * `a, b -> a && b`
 		 */
-		export function joinBinaryExpressions(exps: TS.Expression[], operator: TS.BinaryOperator): TS.Expression {
+		export function bundleBinaryExpressions(exps: TS.Expression[], operator: TS.BinaryOperator): TS.Expression {
 
 			// Only one expression, returns it.
 			if (exps.length === 1) {
@@ -1617,13 +1617,33 @@ export namespace Helper {
 		}
 
 		/** 
+		 * D expressions to a single binary expression.
+		 * `a, b, c -> [a, b, c]`
+		 */
+		export function unBundleCommaBinaryExpressions(exp: TS.Expression): TS.Expression[] {
+			if (ts.isBinaryExpression(exp)
+				&& exp.operatorToken.kind === ts.SyntaxKind.CommaToken
+			) {
+				return [
+					...unBundleCommaBinaryExpressions(exp.left),
+					...unBundleCommaBinaryExpressions(exp.right),
+				]
+			}
+			else {
+				return [exp]
+			}
+		}
+
+		/** 
 		 * For each level of nodes, extract final expressions from a parenthesized expression.
 		 * `(a, b, c)` -> `c`
 		 */
 		export function extractFinalParenthesized(node: TS.Node): TS.Node {
 			if (ts.isParenthesizedExpression(node)) {
 				let exp = node.expression
-				if (ts.isBinaryExpression(exp) && exp.operatorToken.kind === ts.SyntaxKind.CommaToken) {
+				if (ts.isBinaryExpression(exp)
+					&& exp.operatorToken.kind === ts.SyntaxKind.CommaToken
+				) {
 					return extractFinalParenthesized(exp.right)
 				}
 			}

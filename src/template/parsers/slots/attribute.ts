@@ -8,11 +8,11 @@ export class AttributeSlotParser extends SlotParserBase {
 	declare readonly name: string
 
 	/** $latest_0 */
-	private latestVariableName: string | null = null
+	private latestVariableNames: (string | null)[] | null = null
 
 	init() {
-		if (this.isValueMutable()) {
-			this.latestVariableName = this.tree.getUniqueLatestName()
+		if (this.isAnyValueMutable()) {
+			this.latestVariableNames = this.makeGroupOfLatestNames()
 		}
 	}
 
@@ -40,15 +40,12 @@ export class AttributeSlotParser extends SlotParserBase {
 		let value = this.outputValue()
 
 		// if ($latest_0 !== $values[0]) {
-		//   $node_0.setAttribute(attrName, $latest_0 = $values[0])
+		//   $node_0.setAttribute(attrName, $values[0])
+		//   $latest_0 = $values[0]
 		// }
-		if (this.latestVariableName) {
+		if (this.latestVariableNames) {
 			return factory.createIfStatement(
-				factory.createBinaryExpression(
-					factory.createIdentifier(this.latestVariableName),
-					factory.createToken(ts.SyntaxKind.ExclamationEqualsEqualsToken),
-					value
-				),
+				this.outputLatestComparison(this.latestVariableNames, value.valueNodes),
 				factory.createBlock(
 					[
 						factory.createExpressionStatement(factory.createCallExpression(
@@ -59,13 +56,10 @@ export class AttributeSlotParser extends SlotParserBase {
 							undefined,
 							[
 								factory.createStringLiteral(this.name),
-								factory.createBinaryExpression(
-									factory.createIdentifier(this.latestVariableName),
-									factory.createToken(ts.SyntaxKind.EqualsToken),
-									value
-								)
+								value.joint
 							]
-						))
+						)),
+						...this.outputLatestAssignments(this.latestVariableNames, value.valueNodes),
 					],
 					true
 				),
@@ -83,7 +77,7 @@ export class AttributeSlotParser extends SlotParserBase {
 				undefined,
 				[
 					factory.createStringLiteral(this.name),
-					value
+					value.joint
 				]
 			)
 		}
@@ -96,24 +90,19 @@ export class AttributeSlotParser extends SlotParserBase {
 
 		// $values[0]
 		let value = this.outputValue()
-		let compareValue = this.outputValueForComparing()
 
 		// if ($latest_0 === $values[0]) { 
 		// 	 $values[0] === null ? $node_0.removeAttribute(attrName) : $node_0.setAttribute(attrName, $values[0])
 		//	 $latest_0 = $values[0]
 		// }
-		if (this.latestVariableName) {
+		if (this.latestVariableNames) {
 			return factory.createIfStatement(
-				factory.createBinaryExpression(
-					factory.createIdentifier(this.latestVariableName),
-					factory.createToken(ts.SyntaxKind.EqualsEqualsEqualsToken),
-					compareValue
-				),
+				this.outputLatestComparison(this.latestVariableNames, value.valueNodes),
 				factory.createBlock(
 					[
 						factory.createExpressionStatement(factory.createConditionalExpression(
 							factory.createBinaryExpression(
-								value,
+								value.joint,
 								factory.createToken(ts.SyntaxKind.EqualsEqualsEqualsToken),
 								factory.createNull()
 							),
@@ -135,15 +124,11 @@ export class AttributeSlotParser extends SlotParserBase {
 								undefined,
 								[
 									factory.createStringLiteral(this.name),
-									value
+									value.joint
 								]
 							)
 						)),
-						factory.createExpressionStatement(factory.createBinaryExpression(
-							factory.createIdentifier(this.latestVariableName),
-							factory.createToken(ts.SyntaxKind.EqualsToken),
-							compareValue
-						))
+						...this.outputLatestAssignments(this.latestVariableNames, value.valueNodes),
 					],
 					true
 				)
@@ -154,7 +139,7 @@ export class AttributeSlotParser extends SlotParserBase {
 		else {
 			return factory.createConditionalExpression(
 				factory.createBinaryExpression(
-					value,
+					value.joint,
 					factory.createToken(ts.SyntaxKind.EqualsEqualsEqualsToken),
 					factory.createNull()
 				),
@@ -176,7 +161,7 @@ export class AttributeSlotParser extends SlotParserBase {
 					undefined,
 					[
 						factory.createStringLiteral(this.name),
-						value
+						value.joint
 					]
 				)
 			)

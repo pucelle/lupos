@@ -419,18 +419,18 @@ export class TreeParser {
 	
 
 	/** Return variable name to reference current template maker, like `$template_0`. */
-	getTemplateRefName(): string {
+	makeTemplateRefName(): string {
 		return VariableNames.buildName(VariableNames.template, this.index)
 	}
 
 	/** `$slot_0` */
-	getUniqueSlotName(): string {
+	makeUniqueSlotName(): string {
 		let name = VariableNames.getDoublyUniqueName(VariableNames.slot, this)
 		return name
 	}
 
 	/** `$binding_0` */
-	getUniqueBindingName(): string {
+	makeUniqueBindingName(): string {
 
 		// Only partial binding classes are parts.
 		let name = VariableNames.getDoublyUniqueName(VariableNames.binding, this)
@@ -438,19 +438,25 @@ export class TreeParser {
 		return this.latestBindingName = name
 	}
 
+	/** `$delegator_0` */
+	makeUniqueDelegatorName(): string {
+		let name = VariableNames.getDoublyUniqueName(VariableNames.delegator, this)
+		return name
+	}
+
 	/** `$binding_0` */
-	getLatestBindingName(): string | null {
+	makeLatestBindingName(): string | null {
 		return this.latestBindingName
 	}
 
 	/** `$block_0` */
-	getUniqueBlockName(): string {
+	makeUniqueBlockName(): string {
 		let name = VariableNames.getDoublyUniqueName(VariableNames.block, this)
 		return name
 	}
 
 	/** `$latest_0` */
-	getUniqueLatestName(): string {
+	makeUniqueLatestName(): string {
 		let name = VariableNames.getDoublyUniqueName(VariableNames.latest, this)
 		this.addPreDeclaredVariableName(name)
 		return name

@@ -12,6 +12,7 @@ export namespace VariableNames {
 	export const slot = '$slot'
 	export const com = '$com'
 	export const binding = '$binding'
+	export const delegator = '$delegator'
 	export const block = '$block'
 
 	const AreaIndexMap: Map<any, number> = new Map()

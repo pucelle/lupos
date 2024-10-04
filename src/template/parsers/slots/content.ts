@@ -1,5 +1,5 @@
 import {SlotParserBase} from './base'
-import {factory, Helper, ts} from '../../../base'
+import {factory, Helper} from '../../../base'
 import {SlotContentType} from '../../../enums'
 
 
@@ -12,13 +12,13 @@ export class ContentSlotParser extends SlotParserBase {
 	private slotVariableName: string = ''
 
 	/** $latest_0 */
-	private latestVariableName: string | null = null
+	private latestVariableNames: (string | null)[] | null = null
 
 	init() {
 		this.slotContentType = this.identifySlotContentType()
-		this.slotVariableName = this.getSlotName()
+		this.slotVariableName = this.makeSlotName()
 
-		if (this.isValueMutable()) {
+		if (this.isAnyValueMutable()) {
 
 			// Assume for `TemplateResult` or `TemplateResult[]`, it regenerates every time.
 			// And for node, slot itself will compare value.
@@ -26,7 +26,7 @@ export class ContentSlotParser extends SlotParserBase {
 				&& this.slotContentType !== SlotContentType.TemplateResultList
 				&& this.slotContentType !== SlotContentType.Node
 			) {
-				this.latestVariableName = this.tree.getUniqueLatestName()
+				this.latestVariableNames = this.makeGroupOfLatestNames()
 			}
 		}
 	}
@@ -69,14 +69,13 @@ export class ContentSlotParser extends SlotParserBase {
 		// $values[0]
 		let value = this.outputValue()
 
-		// $latest_0 !== $values[0] && $slot_0.update($latest_0 = $values[0])
-		if (this.latestVariableName) {
+		// if ($latest_0 !== $values[0]) {
+		//   $slot_0.update($values[0])
+		//   $latest_0 = $values[0]
+		// }
+		if (this.latestVariableNames) {
 			return factory.createIfStatement(
-				factory.createBinaryExpression(
-					factory.createIdentifier(this.latestVariableName),
-					factory.createToken(ts.SyntaxKind.ExclamationEqualsEqualsToken),
-					value
-				),
+				this.outputLatestComparison(this.latestVariableNames, value.valueNodes),
 				factory.createBlock(
 					[
 						factory.createExpressionStatement(factory.createCallExpression(
@@ -86,13 +85,10 @@ export class ContentSlotParser extends SlotParserBase {
 							),
 							undefined,
 							[
-								factory.createBinaryExpression(
-									factory.createIdentifier(this.latestVariableName),
-									factory.createToken(ts.SyntaxKind.EqualsToken),
-									value
-								)
+								value.joint
 							]
 						)),
+						...this.outputLatestAssignments(this.latestVariableNames, value.valueNodes),
 					],
 					true
 				),
@@ -108,7 +104,7 @@ export class ContentSlotParser extends SlotParserBase {
 					factory.createIdentifier('update')
 				),
 				undefined,
-				[value]
+				[value.joint]
 			)
 		}
 	}

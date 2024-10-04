@@ -8,7 +8,7 @@ export class FlowControlSlotParser extends SlotParserBase {
 	private control: FlowControlBase | null = null
 
 	/** Flow control should always be updated dynamically. */
-	isValueOutputAsMutable(): boolean {
+	isAnyValueOutputAsMutable(): boolean {
 		return true
 	}
 

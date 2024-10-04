@@ -423,7 +423,7 @@ class MethodOverwrite {
 
 	private addToNew(statements: TS.Statement[], position: InsertPosition) {
 		let method = this.newNode!
-		let newStatements = [...method.body!.statements] || []
+		let newStatements = [...method.body!.statements]
 
 		if (position === 'end') {
 			newStatements.push(...statements)

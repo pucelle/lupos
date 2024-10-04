@@ -109,7 +109,7 @@ export class TemplateParser {
 	 */
 	outputReplaced(): TS.Expression {
 		let mainTreeParser = this.treeParsers[0]
-		let makerName = mainTreeParser.getTemplateRefName()
+		let makerName = mainTreeParser.makeTemplateRefName()
 		let valuesNodes = this.values.output()
 
 		return factory.createNewExpression(

@@ -19,8 +19,8 @@ export class SwitchFlowControl extends FlowControlBase {
 	private contentTemplates: (TemplateParser | null)[] = []
 
 	init() {
-		this.blockVariableName = this.tree.getUniqueBlockName()
-		this.slotVariableName = this.slot.getSlotName()
+		this.blockVariableName = this.tree.makeUniqueBlockName()
+		this.slotVariableName = this.slot.makeSlotName()
 		this.cacheable = this.hasAttrValue(this.node, 'cache')
 
 		let switchValueIndex = this.getAttrValueIndex(this.node)

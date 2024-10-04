@@ -12,7 +12,7 @@ export class PropertySlotParser extends SlotParserBase {
 	private forceComponentTargetType: boolean = false
 
 	/** $latest_0 */
-	private latestVariableName: string | null = null
+	private latestVariableNames: (string | null)[] | null = null
 
 	/** Indicates whether attach to target component or element. */
 	private targetType: 'component' | 'element' = 'element'
@@ -23,8 +23,8 @@ export class PropertySlotParser extends SlotParserBase {
 			this.forceComponentTargetType = TemplateSlotPlaceholder.isComponent(this.node.tagName!)
 		}
 
-		if (this.isValueMutable()) {
-			this.latestVariableName = this.tree.getUniqueLatestName()
+		if (this.isAnyValueMutable()) {
+			this.latestVariableNames = this.makeGroupOfLatestNames()
 		}
 
 		this.targetType = this.checkTargetType()
@@ -67,7 +67,7 @@ export class PropertySlotParser extends SlotParserBase {
 		let target: TS.Identifier
 
 		// trackSet
-		if (this.targetType === 'component' && this.latestVariableName) {
+		if (this.targetType === 'component' && this.latestVariableNames) {
 			Modifier.addImport('trackSet', '@pucelle/ff')
 		}
 
@@ -85,7 +85,7 @@ export class PropertySlotParser extends SlotParserBase {
 		let value = this.outputValue()
 
 		// trackSet($com_0, property)
-		let setTracking = this.targetType === 'component' && this.latestVariableName
+		let setTracking = this.targetType === 'component' && this.latestVariableNames
 			? [factory.createCallExpression(
 				factory.createIdentifier("trackSet"),
 				undefined,
@@ -97,15 +97,12 @@ export class PropertySlotParser extends SlotParserBase {
 			: []
 
 		// if ($latest_0 !== $values[0]) {
-		//   target[propertyName] = $latest_0 = $values[0]
+		//   target[propertyName] = $values[0]
+		//   $latest_0 = $values[0]
 		// }
-		if (this.latestVariableName) {
+		if (this.latestVariableNames) {
 			return factory.createIfStatement(
-				factory.createBinaryExpression(
-					factory.createIdentifier(this.latestVariableName),
-					factory.createToken(ts.SyntaxKind.ExclamationEqualsEqualsToken),
-					value
-				),
+				this.outputLatestComparison(this.latestVariableNames, value.valueNodes),
 				factory.createBlock(
 					[
 						factory.createExpressionStatement(factory.createBinaryExpression(
@@ -114,12 +111,9 @@ export class PropertySlotParser extends SlotParserBase {
 								factory.createIdentifier(this.name)
 							),
 							factory.createToken(ts.SyntaxKind.EqualsToken),
-							factory.createBinaryExpression(
-								factory.createIdentifier(this.latestVariableName),
-								factory.createToken(ts.SyntaxKind.EqualsToken),
-								value
-							)
+							value.joint
 						)),
+						...this.outputLatestAssignments(this.latestVariableNames, value.valueNodes),
 						...Helper.pack.toStatements(setTracking),
 					],
 					true
@@ -136,7 +130,7 @@ export class PropertySlotParser extends SlotParserBase {
 					factory.createIdentifier(this.name)
 				),
 				factory.createToken(ts.SyntaxKind.EqualsToken),
-				value
+				value.joint
 			)
 		}
 	}

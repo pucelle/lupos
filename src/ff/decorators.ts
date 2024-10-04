@@ -613,7 +613,7 @@ function compileWatchDecorator(decoName: string, methodDecl: TS.MethodDeclaratio
 
 		// if (value_0 !== this.#values_XXX) {...}
 		let compareStatement = factory.createIfStatement(
-			Helper.pack.joinBinaryExpressions(compareExps, ts.SyntaxKind.BarBarToken),
+			Helper.pack.bundleBinaryExpressions(compareExps, ts.SyntaxKind.BarBarToken),
 			factory.createBlock(
 				[
 					...Helper.pack.toStatements(valuePropAssignExps),
