@@ -12,7 +12,8 @@ const $html_0 = new HTMLMaker(" ");
         position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {
-                $node_0.data = $latest_0 = $values[0];
+                $node_0.data = $values[0];
+                $latest_0 = $values[0];
             }
         }
     };
@@ -34,7 +35,7 @@ const $html_1 = new HTMLMaker("<!----><!---->");
         update() {
             $block_0.update([1, 2, 3]);
         },
-        parts: [[$slot_0, 0]]
+        parts: [[$slot_0, 1]]
     };
 });
 /*
@@ -48,7 +49,8 @@ const $html_1 = new HTMLMaker("<!----><!---->");
         position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {
-                $node_0.data = $latest_0 = $values[0];
+                $node_0.data = $values[0];
+                $latest_0 = $values[0];
             }
         }
     };
@@ -71,7 +73,7 @@ const $html_1 = new HTMLMaker("<!----><!---->");
         update() {
             $block_0.update([1, 2, 3]);
         },
-        parts: [[$slot_0, 0]]
+        parts: [[$slot_0, 1]]
     };
 });
 /*
@@ -85,7 +87,8 @@ const $html_1 = new HTMLMaker("<!----><!---->");
         position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {
-                $node_0.data = $latest_0 = $values[0];
+                $node_0.data = $values[0];
+                $latest_0 = $values[0];
             }
         }
     };
@@ -109,7 +112,7 @@ const $html_1 = new HTMLMaker("<!----><!---->");
             $latestValues = $values;
             $block_0.update([1, 2, 3]);
         },
-        parts: [[$slot_0, 0]]
+        parts: [[$slot_0, 1]]
     };
 });
 class TestFor extends Component {

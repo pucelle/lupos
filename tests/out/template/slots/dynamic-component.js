@@ -21,11 +21,12 @@ const $html_0 = new HTMLMaker("<!----><div></div><!---->");
         position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {
-                $com_0.comProp = $latest_0 = $values[0];
+                $com_0.comProp = $values[0];
+                $latest_0 = $values[0];
                 trackSet($com_0, "comProp");
             }
         },
-        parts: [[$slot_0, 0]]
+        parts: [[$slot_0, 1]]
     };
 });
 class TestDynamicComponent extends Component {

@@ -1,6 +1,6 @@
 import type TS from 'typescript'
 import {SlotParserBase} from './base'
-import {factory, ts, Helper, TemplateSlotPlaceholder, ScopeTree, Modifier, VisitTree} from '../../../base'
+import {factory, ts, Helper, TemplateSlotPlaceholder, ScopeTree, Modifier, VisitTree, MutableMask} from '../../../base'
 import {VariableNames} from '../variable-names'
 import {addToList} from '../../../utils'
 import {TrackingPatch} from '../../../ff'
@@ -32,7 +32,7 @@ export class BindingSlotParser extends SlotParserBase {
 	 * After splitting like `:binding=${a, b}` or `:binding=${(a, b)}`.
 	 * It includes query value for `:?binding=${a, b}`
 	 */
-	private parameterList: TS.Expression[] | null = []
+	private parameterList: TS.Expression[] | null = null
 
 	/** Binding constructor parameter count. */
 	private implementsPart: boolean = false
@@ -52,6 +52,43 @@ export class BindingSlotParser extends SlotParserBase {
 	/** $delegator_0 */
 	private delegatorVariableName: string | null = null
 
+	outputValue(forceStatic: boolean = false): {
+		joint: TS.Expression,
+		valueNodes: TS.Expression[],
+	} {
+		let value: {
+			joint: TS.Expression,
+			valueNodes: TS.Expression[],
+		}
+
+		// Ignore original ref value output.
+		if (this.beRefAccess) {
+			value = {
+				joint: factory.createNull(),
+				valueNodes: [],
+			}
+		}
+
+		// Output values from parameter list.
+		else if (this.parameterList) {
+			let valueNodes = this.template.values.outputValueAsParameterList(this.parameterList, this.valueIndices![0])
+			let joint = valueNodes[0]
+
+			if (this.withQueryToken) {
+				joint = valueNodes[1] ?? factory.createIdentifier("undefined")
+			}
+
+			value = {
+				joint,
+				valueNodes,
+			}
+		}
+		else {
+			value = super.outputValue(forceStatic)
+		}
+
+		return value
+	}
 
 	init() {
 		if (this.name.startsWith('?')) {
@@ -63,25 +100,27 @@ export class BindingSlotParser extends SlotParserBase {
 			this.initRef()
 		}
 
-		if (!this.beRefAccess && this.valueIndices) {
-			this.parameterList = this.template.values.getRawParameterList(this.valueIndices![0])
+		if (!this.beRefAccess) {
+
+			// Initialize as list parameters, like `:bind=${a, b}` will be parsed as `[a, b]`.
+			if (!this.strings && this.valueIndices) {
+				this.parameterList = this.getRawParameterList()
+			}
+
+			// Initialize latest variable names.
+			if (this.isAnyValueMutable()) {
+				if (this.parameterList) {
+					this.latestVariableNames = this.makeGroupOfParameterLatestNames()
+				}
+				else if (!this.beRefAccess) {
+					this.latestVariableNames = this.makeGroupOfLatestNames()
+				}
+			}
 		}
 
-		if (this.isAnyValueMutable()
-			&& !this.beRefAccess
-		) {
-			let paramMutable = this.template.values.getRawParameterListMutable(this.parameterList!, this.valueIndices![0])
-
-			this.latestVariableNames = paramMutable.map(mutable => {
-				return mutable ? this.tree.makeUniqueLatestName() : null
-			})
-			
-			this.makeGroupOfLatestNames()
-		}
-
-		this.bindingVariableName = this.tree.makeUniqueBindingName()
 		this.initBindingClass()
-
+		this.bindingVariableName = this.tree.makeUniqueBindingName()
+		
 		// Use a delegator to delegate binding part because it may be deleted.
 		if (this.withQueryToken) {
 			Modifier.addImport('PartDelegator', '@pucelle/lupos.js')
@@ -173,6 +212,50 @@ export class BindingSlotParser extends SlotParserBase {
 		}
 	}
 
+	/** 
+	 * For binding parameter list like `:binding=${a, b}` or `:binding=${(a, b)}`,
+	 * get nodes after splitting the parameters to a list.
+	 * `valueIndices` must exist to get this list.
+	 */
+	private getRawParameterList(): TS.Expression[] {
+		let rawValueNode = this.template.values.getRawValue(this.valueIndices![0])
+
+		if (ts.isParenthesizedExpression(rawValueNode)) {
+			rawValueNode = rawValueNode.expression
+		}
+
+		let rawValueNodes = Helper.pack.unBundleCommaBinaryExpressions(rawValueNode)
+		return rawValueNodes
+	}
+
+	/** 
+	 * Get a group of latest names for parameter list.
+	 * `parameterList` must exist to get this list.
+	 */
+	private makeGroupOfParameterLatestNames(): (string | null)[] {
+		let hashes: string[] = []
+
+		let names = this.parameterList!.map((exp, index) => {
+			if ((ScopeTree.testMutable(exp) & MutableMask.Mutable) === 0) {
+				return null
+			}
+
+			// If first parameter use for querying, ignore.
+			if (!this.withQueryToken || index > 0) {
+				let hash = ScopeTree.hashNode(exp).name
+				if (hashes.includes(hash)) {
+					return null
+				}
+
+				hashes.push(hash)
+			}
+
+			return this.tree.makeUniqueLatestName()
+		})
+
+		return names
+	}
+
 	outputInit() {
 		let nodeName = this.getRefedNodeName()
 		let bindingParamCount = this.bindClassParameterCount
@@ -224,33 +307,42 @@ export class BindingSlotParser extends SlotParserBase {
 	}
 
 	outputUpdate() {
-
-		// `[$values[0], $values[1]]`, or a single '...'
-		let values = this.beRefAccess ? [factory.createNull()]
-			: this.parameterList ? this.template.values.outputValueAsParameterList(this.parameterList, this.valueIndices![0])
-			: [this.outputValue().joint]
-
+		let values = this.outputValue()
 		let queryValue: TS.Expression | null = null
-		let paramValues = values
+		let paramValuesJoint = this.parameterList ? values.valueNodes : [values.joint]
+		let paramValueNodes = this.parameterList ? values.valueNodes : values.valueNodes
 		let latestQueryParamVariableName = null
 		let latestParamVariableNames = this.latestVariableNames
 
 		if (this.withQueryToken) {
-			queryValue = values[0]
-			paramValues = values.slice(1)
+			queryValue = paramValuesJoint[0]
+			paramValuesJoint = paramValuesJoint.slice(1)
 			latestQueryParamVariableName = this.latestVariableNames?.[0] ?? null
 			latestParamVariableNames = this.latestVariableNames?.slice(1) ?? null
+
+			// May have no other names after excluding query parameter.
+			if (latestParamVariableNames &&
+				(latestParamVariableNames.length === 0
+					|| !latestParamVariableNames.some(v => v !== null)
+				)
+			) {
+				latestParamVariableNames = null
+			}
 		}
 
-		let callWith: {method: string, values: TS.Expression[]} = {method: 'update', values: paramValues}
+		let callWith: {method: string, values: TS.Expression[]} = {method: 'update', values: paramValuesJoint}
 		if (this.name === 'class') {
-			callWith = this.getClassUpdateCallWith(values[0])
+			let o = this.getClassUpdateCallWith(paramValuesJoint[0])
+			callWith.method = o.method
+			callWith.values = [o.value]
 		}
 		else if (this.name === 'style') {
-			callWith = this.getStyleUpdateCallWith(values[0])
+			let o = this.getStyleUpdateCallWith(paramValuesJoint[0])
+			callWith.method = o.method
+			callWith.values = [o.value]
 		}
 		else if (this.name === 'ref') {
-			callWith.values = [this.getRefUpdateCallWithValue(values[0])]
+			callWith.values = [this.getRefUpdateCallWithValue(paramValuesJoint[0])]
 		}
 
 		let callMethod = callWith.method
@@ -258,12 +350,12 @@ export class BindingSlotParser extends SlotParserBase {
 		let update: TS.Statement | TS.Expression
 
 		// if ($latest_0 !== $values[0]) {
-		//	 $binding_0.callMethod(callValue)
-		//	 $latest_0 = $values[0]
+		//   $binding_0.callMethod(callValue)
+		//   $latest_0 = $values[0]
 		// }
 		if (latestParamVariableNames) {
 			update = factory.createIfStatement(
-				this.outputLatestComparison(latestParamVariableNames, paramValues),
+				this.outputLatestComparison(latestParamVariableNames, paramValueNodes),
 				factory.createBlock(
 					[
 						factory.createExpressionStatement(factory.createCallExpression(
@@ -274,7 +366,7 @@ export class BindingSlotParser extends SlotParserBase {
 							undefined,
 							callValues
 						)),
-						...this.outputLatestAssignments(latestParamVariableNames, values),
+						...this.outputLatestAssignments(latestParamVariableNames, paramValueNodes),
 					],
 					true
 				),
@@ -294,32 +386,33 @@ export class BindingSlotParser extends SlotParserBase {
 			)
 		}
 
-		
+		// For `:?binding=...`.
 		if (this.delegatorVariableName) {
-			return this.outputDelegator(queryValue!, latestQueryParamVariableName, update)
+			let isStaticUpdate = !latestParamVariableNames
+			return this.outputDelegator(queryValue!, latestQueryParamVariableName, update, isStaticUpdate)
 		}
 
 		return update
 	}
 
-	private getClassUpdateCallWith(value: TS.Expression): {method: string, values: TS.Expression[]} {
+	private getClassUpdateCallWith(value: TS.Expression): {method: string, value: TS.Expression} {
 		if (this.modifiers.length > 0) {
 			return {
 				method: 'updateObject',
-				values: [factory.createObjectLiteralExpression(
+				value: factory.createObjectLiteralExpression(
 					[factory.createPropertyAssignment(
 						Helper.createPropertyName(this.modifiers[0]),
 						value
 					)],
 					false
-				)],
+				),
 			}
 		}
 
 		if (!this.hasValueIndex()) {
 			return {
 				method: 'updateString',
-				values: [value],
+				value,
 			}
 		}
 
@@ -329,29 +422,29 @@ export class BindingSlotParser extends SlotParserBase {
 		if (this.hasString() || Helper.types.isValueType(slotNodeType!)) {
 			return {
 				method: 'updateString',
-				values: [value],
+				value,
 			}
 		}
 		else if (Helper.types.isArrayType(slotNodeType!)) {
 			return {
 				method: 'updateList',
-				values: [value],
+				value,
 			}
 		}
 		else if (Helper.types.isObjectType(slotNodeType!)) {
 			return {
 				method: 'updateObject',
-				values: [value],
+				value,
 			}
 		}
 
 		return {
 			method: 'update',
-			values: [value],
+			value,
 		}
 	}
 
-	private getStyleUpdateCallWith(value: TS.Expression): {method: string, values: TS.Expression[]} {
+	private getStyleUpdateCallWith(value: TS.Expression): {method: string, value: TS.Expression} {
 		if (this.modifiers.length > 0) {
 			if (this.modifiers.length > 1 && this.modifiers[1].length > 0) {
 
@@ -389,20 +482,20 @@ export class BindingSlotParser extends SlotParserBase {
 
 			return {
 				method: 'updateObject',
-				values: [factory.createObjectLiteralExpression(
+				value: factory.createObjectLiteralExpression(
 					[factory.createPropertyAssignment(
 						Helper.createPropertyName(this.modifiers[0]),
 						value
 					)],
 					false
-				)],
+				),
 			}
 		}
 
 		if (!this.hasValueIndex()) {
 			return {
 				method: 'updateString',
-				values: [value],
+				value,
 			}
 		}
 
@@ -412,19 +505,19 @@ export class BindingSlotParser extends SlotParserBase {
 		if (this.hasString() || Helper.types.isValueType(slotNodeType!)) {
 			return {
 				method: 'updateString',
-				values: [value],
+				value,
 			}
 		}
 		else if (Helper.types.isObjectType(slotNodeType!)) {
 			return {
 				method: 'updateObject',
-				values: [value],
+				value,
 			}
 		}
 
 		return {
 			method: 'update',
-			values: [value],
+			value,
 		}
 	}
 
@@ -493,13 +586,16 @@ export class BindingSlotParser extends SlotParserBase {
 	private outputDelegator(
 		queryValue: TS.Expression,
 		latestQueryParamVariableName: string | null,
-		update: TS.Statement | TS.Expression
+		update: TS.Statement | TS.Expression,
+		isStaticUpdate: boolean
 	) {
+
 		// if ($values[0]) {
 		//   NormalUpdateLogic
 		// }
 
 		// if ($values[0] && !$latest_0) {
+		//   StaticUpdatePosition
 		//   $delegator_0.update($binding_0)
 		//   $latest_0 = $values[0]
 		// }
@@ -507,18 +603,25 @@ export class BindingSlotParser extends SlotParserBase {
 		//   $delegator_0.update(null)
 		//   $latest_0 = $values[0]
 		// }
-		// 
 
-		let updateIf = factory.createIfStatement(
-			queryValue,
-			factory.createBlock(
-				[Helper.pack.toStatement(update)],
-				true
-			),
-			undefined
-		)
+		// If `isStaticUpdate`,
+		// Moves `NormalUpdateLogic` to `StaticUpdatePosition`.
+
+		let updateIf: TS.Statement | null = null
+		
+		if (!isStaticUpdate) {
+			updateIf = factory.createIfStatement(
+				queryValue,
+				factory.createBlock(
+					[Helper.pack.toStatement(update)],
+					true
+				),
+				undefined
+			)
+		}
 		
 		let compare: TS.Statement | null = null
+
 		if (latestQueryParamVariableName) {
 			compare = factory.createIfStatement(
 				factory.createBinaryExpression(
@@ -531,19 +634,20 @@ export class BindingSlotParser extends SlotParserBase {
 				),
 				factory.createBlock(
 					[
-					factory.createExpressionStatement(factory.createCallExpression(
-						factory.createPropertyAccessExpression(
-							factory.createIdentifier(this.delegatorVariableName!),
-							factory.createIdentifier('update')
-						),
-						undefined,
-						[factory.createIdentifier(this.bindingVariableName)]
-					)),
-					factory.createExpressionStatement(factory.createBinaryExpression(
-						factory.createIdentifier(latestQueryParamVariableName),
-						factory.createToken(ts.SyntaxKind.EqualsToken),
-						queryValue
-					))
+						...(isStaticUpdate ? [Helper.pack.toStatement(update)] : []),
+						factory.createExpressionStatement(factory.createCallExpression(
+							factory.createPropertyAccessExpression(
+								factory.createIdentifier(this.delegatorVariableName!),
+								factory.createIdentifier('update')
+							),
+							undefined,
+							[factory.createIdentifier(this.bindingVariableName)]
+						)),
+						factory.createExpressionStatement(factory.createBinaryExpression(
+							factory.createIdentifier(latestQueryParamVariableName),
+							factory.createToken(ts.SyntaxKind.EqualsToken),
+							queryValue
+						))
 					],
 					true
 				),
@@ -580,7 +684,7 @@ export class BindingSlotParser extends SlotParserBase {
 		}
 		
 		return [
-			updateIf,
+			...(updateIf ? [updateIf] : []),
 			...(compare ? [compare] : []),
 		]
 	}

@@ -54,21 +54,6 @@ export class TemplateValues {
 
 	/** 
 	 * For binding parameter list like `:binding=${a, b}` or `:binding=${(a, b)}`,
-	 * get nodes after splitting the parameters to a list.
-	 */
-	getRawParameterList(valueIndex: number): TS.Expression[] {
-		let rawValueNode = this.getRawValue(valueIndex)
-
-		if (ts.isParenthesizedExpression(rawValueNode)) {
-			rawValueNode = rawValueNode.expression
-		}
-
-		let rawValueNodes = Helper.pack.unBundleCommaBinaryExpressions(rawValueNode)
-		return rawValueNodes
-	}
-
-	/** 
-	 * For binding parameter list like `:binding=${a, b}` or `:binding=${(a, b)}`,
 	 * get mutable state of each of `a, b`.
 	 */
 	getRawParameterListMutable(rawParamNodes: TS.Expression[], valueIndex: number): boolean[] {

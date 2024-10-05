@@ -27,7 +27,8 @@ const $html_0 = new HTMLMaker("<div></div>");
         position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {
-                $node_0.setAttribute("attr", $latest_0 = $values[0]);
+                $node_0.setAttribute("attr", $values[0]);
+                $latest_0 = $values[0];
             }
         }
     };
@@ -71,7 +72,8 @@ const $html_0 = new HTMLMaker("<div></div>");
         position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {
-                $node_0.setAttribute("attr", $latest_0 = $values[0]);
+                $node_0.setAttribute("attr", $values[0]);
+                $latest_0 = $values[0];
             }
         }
     };
@@ -114,8 +116,9 @@ const $html_0 = new HTMLMaker("<div></div>");
         el: $node,
         position: new SlotPosition(1, $node_0),
         update($values) {
-            if ($latest_0 !== "name1 " + $values[0] + " name2 " + $values[0]) {
-                $node_0.setAttribute("attr", $latest_0 = "name1 " + $values[0] + " name2 " + $values[0]);
+            if ($latest_0 !== $values[0]) {
+                $node_0.setAttribute("attr", "name1 " + $values[0] + " name2 " + $values[0]);
+                $latest_0 = $values[0];
             }
         }
     };
@@ -132,11 +135,13 @@ const $html_0 = new HTMLMaker("<div></div>");
         el: $node,
         position: new SlotPosition(1, $node_0),
         update($values) {
-            if ($latest_0 !== "" + $values[0]) {
-                $node_0.setAttribute("attr", $latest_0 = "" + $values[0]);
+            if ($latest_0 !== $values[0]) {
+                $node_0.setAttribute("attr", "" + $values[0]);
+                $latest_0 = $values[0];
             }
             if ($latest_1 !== $values[0]) {
-                $node_0.setAttribute("attr2", $latest_1 = $values[0]);
+                $node_0.setAttribute("attr2", $values[0]);
+                $latest_1 = $values[0];
             }
         }
     };

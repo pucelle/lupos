@@ -147,7 +147,7 @@ export class TreeParser {
 		node: HTMLNode
 	) {
 		let slot: SlotParserBase
-		
+
 		switch (type) {
 			case SlotType.SlotTag:
 				slot = new SlotTagSlotParser(name, strings, valueIndices, node, this)

@@ -14,8 +14,9 @@ const $html_0 = new HTMLMaker("<div></div>");
         el: $node,
         position: new SlotPosition(1, $node_0),
         update($values) {
-            if ($latest_0 !== $values[0] + " className2") {
-                $binding_0.updateString($latest_0 = $values[0] + " className2");
+            if ($latest_0 !== $values[0]) {
+                $binding_0.updateString($values[0] + " className2");
+                $latest_0 = $values[0];
             }
         }
     };
@@ -34,7 +35,8 @@ const $html_0 = new HTMLMaker("<div></div>");
         position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {
-                $binding_0.updateString($latest_0 = $values[0]);
+                $binding_0.updateString($values[0]);
+                $latest_0 = $values[0];
             }
         }
     };
@@ -52,8 +54,9 @@ const $html_0 = new HTMLMaker("<div></div>");
         el: $node,
         position: new SlotPosition(1, $node_0),
         update($values) {
-            if ($latest_0 !== "" + $values[0]) {
-                $binding_0.updateString($latest_0 = "" + $values[0]);
+            if ($latest_0 !== $values[0]) {
+                $binding_0.updateString("" + $values[0]);
+                $latest_0 = $values[0];
             }
         }
     };
@@ -72,7 +75,8 @@ const $html_0 = new HTMLMaker("<div></div>");
         position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {
-                $binding_0.updateList($latest_0 = $values[0]);
+                $binding_0.updateList($values[0]);
+                $latest_0 = $values[0];
             }
         }
     };
@@ -91,7 +95,8 @@ const $html_0 = new HTMLMaker("<div></div>");
         position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {
-                $binding_0.updateObject($latest_0 = $values[0]);
+                $binding_0.updateObject($values[0]);
+                $latest_0 = $values[0];
             }
         }
     };

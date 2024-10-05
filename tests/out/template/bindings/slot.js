@@ -13,7 +13,7 @@ const $html_0 = new HTMLMaker("<!----><div></div>");
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),
-        parts: [[$binding_0, 0]]
+        parts: [[$binding_0, 1]]
     };
 });
 class TestSlotBinding extends Component {

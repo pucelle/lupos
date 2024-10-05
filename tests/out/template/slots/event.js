@@ -13,7 +13,7 @@ const $html_0 = new HTMLMaker("<div></div>");
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),
-        parts: [[$com_0, 0]]
+        parts: [[$com_0, 1]]
     };
 });
 /*
@@ -28,7 +28,7 @@ const $html_0 = new HTMLMaker("<div></div>");
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),
-        parts: [[$com_0, 0]]
+        parts: [[$com_0, 1]]
     };
 });
 const $html_2 = new HTMLMaker("<!----><div></div><!---->");
@@ -53,7 +53,7 @@ const $html_2 = new HTMLMaker("<!----><div></div><!---->");
         update($values) {
             $block_0.update($values[0]);
         },
-        parts: [[$slot_0, 0]]
+        parts: [[$slot_0, 1]]
     };
 });
 /*
@@ -77,7 +77,7 @@ const $html_2 = new HTMLMaker("<!----><div></div><!---->");
         update($values) {
             $block_0.update($values[0]);
         },
-        parts: [[$slot_0, 0]]
+        parts: [[$slot_0, 1]]
     };
 });
 /*
@@ -92,7 +92,7 @@ const $html_2 = new HTMLMaker("<!----><div></div><!---->");
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),
-        parts: [[$com_0, 0]]
+        parts: [[$com_0, 1]]
     };
 });
 /*

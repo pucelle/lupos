@@ -62,7 +62,7 @@ export abstract class SlotParserBase {
 	private splitNameAndModifiers(name: string) {
 
 		// Main name may be `[@]...` or `[.]...`
-		let mainName = name.match(/^[@.]?\w+/)?.[0] || ''
+		let mainName = name.match(/^[@.?]?\w+/)?.[0] || ''
 		let modifiers = name.slice(mainName.length).split(/[.]/).filter(v => v)
 
 		return {
@@ -121,13 +121,20 @@ export abstract class SlotParserBase {
 
 	/** Get a group of latest names. */
 	protected makeGroupOfLatestNames(): (string | null)[] {
+		let hashes: string[] = []
+
 		let names = this.valueIndices!.map(valueIndex => {
-			if (this.template.values.isIndexMutable(valueIndex)) {
-				return this.tree.makeUniqueLatestName()
-			}
-			else {
+			if (!this.template.values.isIndexMutable(valueIndex)) {
 				return null
 			}
+
+			let hash = ScopeTree.hashNode(this.template.values.getRawValue(valueIndex)).name
+			if (hashes.includes(hash)) {
+				return null
+			}
+
+			hashes.push(hash)
+			return this.tree.makeUniqueLatestName()
 		})
 
 		return names

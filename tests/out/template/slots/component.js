@@ -17,11 +17,12 @@ const $html_0 = new HTMLMaker("<div></div>");
         position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {
-                $com_0.prop = $latest_0 = $values[0];
+                $com_0.prop = $values[0];
+                $latest_0 = $values[0];
                 trackSet($com_0, "prop");
             }
         },
-        parts: [[$com_0, 0]]
+        parts: [[$com_0, 1]]
     };
 });
 const $html_1 = new HTMLMaker("<div>Rest Content</div>");
@@ -38,7 +39,7 @@ const $html_1 = new HTMLMaker("<div>Rest Content</div>");
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),
-        parts: [[$com_0, 0]]
+        parts: [[$com_0, 1]]
     };
 });
 const $html_2 = new HTMLMaker("<div> </div>");
@@ -57,11 +58,12 @@ const $html_2 = new HTMLMaker("<div> </div>");
         el: $node,
         position: new SlotPosition(1, $node_0),
         update($values) {
-            if ($latest_0 !== "" + $values[0] + "Rest Content") {
-                $node_1.data = $latest_0 = "" + $values[0] + "Rest Content";
+            if ($latest_0 !== $values[0]) {
+                $node_1.data = "" + $values[0] + "Rest Content";
+                $latest_0 = $values[0];
             }
         },
-        parts: [[$com_0, 0]]
+        parts: [[$com_0, 1]]
     };
 });
 class TestComponent extends Component {

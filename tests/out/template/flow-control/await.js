@@ -17,7 +17,7 @@ const $html_0 = new HTMLMaker("<!----><!---->");
         update($values) {
             $block_0.update($values[0], $values);
         },
-        parts: [[$slot_0, 0]]
+        parts: [[$slot_0, 1]]
     };
 });
 const $html_1 = new HTMLMaker("Pending Content");
@@ -58,7 +58,7 @@ const $html_2 = new HTMLMaker("Then Content");
         update($values) {
             $block_0.update($values[0], $values);
         },
-        parts: [[$slot_0, 0]]
+        parts: [[$slot_0, 1]]
     };
 });
 /*
@@ -98,7 +98,7 @@ const $html_5 = new HTMLMaker("Catch Content");
         update($values) {
             $block_0.update($values[0], $values);
         },
-        parts: [[$slot_0, 0]]
+        parts: [[$slot_0, 1]]
     };
 });
 /*
