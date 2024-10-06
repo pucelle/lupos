@@ -1,6 +1,6 @@
 import {ListMap} from '../utils'
 import type TS from 'typescript'
-import {factory, ts} from './global'
+import {factory, sourceFile, ts} from './global'
 import {Helper} from './helper'
 import {InterpolationContentType, Interpolator} from './interpolator'
 import {VisitTree} from './visit-tree'
@@ -20,10 +20,15 @@ export namespace Modifier {
 	/** The visiting indices the node at where will be moved. */
 	const RemovedIndices: Set<number> = new Set()
 
+	/** The visiting indices the node at where have been persisted. */
+	const PersistedIndices: Set<number> = new Set()
+
+
 
 	export function initialize() {
 		Imports.clear()
 		RemovedIndices.clear()
+		PersistedIndices.clear()
 	}
 
 
@@ -60,10 +65,10 @@ export namespace Modifier {
 
 
 	/** Add or replace a member to a class declaration. */
-	export function addClassMember(classIndex: number, member: TS.ClassElement, preferInsertToHead: boolean = false) {
-		let node = VisitTree.getNode(classIndex) as TS.ClassDeclaration
+	export function addClassMember(classNode: TS.ClassDeclaration, member: TS.ClassElement, preferInsertToHead: boolean = false) {
+		let classIndex = VisitTree.getIndex(classNode)
 		let name = Helper.cls.getMemberName(member)
-		let existing = node.members.find(m => Helper.cls.getMemberName(m) === name)
+		let existing = classNode.members.find(m => Helper.cls.getMemberName(m) === name)
 
 		if (existing) {
 			let toIndex = VisitTree.getIndex(existing)
@@ -84,6 +89,25 @@ export namespace Modifier {
 	 */
 	export function addImport(memberName: string, moduleName: string) {
 		Imports.addIf(moduleName, memberName)
+	}
+
+
+	/** 
+	 * An import may be removed by typescript compiling because of no use.
+	 * Use this can persist it.
+	 */
+	export function persistImport(node: TS.ImportSpecifier) {
+		let index = VisitTree.getIndex(node)
+
+		if (PersistedIndices.has(index)) {
+			return
+		}
+
+		PersistedIndices.add(index)
+		
+		Interpolator.replace(index, InterpolationContentType.Import, () => {
+			return factory.createImportSpecifier(node.isTypeOnly, node.propertyName, node.name)
+		})
 	}
 
 	
@@ -178,10 +202,6 @@ export namespace Modifier {
 			if (existingImportDecl) {
 				let namedImportsIndex = VisitTree.getIndex(existingImportDecl.importClause!.namedBindings!)
 				Interpolator.append(namedImportsIndex, InterpolationContentType.Import, () => namedImports)
-				
-				// Because modified whole import node, cause type imports still exist.
-				// Here remove them manually.
-				removeAllTypedImports(existingImportDecl)
 			}
 
 			// Add an import statement.
@@ -199,6 +219,14 @@ export namespace Modifier {
 
 				Interpolator.before(sourceFileIndex, InterpolationContentType.Import, () => newImportDecl!)
 			}
+		}
+
+
+		// Because modified whole import node, cause type imports still exist.
+		// Here remove them manually.
+		let imports = sourceFile.statements.filter(st => ts.isImportDeclaration(st))
+		for (let importDecl of imports) {
+			removeTypedImports(importDecl)
 		}
 	}
 
@@ -225,10 +253,13 @@ export namespace Modifier {
 	}
 
 	/** Remove all type imports. */
-	function removeAllTypedImports(node: TS.ImportDeclaration) {
-		let specifiers = (node.importClause!.namedBindings as TS.NamedImports).elements
+	function removeTypedImports(node: TS.ImportDeclaration) {
+		let namedBindings = node.importClause?.namedBindings
+		if (!namedBindings || !ts.isNamedImports(namedBindings)) {
+			return 
+		}
 
-		for (let specifier of specifiers) {
+		for (let specifier of namedBindings.elements) {
 			let type = Helper.symbol.resolveDeclaration(specifier, Helper.isTypeDeclaration)
 			if (type) {
 				removeOnce(VisitTree.getIndex(specifier))

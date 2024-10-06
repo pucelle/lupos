@@ -1,6 +1,6 @@
 import type TS from 'typescript'
 import {SlotParserBase} from './base'
-import {factory, ScopeTree} from '../../../base'
+import {factory, Modifier, ScopeTree, ts} from '../../../base'
 import {cleanList} from '../../../utils'
 
 
@@ -14,6 +14,11 @@ export class ComponentSlotParser extends SlotParserBase {
 		if (decl) {
 			this.template.addRefedDeclaration(decl)
 		}
+
+		// Avoid been removed by typescript compiler.
+		if (decl && ts.isImportSpecifier(decl)) {
+			Modifier.persistImport(decl)
+		}
 	}
 
 	outputInit() {
@@ -21,7 +26,6 @@ export class ComponentSlotParser extends SlotParserBase {
 		let comName = this.node.tagName!
 		let hasRestSlotContentExisted = this.node.children.length > 0
 		let restSlotRangeInit: TS.Expression | null = null
-
 		let comVariableName = this.getRefedComponentName()
 
 		// let $com_0 = new Com({}, $node_0), after component has been referenced.

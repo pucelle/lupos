@@ -3,7 +3,7 @@ import {Helper, defineVisitor, ts, Modifier, factory} from '../base'
 import {SlotContentType} from '../enums'
 
 
-defineVisitor(function(node: TS.Node, index: number) {
+defineVisitor(function(node: TS.Node, _index: number) {
 	if (!ts.isClassDeclaration(node)) {
 		return
 	}
@@ -61,6 +61,6 @@ defineVisitor(function(node: TS.Node, index: number) {
 			factory.createNumericLiteral(slotType)
 		)
 
-		Modifier.addClassMember(index, property, true)
+		Modifier.addClassMember(node, property, true)
 	}
 })

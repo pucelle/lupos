@@ -93,6 +93,13 @@ export class TemplateValues {
 		joint: TS.Expression,
 		valueNodes: TS.Expression[],
 	} {
+		if (!strings && !valueIndices) {
+			return {
+				joint: factory.createTrue(),
+				valueNodes: [],
+			}
+		}
+
 		if (valueIndices === null) {
 			return {
 				joint: factory.createStringLiteral(strings![0]),

@@ -38,7 +38,7 @@ export class BindingSlotParser extends SlotParserBase {
 	private implementsPart: boolean = false
 
 	/** Binding constructor parameter count. */
-	private bindClassParameterCount: number | null = null
+	private bindingClassParameterCount: number | null = null
 
 	/** $latest_0 */
 	private latestVariableNames: (string | null)[] | null = null
@@ -178,37 +178,42 @@ export class BindingSlotParser extends SlotParserBase {
 			Modifier.addImport(item.name, '@pucelle/lupos.js') 
 
 			// Remember class parameter count.
-			this.bindClassParameterCount = item.parameterCount
+			this.bindingClassParameterCount = item.parameterCount
 		}
 
 		else {
 
 			// :bindingName -> bindingName
-			let bindingClassDecl = ScopeTree.getDeclarationByName(this.name, this.template.rawNode)
+			let decl = ScopeTree.getDeclarationByName(this.name, this.template.rawNode)
 
 			// `Import ClassBinding`
 			// `class ClassBinding {...}`
-			if (!bindingClassDecl
+			if (!decl
 				|| (
-					!ts.isImportSpecifier(bindingClassDecl)
-					&& !(ts.isClassDeclaration(bindingClassDecl))
+					!ts.isImportSpecifier(decl)
+					&& !(ts.isClassDeclaration(decl))
 				)
-				|| !bindingClassDecl.name
+				|| !decl.name
 			) {
 				throw new Error(`Please make sure to import or declare "${this.name}"!`)
 			}
 
-			let bindingModuleName = Helper.symbol.resolveImport(bindingClassDecl)
-			let bindingClass = Helper.symbol.resolveDeclaration(bindingClassDecl, ts.isClassDeclaration)!
+			// Avoid been removed by typescript compiler.
+			if (ts.isImportSpecifier(decl)) {
+				Modifier.persistImport(decl)
+			}
 
-			this.template.addRefedDeclaration(bindingClassDecl)
+			let bindingModuleName = Helper.symbol.resolveImport(decl)
+			let bindingClass = Helper.symbol.resolveDeclaration(decl, ts.isClassDeclaration)!
+
+			this.template.addRefedDeclaration(decl)
 
 			if (bindingClass && Helper.cls.isImplemented(bindingClass, 'Part', '@pucelle/lupos.js', bindingModuleName?.moduleName)) {
 				this.implementsPart = true
 			}
 
 			let bindingClassParams = bindingClass ? Helper.cls.getConstructorParameters(bindingClass) : null
-			this.bindClassParameterCount = bindingClassParams ? bindingClassParams.length : null
+			this.bindingClassParameterCount = bindingClassParams ? bindingClassParams.length : null
 		}
 	}
 
@@ -258,7 +263,7 @@ export class BindingSlotParser extends SlotParserBase {
 
 	outputInit() {
 		let nodeName = this.getRefedNodeName()
-		let bindingParamCount = this.bindClassParameterCount
+		let bindingParamCount = this.bindingClassParameterCount
 		let bindingClassName = KnownInternalBindings[this.name] ? KnownInternalBindings[this.name].name : this.name
 		let bindingParams: TS.Expression[] = [factory.createIdentifier(nodeName)]
 
