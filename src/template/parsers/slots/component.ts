@@ -10,13 +10,17 @@ export class ComponentSlotParser extends SlotParserBase {
 		this.refAsComponent()
 
 		let comName = this.node.tagName!
+
 		let decl = ScopeTree.getDeclarationByName(comName, this.template.rawNode)
-		if (decl) {
-			this.template.addRefedDeclaration(decl)
+		if (!decl) {
+			throw new Error(`Please make sure to import or declare "<${comName}>"!`)
 		}
 
+		// Limit closest scope by referenced declaration.
+		this.template.addRefedDeclaration(decl)
+
 		// Avoid been removed by typescript compiler.
-		if (decl && ts.isImportSpecifier(decl)) {
+		if (ts.isImportSpecifier(decl)) {
 			Modifier.persistImport(decl)
 		}
 	}

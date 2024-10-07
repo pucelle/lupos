@@ -1,6 +1,6 @@
 import {ListMap} from '../utils'
 import type TS from 'typescript'
-import {factory, sourceFile, ts} from './global'
+import {factory, ts} from './global'
 import {Helper} from './helper'
 import {InterpolationContentType, Interpolator} from './interpolator'
 import {VisitTree} from './visit-tree'
@@ -22,7 +22,6 @@ export namespace Modifier {
 
 	/** The visiting indices the node at where have been persisted. */
 	const PersistedIndices: Set<number> = new Set()
-
 
 
 	export function initialize() {
@@ -172,6 +171,7 @@ export namespace Modifier {
 	/** Apply imports to do interpolation. */
 	export function applyInterpolation() {
 		let sourceFileIndex = ScopeTree.getTopmost().getIndexToAddStatements()
+		let modifiedImportDecls: Set<TS.ImportDeclaration> = new Set()
 
 
 		// A ts bug here: if insert some named import identifiers,
@@ -202,9 +202,10 @@ export namespace Modifier {
 			if (existingImportDecl) {
 				let namedImportsIndex = VisitTree.getIndex(existingImportDecl.importClause!.namedBindings!)
 				Interpolator.append(namedImportsIndex, InterpolationContentType.Import, () => namedImports)
+				modifiedImportDecls.add(existingImportDecl)
 			}
 
-			// Add an import statement.
+			// Add a new import statement.
 			else {
 				let newImportDecl = factory.createImportDeclaration(
 					undefined,
@@ -221,11 +222,18 @@ export namespace Modifier {
 			}
 		}
 
+		for (let specifierIndex of PersistedIndices) {
+			let specifier = VisitTree.getNode(specifierIndex) as TS.ImportSpecifier
+			let importDecl = specifier.parent.parent.parent
+
+			if (ts.isImportDeclaration(importDecl)) {
+				modifiedImportDecls.add(importDecl)
+			}
+		}
 
 		// Because modified whole import node, cause type imports still exist.
 		// Here remove them manually.
-		let imports = sourceFile.statements.filter(st => ts.isImportDeclaration(st))
-		for (let importDecl of imports) {
+		for (let importDecl of modifiedImportDecls) {
 			removeTypedImports(importDecl)
 		}
 	}
