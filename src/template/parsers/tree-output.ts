@@ -45,7 +45,7 @@ export class TreeOutputHandler {
 	): () => void {
 		Modifier.addImport('TemplateMaker', '@pucelle/lupos.js')
 
-		// May modify nodes, must before outputting HTML Maker.
+		// May modify nodes, must before outputting HTML.
 		let templatePosition = this.outputSlotPosition()
 
 		// Must output slots firstly, it completes references.
@@ -232,6 +232,7 @@ export class TreeOutputHandler {
 		let container: HTMLNode = this.root
 		let firstNode = container.firstChild!
 
+		// Being wrapped.
 		if (this.wrappedBySVG || this.wrappedByTemplate) {
 			container = container.firstChild!
 			firstNode = firstNode.firstChild!

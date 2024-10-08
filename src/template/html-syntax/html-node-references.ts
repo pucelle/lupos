@@ -85,13 +85,20 @@ export class HTMLNodeReferences {
 	}
 
 	/** Output all reference sequence. */
-	output(): Iterable<ReferenceOutputItem> {
+	output(): ReferenceOutputItem[] {
 		let refTree = this.makeDeepReferenceTree()
 		if (!refTree) {
 			return []
 		}
 
-		return this.outputItem(refTree, this.root, [])
+		let items = [...this.outputItem(refTree, this.root, [])]
+
+		// Order by reference indices.
+		items.sort((a, b) => {
+			return this.references.get(a.node)! - this.references.get(b.node)!
+		})
+
+		return items
 	}
 
 	/** Made deep reference tree. */

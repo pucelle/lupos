@@ -20,8 +20,8 @@ const $html_0 = new HTMLMaker("<!---->");
 </root>
 */ const $template_1 = new TemplateMaker(function ($context) {
     let $node = $html_0.make();
-    let $node_1 = $context.el;
     let $node_0 = $node.content.firstChild;
+    let $node_1 = $context.el;
     let $binding_0 = new TransitionBinding($node_1, $context);
     $binding_0.update(fade());
     return {
