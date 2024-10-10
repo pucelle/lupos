@@ -17,7 +17,9 @@ const $html_0 = new HTMLMaker("<!----><!---->");
         update($values) {
             $block_0.update($values[0], $values[1]);
         },
-        parts: [[$slot_0, 1]]
+        parts: [
+            [$slot_0, 1]
+        ]
     };
 });
 const $html_1 = new HTMLMaker("Keyed Content");

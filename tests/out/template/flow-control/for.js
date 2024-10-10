@@ -35,7 +35,9 @@ const $html_1 = new HTMLMaker("<!----><!---->");
         update() {
             $block_0.update([1, 2, 3]);
         },
-        parts: [[$slot_0, 1]]
+        parts: [
+            [$slot_0, 1]
+        ]
     };
 });
 /*
@@ -73,7 +75,9 @@ const $html_1 = new HTMLMaker("<!----><!---->");
         update() {
             $block_0.update([1, 2, 3]);
         },
-        parts: [[$slot_0, 1]]
+        parts: [
+            [$slot_0, 1]
+        ]
     };
 });
 /*
@@ -112,7 +116,9 @@ const $html_1 = new HTMLMaker("<!----><!---->");
             $latestValues = $values;
             $block_0.update([1, 2, 3]);
         },
-        parts: [[$slot_0, 1]]
+        parts: [
+            [$slot_0, 1]
+        ]
     };
 });
 class TestFor extends Component {

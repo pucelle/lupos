@@ -29,7 +29,9 @@ const $html_1 = new HTMLMaker("<div><!----></div>");
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),
-        parts: [[$slot_0, 0]]
+        parts: [
+            [$slot_0, 0]
+        ]
     };
 });
 /*
@@ -59,7 +61,9 @@ const $html_1 = new HTMLMaker("<div><!----></div>");
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),
-        parts: [[$slot_0, 0]]
+        parts: [
+            [$slot_0, 0]
+        ]
     };
 });
 /*
@@ -95,7 +99,9 @@ const $html_1 = new HTMLMaker("<div><!----></div>");
                 $latest_0 = $values[0];
             }
         },
-        parts: [[$slot_0, 0]]
+        parts: [
+            [$slot_0, 0]
+        ]
     };
 });
 /*
@@ -132,7 +138,9 @@ const $html_7 = new HTMLMaker("<div> <!----> </div>");
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),
-        parts: [[$slot_0, 0]]
+        parts: [
+            [$slot_0, 0]
+        ]
     };
 });
 class TestContent extends Component {

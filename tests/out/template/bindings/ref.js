@@ -13,7 +13,9 @@ const $html_0 = new HTMLMaker("<div></div>");
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),
-        parts: [[$binding_0, 1]]
+        parts: [
+            [$binding_0, 1]
+        ]
     };
 });
 /*
@@ -29,7 +31,10 @@ const $html_0 = new HTMLMaker("<div></div>");
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),
-        parts: [[$com_0, 1], [$binding_0, 1]]
+        parts: [
+            [$com_0, 1],
+            [$binding_0, 1]
+        ]
     };
 });
 /*
@@ -45,7 +50,10 @@ const $html_0 = new HTMLMaker("<div></div>");
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),
-        parts: [[$com_0, 1], [$binding_0, 1]]
+        parts: [
+            [$com_0, 1],
+            [$binding_0, 1]
+        ]
     };
 });
 /*
@@ -61,7 +69,10 @@ const $html_0 = new HTMLMaker("<div></div>");
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),
-        parts: [[$com_0, 1], [$binding_0, 1]]
+        parts: [
+            [$com_0, 1],
+            [$binding_0, 1]
+        ]
     };
 });
 /*
@@ -79,7 +90,10 @@ const $html_0 = new HTMLMaker("<div></div>");
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),
-        parts: [[$com_0, 1], [$binding_1, 1]]
+        parts: [
+            [$com_0, 1],
+            [$binding_1, 1]
+        ]
     };
 });
 /*
@@ -94,7 +108,9 @@ const $html_0 = new HTMLMaker("<div></div>");
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),
-        parts: [[$binding_0, 1]]
+        parts: [
+            [$binding_0, 1]
+        ]
     };
 });
 class TestRefBinding extends Component {

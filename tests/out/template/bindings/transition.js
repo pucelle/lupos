@@ -19,7 +19,9 @@ const $html_0 = new HTMLMaker("<div></div>");
                 $latest_0 = $values[0];
             }
         },
-        parts: [[$binding_0, 1]]
+        parts: [
+            [$binding_0, 1]
+        ]
     };
 });
 /*
@@ -34,7 +36,9 @@ const $html_0 = new HTMLMaker("<div></div>");
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),
-        parts: [[$binding_0, 1]]
+        parts: [
+            [$binding_0, 1]
+        ]
     };
 });
 /*
@@ -66,7 +70,9 @@ const $html_0 = new HTMLMaker("<div></div>");
                 $latest_0 = $values[0];
             }
         },
-        parts: [[$delegator_0, 1]]
+        parts: [
+            [$delegator_0, 1]
+        ]
     };
 });
 /*
@@ -93,7 +99,9 @@ const $html_0 = new HTMLMaker("<div></div>");
                 $latest_0 = $values[0];
             }
         },
-        parts: [[$delegator_0, 1]]
+        parts: [
+            [$delegator_0, 1]
+        ]
     };
 });
 class TestTransitionBinding extends Component {

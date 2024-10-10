@@ -436,7 +436,7 @@ export class TreeOutputHandler {
 					factory.createIdentifier(part[0]),
 					factory.createNumericLiteral(part[1])
 				], false)),
-				false
+				true
 			)
 
 			partsNode = factory.createPropertyAssignment(

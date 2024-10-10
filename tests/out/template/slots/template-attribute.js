@@ -28,7 +28,9 @@ const $html_0 = new HTMLMaker("<!---->");
     return {
         el: $node,
         position: new SlotPosition(1, $node_1),
-        parts: [[$binding_0, 2]]
+        parts: [
+            [$binding_0, 2]
+        ]
     };
 });
 /*
@@ -93,7 +95,9 @@ const $html_5 = new HTMLMaker("<div><!----></div>");
     return {
         el: $node,
         position: new SlotPosition(1, $node_1),
-        parts: [[$slot_0, 0]]
+        parts: [
+            [$slot_0, 0]
+        ]
     };
 });
 const $html_6 = new HTMLMaker("<div></div><div></div>");

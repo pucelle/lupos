@@ -17,7 +17,9 @@ const $html_0 = new HTMLMaker("<!----><!---->");
         update($values) {
             $block_0.update($values[0]);
         },
-        parts: [[$slot_0, 1]]
+        parts: [
+            [$slot_0, 1]
+        ]
     };
 });
 const $html_1 = new HTMLMaker("Case Content 1");
@@ -58,7 +60,9 @@ const $html_2 = new HTMLMaker("Case Content 2");
         update($values) {
             $block_0.update($values[0]);
         },
-        parts: [[$slot_0, 1]]
+        parts: [
+            [$slot_0, 1]
+        ]
     };
 });
 /*

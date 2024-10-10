@@ -17,7 +17,9 @@ const $html_0 = new HTMLMaker("<div><slot name=\"slotName\"></slot></div>");
         update($values) {
             $slot_0.update($values[0]);
         },
-        parts: [[$slot_0, 0]]
+        parts: [
+            [$slot_0, 0]
+        ]
     };
 });
 /*
@@ -37,7 +39,9 @@ const $html_0 = new HTMLMaker("<div><slot name=\"slotName\"></slot></div>");
         update($values) {
             $slot_0.update($values[0]);
         },
-        parts: [[$slot_0, 0]]
+        parts: [
+            [$slot_0, 0]
+        ]
     };
 });
 const $html_2 = new HTMLMaker("Content");

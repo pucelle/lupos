@@ -17,7 +17,9 @@ const $html_0 = new HTMLMaker("<!----><!---->");
         update($values) {
             $block_0.update($values[0]);
         },
-        parts: [[$slot_0, 1]]
+        parts: [
+            [$slot_0, 1]
+        ]
     };
 });
 const $html_1 = new HTMLMaker("If Content");
@@ -47,7 +49,9 @@ const $html_1 = new HTMLMaker("If Content");
         update($values) {
             $block_0.update($values[0]);
         },
-        parts: [[$slot_0, 1]]
+        parts: [
+            [$slot_0, 1]
+        ]
     };
 });
 /*
@@ -76,7 +80,9 @@ const $html_1 = new HTMLMaker("If Content");
         update($values) {
             $block_0.update($values[0]);
         },
-        parts: [[$slot_0, 1]]
+        parts: [
+            [$slot_0, 1]
+        ]
     };
 });
 const $html_5 = new HTMLMaker(" ");
@@ -113,7 +119,9 @@ const $html_5 = new HTMLMaker(" ");
         update($values) {
             $block_0.update($values[0]);
         },
-        parts: [[$slot_0, 1]]
+        parts: [
+            [$slot_0, 1]
+        ]
     };
 });
 /*
@@ -153,7 +161,9 @@ const $html_8 = new HTMLMaker("Else Content");
         update($values) {
             $block_0.update($values[0]);
         },
-        parts: [[$slot_0, 1]]
+        parts: [
+            [$slot_0, 1]
+        ]
     };
 });
 /*
