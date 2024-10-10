@@ -145,9 +145,14 @@ export abstract class SlotParserBase {
 		return this.tree.references.hasRefed(this.node)
 	}
 
+	/** Will later reference node as a variable. */
+	protected refNode() {
+		this.tree.references.ref(this.node)
+	}
+
 	/** Get node variable name. */
 	protected getRefedNodeName(): string {
-		return this.tree.references.refAsName(this.node)
+		return this.tree.references.getRefedName(this.node)
 	}
 
 	/** 
@@ -249,44 +254,48 @@ export abstract class SlotParserBase {
 		return Helper.pack.toStatements(exps)
 	}
 
-	/** Make `new TemplateSlot(...)`. */
-	outputTemplateSlot(slotContentType: number | null): TS.Expression {
+	/** Return a callback to get `new TemplateSlot(...)`. */
+	prepareTemplateSlot(slotContentType: number | null): () => TS.Expression {
 		Modifier.addImport('TemplateSlot', '@pucelle/lupos.js')
 		Modifier.addImport('SlotPosition', '@pucelle/lupos.js')
 
-		let {nodeName, position} = this.getTemplateSlotParameters()
+		let parameterGetter = this.prepareTemplateSlotParameters()
 
-		// new TemplateSlot(
-		//   new SlotPosition(SlotPositionType.Before / AfterContent, $context),
-		//   context,
-		//   ?SlotContentType.xxx
-		// )
+		return () => {
+			let {nodeName, position} = parameterGetter()
 
-		let slotContentTypeNodes = slotContentType !== null ? [factory.createNumericLiteral(slotContentType)] : []
+			// new TemplateSlot(
+			//   new SlotPosition(SlotPositionType.Before / AfterContent, $context),
+			//   context,
+			//   ?SlotContentType.xxx
+			// )
 
-		return factory.createNewExpression(
-			factory.createIdentifier('TemplateSlot'),
-			undefined,
-			[
-				factory.createNewExpression(
-					factory.createIdentifier('SlotPosition'),
-					undefined,
-					[
-						factory.createNumericLiteral(position),
-						factory.createIdentifier(nodeName)
-					]
-				),
-				factory.createIdentifier(VariableNames.context),
-				...slotContentTypeNodes
-			]
-		)
+			let slotContentTypeNodes = slotContentType !== null ? [factory.createNumericLiteral(slotContentType)] : []
+
+			return factory.createNewExpression(
+				factory.createIdentifier('TemplateSlot'),
+				undefined,
+				[
+					factory.createNewExpression(
+						factory.createIdentifier('SlotPosition'),
+						undefined,
+						[
+							factory.createNumericLiteral(position),
+							factory.createIdentifier(nodeName)
+						]
+					),
+					factory.createIdentifier(VariableNames.context),
+					...slotContentTypeNodes
+				]
+			)
+		}
 	}
 
-	/** Get node name and position parameters for outputting template slot. */
-	protected getTemplateSlotParameters() {
-		let position: number
+	/** Return a callback to get node name and position parameters for outputting template slot. */
+	protected prepareTemplateSlotParameters() {
+		let position = SlotPositionType.Before
 		let nextNode = this.node.nextSibling
-		let nodeName: string
+		let useNode: HTMLNode
 
 		// Use next node to locate.
 		if (nextNode
@@ -294,23 +303,27 @@ export abstract class SlotParserBase {
 			&& this.canRemoveNode(this.node)
 		) {
 			this.node.remove()
-			nodeName = this.tree.references.refAsName(nextNode)
-			position = SlotPositionType.Before
+			useNode = nextNode
 		}
 
 		// Use current node to locate.
 		else {
-			nodeName = this.getRefedNodeName()
-			position = SlotPositionType.Before
+			useNode = this.node
 		}
 
-		return {
-			nodeName,
-			position,
+		this.tree.references.ref(useNode)
+
+		return () => {
+			let nodeName = this.tree.references.getRefedName(useNode)
+
+			return {
+				nodeName,
+				position,
+			}
 		}
 	}
 
-	/** Whether can remove current node, and will not cause two text node joining. */
+	/** Whether can remove current node, and will not cause two sibling text nodes joined. */
 	private canRemoveNode(node: HTMLNode): boolean {
 		let previousBeText = node.previousSibling?.type === HTMLNodeType.Text
 		let nextBeText = node.nextSibling?.type === HTMLNodeType.Text
@@ -322,8 +335,11 @@ export abstract class SlotParserBase {
 		return true
 	}
 
-	/** Make `new SlotRange(...)`. */
-	protected makeSlotRange(): TS.Expression | null {
+	/** 
+	 * Prepare nodes for `SlotRange`, and return a getter,
+	 * call which will get slot range node.
+	 */
+	protected prepareSlotRange(): (() => TS.Expression) | null {
 		if (this.node.children.length === 0) {
 			return null
 		}
@@ -340,17 +356,22 @@ export abstract class SlotParserBase {
 			firstChild = comment
 		}
 
-		let firstChildName = this.tree.references.refAsName(firstChild)
-		let lastChildName = this.tree.references.refAsName(lastChild)
+		this.tree.references.ref(firstChild)
+		this.tree.references.ref(lastChild)
 
-		return factory.createNewExpression(
-			factory.createIdentifier('SlotRange'),
-			undefined,
-			[
-				factory.createIdentifier(firstChildName),
-				factory.createIdentifier(lastChildName)
-			]
-		)
+		return () => {
+			let firstChildName = this.tree.references.getRefedName(firstChild)
+			let lastChildName = this.tree.references.getRefedName(lastChild)
+
+			return factory.createNewExpression(
+				factory.createIdentifier('SlotRange'),
+				undefined,
+				[
+					factory.createIdentifier(firstChildName),
+					factory.createIdentifier(lastChildName)
+				]
+			)
+		}
 	}
 
 	/** Try resolve component declarations. */

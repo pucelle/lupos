@@ -267,17 +267,12 @@ export namespace Helper {
 
 		/** Get the first decorator name of a decorator. */
 		export function getName(node: TS.Decorator): string | undefined {
-			let identifier = getIdentifier(node)
-			if (!identifier) {
-				return undefined
-			}
-
-			let resolved = symbol.resolveImport(identifier)
+			let resolved = symbol.resolveImport(node)
 			if (resolved) {
 				return resolved.memberName
 			}
 
-			let decl = symbol.resolveDeclaration(identifier, ts.isFunctionDeclaration)
+			let decl = symbol.resolveDeclaration(node, ts.isFunctionDeclaration)
 			if (!decl) {
 				return undefined
 			}

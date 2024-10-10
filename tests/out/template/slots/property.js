@@ -1,4 +1,4 @@
-import { Component, CompiledTemplateResult, TemplateMaker, SlotPosition, HTMLMaker, DynamicComponentBlock, TemplateSlot } from '@pucelle/lupos.js';
+import { Component, CompiledTemplateResult, TemplateMaker, SlotPosition, HTMLMaker, TemplateSlot, DynamicComponentBlock } from '@pucelle/lupos.js';
 import { trackGet } from "@pucelle/ff";
 const $html_0 = new HTMLMaker("<div></div>");
 /*
@@ -29,6 +29,7 @@ const $html_1 = new HTMLMaker("<!----><div></div><!---->");
     let $node_2 = $node.content.lastChild;
     let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_2), $context);
     let $block_0 = new DynamicComponentBlock(function (com) {
+        $node_1 = com.el;
         $com_0 = com;
         $com_0.comProp = 1;
     }, $node_1, $slot_0);
@@ -53,6 +54,7 @@ const $html_1 = new HTMLMaker("<!----><div></div><!---->");
     let $node_2 = $node.content.lastChild;
     let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_2), $context);
     let $block_0 = new DynamicComponentBlock(function (com) {
+        $node_1 = com.el;
         $com_0 = com;
         $com_0.comProp = 1;
     }, $node_1, $slot_0);

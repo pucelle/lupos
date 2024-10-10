@@ -6,11 +6,12 @@ const $html_0 = new HTMLMaker("<!---->");
 </root>
 */ const $template_0 = new TemplateMaker(function ($context) {
     let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
-    $context.el.classList.add("className");
+    let $node_0 = $context.el;
+    let $node_1 = $node.content.firstChild;
+    $node_0.classList.add("className");
     return {
         el: $node,
-        position: new SlotPosition(1, $node_0)
+        position: new SlotPosition(1, $node_1)
     };
 });
 const $html_1 = new HTMLMaker("<svg><path></path></svg>", true);

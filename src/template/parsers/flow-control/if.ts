@@ -13,6 +13,9 @@ export class IfFlowControl extends FlowControlBase {
 	/** $slot_0 */
 	private slotVariableName: string = ''
 
+	/** new TemplateSlot(...) */
+	private templateSlotGetter!: () => TS.Expression
+
 	private cacheable: boolean = false
 	private valueIndices: (number | null)[] = []
 	private contentTemplates: (TemplateParser | null)[] = []
@@ -62,6 +65,10 @@ export class IfFlowControl extends FlowControlBase {
 
 		this.contentTemplates = contentTemplates
 		this.valueIndices = valueIndices
+
+		let allBeResult = this.contentTemplates.every(t => t)
+		let slotContentType = allBeResult ? SlotContentType.TemplateResult : null
+		this.templateSlotGetter = this.slot.prepareTemplateSlot(slotContentType)
 	}
 
 	outputInit() {
@@ -71,9 +78,7 @@ export class IfFlowControl extends FlowControlBase {
 		// let $block_0 = new IfBlock / CacheableIfBlock(
 		//   new TemplateSlot(new SlotPosition(SlotPositionType.Before, nextChild)),
 		// )
-		let allBeResult = this.contentTemplates.every(t => t)
-		let slotContentType = allBeResult ? SlotContentType.TemplateResult : null
-		let templateSlot = this.slot.outputTemplateSlot(slotContentType)
+		let templateSlot = this.templateSlotGetter()
 
 		let slotInit = this.slot.createVariableAssignment(
 			this.slotVariableName,

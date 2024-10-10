@@ -238,20 +238,7 @@ export class TreeOutputHandler {
 			firstNode = firstNode.firstChild!
 		}
 
-		// Insert a comment at least, to make sure having a position.
-		if (!firstNode) {
-			firstNode = new HTMLNode(HTMLNodeType.Comment, {})
-			container.append(firstNode)
-		}
-
-		// Use a new comment node to locate if position is not stable.
-		else if (!firstNode.isPrecedingPositionStable()) {
-			let comment = new HTMLNode(HTMLNodeType.Comment, {})
-			firstNode.before(comment)
-			firstNode = comment
-		}
-
-		let nodeName = this.parser.references.refAsName(firstNode)
+		let nodeName = this.parser.references.getRefedName(firstNode)
 
 		// new SlotPosition(SlotPositionType.Before, $context),
 		return factory.createNewExpression(

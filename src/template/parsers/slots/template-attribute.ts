@@ -1,6 +1,5 @@
 import {SlotParserBase} from './base'
 import {factory, Helper, ts} from '../../../base'
-import {VariableNames} from '../variable-names'
 import {cleanList} from '../../../utils'
 
 
@@ -17,6 +16,7 @@ export class TemplateAttributeSlotParser extends SlotParserBase {
 
 	outputInit() {
 		let string = this.strings[0]
+		let nodeName = this.getRefedNodeName()
 
 		// class="..."
 		if (this.name === 'class') {
@@ -25,11 +25,8 @@ export class TemplateAttributeSlotParser extends SlotParserBase {
 			return factory.createCallExpression(
 				factory.createPropertyAccessExpression(
 					factory.createPropertyAccessExpression(
-					factory.createPropertyAccessExpression(
-						factory.createIdentifier(VariableNames.context),
-						factory.createIdentifier('el')
-					),
-					factory.createIdentifier('classList')
+						factory.createIdentifier(nodeName),
+						factory.createIdentifier('classList')
 					),
 					factory.createIdentifier('add')
 				),
@@ -45,10 +42,7 @@ export class TemplateAttributeSlotParser extends SlotParserBase {
 				.filter(v => v[0])
 
 			let styleNode = factory.createPropertyAccessExpression(
-				factory.createPropertyAccessExpression(
-					factory.createIdentifier(VariableNames.context),
-					factory.createIdentifier('el')
-				),
+				factory.createIdentifier(nodeName),
 				factory.createIdentifier('style')
 			)
 			
@@ -68,10 +62,7 @@ export class TemplateAttributeSlotParser extends SlotParserBase {
 		else {
 			return factory.createCallExpression(
 				factory.createPropertyAccessExpression(
-					factory.createPropertyAccessExpression(
-						factory.createIdentifier(VariableNames.context),
-						factory.createIdentifier('el')
-					),
+					factory.createIdentifier(nodeName),
 					factory.createIdentifier('setAttribute')
 				),
 				undefined,

@@ -6,10 +6,14 @@ import {cleanList} from '../../../utils'
 
 export class ComponentSlotParser extends SlotParserBase {
 
-	init() {
-		this.refAsComponent()
+	/** new SlotRange(...) */
+	private slotRangeGetter: (() => TS.Expression) | null = null
 
+	init() {
 		let comName = this.node.tagName!
+		let hasRestSlotContentExisted = this.node.children.length > 0
+
+		this.refAsComponent()
 
 		let decl = ScopeTree.getDeclarationByName(comName, this.template.rawNode)
 		if (!decl) {
@@ -22,6 +26,10 @@ export class ComponentSlotParser extends SlotParserBase {
 		// Avoid been removed by typescript compiler.
 		if (ts.isImportSpecifier(decl)) {
 			Modifier.persistImport(decl)
+		}
+
+		if (hasRestSlotContentExisted) {
+			this.slotRangeGetter = this.prepareSlotRange()
 		}
 	}
 
@@ -53,7 +61,7 @@ export class ComponentSlotParser extends SlotParserBase {
 		// )
 		if (hasRestSlotContentExisted) {
 			let comVariableName = this.getRefedComponentName()
-			let contentRange = this.makeSlotRange()!
+			let contentRange = this.slotRangeGetter!()
 
 			restSlotRangeInit = factory.createCallExpression(
 				factory.createPropertyAccessExpression(

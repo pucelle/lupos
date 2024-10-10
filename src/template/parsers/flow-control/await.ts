@@ -1,3 +1,4 @@
+import type TS from 'typescript'
 import {factory, Modifier} from '../../../base'
 import {FlowControlBase} from './base'
 import {VariableNames} from '../variable-names'
@@ -10,6 +11,9 @@ export class AwaitFlowControl extends FlowControlBase {
 
 	/** $slot_0 */
 	private slotVariableName: string = ''
+
+	/** new TemplateSlot(...) */
+	private templateSlotGetter!: () => TS.Expression
 
 	private templateNames: (string | null)[] = []
 	private promiseIndex: number = -1
@@ -48,6 +52,7 @@ export class AwaitFlowControl extends FlowControlBase {
 
 		this.promiseIndex = promiseIndex
 		this.templateNames = templateNames
+		this.templateSlotGetter = this.slot.prepareTemplateSlot(null)
 	}
 
 	outputInit() {
@@ -60,7 +65,7 @@ export class AwaitFlowControl extends FlowControlBase {
 		// )
 
 		let makers = this.outputMakerNodes(this.templateNames)
-		let templateSlot = this.slot.outputTemplateSlot(null)
+		let templateSlot = this.templateSlotGetter()
 
 		let slotInit = this.slot.createVariableAssignment(
 			this.slotVariableName,

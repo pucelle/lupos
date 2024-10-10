@@ -10,9 +10,9 @@ interface DeepReferenceItem {
 	children: DeepReferenceItem[]
 }
 
-export interface ReferenceOutputItem {
+export interface ReferenceItem {
 
-	type: ReferenceOutputTypeMask
+	type: ReferenceItemTypeMask
 
 	/** Visiting node. */
 	node: HTMLNode
@@ -27,7 +27,7 @@ export interface ReferenceOutputItem {
 	visitSteps: number[] | null
 }
 
-export enum ReferenceOutputTypeMask {
+export enum ReferenceItemTypeMask {
 
 	/** Reference node as variable for some binding like. */
 	Reference = 1,
@@ -40,34 +40,23 @@ export enum ReferenceOutputTypeMask {
 export class HTMLNodeReferences {
 
 	readonly root: HTMLRoot
-	private references: Map<HTMLNode, number> = new Map()
+	private referencedNodes: Set<HTMLNode> = new Set()
+	private determined: boolean = false
+	private indexMap: Map<HTMLNode, number> = new Map()
+	private referenceItems: ReferenceItem[] = []
 
 	constructor(root: HTMLRoot) {
 		this.root = root
 	}
 
-	/** 
-	 * Add a reference after known a node should be referenced.
-	 * Returns the reference index.
-	 */
-	refAsIndex(node: HTMLNode): number {
-		if (this.references.has(node)) {
-			return this.references.get(node)!
-		}
-
-		let index = VariableNames.getUniqueIndex(this)
-		this.references.set(node, index)
-
-		return index
+	/** Reference node if not */
+	ref(node: HTMLNode) {
+		this.referencedNodes.add(node)
 	}
 
-	/** 
-	 * Reference node if not, and return it's reference variable name.
-	 * Like `$node_0`.
-	 */
-	refAsName(node: HTMLNode) {
-		let nodeIndex = this.refAsIndex(node)
-		return VariableNames.node + '_' + nodeIndex
+	/** Whether node has been referenced. */
+	hasRefed(node: HTMLNode): boolean {
+		return this.referencedNodes.has(node)
 	}
 
 	/** 
@@ -75,30 +64,27 @@ export class HTMLNodeReferences {
 	 * Like `$node_0`.
 	 */
 	getRefedName(node: HTMLNode) {
-		let nodeIndex = this.references.get(node)!
+		if (!this.determined) {
+			throw new Error(`References have not been determined!`)
+		}
+
+		let nodeIndex = this.indexMap.get(node)!
 		return VariableNames.node + '_' + nodeIndex
 	}
 
-	/** Whether node has been referenced. */
-	hasRefed(node: HTMLNode): boolean {
-		return this.references.has(node)
-	}
+	/** 
+	 * Lock all existing references.
+	 * Later can call `getRefedName`, but not `refAsName` and `refAsIndex`.
+	 */
+	determine() {
+		this.determined = true
 
-	/** Output all reference sequence. */
-	output(): ReferenceOutputItem[] {
 		let refTree = this.makeDeepReferenceTree()
 		if (!refTree) {
-			return []
+			return
 		}
 
-		let items = [...this.outputItem(refTree, this.root, [])]
-
-		// Order by reference indices.
-		items.sort((a, b) => {
-			return this.references.get(a.node)! - this.references.get(b.node)!
-		})
-
-		return items
+		this.referenceItems = [...this.walkReferenceItem(refTree, this.root, [])]
 	}
 
 	/** Made deep reference tree. */
@@ -116,13 +102,12 @@ export class HTMLNodeReferences {
 			let siblingIndex = i > 0 && i === node.children.length - 1 ? -1 : i
 
 			let item = this.makeDeepReferenceItem(child, siblingIndex)
-
 			if (item) {
 				children.push(item)
 			}
 		}
 
-		if (this.references.has(node) || children.length > 0) {
+		if (this.referencedNodes.has(node) || children.length > 0) {
 			return {
 				node,
 				siblingIndex,
@@ -134,26 +119,27 @@ export class HTMLNodeReferences {
 	}
 
 	/** `steps` doesn't include current item sibling index. */
-	private *outputItem(item: DeepReferenceItem, visitFromNode: HTMLNode, parentalSteps: number[]): Iterable<ReferenceOutputItem> {
+	private *walkReferenceItem(item: DeepReferenceItem, visitFromNode: HTMLNode, parentalSteps: number[]): Iterable<ReferenceItem> {
+		let node = item.node
 		let steps: number[] = [...parentalSteps]
 		let visitSteps: number[] | null = steps
-		let type: ReferenceOutputTypeMask | 0 = 0
+		let type: ReferenceItemTypeMask | 0 = 0
 
 		// No visit step for tree.
-		if (item.node !== this.root) {
+		if (node !== this.root) {
 			steps.push(item.siblingIndex)
 		}
 
 		// Template tags get removed, no visit steps, but still iterate them.
-		if (item.node.tagName === 'template'
-			&& item.node.parent === this.root
+		if (node.tagName === 'template'
+			&& node.parent === this.root
 		) {
 			visitSteps = null
 		}
 
 		// Output directly.
-		if (this.hasRefed(item.node)) {
-			type |= ReferenceOutputTypeMask.Reference
+		if (this.hasRefed(node)) {
+			type |= ReferenceItemTypeMask.Reference
 		}
 
 		// When more than one descendant nodes get referenced,
@@ -165,26 +151,27 @@ export class HTMLNodeReferences {
 		// f = a.b.c
 		// f.d
 		// f.e
-		if (item.children.length > 1 && item.node !== this.root && visitSteps !== null) {
-			type |= ReferenceOutputTypeMask.PassingBy
-			this.refAsIndex(item.node)
+		if (item.children.length > 1 && node !== this.root && visitSteps !== null) {
+			type |= ReferenceItemTypeMask.PassingBy
 		}
 
 		// Output node, and output descendants relative to it.
 		if (type !== 0) {
+			this.refAsIndex(node)
+
 			yield {
 				type,
-				node: item.node,
+				node,
 				visitFromNode,
 				visitSteps,
 			}
 			
 			for (let child of item.children) {
 				if (visitSteps) {
-					yield* this.outputItem(child, item.node, [])
+					yield* this.walkReferenceItem(child, node, [])
 				}
 				else {
-					yield* this.outputItem(child, visitFromNode, steps)
+					yield* this.walkReferenceItem(child, visitFromNode, steps)
 				}
 			}
 		}
@@ -192,8 +179,20 @@ export class HTMLNodeReferences {
 		// Add step to current path.
 		else {
 			for (let child of item.children) {
-				yield* this.outputItem(child, visitFromNode, steps)
+				yield* this.walkReferenceItem(child, visitFromNode, steps)
 			}
 		}
+	}
+
+	/** Assign an index to node. */
+	private refAsIndex(node: HTMLNode) {
+		let index = VariableNames.getUniqueIndex(this)
+		this.indexMap.set(node, index)
+		this.referencedNodes.add(node)
+	}
+
+	/** Output reference items. */
+	output(): ReferenceItem[] {
+		return this.referenceItems
 	}
 }

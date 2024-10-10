@@ -13,35 +13,52 @@ export class DynamicComponentSlotParser extends SlotParserBase {
 	/** $slot_0 */
 	private slotVariableName: string = ''
 
+	/** new TemplateSlot(...) */
+	private templateSlotGetter!: () => TS.Expression
+
+	/** new SlotRange(...) */
+	private slotRangeGetter: (() => TS.Expression) | null = null
+
 	init() {
+		let hasContentExisted = this.node.children.length > 0
+
 		this.refAsComponent()
 		this.blockVariableName = this.tree.makeUniqueBlockName()
 		this.slotVariableName = this.makeSlotName()
+		this.templateSlotGetter = this.prepareTemplateSlot(null)
+
+		if (hasContentExisted) {
+			this.slotRangeGetter = this.prepareSlotRange()
+		}
 	}
 
 	/** Get node name and position parameters for outputting template slot. */
-	protected getTemplateSlotParameters() {
-		let position: number
+	protected prepareTemplateSlotParameters() {
+		let position = SlotPositionType.Before
 		let nextNode = this.node.nextSibling
-		let nodeName: string
+		let useNode: HTMLNode
 
 		// Use next node to locate.
 		if (nextNode && nextNode.isPrecedingPositionStable()) {
-			nodeName = this.tree.references.refAsName(nextNode)
-			position = SlotPositionType.Before
+			useNode = nextNode
 		}
 
 		// Use current node to locate.
 		else {
 			let comment = new HTMLNode(HTMLNodeType.Comment, {})
 			this.node.after(comment)
-			nodeName = this.tree.references.refAsName(comment)
-			position = SlotPositionType.Before
+			useNode = comment
 		}
 
-		return {
-			nodeName,
-			position
+		this.tree.references.ref(useNode)
+
+		return () => {
+			let nodeName = this.tree.references.getRefedName(useNode)
+
+			return {
+				nodeName,
+				position
+			}
 		}
 	}
 
@@ -51,6 +68,7 @@ export class DynamicComponentSlotParser extends SlotParserBase {
 		let hasNodeRefed = this.hasNodeRefed()
 		let nodeName = this.getRefedNodeName()
 		let comName = this.getRefedComponentName()
+		let hasContentExisted = this.node.children.length > 0
 
 		// let $com_0
 		this.tree.addPreDeclaredVariableName(comName)
@@ -98,7 +116,8 @@ export class DynamicComponentSlotParser extends SlotParserBase {
 		)
 
 
-		let templateSlot = this.outputTemplateSlot(null)
+		// new TemplateSlot(...)
+		let templateSlot = this.templateSlotGetter()
 
 		// Must not pre-declare.
 		let slotInit = this.createVariableAssignment(
@@ -108,7 +127,8 @@ export class DynamicComponentSlotParser extends SlotParserBase {
 		)
 
 
-		let contentRangeNodes = this.node.children.length > 0 ? [this.makeSlotRange()!] : []
+		// new SlotRange(...)
+		let contentRangeNodes = hasContentExisted ? [this.slotRangeGetter!()] : []
 		
 		return [
 			slotInit,

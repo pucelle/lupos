@@ -1,3 +1,4 @@
+import type TS from 'typescript'
 import {SlotParserBase} from './base'
 import {factory, Helper} from '../../../base'
 import {SlotContentType} from '../../../enums'
@@ -5,30 +6,32 @@ import {SlotContentType} from '../../../enums'
 
 export class ContentSlotParser extends SlotParserBase {
 
-	/** Of `SlotContentType` */
-	private slotContentType: SlotContentType | null = null
-
 	/** $slot_0 */
 	private slotVariableName: string = ''
 
 	/** $latest_0 */
 	private latestVariableNames: (string | null)[] | null = null
 
+	/** new TemplateSlot(...) */
+	private templateSlotGetter!: () => TS.Expression
+
 	init() {
-		this.slotContentType = this.identifySlotContentType()
+		let slotContentType = this.identifySlotContentType()
 		this.slotVariableName = this.makeSlotName()
 
 		if (this.isAnyValueMutable()) {
 
 			// Assume for `TemplateResult` or `TemplateResult[]`, it regenerates every time.
 			// And for node, slot itself will compare value.
-			if (this.slotContentType !== SlotContentType.TemplateResult
-				&& this.slotContentType !== SlotContentType.TemplateResultList
-				&& this.slotContentType !== SlotContentType.Node
+			if (slotContentType !== SlotContentType.TemplateResult
+				&& slotContentType !== SlotContentType.TemplateResultList
+				&& slotContentType !== SlotContentType.Node
 			) {
 				this.latestVariableNames = this.makeGroupOfLatestNames()
 			}
 		}
+
+		this.templateSlotGetter = this.prepareTemplateSlot(slotContentType)
 	}
 
 	private identifySlotContentType(): number | null {
@@ -56,11 +59,11 @@ export class ContentSlotParser extends SlotParserBase {
 	}
 
 	outputInit() {
-		let templateSLot = this.outputTemplateSlot(this.slotContentType)
+		let templateSlot = this.templateSlotGetter()
 
 		return this.createVariableAssignment(
 			this.slotVariableName,
-			templateSLot
+			templateSlot
 		)
 	}
 

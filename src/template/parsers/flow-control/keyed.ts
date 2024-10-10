@@ -1,3 +1,4 @@
+import type TS from 'typescript'
 import {factory, Modifier} from '../../../base'
 import {FlowControlBase} from './base'
 import {TemplateParser} from '../template'
@@ -11,6 +12,9 @@ export class KeyedFlowControl extends FlowControlBase {
 
 	/** $slot_0 */
 	private slotVariableName: string = ''
+
+	/** new TemplateSlot(...) */
+	private templateSlotGetter!: () => TS.Expression
 
 	private contentTemplate: TemplateParser | null = null
 	private valueIndex: number = 1
@@ -30,17 +34,18 @@ export class KeyedFlowControl extends FlowControlBase {
 			let template = this.template.separateChildrenAsTemplate(this.node)
 			this.contentTemplate = template
 		}
+
+		let slotContentType = this.contentTemplate ? SlotContentType.TemplateResult : null
+		this.templateSlotGetter = this.slot.prepareTemplateSlot(slotContentType)
 	}
 
 	outputInit() {
 		Modifier.addImport('KeyedBlock', '@pucelle/lupos.js')
 
-		// let $block_0 = new KeyedBlock / CacheableKeyedBlock(
+		// let $block_0 = new KeyedBlock(
 		//   new TemplateSlot(new SlotPosition(SlotPositionType.Before, nextChild)),
 		// )
-
-		let slotContentType = this.contentTemplate ? SlotContentType.TemplateResult : null
-		let templateSlot = this.slot.outputTemplateSlot(slotContentType)
+		let templateSlot = this.templateSlotGetter()
 
 		let slotInit = this.slot.createVariableAssignment(
 			this.slotVariableName,

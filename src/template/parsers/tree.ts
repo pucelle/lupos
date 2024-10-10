@@ -112,30 +112,69 @@ export class TreeParser {
 
 	private parseSlots() {
 		for (let node of this.root.walk()) {
-			switch (node.type) {
-				case HTMLNodeType.Tag:
-					let tagName = node.tagName!
-					if (tagName === 'slot') {
-						this.parseSlotTag(node)
-					}
-					else if (TemplateSlotPlaceholder.isNamedComponent(tagName)) {
-						this.parseComponentTag(node)
-					}
-					else if (TemplateSlotPlaceholder.isDynamicComponent(tagName)) {
-						this.parseDynamicTag(node)
-					}
-					else if (tagName.startsWith('lu:') && tagName !== 'lu:portal') {
-						this.parseFlowControlTag(node)
-					}
-
-					this.parseAttributes(node)
-					break
-
-				case HTMLNodeType.Text:
-					this.parseText(node)
-					break
-			}
+			this.parseNode(node)
 		}
+
+		// Must after nodes parsed.
+		// Nodes will be adjusted when parsing.
+		// If insert nodes earlier, may affect
+		// this step, especially text parsing.
+		this.prepareSlotPositionNode()
+	}
+
+	private parseNode(node: HTMLNode) {
+		switch (node.type) {
+			case HTMLNodeType.Tag:
+				let tagName = node.tagName!
+				if (tagName === 'slot') {
+					this.parseSlotTag(node)
+				}
+				else if (TemplateSlotPlaceholder.isNamedComponent(tagName)) {
+					this.parseComponentTag(node)
+				}
+				else if (TemplateSlotPlaceholder.isDynamicComponent(tagName)) {
+					this.parseDynamicTag(node)
+				}
+				else if (tagName.startsWith('lu:') && tagName !== 'lu:portal') {
+					this.parseFlowControlTag(node)
+				}
+
+				this.parseAttributes(node)
+				break
+
+			case HTMLNodeType.Text:
+				this.parseText(node)
+				break
+		}
+	}
+
+	
+	/** Prepare node for `new SlotPosition(...)` to indicate the start inner position of template. */
+	private prepareSlotPositionNode() {
+		let container = this.root
+		let firstNode = container.firstChild!
+
+		// Being wrapped.
+		if (this.wrappedBySVG || this.wrappedByTemplate) {
+			container = container.firstChild!
+			firstNode = firstNode.firstChild!
+		}
+
+		// Insert a comment at least, to make sure having a position.
+		if (!firstNode) {
+			firstNode = new HTMLNode(HTMLNodeType.Comment, {})
+			container.append(firstNode)
+		}
+
+		// Use a new comment node to locate if position is not stable.
+		else if (!firstNode.isPrecedingPositionStable()) {
+			let comment = new HTMLNode(HTMLNodeType.Comment, {})
+			firstNode.before(comment)
+			firstNode = comment
+		}
+
+		// Make it to be referenced.
+		this.references.ref(firstNode)
 	}
 
 	/** Note `node` may not in tree when adding the slot. */
@@ -196,6 +235,7 @@ export class TreeParser {
 
 		slot.init()
 		this.slots.push(slot)
+		this.references.ref(node)
 	}
 
 	private parseSlotTag(node: HTMLNode) {
@@ -286,7 +326,7 @@ export class TreeParser {
 		}
 
 		// `${html`...`}`
-		else if (group.length === 1 && group[0].beText) {
+		else if (group.length === 1 && !group[0].beText) {
 			let {valueIndices} = group[0]
 
 			let comment = new HTMLNode(HTMLNodeType.Comment, {})
@@ -472,23 +512,23 @@ export class TreeParser {
 	private getPartPositionType(node: HTMLNode): PartPositionType {
 		let parent = node.parent!
 
-		if (this.wrappedByTemplate && parent.tagName === 'root') {
+		if (this.wrappedByTemplate && parent === this.root) {
 			return PartPositionType.ContextNode
 		}
 		else if (this.wrappedByTemplate || this.wrappedBySVG) {
-			if (parent.parent && parent.parent.tagName === 'root') {
+			if (parent.parent === this.root) {
 				return PartPositionType.DirectNode
 			}
 			else {
-				return PartPositionType.Others
+				return PartPositionType.Normal
 			}
 		}
 		else {
-			if (parent.tagName === 'root') {
+			if (parent === this.root) {
 				return PartPositionType.DirectNode
 			}
 			else {
-				return PartPositionType.Others
+				return PartPositionType.Normal
 			}
 		}
 	}
@@ -528,6 +568,8 @@ export class TreeParser {
 	 * Return a callback, call which will finally interpolate to source file.
 	 */
 	prepareToOutput(scope: Scope): () => void {
+		this.references.determine()
+
 		return this.outputHandler.prepareToOutput(
 			this.slots,
 			this.preDeclaredVariableNames,

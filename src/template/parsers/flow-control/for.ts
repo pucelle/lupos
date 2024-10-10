@@ -12,12 +12,16 @@ export class ForFlowControl extends FlowControlBase {
 	/** $slot_0 */
 	private slotVariableName: string = ''
 
+	/** new TemplateSlot(...) */
+	private templateSlotGetter!: () => TS.Expression
+
 	private ofValueIndex: number = -1
 	private fnValueIndex: number = -1
 
 	init() {
 		this.blockVariableName = this.tree.makeUniqueBlockName()
 		this.slotVariableName = this.slot.makeSlotName()
+		this.templateSlotGetter = this.slot.prepareTemplateSlot(SlotContentType.TemplateResultList)
 
 		let ofValueIndex = this.getAttrValueIndex(this.node)
 		let fnValueIndex = this.getUniqueChildValueIndex(this.node)
@@ -54,7 +58,7 @@ export class ForFlowControl extends FlowControlBase {
 			true
 		).joint as TS.FunctionExpression
 		
-		let templateSlot = this.slot.outputTemplateSlot(SlotContentType.TemplateResultList)
+		let templateSlot = this.templateSlotGetter()
 
 		let slotInit = this.slot.createVariableAssignment(
 			this.slotVariableName,

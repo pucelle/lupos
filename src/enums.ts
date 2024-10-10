@@ -11,7 +11,7 @@ export enum SlotContentType {
 }
 
 export enum PartPositionType {
-	Others = 0,
+	Normal = 0,
 	DirectNode = 1,
 	ContextNode = 2,
 }
