@@ -1,7 +1,7 @@
 import type TS from 'typescript'
 import {Context} from './context'
 import {ContextTypeMask} from './context-tree'
-import {AccessNode, FlowInterruptionTypeMask, Helper, ts} from '../../base'
+import {AccessNode, FlowInterruptionTypeMask, Helper, ts, VisitTree} from '../../base'
 
 
 
@@ -14,12 +14,12 @@ export class ContextState {
 	readonly withinLifeFunction: boolean
 
 	/** 
-	 * Whether function has nothing returned.
+	 * Whether inside a function that has nothing returned.
 	 * If a function returns nothing, we stop tracking it's property getting.
 	 * Initialize from a function-like type of context, and broadcast to descendants.
 	 * A generator returns an `Iterable`, so it is not nothing returned.
 	 */
-	readonly nothingReturned: boolean
+	readonly stopGetTracking: boolean
 
 	/** 
 	 * Whether method has effect decorated.
@@ -34,9 +34,9 @@ export class ContextState {
 	constructor(context: Context) {
 		this.context = context
 		this.withinLifeFunction = this.checkWithinLifeFunction()
-		this.nothingReturned = this.checkNothingReturned()
+		this.stopGetTracking = this.checkStopGetTracking()
 		this.effectDecorated = this.checkEffectDecorated()
-		
+
 		if (context.type & ContextTypeMask.FlowInterruption) {
 			this.flowInterruptionType = Helper.pack.getFlowInterruptionType(context.node)
 		}
@@ -71,15 +71,39 @@ export class ContextState {
 		return ['onCreated', 'onConnected', 'onWillDisconnect'].includes(methodName)
 	}
 
-	private checkNothingReturned(): boolean {
+	private checkStopGetTracking(): boolean {
 		let node = this.context.node
+		let parent = this.context.parent
 
-		// Inherit from parent context.
-		if ((this.context.type & ContextTypeMask.FunctionLike) === 0) {
-			return this.context.parent?.state.nothingReturned ?? false
+		if (!parent) {
+			return false
 		}
 
-		return Helper.types.isVoidReturned(node as TS.FunctionLikeDeclaration)
+		// Self is not function, inherit from parent context.
+		if ((this.context.type & ContextTypeMask.FunctionLike) === 0) {
+			return parent.state.stopGetTracking ?? false
+		}
+
+		// If current context was included by a decorator, treat parent as global context.
+		let decorator = VisitTree.findOutwardMatch(
+			this.context.visitIndex,
+			parent.visitIndex,
+			ts.isDecorator
+		)
+
+		if (decorator) {
+			return false
+		}
+
+		// An arrow function or function expression inherit from parent.
+		// We assume this function would be run immediately.
+		if (ts.isFunctionExpression(this.context.node)
+			|| ts.isArrowFunction(this.context.node)
+		) {
+			return parent.state.stopGetTracking ?? false
+		}
+
+		return Helper.types.isVoidReturning(node as TS.FunctionLikeDeclaration)
 	}
 
 	private checkEffectDecorated(): boolean {
@@ -150,7 +174,7 @@ export class ContextState {
 			}
 		}
 
-		if (this.nothingReturned && !this.effectDecorated) {
+		if (this.stopGetTracking && !this.effectDecorated) {
 			return true
 		}
 

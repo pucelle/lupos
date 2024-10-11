@@ -801,7 +801,7 @@ export namespace Helper {
 		}
 
 		/** Whether returned `void` or `Promise<void>`. */
-		export function isVoidReturned(node: TS.FunctionLikeDeclaration): boolean {
+		export function isVoidReturning(node: TS.FunctionLikeDeclaration): boolean {
 			let type = types.getReturnType(node)
 			if (!type) {
 				return false
