@@ -2,7 +2,6 @@ import type TS from 'typescript'
 import {SlotParserBase} from './base'
 import {factory, ts, Helper, TemplateSlotPlaceholder, ScopeTree, Modifier, VisitTree, MutableMask} from '../../../base'
 import {VariableNames} from '../variable-names'
-import {addToList} from '../../../utils'
 import {TrackingPatch} from '../../../ff'
 
 
@@ -20,7 +19,7 @@ const KnownInternalBindings: Record<string, {name: string, parameterCount: numbe
 export class BindingSlotParser extends SlotParserBase {
 
 	declare name: string
-	declare readonly modifiers: string[]
+	declare modifiers: string[]
 
 	// `:?binding=value`, detach binding if value is `null` or `undefined`.
 	private withQueryToken: boolean = false
@@ -136,21 +135,33 @@ export class BindingSlotParser extends SlotParserBase {
 	}
 
 	private initRef() {
-		
-		// If declare property as `XXXElement`, force ref element.
 		let rawValueNode = this.getFirstRawValueNode()
-		if (rawValueNode && TemplateSlotPlaceholder.isComponent(this.node.tagName!)) {
+		let beComponent = TemplateSlotPlaceholder.isComponent(this.node.tagName!)
+
+		// If declare property as `XXXElement`, force ref element.
+		if (rawValueNode && beComponent) {
 			let type = Helper.types.getType(rawValueNode)
 			let typeText = Helper.types.getTypeFullText(type)
 
 			if (/^\w*?Element$/.test(typeText)) {
-				addToList(this.modifiers, 'el')
+				this.modifiers = ['el']
+			}
+		}
+
+		// Become `com` or `el` ref.
+		if (this.modifiers.length === 0) {
+			if (beComponent) {
+				this.modifiers = ['com']
+			}
+			else {
+				this.modifiers = ['el']
 			}
 		}
 
 		// Will be compiled as a function and become static.
 		if (rawValueNode &&
 			(Helper.access.isAccess(rawValueNode)
+				&& Helper.symbol.resolveDeclaration(rawValueNode, Helper.isPropertyLike)
 				|| Helper.variable.isVariableIdentifier(rawValueNode)
 			)
 		) {
@@ -547,6 +558,47 @@ export class BindingSlotParser extends SlotParserBase {
 							factory.createIdentifier(this.previousBindingName!)
 						)),
 						...Helper.pack.toStatements(TrackingPatch.outputIsolatedTracking(rawValueNode, 'set'))
+					],
+					false
+				)
+			)
+		}
+
+		// function(doRef){ this.refBinding.call(this, doRef ? previousBinding : null) }
+		else if (this.modifiers.includes('binding')) {
+			return factory.createFunctionExpression(
+				undefined,
+				undefined,
+				factory.createIdentifier(''),
+				undefined,
+				[factory.createParameterDeclaration(
+					undefined,
+					undefined,
+					factory.createIdentifier('doRef'),
+					undefined,
+					undefined,
+					undefined
+				)],
+				undefined,
+				factory.createBlock(
+					[
+						factory.createExpressionStatement(factory.createCallExpression(
+							factory.createPropertyAccessExpression(
+								rawValueNode,
+								factory.createIdentifier('call')
+							),
+							undefined,
+							[
+								factory.createThis(),
+								factory.createConditionalExpression(
+									factory.createIdentifier('doRef'),
+									factory.createToken(ts.SyntaxKind.QuestionToken),
+									factory.createIdentifier(this.previousBindingName!),
+									factory.createToken(ts.SyntaxKind.ColonToken),
+									factory.createNull()
+								)
+							]
+						))
 					],
 					false
 				)

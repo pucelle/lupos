@@ -29,10 +29,16 @@ class TestRefBinding extends Component {
 	}
 
 	testRefElMethod() {
-		return html`<div :ref=${this.refElMethod.bind(this)} />`
+		return html`<div :ref=${this.refElMethod} />`
 	}
 
 	refElMethod(_el: HTMLElement) {}
+
+	testRefBindingMethod() {
+		return html`<ChildComponent :class="className" :ref.binding=${this.refBindingMethod} />`
+	}
+
+	refBindingMethod(_binding: ClassBinding) {}
 }
 
 class ChildComponent extends Component {}

@@ -8,7 +8,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 */ const $template_0 = new TemplateMaker(function ($context) {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
-    let $binding_0 = new RefBinding($node_0, $context);
+    let $binding_0 = new RefBinding($node_0, $context, ["el"]);
     $binding_0.update(function (refed) { this.refEl = refed; trackSet(this, "refEl"); });
     return {
         el: $node,
@@ -26,7 +26,7 @@ const $html_0 = new HTMLMaker("<div></div>");
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $com_0 = new ChildComponent({}, $node_0);
-    let $binding_0 = new RefBinding($node_0, $context);
+    let $binding_0 = new RefBinding($node_0, $context, ["com"]);
     $binding_0.update(function (refed) { this.refCom = refed; trackSet(this, "refCom"); });
     return {
         el: $node,
@@ -98,18 +98,39 @@ const $html_0 = new HTMLMaker("<div></div>");
 });
 /*
 <root>
-    <div :ref=${this.refElMethod.bind(this)} />
+    <div :ref=${this.refElMethod} />
 </root>
 */ const $template_5 = new TemplateMaker(function ($context) {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
-    let $binding_0 = new RefBinding($node_0, $context);
-    $binding_0.update($context.refElMethod.bind($context));
+    let $binding_0 = new RefBinding($node_0, $context, ["el"]);
+    $binding_0.update($context.refElMethod);
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),
         parts: [
             [$binding_0, 1]
+        ]
+    };
+});
+/*
+<root>
+    <ChildComponent :class="className" :ref.binding=${this.refBindingMethod} />
+</root>
+*/ const $template_6 = new TemplateMaker(function ($context) {
+    let $node = $html_0.make();
+    let $node_0 = $node.content.firstChild;
+    let $com_0 = new ChildComponent({}, $node_0);
+    let $binding_0 = new ClassBinding($node_0);
+    let $binding_1 = new RefBinding($node_0, $context, ["binding"]);
+    $binding_0.updateString("className");
+    $binding_1.update(function (doRef) { this.refBindingMethod.call(this, doRef ? $binding_0 : null); });
+    return {
+        el: $node,
+        position: new SlotPosition(1, $node_0),
+        parts: [
+            [$com_0, 1],
+            [$binding_1, 1]
         ]
     };
 });
@@ -137,6 +158,10 @@ class TestRefBinding extends Component {
         return new CompiledTemplateResult($template_5, []);
     }
     refElMethod(_el) { }
+    testRefBindingMethod() {
+        return new CompiledTemplateResult($template_6, []);
+    }
+    refBindingMethod(_binding) { }
 }
 class ChildComponent extends Component {
 }
