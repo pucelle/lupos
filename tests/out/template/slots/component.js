@@ -37,7 +37,7 @@ const $html_1 = new HTMLMaker("<div>Rest Content</div>");
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node_0.firstChild;
     let $com_0 = new ChildComponent({}, $node_0);
-    $com_0.__applyRestSlotRangeNodes($node_1, $node_1);
+    $com_0.__applyRestSlotRangeNodes($node_1);
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),
@@ -57,7 +57,7 @@ const $html_2 = new HTMLMaker("<div> </div>");
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node_0.firstChild;
     let $com_0 = new ChildComponent({}, $node_0);
-    $com_0.__applyRestSlotRangeNodes($node_1, $node_1);
+    $com_0.__applyRestSlotRangeNodes($node_1);
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),
