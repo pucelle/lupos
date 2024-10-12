@@ -16,8 +16,8 @@ export class DynamicComponentSlotParser extends SlotParserBase {
 	/** new TemplateSlot(...) */
 	private templateSlotGetter!: () => TS.Expression
 
-	/** new SlotRange(...) */
-	private slotRangeGetter: (() => TS.Expression) | null = null
+	/** Nodes parameters for `new SlotRange(...)` */
+	private slotRangeNodesGetter: (() => TS.Expression[]) | null = null
 
 	init() {
 		let hasContentExisted = this.node.children.length > 0
@@ -28,7 +28,8 @@ export class DynamicComponentSlotParser extends SlotParserBase {
 		this.templateSlotGetter = this.prepareTemplateSlot(null)
 
 		if (hasContentExisted) {
-			this.slotRangeGetter = this.prepareSlotRange()
+			Modifier.addImport('SlotRange', '@pucelle/lupos.js')
+			this.slotRangeNodesGetter = this.prepareNodesSlotRangeNodes()
 		}
 	}
 
@@ -128,7 +129,11 @@ export class DynamicComponentSlotParser extends SlotParserBase {
 
 
 		// new SlotRange(...)
-		let contentRangeNodes = hasContentExisted ? [this.slotRangeGetter!()] : []
+		let contentRange = hasContentExisted ? [factory.createNewExpression(
+			factory.createIdentifier('SlotRange'),
+			undefined,
+			this.slotRangeNodesGetter!()
+		)] : []
 		
 		return [
 			slotInit,
@@ -146,7 +151,7 @@ export class DynamicComponentSlotParser extends SlotParserBase {
 								binderFn,
 								factory.createIdentifier(nodeName),
 								factory.createIdentifier(this.slotVariableName),
-								...contentRangeNodes,
+								...contentRange
 							]
 						)
 					)],

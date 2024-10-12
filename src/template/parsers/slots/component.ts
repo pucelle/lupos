@@ -6,8 +6,8 @@ import {cleanList} from '../../../utils'
 
 export class ComponentSlotParser extends SlotParserBase {
 
-	/** new SlotRange(...) */
-	private slotRangeGetter: (() => TS.Expression) | null = null
+	/** Nodes parameters for `new SlotRange(...)` */
+	private slotRangeNodesGetter: (() => TS.Expression[]) | null = null
 
 	init() {
 		let comName = this.node.tagName!
@@ -29,7 +29,7 @@ export class ComponentSlotParser extends SlotParserBase {
 		}
 
 		if (hasRestSlotContentExisted) {
-			this.slotRangeGetter = this.prepareSlotRange()
+			this.slotRangeNodesGetter = this.prepareNodesSlotRangeNodes()
 		}
 	}
 
@@ -56,20 +56,18 @@ export class ComponentSlotParser extends SlotParserBase {
 			)
 		)
 
-		// $com_0.__applyRestSlotRange(
-		//   new SlotRange(startNode, endNode)
-		// )
+		// $com_0.__applyRestSlotNodes(startNode, endNode)
 		if (hasRestSlotContentExisted) {
 			let comVariableName = this.getRefedComponentName()
-			let contentRange = this.slotRangeGetter!()
+			let contentRangeNodes = this.slotRangeNodesGetter!()
 
 			restSlotRangeInit = factory.createCallExpression(
 				factory.createPropertyAccessExpression(
 					factory.createIdentifier(comVariableName),
-					factory.createIdentifier('__applyRestSlotRange')
+					factory.createIdentifier('__applyRestSlotRangeNodes')
 				),
 				undefined,
-				[contentRange]
+				contentRangeNodes
 			)  
 		}
 

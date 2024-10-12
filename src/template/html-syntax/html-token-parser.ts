@@ -4,6 +4,7 @@ export interface HTMLToken {
 	text?: string
 	tagName?: string
 	attrs?: HTMLAttribute[]
+	selfClose?: boolean
 }
 
 /** Attribute names and values */
@@ -109,6 +110,7 @@ export namespace HTMLTokenParser {
 					type: HTMLTokenType.StartTag,
 					tagName,
 					attrs,
+					selfClose,
 				})
 
 				//`<tag />` -> `<tag></tag>`

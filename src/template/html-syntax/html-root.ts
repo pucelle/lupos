@@ -14,7 +14,10 @@ export class HTMLRoot extends HTMLNode {
 				case HTMLTokenType.StartTag:
 					let node = new HTMLNode(HTMLNodeType.Tag, token)
 					current.append(node)
-					current = node
+
+					if (!token.selfClose) {
+						current = node
+					}
 					break
 
 				case HTMLTokenType.EndTag:

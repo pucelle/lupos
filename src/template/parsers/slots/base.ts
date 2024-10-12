@@ -339,12 +339,10 @@ export abstract class SlotParserBase {
 	 * Prepare nodes for `SlotRange`, and return a getter,
 	 * call which will get slot range node.
 	 */
-	protected prepareSlotRange(): (() => TS.Expression) | null {
+	protected prepareNodesSlotRangeNodes(): (() => TS.Expression[]) | null {
 		if (this.node.children.length === 0) {
 			return null
 		}
-
-		Modifier.addImport('SlotRange', '@pucelle/lupos.js')
 
 		let firstChild = this.node.firstChild!
 		let lastChild = this.node.lastChild!
@@ -363,14 +361,10 @@ export abstract class SlotParserBase {
 			let firstChildName = this.tree.references.getRefedName(firstChild)
 			let lastChildName = this.tree.references.getRefedName(lastChild)
 
-			return factory.createNewExpression(
-				factory.createIdentifier('SlotRange'),
-				undefined,
-				[
-					factory.createIdentifier(firstChildName),
-					factory.createIdentifier(lastChildName)
-				]
-			)
+			return [
+				factory.createIdentifier(firstChildName),
+				factory.createIdentifier(lastChildName)
+			]
 		}
 	}
 
