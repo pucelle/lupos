@@ -93,6 +93,8 @@ export class TemplateValues {
 		joint: TS.Expression,
 		valueNodes: TS.Expression[],
 	} {
+
+		// Like `.booleanProp`.
 		if (!strings && !valueIndices) {
 			return {
 				joint: factory.createTrue(),

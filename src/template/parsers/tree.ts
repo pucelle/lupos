@@ -69,8 +69,8 @@ export class TreeParser {
 	/** Second value is whether direct child of template context. */
 	private parts: [string, PartPositionType][] = []
 
+	/** Node referenced component name. */
 	private refedComponentMap: Map<HTMLNode, string> = new Map()
-	private latestBindingName: string | null = ''
 
 	constructor(template: TemplateParser, root: HTMLRoot, parent: TreeParser | null, fromNode: HTMLNode | null) {
 		this.template = template
@@ -277,6 +277,12 @@ export class TreeParser {
 					type = SlotType.Binding
 					break
 
+				case '?':
+					if (name[1] === ':') {
+						type = SlotType.Binding
+					}
+					break
+	
 				case '@':
 					type = SlotType.Event
 					break
@@ -296,7 +302,12 @@ export class TreeParser {
 			}
 
 			if (type !== SlotType.Attribute && type !== SlotType.TemplateAttribute) {
-				name = name.slice(1)
+				if (name[0] === '?' && name[1] === ':') {
+					name = name[0] + name.slice(2)
+				}
+				else {
+					name = name.slice(1)
+				}
 			}
 
 			this.addSlot(type, name, strings, valueIndices, node)
@@ -474,19 +485,13 @@ export class TreeParser {
 
 		// Only partial binding classes are parts.
 		let name = VariableNames.getDoublyUniqueName(VariableNames.binding, this)
-
-		return this.latestBindingName = name
+		return name
 	}
 
 	/** `$delegator_0` */
 	makeUniqueDelegatorName(): string {
 		let name = VariableNames.getDoublyUniqueName(VariableNames.delegator, this)
 		return name
-	}
-
-	/** `$binding_0` */
-	makeLatestBindingName(): string | null {
-		return this.latestBindingName
 	}
 
 	/** `$block_0` */

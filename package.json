@@ -14,7 +14,7 @@
 		"build": "tsc -b",
 		"watch": "tsc -b -w",
 		"prepublish": "tsc -b",
-		"test": "cd tests && tspc && echo Compare git changes to get test result!"
+		"test": "cd tests && tspc && echo Compare git changes to get test result"
 	},
 	"devDependencies": {
 		"ts-node": "^10.9.2",

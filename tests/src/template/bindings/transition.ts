@@ -15,11 +15,11 @@ class TestTransitionBinding extends Component {
 	}
 	
 	withQueryToken() {
-		return html`<div :?transition=${this.duration, fade({duration: this.duration})} />`
+		return html`<div ?:transition=${this.duration, fade({duration: this.duration})} />`
 	}
 
 	withQueryTokenAndStaticContent() {
-		return html`<div :?transition=${this.duration, fade({duration: 3000})} />`
+		return html`<div ?:transition=${this.duration, fade({duration: 3000})} />`
 	}
 }
 

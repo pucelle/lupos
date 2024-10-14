@@ -72,23 +72,23 @@ export abstract class SlotParserBase {
 	}
 
 	/** Returns whether have value indices exist. */
-	protected hasValueIndex(): boolean {
+	hasValueIndex(): boolean {
 		return this.valueIndices !== null
 	}
 
 	/** Returns whether have strings exist. */
-	protected hasString(): boolean {
+	hasString(): boolean {
 		return this.strings !== null
 	}
 
 	/** Returns whether current raw value node is mutable. */
-	protected isAnyValueMutable(): boolean {
+	isAnyValueMutable(): boolean {
 		return this.valueIndices !== null
 			&& this.valueIndices.some(index => this.template.values.isIndexMutable(index))
 	}
 
 	/** Returns whether current value node can turn from mutable to static. */
-	protected isAllValueCanTurnStatic(): boolean {
+	isAllValueCanTurnStatic(): boolean {
 		return this.valueIndices !== null
 			&& this.valueIndices.every(index => this.template.values.isIndexCanTurnStatic(index))
 	}
@@ -102,9 +102,8 @@ export abstract class SlotParserBase {
 	/** 
 	 * Get first of raw value nodes,
 	 * can only use returned node to identify type, cant output.
-	 * If not `hasString()`, this value will always exist.
 	 */
-	protected getFirstRawValueNode(): TS.Expression | undefined {
+	getFirstRawValueNode(): TS.Expression | undefined {
 		return this.valueIndices ? this.template.values.getRawValue(this.valueIndices[0]) : undefined
 	}
 
@@ -120,7 +119,7 @@ export abstract class SlotParserBase {
 	}	
 
 	/** Get a group of latest names. */
-	protected makeGroupOfLatestNames(): (string | null)[] {
+	makeGroupOfLatestNames(): (string | null)[] {
 		let hashes: string[] = []
 
 		let names = this.valueIndices!.map(valueIndex => {
@@ -151,7 +150,7 @@ export abstract class SlotParserBase {
 	}
 
 	/** Get node variable name. */
-	protected getRefedNodeName(): string {
+	getRefedNodeName(): string {
 		return this.tree.references.getRefedName(this.node)
 	}
 

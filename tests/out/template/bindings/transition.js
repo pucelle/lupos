@@ -43,7 +43,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 });
 /*
 <root>
-    <div :?transition=${this.duration, fade({duration: this.duration})} />
+    <div ?:transition=${this.duration, fade({duration: this.duration})} />
 </root>
 */ const $template_2 = new TemplateMaker(function ($context) {
     let $latest_0, $latest_1;
@@ -77,7 +77,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 });
 /*
 <root>
-    <div :?transition=${this.duration, fade({duration: 3000})} />
+    <div ?:transition=${this.duration, fade({duration: 3000})} />
 </root>
 */ const $template_3 = new TemplateMaker(function ($context) {
     let $latest_0;
