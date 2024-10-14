@@ -56,9 +56,9 @@ const $html_0 = new HTMLMaker("<div></div>");
         position: new SlotPosition(1, $node_0),
         update($values) {
             if ($values[0]) {
-                if ($latest_1 !== $values[0]) {
+                if ($latest_1 !== $values[1]) {
                     $binding_0.update($values[1]);
-                    $latest_1 = $values[0];
+                    $latest_1 = $values[1];
                 }
             }
             if ($values[0] && !$latest_0) {

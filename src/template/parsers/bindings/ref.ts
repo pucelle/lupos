@@ -10,7 +10,7 @@ export class RefBinding extends BindingBase {
 	private useAccess: boolean = false
 
 	/** Previous binding information. */
-	private previousBinding: LatestBindingInfo | null = null
+	private previousBindingInfo: LatestBindingInfo | null = null
 
 	outputValue(forceStatic: boolean = false) {
 
@@ -29,7 +29,7 @@ export class RefBinding extends BindingBase {
 
 	init() {
 		if (this.modifiers.includes('binding')) {
-			this.previousBinding = getLatestBindingInfo(this.node)
+			this.previousBindingInfo = getLatestBindingInfo(this.node)
 		}
 		
 		this.initRef()
@@ -73,21 +73,21 @@ export class RefBinding extends BindingBase {
 		}
 	}
 
-	protected initParameterList() {
-		if (!this.useAccess) {
-			super.initParameterList()
+	protected initParameters() {
+		super.initParameters()
+
+		// Be overwritten by built expressions.
+		if (this.useAccess) {
+			this.parameterList = null
 		}
 
-		// Apply the query parameter from referencing binding to current.
-		if (!this.withQueryToken && this.previousBinding && this.previousBinding.queryParameter) {
+		// Apply, but not overwrite the query parameter from referencing binding to current.
+		if (!this.withQueryToken
+			&& this.previousBindingInfo
+			&& this.previousBindingInfo.queryParameter
+		) {
 			this.withQueryToken = true
-
-			if (this.parameterList) {
-				this.parameterList.unshift(this.previousBinding.queryParameter)
-			}
-			else if (this.slot.valueIndices) {
-				this.parameterList = [this.previousBinding.queryParameter, this.slot.outputValue().joint]
-			}
+			this.queryParameter = this.previousBindingInfo.queryParameter
 		}
 	}
 
@@ -103,20 +103,33 @@ export class RefBinding extends BindingBase {
 
 		// this.refName ->
 		// function(){ this.refName = previousBinding }
-		if (this.previousBinding && this.useAccess) {
+		if (this.previousBindingInfo && this.useAccess) {
 			callValue = factory.createFunctionExpression(
 				undefined,
 				undefined,
 				factory.createIdentifier(''),
 				undefined,
-				[],
+				[factory.createParameterDeclaration(
+					undefined,
+					undefined,
+					factory.createIdentifier('doRef'),
+					undefined,
+					undefined,
+					undefined
+				)],
 				undefined,
 				factory.createBlock(
 					[
 						factory.createExpressionStatement(factory.createBinaryExpression(
 							rawValueNode,
 							factory.createToken(ts.SyntaxKind.EqualsToken),
-							factory.createIdentifier(this.previousBinding.name)
+							factory.createConditionalExpression(
+								factory.createIdentifier('doRef'),
+								factory.createToken(ts.SyntaxKind.QuestionToken),
+								factory.createIdentifier(this.previousBindingInfo.name),
+								factory.createToken(ts.SyntaxKind.ColonToken),
+								factory.createNull()
+							)
 						)),
 						...Helper.pack.toStatements(TrackingPatch.outputIsolatedTracking(rawValueNode, 'set'))
 					],
@@ -126,7 +139,7 @@ export class RefBinding extends BindingBase {
 		}
 
 		// function(doRef){ this.refBinding.call(this, doRef ? previousBinding : null) }
-		else if (this.previousBinding) {
+		else if (this.previousBindingInfo) {
 			callValue = factory.createFunctionExpression(
 				undefined,
 				undefined,
@@ -154,7 +167,7 @@ export class RefBinding extends BindingBase {
 								factory.createConditionalExpression(
 									factory.createIdentifier('doRef'),
 									factory.createToken(ts.SyntaxKind.QuestionToken),
-									factory.createIdentifier(this.previousBinding.name),
+									factory.createIdentifier(this.previousBindingInfo.name),
 									factory.createToken(ts.SyntaxKind.ColonToken),
 									factory.createNull()
 								)

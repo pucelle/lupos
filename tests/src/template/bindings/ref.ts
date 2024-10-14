@@ -9,39 +9,39 @@ class TestRefBinding extends Component {
 	refElByType!: HTMLElement
 	refBinding!: ClassBinding
 
-	// testRefEl() {
-	// 	return html`<div :ref=${this.refEl} />`
-	// }
+	testRefEl() {
+		return html`<div :ref=${this.refEl} />`
+	}
 
-	// testRefCom() {
-	// 	return html`<ChildComponent :ref=${this.refCom} />`
-	// }
+	testRefCom() {
+		return html`<ChildComponent :ref=${this.refCom} />`
+	}
 
-	// testRefElModifier() {
-	// 	return html`<ChildComponent :ref.el=${this.refEl} />`
-	// }
+	testRefElModifier() {
+		return html`<ChildComponent :ref.el=${this.refEl} />`
+	}
 
-	// testRefElByDeclarationType() {
-	// 	return html`<ChildComponent :ref=${this.refElByType} />`
-	// }
+	testRefElByDeclarationType() {
+		return html`<ChildComponent :ref=${this.refElByType} />`
+	}
 
-	// testRefBinding() {
-	// 	return html`<ChildComponent :class="className" :ref.binding=${this.refBinding} />`
-	// }
-
-
-	// testRefElMethod() {
-	// 	return html`<div :ref=${this.refElMethod} />`
-	// }
-
-	// refElMethod(_el: HTMLElement) {}
+	testRefBinding() {
+		return html`<ChildComponent :class="className" :ref.binding=${this.refBinding} />`
+	}
 
 
-	// testRefBindingMethod() {
-	// 	return html`<ChildComponent :class="className" :ref.binding=${this.refBindingMethod} />`
-	// }
+	testRefElMethod() {
+		return html`<div :ref=${this.refElMethod} />`
+	}
 
-	// refBindingMethod(_binding: ClassBinding) {}
+	refElMethod(_el: HTMLElement) {}
+
+
+	testRefBindingMethod() {
+		return html`<ChildComponent :class="className" :ref.binding=${this.refBindingMethod} />`
+	}
+
+	refBindingMethod(_binding: ClassBinding) {}
 
 
 	shouldTransition: boolean = true

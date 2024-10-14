@@ -67,23 +67,6 @@ export class TemplateValues {
 	}
 
 	/** 
-	 * Use for passing several parameters to a binding,
-	 * like `:binding=${value1, value2}`, or `:binding=${(value1, value2)}`.
-	 */
-	outputValueAsParameterList(rawParamNodes: TS.Expression[], valueIndex: number, forceStatic: boolean = false): TS.Expression[] {
-		let valueNodes = rawParamNodes.map(rawValueNode => {
-			let mutableMask = ScopeTree.testMutable(rawValueNode)
-			let mutable = (mutableMask & MutableMask.Mutable) > 0
-			let canTurn = (mutableMask & MutableMask.CantTransfer) === 0
-			let asStatic = !mutable || forceStatic && canTurn
-
-			return this.outValueNodeOfIndex(rawValueNode, valueIndex, asStatic)
-		})
-
-		return valueNodes
-	}
-
-	/** 
 	 * Use value node at index, either `$values[0]`, or static raw node.
 	 * Can only use it when outputting update.
 	 * If `forceStatic`, will treat it as static value node,
@@ -209,20 +192,6 @@ export class TemplateValues {
 	}
 
 	/** 
-	 * Add a custom value to value list,
-	 * and return reference of this value.
-	 */
-	outputCustomValue(node: TS.Expression): TS.Expression {
-		let valueIndex = this.outputNodes.length
-		this.outputNodes.push(node)
-
-		return factory.createElementAccessExpression(
-			factory.createIdentifier(VariableNames.values),
-			factory.createNumericLiteral(valueIndex)
-		)
-	}
-
-	/** 
 	 * Bundle a interpolation strings and value indices to a new expression.
 	 * It uses `indices[0]` as new index.
 	 * `...${value}...` -> `${'...' + value + '...'}`
@@ -253,6 +222,40 @@ export class TemplateValues {
 
 		
 		return Helper.pack.bundleBinaryExpressions(parts, ts.SyntaxKind.PlusToken)
+	}
+
+	/** 
+	 * Add a custom value to value list,
+	 * and return reference of this value.
+	 */
+	outputCustomValue(node: TS.Expression): TS.Expression {
+		let valueIndex = this.outputNodes.length
+		this.outputNodes.push(node)
+
+		return factory.createElementAccessExpression(
+			factory.createIdentifier(VariableNames.values),
+			factory.createNumericLiteral(valueIndex)
+		)
+	}
+
+	/** Output a single value from a raw node. */
+	outputRawValue(rawNode: TS.Expression, valueIndex: number, forceStatic: boolean = false): TS.Expression {
+		let mutableMask = ScopeTree.testMutable(rawNode)
+		let mutable = (mutableMask & MutableMask.Mutable) > 0
+		let canTurn = (mutableMask & MutableMask.CantTransfer) === 0
+		let asStatic = !mutable || forceStatic && canTurn
+
+		return this.outValueNodeOfIndex(rawNode, valueIndex, asStatic)
+	}
+
+	/** 
+	 * Output custom values from a list of raw nodes list.
+	 * Use for passing several parameters to a binding,
+	 * like `:binding=${value1, value2}`, or `:binding=${(value1, value2)}`.
+	 */
+	outputRawValueList(rawNodes: TS.Expression[], valueIndex: number, forceStatic: boolean = false): TS.Expression[] {
+		let valueNodes = rawNodes.map(rawNode => this.outputRawValue(rawNode, valueIndex, forceStatic))
+		return valueNodes
 	}
 
 	/** Output all values to an array. */

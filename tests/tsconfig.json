@@ -19,5 +19,5 @@
 			{"transform": "../src/index.ts"},
 		]
 	},
-	"include": ["src/**/ref.ts"],
+	"include": ["src/**/*.ts"],
 }

@@ -2,7 +2,7 @@ import type TS from 'typescript'
 import {HTMLNode} from '../../html-syntax'
 import {TreeParser} from '../tree'
 import {BindingSlotParser} from '../slots'
-import {factory, Helper, Modifier, MutableMask, ScopeTree, ts} from '../../../base'
+import {factory, Helper, Modifier, ScopeTree, ts} from '../../../base'
 import {TemplateParser} from '../template'
 import {VariableNames} from '../variable-names'
 import {setLatestBindingInfo} from './latest-binding'
@@ -35,7 +35,7 @@ export class BindingBase {
 	name: string
 	modifiers: string[]
 
-	/** `:?binding=value`, detach binding if value is `null` or `undefined`. */
+	/** `?:binding=value`, detach binding if value is `null` or `undefined`. */
 	protected withQueryToken: boolean = false
 
 	/** Binding constructor parameter count. */
@@ -47,9 +47,15 @@ export class BindingBase {
 	/** $binding_0 */
 	protected bindingVariableName: string = ''
 
+	/** Query parameter part like `a` of `?:binding=${a, b}`. */
+	protected queryParameter: TS.Expression | null = null
+
+	/** $latest_0 for query parameter. */
+	protected latestQueryVariableName: string | null = null
+
 	/** 
 	 * After splitting like `:binding=${a, b}` or `:binding=${(a, b)}`.
-	 * It includes query value for `:?binding=${a, b}`
+	 * It doesn't include query value for optional binding like `?:binding=${a, b}`
 	 */
 	protected parameterList: TS.Expression[] | null = null
 	
@@ -85,12 +91,8 @@ export class BindingBase {
 
 		// Output values from parameter list.
 		if (this.parameterList) {
-			let valueNodes = this.template.values.outputValueAsParameterList(this.parameterList, this.slot.valueIndices![0])
+			let valueNodes = this.template.values.outputRawValueList(this.parameterList, this.slot.valueIndices![0])
 			let joint = valueNodes[0]
-
-			if (this.withQueryToken) {
-				joint = valueNodes[1] ?? factory.createIdentifier('undefined')
-			}
 
 			return {
 				joint,
@@ -102,9 +104,21 @@ export class BindingBase {
 		}
 	}
 
+
+	/** Output query value when having query parameter. */
+	outputQueryValue(): TS.Expression {
+		if (!this.queryParameter) {
+			return factory.createNull()
+		}
+
+		let value = this.template.values.outputRawValue(this.queryParameter!, this.slot.valueIndices![0])
+		return value
+	}
+
 	init() {
 		this.initBindingClass()
-		this.initParameterList()
+		this.initParameters()
+		this.initLatestQueryVariableName()
 		this.initLatestVariableNames()
 		this.bindingVariableName = this.tree.makeUniqueBindingName()
 
@@ -120,9 +134,8 @@ export class BindingBase {
 		else if (this.implementsPart) {
 			this.tree.addPart(this.bindingVariableName, this.node)
 		}
-
-		let queryParameter = this.withQueryToken && this.parameterList ? this.parameterList[0] ?? null : null
-		setLatestBindingInfo(this.node, this.bindingVariableName, queryParameter)
+		
+		setLatestBindingInfo(this.node, this.bindingVariableName, this.queryParameter)
 	}
 
 	/** Check binding class declaration. */
@@ -181,9 +194,19 @@ export class BindingBase {
 	}
 
 	/** Initialize as list parameters, like `:bind=${a, b}` will be parsed as `[a, b]`. */
-	protected initParameterList() {
-		if (!this.slot.strings && this.slot.valueIndices) {
-			this.parameterList = this.getRawParameterList()
+	protected initParameters() {
+		if (this.slot.strings || !this.slot.valueIndices) {
+			return
+		}
+
+		let parameters = this.splitToParameters()
+
+		if (this.withQueryToken) {
+			this.queryParameter = parameters[0] ?? null
+			this.parameterList = parameters.slice(1)
+		}
+		else {
+			this.parameterList = parameters
 		}
 	}
 
@@ -192,7 +215,7 @@ export class BindingBase {
 	 * get nodes after splitting the parameters to a list.
 	 * `valueIndices` must exist to get this list.
 	 */
-	private getRawParameterList(): TS.Expression[] {
+	private splitToParameters(): TS.Expression[] {
 		let rawValueNode = this.template.values.getRawValue(this.slot.valueIndices![0])
 
 		if (ts.isParenthesizedExpression(rawValueNode)) {
@@ -203,44 +226,26 @@ export class BindingBase {
 		return rawValueNodes
 	}
 
-	/** Initialize latest variable names, must after `initParameterList`. */
-	protected initLatestVariableNames() {
-		if (this.slot.isAnyValueMutable()) {
-			if (this.parameterList) {
-				this.latestVariableNames = this.makeGroupOfParameterLatestNames()
-			}
-			else {
-				this.latestVariableNames = this.slot.makeGroupOfLatestNames()
-			}
+	/** Initialize latest query variable name, must after `initParameterList`. */
+	protected initLatestQueryVariableName() {
+		if (this.queryParameter) {
+			this.latestQueryVariableName = this.slot.makeCustomGroupOfLatestNames([this.queryParameter])[0]
 		}
 	}
 
-	/** 
-	 * Get a group of latest names for parameter list.
-	 * `parameterList` must exist to get this list.
-	 */
-	private makeGroupOfParameterLatestNames(): (string | null)[] {
-		let hashes: string[] = []
+	/** Initialize latest variable names, must after `initParameterList`. */
+	protected initLatestVariableNames() {
+		if (this.parameterList) {
+			this.latestVariableNames = this.slot.makeCustomGroupOfLatestNames(this.parameterList)
+		}
+		else {
+			this.latestVariableNames = this.slot.makeGroupOfLatestNames()
+		}
 
-		let names = this.parameterList!.map((exp, index) => {
-			if ((ScopeTree.testMutable(exp) & MutableMask.Mutable) === 0) {
-				return null
-			}
-
-			// If first parameter use for querying, ignore.
-			if (!this.withQueryToken || index > 0) {
-				let hash = ScopeTree.hashNode(exp).name
-				if (hashes.includes(hash)) {
-					return null
-				}
-
-				hashes.push(hash)
-			}
-
-			return this.tree.makeUniqueLatestName()
-		})
-
-		return names
+		// All be `null`.
+		if (this.latestVariableNames && this.latestVariableNames.every(v => !v)) {
+			this.latestVariableNames = null
+		}
 	}
 
 	outputInit() {
@@ -297,43 +302,24 @@ export class BindingBase {
 	}
 
 	outputUpdate() {
+		let queryValue = this.outputQueryValue()
 		let values = this.outputValue()
-		let queryValue: TS.Expression | null = null
-		let paramValuesJoint = this.parameterList ? values.valueNodes : [values.joint]
-		let paramValueNodes = this.parameterList ? values.valueNodes : values.valueNodes
-		let latestQueryParamVariableName = null
-		let latestParamVariableNames = this.latestVariableNames
 
-		if (this.withQueryToken) {
-			queryValue = paramValuesJoint[0]
-			paramValuesJoint = paramValuesJoint.slice(1)
-			latestQueryParamVariableName = this.latestVariableNames?.[0] ?? null
-			latestParamVariableNames = this.latestVariableNames?.slice(1) ?? null
+		let callMethod = 'update'
+		let callValues = this.parameterList ? values.valueNodes : [values.joint]
+		let callWith = this.patchCallMethodAndValues({method: callMethod, values: callValues})
+		callMethod = callWith.method
+		callValues = callWith.values
 
-			// May have no names after excluding query parameter.
-			if (latestParamVariableNames &&
-				(latestParamVariableNames.length === 0
-					|| !latestParamVariableNames.some(v => v !== null)
-				)
-			) {
-				latestParamVariableNames = null
-			}
-		}
-
-		let callWith: BindingUpdateCallWith = {method: 'update', values: paramValuesJoint}
-		callWith = this.patchCallMethodAndValues(callWith)
-
-		let callMethod = callWith.method
-		let callValues = callWith.values
 		let update: TS.Statement | TS.Expression
 
 		// if ($latest_0 !== $values[0]) {
 		//   $binding_0.callMethod(callValue)
 		//   $latest_0 = $values[0]
 		// }
-		if (latestParamVariableNames) {
+		if (this.latestVariableNames) {
 			update = factory.createIfStatement(
-				this.slot.outputLatestComparison(latestParamVariableNames, paramValueNodes),
+				this.slot.outputLatestComparison(this.latestVariableNames, values.valueNodes),
 				factory.createBlock(
 					[
 						factory.createExpressionStatement(factory.createCallExpression(
@@ -344,7 +330,7 @@ export class BindingBase {
 							undefined,
 							callValues
 						)),
-						...this.slot.outputLatestAssignments(latestParamVariableNames, paramValueNodes),
+						...this.slot.outputLatestAssignments(this.latestVariableNames, values.valueNodes),
 					],
 					true
 				),
@@ -364,10 +350,10 @@ export class BindingBase {
 			)
 		}
 
-		// For `:?binding=...`.
+		// For `?:binding=...`.
 		if (this.delegatorVariableName) {
-			let isStaticUpdate = !latestParamVariableNames
-			return this.outputDelegator(queryValue!, latestQueryParamVariableName, update, isStaticUpdate)
+			let isStaticUpdate = !this.latestVariableNames
+			return this.outputDelegator(queryValue, update, isStaticUpdate)
 		}
 
 		return update
@@ -378,14 +364,7 @@ export class BindingBase {
 		return callWith
 	}
 
-	private outputDelegator(
-		queryValue: TS.Expression,
-		latestQueryParamVariableName: string | null,
-		update: TS.Statement | TS.Expression,
-		isStaticUpdate: boolean
-	) {
-
-		console.log(this.parameterList!.map(Helper.getFullText), latestQueryParamVariableName, isStaticUpdate)
+	private outputDelegator(queryValue: TS.Expression, update: TS.Statement | TS.Expression, isStaticUpdate: boolean) {
 
 		// if ($values[0]) {
 		//   NormalUpdateLogic
@@ -420,14 +399,14 @@ export class BindingBase {
 
 		let compare: TS.Statement | null = null
 
-		if (latestQueryParamVariableName) {
+		if (this.latestQueryVariableName) {
 			compare = factory.createIfStatement(
 				factory.createBinaryExpression(
 					queryValue,
 					factory.createToken(ts.SyntaxKind.AmpersandAmpersandToken),
 					factory.createPrefixUnaryExpression(
 						ts.SyntaxKind.ExclamationToken,
-						factory.createIdentifier(latestQueryParamVariableName)
+						factory.createIdentifier(this.latestQueryVariableName)
 					)
 				),
 				factory.createBlock(
@@ -442,7 +421,7 @@ export class BindingBase {
 							[factory.createIdentifier(this.bindingVariableName)]
 						)),
 						factory.createExpressionStatement(factory.createBinaryExpression(
-							factory.createIdentifier(latestQueryParamVariableName),
+							factory.createIdentifier(this.latestQueryVariableName),
 							factory.createToken(ts.SyntaxKind.EqualsToken),
 							queryValue
 						))
@@ -456,7 +435,7 @@ export class BindingBase {
 							queryValue
 						),
 						factory.createToken(ts.SyntaxKind.AmpersandAmpersandToken),
-						factory.createIdentifier(latestQueryParamVariableName)
+						factory.createIdentifier(this.latestQueryVariableName)
 					),
 					factory.createBlock(
 					[
@@ -469,7 +448,7 @@ export class BindingBase {
 							[factory.createNull()]
 						)),
 						factory.createExpressionStatement(factory.createBinaryExpression(
-							factory.createIdentifier(latestQueryParamVariableName),
+							factory.createIdentifier(this.latestQueryVariableName),
 							factory.createToken(ts.SyntaxKind.EqualsToken),
 							queryValue
 						))

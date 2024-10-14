@@ -1,7 +1,7 @@
 import type TS from 'typescript'
 import {HTMLNode, HTMLNodeType} from '../../html-syntax'
 import {TreeParser} from '../tree'
-import {factory, Helper, Modifier, ScopeTree, TemplateSlotPlaceholder, ts} from '../../../base'
+import {factory, Helper, Modifier, MutableMask, ScopeTree, TemplateSlotPlaceholder, ts} from '../../../base'
 import {VariableNames} from '../variable-names'
 import {TemplateParser} from '../template'
 import {SlotPositionType} from '../../../enums'
@@ -119,10 +119,14 @@ export abstract class SlotParserBase {
 	}	
 
 	/** Get a group of latest names. */
-	makeGroupOfLatestNames(): (string | null)[] {
+	makeGroupOfLatestNames(): (string | null)[] | null {
+		if (!this.valueIndices) {
+			return null
+		}
+
 		let hashes: string[] = []
 
-		let names = this.valueIndices!.map(valueIndex => {
+		let names = this.valueIndices.map(valueIndex => {
 			if (!this.template.values.isIndexMutable(valueIndex)) {
 				return null
 			}
@@ -133,6 +137,28 @@ export abstract class SlotParserBase {
 			}
 
 			hashes.push(hash)
+			return this.tree.makeUniqueLatestName()
+		})
+
+		return names
+	}
+
+	/** Get a group of latest names by an expression list. */
+	makeCustomGroupOfLatestNames(exps: TS.Expression[]): (string | null)[] {
+		let hashes: string[] = []
+
+		let names = exps.map((exp) => {
+			if ((ScopeTree.testMutable(exp) & MutableMask.Mutable) === 0) {
+				return null
+			}
+
+			let hash = ScopeTree.hashNode(exp).name
+			if (hashes.includes(hash)) {
+				return null
+			}
+
+			hashes.push(hash)
+
 			return this.tree.makeUniqueLatestName()
 		})
 
