@@ -1,5 +1,6 @@
 import {SlotParserBase} from './base'
-import {factory, Helper, ts} from '../../../base'
+import {factory, Helper, TemplateSlotPlaceholder, ts} from '../../../base'
+import {cleanList} from '../../../utils'
 
 
 export class AttributeSlotParser extends SlotParserBase {
@@ -10,7 +11,16 @@ export class AttributeSlotParser extends SlotParserBase {
 	/** $latest_0 */
 	private latestVariableNames: (string | null)[] | null = null
 
+	/** 
+	 * `<template ...>`, or `<Com ...>`
+	 * Current attribute may need to share with another attribute modification.
+	 * */
+	private isSharedModification: boolean = false
+
 	init() {
+		this.isSharedModification = this.node.tagName === 'template'
+			|| TemplateSlotPlaceholder.isComponent(this.node.tagName!)
+
 		if (this.isAnyValueMutable()) {
 			this.latestVariableNames = this.makeGroupOfLatestNames()
 		}
@@ -19,6 +29,18 @@ export class AttributeSlotParser extends SlotParserBase {
 	outputUpdate() {
 		let slotNode = this.getFirstRawValueNode()
 		let slotNodeType = slotNode ? Helper.types.getType(slotNode) : null
+
+		// class="..."
+		if (this.isSharedModification && this.hasString()) {
+			if (this.name === 'class') {
+				return this.outputSharedClassOutput()
+			}
+
+			// style="..."
+			else if (this.name === 'style') {
+				return this.outputSharedStyleOutput()
+			}
+		}
 
 		// `$values[0]` is not nullable
 		if (this.hasString() || Helper.types.isNonNullableValueType(slotNodeType!)) {
@@ -29,6 +51,49 @@ export class AttributeSlotParser extends SlotParserBase {
 		else {
 			return this.outputNullableValueUpdate()
 		}
+	}
+
+	private outputSharedClassOutput() {
+		let string = this.strings![0]
+		let nodeName = this.getRefedNodeName()
+		let classNames = cleanList(string.split(/\s+/))
+
+		return factory.createCallExpression(
+			factory.createPropertyAccessExpression(
+				factory.createPropertyAccessExpression(
+					factory.createIdentifier(nodeName),
+					factory.createIdentifier('classList')
+				),
+				factory.createIdentifier('add')
+			),
+			undefined,
+			classNames.map(n => factory.createStringLiteral(n))
+		)
+	}
+
+	private outputSharedStyleOutput() {
+		let string = this.strings![0]
+		let nodeName = this.getRefedNodeName()
+
+		let styles = string.split(/\s*;\s*/)
+			.map(v => v.split(/\s*:\s*/))
+			.filter(v => v[0])
+
+		let styleNode = factory.createPropertyAccessExpression(
+			factory.createIdentifier(nodeName),
+			factory.createIdentifier('style')
+		)
+		
+		return styles.map(([name, value]) => {
+			return factory.createBinaryExpression(
+				Helper.createAccessNode(
+					styleNode,
+					name
+				),
+				factory.createToken(ts.SyntaxKind.EqualsToken),
+				factory.createStringLiteral(value || '')
+			)
+		})
 	}
 
 	private outputNonNullableValueUpdate() {

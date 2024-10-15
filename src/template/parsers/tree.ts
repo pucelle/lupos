@@ -1,7 +1,7 @@
 import {Helper, Scope, TemplateSlotPlaceholder} from '../../base'
 import {PartPositionType} from '../../enums'
 import {HTMLNode, HTMLNodeType, HTMLRoot, HTMLNodeReferences} from '../html-syntax'
-import {SlotParserBase, DynamicComponentSlotParser, FlowControlSlotParser, PropertySlotParser, BindingSlotParser, EventSlotParser, AttributeSlotParser, TextSlotParser, ContentSlotParser, ComponentSlotParser, SlotTagSlotParser, TemplateAttributeSlotParser} from './slots'
+import {SlotParserBase, DynamicComponentSlotParser, FlowControlSlotParser, PropertySlotParser, BindingSlotParser, EventSlotParser, AttributeSlotParser, TextSlotParser, ContentSlotParser, ComponentSlotParser, SlotTagSlotParser} from './slots'
 import {TemplateParser} from './template'
 import {TreeOutputHandler} from './tree-output'
 import {VariableNames} from './variable-names'
@@ -30,9 +30,6 @@ enum SlotType {
 
 	/** `<tag attr=...>` */
 	Attribute,
-
-	/** `<template attr="">` */
-	TemplateAttribute,
 
 	/** `<tag .property=...>` */
 	Property,
@@ -220,10 +217,6 @@ export class TreeParser {
 				slot = new AttributeSlotParser(name, strings, valueIndices, node, this)
 				break
 
-			case SlotType.TemplateAttribute:
-				slot = new TemplateAttributeSlotParser(name, strings, valueIndices, node, this)
-				break
-
 			case SlotType.Text:
 				slot = new TextSlotParser(name, strings, valueIndices, node, this)
 				break
@@ -293,15 +286,29 @@ export class TreeParser {
 					}
 			}
 
-			if (type === null && node.tagName === 'template') {
-				type = SlotType.TemplateAttribute
+			let isSharedModificationNode = node.tagName === 'template'
+				|| node.tagName && TemplateSlotPlaceholder.isComponent(node.tagName)
+		
+			// Append attribute, but not set, to $context.el, or component.
+			if (type === null && isSharedModificationNode) {
+				type = SlotType.Attribute
+			}
+
+			// `<Com class=...>` use `:class` to do binding, to avoid conflict with component inner class attribute.
+			if (type === SlotType.Attribute
+				&& isSharedModificationNode
+				&& (name === 'class' || name === 'style')
+				&& valueIndices
+			) {
+				type = SlotType.Binding
+				name = ':' + name
 			}
 
 			if (type === null) {
 				continue
 			}
 
-			if (type !== SlotType.Attribute && type !== SlotType.TemplateAttribute) {
+			if (type !== SlotType.Attribute) {
 				if (name[0] === '?' && name[1] === ':') {
 					name = name[0] + name.slice(2)
 				}

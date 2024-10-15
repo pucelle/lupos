@@ -18,4 +18,19 @@ class TestAttribute extends Component {
 	testNullableAttr() {
 		return html`<div class=${this.nullableClassName} />`
 	}
+
+	testComponentClass() {
+		return html`<Com class="className" />`
+	}
+}
+
+class Com extends Component {
+
+	dynamicClassName: string = ''
+
+	render() {
+		return html`
+			<template class="classNameSelf">
+		`
+	}
 }

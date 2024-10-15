@@ -88,8 +88,8 @@ const $html_5 = new HTMLMaker("<div><!----></div>");
     let $node_0 = $context.el;
     let $node_1 = $node.content.firstChild;
     let $node_2 = $node_1.firstChild;
-    $node_0.setAttribute("attr", "value");
     let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_2), $context, 0);
+    $node_0.setAttribute("attr", "value");
     $node_1.setAttribute("attr", 'value');
     $slot_0.update(new CompiledTemplateResult($template_4, []));
     return {
