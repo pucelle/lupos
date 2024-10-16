@@ -286,7 +286,7 @@ onWillDisconnect() {
 }
 
 #enqueue_effectFn() {
-	enqueue(this.effectFn, this)
+	enqueueUpdate(this.effectFn, this)
 }
 
 effectFn() {
@@ -306,7 +306,7 @@ effectFn() {
 function compileEffectDecorator(methodDecl: TS.MethodDeclaration): () => TS.Node[] {
 	Modifier.addImport('beginTrack', '@pucelle/ff')
 	Modifier.addImport('endTrack', '@pucelle/ff')
-	Modifier.addImport('enqueue', '@pucelle/ff')
+	Modifier.addImport('enqueueUpdate', '@pucelle/ff')
 
 	return () => {
 		let methodName = Helper.getFullText(methodDecl.name)
@@ -323,7 +323,7 @@ function compileEffectDecorator(methodDecl: TS.MethodDeclaration): () => TS.Node
 			factory.createBlock(
 				[
 					factory.createExpressionStatement(factory.createCallExpression(
-						factory.createIdentifier('enqueue'),
+						factory.createIdentifier('enqueueUpdate'),
 						undefined,
 						[
 							factory.createPropertyAccessExpression(
@@ -414,7 +414,7 @@ onWillDisconnect() {
 #property_onWatchChange = undefined
 
 #enqueue_onWatchChange() {
-	enqueue(this.onWatchChange, this)
+	enqueueUpdate(this.onWatchChange, this)
 }
 
 #compare_onWatchChange() {
@@ -446,7 +446,7 @@ onWatchChange(prop) {
 function compileWatchDecorator(decoName: string, methodDecl: TS.MethodDeclaration, decorator: TS.Decorator): () => TS.Node[] {
 	Modifier.addImport('beginTrack', '@pucelle/ff')
 	Modifier.addImport('endTrack', '@pucelle/ff')
-	Modifier.addImport('enqueue', '@pucelle/ff')
+	Modifier.addImport('enqueueUpdate', '@pucelle/ff')
 
 	let immediateWatch = decoName === 'immediateWatch'
 	let methodName = Helper.getFullText(methodDecl.name)
@@ -543,7 +543,7 @@ function compileWatchDecorator(decoName: string, methodDecl: TS.MethodDeclaratio
 			undefined,
 			factory.createBlock(
 				[factory.createExpressionStatement(factory.createCallExpression(
-					factory.createIdentifier('enqueue'),
+					factory.createIdentifier('enqueueUpdate'),
 					undefined,
 					[
 						factory.createPropertyAccessExpression(
@@ -696,7 +696,10 @@ function compileWatchDecorator(decoName: string, methodDecl: TS.MethodDeclaratio
 					),
 					factory.createTryStatement(
 						factory.createBlock(
-							Helper.pack.toStatements(valueAssignExps),
+							Helper.pack.toStatements([
+								...valueAssignExps,
+								...trackExps,
+							]),
 							true
 						),
 						factory.createCatchClause(
@@ -728,7 +731,6 @@ function compileWatchDecorator(decoName: string, methodDecl: TS.MethodDeclaratio
 						)
 					),
 					compareStatement,
-					...Helper.pack.toStatements(trackExps),
 				],
 				true
 			)

@@ -43,7 +43,7 @@ export class AttributeSlotParser extends SlotParserBase {
 		}
 
 		// `$values[0]` is not nullable
-		if (this.hasString() || Helper.types.isNonNullableValueType(slotNodeType!)) {
+		if (this.hasString() || slotNodeType && Helper.types.isNonNullableValueType(slotNodeType!)) {
 			return this.outputNonNullableValueUpdate()
 		}
 
