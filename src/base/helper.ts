@@ -300,6 +300,31 @@ export namespace Helper {
 		}
 
 		/** 
+		 * Get one class member declaration by it's name.
+		 * `resolveExtend` specifies whether will look at extended class.
+		 */
+		export function getMember(node: TS.ClassDeclaration, memberName: string, resolveExtend: boolean = false): TS.ClassElement | undefined {
+			if (resolveExtend) {
+				let prop = getMember(node, memberName, false)
+				if (prop) {
+					return prop
+				}
+
+				let superClass = getSuper(node)
+				if (superClass) {
+					return getMember(superClass, memberName, resolveExtend)
+				}
+
+				return undefined
+			}
+			else {
+				return node.members.find(m => {
+					return getMemberName(m) === memberName
+				}) as TS.PropertyDeclaration | undefined
+			}
+		}
+
+		/** 
 		 * Get one class property declaration by it's name.
 		 * `resolveExtend` specifies whether will look at extended class.
 		 */

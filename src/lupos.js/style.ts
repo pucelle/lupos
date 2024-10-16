@@ -19,8 +19,10 @@ defineVisitor(function(node: TS.Node, index: number) {
 	}
 
 	// Must has own style declared.
-	let style = Helper.cls.getProperty(node, 'style')
-	if (!style || !style.modifiers?.some(m => m.kind === ts.SyntaxKind.StaticKeyword)) {
+	let style = Helper.cls.getMember(node, 'style')
+	if (!style
+		|| !ts.isPropertyDeclaration(style) && !ts.isMethodDeclaration(style)
+		|| !style.modifiers?.some(m => m.kind === ts.SyntaxKind.StaticKeyword)) {
 		return
 	}
 
