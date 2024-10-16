@@ -1,4 +1,4 @@
-import { Component, ensureComponentStyle, CompiledTemplateResult, TemplateMaker, SlotPosition, HTMLMaker } from '@pucelle/lupos.js';
+import { Component, CompiledTemplateResult, TemplateMaker, SlotPosition, HTMLMaker } from '@pucelle/lupos.js';
 import { trackGet } from "@pucelle/ff";
 const $html_0 = new HTMLMaker("<div></div>");
 /*
@@ -94,10 +94,6 @@ class TestAttribute extends Component {
     className = 'className';
     booleanValue = true;
     nullableClassName;
-    onCreated() {
-        ensureComponentStyle(Com);
-        super.onCreated();
-    }
     testInterpolatedString() {
         trackGet(this, "className");
         return new CompiledTemplateResult($template_0, [

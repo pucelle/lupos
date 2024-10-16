@@ -1,5 +1,5 @@
 import { fade, trackSet, trackGet } from '@pucelle/ff';
-import { ClassBinding, Component, ensureComponentStyle, RefBinding, CompiledTemplateResult, TemplateMaker, SlotPosition, HTMLMaker, TransitionBinding, PartDelegator } from '@pucelle/lupos.js';
+import { ClassBinding, Component, RefBinding, CompiledTemplateResult, TemplateMaker, SlotPosition, HTMLMaker, TransitionBinding, PartDelegator } from '@pucelle/lupos.js';
 const $html_0 = new HTMLMaker("<div></div>");
 /*
 <root>
@@ -182,10 +182,6 @@ class TestRefBinding extends Component {
     refCom;
     refElByType;
     refBinding;
-    onCreated() {
-        ensureComponentStyle(ChildComponent);
-        super.onCreated();
-    }
     testRefEl() {
         return new CompiledTemplateResult($template_0, []);
     }

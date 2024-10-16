@@ -1,4 +1,4 @@
-import { Component, ensureComponentStyle, CompiledTemplateResult, TemplateMaker, SlotPosition, HTMLMaker, TemplateSlot, DynamicComponentBlock } from '@pucelle/lupos.js';
+import { Component, CompiledTemplateResult, TemplateMaker, SlotPosition, HTMLMaker, TemplateSlot, DynamicComponentBlock } from '@pucelle/lupos.js';
 import { SimulatedEvents, DOMModifiableEvents, trackGet } from "@pucelle/ff";
 const $html_0 = new HTMLMaker("<div></div>");
 /*
@@ -182,10 +182,6 @@ class TestEvent extends Component {
     UnionedCom = Com1;
     ConstructedCom = Com1;
     booleanValue = true;
-    onCreated() {
-        ensureComponentStyle(Com1);
-        super.onCreated();
-    }
     handleEvent() { }
     handleAnotherEvent() { }
     testComponentEvent() {

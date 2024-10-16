@@ -15,7 +15,7 @@ defineVisitor(function(node: TS.Node, _index: number) {
 
 	// Must not specify `ContentSlotType: ...` itself.
 	let contentSlotProperty = Helper.cls.getProperty(node, 'ContentSlotType')
-	if (contentSlotProperty) {
+	if (contentSlotProperty && contentSlotProperty.modifiers?.some(m => m.kind === ts.SyntaxKind.StaticKeyword)) {
 		return
 	}
 

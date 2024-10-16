@@ -1,4 +1,4 @@
-import { untrack, beginTrack, endTrack, trackSet, enqueue, trackGet } from '@pucelle/ff';
+import { untrack, beginTrack, endTrack, trackSet, enqueueUpdate, trackGet } from '@pucelle/ff';
 import { Component } from '@pucelle/lupos.js';
 class TestComputed extends Component {
     prop = 1;
@@ -51,7 +51,7 @@ class TestEffect extends Component {
         untrack(this.#enqueue_onPropChangeEffect, this);
     }
     #enqueue_onPropChangeEffect() {
-        enqueue(this.onPropChangeEffect, this);
+        enqueueUpdate(this.onPropChangeEffect, this);
     }
     onPropChangeEffect() {
         beginTrack(this.#enqueue_onPropChangeEffect, this);
@@ -82,7 +82,7 @@ class TestWatchProperty extends Component {
     }
     #values_onPropChange;
     #enqueue_onPropChange() {
-        enqueue(this.#compare_onPropChange, this);
+        enqueueUpdate(this.#compare_onPropChange, this);
     }
     #compare_onPropChange() {
         beginTrack(this.#enqueue_onPropChange, this);
@@ -90,6 +90,7 @@ class TestWatchProperty extends Component {
         try {
             values_0 = this.prop;
             values_1 = this.prop;
+            trackGet(this, "prop");
         }
         catch (err) {
             console.error(err);
@@ -107,20 +108,20 @@ class TestWatchProperty extends Component {
             this.#values_onPropChange[1] = values_1;
             this.onPropChange(values_0, values_1);
         }
-        trackGet(this, "prop");
     }
     onPropChange(prop) {
         console.log(prop);
     }
     #values_onImmediatePropChange = new Array(1);
     #enqueue_onImmediatePropChange() {
-        enqueue(this.#compare_onImmediatePropChange, this);
+        enqueueUpdate(this.#compare_onImmediatePropChange, this);
     }
     #compare_onImmediatePropChange() {
         beginTrack(this.#enqueue_onImmediatePropChange, this);
         let values_0;
         try {
             values_0 = this.prop;
+            trackGet(this, "prop");
         }
         catch (err) {
             console.error(err);
@@ -132,7 +133,6 @@ class TestWatchProperty extends Component {
             this.#values_onImmediatePropChange[0] = values_0;
             this.onImmediatePropChange(values_0);
         }
-        trackGet(this, "prop");
     }
     onImmediatePropChange(prop) {
         console.log(prop);
@@ -152,7 +152,7 @@ class TestWatchCallback extends Component {
     }
     #values_onPropChange;
     #enqueue_onPropChange() {
-        enqueue(this.#compare_onPropChange, this);
+        enqueueUpdate(this.#compare_onPropChange, this);
     }
     #compare_onPropChange() {
         beginTrack(this.#enqueue_onPropChange, this);
@@ -180,7 +180,7 @@ class TestWatchCallback extends Component {
     }
     #values_onImmediatePropChange = new Array(1);
     #enqueue_onImmediatePropChange() {
-        enqueue(this.#compare_onImmediatePropChange, this);
+        enqueueUpdate(this.#compare_onImmediatePropChange, this);
     }
     #compare_onImmediatePropChange() {
         beginTrack(this.#enqueue_onImmediatePropChange, this);
@@ -209,7 +209,7 @@ class TestObservedImplemented {
         this.onPropChangeEffect();
     }
     #enqueue_onPropChangeEffect() {
-        enqueue(this.onPropChangeEffect, this);
+        enqueueUpdate(this.onPropChangeEffect, this);
     }
     onPropChangeEffect() {
         beginTrack(this.#enqueue_onPropChangeEffect, this);

@@ -1,4 +1,4 @@
-import { Component, ensureComponentStyle, CompiledTemplateResult, TemplateMaker, SlotPosition, HTMLMaker, TemplateSlot, DynamicComponentBlock } from '@pucelle/lupos.js';
+import { Component, CompiledTemplateResult, TemplateMaker, SlotPosition, HTMLMaker, TemplateSlot, DynamicComponentBlock } from '@pucelle/lupos.js';
 import { trackGet } from "@pucelle/ff";
 const $html_0 = new HTMLMaker("<div></div>");
 /*
@@ -106,10 +106,6 @@ const $html_1 = new HTMLMaker("<!----><div></div><!---->");
 class TestProperty extends Component {
     UnionedCom = Com1;
     ConstructedCom = Com1;
-    onCreated() {
-        ensureComponentStyle(Com1);
-        super.onCreated();
-    }
     testComponentProperty() {
         return new CompiledTemplateResult($template_0, []);
     }
