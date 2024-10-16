@@ -26,8 +26,6 @@ class TestAttribute extends Component {
 
 class Com extends Component {
 
-	dynamicClassName: string = ''
-
 	render() {
 		return html`
 			<template class="classNameSelf">

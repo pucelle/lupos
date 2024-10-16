@@ -49,7 +49,7 @@ export class TreeOutputHandler {
 		let templatePosition = this.outputSlotPosition()
 
 		// Must output slots firstly, it completes references.
-		let {init, staticUpdate, update} = this.outputSlots(slots)
+		let {init, moreInit, staticUpdate, update} = this.outputSlots(slots)
 
 		// Output `$latest_values = $values` if needed.
 		this.outputLatestValues(update)
@@ -70,6 +70,7 @@ export class TreeOutputHandler {
 			rootNode,
 			nodeRefs,
 			init,
+			moreInit,
 			staticUpdate,
 		].flat())
 
@@ -142,6 +143,7 @@ export class TreeOutputHandler {
 
 	private outputSlots(slots: SlotParserBase[]) {
 		let init: OutputNodes[] = []
+		let moreInit: OutputNodes[] = []
 		let staticUpdate: OutputNodes[] = []
 		let update: OutputNodes[] = []
 
@@ -150,8 +152,8 @@ export class TreeOutputHandler {
 			let attached = this.outputDynamicComponentAttached(slots, i, update)
 			let attachedInitStatements = Helper.pack.toStatements(attached.init.flat())
 			let initNodes = slot.outputInit(attachedInitStatements)
+			let moreInitNodes = slot.outputMoreInit()
 			let updateNodes = slot.outputUpdate()
-			
 
 			if (slot.isAnyValueOutputAsMutable()) {
 				update.push(updateNodes)
@@ -162,10 +164,12 @@ export class TreeOutputHandler {
 
 			i = attached.index
 			init.push(initNodes)
+			moreInit.push(moreInitNodes)
 		}
 
 		return {
 			init: init.flat(),
+			moreInit: moreInit.flat(),
 			staticUpdate: staticUpdate.flat(),
 			update: update.flat(),
 		}
@@ -178,6 +182,7 @@ export class TreeOutputHandler {
 	) {
 		let slot = slots[index]
 		let init: OutputNodes[] = []
+		let moreInit: OutputNodes[] = []
 		let staticUpdate: OutputNodes[] = []
 
 		if (slot.node.type === HTMLNodeType.Tag
@@ -192,6 +197,7 @@ export class TreeOutputHandler {
 				}
 
 				init.push(attrSlot.outputInit([]))
+				moreInit.push(attrSlot.outputMoreInit())
 
 				let attrUpdateNodes = attrSlot.outputUpdate()
 
@@ -208,7 +214,7 @@ export class TreeOutputHandler {
 
 		return {
 			index,
-			init: [...init, ...staticUpdate],
+			init: [...init, ...moreInit, ...staticUpdate],
 		}
 	}
 

@@ -455,6 +455,11 @@ export abstract class SlotParserBase {
 		return []
 	}
 
+	/** Also output init codes, but output them later than all normal init codes. */
+	outputMoreInit(): TS.Statement | TS.Expression | (TS.Statement| TS.Expression)[] {
+		return []
+	}
+
 	/** Output update codes. */
 	outputUpdate(): TS.Statement | TS.Expression | (TS.Statement| TS.Expression)[] {
 		return []

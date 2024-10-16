@@ -1,7 +1,6 @@
 import type TS from 'typescript'
 import {SlotParserBase} from './base'
 import {factory, Modifier, ScopeTree, ts} from '../../../base'
-import {cleanList} from '../../../utils'
 
 
 export class ComponentSlotParser extends SlotParserBase {
@@ -36,8 +35,6 @@ export class ComponentSlotParser extends SlotParserBase {
 	outputInit() {
 		let nodeName = this.getRefedNodeName()
 		let comName = this.node.tagName!
-		let hasRestSlotContentExisted = this.node.children.length > 0
-		let restSlotRangeInit: TS.Expression | null = null
 		let comVariableName = this.getRefedComponentName()
 
 		// let $com_0 = new Com({}, $node_0), after component has been referenced.
@@ -56,12 +53,18 @@ export class ComponentSlotParser extends SlotParserBase {
 			)
 		)
 
+		return comInit
+	}
+
+	outputMoreInit() {
+		let hasRestSlotContentExisted = this.node.children.length > 0
+
 		// $com_0.__applyRestSlotNodes(startNode, endNode)
 		if (hasRestSlotContentExisted) {
 			let comVariableName = this.getRefedComponentName()
 			let contentRangeNodes = this.slotRangeNodesGetter!()
 
-			restSlotRangeInit = factory.createCallExpression(
+			return factory.createCallExpression(
 				factory.createPropertyAccessExpression(
 					factory.createIdentifier(comVariableName),
 					factory.createIdentifier('__applyRestSlotRangeNodes')
@@ -71,9 +74,6 @@ export class ComponentSlotParser extends SlotParserBase {
 			)  
 		}
 
-		return cleanList([
-			comInit,
-			restSlotRangeInit,
-		])
+		return []
 	}
 }

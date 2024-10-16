@@ -1,4 +1,4 @@
-import { Component, ClassBinding, CompiledTemplateResult, TemplateMaker, SlotPosition, HTMLMaker } from '@pucelle/lupos.js';
+import { Component, ensureComponentStyle, ClassBinding, CompiledTemplateResult, TemplateMaker, SlotPosition, HTMLMaker } from '@pucelle/lupos.js';
 import { trackSet, trackGet } from "@pucelle/ff";
 const $html_0 = new HTMLMaker("<div></div>");
 /*
@@ -74,6 +74,10 @@ const $html_2 = new HTMLMaker("<div> </div>");
 });
 class TestComponent extends Component {
     prop = 1;
+    onCreated() {
+        ensureComponentStyle(ChildComponent);
+        super.onCreated();
+    }
     testComponent() {
         trackGet(this, "prop");
         return new CompiledTemplateResult($template_0, [

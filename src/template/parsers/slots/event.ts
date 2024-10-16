@@ -82,7 +82,7 @@ export class EventSlotParser extends SlotParserBase {
 		return	'element'
 	}
 
-	outputInit() {
+	outputMoreInit() {
 		if (this.targetType === 'component') {
 			return this.outputComponentInit()
 		}
