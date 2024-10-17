@@ -17,7 +17,7 @@ class TestComponent extends Component {
 	}
 
 	testRestSlotContentWithPrecedingTemplateSlot() {
-		return html`<ChildComponent>${this.prop}Rest Content</ChildComponent>`
+		return html`<ChildComponent>${html`<div />`}Rest Content</ChildComponent>`
 	}
 }
 

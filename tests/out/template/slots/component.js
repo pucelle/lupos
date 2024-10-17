@@ -1,4 +1,4 @@
-import { Component, ClassBinding, CompiledTemplateResult, TemplateMaker, SlotPosition, HTMLMaker } from '@pucelle/lupos.js';
+import { Component, ClassBinding, CompiledTemplateResult, TemplateMaker, SlotPosition, HTMLMaker, TemplateSlot } from '@pucelle/lupos.js';
 import { trackSet, trackGet } from "@pucelle/ff";
 const $html_0 = new HTMLMaker("<div></div>");
 /*
@@ -46,29 +46,36 @@ const $html_1 = new HTMLMaker("<div>Rest Content</div>");
         ]
     };
 });
-const $html_2 = new HTMLMaker("<div> </div>");
 /*
 <root>
-    <ChildComponent>${this.prop}Rest Content</ChildComponent>
+    <div />
 </root>
 */ const $template_2 = new TemplateMaker(function () {
-    let $latest_0;
-    let $node = $html_2.make();
+    let $node = $html_0.make();
+    let $node_0 = $node.content.firstChild;
+    return {
+        el: $node,
+        position: new SlotPosition(1, $node_0)
+    };
+});
+/*
+<root>
+    <ChildComponent>Rest Content</ChildComponent>
+</root>
+*/ const $template_3 = new TemplateMaker(function ($context) {
+    let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node_0.firstChild;
     let $com_0 = new ChildComponent({}, $node_0);
-    $com_0.__applyRestSlotRangeNodes($node_1);
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context, 0);
+    $com_0.__applyRestSlotRangeNodes($node_undefined);
+    $slot_0.update(new CompiledTemplateResult($template_2, []));
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),
-        update($values) {
-            if ($latest_0 !== $values[0]) {
-                $node_1.data = "" + $values[0] + "Rest Content";
-                $latest_0 = $values[0];
-            }
-        },
         parts: [
-            [$com_0, 1]
+            [$com_0, 1],
+            [$slot_0, 0]
         ]
     };
 });
@@ -84,10 +91,7 @@ class TestComponent extends Component {
         return new CompiledTemplateResult($template_1, []);
     }
     testRestSlotContentWithPrecedingTemplateSlot() {
-        trackGet(this, "prop");
-        return new CompiledTemplateResult($template_2, [
-            this.prop
-        ]);
+        return new CompiledTemplateResult($template_3, []);
     }
 }
 class ChildComponent extends Component {
