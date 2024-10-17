@@ -317,8 +317,8 @@ export class TreeParser {
 				}
 			}
 
-			this.addSlot(type, name, strings, valueIndices, node)
 			node.removeAttr(attr)
+			this.addSlot(type, name, strings, valueIndices, node)
 		}
 	}
 
@@ -356,6 +356,8 @@ export class TreeParser {
 
 		// Mixture of Text, Comment, Text, Comment...
 		else {
+			let callbacks: (() => void)[] = []
+
 			for (let item of group) {
 				let {strings, valueIndices, beText} = item
 
@@ -365,27 +367,32 @@ export class TreeParser {
 					textNode.desc = TemplateSlotPlaceholder.joinStringsAndValueIndices(strings, valueIndices)
 					node.before(textNode)
 
-					this.addSlot(SlotType.Text, null, strings, valueIndices, textNode)
+					callbacks.push(() => this.addSlot(SlotType.Text, null, strings, valueIndices, textNode))
 				}
 
 				// Static text.
 				else if (beText) {
 					let textNode = new HTMLNode(HTMLNodeType.Text, {text: strings![0]})
-					textNode.desc = strings![0]
+					textNode.desc = TemplateSlotPlaceholder.joinStringsAndValueIndices(strings, valueIndices)
 					node.before(textNode)
 				}
 
 				// Dynamic content.
 				else {
 					let comment = new HTMLNode(HTMLNodeType.Comment, {})
-					comment.desc = TemplateSlotPlaceholder.joinStringsAndValueIndices(null, valueIndices)
+					comment.desc = TemplateSlotPlaceholder.joinStringsAndValueIndices(strings, valueIndices)
 					node.before(comment)
-
-					this.addSlot(SlotType.Content, null, null, valueIndices, comment)
+	
+					callbacks.push(() => this.addSlot(SlotType.Content, null, null, valueIndices, comment))
 				}
 			}
 
 			node.remove()
+
+			// Ensure sibling nodes have been cleaned, then add slots.
+			for (let callback of callbacks) {
+				callback()
+			}
 		}
 	}
 	

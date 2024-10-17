@@ -143,6 +143,56 @@ const $html_7 = new HTMLMaker("<div> <!----> </div>");
         ]
     };
 });
+/*
+<root>
+    <div />
+</root>
+*/ const $template_8 = new TemplateMaker(function () {
+    let $node = $html_0.make();
+    let $node_0 = $node.content.firstChild;
+    return {
+        el: $node,
+        position: new SlotPosition(1, $node_0)
+    };
+});
+/*
+<root>
+    <div />
+</root>
+*/ const $template_9 = new TemplateMaker(function () {
+    let $node = $html_0.make();
+    let $node_0 = $node.content.firstChild;
+    return {
+        el: $node,
+        position: new SlotPosition(1, $node_0)
+    };
+});
+const $html_10 = new HTMLMaker("<div><!----><!----></div>");
+/*
+<root>
+    <div>
+        ${html`<div></div>`}
+        ${html`<div></div>`}
+    </div>
+</root>
+*/ const $template_10 = new TemplateMaker(function ($context) {
+    let $node = $html_10.make();
+    let $node_0 = $node.content.firstChild;
+    let $node_1 = $node_0.firstChild;
+    let $node_2 = $node_0.lastChild;
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context, 0);
+    let $slot_1 = new TemplateSlot(new SlotPosition(1, $node_2), $context, 0);
+    $slot_0.update(new CompiledTemplateResult($template_8, []));
+    $slot_1.update(new CompiledTemplateResult($template_9, []));
+    return {
+        el: $node,
+        position: new SlotPosition(1, $node_0),
+        parts: [
+            [$slot_0, 0],
+            [$slot_1, 0]
+        ]
+    };
+});
 class TestContent extends Component {
     booleanProp = true;
     testTemplateResultContent() {
@@ -159,5 +209,8 @@ class TestContent extends Component {
     }
     testMultipleContents() {
         return new CompiledTemplateResult($template_7, []);
+    }
+    testNeighborContents() {
+        return new CompiledTemplateResult($template_10, []);
     }
 }

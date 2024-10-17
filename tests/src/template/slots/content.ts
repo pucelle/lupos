@@ -20,4 +20,11 @@ class TestContent extends Component {
 	testMultipleContents() {
 		return html`<div> ${'1'} ${html`<div></div>`} ${'1'}</div>`
 	}
+
+	testNeighborContents() {
+		return html`<div>
+			${html`<div></div>`}
+			${html`<div></div>`}
+		</div>`
+	}
 }
