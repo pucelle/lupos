@@ -78,8 +78,12 @@ export class HTMLNode {
 		return this.childAt(this.children.length - 1)
 	}
 
-	*walk(): Iterable<HTMLNode> {
-		yield this
+	/** 
+	 * Visitor get a node each time, in `parent->child` order.
+	 * It returns a callback, call it after visited all descendants.
+	 */
+	visit(visitor: (node: HTMLNode) => () => void) {
+		let callback = visitor(this)
 
 		for (let child of [...this.children]) {
 
@@ -88,8 +92,10 @@ export class HTMLNode {
 				continue
 			}
 
-			yield* child.walk()
+			child.visit(visitor)
 		}
+
+		callback()
 	}
 
 	/** Remove all child nodes. */

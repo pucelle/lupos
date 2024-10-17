@@ -18,7 +18,7 @@ export class ForFlowControl extends FlowControlBase {
 	private ofValueIndex: number = -1
 	private fnValueIndex: number = -1
 
-	init() {
+	preInit() {
 		this.blockVariableName = this.tree.makeUniqueBlockName()
 		this.slotVariableName = this.slot.makeSlotName()
 		this.templateSlotGetter = this.slot.prepareTemplateSlot(SlotContentType.TemplateResultList)

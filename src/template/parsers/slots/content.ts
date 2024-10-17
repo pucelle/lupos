@@ -15,7 +15,7 @@ export class ContentSlotParser extends SlotParserBase {
 	/** new TemplateSlot(...) */
 	private templateSlotGetter!: () => TS.Expression
 
-	init() {
+	preInit() {
 		let slotContentType = this.identifySlotContentType()
 		this.slotVariableName = this.makeSlotName()
 

@@ -10,7 +10,7 @@ export class BindingSlotParser extends SlotParserBase {
 	/** To process output via binding type. */
 	private binding!: BindingBase
 
-	init() {
+	preInit() {
 		let binding: BindingBase
 
 		switch (this.name) {
@@ -30,8 +30,12 @@ export class BindingSlotParser extends SlotParserBase {
 				binding = new BindingBase(this)
 		}
 
-		binding.init()
+		binding.preInit()
 		this.binding = binding
+	}
+
+	postInit() {
+		this.binding.postInit()
 	}
 
 	outputInit() {

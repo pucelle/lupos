@@ -27,13 +27,13 @@ export class RefBinding extends BindingBase {
 		}
 	}
 
-	init() {
+	preInit() {
 		if (this.modifiers.includes('binding')) {
 			this.previousBindingInfo = getLatestBindingInfo(this.node)
 		}
 		
 		this.initRef()
-		super.init()
+		super.preInit()
 	}
 
 	/** Init things for `:ref`. */

@@ -8,9 +8,8 @@ export class ComponentSlotParser extends SlotParserBase {
 	/** Nodes parameters for `new SlotRange(...)` */
 	private slotRangeNodesGetter: (() => TS.Expression[]) | null = null
 
-	init() {
+	preInit() {
 		let comName = this.node.tagName!
-		let hasRestSlotContentExisted = this.node.children.length > 0
 
 		this.refAsComponent()
 
@@ -26,6 +25,10 @@ export class ComponentSlotParser extends SlotParserBase {
 		if (ts.isImportSpecifier(decl)) {
 			Modifier.persistImport(decl)
 		}
+	}
+
+	postInit() {
+		let hasRestSlotContentExisted = this.node.children.length > 0
 
 		if (hasRestSlotContentExisted) {
 			this.slotRangeNodesGetter = this.prepareNodesSlotRangeNodes()

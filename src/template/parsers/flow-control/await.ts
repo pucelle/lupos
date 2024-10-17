@@ -18,7 +18,7 @@ export class AwaitFlowControl extends FlowControlBase {
 	private templateNames: (string | null)[] = []
 	private promiseIndex: number = -1
 
-	init() {
+	preInit() {
 		this.blockVariableName = this.tree.makeUniqueBlockName()
 		this.slotVariableName = this.slot.makeSlotName()
 

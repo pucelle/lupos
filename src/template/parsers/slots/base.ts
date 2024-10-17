@@ -440,8 +440,20 @@ export abstract class SlotParserBase {
 		}
 	}
 
-	/** Initialize and prepare. */
-	init() {}
+	/** 
+	 * Initialize and prepare.
+	 * In `parent->child` order.
+	 * You may modify nodes, like add or remove sibling nodes here.
+	 */
+	preInit() {}
+
+	/** 
+	 * Initialize and prepare after all children get initialized.
+	 * All children and descendants have called `preInit` and `postInit`.
+	 * In `child->parent` order.
+	 * Child nodes become stable, you may visit them here.
+	 */
+	postInit() {}
 
 	/** 
 	 * Output initialize codes.

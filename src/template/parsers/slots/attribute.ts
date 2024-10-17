@@ -17,7 +17,7 @@ export class AttributeSlotParser extends SlotParserBase {
 	 * */
 	private isSharedModification: boolean = false
 
-	init() {
+	preInit() {
 		this.isSharedModification = this.node.tagName === 'template'
 			|| TemplateSlotPlaceholder.isComponent(this.node.tagName!)
 

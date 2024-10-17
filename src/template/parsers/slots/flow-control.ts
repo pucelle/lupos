@@ -5,14 +5,14 @@ import {AwaitFlowControl, FlowControlBase, ForFlowControl, IfFlowControl, KeyedF
 
 export class FlowControlSlotParser extends SlotParserBase {
 
-	private control: FlowControlBase | null = null
+	private control!: FlowControlBase
 
 	/** Flow control should always be updated dynamically. */
 	isAnyValueOutputAsMutable(): boolean {
 		return true
 	}
 
-	init() {
+	preInit() {
 		let control: FlowControlBase
 
 		switch (this.node.tagName) {
@@ -40,15 +40,19 @@ export class FlowControlSlotParser extends SlotParserBase {
 				throw new Error(`Can't parse content:\n${this.node.toReadableString(this.template.values.valueNodes)}`)
 		}
 
-		control.init()
+		control.preInit()
 		this.control = control
 	}
 
+	postInit() {
+		this.control.postInit()
+	}
+
 	outputInit(): TS.Statement | TS.Expression | (TS.Statement| TS.Expression)[] {
-		return this.control!.outputInit()
+		return this.control.outputInit()
 	}
 
 	outputUpdate(): TS.Statement | TS.Expression | (TS.Statement| TS.Expression)[] {
-		return this.control!.outputUpdate()
+		return this.control.outputUpdate()
 	}
 }

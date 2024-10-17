@@ -20,7 +20,7 @@ export class IfFlowControl extends FlowControlBase {
 	private valueIndices: (number | null)[] = []
 	private contentTemplates: (TemplateParser | null)[] = []
 
-	init() {
+	preInit() {
 		this.blockVariableName = this.tree.makeUniqueBlockName()
 		this.slotVariableName = this.slot.makeSlotName()
 		this.cacheable = this.hasAttrValue(this.node, 'cache')

@@ -68,7 +68,7 @@ const $html_1 = new HTMLMaker("<div>Rest Content</div>");
     let $node_1 = $node_0.firstChild;
     let $com_0 = new ChildComponent({}, $node_0);
     let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context, 0);
-    $com_0.__applyRestSlotRangeNodes($node_undefined);
+    $com_0.__applyRestSlotRangeNodes($node_1);
     $slot_0.update(new CompiledTemplateResult($template_2, []));
     return {
         el: $node,

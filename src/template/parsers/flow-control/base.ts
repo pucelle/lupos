@@ -83,15 +83,11 @@ export abstract class FlowControlBase {
 		return templateName ? factory.createIdentifier(templateName) : factory.createNull()
 	}
 
-	/** Initialize and prepare. */
-	init() {}
-
-	/** Output initialize codes. */
+	preInit() {}
+	postInit() {}
 	outputInit(): TS.Statement | TS.Expression | (TS.Statement| TS.Expression)[] {
 		return []
 	}
-
-	/** Output update codes. */
 	outputUpdate(): TS.Statement | TS.Expression | (TS.Statement| TS.Expression)[] {
 		return []
 	}

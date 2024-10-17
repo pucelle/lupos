@@ -115,7 +115,7 @@ export class BindingBase {
 		return value
 	}
 
-	init() {
+	preInit() {
 		this.initBindingClass()
 		this.initParameters()
 		this.initLatestQueryVariableName()
@@ -137,6 +137,8 @@ export class BindingBase {
 		
 		setLatestBindingInfo(this.node, this.bindingVariableName, this.queryParameter)
 	}
+
+	postInit() {}
 
 	/** Check binding class declaration. */
 	private initBindingClass() {

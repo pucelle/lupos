@@ -19,7 +19,7 @@ export class SlotTagSlotParser extends SlotParserBase {
 		return !!this.name
 	}
 
-	init() {
+	preInit() {
 
 		// Slot default content.
 		if (this.name && this.node.children.length > 0) {

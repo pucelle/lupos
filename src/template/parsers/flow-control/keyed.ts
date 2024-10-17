@@ -19,7 +19,7 @@ export class KeyedFlowControl extends FlowControlBase {
 	private contentTemplate: TemplateParser | null = null
 	private valueIndex: number = 1
 
-	init() {
+	preInit() {
 		this.blockVariableName = this.tree.makeUniqueBlockName()
 		this.slotVariableName = this.slot.makeSlotName()
 

@@ -21,7 +21,7 @@ export class EventSlotParser extends SlotParserBase {
 	/** Whether be simulated events. */
 	private beSimulatedEvents: boolean = false
 
-	init() {
+	preInit() {
 		if (this.name.startsWith('@')) {
 			this.name = this.name.slice(1)
 			this.forceComponentTargetType = TemplateSlotPlaceholder.isComponent(this.node.tagName!)

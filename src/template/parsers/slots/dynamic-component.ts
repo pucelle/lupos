@@ -19,13 +19,15 @@ export class DynamicComponentSlotParser extends SlotParserBase {
 	/** Nodes parameters for `new SlotRange(...)` */
 	private slotRangeNodesGetter: (() => TS.Expression[]) | null = null
 
-	init() {
-		let hasContentExisted = this.node.children.length > 0
-
+	preInit() {
 		this.refAsComponent()
 		this.blockVariableName = this.tree.makeUniqueBlockName()
 		this.slotVariableName = this.makeSlotName()
 		this.templateSlotGetter = this.prepareTemplateSlot(null)
+	}
+
+	postInit() {
+		let hasContentExisted = this.node.children.length > 0
 
 		if (hasContentExisted) {
 			Modifier.addImport('SlotRange', '@pucelle/lupos.js')
