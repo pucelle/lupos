@@ -15,4 +15,12 @@ class TestDynamicStyleWithValues extends Component {
     }
 }
 TestDynamicStyleWithValues.ensureStyle();
+class TestClassNameInterpolated extends Component {
+    static style() {
+        let type = '';
+        let color = '';
+        return css `.a.type-${type}{}.a.type-${type} .b{background:${color};}`;
+    }
+}
+TestClassNameInterpolated.ensureStyle();
 addGlobalStyle(css `.a{}.a .b{color:red;}`);

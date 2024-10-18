@@ -20,6 +20,7 @@ function parseCSSTemplate(node: TS.TaggedTemplateExpression, index: number) {
 	let string = TemplateSlotPlaceholder.toTemplateString(node)
 	let parsed = minifyCSSString(parseStyleString(string))
 	let parts = TemplateSlotPlaceholder.parseTemplateStrings(parsed)!
+	let indices = TemplateSlotPlaceholder.parseTemplateIndices(parsed)!
 	let template = node.template
 
 	Interpolator.replace(index, InterpolationContentType.Normal, () => {
@@ -38,20 +39,23 @@ function parseCSSTemplate(node: TS.TaggedTemplateExpression, index: number) {
 		else {
 			let oldSpans = template.templateSpans
 
-			let newSpans = oldSpans.map((span, index) => {
-				let inEnd = index === oldSpans.length - 1
+			let newSpans = indices.map((spanIndex, index) => {
+				let inEnd = index === indices.length - 1
+				let part = parts[index + 1]
+				let oldSpan = oldSpans[spanIndex]
+
 				let middleOrTail = inEnd ?
 					factory.createTemplateTail(
-						parts[index + 1] || '',
-						parts[index + 1] || ''
+						part,
+						part
 					) :
 					factory.createTemplateMiddle(
-						parts[index + 1] || '',
-						parts[index + 1] || ''
+						part,
+						part
 					)
 
 				return factory.createTemplateSpan(
-					Interpolator.outputNodeSelf(span.expression) as TS.Expression,
+					Interpolator.outputNodeSelf(oldSpan.expression) as TS.Expression,
 					middleOrTail
 				)
 			})

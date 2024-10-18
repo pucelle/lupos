@@ -43,6 +43,24 @@ class TestDynamicStyleWithValues extends Component {
 }
 
 
+class TestClassNameInterpolated extends Component {
+
+	static style() {
+		let type = ''
+		let color = ''
+
+		return css`
+			.a.type-${type}{
+				.b{
+					background: ${color};
+				}
+			}
+			`
+	}
+}
+
+
+
 addGlobalStyle(css`.a{
 	.b{
 		color: red;

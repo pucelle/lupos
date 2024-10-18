@@ -77,6 +77,7 @@ export namespace TemplateSlotPlaceholder {
 		return values
 	}
 
+	
 	/** 
 	 * Split a full template string by template slot placeholder `$LUPOS_SLOT_INDEX_\d_.
 	 * If `quoted`, must return a string list.
@@ -88,6 +89,23 @@ export namespace TemplateSlotPlaceholder {
 		}
 
 		return result
+	}
+
+
+	/** 
+	 * Get all indices from interpolation like `$LUPOS_SLOT_INDEX_\d_.
+	 * It is useful only when natural incremental indices were broken.
+	 */
+	export function parseTemplateIndices(parsed: string): number[] {
+		let re = /\$LUPOS_SLOT_INDEX_(\d+)\$/g
+		let indices: number[] = []
+		let match: RegExpExecArray | null
+
+		while (match = re.exec(parsed)) {
+			indices.push(Number(match[1]))
+		}
+
+		return indices
 	}
 
 
