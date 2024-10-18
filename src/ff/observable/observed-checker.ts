@@ -51,8 +51,20 @@ export namespace ObservedChecker {
 
 	/** Whether a type should be observed. */
 	export function isTypeObserved(type: TS.Type): boolean {
+		if (type.isUnionOrIntersection()) {
+			return type.types.some(t => isTypeObserved(t))
+		}
+
 		let symbol = type.getSymbol()
-		let clsDecl = symbol ? Helper.symbol.resolveDeclarationBySymbol(symbol, ts.isClassDeclaration) : undefined
+		if (!symbol) {
+			return false
+		}
+
+		let clsDecl = Helper.symbol.resolveDeclarationBySymbol(symbol, ts.isClassDeclaration)
+		if (!clsDecl) {
+			return false
+		}
+		
 		if (clsDecl && Helper.cls.isImplemented(clsDecl, 'Observed', '@pucelle/ff')) {
 			return true
 		}
@@ -73,6 +85,17 @@ export namespace ObservedChecker {
 
 		if (typeNode) {
 			observed = isTypeNodeObserved(typeNode)
+		}
+		else {
+			let type = Helper.types.getType(rawNode)
+			if (type) {
+									
+				if (Helper.getFullText(rawNode.parent).includes('popup')) {
+					console.log(Helper.types.getTypeFullText(type))
+				}
+
+				observed = isTypeObserved(type)
+			}
 		}
 
 		// `var a = b.c`.

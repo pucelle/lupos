@@ -97,7 +97,8 @@ export class ContextCapturer {
 	capture(
 		node: AccessNode | TS.Identifier,
 		exp: TS.Expression | undefined,
-		keys: (string | number)[] | undefined, type: 'get' | 'set'
+		keys: (string | number)[] | undefined,
+		type: 'get' | 'set'
 	) {
 		let index = VisitTree.getIndex(node)
 		let expIndex = exp ? VisitTree.getIndex(exp) : undefined

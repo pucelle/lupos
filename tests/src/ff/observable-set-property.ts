@@ -153,7 +153,14 @@ class TesOperators extends Component {
 
 class TestNew extends Component {
 	prop: number = 1
+
+	getInstance(): TestNew | null {
+		return this
+	}
 }
 
 let com = new TestNew()
-com.prop = 2
+com.prop = 1
+
+let com2 = com.getInstance()
+com2!.prop = 2

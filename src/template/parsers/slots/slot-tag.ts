@@ -36,9 +36,16 @@ export class SlotTagSlotParser extends SlotParserBase {
 		if (this.name) {
 			return this.outputNamedInit()
 		}
-		else {
+
+		return []
+	}
+
+	outputMoreInit() {
+		if (!this.name) {
 			return this.outputNonNamedInit()
 		}
+
+		return []
 	}
 
 	private outputNamedInit() {

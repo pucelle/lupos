@@ -132,7 +132,13 @@ class TesOperators extends Component {
 }
 class TestNew extends Component {
     prop = 1;
+    getInstance() {
+        return this;
+    }
 }
 let com = new TestNew();
-com.prop = 2;
+com.prop = 1;
+let com2 = com.getInstance();
+com2.prop = 2;
 trackSet(com, "prop");
+trackSet(com2, "prop");
