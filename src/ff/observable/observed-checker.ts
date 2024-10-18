@@ -64,7 +64,7 @@ export namespace ObservedChecker {
 		if (!clsDecl) {
 			return false
 		}
-		
+
 		if (clsDecl && Helper.cls.isImplemented(clsDecl, 'Observed', '@pucelle/ff')) {
 			return true
 		}
@@ -89,11 +89,6 @@ export namespace ObservedChecker {
 		else {
 			let type = Helper.types.getType(rawNode)
 			if (type) {
-									
-				if (Helper.getFullText(rawNode.parent).includes('popup')) {
-					console.log(Helper.types.getTypeFullText(type))
-				}
-
 				observed = isTypeObserved(type)
 			}
 		}

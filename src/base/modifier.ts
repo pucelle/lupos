@@ -21,13 +21,13 @@ export namespace Modifier {
 	const RemovedIndices: Set<number> = new Set()
 
 	/** The visiting indices the node at where have been persisted. */
-	const PersistedIndices: Set<number> = new Set()
+	const PersistedImportIndices: Set<number> = new Set()
 
 
 	export function initialize() {
 		Imports.clear()
 		RemovedIndices.clear()
-		PersistedIndices.clear()
+		PersistedImportIndices.clear()
 	}
 
 
@@ -98,11 +98,11 @@ export namespace Modifier {
 	export function persistImport(node: TS.ImportSpecifier) {
 		let index = VisitTree.getIndex(node)
 
-		if (PersistedIndices.has(index)) {
+		if (PersistedImportIndices.has(index)) {
 			return
 		}
 
-		PersistedIndices.add(index)
+		PersistedImportIndices.add(index)
 		
 		Interpolator.replace(index, InterpolationContentType.Import, () => {
 			return factory.createImportSpecifier(node.isTypeOnly, node.propertyName, node.name)
@@ -181,11 +181,24 @@ export namespace Modifier {
 
 		for (let [moduleName, names] of Imports.entries()) {
 			let existingImportDecl = getNamedImportDeclaration(moduleName)
+			let existingNames: Map<string, TS.ImportSpecifier> = new Map()
 
 			// Removes existing names.
 			if (existingImportDecl) {
-				let existingNames = (existingImportDecl.importClause!.namedBindings as TS.NamedImports).elements.map(e => e.name.text)
-				names = names.filter(name => !existingNames.includes(name))
+				for (let element of (existingImportDecl.importClause!.namedBindings as TS.NamedImports).elements) {
+					existingNames.set(element.name.text, element)
+				}
+			}
+
+			// Filter out existing names, and also avoid these imports to be deleted.
+			if (existingNames.size > 0) {
+				for (let name of names) {
+					if (existingNames.has(name)) {
+						persistImport(existingNames.get(name)!)
+					}
+				}
+
+				names = names.filter(name => !existingNames.has(name))
 			}
 
 			if (names.length === 0) {
@@ -222,7 +235,7 @@ export namespace Modifier {
 			}
 		}
 
-		for (let specifierIndex of PersistedIndices) {
+		for (let specifierIndex of PersistedImportIndices) {
 			let specifier = VisitTree.getNode(specifierIndex) as TS.ImportSpecifier
 			let importDecl = specifier.parent.parent.parent
 
