@@ -225,7 +225,6 @@ function combineNestedNames(oldNames: string[], parentNames: string[]): string[]
 
 /** Minify CSS string, eliminate useless whitespace. */
 function minifyCSSString(string: string) {
-	return string
 	let re = /(["']).*?\1/g
 	let output = ''
 	let lastIndex = 0

@@ -15,7 +15,8 @@ export class ComponentSlotParser extends SlotParserBase {
 
 		let decl = ScopeTree.getDeclarationByName(comName, this.template.rawNode)
 		if (!decl) {
-			throw new Error(`Please make sure to import or declare "<${comName}>"!`)
+			console.error(`Please make sure to import or declare "<${comName}>"!`)
+			return
 		}
 
 		// Limit closest scope by referenced declaration.

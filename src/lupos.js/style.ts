@@ -22,7 +22,8 @@ defineVisitor(function(node: TS.Node, index: number) {
 	let style = Helper.cls.getMember(node, 'style')
 	if (!style
 		|| !ts.isPropertyDeclaration(style) && !ts.isMethodDeclaration(style)
-		|| !style.modifiers?.some(m => m.kind === ts.SyntaxKind.StaticKeyword)) {
+		|| !style.modifiers?.some(m => m.kind === ts.SyntaxKind.StaticKeyword)
+	) {
 		return
 	}
 

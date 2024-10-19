@@ -171,7 +171,8 @@ export class BindingBase {
 				)
 				|| !decl.name
 			) {
-				throw new Error(`Please make sure to import or declare "${this.name}"!`)
+				console.error(`Please make sure to import or declare "${this.name}"!`)
+				return
 			}
 
 			// Avoid been removed by typescript compiler.
