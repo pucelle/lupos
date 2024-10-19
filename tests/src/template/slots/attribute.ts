@@ -22,6 +22,10 @@ class TestAttribute extends Component {
 	testComponentClass() {
 		return html`<Com class="className" />`
 	}
+
+	testQueryAttr() {
+		return html`<div ?hidden=${this.booleanValue} />`
+	}
 }
 
 class Com extends Component {

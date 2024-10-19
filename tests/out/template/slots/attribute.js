@@ -75,13 +75,32 @@ const $html_0 = new HTMLMaker("<div></div>");
         ]
     };
 });
-const $html_4 = new HTMLMaker("<!---->");
+/*
+<root>
+    <div ?hidden=${this.booleanValue} />
+</root>
+*/ const $template_4 = new TemplateMaker(function () {
+    let $latest_0;
+    let $node = $html_0.make();
+    let $node_0 = $node.content.firstChild;
+    return {
+        el: $node,
+        position: new SlotPosition(1, $node_0),
+        update($values) {
+            if ($latest_0 !== $values[0]) {
+                $values[0] ? $node_0.setAttribute("hidden", "") : $node_0.removeAttribute("hidden");
+                $latest_0 = $values[0];
+            }
+        }
+    };
+});
+const $html_5 = new HTMLMaker("<!---->");
 /*
 <root>
     <template class="classNameSelf" />
 </root>
-*/ const $template_4 = new TemplateMaker(function ($context) {
-    let $node = $html_4.make();
+*/ const $template_5 = new TemplateMaker(function ($context) {
+    let $node = $html_5.make();
     let $node_0 = $context.el;
     let $node_1 = $node.content.firstChild;
     $node_0.classList.add("classNameSelf");
@@ -115,10 +134,16 @@ class TestAttribute extends Component {
     testComponentClass() {
         return new CompiledTemplateResult($template_3, []);
     }
+    testQueryAttribute() {
+        trackGet(this, "booleanValue");
+        return new CompiledTemplateResult($template_4, [
+            this.booleanValue
+        ]);
+    }
 }
 class Com extends Component {
     static SlotContentType = 0;
     render() {
-        return new CompiledTemplateResult($template_4, []);
+        return new CompiledTemplateResult($template_5, []);
     }
 }

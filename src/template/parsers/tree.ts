@@ -289,6 +289,9 @@ export class TreeParser {
 					if (name[1] === ':') {
 						type = SlotType.Binding
 					}
+					else {
+						type = SlotType.Attribute
+					}
 					break
 	
 				case '@':
