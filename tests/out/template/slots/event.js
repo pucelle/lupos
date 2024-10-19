@@ -1,5 +1,5 @@
 import { Component, CompiledTemplateResult, TemplateMaker, SlotPosition, HTMLMaker, TemplateSlot, DynamicComponentBlock } from '@pucelle/lupos.js';
-import { SimulatedEvents, DOMModifiableEvents, trackGet } from "@pucelle/ff";
+import { trackGet, trackSet, SimulatedEvents, DOMModifiableEvents } from "@pucelle/ff";
 const $html_0 = new HTMLMaker("<div></div>");
 /*
 <root>
@@ -178,11 +178,44 @@ const $html_2 = new HTMLMaker("<!----><div></div><!---->");
         }
     };
 });
+/*
+<root>
+    <div @click=${() => this.booleanValue = true} />
+</root>
+*/ const $template_10 = new TemplateMaker(function ($context) {
+    let $node = $html_0.make();
+    let $node_0 = $node.content.firstChild;
+    $node_0.addEventListener("click", (() => {
+        trackSet($context, "booleanValue");
+        return $context.booleanValue = true;
+    }).bind($context));
+    return {
+        el: $node,
+        position: new SlotPosition(1, $node_0)
+    };
+});
+/*
+<root>
+    <div @click=${() => this.handleEventWithParameter(this.booleanValue)} />
+</root>
+*/ const $template_11 = new TemplateMaker(function ($context) {
+    let $node = $html_0.make();
+    let $node_0 = $node.content.firstChild;
+    $node_0.addEventListener("click", (() => {
+        trackGet($context, "booleanValue");
+        return $context.handleEventWithParameter($context.booleanValue);
+    }).bind($context));
+    return {
+        el: $node,
+        position: new SlotPosition(1, $node_0)
+    };
+});
 class TestEvent extends Component {
     UnionedCom = Com1;
     ConstructedCom = Com1;
     booleanValue = true;
     handleEvent() { }
+    handleEventWithParameter(_value) { }
     handleAnotherEvent() { }
     testComponentEvent() {
         return new CompiledTemplateResult($template_0, []);
@@ -222,6 +255,12 @@ class TestEvent extends Component {
         return new CompiledTemplateResult($template_9, [
             this.booleanValue ? this.handleEvent : this.handleAnotherEvent
         ]);
+    }
+    testInlineEventHandler() {
+        return new CompiledTemplateResult($template_10, []);
+    }
+    testInlineCallMethod() {
+        return new CompiledTemplateResult($template_11, []);
     }
 }
 class Com1 extends Component {

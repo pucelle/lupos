@@ -8,6 +8,7 @@ class TestEvent extends Component {
 	booleanValue: boolean = true
 
 	handleEvent() {}
+	handleEventWithParameter(_value: boolean) {}
 	handleAnotherEvent() {}
 
 	testComponentEvent() {
@@ -48,6 +49,14 @@ class TestEvent extends Component {
 
 	testDynamicEventHandler() {
 		return html`<div @click=${this.booleanValue ? this.handleEvent : this.handleAnotherEvent} />`
+	}
+
+	testInlineEventHandler() {
+		return html`<div @click=${() => this.booleanValue = true} />`
+	}
+
+	testInlineCallMethod() {
+		return html`<div @click=${() => this.handleEventWithParameter(this.booleanValue)} />`
 	}
 }
 

@@ -85,7 +85,10 @@ const $html_0 = new HTMLMaker("<div></div>");
 */ const $template_5 = new TemplateMaker(function ($context) {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
-    $node_0.addEventListener("click", (() => $context.handleEvent($context.prop)).bind($context));
+    $node_0.addEventListener("click", (() => {
+        trackGet($context, "prop");
+        return $context.handleEvent($context.prop);
+    }).bind($context));
     return {
         el: $node,
         position: new SlotPosition(1, $node_0)

@@ -118,7 +118,6 @@ export class TemplateValues {
 
 	/** Output a raw node of full or partial specified index. */
 	private outValueNodeOfIndex(rawValueNode: TS.Expression, valueIndex: number, asStatic: boolean): TS.Expression {
-
 		// Output static node.
 		if (asStatic) {
 			let interpolated = Interpolator.outputNodeSelf(rawValueNode) as TS.Expression

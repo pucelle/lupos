@@ -75,6 +75,9 @@ export class TemplateParser {
 	/** 
 	 * Output whole template compiled contents, and sub templates.
 	 * Return a callback, call which will finally interpolate to source file.
+	 * 
+	 * Split it to two steps because it initialize self then children,
+	 * but we want to output children firstly, then self.
 	 */
 	prepareToOutputCompiled(): () => void {
 		Modifier.addImport('CompiledTemplateResult', '@pucelle/lupos.js')

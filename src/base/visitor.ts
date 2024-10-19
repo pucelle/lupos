@@ -15,8 +15,32 @@ import {runPostVisitCallbacks, runPreVisitCallbacks} from './visitor-callbacks'
 type VisitFunction = (node: TS.Node, index: number) => (() => void) | void
 
 
+export enum VisitorPhase {
+
+	/** 
+	 * Observable part requires whole source file visited
+	 * before output to interpolator.
+	 */
+	Observable,
+
+	/** 
+	 * All others, especially those require output of
+	 * an observable interpolated node.
+	 */
+	Others,
+}
+
+
 /** All defined visitors. */
-const Visitors: VisitFunction[] = []
+const Visitors: {visitor: VisitFunction, phase: VisitorPhase}[] = []
+let currentVisitors: VisitFunction[] | null = null
+
+
+/** Start new visiting phase. */
+function startPhase(phase: VisitorPhase) {
+	currentVisitors = Visitors.filter(v => v.phase === phase).map(v => v.visitor)
+}
+
 
 
 /** 
@@ -24,8 +48,8 @@ const Visitors: VisitFunction[] = []
  * `visit` will visit each node in depth-first order,
  * so you don't need to visit child nodes in each defined visitor.
  */
-export function defineVisitor(visitor: VisitFunction) {
-	Visitors.push(visitor)
+export function defineVisitor(visitor: VisitFunction, phase: VisitorPhase = VisitorPhase.Others) {
+	Visitors.push({visitor, phase})
 }
 
 
@@ -37,7 +61,7 @@ export function applyVisitors(node: TS.Node): () => void {
 	let doMoreAfterVisitedChildren: Function[] = []
 	let index = VisitTree.getIndex(node)
 
-	for (let visitor of Visitors) {
+	for (let visitor of currentVisitors!) {
 		let more = visitor(node, index)
 		if (more) {
 			doMoreAfterVisitedChildren.push(more)
@@ -64,6 +88,7 @@ export function transformer(program: TS.Program, extras: TransformerExtras) {
 			setSourceFile(sourceFile)
 			runPreVisitCallbacks()
 
+			// In the first visiting initialize visit and scope tree.
 			function initVisitor(node: TS.Node): TS.Node {
 				VisitTree.toNext(node)
 				ScopeTree.toNext(node)
@@ -91,7 +116,13 @@ export function transformer(program: TS.Program, extras: TransformerExtras) {
 
 			try {
 				ts.visitNode(sourceFile, initVisitor)
+
+				startPhase(VisitorPhase.Observable)
 				ts.visitNode(sourceFile, visitor)
+
+				startPhase(VisitorPhase.Others)
+				ts.visitNode(sourceFile, visitor)
+
 				runPostVisitCallbacks()
 
 				return Interpolator.outputSelf(0) as TS.SourceFile

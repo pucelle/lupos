@@ -299,7 +299,7 @@ export class EventSlotParser extends SlotParserBase {
 				this.outputValue().joint
 			)
 		}
-		
+
 		return []
 	}
 }
