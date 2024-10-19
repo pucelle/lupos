@@ -81,7 +81,7 @@ function parseCSSTemplate(node: TS.TaggedTemplateExpression, index: number) {
 
 /** Parse a style string to eliminate all sass like nesting. */
 function parseStyleString(text: string): string {
-	let re = /(\s*)(?:\/\/.*|\/\*[\s\S]*?\*\/|((?:\(.*?\)|".*?"|'.*?'|[\s\S])*?)([;{}]))/g
+	let re = /(\s*)(?:\/\/.*|\/\*[\s\S]*?\*\/|\$LUPOS_SLOT_INDEX_\d+\$|((?:\(.*?\)|".*?"|'.*?'|[\s\S])*?)([;{}]))/g
 		/*
 			\s* - match white spaces in left
 			(?:
@@ -225,6 +225,7 @@ function combineNestedNames(oldNames: string[], parentNames: string[]): string[]
 
 /** Minify CSS string, eliminate useless whitespace. */
 function minifyCSSString(string: string) {
+	return string
 	let re = /(["']).*?\1/g
 	let output = ''
 	let lastIndex = 0

@@ -60,6 +60,22 @@ class TestClassNameInterpolated extends Component {
 }
 
 
+class TestCodesInterpolated extends Component {
+
+	static style() {
+		let code1 = ''
+		let code2 = ''
+
+		return css`
+			${code1}
+			.a{
+				background: red;
+			}
+			${code2}
+			`
+	}
+}
+
 
 addGlobalStyle(css`.a{
 	.b{
