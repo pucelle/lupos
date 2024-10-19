@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {Helper, ts, defineVisitor, factory, Interpolator, InterpolationContentType, Modifier, VisitorPhase} from '../base'
+import {Helper, ts, defineVisitor, factory, Interpolator, InterpolationContentType, Modifier} from '../base'
 
 
 defineVisitor(function(node: TS.Node, index: number) {
@@ -29,7 +29,7 @@ defineVisitor(function(node: TS.Node, index: number) {
 			return compileUseContextDecorator(node)
 		}
 	})
-}, VisitorPhase.Others)
+})
 
 
 

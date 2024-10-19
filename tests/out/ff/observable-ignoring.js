@@ -1,5 +1,5 @@
 import { Component } from '@pucelle/lupos.js';
-import { trackGet, untrack, beginTrack, endTrack, trackSet } from '@pucelle/ff';
+import { untrack, beginTrack, endTrack, trackSet, trackGet } from '@pucelle/ff';
 class TestIgnoringStringIndex extends Component {
     prop = '1';
     ignoreStringIndex() {

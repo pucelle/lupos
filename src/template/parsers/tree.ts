@@ -180,7 +180,10 @@ export class TreeParser {
 		this.references.ref(firstNode)
 	}
 
-	/** Note `node` may not in tree when adding the slot. */
+	/** 
+	 * Note `node` may not in tree when adding the slot.
+	 * It returns a callback to do more init after all children initialized.
+	 */
 	private addSlot(
 		type: SlotType,
 		name: string | null,

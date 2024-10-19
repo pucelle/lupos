@@ -1,4 +1,4 @@
-import { Component, CompiledTemplateResult, TemplateMaker, SlotPosition, HTMLMaker, TemplateSlot, DynamicComponentBlock } from '@pucelle/lupos.js';
+import { Component, TemplateSlot, SlotPosition, CompiledTemplateResult, TemplateMaker, HTMLMaker, DynamicComponentBlock } from '@pucelle/lupos.js';
 import { trackGet, trackSet, SimulatedEvents, DOMModifiableEvents } from "@pucelle/ff";
 const $html_0 = new HTMLMaker("<div></div>");
 /*
@@ -201,10 +201,7 @@ const $html_2 = new HTMLMaker("<!----><div></div><!---->");
 */ const $template_11 = new TemplateMaker(function ($context) {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
-    $node_0.addEventListener("click", (() => {
-        trackGet($context, "booleanValue");
-        return $context.handleEventWithParameter($context.booleanValue);
-    }).bind($context));
+    $node_0.addEventListener("click", (() => $context.handleEventWithParameter($context.booleanValue)).bind($context));
     return {
         el: $node,
         position: new SlotPosition(1, $node_0)

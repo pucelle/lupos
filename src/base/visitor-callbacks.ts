@@ -42,3 +42,23 @@ export function runPostVisitCallbacks() {
 		callback()
 	}
 }
+
+
+let visitedSourceFileCallbacks: (() => void)[] = []
+
+/** 
+ * Do somethings, normally output something after visited whole source file,
+ * and all normal visitors have completed outputting interpolation.
+ */
+export function onVisitedSourceFile(callback: () => void) {
+	visitedSourceFileCallbacks.push(callback)
+}
+
+/** Do somethings, normally output something after visited whole source file. */
+export function callVisitedSourceFileCallbacks() {
+	for (let callback of visitedSourceFileCallbacks) {
+		callback()
+	}
+
+	visitedSourceFileCallbacks = []
+}

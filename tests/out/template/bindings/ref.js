@@ -1,5 +1,5 @@
-import { fade, trackSet, trackGet } from '@pucelle/ff';
-import { ClassBinding, Component, RefBinding, CompiledTemplateResult, TemplateMaker, SlotPosition, HTMLMaker, TransitionBinding, PartDelegator } from '@pucelle/lupos.js';
+import { fade, trackGet, trackSet } from '@pucelle/ff';
+import { ClassBinding, Component, RefBinding, TransitionBinding, PartDelegator, CompiledTemplateResult, TemplateMaker, SlotPosition, HTMLMaker } from '@pucelle/lupos.js';
 const $html_0 = new HTMLMaker("<div></div>");
 /*
 <root>

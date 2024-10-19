@@ -4,7 +4,7 @@ import {Interpolator} from './interpolator'
 import {TransformerExtras} from 'ts-patch'
 import {setGlobal, setSourceFile, setTransformContext} from './global'
 import {ScopeTree} from './scope-tree'
-import {runPostVisitCallbacks, runPreVisitCallbacks} from './visitor-callbacks'
+import {callVisitedSourceFileCallbacks, runPostVisitCallbacks, runPreVisitCallbacks} from './visitor-callbacks'
 
 
 /** 
@@ -15,32 +15,8 @@ import {runPostVisitCallbacks, runPreVisitCallbacks} from './visitor-callbacks'
 type VisitFunction = (node: TS.Node, index: number) => (() => void) | void
 
 
-export enum VisitorPhase {
-
-	/** 
-	 * Observable part requires whole source file visited
-	 * before output to interpolator.
-	 */
-	Observable,
-
-	/** 
-	 * All others, especially those require output of
-	 * an observable interpolated node.
-	 */
-	Others,
-}
-
-
 /** All defined visitors. */
-const Visitors: {visitor: VisitFunction, phase: VisitorPhase}[] = []
-let currentVisitors: VisitFunction[] | null = null
-
-
-/** Start new visiting phase. */
-function startPhase(phase: VisitorPhase) {
-	currentVisitors = Visitors.filter(v => v.phase === phase).map(v => v.visitor)
-}
-
+const Visitors: VisitFunction[] = []
 
 
 /** 
@@ -48,8 +24,8 @@ function startPhase(phase: VisitorPhase) {
  * `visit` will visit each node in depth-first order,
  * so you don't need to visit child nodes in each defined visitor.
  */
-export function defineVisitor(visitor: VisitFunction, phase: VisitorPhase = VisitorPhase.Others) {
-	Visitors.push({visitor, phase})
+export function defineVisitor(visitor: VisitFunction) {
+	Visitors.push(visitor)
 }
 
 
@@ -57,11 +33,11 @@ export function defineVisitor(visitor: VisitFunction, phase: VisitorPhase = Visi
  * Apply defined visitors to a node.
  * Returns a function, which will be called after visited all children.
  */
-export function applyVisitors(node: TS.Node): () => void {
+function applyVisitors(node: TS.Node): () => void {
 	let doMoreAfterVisitedChildren: Function[] = []
 	let index = VisitTree.getIndex(node)
 
-	for (let visitor of currentVisitors!) {
+	for (let visitor of Visitors) {
 		let more = visitor(node, index)
 		if (more) {
 			doMoreAfterVisitedChildren.push(more)
@@ -116,13 +92,8 @@ export function transformer(program: TS.Program, extras: TransformerExtras) {
 
 			try {
 				ts.visitNode(sourceFile, initVisitor)
-
-				startPhase(VisitorPhase.Observable)
 				ts.visitNode(sourceFile, visitor)
-
-				startPhase(VisitorPhase.Others)
-				ts.visitNode(sourceFile, visitor)
-
+				callVisitedSourceFileCallbacks()
 				runPostVisitCallbacks()
 
 				return Interpolator.outputSelf(0) as TS.SourceFile

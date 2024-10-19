@@ -95,15 +95,17 @@ export class ContextState {
 			return false
 		}
 
+		let isVoidReturning = Helper.types.isVoidReturning(node as TS.FunctionLikeDeclaration)
+
 		// An arrow function or function expression inherit from parent.
 		// We assume this function would be run immediately.
 		if (ts.isFunctionExpression(this.context.node)
 			|| ts.isArrowFunction(this.context.node)
 		) {
-			return parent.state.stopGetTracking ?? false
+			return parent.state.stopGetTracking || isVoidReturning
 		}
 
-		return Helper.types.isVoidReturning(node as TS.FunctionLikeDeclaration)
+		return isVoidReturning
 	}
 
 	private checkEffectDecorated(): boolean {

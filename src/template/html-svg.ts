@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {Helper, defineVisitor, ts, Interpolator, InterpolationContentType, TemplateSlotPlaceholder, Modifier} from '../base'
+import {Helper, defineVisitor, ts, Interpolator, InterpolationContentType, TemplateSlotPlaceholder, Modifier, onVisitedSourceFile} from '../base'
 import {TemplateParser} from './parsers'
 import {VariableNames} from './parsers/variable-names'
 import {HTMLRoot} from './html-syntax'
@@ -30,9 +30,12 @@ defineVisitor(function(node: TS.Node, index: number) {
 
 	Modifier.removeImportOf(node.tag)
 
-	// Must after all descendant nodes visited.
+	// After all descendant nodes visited.
 	return () => {
-		parseHTMLTemplate(node, index, nm.memberName as 'html' | 'svg')
+		let toOutput = parseHTMLTemplate(node, index, nm.memberName as 'html' | 'svg')
+
+		// Must after all observable interpolation outputted.
+		onVisitedSourceFile(toOutput)
 	}
 })
 
@@ -44,9 +47,10 @@ function parseHTMLTemplate(node: TS.TaggedTemplateExpression, index: number, tem
 	let root = HTMLRoot.fromString(string)
 	let parser = new TemplateParser(templateType, root, values, node)
 
-	parser.prepareToOutputCompiled()()
-	let outputted = parser.outputReplaced()
-	
-	Interpolator.replace(index, InterpolationContentType.Normal, () => outputted)
+	return () => {
+		parser.prepareToOutputCompiled()()
+		let outputted = parser.outputReplaced()
+		Interpolator.replace(index, InterpolationContentType.Normal, () => outputted)
+	}
 }
 

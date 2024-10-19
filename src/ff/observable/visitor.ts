@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {defineVisitor, ts, VisitorPhase} from '../../base'
+import {defineVisitor, ts} from '../../base'
 import {ContextTree} from './context-tree'
 import {AccessReferences} from './access-references'
 import {TrackingPatch} from './tracking-patch'
@@ -29,4 +29,4 @@ defineVisitor(function(node: TS.Node) {
 			ContextTree.pop()
 		}
 	}
-}, VisitorPhase.Observable)
+})
