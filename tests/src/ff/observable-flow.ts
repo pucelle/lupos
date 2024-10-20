@@ -74,24 +74,27 @@ class TestForBlock extends Component {
 		return 0
 	}
 
-	testForItemGetObserved() {
+	testForOfItems() {
 		let list: Observed<{value: number}[]> = [{value: 1}]
 
 		for (let item of list) {
-			item.value
+			item.value = 1
 		}
 
-		return 0
-	}
-
-	
-	testForItemSetObserved() {
 		for (let item of this.getList()) {
+			item.prop = 1
+		}
+
+		for (let item of this.list) {
 			item.prop = 1
 		}
 	}
 
 	getList(): TestForBlock[] {
+		return [this]
+	}
+
+	get list(): TestForBlock[] {
 		return [this]
 	}
 

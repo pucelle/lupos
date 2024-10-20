@@ -66,21 +66,25 @@ class TestForBlock extends Component {
         trackGet(this, "prop");
         return 0;
     }
-    testForItemGetObserved() {
+    testForOfItems() {
         let list = [{ value: 1 }];
         for (let item of list) {
-            item.value;
-            trackGet(item, "value");
+            item.value = 1;
+            trackSet(item, "value");
         }
-        return 0;
-    }
-    testForItemSetObserved() {
         for (let item of this.getList()) {
+            item.prop = 1;
+            trackSet(item, "prop");
+        }
+        for (let item of this.list) {
             item.prop = 1;
             trackSet(item, "prop");
         }
     }
     getList() {
+        return [this];
+    }
+    get list() {
         return [this];
     }
     testForCondition() {

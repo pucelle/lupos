@@ -305,22 +305,24 @@ export namespace ObservedChecker {
 			return false
 		}
 
-		// Always ignore get and set accessor, except `@computed` decorated.
-		let decl = Helper.symbol.resolveDeclaration(rawNode, ts.isAccessor)
-		if (decl) {
-			let decoName = Helper.deco.getFirstName(decl)
-			if (decoName !== 'computed') {
-				return false
-			}
-		}
-
 		// `[]`, `Map`, `Set`.
 		if (Helper.access.isListStruct(rawNode.expression)) {
 			return isObserved(rawNode.expression, true)
 		}
 
-		// Readonly properties are always not been observed.
+		// Only check when directly visiting the node.
 		if (!parental) {
+
+			// Always ignore get and set accessor, except `@computed` decorated.
+			let decl = Helper.symbol.resolveDeclaration(rawNode, ts.isAccessor)
+			if (decl) {
+				let decoName = Helper.deco.getFirstName(decl)
+				if (decoName !== 'computed') {
+					return false
+				}
+			}
+
+			// Readonly properties are always not been observed.
 			let readonly = Helper.types.isReadonly(rawNode)
 			if (readonly) {
 				return false
