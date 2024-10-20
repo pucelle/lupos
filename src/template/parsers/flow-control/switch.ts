@@ -17,7 +17,7 @@ export class SwitchFlowControl extends FlowControlBase {
 	private templateSlotGetter!: () => TS.Expression
 
 	private cacheable: boolean = false
-	private switchValueIndex: number = -1
+	private switchValueIndex: number | null = null
 	private valueIndices: (number | null)[] = []
 	private contentTemplates: (TemplateParser | null)[] = []
 
@@ -28,7 +28,7 @@ export class SwitchFlowControl extends FlowControlBase {
 
 		let switchValueIndex = this.getAttrValueIndex(this.node)
 		if (switchValueIndex === null) {
-			throw new Error('<lu:switch ${...}> must accept a parameter as condition!')
+			console.error('<lu:switch ${...}> must accept a parameter as condition!')
 		}
 		this.switchValueIndex = switchValueIndex
 
@@ -40,15 +40,18 @@ export class SwitchFlowControl extends FlowControlBase {
 		for (let child of childNodes) {
 			let valueIndex = this.getAttrValueIndex(child)
 			if (valueIndex === null && child.tagName === 'lu:case') {
-				throw new Error('<lu:case ${...}> must accept a parameter as condition!')
+				console.error('<lu:case ${...}> must accept a parameter as condition!')
+				break
 			}
 
 			if (valueIndex !== null && child.tagName === 'lu:default') {
-				throw new Error('<lu:default> should not accept any parameter!')
+				console.error('<lu:default> should not accept any parameter!')
+				break
 			}
 
 			if (valueIndex === null && lastValueIndex === null) {
-				throw new Error('<lu:default> is allowed only one to exist on the tail!')
+				console.error('<lu:default> is allowed only one to exist on the tail!')
+				break
 			}
 
 			valueIndices.push(valueIndex)
@@ -136,7 +139,9 @@ export class SwitchFlowControl extends FlowControlBase {
 
 	/** Make an index output function by an if condition value index sequence. */
 	private outputConditionalExpression(): TS.Expression {
-		let switchValue = this.template.values.getRawValue(this.switchValueIndex)
+		let switchValue = this.switchValueIndex !== null
+			? this.template.values.getRawValue(this.switchValueIndex)
+			: factory.createNull()
 
 		let conditions = this.valueIndices.map(index => {
 			if (index === null) {

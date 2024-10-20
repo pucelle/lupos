@@ -16,7 +16,7 @@ export class AwaitFlowControl extends FlowControlBase {
 	private templateSlotGetter!: () => TS.Expression
 
 	private templateNames: (string | null)[] = []
-	private promiseIndex: number = -1
+	private promiseIndex: number | null = null
 
 	preInit() {
 		this.blockVariableName = this.tree.makeUniqueBlockName()
@@ -24,7 +24,7 @@ export class AwaitFlowControl extends FlowControlBase {
 
 		let promiseIndex = this.getAttrValueIndex(this.node)
 		if (promiseIndex === null) {
-			throw new Error('<lu:await ${...}> must accept a parameter as promise to await!')
+			console.error('<lu:await ${...}> must accept a parameter as promise to await!')
 		}
 
 		let nextNodes = this.eatNext('lu:then', 'lu:catch')
@@ -90,7 +90,8 @@ export class AwaitFlowControl extends FlowControlBase {
 
 	outputUpdate() {
 		// This promise may be static, will still update each time.
-		let promiseNode = this.template.values.outputValue(null, [this.promiseIndex]).joint
+		let valueIndices = this.promiseIndex !== null ? [this.promiseIndex] : null
+		let promiseNode = this.template.values.outputValue(null, valueIndices).joint
 
 		// $block_0.update(promise, $values)
 		return factory.createCallExpression(

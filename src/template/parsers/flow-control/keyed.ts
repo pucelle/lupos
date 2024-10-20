@@ -17,7 +17,7 @@ export class KeyedFlowControl extends FlowControlBase {
 	private templateSlotGetter!: () => TS.Expression
 
 	private contentTemplate: TemplateParser | null = null
-	private valueIndex: number = 1
+	private valueIndex: number | null = null
 
 	preInit() {
 		this.blockVariableName = this.tree.makeUniqueBlockName()
@@ -25,7 +25,7 @@ export class KeyedFlowControl extends FlowControlBase {
 
 		let valueIndex = this.getAttrValueIndex(this.node)
 		if (valueIndex === null) {
-			throw new Error('<lu:keyed ${...}> must accept a parameter as key!')
+			console.error('<lu:keyed ${...}> must accept a parameter as key!')
 		}
 
 		this.valueIndex = valueIndex
@@ -68,7 +68,8 @@ export class KeyedFlowControl extends FlowControlBase {
 	}
 
 	outputUpdate() {
-		let keyedValue = this.template.values.outputValue(null, [this.valueIndex]).joint
+		let keyedValueIndices = this.valueIndex !== null ? [this.valueIndex] : null
+		let keyedValue = this.template.values.outputValue(null, keyedValueIndices).joint
 		let resultValue = this.contentTemplate ? this.contentTemplate.outputReplaced() : null
 
 		// Add it as a value item to original template, and returned it's reference.

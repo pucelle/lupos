@@ -15,8 +15,8 @@ export class ForFlowControl extends FlowControlBase {
 	/** new TemplateSlot(...) */
 	private templateSlotGetter!: () => TS.Expression
 
-	private ofValueIndex: number = -1
-	private fnValueIndex: number = -1
+	private ofValueIndex: number | null = null
+	private fnValueIndex: number | null = null
 
 	preInit() {
 		this.blockVariableName = this.tree.makeUniqueBlockName()
@@ -27,11 +27,11 @@ export class ForFlowControl extends FlowControlBase {
 		let fnValueIndex = this.getUniqueChildValueIndex(this.node)
 
 		if (ofValueIndex === null) {
-			throw new Error('<lu:for ${...}> must accept a parameter as loop data!')
+			console.error('<lu:for ${...}> must accept a parameter as loop data!')
 		}
 
 		if (fnValueIndex === null) {
-			throw new Error('<lu:for>${...}</> must accept a parameter as child item renderer!')
+			console.error('<lu:for>${...}</> must accept a parameter as child item renderer!')
 		}
 
 		this.ofValueIndex = ofValueIndex
@@ -52,11 +52,8 @@ export class ForFlowControl extends FlowControlBase {
 
 		// Force render fn to be static.
 		// So this render fn can't be like `a ? this.render1` : `this.render2`.
-		let renderFnNode = this.template.values.outputValue(
-			null,
-			[this.fnValueIndex],
-			true
-		).joint as TS.FunctionExpression
+		let fnValueIndices = this.fnValueIndex !== null ? [this.fnValueIndex] : null
+		let renderFnNode = this.template.values.outputValue(null, fnValueIndices, true).joint as TS.FunctionExpression
 		
 		let templateSlot = this.templateSlotGetter()
 
@@ -82,7 +79,8 @@ export class ForFlowControl extends FlowControlBase {
 	}
 
 	outputUpdate() {
-		let ofNode = this.template.values.outputValue(null, [this.ofValueIndex]).joint
+		let ofValueIndices = this.ofValueIndex !== null ? [this.ofValueIndex] : null
+		let ofNode = this.template.values.outputValue(null, ofValueIndices).joint
 
 		// $block_0.update(data)
 		// may be data is static, will still update each time

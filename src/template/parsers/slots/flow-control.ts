@@ -13,7 +13,7 @@ export class FlowControlSlotParser extends SlotParserBase {
 	}
 
 	preInit() {
-		let control: FlowControlBase
+		let control: FlowControlBase | null = null
 
 		switch (this.node.tagName) {
 			case 'lu:await':
@@ -37,11 +37,13 @@ export class FlowControlSlotParser extends SlotParserBase {
 				break
 
 			default:
-				throw new Error(`Can't parse content:\n${this.node.toReadableString(this.template.values.valueNodes)}`)
+				console.error(`Can't parse content:\n${this.node.toReadableString(this.template.values.valueNodes)}`)
 		}
 
-		control.preInit()
-		this.control = control
+		if (control) {
+			control.preInit()
+			this.control = control
+		}
 	}
 
 	postInit() {
