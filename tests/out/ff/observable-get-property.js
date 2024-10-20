@@ -1,5 +1,5 @@
+import { trackGet } from '@pucelle/ff';
 import { Component } from '@pucelle/lupos.js';
-import { trackGet } from "@pucelle/ff";
 class TestNormalProp extends Component {
     prop = 1;
     getProp() {
@@ -65,5 +65,12 @@ class TestQuestionDotPropMerge extends Component {
         this.prop && trackGet(this.prop, "value");
         return '' + this.prop?.value
             + this.prop?.['value'];
+    }
+}
+class TestNonObservedClass {
+    prop = { value: 1 };
+    getProp() {
+        trackGet(this.prop, "value");
+        return this.prop.value;
     }
 }

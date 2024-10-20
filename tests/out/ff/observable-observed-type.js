@@ -48,12 +48,10 @@ class TestObservedPropertyAtUnobserved {
     observedInitProp = { value: 1 };
     unObservedProp = { value: 1 };
     getObservedTypePropValue() {
-        trackGet(this, "observedTypeProp");
         trackGet(this.observedTypeProp, "value");
         return this.observedTypeProp.value;
     }
     getObservedInitPropValue() {
-        trackGet(this, "observedInitProp");
         trackGet(this.observedInitProp, "value");
         return this.observedInitProp.value;
     }

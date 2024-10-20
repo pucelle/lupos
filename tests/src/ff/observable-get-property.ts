@@ -1,3 +1,4 @@
+import {Observed} from '@pucelle/ff'
 import {Component} from '@pucelle/lupos.js'
 
 
@@ -77,5 +78,15 @@ class TestQuestionDotPropMerge extends Component {
 	getProp() {
 		return '' + this.prop?.value
 			+ this.prop?.['value']
+	}
+}
+
+
+class TestNonObservedClass {
+
+	prop: Observed<{value: number}> = {value: 1}
+
+	getProp() {
+		return this.prop.value
 	}
 }

@@ -305,20 +305,25 @@ export namespace ObservedChecker {
 	 */
 	export function isAccessObserved(rawNode: AccessNode, parental: boolean = false): boolean {
 
-		// Will never observe private identifier like `a.#b`.
-		if (ts.isPropertyAccessExpression(rawNode) && ts.isPrivateIdentifier(rawNode.name)) {
-			return false
-		}
-
 		// `[]`, `Map`, `Set`.
 		if (Helper.access.isListStruct(rawNode.expression)) {
 			return isObserved(rawNode.expression, true)
 		}
 
+		// Typescript lib.
+		if (Helper.symbol.isOfTypescriptLib(rawNode)) {
+			return false
+		}
+
 		// Only check when directly visiting the node.
 		if (!parental) {
 
-			// Always ignore get and set accessor, except `@computed` decorated.
+			// Will never observe private identifier like `a.#b`.
+			if (ts.isPropertyAccessExpression(rawNode) && ts.isPrivateIdentifier(rawNode.name)) {
+				return false
+			}
+
+			// Ignore get and set accessor, except `@computed` decorated.
 			let decl = Helper.symbol.resolveDeclaration(rawNode, ts.isAccessor)
 			if (decl) {
 				let decoName = Helper.deco.getFirstName(decl)
@@ -327,21 +332,19 @@ export namespace ObservedChecker {
 				}
 			}
 
-			// Readonly properties are always not been observed.
+			// Readonly properties are always not observe.
 			let readonly = Helper.types.isReadonly(rawNode)
 			if (readonly) {
 				return false
 			}
 		}
 
+		// When visiting parental nodes.
 		// Property declaration has specified as observed type or observed initializer.
-		if (isPropertyDeclaredAsObserved(rawNode)) {
-			return true
-		}
-
-		// Typescript lib.
-		if (Helper.symbol.isOfTypescriptLib(rawNode)) {
-			return false
+		else {
+			if (isPropertyDeclaredAsObserved(rawNode)) {
+				return true
+			}
 		}
 
 		// Take `node = a.b.c` as example, exp is `a.b`.
