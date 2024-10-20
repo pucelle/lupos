@@ -1,4 +1,4 @@
-import { trackGet } from '@pucelle/ff';
+import { trackGet, trackSet } from '@pucelle/ff';
 import { Component } from '@pucelle/lupos.js';
 class TestIfStatement extends Component {
     prop1 = 0;
@@ -66,13 +66,22 @@ class TestForBlock extends Component {
         trackGet(this, "prop");
         return 0;
     }
-    testForInitializerObserved() {
+    testForItemGetObserved() {
         let list = [{ value: 1 }];
         for (let item of list) {
             item.value;
             trackGet(item, "value");
         }
         return 0;
+    }
+    testForItemSetObserved() {
+        for (let item of this.getList()) {
+            item.prop = 1;
+            trackSet(item, "prop");
+        }
+    }
+    getList() {
+        return [this];
     }
     testForCondition() {
         for (let i = 0; i < this.prop; i++) {

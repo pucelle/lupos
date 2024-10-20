@@ -134,7 +134,7 @@ class TestAttribute extends Component {
     testComponentClass() {
         return new CompiledTemplateResult($template_3, []);
     }
-    testQueryAttribute() {
+    testQueryAttr() {
         trackGet(this, "booleanValue");
         return new CompiledTemplateResult($template_4, [
             this.booleanValue

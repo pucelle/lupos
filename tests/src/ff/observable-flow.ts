@@ -74,7 +74,7 @@ class TestForBlock extends Component {
 		return 0
 	}
 
-	testForInitializerObserved() {
+	testForItemGetObserved() {
 		let list: Observed<{value: number}[]> = [{value: 1}]
 
 		for (let item of list) {
@@ -83,6 +83,18 @@ class TestForBlock extends Component {
 
 		return 0
 	}
+
+	
+	testForItemSetObserved() {
+		for (let item of this.getList()) {
+			item.prop = 1
+		}
+	}
+
+	getList(): TestForBlock[] {
+		return [this]
+	}
+
 
 	testForCondition() {
 		for (let i = 0; i < this.prop; i++) {

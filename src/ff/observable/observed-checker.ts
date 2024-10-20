@@ -28,10 +28,30 @@ export namespace ObservedChecker {
 	export function isTypeNodeObserved(typeNode: TS.TypeNode): boolean {
 
 		// `Observed<>`, must use it directly, type extending is now working.
+		// May `Observed<A[]>`, so test it at start.
 		if (Helper.symbol.isImportedFrom(typeNode, 'Observed', '@pucelle/ff')) {
 			return true
 		}
 		
+		// Treat it as computed, means `Observed<A>` becomes `A`.
+		return isComputedTypeNodeObserved(typeNode)
+	}
+
+	/** Whether a computed type node represented node should be observed. */
+	export function isComputedTypeNodeObserved(typeNode: TS.TypeNode): boolean {
+
+		// A | B
+		if (ts.isUnionTypeNode(typeNode)
+			|| ts.isIntersectionTypeNode(typeNode)
+		) {
+			return typeNode.types.some(n => isTypeNodeObserved(n))
+		}
+
+		// A[]
+		if (ts.isArrayTypeNode(typeNode)) {
+			return isTypeNodeObserved(typeNode.elementType)
+		}
+
 		let resolveFrom: TS.Node = typeNode
 
 		// Resolve type reference.
@@ -49,30 +69,6 @@ export namespace ObservedChecker {
 	}
 
 
-	/** Whether a type should be observed. */
-	export function isTypeObserved(type: TS.Type): boolean {
-		if (type.isUnionOrIntersection()) {
-			return type.types.some(t => isTypeObserved(t))
-		}
-
-		let symbol = type.getSymbol()
-		if (!symbol) {
-			return false
-		}
-
-		let clsDecl = Helper.symbol.resolveDeclarationBySymbol(symbol, ts.isClassDeclaration)
-		if (!clsDecl) {
-			return false
-		}
-
-		if (clsDecl && Helper.cls.isImplemented(clsDecl, 'Observed', '@pucelle/ff')) {
-			return true
-		}
-
-		return false
-	}
-
-
 	/** Whether a variable declaration should be observed. */
 	export function isVariableDeclarationObserved(rawNode: TS.VariableDeclaration): boolean {
 
@@ -80,17 +76,11 @@ export namespace ObservedChecker {
 		// `var a: Observed<{b: number}> = {b:1}`, observed.
 		// Note here: `Observed` must appear directly, reference or alias is not working.
 
-		let typeNode = rawNode.type 
+		let typeNode = rawNode.type ?? Helper.types.getTypeNode(rawNode)
 		let observed = false
 
 		if (typeNode) {
 			observed = isTypeNodeObserved(typeNode)
-		}
-		else {
-			let type = Helper.types.getType(rawNode)
-			if (type) {
-				observed = isTypeObserved(type)
-			}
 		}
 
 		// `var a = b.c`.
@@ -139,6 +129,14 @@ export namespace ObservedChecker {
 		}
 
 		let typeNode = propDecl.type
+		if (!typeNode
+			&& ts.isGetAccessorDeclaration(propDecl)
+		) {
+			let returnType = Helper.types.getReturnType(propDecl)
+			if (returnType) {
+				typeNode = Helper.types.typeToTypeNode(returnType)
+			}
+		}
 
 		// `class A{p: Observed<...>}`
 		if (typeNode && isTypeNodeObserved(typeNode)) {
@@ -152,16 +150,6 @@ export namespace ObservedChecker {
 			&& isObserved(propDecl.initializer)
 		) {
 			return true
-		}
-
-		// Directly return an observed object, which implemented `Observed<>`.
-		if (!typeNode
-			&& ts.isGetAccessorDeclaration(propDecl)
-		) {
-			let returnType = Helper.types.getReturnType(propDecl)
-			if (returnType && isTypeObserved(returnType)) {
-				return true
-			}
 		}
 
 		return false
@@ -403,14 +391,15 @@ export namespace ObservedChecker {
 			return false
 		}
 
-		// Directly return an observed object, which implemented `Observed<>`.
-		let returnType = Helper.types.getReturnType(decl)
-		if (returnType && isTypeObserved(returnType)) {
-			return true
+		// Test whether returned type should be observed.
+		let returnTypeNode = decl.type
+		if (!returnTypeNode) {
+			let returnType = Helper.types.getReturnType(decl)
+			if (returnType) {
+				returnTypeNode = Helper.types.typeToTypeNode(returnType)
+			}
 		}
 
-		// Declare the returned type as `Observed<>`.
-		let returnTypeNode = decl.type
 		if (!returnTypeNode) {
 			return false
 		}
