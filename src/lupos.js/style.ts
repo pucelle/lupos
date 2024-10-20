@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {ts, defineVisitor, Modifier, Helper, factory, Interpolator, InterpolationContentType} from '../base'
+import {ts, defineVisitor, Helper, factory, Interpolator, InterpolationContentType} from '../base'
 
 
 // Add `Com.ensureStyle()` after class declaration.
@@ -26,8 +26,6 @@ defineVisitor(function(node: TS.Node, index: number) {
 	) {
 		return
 	}
-
-	Modifier.addImport('ensureComponentStyle', '@pucelle/lupos.js')
 
 	let callEnsureStyle = factory.createCallExpression(
 		factory.createPropertyAccessExpression(
