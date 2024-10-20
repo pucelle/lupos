@@ -550,8 +550,8 @@ export namespace Helper {
 
 		/** Test whether be `Map` or `Set`, or of `Array` type. */
 		export function isListStruct(rawNode: TS.Node) {
-			let type = Helper.types.getType(rawNode)
-			let typeNode = Helper.types.getTypeNode(rawNode)
+			let type = Helper.types.typeOf(rawNode)
+			let typeNode = Helper.types.getOrMakeTypeNode(rawNode)
 			let objName = typeNode ? Helper.types.getTypeNodeReferenceName(typeNode) : undefined
 
 			return objName === 'Map'
@@ -753,26 +753,27 @@ export namespace Helper {
 	/** Type part */
 	export namespace types {
 
-		/** Get type of a node. */
-		export function getType(node: TS.Node): TS.Type {
-			return typeChecker.getTypeAtLocation(node)
-		}
-
 		/** 
 		 * Get type node of a node.
-		 * Will firstly try to get type node when doing declaration.
+		 * Will firstly try to get type node when doing declaration,
+		 * If can't find, make a new type node, but it can't be resolved.
 		 */
-		export function getTypeNode(node: TS.Node): TS.TypeNode | undefined {
+		export function getOrMakeTypeNode(node: TS.Node): TS.TypeNode | undefined {
 			let typeNode: TS.TypeNode | undefined
 
-			// Resolved type node exist in source file, and can be resolve again.
+			// `class {a: Type = xxx}`
 			if (access.isAccess(node)) {
 				typeNode = symbol.resolveDeclaration(node, isPropertyOrGetAccessor)?.type
 			}
 
-			// Resolve variable declaration type.
-			if (variable.isVariableIdentifier(node)) {
+			// `let a: Type`
+			else if (variable.isVariableIdentifier(node)) {
 				typeNode = symbol.resolveDeclaration(node, ts.isVariableDeclaration)?.type
+			}
+
+			// `() => Type`
+			else if (ts.isCallExpression(node)) {
+				typeNode = symbol.resolveDeclaration(node.expression, Helper.isFunctionLike)?.type
 			}
 
 			if (typeNode) {
@@ -780,7 +781,12 @@ export namespace Helper {
 			}
 
 			// This generated type node can't be resolved.
-			return typeToTypeNode(getType(node))
+			return typeToTypeNode(typeOf(node))
+		}
+
+		/** Get type of a node. */
+		export function typeOf(node: TS.Node): TS.Type {
+			return typeChecker.getTypeAtLocation(node)
 		}
 
 		/** 
@@ -915,7 +921,7 @@ export namespace Helper {
 			if (access.isAccess(node)) {
 				let exp = node.expression
 
-				let expTypeNode = getTypeNode(exp)
+				let expTypeNode = getOrMakeTypeNode(exp)
 				if (!expTypeNode) {
 					return false
 				}

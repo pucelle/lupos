@@ -43,7 +43,7 @@ export class RefBinding extends BindingBase {
 
 		// If declare property as `XXXElement`, force ref element.
 		if (rawValueNode && beComponent) {
-			let type = Helper.types.getType(rawValueNode)
+			let type = Helper.types.typeOf(rawValueNode)
 			let typeText = Helper.types.getTypeFullText(type)
 
 			if (/^\w*?Element$/.test(typeText)) {

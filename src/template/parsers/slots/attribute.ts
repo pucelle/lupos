@@ -39,7 +39,7 @@ export class AttributeSlotParser extends SlotParserBase {
 
 	outputUpdate() {
 		let slotNode = this.getFirstRawValueNode()
-		let slotNodeType = slotNode ? Helper.types.getType(slotNode) : null
+		let slotNodeType = slotNode ? Helper.types.typeOf(slotNode) : null
 
 		// class="..."
 		if (this.isSharedModification && this.hasString()) {

@@ -2,6 +2,7 @@ import type TS from 'typescript'
 import {AccessNode} from '../../base/helper'
 import {ts, Helper, typeChecker} from '../../base'
 import {ContextTree} from './context-tree'
+import {GenericType} from 'typescript'
 
 
 /** 
@@ -46,12 +47,59 @@ export namespace ObservedChecker {
 
 		let resolveFrom: TS.Node = typeNode
 
-		// Resolve type reference.
+		// Resolve type reference name.
 		if (ts.isTypeReferenceNode(typeNode)) {
 			resolveFrom = typeNode.typeName
 		}
 
 		let decl = Helper.symbol.resolveDeclaration(resolveFrom)
+		if (!decl) {
+			return false
+		}
+
+		return isTypeOrTypeNodeResolvedObserved(decl)
+	}
+
+
+	/** 
+	 * Whether a type should be observed.
+	 * A newly made `TypeNode` can't resolve symbol and declaration,
+	 * so need the type observed checker.
+	 */
+	export function isTypeObserved(type: TS.Type): boolean {
+
+		// A | B, A & B
+		if (type.isUnionOrIntersection()) {
+			return type.types.some(t => isTypeObserved(t))
+		}
+
+		// A[]
+		if (typeChecker.isArrayType(type)) {
+			let parameter = (type as GenericType).typeParameters?.[0]
+			if (parameter) {
+				return isTypeObserved(parameter)
+			}
+			else {
+				return false
+			}
+		}
+
+		let symbol = type.getSymbol()
+		if (!symbol) {
+			return false
+		}
+
+		let decl = Helper.symbol.resolveDeclarationBySymbol(symbol)
+		if (!decl) {
+			return false
+		}
+
+		return isTypeOrTypeNodeResolvedObserved(decl)
+	}
+
+
+	/** Whether a type or type node resolved declaration should be observed. */
+	function isTypeOrTypeNodeResolvedObserved(decl: TS.Node): boolean {
 		if (!decl) {
 			return false
 		}
@@ -76,24 +124,26 @@ export namespace ObservedChecker {
 
 	/** Whether a variable declaration should be observed. */
 	export function isVariableDeclarationObserved(rawNode: TS.VariableDeclaration): boolean {
-
 		// `var a = {b:1} as Observed<{b: number}>`, observed.
 		// `var a: Observed<{b: number}> = {b:1}`, observed.
 		// Note here: `Observed` must appear directly, reference or alias is not working.
 
-		let typeNode = rawNode.type ?? Helper.types.getTypeNode(rawNode)
-		let observed = false
+		let typeNode = rawNode.type
+		if (typeNode && isTypeNodeObserved(typeNode)) {
+			return true
+		}
 
-		if (typeNode) {
-			observed = isTypeNodeObserved(typeNode)
+		let type = Helper.types.typeOf(rawNode)
+		if (type && isTypeObserved(type)) {
+			return true
 		}
 
 		// `var a = b.c`.
-		if (!observed && rawNode.initializer) {
-			observed = isObserved(rawNode.initializer)
+		if (rawNode.initializer && isObserved(rawNode.initializer)) {
+			return true
 		}
 
-		return observed
+		return false
 	}
 
 
@@ -133,19 +183,18 @@ export namespace ObservedChecker {
 			return false
 		}
 
-		let typeNode = propDecl.type
-		if (!typeNode
-			&& ts.isGetAccessorDeclaration(propDecl)
-		) {
-			let returnType = Helper.types.getReturnType(propDecl)
-			if (returnType) {
-				typeNode = Helper.types.typeToTypeNode(returnType)
-			}
-		}
-
 		// `class A{p: Observed<...>}`
+		let typeNode = propDecl.type
 		if (typeNode && isTypeNodeObserved(typeNode)) {
 			return true
+		}
+
+		// Return type of declaration.
+		if (ts.isGetAccessorDeclaration(propDecl)) {
+			let returnType = Helper.types.getReturnType(propDecl)
+			if (returnType &&isTypeObserved(returnType)) {
+				return true
+			}
 		}
 
 		// `class A{p = {} as Observed}`, must not specified property type.
@@ -401,20 +450,19 @@ export namespace ObservedChecker {
 			return false
 		}
 
-		// Test whether returned type should be observed.
+		// Test call method returned type node.
 		let returnTypeNode = decl.type
-		if (!returnTypeNode) {
-			let returnType = Helper.types.getReturnType(decl)
-			if (returnType) {
-				returnTypeNode = Helper.types.typeToTypeNode(returnType)
-			}
+		if (returnTypeNode && isTypeNodeObserved(returnTypeNode)) {
+			return true
 		}
 
-		if (!returnTypeNode) {
-			return false
+		// Test call method returned type.
+		let returnType = Helper.types.getReturnType(decl)
+		if (returnType && isTypeObserved(returnType)) {
+			return true
 		}
 
-		return isTypeNodeObserved(returnTypeNode)
+		return false
 	}
 
 
@@ -431,8 +479,8 @@ export namespace ObservedChecker {
 
 	/** Test whether calls reading process of `Map`, `Set`, `Array`. */
 	export function isListStructReadAccess(rawNode: AccessNode): boolean {
-		let expType = Helper.types.getType(rawNode.expression)
-		let expTypeNode = Helper.types.getTypeNode(rawNode.expression)
+		let expType = Helper.types.typeOf(rawNode.expression)
+		let expTypeNode = Helper.types.getOrMakeTypeNode(rawNode.expression)
 		let objName = expTypeNode ? Helper.types.getTypeNodeReferenceName(expTypeNode) : undefined
 		let propName = Helper.access.getNameText(rawNode)
 
@@ -459,8 +507,8 @@ export namespace ObservedChecker {
 
 	/** Test whether calls `Map.set`, or `Set.set`. */
 	export function isListStructWriteAccess(rawNode: AccessNode) {
-		let expType = Helper.types.getType(rawNode.expression)
-		let expTypeNode = Helper.types.getTypeNode(rawNode.expression)
+		let expType = Helper.types.typeOf(rawNode.expression)
+		let expTypeNode = Helper.types.getOrMakeTypeNode(rawNode.expression)
 		let objName = expTypeNode ? Helper.types.getTypeNodeReferenceName(expTypeNode) : undefined
 		let propName = Helper.access.getNameText(rawNode)
 

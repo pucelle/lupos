@@ -432,7 +432,8 @@ export abstract class SlotParserBase {
 				return
 			}
 
-			let typeNode = Helper.types.getTypeNode(ref)
+			// Note made type node can't be resolved.
+			let typeNode = Helper.types.getOrMakeTypeNode(ref)
 			if (typeNode) {
 				yield* Helper.symbol.resolveInstanceDeclarations(typeNode)
 				return

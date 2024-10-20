@@ -36,7 +36,7 @@ export class ContentSlotParser extends SlotParserBase {
 
 	private identifySlotContentType(): number | null {
 		let valueNode = this.getFirstRawValueNode()
-		let valueType = valueNode ? Helper.types.getType(valueNode) : null
+		let valueType = valueNode ? Helper.types.typeOf(valueNode) : null
 		let typeText = valueType ? Helper.types.getTypeFullText(valueType) : null
 		let slotContentType: number | null = null
 

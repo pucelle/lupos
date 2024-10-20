@@ -490,7 +490,7 @@ export class TreeParser {
 	/** Check whether a value index represents a value type of node. */
 	private isValueIndexValueType(index: number): boolean {
 		let rawNode = this.template.values.getRawValue(index)
-		let type = Helper.types.getType(rawNode)
+		let type = Helper.types.typeOf(rawNode)
 
 		return Helper.types.isValueType(type)
 	}

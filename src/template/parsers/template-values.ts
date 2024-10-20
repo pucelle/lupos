@@ -214,7 +214,7 @@ export class TemplateValues {
 
 		// '' + ... if it's not a string type of value.
 		if (!ts.isStringLiteral(parts[0])
-			&& !Helper.types.isStringType(Helper.types.getType(firstRawNode))
+			&& !Helper.types.isStringType(Helper.types.typeOf(firstRawNode))
 		) {
 			parts.unshift(factory.createStringLiteral(''))
 		}

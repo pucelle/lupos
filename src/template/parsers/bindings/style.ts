@@ -62,7 +62,7 @@ export class StyleBinding extends BindingBase {
 		}
 
 		let slotNode = this.slot.getFirstRawValueNode()
-		let slotNodeType = slotNode ? Helper.types.getType(slotNode) : null
+		let slotNodeType = slotNode ? Helper.types.typeOf(slotNode) : null
 
 		if (this.slot.hasString() || Helper.types.isValueType(slotNodeType!)) {
 			return {
