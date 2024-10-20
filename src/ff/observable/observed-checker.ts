@@ -27,19 +27,6 @@ export namespace ObservedChecker {
 	/** Whether a type node represented node should be observed. */
 	export function isTypeNodeObserved(typeNode: TS.TypeNode): boolean {
 
-		// `Observed<>`, must use it directly, type extending is now working.
-		// May `Observed<A[]>`, so test it at start.
-		if (Helper.symbol.isImportedFrom(typeNode, 'Observed', '@pucelle/ff')) {
-			return true
-		}
-		
-		// Treat it as computed, means `Observed<A>` becomes `A`.
-		return isComputedTypeNodeObserved(typeNode)
-	}
-
-	/** Whether a computed type node represented node should be observed. */
-	export function isComputedTypeNodeObserved(typeNode: TS.TypeNode): boolean {
-
 		// A | B
 		if (ts.isUnionTypeNode(typeNode)
 			|| ts.isIntersectionTypeNode(typeNode)
@@ -52,6 +39,11 @@ export namespace ObservedChecker {
 			return isTypeNodeObserved(typeNode.elementType)
 		}
 
+		// `Observed<>`, must use it directly.
+		if (Helper.symbol.isImportedFrom(typeNode, 'Observed', '@pucelle/ff')) {
+			return true
+		}
+
 		let resolveFrom: TS.Node = typeNode
 
 		// Resolve type reference.
@@ -59,9 +51,22 @@ export namespace ObservedChecker {
 			resolveFrom = typeNode.typeName
 		}
 
+		let decl = Helper.symbol.resolveDeclaration(resolveFrom)
+		if (!decl) {
+			return false
+		}
+
+		// Resolve type reference to type decl.
+		if (ts.isTypeParameterDeclaration(decl)) {
+			if (decl.constraint) {
+				return isTypeNodeObserved(decl.constraint)
+			}
+		}
+
 		// `Component` like.
-		let clsDecl = Helper.symbol.resolveDeclaration(resolveFrom, ts.isClassDeclaration)
-		if (clsDecl && Helper.cls.isImplemented(clsDecl, 'Observed', '@pucelle/ff')) {
+		if (ts.isClassDeclaration(decl)
+			&& Helper.cls.isImplemented(decl, 'Observed', '@pucelle/ff')
+		) {
 			return true 
 		}
 

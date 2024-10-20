@@ -142,3 +142,15 @@ class TestMethodReturnedType extends Component {
 		return this
 	}
 }
+
+
+class TestClassTypeParameter<T extends Observed<{value: number}>> {
+
+	getItems(item: T) {
+		return item.value
+	}
+
+	setItems(item: T) {
+		item.value = 1
+	}
+}

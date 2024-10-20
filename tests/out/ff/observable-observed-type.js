@@ -1,4 +1,4 @@
-import { trackGet } from '@pucelle/ff';
+import { trackGet, trackSet } from '@pucelle/ff';
 import { Component } from '@pucelle/lupos.js';
 class TestObservedVariableType {
     variables() {
@@ -134,5 +134,15 @@ class TestMethodReturnedType extends Component {
     }
     getInstance() {
         return this;
+    }
+}
+class TestClassTypeParameter {
+    getItems(item) {
+        trackGet(item, "value");
+        return item.value;
+    }
+    setItems(item) {
+        item.value = 1;
+        trackSet(item, "value");
     }
 }
