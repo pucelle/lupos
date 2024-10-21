@@ -163,9 +163,33 @@ const $html_0 = new HTMLMaker("<div></div>");
 });
 /*
 <root>
-    <div :style="color: ${'red'}" />
+    <div style="background: ${this.styleValue}" :style.background=${this.styleValue} />
 </root>
 */ const $template_8 = new TemplateMaker(function () {
+    let $latest_0, $latest_1;
+    let $node = $html_0.make();
+    let $node_0 = $node.content.firstChild;
+    let $binding_0 = new StyleBinding($node_0);
+    return {
+        el: $node,
+        position: new SlotPosition(1, $node_0),
+        update($values) {
+            if ($latest_0 !== $values[0]) {
+                $node_0.setAttribute("style", "background: " + $values[0]);
+                $latest_0 = $values[0];
+            }
+            if ($latest_1 !== $values[0]) {
+                $binding_0.updateObject({ background: $values[0] });
+                $latest_1 = $values[0];
+            }
+        }
+    };
+});
+/*
+<root>
+    <div :style="color: ${'red'}" />
+</root>
+*/ const $template_9 = new TemplateMaker(function () {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $binding_0 = new StyleBinding($node_0);
@@ -179,7 +203,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 <root>
     <div :style=${'styleValue'} />
 </root>
-*/ const $template_9 = new TemplateMaker(function () {
+*/ const $template_10 = new TemplateMaker(function () {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $binding_0 = new StyleBinding($node_0);
@@ -193,7 +217,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 <root>
     <div :style=${{styleName: 'styleValue'}} />
 </root>
-*/ const $template_10 = new TemplateMaker(function () {
+*/ const $template_11 = new TemplateMaker(function () {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $binding_0 = new StyleBinding($node_0);
@@ -207,7 +231,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 <root>
     <div :style.prop=${true} />
 </root>
-*/ const $template_11 = new TemplateMaker(function () {
+*/ const $template_12 = new TemplateMaker(function () {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $binding_0 = new StyleBinding($node_0);
@@ -268,18 +292,24 @@ class TestStyleBinding extends Component {
             this.styleValue
         ]);
     }
+    testConflictWithClassAttr() {
+        trackGet(this, "styleValue");
+        return new CompiledTemplateResult($template_8, [
+            this.styleValue
+        ]);
+    }
 }
 class TestStaticStyleBinding extends Component {
     testInterpolatedString() {
-        return new CompiledTemplateResult($template_8, []);
-    }
-    testString() {
         return new CompiledTemplateResult($template_9, []);
     }
-    testObject() {
+    testString() {
         return new CompiledTemplateResult($template_10, []);
     }
-    testModifier() {
+    testObject() {
         return new CompiledTemplateResult($template_11, []);
+    }
+    testModifier() {
+        return new CompiledTemplateResult($template_12, []);
     }
 }

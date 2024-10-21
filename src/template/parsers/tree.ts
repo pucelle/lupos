@@ -266,8 +266,9 @@ export class TreeParser {
 
 	private parseAttributes(node: HTMLNode) {
 		let callbacks: (() => void)[] = []
+		let attrs = [...node.attrs!]
 
-		for (let attr of [...node.attrs!]) {
+		for (let attr of attrs) {
 			let {name, value, quoted} = attr
 			let type: SlotType | null = null
 
@@ -304,22 +305,27 @@ export class TreeParser {
 					}
 			}
 
+			// On component or template, component inner may bind more.
 			let isSharedModificationNode = node.tagName === 'template'
 				|| node.tagName && TemplateSlotPlaceholder.isComponent(node.tagName)
-		
+
 			// Append attribute, but not set, to $context.el, or component.
 			if (type === null && isSharedModificationNode) {
 				type = SlotType.Attribute
 			}
 
 			// `<Com class=...>` use `:class` to do binding, to avoid conflict with component inner class attribute.
+			// Or `<div class=... :class=...>`, should upgrade `class` to `:class` to avoid it overwrites.
 			if (type === SlotType.Attribute
-				&& isSharedModificationNode
 				&& (name === 'class' || name === 'style')
-				&& valueIndices
 			) {
-				type = SlotType.Binding
-				name = ':' + name
+				let upgradeToBinding = isSharedModificationNode && valueIndices
+					|| attrs.find(attr => attr.name.startsWith(':' + name))
+
+				if (upgradeToBinding) {
+					type = SlotType.Binding
+					name = ':' + name
+				}
 			}
 
 			if (type === null) {

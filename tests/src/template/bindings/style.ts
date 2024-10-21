@@ -37,6 +37,10 @@ class TestStyleBinding extends Component {
 	testURLModifier() {
 		return html`<div :style.background.url=${this.styleValue} />`
 	}
+
+	testConflictWithStyleAttr() {
+		return html`<div style="background: ${this.styleValue}" :style.background=${this.styleValue} />`
+	}
 }
 
 

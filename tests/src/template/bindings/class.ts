@@ -29,6 +29,10 @@ class TestClassBinding extends Component {
 	testModifier() {
 		return html`<div :class.className=${this.booleanValue} />`
 	}
+
+	testConflictWithClassAttr() {
+		return html`<div class=${this.className} :class.className=${this.booleanValue} />`
+	}
 }
 
 
