@@ -15,7 +15,13 @@ const $html_0 = new HTMLMaker("<!---->");
         position: new SlotPosition(1, $node_1)
     };
 });
-class TestDiagnostics extends Component {
+export class TestDiagnostics extends Component {
+    // testUnImportedBinding() {
+    // 	return html`<template :binding=${true}>`
+    // }
+    // testUnImportedCom() {
+    // 	return html`<Com>`
+    // }
     testMultipleBindingParameters() {
         return new CompiledTemplateResult($template_0, []);
     }

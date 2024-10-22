@@ -51,7 +51,7 @@ export namespace DiagnosticModifier {
 
 
 	/** Add usage of a import specifier node, remove it's diagnostic. */
-	export function removeNeverRead(node: TS.ImportSpecifier) {
+	export function removeNeverRead(node: TS.Node) {
 		remove(node, 6133)
 	}
 

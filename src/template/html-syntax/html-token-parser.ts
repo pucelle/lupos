@@ -107,7 +107,7 @@ export namespace HTMLTokenParser {
 			// Start Tag
 			else {
 				let tagName = match[1]
-				let attrs = parseAttributes(match[2], match.index + 1)
+				let attrs = parseAttributes(match[2], match.index + tagName.length + 1)
 				let selfClose = SelfClosingTags.includes(tagName)
 
 				tokens.push({

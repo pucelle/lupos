@@ -446,14 +446,14 @@ export abstract class SlotParserBase {
 	}
 
 
-	diagnosticMissingTagImport(message: string) {
+	diagnoseMissingTagImport(message: string) {
 		let start = this.node.start + 1
 		let length = this.node.tagName!.length
 
 		DiagnosticModifier.addMissingImport(start, length, message)
 	}
 
-	diagnosticNormal(message: string) {
+	diagnoseNormal(message: string) {
 		let start = this.node.start + 1
 		let length = this.node.tagName!.length
 

@@ -13,12 +13,12 @@ export class BindingSlotParser extends SlotParserBase {
 	/** To process output via binding type. */
 	private binding!: BindingBase
 
-	diagnosticMissingBinding() {
+	diagnoseMissingBinding() {
 		let start = this.attr.start
 		let length = this.attr.name.replace(/\..+/, '').length
 
 		DiagnosticModifier.addMissingImport(
-			start, length, `Please make sure to import or declare binding "${this.name}"!`
+			start, length, `Please make sure to import or declare binding ":${this.name}"!`
 		)
 	}
 

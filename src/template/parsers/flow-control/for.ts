@@ -27,11 +27,11 @@ export class ForFlowControl extends FlowControlBase {
 		let fnValueIndex = this.getUniqueChildValueIndex(this.node)
 
 		if (ofValueIndex === null) {
-			this.slot.diagnosticNormal('<lu:for ${...}> must accept a parameter as loop data!')
+			this.slot.diagnoseNormal('<lu:for ${...}> must accept a parameter as loop data!')
 		}
 
 		if (fnValueIndex === null) {
-			this.slot.diagnosticNormal('<lu:for>${...}</> must accept a parameter as child item renderer!')
+			this.slot.diagnoseNormal('<lu:for>${...}</> must accept a parameter as child item renderer!')
 		}
 
 		this.ofValueIndex = ofValueIndex

@@ -1,6 +1,6 @@
 import type TS from 'typescript'
 import {SlotParserBase} from './base'
-import {factory, Modifier, ScopeTree, ts} from '../../../base'
+import {DiagnosticModifier, factory, Modifier, ScopeTree, ts} from '../../../base'
 
 
 export class ComponentSlotParser extends SlotParserBase {
@@ -15,16 +15,18 @@ export class ComponentSlotParser extends SlotParserBase {
 
 		let decl = ScopeTree.getDeclarationByName(comName, this.template.rawNode)
 		if (!decl) {
-			this.diagnosticMissingTagImport(`Please make sure to import or declare "<${comName}>"!`)
-			return
+			this.diagnoseMissingTagImport(`Please make sure to import or declare component "<${comName}>"!`)
 		}
+		else {
+			// Limit closest scope by referenced declaration.
+			this.template.addRefedDeclaration(decl)
 
-		// Limit closest scope by referenced declaration.
-		this.template.addRefedDeclaration(decl)
+			// Avoid been removed by typescript compiler.
+			if (ts.isImportSpecifier(decl)) {
+				Modifier.persistImport(decl)
+			}
 
-		// Avoid been removed by typescript compiler.
-		if (ts.isImportSpecifier(decl)) {
-			Modifier.persistImport(decl)
+			DiagnosticModifier.removeNeverRead(decl)
 		}
 	}
 

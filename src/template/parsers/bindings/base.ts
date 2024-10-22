@@ -2,7 +2,7 @@ import type TS from 'typescript'
 import {HTMLNode} from '../../html-syntax'
 import {TreeParser} from '../tree'
 import {BindingSlotParser} from '../slots'
-import {factory, Helper, Modifier, ScopeTree, ts} from '../../../base'
+import {DiagnosticModifier, factory, Helper, Modifier, ScopeTree, ts} from '../../../base'
 import {TemplateParser} from '../template'
 import {VariableNames} from '../variable-names'
 import {setLatestBindingInfo} from './latest-binding'
@@ -171,28 +171,31 @@ export class BindingBase {
 				)
 				|| !decl.name
 			) {
-				this.slot.diagnosticMissingBinding()
-				return
+				this.slot.diagnoseMissingBinding()
 			}
+			else {
 
-			// Avoid been removed by typescript compiler.
-			if (ts.isImportSpecifier(decl)) {
-				Modifier.persistImport(decl)
+				// Avoid been removed by typescript compiler.
+				if (ts.isImportSpecifier(decl)) {
+					Modifier.persistImport(decl)
+				}
+
+				DiagnosticModifier.removeNeverRead(decl)
+
+				let bindingModuleName = Helper.symbol.resolveImport(decl)
+				let bindingClass = Helper.symbol.resolveDeclaration(decl, ts.isClassDeclaration)!
+
+				this.template.addRefedDeclaration(decl)
+
+				if (bindingClass
+					&& Helper.cls.isImplemented(bindingClass, 'Part', '@pucelle/lupos.js', bindingModuleName?.moduleName)
+				) {
+					this.implementsPart = true
+				}
+
+				let bindingClassParams = bindingClass ? Helper.cls.getConstructorParameters(bindingClass) : null
+				this.bindingClassParameterCount = bindingClassParams ? bindingClassParams.length : null
 			}
-
-			let bindingModuleName = Helper.symbol.resolveImport(decl)
-			let bindingClass = Helper.symbol.resolveDeclaration(decl, ts.isClassDeclaration)!
-
-			this.template.addRefedDeclaration(decl)
-
-			if (bindingClass
-				&& Helper.cls.isImplemented(bindingClass, 'Part', '@pucelle/lupos.js', bindingModuleName?.moduleName)
-			) {
-				this.implementsPart = true
-			}
-
-			let bindingClassParams = bindingClass ? Helper.cls.getConstructorParameters(bindingClass) : null
-			this.bindingClassParameterCount = bindingClassParams ? bindingClassParams.length : null
 		}
 	}
 
@@ -226,6 +229,14 @@ export class BindingBase {
 		}
 
 		let rawValueNodes = Helper.pack.unBundleCommaBinaryExpressions(rawValueNode)
+
+		// May unused comma expression of a for `${a, b}`, here remove it.
+		if (rawValueNodes.length > 1) {
+			for (let i = 0; i < rawValueNodes.length - 1; i++) {
+				DiagnosticModifier.removeUnusedComma(rawValueNodes[i])
+			}
+		}
+
 		return rawValueNodes
 	}
 

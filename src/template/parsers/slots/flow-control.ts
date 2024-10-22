@@ -37,7 +37,7 @@ export class FlowControlSlotParser extends SlotParserBase {
 				break
 
 			default:
-				this.diagnosticNormal(`Unknown control tag "<${this.node.tagName}>"!`)
+				this.diagnoseNormal(`Unknown control tag "<${this.node.tagName}>"!`)
 		}
 
 		if (control) {
