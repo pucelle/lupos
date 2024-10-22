@@ -27,4 +27,15 @@ class TestContent extends Component {
 			${html`<div></div>`}
 		</div>`
 	}
+
+	testNeighborIfContents() {
+		return html`
+		<template>
+			<lu:if ${this.booleanProp}>
+				<div></div>
+			</lu:if>
+			${html`<div></div>`}
+		</template>
+		`
+	}
 }

@@ -1,4 +1,4 @@
-import { Component, TemplateSlot, SlotPosition, CompiledTemplateResult, TemplateMaker, HTMLMaker } from '@pucelle/lupos.js';
+import { Component, TemplateSlot, SlotPosition, CompiledTemplateResult, TemplateMaker, HTMLMaker, IfBlock } from '@pucelle/lupos.js';
 import { trackGet } from "@pucelle/ff";
 const $html_0 = new HTMLMaker("<div></div>");
 /*
@@ -193,6 +193,59 @@ const $html_10 = new HTMLMaker("<div><!----><!----></div>");
         ]
     };
 });
+/*
+<root>
+    <div />
+</root>
+*/ const $template_11 = new TemplateMaker(function () {
+    let $node = $html_0.make();
+    let $node_0 = $node.content.firstChild;
+    return {
+        el: $node,
+        position: new SlotPosition(1, $node_0)
+    };
+});
+const $html_12 = new HTMLMaker("<!----><!----><!---->");
+/*
+<root>
+    <template>
+        <lu:if ${this.booleanProp} />
+        ${html`<div></div>`}
+    </template>
+</root>
+*/ const $template_12 = new TemplateMaker(function ($context) {
+    let $node = $html_12.make();
+    let $node_0 = $node.content.firstChild;
+    let $node_1 = $node.content.childNodes[1];
+    let $node_2 = $node.content.lastChild;
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context);
+    let $block_0 = new IfBlock($slot_0);
+    let $slot_1 = new TemplateSlot(new SlotPosition(1, $node_2), $context, 0);
+    $slot_1.update(new CompiledTemplateResult($template_11, []));
+    return {
+        el: $node,
+        position: new SlotPosition(1, $node_0),
+        update($values) {
+            $block_0.update($values[0]);
+        },
+        parts: [
+            [$slot_0, 1],
+            [$slot_1, 1]
+        ]
+    };
+});
+/*
+<root>
+    <div />
+</root>
+*/ const $template_13 = new TemplateMaker(function () {
+    let $node = $html_0.make();
+    let $node_0 = $node.content.firstChild;
+    return {
+        el: $node,
+        position: new SlotPosition(1, $node_0)
+    };
+});
 class TestContent extends Component {
     booleanProp = true;
     testTemplateResultContent() {
@@ -212,5 +265,11 @@ class TestContent extends Component {
     }
     testNeighborContents() {
         return new CompiledTemplateResult($template_10, []);
+    }
+    testNeighborIfContents() {
+        trackGet(this, "booleanProp");
+        return new CompiledTemplateResult($template_12, [
+            this.booleanProp ? new CompiledTemplateResult($template_13, []) : null
+        ]);
     }
 }

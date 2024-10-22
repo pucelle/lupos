@@ -6,7 +6,7 @@ import {VariableNames} from './variable-names'
 /** Help to manage all value nodes. */
 export class TemplateValues {
 
-	readonly valueNodes: TS.Expression[]
+	readonly rawValueNodes: TS.Expression[]
 
 	private valueHash: Map<string, number> = new Map()
 	private outputNodes: TS.Expression[] = []
@@ -15,14 +15,14 @@ export class TemplateValues {
 	private indicesTransferredWithinFunction: Set<number> = new Set()
 
 	constructor(valueNodes: TS.Expression[]) {
-		this.valueNodes = valueNodes
+		this.rawValueNodes = valueNodes
 		this.checkIndicesMutable()
 	}
 	
 	/** Removes all static values and remap value indices. */
 	private checkIndicesMutable() {
-		for (let i = 0; i < this.valueNodes.length; i++) {
-			let node = this.valueNodes[i]
+		for (let i = 0; i < this.rawValueNodes.length; i++) {
+			let node = this.rawValueNodes[i]
 			this.indicesMutable.set(i, ScopeTree.testMutable(node))
 		}
 	}
@@ -49,7 +49,7 @@ export class TemplateValues {
 
 	/** Get raw value node at index. */
 	getRawValue(valueIndex: number): TS.Expression {
-		return this.valueNodes[valueIndex]
+		return this.rawValueNodes[valueIndex]
 	}
 
 	/** 
@@ -93,7 +93,7 @@ export class TemplateValues {
 		}
 		
 		let valueNodes = valueIndices.map(valueIndex => {
-			let rawValueNode = this.valueNodes[valueIndex]
+			let rawValueNode = this.rawValueNodes[valueIndex]
 			let mutable = this.isIndexMutable(valueIndex)
 			let canTurn = this.isIndexCanTurnStatic(valueIndex)
 			let asStatic = !mutable || forceStatic && canTurn

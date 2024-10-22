@@ -324,7 +324,7 @@ export abstract class SlotParserBase {
 
 		// Use next node to locate.
 		if (nextNode
-			&& nextNode.isPrecedingPositionStable()
+			&& nextNode.isPrecedingPositionStable(this.template.values.rawValueNodes)
 			&& this.canRemoveNode(this.node)
 		) {
 			this.node.remove()
@@ -373,7 +373,7 @@ export abstract class SlotParserBase {
 		let lastChild = this.node.lastChild!
 
 		// If first child is not stable, insert a comment before it.
-		if (!firstChild.isPrecedingPositionStable()) {
+		if (!firstChild.isPrecedingPositionStable(this.template.values.rawValueNodes)) {
 			let comment = new HTMLNode(HTMLNodeType.Comment, {})
 			firstChild.before(comment)
 			firstChild = comment

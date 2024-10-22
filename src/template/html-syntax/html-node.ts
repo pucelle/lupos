@@ -163,7 +163,7 @@ export class HTMLNode {
 	 * Whether preceding position of current node is stable.
 	 * Means will not remove, or insert other nodes before it.
 	 */
-	isPrecedingPositionStable(): boolean {
+	isPrecedingPositionStable(rawValueNodes: TS.Node[]): boolean {
 		if (this.type === HTMLNodeType.Comment) {
 			return false
 		}
@@ -192,10 +192,26 @@ export class HTMLNode {
 			return false
 		}
 
+		// Text, if start with string, return true.
+		if (this.type === HTMLNodeType.Text) {
+			let strings = TemplateSlotPlaceholder.parseTemplateStrings(this.text!)
+			let valueIndices = TemplateSlotPlaceholder.getSlotIndices(this.text!)
+
+			// First part is value, and the value is not object type.
+			if (valueIndices && (!strings || !strings[0])) {
+				let firstRawNode = rawValueNodes[valueIndices[0]]
+				let type = Helper.types.typeOf(firstRawNode)
+
+				if (!Helper.types.isValueType(type)) {
+					return false
+				}
+			}
+		}
+
 		return true
 	}
 
-	toReadableString(rawNodes: TS.Node[], tab = ''): string {
+	toReadableString(rawValueNodes: TS.Node[], tab = ''): string {
 		if (this.type === HTMLNodeType.Tag) {
 			let tagName = this.tagName!
 			let children = this.children.filter(child => child.type === HTMLNodeType.Tag || child.desc || child.text)
@@ -208,9 +224,9 @@ export class HTMLNode {
 			return tab
 				+ TemplateSlotPlaceholder.replaceTemplateString(
 					`<${tagName}${this.toStringOfAttrs(true)}${children.length === 0 ? ' /' : ''}>`,
-					(index: number) => '${' + Helper.getFullText(rawNodes[index]) + '}'
+					(index: number) => '${' + Helper.getFullText(rawValueNodes[index]) + '}'
 				)
-				+ children.map(child => child.toReadableString(rawNodes, wrap ? tab + '\t' : ''))
+				+ children.map(child => child.toReadableString(rawValueNodes, wrap ? tab + '\t' : ''))
 					.map(v => wrap + v).join('')
 				+ (wrap ? wrap + tab : '')
 				+ (children.length > 0
@@ -221,7 +237,7 @@ export class HTMLNode {
 		else if (this.desc) {
 			return TemplateSlotPlaceholder.replaceTemplateString(
 				tab + this.desc,
-				(index: number) => '${' + Helper.getFullText(rawNodes[index]) + '}'
+				(index: number) => '${' + Helper.getFullText(rawValueNodes[index]) + '}'
 			)
 		}
 		else if (this.type === HTMLNodeType.Text && this.text) {

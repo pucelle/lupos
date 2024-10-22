@@ -170,7 +170,7 @@ export class TreeParser {
 		}
 
 		// Use a new comment node to locate if position is not stable.
-		else if (!firstNode.isPrecedingPositionStable()) {
+		else if (!firstNode.isPrecedingPositionStable(this.template.values.rawValueNodes)) {
 			let comment = new HTMLNode(HTMLNodeType.Comment, {})
 			firstNode.before(comment)
 			firstNode = comment
@@ -413,7 +413,7 @@ export class TreeParser {
 					addSlotFn.push(() => this.addSlot(SlotType.Content, null, null, valueIndices, comment))
 				}
 			}
-
+			
 			node.remove()
 
 			// Ensure sibling nodes have been cleaned, then add slots.

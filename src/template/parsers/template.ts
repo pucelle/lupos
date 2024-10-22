@@ -48,7 +48,7 @@ export class TemplateParser {
 	 * */
 	separateChildrenAsTemplate(node: HTMLNode): TemplateParser {
 		let root = HTMLRoot.fromSeparatingChildren(node)
-		let template = new TemplateParser(this.type, root, this.values.valueNodes, this.rawNode)
+		let template = new TemplateParser(this.type, root, this.values.rawValueNodes, this.rawNode)
 		this.subTemplates.push(template)
 
 		return template
