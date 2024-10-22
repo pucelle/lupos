@@ -1,7 +1,7 @@
 import {Component} from '@pucelle/lupos.js'
 
 
-class TestArrayIndex extends Component {
+export class TestArrayIndex extends Component {
 
 	prop: {value: number}[] = [{value:1}]
 
@@ -24,7 +24,7 @@ class TestArrayIndex extends Component {
 }
 
 
-class TestArrayTuple extends Component {
+export class TestArrayTuple extends Component {
 
 	prop: [number, number] = [1, 1]
 
@@ -34,7 +34,7 @@ class TestArrayTuple extends Component {
 }
 
 
-class TestArrayMethods extends Component {
+export class TestArrayMethods extends Component {
 
 	prop: number[] = [1]
 
@@ -57,7 +57,7 @@ class TestArrayMethods extends Component {
 type ArrayProp = {value: number}[]
 type ArrayPropAlias = ArrayProp
 
-class TestAliasArrayTypeOfProp extends Component {
+export class TestAliasArrayTypeOfProp extends Component {
 
 	prop: ArrayPropAlias = [{value:1}]
 
@@ -67,7 +67,7 @@ class TestAliasArrayTypeOfProp extends Component {
 }
 
 
-class TestArrayBroadcastingObservedToMapFn extends Component {
+export class TestArrayBroadcastingObservedToMapFn extends Component {
 
 	prop: {value: number}[] = [{value:1}]
 

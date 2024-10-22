@@ -1,7 +1,7 @@
 import {Component, html} from '@pucelle/lupos.js'
 
 
-class TestText extends Component {
+export class TestText extends Component {
 
 	stringProp: string = '1'
 	numericProp: number = 1

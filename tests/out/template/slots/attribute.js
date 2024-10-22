@@ -109,7 +109,7 @@ const $html_5 = new HTMLMaker("<!---->");
         position: new SlotPosition(1, $node_1)
     };
 });
-class TestAttribute extends Component {
+export class TestAttribute extends Component {
     className = 'className';
     booleanValue = true;
     nullableClassName;

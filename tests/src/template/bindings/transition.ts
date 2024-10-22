@@ -2,7 +2,7 @@ import {fade} from '@pucelle/ff'
 import {Component, html} from '@pucelle/lupos.js'
 
 
-class TestTransitionBinding extends Component {
+export class TestTransitionBinding extends Component {
 
 	duration: number = 300
 

@@ -207,7 +207,7 @@ const $html_2 = new HTMLMaker("<!----><div></div><!---->");
         position: new SlotPosition(1, $node_0)
     };
 });
-class TestEvent extends Component {
+export class TestEvent extends Component {
     UnionedCom = Com1;
     ConstructedCom = Com1;
     booleanValue = true;

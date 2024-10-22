@@ -6,7 +6,7 @@ interface ReadonlyProp {
 	readonly value: string
 }
 
-class TestReadonlyModifier extends Component {
+export class TestReadonlyModifier extends Component {
 
 	readonly prop1: {value: string} = {value: 'Text'}
 	prop2: ReadonlyProp = {value: 'Text'}
@@ -18,7 +18,7 @@ class TestReadonlyModifier extends Component {
 }
 
 
-class TestReadonlyProp extends Component {
+export class TestReadonlyProp extends Component {
 
 	prop: Readonly<{value: string}> = {value: 'Text'}
 
@@ -28,7 +28,7 @@ class TestReadonlyProp extends Component {
 }
 
 
-class TestReadonlyArrayProp extends Component {
+export class TestReadonlyArrayProp extends Component {
 
 	prop: ReadonlyArray<{value: string}> = [{value: 'Text1'}]
 
@@ -38,7 +38,7 @@ class TestReadonlyArrayProp extends Component {
 }
 
 
-class TestDeepReadonlyProp extends Component {
+export class TestDeepReadonlyProp extends Component {
 
 	prop: DeepReadonly<{value: {value: string}}> = {value: {value: 'Text'}}
 
@@ -48,7 +48,7 @@ class TestDeepReadonlyProp extends Component {
 }
 
 
-class TestDeepReadonlyArrayProp extends Component {
+export class TestDeepReadonlyArrayProp extends Component {
 
 	prop: DeepReadonly<{value: string}[]> = [{value: 'Text1'}]
 

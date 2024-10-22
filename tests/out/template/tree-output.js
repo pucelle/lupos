@@ -66,7 +66,7 @@ const $html_2 = new HTMLMaker("<svg><slot name=\"slotName\"></slot></svg>", true
     };
 });
 const $html_4 = new HTMLMaker("<div></div>");
-class TestTemplateOutput extends Component {
+export class TestTemplateOutput extends Component {
     prop = 1;
     readonlyProp = 1;
     testTemplate() {

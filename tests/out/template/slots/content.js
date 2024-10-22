@@ -246,7 +246,7 @@ const $html_12 = new HTMLMaker("<!----><!----><!---->");
         position: new SlotPosition(1, $node_0)
     };
 });
-class TestContent extends Component {
+export class TestContent extends Component {
     booleanProp = true;
     testTemplateResultContent() {
         return new CompiledTemplateResult($template_1, []);

@@ -1,7 +1,7 @@
 import {Component, html} from '@pucelle/lupos.js'
 
 
-class TestFor extends Component {
+export class TestFor extends Component {
 
 	prop: number = 1
 

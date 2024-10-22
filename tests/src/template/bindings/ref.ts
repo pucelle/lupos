@@ -2,7 +2,7 @@ import {fade} from '@pucelle/ff'
 import {ClassBinding, Component, html} from '@pucelle/lupos.js'
 
 
-class TestRefBinding extends Component {
+export class TestRefBinding extends Component {
 
 	refEl: any
 	refCom: any

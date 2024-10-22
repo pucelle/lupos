@@ -1,7 +1,7 @@
 import {Component, html} from '@pucelle/lupos.js'
 
 
-class TestContent extends Component {
+export class TestContent extends Component {
 
 	booleanProp: boolean = true
 

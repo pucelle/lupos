@@ -1,6 +1,6 @@
 import { Component } from '@pucelle/lupos.js';
 import { trackGet } from "@pucelle/ff";
-class TestAndOrDoubleQuestionOperators extends Component {
+export class TestAndOrDoubleQuestionOperators extends Component {
     prop1 = { value: '1' };
     prop2 = { value: '2' };
     and() {
@@ -40,7 +40,7 @@ class TestAndOrDoubleQuestionOperators extends Component {
         return $ref_0.value;
     }
 }
-class TestTernaryConditionalOperator extends Component {
+export class TestTernaryConditionalOperator extends Component {
     prop1 = undefined;
     prop2 = undefined;
     byProp() {

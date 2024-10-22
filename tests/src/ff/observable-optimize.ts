@@ -2,7 +2,7 @@ import {Observed} from '@pucelle/ff'
 import {Component} from '@pucelle/lupos.js'
 
 
-class TestOptimizing extends Component {
+export class TestOptimizing extends Component {
 
 	prop: {value: number} = {value: 1}
 

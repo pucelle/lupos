@@ -1,6 +1,6 @@
 import { Component } from '@pucelle/lupos.js';
 import { trackGet, trackSet } from "@pucelle/ff";
-class TestMap extends Component {
+export class TestMap extends Component {
     map = new Map();
     has() {
         trackGet(this, "map");
@@ -22,7 +22,7 @@ class TestMap extends Component {
         trackSet(this.map, "");
     }
 }
-class TestSet extends Component {
+export class TestSet extends Component {
     set = new Set();
     has() {
         trackGet(this, "set");

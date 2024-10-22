@@ -4,7 +4,7 @@ import {Component, html} from '@pucelle/lupos.js'
 let globalVariable: number = 1
 
 
-class TestTemplateValues extends Component {
+export class TestTemplateValues extends Component {
 
 	prop: number = 1
 	readonly readonlyProp: number = 1

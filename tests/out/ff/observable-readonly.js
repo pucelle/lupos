@@ -1,6 +1,6 @@
 import { trackGet } from '@pucelle/ff';
 import { Component } from '@pucelle/lupos.js';
-class TestReadonlyModifier extends Component {
+export class TestReadonlyModifier extends Component {
     static SlotContentType = 2;
     prop1 = { value: 'Text' };
     prop2 = { value: 'Text' };
@@ -11,7 +11,7 @@ class TestReadonlyModifier extends Component {
             + this.prop2.value;
     }
 }
-class TestReadonlyProp extends Component {
+export class TestReadonlyProp extends Component {
     static SlotContentType = 2;
     prop = { value: 'Text' };
     render() {
@@ -19,7 +19,7 @@ class TestReadonlyProp extends Component {
         return this.prop.value;
     }
 }
-class TestReadonlyArrayProp extends Component {
+export class TestReadonlyArrayProp extends Component {
     static SlotContentType = 2;
     prop = [{ value: 'Text1' }];
     render() {
@@ -31,7 +31,7 @@ class TestReadonlyArrayProp extends Component {
         }).join(' ');
     }
 }
-class TestDeepReadonlyProp extends Component {
+export class TestDeepReadonlyProp extends Component {
     static SlotContentType = 2;
     prop = { value: { value: 'Text' } };
     render() {
@@ -41,7 +41,7 @@ class TestDeepReadonlyProp extends Component {
         return this.prop.value.value;
     }
 }
-class TestDeepReadonlyArrayProp extends Component {
+export class TestDeepReadonlyArrayProp extends Component {
     static SlotContentType = 2;
     prop = [{ value: 'Text1' }];
     render() {

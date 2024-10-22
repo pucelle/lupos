@@ -14,7 +14,7 @@ const $html_0 = new HTMLMaker("<!----><template><div>Portal Content</div></templ
         position: new SlotPosition(1, $node_0)
     };
 });
-class TestPortal extends Component {
+export class TestPortal extends Component {
     testPortal() {
         return new CompiledTemplateResult($template_0, []);
     }

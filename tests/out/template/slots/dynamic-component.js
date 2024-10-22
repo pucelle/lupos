@@ -32,7 +32,7 @@ const $html_0 = new HTMLMaker("<!----><div></div><!---->");
         ]
     };
 });
-class TestDynamicComponent extends Component {
+export class TestDynamicComponent extends Component {
     prop = 1;
     // testNormal() {
     // 	return html`<${ChildComponent} />`

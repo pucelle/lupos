@@ -1,21 +1,21 @@
 import { Component, addGlobalStyle, css } from '@pucelle/lupos.js';
-class TestNormalStyle extends Component {
+export class TestNormalStyle extends Component {
     static style = css `.a{}.a .b{color:red;}`;
 }
 TestNormalStyle.ensureStyle();
-class TestDynamicStyle extends Component {
+export class TestDynamicStyle extends Component {
     static style() {
         return css `.a{}.a .b{color:red;}`;
     }
 }
 TestDynamicStyle.ensureStyle();
-class TestDynamicStyleWithValues extends Component {
+export class TestDynamicStyleWithValues extends Component {
     static style() {
         return css `.a{color:${"red"};}.a .b{color:${"green"};}`;
     }
 }
 TestDynamicStyleWithValues.ensureStyle();
-class TestClassNameInterpolated extends Component {
+export class TestClassNameInterpolated extends Component {
     static style() {
         let type = '';
         let color = '';
@@ -23,7 +23,7 @@ class TestClassNameInterpolated extends Component {
     }
 }
 TestClassNameInterpolated.ensureStyle();
-class TestCodesInterpolated extends Component {
+export class TestCodesInterpolated extends Component {
     static style() {
         let code1 = '';
         let code2 = '';

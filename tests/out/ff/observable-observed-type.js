@@ -1,6 +1,6 @@
 import { trackGet, trackSet } from '@pucelle/ff';
 import { Component } from '@pucelle/lupos.js';
-class TestObservedVariableType {
+export class TestObservedVariableType {
     variables() {
         var a = { value: 1 };
         var b = { value: 1 };
@@ -27,7 +27,7 @@ class TestObservedVariableType {
         return item.value;
     }
 }
-class TestObservedParameter {
+export class TestObservedParameter {
     prop = { value: 1 };
     parameterAs(a = { value: 1 }) {
         trackGet(a, "value");
@@ -43,7 +43,7 @@ class TestObservedParameter {
         return this.prop.value;
     }
 }
-class TestObservedPropertyAtUnobserved {
+export class TestObservedPropertyAtUnobserved {
     observedTypeProp = { value: 1 };
     observedInitProp = { value: 1 };
     unObservedProp = { value: 1 };
@@ -60,7 +60,7 @@ class TestObservedPropertyAtUnobserved {
         return this.unObservedProp.value;
     }
 }
-class TestObservedProperty extends Component {
+export class TestObservedProperty extends Component {
     prop = { value: 1 };
     getPropValueUseMethod() {
         trackGet(this, "prop");
@@ -76,7 +76,7 @@ class TestObservedProperty extends Component {
         return this.prop.value + this.prop.value;
     }
 }
-class TestArrayMapObservedParameter {
+export class TestArrayMapObservedParameter {
     prop = [{ value: 1 }];
     arrowFnImplicitReturn() {
         return this.prop.map((v) => {
@@ -91,7 +91,7 @@ class TestArrayMapObservedParameter {
         return this.prop.map(function (v) { trackGet(v, "value"); return v.value; }).join('');
     }
 }
-class TestMethodReturnedType extends Component {
+export class TestMethodReturnedType extends Component {
     prop = { value: 'Text' };
     getValueUseMethod() {
         var item = this.getNormalItem();
@@ -134,7 +134,7 @@ class TestMethodReturnedType extends Component {
         return this;
     }
 }
-class TestClassTypeParameter {
+export class TestClassTypeParameter {
     getItems(item) {
         trackGet(item, "value");
         return item.value;

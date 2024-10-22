@@ -1,7 +1,7 @@
 import {Component, addGlobalStyle, css} from '@pucelle/lupos.js'
 
 
-class TestNormalStyle extends Component {
+export class TestNormalStyle extends Component {
 
 	static style = css`
 		.a{
@@ -13,7 +13,7 @@ class TestNormalStyle extends Component {
 }
 
 
-class TestDynamicStyle extends Component {
+export class TestDynamicStyle extends Component {
 
 	static style() {
 		return css`
@@ -27,7 +27,7 @@ class TestDynamicStyle extends Component {
 }
 
 
-class TestDynamicStyleWithValues extends Component {
+export class TestDynamicStyleWithValues extends Component {
 
 	static style() {
 		return css`
@@ -43,7 +43,7 @@ class TestDynamicStyleWithValues extends Component {
 }
 
 
-class TestClassNameInterpolated extends Component {
+export class TestClassNameInterpolated extends Component {
 
 	static style() {
 		let type = ''
@@ -60,7 +60,7 @@ class TestClassNameInterpolated extends Component {
 }
 
 
-class TestCodesInterpolated extends Component {
+export class TestCodesInterpolated extends Component {
 
 	static style() {
 		let code1 = ''

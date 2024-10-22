@@ -1,6 +1,6 @@
 import { trackGet } from '@pucelle/ff';
 import { Component } from '@pucelle/lupos.js';
-class TestNormalProp extends Component {
+export class TestNormalProp extends Component {
     prop = 1;
     getProp() {
         trackGet(this, "prop");
@@ -12,7 +12,7 @@ class TestNormalProp extends Component {
         return prop;
     }
 }
-class TestElementProp extends Component {
+export class TestElementProp extends Component {
     prop = 1;
     getProp() {
         let prop = 'prop';
@@ -21,7 +21,7 @@ class TestElementProp extends Component {
             + this[prop];
     }
 }
-class TestObjectProp extends Component {
+export class TestObjectProp extends Component {
     prop = { value: 1 };
     getProp() {
         trackGet(this, "prop");
@@ -35,7 +35,7 @@ class TestObjectProp extends Component {
         return value;
     }
 }
-class TestRepetitiveProp extends Component {
+export class TestRepetitiveProp extends Component {
     prop = { value: 1 };
     getProp() {
         trackGet(this, "prop");
@@ -46,7 +46,7 @@ class TestRepetitiveProp extends Component {
             + this.prop['value'];
     }
 }
-class TestGroupedProp extends Component {
+export class TestGroupedProp extends Component {
     prop1 = { value1: 1, value2: 2 };
     prop2 = { value: 1 };
     getProp() {
@@ -58,7 +58,7 @@ class TestGroupedProp extends Component {
             + this.prop2.value;
     }
 }
-class TestQuestionDotPropMerge extends Component {
+export class TestQuestionDotPropMerge extends Component {
     prop = undefined;
     getProp() {
         trackGet(this, "prop");
@@ -67,7 +67,7 @@ class TestQuestionDotPropMerge extends Component {
             + this.prop?.['value'];
     }
 }
-class TestNonObservedClass {
+export class TestNonObservedClass {
     prop = { value: 1 };
     getProp() {
         trackGet(this.prop, "value");

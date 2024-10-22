@@ -1,7 +1,7 @@
 import {Component} from '@pucelle/lupos.js'
 
 
-class TestArrayProp extends Component {
+export class TestArrayProp extends Component {
 
 	prop: {value: number}[] = [{value:1}]
 
@@ -19,7 +19,7 @@ class TestArrayProp extends Component {
 type ArrayProp = {value: number}[]
 type ArrayPropAlias = ArrayProp
 
-class TestAliasArrayTypeOfProp extends Component {
+export class TestAliasArrayTypeOfProp extends Component {
 
 	prop: ArrayPropAlias = [{value:1}]
 
@@ -29,7 +29,7 @@ class TestAliasArrayTypeOfProp extends Component {
 }
 
 
-class TestArrayBroadcastingObservedToEachFn extends Component {
+export class TestArrayBroadcastingObservedToEachFn extends Component {
 
 	prop: {value: number}[] = [{value:1}]
 
@@ -47,7 +47,7 @@ class TestArrayBroadcastingObservedToEachFn extends Component {
 }
 
 
-class TestArrayElementsSet extends Component {
+export class TestArrayElementsSet extends Component {
 
 	list: number[] = []
 

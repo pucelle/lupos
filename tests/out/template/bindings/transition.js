@@ -104,7 +104,7 @@ const $html_0 = new HTMLMaker("<div></div>");
         ]
     };
 });
-class TestTransitionBinding extends Component {
+export class TestTransitionBinding extends Component {
     duration = 300;
     testTransition() {
         trackGet(this, "duration");

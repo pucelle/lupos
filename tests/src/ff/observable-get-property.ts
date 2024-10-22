@@ -2,7 +2,7 @@ import {Observed} from '@pucelle/ff'
 import {Component} from '@pucelle/lupos.js'
 
 
-class TestNormalProp extends Component {
+export class TestNormalProp extends Component {
 
 	prop: number =  1
 
@@ -17,7 +17,7 @@ class TestNormalProp extends Component {
 }
 
 
-class TestElementProp extends Component {
+export class TestElementProp extends Component {
 
 	prop: number =  1
 
@@ -30,7 +30,7 @@ class TestElementProp extends Component {
 }
 
 
-class TestObjectProp extends Component {
+export class TestObjectProp extends Component {
 
 	prop = {value: 1}
 
@@ -45,7 +45,7 @@ class TestObjectProp extends Component {
 }
 
 
-class TestRepetitiveProp extends Component {
+export class TestRepetitiveProp extends Component {
 
 	prop = {value: 1}
 
@@ -58,7 +58,7 @@ class TestRepetitiveProp extends Component {
 }
 
 
-class TestGroupedProp extends Component {
+export class TestGroupedProp extends Component {
 
 	prop1 = {value1: 1, value2: 2}
 	prop2 = {value: 1}
@@ -71,7 +71,7 @@ class TestGroupedProp extends Component {
 }
 
 
-class TestQuestionDotPropMerge extends Component {
+export class TestQuestionDotPropMerge extends Component {
 
 	prop: {value: number} | undefined = undefined
 
@@ -82,7 +82,7 @@ class TestQuestionDotPropMerge extends Component {
 }
 
 
-class TestNonObservedClass {
+export class TestNonObservedClass {
 
 	prop: Observed<{value: number}> = {value: 1}
 

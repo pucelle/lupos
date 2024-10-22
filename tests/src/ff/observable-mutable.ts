@@ -2,7 +2,7 @@ import {Observed} from '@pucelle/ff'
 import {Component} from '@pucelle/lupos.js'
 
 
-class TestMutable extends Component {
+export class TestMutable extends Component {
 
 	prop: {value: number}[] = [{value: 1}, {value: 2}]
 

@@ -2,7 +2,7 @@ import {Component} from '@pucelle/lupos.js'
 import {computed} from '@pucelle/ff'
 
 
-class TestIgnoringStringIndex extends Component {
+export class TestIgnoringStringIndex extends Component {
 
 	prop: string = '1'
 
@@ -12,7 +12,7 @@ class TestIgnoringStringIndex extends Component {
 }
 
 
-class TestIgnoringLifeFunction extends Component {
+export class TestIgnoringLifeFunction extends Component {
 
 	prop: number
 
@@ -31,7 +31,7 @@ class TestIgnoringLifeFunction extends Component {
 }
 
 
-class TestIgnoringMethod extends Component {
+export class TestIgnoringMethod extends Component {
 
 	ignoreMethod() {
 		return this.anyMethod()
@@ -48,7 +48,7 @@ interface MethodSignature {
 	method(): number
 }
 
-class TestNotIgnoringFnPropertySignature extends Component {
+export class TestNotIgnoringFnPropertySignature extends Component {
 
 	member: MethodSignature = {
 		property: () => 0,
@@ -61,7 +61,7 @@ class TestNotIgnoringFnPropertySignature extends Component {
 }
 
 
-class TestIgnoringInternalMethods extends Component {
+export class TestIgnoringInternalMethods extends Component {
 
 	prop1: Array<number> = [1, 2]
 	prop2: Map<number, number> = new Map([[1, 2]])
@@ -75,7 +75,7 @@ class TestIgnoringInternalMethods extends Component {
 }
 
 
-class TestIgnoringNothingReturnedMethod extends Component {
+export class TestIgnoringNothingReturnedMethod extends Component {
 
 	prop: number = 1
 
@@ -89,7 +89,7 @@ class TestIgnoringNothingReturnedMethod extends Component {
 }
 
 
-class TestIgnoringReadonlyPrivate extends Component {
+export class TestIgnoringReadonlyPrivate extends Component {
 
 	private prop: number = 1
 
@@ -104,17 +104,21 @@ class TestIgnoringReadonlyPrivate extends Component {
 }
 
 
-class TestIgnoringWriteonlyPrivate extends Component {
+export class TestIgnoringWriteonlyPrivate extends Component {
 
 	private prop: number = 1
 
-	readMethod() {
+	readToAvoidNeverReadDiagnostic() {
+		this.prop
+	}
+
+	writeMethod() {
 		this.prop = 2
 	}
 }
 
 
-class TestIgnoringOfPrivateComputedProperty extends Component {
+export class TestIgnoringOfPrivateComputedProperty extends Component {
 
 	private prop: number = 1
 
@@ -128,7 +132,7 @@ class TestIgnoringOfPrivateComputedProperty extends Component {
 }
 
 
-class TestIgnoringNonPrimitiveObject extends Component {
+export class TestIgnoringNonPrimitiveObject extends Component {
 
 	el: HTMLElement = document.body
 

@@ -1,6 +1,6 @@
 import { untrack, beginTrack, endTrack, trackSet, enqueueUpdate, trackGet } from '@pucelle/ff';
 import { Component } from '@pucelle/lupos.js';
-class TestComputed extends Component {
+export class TestComputed extends Component {
     prop = 1;
     #prop2 = undefined;
     #needs_compute_prop2 = true;
@@ -39,7 +39,7 @@ class TestComputed extends Component {
         untrack(this.#reset_prop2, this);
     }
 }
-class TestEffect extends Component {
+export class TestEffect extends Component {
     propRead = 1;
     propWrite = 1;
     onConnected() {
@@ -68,7 +68,7 @@ class TestEffect extends Component {
         }
     }
 }
-class TestWatchProperty extends Component {
+export class TestWatchProperty extends Component {
     prop = 1;
     onConnected() {
         super.onConnected();
@@ -138,7 +138,7 @@ class TestWatchProperty extends Component {
         console.log(prop);
     }
 }
-class TestWatchCallback extends Component {
+export class TestWatchCallback extends Component {
     prop = 1;
     onConnected() {
         super.onConnected();
@@ -203,7 +203,7 @@ class TestWatchCallback extends Component {
         console.log(prop);
     }
 }
-class TestObservedImplemented {
+export class TestObservedImplemented {
     prop = 1;
     constructor() {
         this.onPropChangeEffect();

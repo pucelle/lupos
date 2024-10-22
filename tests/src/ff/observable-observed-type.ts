@@ -2,7 +2,7 @@ import {Observed} from '@pucelle/ff'
 import {Component} from '@pucelle/lupos.js'
 
 
-class TestObservedVariableType {
+export class TestObservedVariableType {
 
 	variables() {
 		var a = {value:1} as Observed<{value: number}>
@@ -30,7 +30,7 @@ class TestObservedVariableType {
 }
 
 
-class TestObservedParameter {
+export class TestObservedParameter {
 
 	prop: {value: number} = {value: 1}
 
@@ -48,7 +48,7 @@ class TestObservedParameter {
 }
 
 
-class TestObservedPropertyAtUnobserved {
+export class TestObservedPropertyAtUnobserved {
 
 	observedTypeProp: Observed<{value: number}> = {value: 1}
 	observedInitProp = {value: 1} as Observed<{value: number}>
@@ -68,7 +68,7 @@ class TestObservedPropertyAtUnobserved {
 }
 
 
-class TestObservedProperty extends Component {
+export class TestObservedProperty extends Component {
 
 	prop = {value: 1}
 
@@ -86,7 +86,7 @@ class TestObservedProperty extends Component {
 }
 
 
-class TestArrayMapObservedParameter {
+export class TestArrayMapObservedParameter {
 
 	prop: {value: number}[] = [{value:1}]
 
@@ -104,7 +104,7 @@ class TestArrayMapObservedParameter {
 }
 
 
-class TestMethodReturnedType extends Component {
+export class TestMethodReturnedType extends Component {
 
 	prop: {value: string} = {value: 'Text'}
 
@@ -144,7 +144,7 @@ class TestMethodReturnedType extends Component {
 }
 
 
-class TestClassTypeParameter<T extends Observed<{value: number}>> {
+export class TestClassTypeParameter<T extends Observed<{value: number}>> {
 
 	getItems(item: T) {
 		return item.value

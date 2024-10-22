@@ -1,7 +1,7 @@
 import {Component, html} from '@pucelle/lupos.js'
 
 
-class TestSwitch extends Component {
+export class TestSwitch extends Component {
 
 	value: number = 1
 

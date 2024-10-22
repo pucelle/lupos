@@ -1,7 +1,7 @@
 import {Component, html} from '@pucelle/lupos.js'
 
 
-class TestIf extends Component {
+export class TestIf extends Component {
 
 	prop: number = 1
 	content: string = ''

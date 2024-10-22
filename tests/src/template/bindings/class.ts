@@ -1,7 +1,7 @@
 import {Component, html} from '@pucelle/lupos.js'
 
 
-class TestClassBinding extends Component {
+export class TestClassBinding extends Component {
 
 	className = 'className'
 	booleanValue = true
@@ -36,7 +36,7 @@ class TestClassBinding extends Component {
 }
 
 
-class TestStaticClassBinding extends Component {
+export class TestStaticClassBinding extends Component {
 
 	testInterpolatedString() {
 		return html`<div :class="${'className'} className2" />`

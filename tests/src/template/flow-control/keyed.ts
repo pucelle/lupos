@@ -1,7 +1,7 @@
 import {Component, html} from '@pucelle/lupos.js'
 
 
-class TestKeyed extends Component {
+export class TestKeyed extends Component {
 
 	key: number = 1
 

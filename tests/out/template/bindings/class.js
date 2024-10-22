@@ -216,7 +216,7 @@ const $html_0 = new HTMLMaker("<div></div>");
         position: new SlotPosition(1, $node_0)
     };
 });
-class TestClassBinding extends Component {
+export class TestClassBinding extends Component {
     className = 'className';
     booleanValue = true;
     testInterpolatedString() {
@@ -263,7 +263,7 @@ class TestClassBinding extends Component {
         ]);
     }
 }
-class TestStaticClassBinding extends Component {
+export class TestStaticClassBinding extends Component {
     testInterpolatedString() {
         return new CompiledTemplateResult($template_7, []);
     }

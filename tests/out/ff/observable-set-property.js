@@ -1,13 +1,13 @@
 import { Component } from '@pucelle/lupos.js';
 import { trackSet } from "@pucelle/ff";
-class TestNormalProp extends Component {
+export class TestNormalProp extends Component {
     prop = 1;
     setProp() {
         this.prop = 1;
         trackSet(this, "prop");
     }
 }
-class TestElementProp extends Component {
+export class TestElementProp extends Component {
     prop = 1;
     setProp() {
         let prop = 'prop';
@@ -16,14 +16,14 @@ class TestElementProp extends Component {
         trackSet(this, "prop", prop);
     }
 }
-class TestObjectProp extends Component {
+export class TestObjectProp extends Component {
     prop = { value: 1 };
     setProp() {
         this.prop.value = 1;
         trackSet(this.prop, "value");
     }
 }
-class TestDeconstructAssignment extends Component {
+export class TestDeconstructAssignment extends Component {
     prop = { value: 1 };
     array() {
         [this.prop] = [{ value: 2 }];
@@ -34,7 +34,7 @@ class TestDeconstructAssignment extends Component {
         trackSet(this, "prop");
     }
 }
-class TestRepetitiveProp extends Component {
+export class TestRepetitiveProp extends Component {
     prop = { value: 1 };
     setProp() {
         this.prop.value = 1;
@@ -44,7 +44,7 @@ class TestRepetitiveProp extends Component {
         trackSet(this.prop, "value");
     }
 }
-class TestGroupedProp extends Component {
+export class TestGroupedProp extends Component {
     prop1 = { value1: 1, value2: 2 };
     prop2 = { value: 1 };
     setProp() {
@@ -55,7 +55,7 @@ class TestGroupedProp extends Component {
         trackSet(this.prop2, "value");
     }
 }
-class TesOperators extends Component {
+export class TesOperators extends Component {
     prop = 1;
     plusEquals() {
         this.prop += 1;
@@ -130,7 +130,7 @@ class TesOperators extends Component {
         trackSet(this, "prop");
     }
 }
-class TestNew extends Component {
+export class TestNew extends Component {
     prop = 1;
     getInstance() {
         return this;

@@ -137,7 +137,7 @@ const $html_5 = new HTMLMaker("Catch Content");
         position: new SlotPosition(1, $node_0)
     };
 });
-class TestAwait extends Component {
+export class TestAwait extends Component {
     promise = Promise.resolve();
     testAwaitThen() {
         trackGet(this, "promise");

@@ -1,7 +1,7 @@
 import {Component, html} from '@pucelle/lupos.js'
 
 
-class TestPortal extends Component {
+export class TestPortal extends Component {
 
 
 	testPortal() {

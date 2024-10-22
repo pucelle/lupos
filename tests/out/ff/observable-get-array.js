@@ -1,6 +1,6 @@
 import { Component } from '@pucelle/lupos.js';
 import { trackGet, trackSet } from "@pucelle/ff";
-class TestArrayIndex extends Component {
+export class TestArrayIndex extends Component {
     prop = [{ value: 1 }];
     fixedIndex() {
         trackGet(this, "prop");
@@ -26,7 +26,7 @@ class TestArrayIndex extends Component {
         return undefined;
     }
 }
-class TestArrayTuple extends Component {
+export class TestArrayTuple extends Component {
     prop = [1, 1];
     fixedIndex() {
         trackGet(this, "prop");
@@ -34,7 +34,7 @@ class TestArrayTuple extends Component {
         return this.prop[0] + this.prop[1];
     }
 }
-class TestArrayMethods extends Component {
+export class TestArrayMethods extends Component {
     prop = [1];
     push() {
         this.prop.push(1);
@@ -55,7 +55,7 @@ class TestArrayMethods extends Component {
         return prop;
     }
 }
-class TestAliasArrayTypeOfProp extends Component {
+export class TestAliasArrayTypeOfProp extends Component {
     prop = [{ value: 1 }];
     arrayAliasType() {
         trackGet(this, "prop");
@@ -64,7 +64,7 @@ class TestAliasArrayTypeOfProp extends Component {
         return this.prop[0].value;
     }
 }
-class TestArrayBroadcastingObservedToMapFn extends Component {
+export class TestArrayBroadcastingObservedToMapFn extends Component {
     prop = [{ value: 1 }];
     mapArrowFnNoBlocking() {
         trackGet(this, "prop");

@@ -124,7 +124,7 @@ const $html_1 = new HTMLMaker("<!----><!---->");
         ]
     };
 });
-class TestFor extends Component {
+export class TestFor extends Component {
     prop = 1;
     renderItem(n) {
         trackGet(this, "prop");

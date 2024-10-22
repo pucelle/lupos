@@ -75,7 +75,7 @@ const $html_0 = new HTMLMaker("<div> </div>");
         }
     };
 });
-class TestText extends Component {
+export class TestText extends Component {
     stringProp = '1';
     numericProp = 1;
     getStringProp() {

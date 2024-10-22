@@ -1,7 +1,7 @@
 import {Component, html} from '@pucelle/lupos.js'
 
 
-class TestEvent extends Component {
+export class TestEvent extends Component {
 
 	UnionedCom: typeof Com1 | typeof Com2 = Com1
 	ConstructedCom: ComConstructor = Com1

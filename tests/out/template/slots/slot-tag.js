@@ -72,7 +72,7 @@ const $html_3 = new HTMLMaker("<div><slot></slot></div>");
         position: new SlotPosition(1, $node_0)
     };
 });
-class TestComponent extends Component {
+export class TestComponent extends Component {
     prop = 1;
     testNamedSlot() {
         return new CompiledTemplateResult($template_0, [

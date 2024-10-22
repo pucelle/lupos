@@ -96,7 +96,7 @@ const $html_6 = new HTMLMaker("Case Content 3");
         position: new SlotPosition(1, $node_0)
     };
 });
-class TestSwitch extends Component {
+export class TestSwitch extends Component {
     value = 1;
     testCaseOnly() {
         trackGet(this, "value");

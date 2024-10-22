@@ -1,6 +1,6 @@
 import { trackGet } from '@pucelle/ff';
 import { Component } from '@pucelle/lupos.js';
-class TestOptimizing extends Component {
+export class TestOptimizing extends Component {
     prop = { value: 1 };
     moveConditionalConditionOutward() {
         if (this.prop) { }

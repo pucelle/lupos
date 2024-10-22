@@ -103,7 +103,7 @@ const $html_1 = new HTMLMaker("<!----><div></div><!---->");
         position: new SlotPosition(1, $node_0)
     };
 });
-class TestProperty extends Component {
+export class TestProperty extends Component {
     UnionedCom = Com1;
     ConstructedCom = Com1;
     testComponentProperty() {

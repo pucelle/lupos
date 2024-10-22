@@ -1,7 +1,7 @@
 import { trackGet } from '@pucelle/ff';
 import { Component } from '@pucelle/lupos.js';
 let $ref_0;
-class TestRef extends Component {
+export class TestRef extends Component {
     prop = { value: 1 };
     getProp() {
         trackGet(this, "prop");

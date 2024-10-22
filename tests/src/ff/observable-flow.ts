@@ -2,7 +2,7 @@ import {Observed} from '@pucelle/ff'
 import {Component} from '@pucelle/lupos.js'
 
 
-class TestIfStatement extends Component {
+export class TestIfStatement extends Component {
 
 	prop1: number = 0
 	prop2: number = 0
@@ -29,7 +29,7 @@ class TestIfStatement extends Component {
 }
 
 
-class TestSwitchBlock extends Component {
+export class TestSwitchBlock extends Component {
 
 	cond: string = '1'
 	prop: string = 'Text'
@@ -55,7 +55,7 @@ class TestSwitchBlock extends Component {
 }
 
 
-class TestForBlock extends Component {
+export class TestForBlock extends Component {
 
 	prop: number = 1
 
@@ -118,7 +118,7 @@ class TestForBlock extends Component {
 
 
 
-class TestWhileBlock extends Component {
+export class TestWhileBlock extends Component {
 
 	prop: number = 1
 
@@ -130,7 +130,7 @@ class TestWhileBlock extends Component {
 }
 
 
-class TestDoWhileBlock extends Component {
+export class TestDoWhileBlock extends Component {
 
 	prop: number = 1
 
@@ -142,7 +142,7 @@ class TestDoWhileBlock extends Component {
 }
 
 
-class TestBreakStatement extends Component {
+export class TestBreakStatement extends Component {
 
 	prop1: number = 0
 	prop2: number = 0
@@ -159,7 +159,7 @@ class TestBreakStatement extends Component {
 }
 
 
-class TestContinueStatement extends Component {
+export class TestContinueStatement extends Component {
 
 	prop1: number = 0
 	prop2: number = 0
@@ -176,7 +176,7 @@ class TestContinueStatement extends Component {
 }
 
 
-class TestAwaitStatement extends Component {
+export class TestAwaitStatement extends Component {
 
 	prop1: number = 1
 	prop2: number = 2
@@ -199,7 +199,7 @@ class TestAwaitStatement extends Component {
 }
 
 
-class TestYieldStatement extends Component {
+export class TestYieldStatement extends Component {
 
 	prop1: number = 1;
 	prop2: number = 2;

@@ -1,7 +1,7 @@
 import {Component, html} from '@pucelle/lupos.js'
 
 
-class TestAttribute extends Component {
+export class TestAttribute extends Component {
 
 	className = 'className'
 	booleanValue = true

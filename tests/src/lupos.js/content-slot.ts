@@ -2,7 +2,7 @@ import * as L from '@pucelle/lupos.js'
 import {Component, TemplateResult} from '@pucelle/lupos.js'
 
 
-class TestTemplateResult extends L.Component {
+export class TestTemplateResult extends L.Component {
 
 	render(): L.TemplateResult {
 		return null as any
@@ -10,7 +10,7 @@ class TestTemplateResult extends L.Component {
 }
 
 
-class TestTemplateResultList extends Component {
+export class TestTemplateResultList extends Component {
 
 	render(): TemplateResult[] {
 		return null as any
@@ -18,7 +18,7 @@ class TestTemplateResultList extends Component {
 }
 
 
-class TestText extends Component {
+export class TestText extends Component {
 
 	render(): string {
 		return ''
@@ -26,7 +26,7 @@ class TestText extends Component {
 }
 
 
-class TestUnionTypes extends Component {
+export class TestUnionTypes extends Component {
 
 	render(): TemplateResult | string {
 		return null as any

@@ -1,7 +1,7 @@
 import {Component, html} from '@pucelle/lupos.js'
 
 
-class TestAwait extends Component {
+export class TestAwait extends Component {
 
 	promise = Promise.resolve() 
 

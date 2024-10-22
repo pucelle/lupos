@@ -1,13 +1,13 @@
 import { Component } from '@pucelle/lupos.js';
 import { untrack, beginTrack, endTrack, trackSet, trackGet } from '@pucelle/ff';
-class TestIgnoringStringIndex extends Component {
+export class TestIgnoringStringIndex extends Component {
     prop = '1';
     ignoreStringIndex() {
         trackGet(this, "prop");
         return this.prop[0];
     }
 }
-class TestIgnoringLifeFunction extends Component {
+export class TestIgnoringLifeFunction extends Component {
     prop;
     constructor() {
         super();
@@ -20,7 +20,7 @@ class TestIgnoringLifeFunction extends Component {
         this.prop = 2;
     }
 }
-class TestIgnoringMethod extends Component {
+export class TestIgnoringMethod extends Component {
     ignoreMethod() {
         return this.anyMethod();
     }
@@ -28,7 +28,7 @@ class TestIgnoringMethod extends Component {
         return 0;
     }
 }
-class TestNotIgnoringFnPropertySignature extends Component {
+export class TestNotIgnoringFnPropertySignature extends Component {
     member = {
         property: () => 0,
         method() { return 0; }
@@ -39,7 +39,7 @@ class TestNotIgnoringFnPropertySignature extends Component {
         return this.member.property() + this.member.method();
     }
 }
-class TestIgnoringInternalMethods extends Component {
+export class TestIgnoringInternalMethods extends Component {
     prop1 = [1, 2];
     prop2 = new Map([[1, 2]]);
     ignoreArrayMethods() {
@@ -51,7 +51,7 @@ class TestIgnoringInternalMethods extends Component {
             + this.prop2.get(1);
     }
 }
-class TestIgnoringNothingReturnedMethod extends Component {
+export class TestIgnoringNothingReturnedMethod extends Component {
     prop = 1;
     nothingReturnedMethod() {
         this.prop;
@@ -60,7 +60,7 @@ class TestIgnoringNothingReturnedMethod extends Component {
         this.prop;
     }
 }
-class TestIgnoringReadonlyPrivate extends Component {
+export class TestIgnoringReadonlyPrivate extends Component {
     prop = 1;
     readMethod() {
         return this.prop;
@@ -71,13 +71,16 @@ class TestIgnoringReadonlyPrivate extends Component {
         return prop;
     }
 }
-class TestIgnoringWriteonlyPrivate extends Component {
+export class TestIgnoringWriteonlyPrivate extends Component {
     prop = 1;
-    readMethod() {
+    readToAvoidNeverReadDiagnostic() {
+        this.prop;
+    }
+    writeMethod() {
         this.prop = 2;
     }
 }
-class TestIgnoringOfPrivateComputedProperty extends Component {
+export class TestIgnoringOfPrivateComputedProperty extends Component {
     prop = 1;
     onConnected() {
         super.onConnected();
@@ -119,7 +122,7 @@ class TestIgnoringOfPrivateComputedProperty extends Component {
         return this.#computedProp;
     }
 }
-class TestIgnoringNonPrimitiveObject extends Component {
+export class TestIgnoringNonPrimitiveObject extends Component {
     el = document.body;
     read() {
         trackGet(this, "el");

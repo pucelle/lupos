@@ -79,7 +79,7 @@ const $html_1 = new HTMLMaker("<div>Rest Content</div>");
         ]
     };
 });
-class TestComponent extends Component {
+export class TestComponent extends Component {
     prop = 1;
     testComponent() {
         trackGet(this, "prop");

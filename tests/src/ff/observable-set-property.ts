@@ -1,7 +1,7 @@
 import {Component} from '@pucelle/lupos.js'
 
 
-class TestNormalProp extends Component {
+export class TestNormalProp extends Component {
 
 	prop: number =  1
 
@@ -11,7 +11,7 @@ class TestNormalProp extends Component {
 }
 
 
-class TestElementProp extends Component {
+export class TestElementProp extends Component {
 
 	prop: number =  1
 
@@ -23,7 +23,7 @@ class TestElementProp extends Component {
 }
 
 
-class TestObjectProp extends Component {
+export class TestObjectProp extends Component {
 
 	prop = {value: 1}
 
@@ -33,7 +33,7 @@ class TestObjectProp extends Component {
 }
 
 
-class TestDeconstructAssignment extends Component {
+export class TestDeconstructAssignment extends Component {
 
 	prop = {value: 1}
 
@@ -47,7 +47,7 @@ class TestDeconstructAssignment extends Component {
 }
 
 
-class TestRepetitiveProp extends Component {
+export class TestRepetitiveProp extends Component {
 
 	prop = {value: 1}
 
@@ -60,7 +60,7 @@ class TestRepetitiveProp extends Component {
 }
 
 
-class TestGroupedProp extends Component {
+export class TestGroupedProp extends Component {
 
 	prop1 = {value1: 1, value2: 2}
 	prop2 = {value: 1}
@@ -73,7 +73,7 @@ class TestGroupedProp extends Component {
 }
 
 
-class TesOperators extends Component {
+export class TesOperators extends Component {
 
 	prop: number =  1
 
@@ -151,7 +151,7 @@ class TesOperators extends Component {
 }
 
 
-class TestNew extends Component {
+export class TestNew extends Component {
 	prop: number = 1
 
 	getInstance(): TestNew | null {

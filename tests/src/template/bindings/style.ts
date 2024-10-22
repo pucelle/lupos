@@ -1,7 +1,7 @@
 import {Component, html} from '@pucelle/lupos.js'
 
 
-class TestStyleBinding extends Component {
+export class TestStyleBinding extends Component {
 
 	styleValue = 'red'
 	numericValue = 1
@@ -44,7 +44,7 @@ class TestStyleBinding extends Component {
 }
 
 
-class TestStaticStyleBinding extends Component {
+export class TestStaticStyleBinding extends Component {
 
 	testInterpolatedString() {
 		return html`<div :style="color: ${'red'}" />`

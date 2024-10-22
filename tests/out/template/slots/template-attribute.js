@@ -121,7 +121,7 @@ const $html_6 = new HTMLMaker("<div></div><div></div>");
         position: new SlotPosition(1, $node_1)
     };
 });
-class TestAttribute extends Component {
+export class TestAttribute extends Component {
     testClass() {
         return new CompiledTemplateResult($template_0, []);
     }

@@ -242,7 +242,7 @@ const $html_0 = new HTMLMaker("<div></div>");
         position: new SlotPosition(1, $node_0)
     };
 });
-class TestStyleBinding extends Component {
+export class TestStyleBinding extends Component {
     styleValue = 'red';
     numericValue = 1;
     testInterpolatedString() {
@@ -300,7 +300,7 @@ class TestStyleBinding extends Component {
         ]);
     }
 }
-class TestStaticStyleBinding extends Component {
+export class TestStaticStyleBinding extends Component {
     testInterpolatedString() {
         return new CompiledTemplateResult($template_9, []);
     }

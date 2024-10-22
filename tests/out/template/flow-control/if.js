@@ -209,7 +209,7 @@ const $html_13 = new HTMLMaker("Then Content");
         position: new SlotPosition(1, $node_0)
     };
 });
-class TestIf extends Component {
+export class TestIf extends Component {
     prop = 1;
     content = '';
     testIf() {

@@ -33,7 +33,7 @@ const $html_1 = new HTMLMaker("Keyed Content");
         position: new SlotPosition(1, $node_0)
     };
 });
-class TestKeyed extends Component {
+export class TestKeyed extends Component {
     key = 1;
     testKeyed() {
         trackGet(this, "key");

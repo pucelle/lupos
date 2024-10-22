@@ -1,7 +1,7 @@
 import {Component} from '@pucelle/lupos.js'
 
 
-class TestMap extends Component {
+export class TestMap extends Component {
 
 	map: Map<number, number> = new Map()
 
@@ -23,7 +23,7 @@ class TestMap extends Component {
 }
 
 
-class TestSet extends Component {
+export class TestSet extends Component {
 
 	set: Set<number> = new Set()
 

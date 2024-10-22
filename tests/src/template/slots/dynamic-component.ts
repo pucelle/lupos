@@ -1,7 +1,7 @@
 import {Component, html} from '@pucelle/lupos.js'
 
 
-class TestDynamicComponent extends Component {
+export class TestDynamicComponent extends Component {
 
 	prop: number = 1
 

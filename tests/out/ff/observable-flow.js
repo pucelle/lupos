@@ -1,6 +1,6 @@
 import { trackGet, trackSet } from '@pucelle/ff';
 import { Component } from '@pucelle/lupos.js';
-class TestIfStatement extends Component {
+export class TestIfStatement extends Component {
     prop1 = 0;
     prop2 = 0;
     testIf() {
@@ -29,7 +29,7 @@ class TestIfStatement extends Component {
         }
     }
 }
-class TestSwitchBlock extends Component {
+export class TestSwitchBlock extends Component {
     cond = '1';
     prop = 'Text';
     fixedCond() {
@@ -50,7 +50,7 @@ class TestSwitchBlock extends Component {
         return 0;
     }
 }
-class TestForBlock extends Component {
+export class TestForBlock extends Component {
     prop = 1;
     testFor() {
         for (let i = 0; i < 10; i++)
@@ -102,7 +102,7 @@ class TestForBlock extends Component {
         return 0;
     }
 }
-class TestWhileBlock extends Component {
+export class TestWhileBlock extends Component {
     prop = 1;
     testWhile() {
         let i = 0;
@@ -112,7 +112,7 @@ class TestWhileBlock extends Component {
         return 0;
     }
 }
-class TestDoWhileBlock extends Component {
+export class TestDoWhileBlock extends Component {
     prop = 1;
     testDoWhile() {
         let i = 0;
@@ -123,7 +123,7 @@ class TestDoWhileBlock extends Component {
         return 0;
     }
 }
-class TestBreakStatement extends Component {
+export class TestBreakStatement extends Component {
     prop1 = 0;
     prop2 = 0;
     testBreak() {
@@ -137,7 +137,7 @@ class TestBreakStatement extends Component {
         return 0;
     }
 }
-class TestContinueStatement extends Component {
+export class TestContinueStatement extends Component {
     prop1 = 0;
     prop2 = 0;
     testContinue() {
@@ -151,7 +151,7 @@ class TestContinueStatement extends Component {
         return 0;
     }
 }
-class TestAwaitStatement extends Component {
+export class TestAwaitStatement extends Component {
     prop1 = 1;
     prop2 = 2;
     async testAwaitTrackSplicing() {
@@ -171,7 +171,7 @@ class TestAwaitStatement extends Component {
         return prop;
     }
 }
-class TestYieldStatement extends Component {
+export class TestYieldStatement extends Component {
     prop1 = 1;
     prop2 = 2;
     *testYield() {

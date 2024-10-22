@@ -1,6 +1,6 @@
 import {} from '@pucelle/ff';
 import { Component } from '@pucelle/lupos.js';
-class Parent extends Component {
+export class Parent extends Component {
     prop = 1;
     onConnected() {
         super.onConnected();
@@ -11,7 +11,7 @@ class Parent extends Component {
         Component.deleteContextVariables(this);
     }
 }
-class Child extends Component {
+export class Child extends Component {
     #prop_declared_by = undefined;
     get prop() {
         return this.#prop_declared_by?.["prop"];

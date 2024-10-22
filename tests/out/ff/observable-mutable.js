@@ -1,6 +1,6 @@
 import { trackGet, trackSet } from '@pucelle/ff';
 import { Component } from '@pucelle/lupos.js';
-class TestMutable extends Component {
+export class TestMutable extends Component {
     prop = [{ value: 1 }, { value: 2 }];
     dynamicVariableAsIndex() {
         let $ref_0;

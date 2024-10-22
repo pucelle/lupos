@@ -2,7 +2,7 @@ import {fade} from '@pucelle/ff'
 import {Component, html} from '@pucelle/lupos.js'
 
 
-class TestAttribute extends Component {
+export class TestAttribute extends Component {
 
 	testClass() {
 		return html`<template class="className" />`

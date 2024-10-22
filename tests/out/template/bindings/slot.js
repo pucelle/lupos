@@ -18,7 +18,7 @@ const $html_0 = new HTMLMaker("<!----><div></div>");
         ]
     };
 });
-class TestSlotBinding extends Component {
+export class TestSlotBinding extends Component {
     testSlot() {
         return new CompiledTemplateResult($template_0, []);
     }

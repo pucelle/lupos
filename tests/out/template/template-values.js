@@ -147,7 +147,7 @@ const $html_0 = new HTMLMaker("<div></div>");
     };
 });
 let globalVariable = 1;
-class TestTemplateValues extends Component {
+export class TestTemplateValues extends Component {
     prop = 1;
     readonlyProp = 1;
     getValue() {

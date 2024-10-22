@@ -1,6 +1,7 @@
 import type TS from 'typescript'
 import {definePreVisitCallback} from './visitor-callbacks'
 import {extras, sourceFile, ts} from './global'
+import {Helper} from './helper'
 
 
 // Where to find diagnostic codes:
@@ -52,27 +53,28 @@ export namespace DiagnosticModifier {
 
 	/** Add usage of a import specifier node, remove it's diagnostic. */
 	export function removeNeverRead(node: TS.Node) {
-		remove(node, 6133)
+		remove(node, [6133, 6196])
 	}
 
 	/** For binding multiple parameters `:bind=${a, b}`. */
 	export function removeUnusedComma(node: TS.Expression) {
-		remove(node, 2695)
+		remove(node, [2695])
 	}
 
 
-	function remove(node: TS.Node, code: number) {
-		let startIndex = node.getStart()
+	function remove(node: TS.Node, codes: number[]) {
+		node = Helper.getIdentifier(node) ?? node
+		let start = node.getStart()
 
-		if (RemovedIndices.has(startIndex)) {
+		if (RemovedIndices.has(start)) {
 			return
 		}
 
 		for (let i = 0; i < extras.diagnostics.length; i++) {
 			let diag = extras.diagnostics[i]
-			if (diag.start === startIndex && diag.code === code) {
+			if (diag.start === start && codes.includes(diag.code)) {
 				extras.removeDiagnostic(i)
-				RemovedIndices.add(startIndex)
+				RemovedIndices.add(start)
 				break
 			}
 		}

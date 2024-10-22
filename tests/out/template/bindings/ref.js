@@ -177,7 +177,7 @@ const $html_0 = new HTMLMaker("<div></div>");
         ]
     };
 });
-class TestRefBinding extends Component {
+export class TestRefBinding extends Component {
     refEl;
     refCom;
     refElByType;

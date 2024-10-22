@@ -1,7 +1,7 @@
 import {Component} from '@pucelle/lupos.js'
 
 
-class TestAndOrDoubleQuestionOperators extends Component {
+export class TestAndOrDoubleQuestionOperators extends Component {
 
 	prop1: {value: string} = {value: '1'}
 	prop2: {value: string} = {value: '2'}
@@ -32,7 +32,7 @@ class TestAndOrDoubleQuestionOperators extends Component {
 }
 
 
-class TestTernaryConditionalOperator extends Component {
+export class TestTernaryConditionalOperator extends Component {
 
 	prop1: {value: string} | undefined = undefined
 	prop2: {value: string} | undefined = undefined

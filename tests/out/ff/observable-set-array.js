@@ -1,6 +1,6 @@
 import { Component } from '@pucelle/lupos.js';
 import { trackSet } from "@pucelle/ff";
-class TestArrayProp extends Component {
+export class TestArrayProp extends Component {
     prop = [{ value: 1 }];
     fixedIndex() {
         this.prop[0].value += 1;
@@ -12,14 +12,14 @@ class TestArrayProp extends Component {
         trackSet(this.prop[i], "value");
     }
 }
-class TestAliasArrayTypeOfProp extends Component {
+export class TestAliasArrayTypeOfProp extends Component {
     prop = [{ value: 1 }];
     arrayAliasType() {
         this.prop[0].value += 1;
         trackSet(this.prop[0], "value");
     }
 }
-class TestArrayBroadcastingObservedToEachFn extends Component {
+export class TestArrayBroadcastingObservedToEachFn extends Component {
     prop = [{ value: 1 }];
     eachArrowFnNoBlocking() {
         this.prop.forEach(v => {
@@ -34,7 +34,7 @@ class TestArrayBroadcastingObservedToEachFn extends Component {
         this.prop.forEach(function (v) { v.value += 1; trackSet(v, "value"); });
     }
 }
-class TestArrayElementsSet extends Component {
+export class TestArrayElementsSet extends Component {
     list = [];
     toggleElementSet(item) {
         if (this.list.includes(item)) {
