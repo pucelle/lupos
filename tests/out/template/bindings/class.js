@@ -130,16 +130,17 @@ const $html_0 = new HTMLMaker("<div></div>");
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $binding_0 = new ClassBinding($node_0);
+    let $binding_1 = new ClassBinding($node_0);
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {
-                $node_0.setAttribute("class", $values[0]);
+                $binding_0.updateString($values[0]);
                 $latest_0 = $values[0];
             }
             if ($latest_1 !== $values[1]) {
-                $binding_0.updateObject({ className: $values[1] });
+                $binding_1.updateObject({ className: $values[1] });
                 $latest_1 = $values[1];
             }
         }
