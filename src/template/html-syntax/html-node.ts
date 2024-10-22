@@ -1,7 +1,7 @@
 import type TS from 'typescript'
 import {Helper, TemplateSlotPlaceholder} from '../../base'
 import {removeFromList} from '../../utils'
-import {HTMLAttribute, HTMLToken, HTMLTokenParser} from './html-token-parser'
+import {HTMLAttribute, HTMLTokenParser} from './html-token-parser'
 
 
 export enum HTMLNodeType {
@@ -13,6 +13,7 @@ export enum HTMLNodeType {
 export class HTMLNode {
 
 	type: HTMLNodeType
+	start: number
 	tagName: string | undefined
 	text: string | undefined
 	attrs: HTMLAttribute[] | undefined
@@ -23,11 +24,12 @@ export class HTMLNode {
 	children: HTMLNode[] = []
 	parent: HTMLNode | null = null
 
-	constructor(type: HTMLNodeType, token: Omit<HTMLToken, 'type'>) {
+	constructor(type: HTMLNodeType, start: number, tagName?: string, attrs?: HTMLAttribute[], text?: string) {
 		this.type = type
-		this.tagName = token.tagName
-		this.attrs = token.attrs
-		this.text = token.text
+		this.start = start
+		this.tagName = tagName
+		this.attrs = attrs
+		this.text = text
 	}
 
 	private setParent(parent: HTMLNode | null) {
@@ -120,7 +122,7 @@ export class HTMLNode {
 	}
 
 	wrapWith(tagName: string, attrs: HTMLAttribute[] = []) {
-		let newNode = new HTMLNode(HTMLNodeType.Tag, {tagName, attrs})
+		let newNode = new HTMLNode(HTMLNodeType.Tag, -1, tagName, attrs)
 		let index = this.siblingIndex
 
 		this.parent!.children[index] = newNode
@@ -130,7 +132,7 @@ export class HTMLNode {
 
 	/** Append all children to a new node, and append it to self. */
 	wrapChildrenWith(tagName: string, attrs: HTMLAttribute[] = []) {
-		let newNode = new HTMLNode(HTMLNodeType.Tag, {tagName, attrs})
+		let newNode = new HTMLNode(HTMLNodeType.Tag, -1, tagName, attrs)
 		newNode.append(...this.children)
 
 		this.children = []

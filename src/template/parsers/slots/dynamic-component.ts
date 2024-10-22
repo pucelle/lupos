@@ -48,7 +48,7 @@ export class DynamicComponentSlotParser extends SlotParserBase {
 
 		// Use current node to locate.
 		else {
-			let comment = new HTMLNode(HTMLNodeType.Comment, {})
+			let comment = new HTMLNode(HTMLNodeType.Comment, -1)
 			this.node.after(comment)
 			useNode = comment
 		}

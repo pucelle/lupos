@@ -17,7 +17,7 @@ defineVisitor(function(node: TS.Node, index: number) {
 
 /** Parse a css template literal. */
 function parseCSSTemplate(node: TS.TaggedTemplateExpression, index: number) {
-	let string = TemplateSlotPlaceholder.toTemplateString(node)
+	let string = TemplateSlotPlaceholder.toTemplateString(node).string
 	let parsed = minifyCSSString(parseStyleString(string))
 	let parts = TemplateSlotPlaceholder.parseTemplateStrings(parsed)!
 	let indices = TemplateSlotPlaceholder.parseTemplateIndices(parsed)!

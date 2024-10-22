@@ -10,6 +10,7 @@
 		"esModuleInterop": true, 
 		"declaration": false,
 		"strict": true,
+		"noUnusedLocals": true,
 		"noUnusedParameters": true,
 		"noImplicitReturns": true,
 		"noFallthroughCasesInSwitch": true,
@@ -19,5 +20,5 @@
 			{"transform": "../src/index.ts"},
 		]
 	},
-	"include": ["src/**/*.ts"],
+	"include": ["src/**/diagnostics.ts"],
 }

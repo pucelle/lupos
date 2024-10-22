@@ -171,7 +171,7 @@ export class BindingBase {
 				)
 				|| !decl.name
 			) {
-				console.error(`Please make sure to import or declare "${this.name}"!`)
+				this.slot.diagnosticMissingBinding()
 				return
 			}
 

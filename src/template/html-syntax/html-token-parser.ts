@@ -1,6 +1,7 @@
 /** Parsed HTML token. */
 export interface HTMLToken {
 	type: HTMLTokenType
+	start: number
 	text?: string
 	tagName?: string
 	attrs?: HTMLAttribute[]
@@ -9,6 +10,7 @@ export interface HTMLToken {
 
 /** Attribute names and values */
 export interface HTMLAttribute {
+	start: number
 	name: string
 
 	/** Quotes have been removed. */
@@ -78,6 +80,7 @@ export namespace HTMLTokenParser {
 				if (text) {
 					tokens.push({
 						type: HTMLTokenType.Text,
+						start: lastIndex,
 						text,
 					})
 				}
@@ -95,6 +98,7 @@ export namespace HTMLTokenParser {
 				if (!SelfClosingTags.includes(tagName)) {
 					tokens.push({
 						type: HTMLTokenType.EndTag,
+						start: match.index,
 						tagName,
 					})
 				}
@@ -103,11 +107,12 @@ export namespace HTMLTokenParser {
 			// Start Tag
 			else {
 				let tagName = match[1]
-				let attrs = parseAttributes(match[2])
+				let attrs = parseAttributes(match[2], match.index + 1)
 				let selfClose = SelfClosingTags.includes(tagName)
 
 				tokens.push({
 					type: HTMLTokenType.StartTag,
+					start: match.index,
 					tagName,
 					attrs,
 					selfClose,
@@ -117,6 +122,7 @@ export namespace HTMLTokenParser {
 				if (piece[piece.length - 2] === '/' && !selfClose) {
 					tokens.push({
 						type: HTMLTokenType.EndTag,
+						start: lastIndex - 2,
 						tagName,
 					})
 				}
@@ -128,6 +134,7 @@ export namespace HTMLTokenParser {
 			if (text) {
 				tokens.push({
 					type: HTMLTokenType.Text,
+					start: lastIndex,
 					text,
 				})
 			}
@@ -143,7 +150,7 @@ export namespace HTMLTokenParser {
 	}
 
 	/** Parses a HTML attribute string to an attribute list. */
-	function parseAttributes(attr: string): HTMLAttribute[] {
+	function parseAttributes(attr: string, start: number): HTMLAttribute[] {
 		let match: RegExpExecArray | null
 		let attrs: HTMLAttribute[] = []
 
@@ -158,6 +165,7 @@ export namespace HTMLTokenParser {
 
 			attrs.push({
 				name,
+				start: start + match.index,
 				value: value ?? null,
 				quoted,
 			})

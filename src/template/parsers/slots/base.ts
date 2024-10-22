@@ -1,7 +1,7 @@
 import type TS from 'typescript'
-import {HTMLNode, HTMLNodeType} from '../../html-syntax'
+import {HTMLAttribute, HTMLNode, HTMLNodeType} from '../../html-syntax'
 import {TreeParser} from '../tree'
-import {factory, Helper, Modifier, MutableMask, ScopeTree, TemplateSlotPlaceholder, ts} from '../../../base'
+import {DiagnosticModifier, factory, Helper, Modifier, MutableMask, ScopeTree, TemplateSlotPlaceholder, ts} from '../../../base'
 import {VariableNames} from '../variable-names'
 import {TemplateParser} from '../template'
 import {SlotPositionType} from '../../../enums'
@@ -27,6 +27,8 @@ export abstract class SlotParserBase {
 	/** Index of the node the slot placed at within the document fragment. */
 	readonly node: HTMLNode
 
+	readonly attr: HTMLAttribute | null
+
 	/** Tree parser current slot belonged to. */
 	readonly tree: TreeParser
 
@@ -41,6 +43,7 @@ export abstract class SlotParserBase {
 		strings: string[] | null,
 		valueIndices: number[] | null,
 		node: HTMLNode,
+		attr: HTMLAttribute | null,
 		treeParser: TreeParser
 	) {
 		this.name = name
@@ -54,6 +57,7 @@ export abstract class SlotParserBase {
 		}
 
 		this.node = node
+		this.attr = attr
 		this.tree = treeParser
 		this.template = treeParser.template
 		this.onDynamicComponent = !!(this.node.tagName && TemplateSlotPlaceholder.isCompleteSlotIndex(this.node.tagName))
@@ -374,7 +378,7 @@ export abstract class SlotParserBase {
 
 		// If first child is not stable, insert a comment before it.
 		if (!firstChild.isPrecedingPositionStable(this.template.values.rawValueNodes)) {
-			let comment = new HTMLNode(HTMLNodeType.Comment, {})
+			let comment = new HTMLNode(HTMLNodeType.Comment, -1)
 			firstChild.before(comment)
 			firstChild = comment
 		}
@@ -440,6 +444,22 @@ export abstract class SlotParserBase {
 			}
 		}
 	}
+
+
+	diagnosticMissingTagImport(message: string) {
+		let start = this.node.start + 1
+		let length = this.node.tagName!.length
+
+		DiagnosticModifier.addMissingImport(start, length, message)
+	}
+
+	diagnosticNormal(message: string) {
+		let start = this.node.start + 1
+		let length = this.node.tagName!.length
+
+		DiagnosticModifier.addNormal(start, length, message)
+	}
+
 
 	/** 
 	 * Initialize and prepare.

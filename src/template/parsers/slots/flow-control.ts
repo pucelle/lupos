@@ -37,7 +37,7 @@ export class FlowControlSlotParser extends SlotParserBase {
 				break
 
 			default:
-				console.error(`Can't parse content:\n${this.node.toReadableString(this.template.values.rawValueNodes)}`)
+				this.diagnosticNormal(`Unknown control tag "<${this.node.tagName}>"!`)
 		}
 
 		if (control) {

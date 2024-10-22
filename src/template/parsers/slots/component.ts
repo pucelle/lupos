@@ -15,7 +15,7 @@ export class ComponentSlotParser extends SlotParserBase {
 
 		let decl = ScopeTree.getDeclarationByName(comName, this.template.rawNode)
 		if (!decl) {
-			console.error(`Please make sure to import or declare "<${comName}>"!`)
+			this.diagnosticMissingTagImport(`Please make sure to import or declare "<${comName}>"!`)
 			return
 		}
 

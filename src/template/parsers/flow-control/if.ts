@@ -35,17 +35,17 @@ export class IfFlowControl extends FlowControlBase {
 			let valueIndex = this.getAttrValueIndex(node)
 			
 			if (valueIndex === null && node.tagName !== 'lu:else') {
-				console.error('<' + node.tagName + ' ${...}> must accept a parameter as condition!')
+				this.slot.diagnosticNormal('<' + node.tagName + ' ${...}> must accept a parameter as condition!')
 				break
 			}
 
 			if (valueIndex !== null && node.tagName === 'lu:else') {
-				console.error('<' + node.tagName + '> should not accept any parameter!')
+				this.slot.diagnosticNormal('<' + node.tagName + '> should not accept any parameter!')
 				break
 			}
 
 			if (valueIndex === null && lastValueIndex === null) {
-				console.error('<lu:else> is allowed only one to exist on the tail!')
+				this.slot.diagnosticNormal('<lu:else> is allowed only one to exist on the tail!')
 				break
 			}
 

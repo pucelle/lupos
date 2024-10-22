@@ -1,32 +1,38 @@
 import type TS from 'typescript'
 import {ts} from './global'
+import {PositionMapper} from '../utils'
 
 
 export namespace TemplateSlotPlaceholder {
 
 	/** 
 	 * Get whole string part of a tagged template.
+	 * Will add `$LUPOS_START_\d$ to indicate start of each template part.
 	 * Template slots have been replaced to placeholder `$LUPOS_SLOT_INDEX_\d$`.
 	 */
-	export function toTemplateString(tem: TS.TaggedTemplateExpression): string {
+	export function toTemplateString(tem: TS.TaggedTemplateExpression): {string: string, mapper: PositionMapper} {
 		let template = tem.template
+		let string = ''
+		let mapper = new PositionMapper()
+
 		if (ts.isNoSubstitutionTemplateLiteral(template)) {
-			return template.text
+			mapper.add(string.length, template.getStart() + 1)
+			string += template.text
 		}
 		else if (ts.isTemplateExpression(template)) {
-			let string = template.head.text
+			mapper.add(string.length, template.head.getStart() + 1)
+			string += template.head.text
+
 			let index = -1
 			
 			for (let span of template.templateSpans) {
 				string += `\$LUPOS_SLOT_INDEX_${++index}\$`
+				mapper.add(string.length, span.literal.getStart() + 1)
 				string += span.literal.text
 			}
-
-			return string
 		}
-		else {
-			return ''
-		}
+		
+		return {string, mapper}
 	}
 
 	/** Join strings and value indices to template string. */
@@ -77,7 +83,7 @@ export namespace TemplateSlotPlaceholder {
 		return values
 	}
 
-	
+
 	/** 
 	 * Split a full template string by template slot placeholder `$LUPOS_SLOT_INDEX_\d_.
 	 * If `quoted`, must return a string list.

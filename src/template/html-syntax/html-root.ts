@@ -1,18 +1,28 @@
+import {PositionMapper} from '../../utils'
 import {HTMLNode, HTMLNodeType} from './html-node'
 import {HTMLTokenParser, HTMLTokenType} from './html-token-parser'
 
 
 export class HTMLRoot extends HTMLNode {
 
-	static fromString(string: string): HTMLRoot {
+	static fromString(string: string, mapper: PositionMapper): HTMLRoot {
 		let tokens = HTMLTokenParser.parseToTokens(string)
 		let tree = new HTMLRoot()
 		let current: HTMLNode | null = tree
 
 		for (let token of tokens) {
+			let start = mapper.map(token.start)
+
 			switch (token.type) {
 				case HTMLTokenType.StartTag:
-					let node = new HTMLNode(HTMLNodeType.Tag, token)
+					let attrs = token.attrs!.map(attr => {
+						return {
+							...attr,
+							start: mapper.map(attr.start),
+						}
+					})
+
+					let node = new HTMLNode(HTMLNodeType.Tag, start, token.tagName, attrs)
 					current.append(node)
 
 					if (!token.selfClose) {
@@ -38,11 +48,11 @@ export class HTMLRoot extends HTMLNode {
 					break
 
 				case HTMLTokenType.Text:
-					current.append(new HTMLNode(HTMLNodeType.Text, token))
+					current.append(new HTMLNode(HTMLNodeType.Text, start, undefined, undefined, token.text))
 					break
 
 				case HTMLTokenType.Comment:
-					current.append(new HTMLNode(HTMLNodeType.Comment, token))
+					current.append(new HTMLNode(HTMLNodeType.Comment, start))
 					break
 			}
 
@@ -74,7 +84,7 @@ export class HTMLRoot extends HTMLNode {
 	}
 
 	constructor() {
-		super(HTMLNodeType.Tag, {tagName: 'root', attrs: []})
+		super(HTMLNodeType.Tag, -1, 'root', [])
 	}
 
 	getContentString() {

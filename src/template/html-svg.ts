@@ -42,9 +42,9 @@ defineVisitor(function(node: TS.Node, index: number) {
 
 /** Parse a html template literal. */
 function parseHTMLTemplate(node: TS.TaggedTemplateExpression, index: number, templateType: 'html' | 'svg') {
-	let string = TemplateSlotPlaceholder.toTemplateString(node)
+	let {string, mapper} = TemplateSlotPlaceholder.toTemplateString(node)
 	let values = TemplateSlotPlaceholder.extractTemplateValues(node)
-	let root = HTMLRoot.fromString(string)
+	let root = HTMLRoot.fromString(string, mapper)
 	let parser = new TemplateParser(templateType, root, values, node)
 
 	return () => {

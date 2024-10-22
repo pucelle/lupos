@@ -28,7 +28,7 @@ export class SwitchFlowControl extends FlowControlBase {
 
 		let switchValueIndex = this.getAttrValueIndex(this.node)
 		if (switchValueIndex === null) {
-			console.error('<lu:switch ${...}> must accept a parameter as condition!')
+			this.slot.diagnosticNormal('<lu:switch ${...}> must accept a parameter as condition!')
 		}
 		this.switchValueIndex = switchValueIndex
 
@@ -40,17 +40,17 @@ export class SwitchFlowControl extends FlowControlBase {
 		for (let child of childNodes) {
 			let valueIndex = this.getAttrValueIndex(child)
 			if (valueIndex === null && child.tagName === 'lu:case') {
-				console.error('<lu:case ${...}> must accept a parameter as condition!')
+				this.slot.diagnosticNormal('<lu:case ${...}> must accept a parameter as condition!')
 				break
 			}
 
 			if (valueIndex !== null && child.tagName === 'lu:default') {
-				console.error('<lu:default> should not accept any parameter!')
+				this.slot.diagnosticNormal('<lu:default> should not accept any parameter!')
 				break
 			}
 
 			if (valueIndex === null && lastValueIndex === null) {
-				console.error('<lu:default> is allowed only one to exist on the tail!')
+				this.slot.diagnosticNormal('<lu:default> is allowed only one to exist on the tail!')
 				break
 			}
 

@@ -1,6 +1,6 @@
 import {Helper, Scope, TemplateSlotPlaceholder} from '../../base'
 import {PartPositionType} from '../../enums'
-import {HTMLNode, HTMLNodeType, HTMLRoot, HTMLNodeReferences} from '../html-syntax'
+import {HTMLNode, HTMLNodeType, HTMLRoot, HTMLNodeReferences, HTMLAttribute} from '../html-syntax'
 import {SlotParserBase, DynamicComponentSlotParser, FlowControlSlotParser, PropertySlotParser, BindingSlotParser, EventSlotParser, AttributeSlotParser, TextSlotParser, ContentSlotParser, ComponentSlotParser, SlotTagSlotParser} from './slots'
 import {TemplateParser} from './template'
 import {TreeOutputHandler} from './tree-output'
@@ -165,13 +165,13 @@ export class TreeParser {
 
 		// Insert a comment at least, to make sure having a position.
 		if (!firstNode) {
-			firstNode = new HTMLNode(HTMLNodeType.Comment, {})
+			firstNode = new HTMLNode(HTMLNodeType.Comment, -1)
 			container.append(firstNode)
 		}
 
 		// Use a new comment node to locate if position is not stable.
 		else if (!firstNode.isPrecedingPositionStable(this.template.values.rawValueNodes)) {
-			let comment = new HTMLNode(HTMLNodeType.Comment, {})
+			let comment = new HTMLNode(HTMLNodeType.Comment, -1)
 			firstNode.before(comment)
 			firstNode = comment
 		}
@@ -189,49 +189,50 @@ export class TreeParser {
 		name: string | null,
 		strings: string[] | null,
 		valueIndices: number[] | null,
-		node: HTMLNode
+		node: HTMLNode,
+		attr: HTMLAttribute | null
 	) {
 		let slot: SlotParserBase
 
 		switch (type) {
 			case SlotType.SlotTag:
-				slot = new SlotTagSlotParser(name, strings, valueIndices, node, this)
+				slot = new SlotTagSlotParser(name, strings, valueIndices, node, attr, this)
 				break
 
 			case SlotType.Component:
-				slot = new ComponentSlotParser(name, strings, valueIndices, node, this)
+				slot = new ComponentSlotParser(name, strings, valueIndices, node, attr, this)
 				break
 
 			case SlotType.DynamicComponent:
-				slot = new DynamicComponentSlotParser(name, strings, valueIndices, node, this)
+				slot = new DynamicComponentSlotParser(name, strings, valueIndices, node, attr, this)
 				break
 
 			case SlotType.FlowControl:
-				slot = new FlowControlSlotParser(name, strings, valueIndices, node, this)
+				slot = new FlowControlSlotParser(name, strings, valueIndices, node, attr, this)
 				break
 
 			case SlotType.Property:
-				slot = new PropertySlotParser(name, strings, valueIndices, node, this)
+				slot = new PropertySlotParser(name, strings, valueIndices, node, attr, this)
 				break
 
 			case SlotType.Binding:
-				slot = new BindingSlotParser(name, strings, valueIndices, node, this)
+				slot = new BindingSlotParser(name, strings, valueIndices, node, attr, this)
 				break
 
 			case SlotType.Event:
-				slot = new EventSlotParser(name, strings, valueIndices, node, this)
+				slot = new EventSlotParser(name, strings, valueIndices, node, attr, this)
 				break
 
 			case SlotType.Attribute:
-				slot = new AttributeSlotParser(name, strings, valueIndices, node, this)
+				slot = new AttributeSlotParser(name, strings, valueIndices, node, attr, this)
 				break
 
 			case SlotType.Text:
-				slot = new TextSlotParser(name, strings, valueIndices, node, this)
+				slot = new TextSlotParser(name, strings, valueIndices, node, attr, this)
 				break
 
 			case SlotType.Content:
-				slot = new ContentSlotParser(name, strings, valueIndices, node, this)
+				slot = new ContentSlotParser(name, strings, valueIndices, node, attr, this)
 				break
 		}
 
@@ -248,20 +249,20 @@ export class TreeParser {
 		let nameAttr = node.attrs!.find(a => a.name === 'name')
 		let name = nameAttr?.value || null
 
-		return this.addSlot(SlotType.SlotTag, name, null, null, node)
+		return this.addSlot(SlotType.SlotTag, name, null, null, node, null)
 	}
 
 	private parseComponentTag(node: HTMLNode) {
-		return this.addSlot(SlotType.Component, null, null, null, node)
+		return this.addSlot(SlotType.Component, null, null, null, node, null)
 	}
 
 	private parseDynamicTag(node: HTMLNode) {
 		let valueIndices = TemplateSlotPlaceholder.getSlotIndices(node.tagName!)
-		return this.addSlot(SlotType.DynamicComponent, null, null, valueIndices, node)
+		return this.addSlot(SlotType.DynamicComponent, null, null, valueIndices, node, null)
 	}
 
 	private parseFlowControlTag(node: HTMLNode) {
-		return this.addSlot(SlotType.FlowControl, null, null, null, node)
+		return this.addSlot(SlotType.FlowControl, null, null, null, node, null)
 	}
 
 	private parseAttributes(node: HTMLNode) {
@@ -342,7 +343,7 @@ export class TreeParser {
 			}
 
 			node.removeAttr(attr)
-			callbacks.push(this.addSlot(type, name, strings, valueIndices, node))
+			callbacks.push(this.addSlot(type, name, strings, valueIndices, node, attr))
 		}
 
 		return callbacks
@@ -367,18 +368,18 @@ export class TreeParser {
 
 			node.desc = TemplateSlotPlaceholder.joinStringsAndValueIndices(strings, valueIndices)
 			node.text = ' '
-			callbacks.push(this.addSlot(SlotType.Text, null, strings, valueIndices, node))
+			callbacks.push(this.addSlot(SlotType.Text, null, strings, valueIndices, node, null))
 		}
 
 		// `${html`...`}`
 		else if (group.length === 1 && !group[0].beText) {
 			let {valueIndices} = group[0]
 
-			let comment = new HTMLNode(HTMLNodeType.Comment, {})
+			let comment = new HTMLNode(HTMLNodeType.Comment, -1)
 			comment.desc = TemplateSlotPlaceholder.joinStringsAndValueIndices(null, valueIndices)
 			node.replaceWith(comment)
 
-			callbacks.push(this.addSlot(SlotType.Content, null, null, valueIndices, comment))
+			callbacks.push(this.addSlot(SlotType.Content, null, null, valueIndices, comment, null))
 		}
 
 		// Mixture of Text, Comment, Text, Comment...
@@ -390,27 +391,27 @@ export class TreeParser {
 
 				// Text, with dynamic content.
 				if (beText && valueIndices) {
-					let textNode = new HTMLNode(HTMLNodeType.Text, {text: ' '})
+					let textNode = new HTMLNode(HTMLNodeType.Text, -1, undefined, undefined, ' ')
 					textNode.desc = TemplateSlotPlaceholder.joinStringsAndValueIndices(strings, valueIndices)
 					node.before(textNode)
 
-					addSlotFn.push(() => this.addSlot(SlotType.Text, null, strings, valueIndices, textNode))
+					addSlotFn.push(() => this.addSlot(SlotType.Text, null, strings, valueIndices, textNode, null))
 				}
 
 				// Static text.
 				else if (beText) {
-					let textNode = new HTMLNode(HTMLNodeType.Text, {text: strings![0]})
+					let textNode = new HTMLNode(HTMLNodeType.Text, -1, undefined, undefined, strings![0])
 					textNode.desc = TemplateSlotPlaceholder.joinStringsAndValueIndices(strings, valueIndices)
 					node.before(textNode)
 				}
 
 				// Dynamic content.
 				else {
-					let comment = new HTMLNode(HTMLNodeType.Comment, {})
+					let comment = new HTMLNode(HTMLNodeType.Comment, -1)
 					comment.desc = TemplateSlotPlaceholder.joinStringsAndValueIndices(strings, valueIndices)
 					node.before(comment)
 	
-					addSlotFn.push(() => this.addSlot(SlotType.Content, null, null, valueIndices, comment))
+					addSlotFn.push(() => this.addSlot(SlotType.Content, null, null, valueIndices, comment, null))
 				}
 			}
 			
