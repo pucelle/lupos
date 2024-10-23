@@ -5,6 +5,7 @@ import {TransformerExtras} from 'ts-patch'
 import {setGlobal, setSourceFile, setTransformContext} from './global'
 import {ScopeTree} from './scope-tree'
 import {callVisitedSourceFileCallbacks, runPostVisitCallbacks, runPreVisitCallbacks} from './visitor-callbacks'
+import {DiagnosticModifier} from './diagnostics'
 
 
 /** 
@@ -56,6 +57,9 @@ function applyVisitors(node: TS.Node): () => void {
 export function transformer(program: TS.Program, extras: TransformerExtras) {
 	let {ts} = extras
 	setGlobal(program, extras)
+
+	// Must after `setGlobal`.
+	DiagnosticModifier.initialize()
 
 	return (ctx: TS.TransformationContext) => {
 		setTransformContext(ctx)

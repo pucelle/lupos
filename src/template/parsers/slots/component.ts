@@ -18,6 +18,7 @@ export class ComponentSlotParser extends SlotParserBase {
 			this.diagnoseMissingTagImport(`Please make sure to import or declare component "<${comName}>"!`)
 		}
 		else {
+
 			// Limit closest scope by referenced declaration.
 			this.template.addRefedDeclaration(decl)
 
