@@ -30,11 +30,12 @@ defineVisitor(function(node: TS.Node, index: number) {
 
 	Modifier.removeImportOf(node.tag)
 
-	// After all descendant nodes visited.
-	return () => {
-		let toOutput = parseHTMLTemplate(node, index, nm.memberName as 'html' | 'svg')
+	// Must visit in normal visit order, so it can modify tracking.
+	let toOutput = parseHTMLTemplate(node, index, nm.memberName as 'html' | 'svg')
 
-		// Must after all observable interpolation outputted.
+	// Must after all observable interpolation outputted.
+	// So internal html`...` can be replaced.
+	return () => {
 		onVisitedSourceFile(toOutput)
 	}
 })

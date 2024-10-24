@@ -179,9 +179,9 @@ export class Scope {
 	 * If current scope can't add statements, will try parent scope.
 	 * Several variable declarations will be stacked to a variable statement.
 	 */
-	addStatements(...stats: TS.Statement[]) {
+	addStatements(stats: TS.Statement[], order?: number) {
 		let toIndex = this.getIndexToAddStatements()
-		Interpolator.before(toIndex, InterpolationContentType.Declaration, () => stats)
+		Interpolator.before(toIndex, InterpolationContentType.Declaration, () => stats, order)
 	}
 
 	/** Get best visit index to add variable before it. */

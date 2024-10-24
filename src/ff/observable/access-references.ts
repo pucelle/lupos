@@ -18,7 +18,7 @@ export namespace AccessReferences {
 	const referenceMap: ListMap<string, number> = new ListMap()
 
 	/** 
-	 * Remember visiting indices that have been visited.
+	 * Remember visit indices that have been visited.
 	 * 
 	 * E.g., for access node `a.b.c`,
 	 * Will visit `a.b.c`, and make reference item `a` -> index of `a.b`.
@@ -31,14 +31,14 @@ export namespace AccessReferences {
 
 	/** 
 	 * If access as `a.b`, and later assign `a`, then node `a` of `a.b` become mutable.
-	 * Mutable visiting index -> Assignment visiting index.
+	 * Mutable visit index -> Assignment visit index.
 	 */
 	const mutableIndices: Map<number, number> = new Map()
 
 	/** Indices where access nodes have been referenced. */
 	const referencedIndices: Set<number> = new Set()
 
-	/** Node visiting indices that have tested reference. */
+	/** Node visit indices that have tested reference. */
 	const referencedTested: Set<number> = new Set()
 
 

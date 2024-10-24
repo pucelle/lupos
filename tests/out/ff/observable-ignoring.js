@@ -46,7 +46,6 @@ export class TestIgnoringInternalMethods extends Component {
         let prop1 = this.prop1;
         trackGet(this, "prop1", "prop2");
         trackGet(prop1, "");
-        trackGet(this.prop2, "");
         return prop1.join('')
             + this.prop2.get(1);
     }

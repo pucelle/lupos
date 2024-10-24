@@ -1,9 +1,26 @@
 import type TS from 'typescript'
-import {Helper, VisitTree, ts, FlowInterruptionTypeMask, ScopeTree} from '../../base'
+import {Helper, VisitTree, ts, FlowInterruptionTypeMask, ScopeTree, HashItem} from '../../base'
 import {AccessReferences} from './access-references'
 import {removeFromList} from '../../utils'
 import {CapturedItem, ContextCapturer} from './context-capturer'
 import {Context} from './context'
+
+
+
+function hashCapturedItem(item: CapturedItem): HashItem {
+	if (item.expIndex !== undefined) {
+		let hash = ScopeTree.hashIndex(item.index)
+		let name = item.keys!.map(key => `[${key}]`).join('')
+
+		return {
+			...hash,
+			name,
+		}
+	}
+	else {
+		return ScopeTree.hashIndex(item.index)
+	}
+}
 
 
 /** 
@@ -21,15 +38,15 @@ export class ContextCapturerOperator {
 			let ownMap: Map<string, number> = new Map()
 
 			// Only codes of the first item is always running.
-			for (let {index, type} of capturer.captured[0].items) {
+			for (let item of capturer.captured[0].items) {
 
 				// Has been referenced, ignore always.
-				if (AccessReferences.isDescendantAccessReferenced(index, true)) {
+				if (AccessReferences.isDescendantAccessReferenced(item.index, true)) {
 					continue
 				}
 
-				let hashName = ScopeTree.hashIndex(index, true).name + '_of_capture_type_' + type
-				ownMap.set(hashName, index)
+				let hashName = hashCapturedItem(item).name + '_of_capture_type_' + item.type
+				ownMap.set(hashName, item.index)
 			}
 
 			if (i === 0) {
@@ -94,7 +111,7 @@ export class ContextCapturerOperator {
 		let residualItems: CapturedItem[] = []
 
 		for (let item of items) {
-			let hashed = ScopeTree.hashIndex(item.index, true)
+			let hashed = hashCapturedItem(item)
 
 			// Leave contexts contain any referenced variable.
 			if (hashed.usedScopes.some(i => scopesLeaved.includes(i))) {
@@ -133,7 +150,7 @@ export class ContextCapturerOperator {
 					continue
 				}
 
-				let hashName = ScopeTree.hashIndex(item.index, true).name
+				let hashName = hashCapturedItem(item).name
 
 				if (ownHashes.has(hashName)) {
 					removeFromList(group.items, item)

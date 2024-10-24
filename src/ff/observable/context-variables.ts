@@ -1,8 +1,9 @@
 import type TS from 'typescript'
 import {ObservedChecker} from './observed-checker'
-import {Helper, ts} from '../../base'
+import {Helper, ts, VisitTree} from '../../base'
 import {Context} from './context'
 import {ContextTypeMask} from './context-tree'
+import {TrackingPatch} from './tracking-patch'
 
 
 /** Mark all variables with a context. */
@@ -82,6 +83,8 @@ export class ContextVariables {
 	/** Visit a parameter. */
 	visitParameter(node: TS.ParameterDeclaration) {
 		let observed = ObservedChecker.isParameterObserved(node)
+			|| TrackingPatch.isIndexForceTracked(VisitTree.getIndex(node))
+
 		this.variableObserved.set(Helper.getFullText(node.name), observed)
 	}
 
@@ -95,6 +98,8 @@ export class ContextVariables {
 		}
 	
 		let observed = this.checkVariableObserved(node, fromContext)
+			|| TrackingPatch.isIndexForceTracked(VisitTree.getIndex(node))
+
 		let names = Helper.variable.walkDeclarationNames(node)
 
 		for (let {node, name} of names) {
@@ -105,6 +110,8 @@ export class ContextVariables {
 
 	/** Check whether a variable declaration node should be observed. */
 	private checkVariableObserved(node: TS.VariableDeclaration, fromContext: Context | null = null): boolean {
+
+		// `for (item of items)`, broadcast observed from items to item.
 		if (fromContext && (fromContext.type & ContextTypeMask.IterationInitializer) > 0) {
 			if (ts.isForOfStatement(this.context.node)) {
 				return ObservedChecker.isObserved(this.context.node.expression, true)

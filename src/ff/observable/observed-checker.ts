@@ -150,12 +150,6 @@ export namespace ObservedChecker {
 	/** Whether destructed variable declaration should be observed. */
 	export function isDestructedVariableDeclarationObserved(rawNode: TS.Node, initializerObserved: boolean): boolean {
 
-		// Readonly properties are always not been observed.
-		let readonly = Helper.types.isReadonly(rawNode)
-		if (readonly) {
-			return false
-		}
-
 		// Property declaration has specified as observed type or has observed initializer.
 		if (isPropertyDeclaredAsObserved(rawNode)) {
 			return true
@@ -381,7 +375,7 @@ export namespace ObservedChecker {
 				}
 			}
 
-			// Readonly properties are always not observe.
+			// Readonly properties are not observe.
 			let readonly = Helper.types.isReadonly(rawNode)
 			if (readonly) {
 				return false
@@ -389,8 +383,9 @@ export namespace ObservedChecker {
 		}
 
 		// When visiting parental nodes.
-		// Property declaration has specified as observed type or observed initializer.
 		else {
+
+			// Property declaration has specified as observed type or observed initializer.
 			if (isPropertyDeclaredAsObserved(rawNode)) {
 				return true
 			}

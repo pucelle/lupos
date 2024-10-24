@@ -19,12 +19,12 @@ export namespace HTMLOutputHandler {
 	 * Output html nodes from a tree parser.
 	 * Returns html maker name.
 	 */
-	export function prepareOutput(parser: TreeParser, wrapped: boolean, htmlName: string):
+	export function prepareOutput(tree: TreeParser, wrapped: boolean, htmlName: string):
 		{name: string, output: () => void}
 	{
 		Modifier.addImport('HTMLMaker', '@pucelle/lupos.js')
 
-		let htmlString = parser.root.getContentString()
+		let htmlString = tree.root.getContentString()
 
 		// Cache meet.
 		if (Cache.has(htmlString, wrapped)) {
@@ -63,7 +63,7 @@ export namespace HTMLOutputHandler {
 		Cache.set(htmlString, wrapped, htmlName)
 
 		let output = () => {
-			ScopeTree.getTopmost().addStatements(htmlNode)
+			ScopeTree.getTopmost().addStatements([htmlNode], tree.index)
 		}
 
 		return {

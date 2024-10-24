@@ -3,7 +3,7 @@ import {ListMap} from '../utils'
 import {definePreVisitCallback} from './visitor-callbacks'
 
 
-interface VisitingItem {
+interface VisitItem {
 
 	/** Visit index unique among whole source file. */
 	index: number
@@ -18,10 +18,10 @@ interface VisitingItem {
  */
 export namespace VisitTree {
 
-	let stack: VisitingItem[] = []
+	let stack: VisitItem[] = []
 	let indexSeed: number = -1
 
-	/** Parent visit index -> child visiting indices. */
+	/** Parent visit index -> child visit indices. */
 	const ChildMap: ListMap<number, number> = new ListMap()
 
 	/** Child visit index -> parent visit index. */
@@ -33,7 +33,7 @@ export namespace VisitTree {
 	/** Node -> Node visit index. */
 	const IndexMap: Map<TS.Node, number> = new Map()
 
-	let current: VisitingItem = {
+	let current: VisitItem = {
 		index: -1,
 	}
 	
@@ -104,12 +104,12 @@ export namespace VisitTree {
 		return ChildMap.get(parentIndex)?.length || 0
 	}
 
-	/** Get all child visiting indices. */
+	/** Get all child visit indices. */
 	export function getChildIndices(parentIndex: number): number[] | undefined {
 		return ChildMap.get(parentIndex)!
 	}
 
-	/** Get all child visiting indices. */
+	/** Get all child visit indices. */
 	export function getChildNodes(parentIndex: number): TS.Node[] | undefined {
 		let childIndices = ChildMap.get(parentIndex)
 		if (childIndices === undefined) {

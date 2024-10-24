@@ -100,6 +100,15 @@ export class ContextCapturer {
 		keys: (string | number)[] | undefined,
 		type: 'get' | 'set'
 	) {
+		// `a[0]` -> `trackGet(a, '')`
+		if (Helper.access.isAccess(node)
+			&& !exp
+			&& Helper.access.isListStruct(node.expression)
+		) {
+			exp = node.expression
+			keys = ['']
+		}
+
 		let index = VisitTree.getIndex(node)
 		let expIndex = exp ? VisitTree.getIndex(exp) : undefined
 
@@ -107,9 +116,15 @@ export class ContextCapturer {
 
 		// Remove repetitive item, normally `a.b = c`,
 		// `a.b` has been captured as get type, and later set type.
-		let repetitiveIndex = this.latestCaptured.items.find(item => item.index === index)
-		if (repetitiveIndex) {
-			removeFromList(this.latestCaptured.items, repetitiveIndex)
+		// Removing repetitive make it works for `both` tracking type.
+		let repetitiveItem = this.latestCaptured.items.find(item => {
+			return item.index === index
+				&& item.expIndex === expIndex
+				&& item.keys === keys
+		})
+
+		if (repetitiveItem) {
+			removeFromList(this.latestCaptured.items, repetitiveItem)
 		}
 
 		let item: CapturedItem = {
@@ -117,15 +132,6 @@ export class ContextCapturer {
 			type,
 			expIndex,
 			keys,
-		}
-
-		// `a[0]` -> `trackGet(a, '')`
-		if (Helper.access.isAccess(node)
-			&& !exp
-			&& Helper.access.isListStruct(node.expression)
-		) {
-			item.expIndex = VisitTree.getIndex(node.expression)
-			item.keys = ['']
 		}
 
 		this.latestCaptured.items.push(item)
@@ -288,10 +294,10 @@ export class ContextCapturer {
 
 		let items = group.items.filter(item => {
 			if (item.expIndex !== undefined) {
-				return !TrackingPatch.ignoredIndex(item.expIndex)
+				return !TrackingPatch.isIndexIgnored(item.expIndex)
 			}
 			else {
-				return !TrackingPatch.ignoredIndex(item.index)
+				return !TrackingPatch.isIndexIgnored(item.index)
 			}
 		})
 

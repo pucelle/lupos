@@ -15,7 +15,7 @@ type OutputNodeList = (TS.Expression | TS.Statement)[]
 
 export class TreeOutputHandler {
 
-	readonly parser: TreeParser
+	readonly tree: TreeParser
 	readonly root: HTMLRoot
 	readonly template: TemplateParser
 
@@ -23,10 +23,10 @@ export class TreeOutputHandler {
 	private wrappedByTemplate: boolean = false
 	private htmlName: string
 
-	constructor(parser: TreeParser, treeIndex: number, wrappedBySVG: boolean, wrappedByTemplate: boolean) {
-		this.parser = parser
-		this.root = parser.root
-		this.template = parser.template
+	constructor(tree: TreeParser, treeIndex: number, wrappedBySVG: boolean, wrappedByTemplate: boolean) {
+		this.tree = tree
+		this.root = tree.root
+		this.template = tree.template
 
 		this.wrappedBySVG = wrappedBySVG
 		this.wrappedByTemplate = wrappedByTemplate
@@ -75,7 +75,7 @@ export class TreeOutputHandler {
 		].flat())
 
 		// $template_0
-		let templateName = this.parser.makeTemplateRefName()
+		let templateName = this.tree.makeTemplateRefName()
 
 		// TemplateInitResult
 		let initResult = this.outputTemplateInitResult(templatePosition, update, parts)
@@ -137,7 +137,7 @@ export class TreeOutputHandler {
 
 		return () => {
 			outputHTML()
-			scope.findClosestToAddStatements().addStatements(templateNode)
+			scope.findClosestToAddStatements().addStatements([templateNode], this.tree.index)
 		}
 	}
 
@@ -244,7 +244,7 @@ export class TreeOutputHandler {
 			firstNode = firstNode.firstChild!
 		}
 
-		let nodeName = this.parser.references.getRefedName(firstNode)
+		let nodeName = this.tree.references.getRefedName(firstNode)
 
 		// new SlotPosition(SlotPositionType.Before, $context),
 		return factory.createNewExpression(
@@ -260,7 +260,7 @@ export class TreeOutputHandler {
 	private outputRootHTML(): {node: OutputNodes, output: () => void} {
 
 		// $html_0
-		let {name: htmlName, output} = HTMLOutputHandler.prepareOutput(this.parser, this.wrappedBySVG, this.htmlName)
+		let {name: htmlName, output} = HTMLOutputHandler.prepareOutput(this.tree, this.wrappedBySVG, this.htmlName)
 
 		// $node
 		let rootNodeName = VariableNames.node
@@ -295,10 +295,10 @@ export class TreeOutputHandler {
 	private outputHTMLReferences(): OutputNodeList {
 		let list: OutputNodeList = []
 
-		for (let {node, visitFromNode, visitSteps} of this.parser.references.output()) {
+		for (let {node, visitFromNode, visitSteps} of this.tree.references.output()) {
 
 			// $node_0
-			let nodeName = this.parser.references.getRefedName(node)
+			let nodeName = this.tree.references.getRefedName(node)
 	
 			// $node.firstChild
 			let fromExp: TS.Expression | undefined
@@ -331,7 +331,7 @@ export class TreeOutputHandler {
 
 			// $node_0
 			else {
-				let fromNodeName = this.parser.references.getRefedName(visitFromNode)
+				let fromNodeName = this.tree.references.getRefedName(visitFromNode)
 				fromExp = factory.createIdentifier(fromNodeName)
 			}
 

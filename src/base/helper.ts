@@ -679,8 +679,15 @@ export namespace Helper {
 
 			// {a: 1}, a is identifier, but not variable identifier.
 			if (node.parent
-				&& ts.isPropertyAssignment(node.parent)
+				&& (ts.isPropertyAssignment(node.parent) || ts.isPropertySignature(node.parent))
 				&& node === node.parent.name
+			) {
+				return false
+			}
+
+			// Type node.
+			if (node.parent
+				&& ts.isTypeReferenceNode(node.parent)
 			) {
 				return false
 			}

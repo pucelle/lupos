@@ -25,6 +25,9 @@ export interface InterpolationItem {
 	 * Only one `replace` can exist.
 	 */
 	replace?: () => TS.Node | TS.Node[] | undefined
+
+	/** Sort interpolated expressions. */
+	order?: number
 }
 
 export enum InterpolationPosition {
@@ -184,12 +187,14 @@ export namespace Interpolator {
 			position: InterpolationPosition.Before,
 			contentType: InterpolationContentType.Normal,
 			exps: () => outputChildren(fromIndex),
+			order: undefined,
 		})
 
 		add(fromIndex, {
 			position: InterpolationPosition.Replace,
 			contentType: InterpolationContentType.Normal,
 			replace: () => undefined,
+			order: undefined,
 		})
 	}
 
@@ -200,43 +205,48 @@ export namespace Interpolator {
 			position: InterpolationPosition.Replace,
 			contentType: InterpolationContentType.Normal,
 			replace: () => undefined,
+			order: undefined,
 		})
 	}
 
 
 	/** Insert expressions to before specified visit index. */
-	export function before(index: number, contentType: InterpolationContentType, exps: () => TS.Node | TS.Node[]) {
+	export function before(index: number, contentType: InterpolationContentType, exps: () => TS.Node | TS.Node[], order?: number) {
 		add(index, {
 			position: InterpolationPosition.Before,
 			contentType,
 			exps,
+			order,
 		})
 	}
 
 	/** Insert expressions to after specified visit index. */
-	export function after(index: number, contentType: InterpolationContentType, exps: () => TS.Node | TS.Node[]) {
+	export function after(index: number, contentType: InterpolationContentType, exps: () => TS.Node | TS.Node[], order?: number) {
 		add(index, {
 			position: InterpolationPosition.After,
 			contentType,
 			exps,
+			order,
 		})
 	}
 
 	/** Prepend expressions to the start inner position of target visit index. */
-	export function prepend(index: number, contentType: InterpolationContentType, exps: () => TS.Node | TS.Node[]) {
+	export function prepend(index: number, contentType: InterpolationContentType, exps: () => TS.Node | TS.Node[], order?: number) {
 		add(index, {
 			position: InterpolationPosition.Prepend,
 			contentType,
 			exps,
+			order,
 		})
 	}
 
 	/** Append expressions to the end inner position of target visit index. */
-	export function append(index: number, contentType: InterpolationContentType, exps: () => TS.Node | TS.Node[]) {
+	export function append(index: number, contentType: InterpolationContentType, exps: () => TS.Node | TS.Node[], order?: number) {
 		add(index, {
 			position: InterpolationPosition.Append,
 			contentType,
 			exps,
+			order,
 		})
 	}
 
@@ -248,6 +258,7 @@ export namespace Interpolator {
 			position: InterpolationPosition.Replace,
 			contentType,
 			replace,
+			order: undefined,
 		})
 	}
 
@@ -283,6 +294,15 @@ export namespace Interpolator {
 		if (!items) {
 			return outputChildren(index)
 		}
+
+		// Sort by order.
+		items.sort((a, b) => {
+			if (a.order === undefined || b.order === undefined) {
+				return 0
+			}
+
+			return a.order - b.order
+		})
 
 		// Sort by content type.
 		items.sort((a, b) => a.contentType - b.contentType)
@@ -328,9 +348,9 @@ export namespace Interpolator {
 			}
 		}
 
-		// if (ts.isVariableDeclaration(Visiting.getNode(Visiting.getParentIndex(index)!))) {
+		// if (ts.isVariableDeclaration(VisitTree.getNode(VisitTree.getParentIndex(index)!))) {
 		// 	console.log('-------------------------------------')
-		// 	console.log('TO', Helper.getText(Visiting.getNode(index)))
+		// 	console.log('TO', Helper.getText(VisitTree.getNode(index)))
 		// 	console.log('ADD', Array.isArray(node) ? node.map(n => Helper.getText(n)) : node ? Helper.getText((node)) : 'NONE')
 		// }
 

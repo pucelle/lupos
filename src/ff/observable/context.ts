@@ -1,11 +1,12 @@
 import type TS from 'typescript'
 import {ObservedChecker} from './observed-checker'
-import {Helper, AccessNode, ts, FlowInterruptionTypeMask, ScopeTree} from '../../base'
+import {Helper, AccessNode, ts, FlowInterruptionTypeMask, ScopeTree, VisitTree} from '../../base'
 import {ContextState} from './context-state'
 import {ContextTypeMask} from './context-tree'
 import {ContextVariables} from './context-variables'
 import {ContextCapturer} from './context-capturer'
 import {AccessReferences} from './access-references'
+import {ForceTrackType, TrackingPatch} from './tracking-patch'
 
 
 /** 
@@ -93,6 +94,7 @@ export class Context {
 	 * When visiting a node, child nodes of this node have visited.
 	 */
 	visitNode(node: TS.Node) {
+		let index = VisitTree.getIndex(node)
 
 		// Add parameters.
 		if (ts.isParameter(node)) {
@@ -115,7 +117,7 @@ export class Context {
 
 		// Test and add property access nodes.
 		else if (Helper.access.isAccess(node)) {
-	
+
 			// `[].push`, `map.set`, `set.set`
 			if (ObservedChecker.isListStructWriteAccess(node)) {
 				this.mayAddSetTracking(node)
@@ -152,6 +154,17 @@ export class Context {
 		else if (ts.isBreakOrContinueStatement(node)) {
 			this.state.unionFlowInterruptionType(FlowInterruptionTypeMask.BreakLike)
 			this.capturer.breakCaptured(this.visitIndex, FlowInterruptionTypeMask.BreakLike)
+		}
+
+		// Force tracking node.
+		if (TrackingPatch.isIndexForceTracked(index)) {
+			let type = TrackingPatch.getIndexForceTrackType(index)!
+			if (type === ForceTrackType.Members) {
+				this.mayAddGetTracking(node as AccessNode | TS.Identifier, node as TS.Expression, [''])
+			}
+			else {
+				this.mayAddGetTracking(node as AccessNode | TS.Identifier)
+			}
 		}
 	}
 

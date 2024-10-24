@@ -1,31 +1,18 @@
 import { Component, TemplateSlot, SlotPosition, CompiledTemplateResult, TemplateMaker, HTMLMaker, IfBlock } from '@pucelle/lupos.js';
 import { trackGet } from "@pucelle/ff";
-const $html_0 = new HTMLMaker("<div></div>");
-/*
-<root>
-    <div />
-</root>
-*/ const $template_0 = new TemplateMaker(function () {
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
-    return {
-        el: $node,
-        position: new SlotPosition(1, $node_0)
-    };
-});
-const $html_1 = new HTMLMaker("<div><!----></div>");
+const $html_0 = new HTMLMaker("<div><!----></div>");
 /*
 <root>
     <div>
         ${html`<div></div>`}
     </div>
 </root>
-*/ const $template_1 = new TemplateMaker(function ($context) {
-    let $node = $html_1.make();
+*/ const $template_0 = new TemplateMaker(function ($context) {
+    let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node_0.firstChild;
     let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context, 0);
-    $slot_0.update(new CompiledTemplateResult($template_0, []));
+    $slot_0.update(new CompiledTemplateResult($template_1, []));
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),
@@ -34,12 +21,13 @@ const $html_1 = new HTMLMaker("<div><!----></div>");
         ]
     };
 });
+const $html_1 = new HTMLMaker("<div></div>");
 /*
 <root>
     <div />
 </root>
-*/ const $template_2 = new TemplateMaker(function () {
-    let $node = $html_0.make();
+*/ const $template_1 = new TemplateMaker(function () {
+    let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     return {
         el: $node,
@@ -52,12 +40,12 @@ const $html_1 = new HTMLMaker("<div><!----></div>");
         ${[html`<div></div>`]}
     </div>
 </root>
-*/ const $template_3 = new TemplateMaker(function ($context) {
-    let $node = $html_1.make();
+*/ const $template_2 = new TemplateMaker(function ($context) {
+    let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node_0.firstChild;
     let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context, 1);
-    $slot_0.update([new CompiledTemplateResult($template_2, [])]);
+    $slot_0.update([new CompiledTemplateResult($template_3, [])]);
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),
@@ -70,8 +58,8 @@ const $html_1 = new HTMLMaker("<div><!----></div>");
 <root>
     <div />
 </root>
-*/ const $template_4 = new TemplateMaker(function () {
-    let $node = $html_0.make();
+*/ const $template_3 = new TemplateMaker(function () {
+    let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     return {
         el: $node,
@@ -84,9 +72,9 @@ const $html_1 = new HTMLMaker("<div><!----></div>");
         ${this.booleanProp ? '1' : html`<div></div>`}
     </div>
 </root>
-*/ const $template_5 = new TemplateMaker(function ($context) {
+*/ const $template_4 = new TemplateMaker(function ($context) {
     let $latest_0;
-    let $node = $html_1.make();
+    let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node_0.firstChild;
     let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context);
@@ -108,15 +96,15 @@ const $html_1 = new HTMLMaker("<div><!----></div>");
 <root>
     <div />
 </root>
-*/ const $template_6 = new TemplateMaker(function () {
-    let $node = $html_0.make();
+*/ const $template_5 = new TemplateMaker(function () {
+    let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     return {
         el: $node,
         position: new SlotPosition(1, $node_0)
     };
 });
-const $html_7 = new HTMLMaker("<div> <!----> </div>");
+const $html_6 = new HTMLMaker("<div> <!----> </div>");
 /*
 <root>
     <div>
@@ -125,15 +113,15 @@ const $html_7 = new HTMLMaker("<div> <!----> </div>");
          ${'1'}
     </div>
 </root>
-*/ const $template_7 = new TemplateMaker(function ($context) {
-    let $node = $html_7.make();
+*/ const $template_6 = new TemplateMaker(function ($context) {
+    let $node = $html_6.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node_0.firstChild;
     let $node_2 = $node_0.childNodes[1];
     let $node_3 = $node_0.lastChild;
     let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_2), $context, 0);
     $node_1.data = '1' + " ";
-    $slot_0.update(new CompiledTemplateResult($template_6, []));
+    $slot_0.update(new CompiledTemplateResult($template_7, []));
     $node_3.data = " " + '1';
     return {
         el: $node,
@@ -147,27 +135,15 @@ const $html_7 = new HTMLMaker("<div> <!----> </div>");
 <root>
     <div />
 </root>
-*/ const $template_8 = new TemplateMaker(function () {
-    let $node = $html_0.make();
+*/ const $template_7 = new TemplateMaker(function () {
+    let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     return {
         el: $node,
         position: new SlotPosition(1, $node_0)
     };
 });
-/*
-<root>
-    <div />
-</root>
-*/ const $template_9 = new TemplateMaker(function () {
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
-    return {
-        el: $node,
-        position: new SlotPosition(1, $node_0)
-    };
-});
-const $html_10 = new HTMLMaker("<div><!----><!----></div>");
+const $html_8 = new HTMLMaker("<div><!----><!----></div>");
 /*
 <root>
     <div>
@@ -175,15 +151,15 @@ const $html_10 = new HTMLMaker("<div><!----><!----></div>");
         ${html`<div></div>`}
     </div>
 </root>
-*/ const $template_10 = new TemplateMaker(function ($context) {
-    let $node = $html_10.make();
+*/ const $template_8 = new TemplateMaker(function ($context) {
+    let $node = $html_8.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node_0.firstChild;
     let $node_2 = $node_0.lastChild;
     let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context, 0);
     let $slot_1 = new TemplateSlot(new SlotPosition(1, $node_2), $context, 0);
-    $slot_0.update(new CompiledTemplateResult($template_8, []));
-    $slot_1.update(new CompiledTemplateResult($template_9, []));
+    $slot_0.update(new CompiledTemplateResult($template_9, []));
+    $slot_1.update(new CompiledTemplateResult($template_10, []));
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),
@@ -197,15 +173,27 @@ const $html_10 = new HTMLMaker("<div><!----><!----></div>");
 <root>
     <div />
 </root>
-*/ const $template_11 = new TemplateMaker(function () {
-    let $node = $html_0.make();
+*/ const $template_9 = new TemplateMaker(function () {
+    let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     return {
         el: $node,
         position: new SlotPosition(1, $node_0)
     };
 });
-const $html_12 = new HTMLMaker("<!----><!----><!---->");
+/*
+<root>
+    <div />
+</root>
+*/ const $template_10 = new TemplateMaker(function () {
+    let $node = $html_1.make();
+    let $node_0 = $node.content.firstChild;
+    return {
+        el: $node,
+        position: new SlotPosition(1, $node_0)
+    };
+});
+const $html_11 = new HTMLMaker("<!----><!----><!---->");
 /*
 <root>
     <template>
@@ -213,15 +201,15 @@ const $html_12 = new HTMLMaker("<!----><!----><!---->");
         ${html`<div></div>`}
     </template>
 </root>
-*/ const $template_12 = new TemplateMaker(function ($context) {
-    let $node = $html_12.make();
+*/ const $template_11 = new TemplateMaker(function ($context) {
+    let $node = $html_11.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.childNodes[1];
     let $node_2 = $node.content.lastChild;
     let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context);
     let $block_0 = new IfBlock($slot_0);
     let $slot_1 = new TemplateSlot(new SlotPosition(1, $node_2), $context, 0);
-    $slot_1.update(new CompiledTemplateResult($template_11, []));
+    $slot_1.update(new CompiledTemplateResult($template_13, []));
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),
@@ -238,8 +226,20 @@ const $html_12 = new HTMLMaker("<!----><!----><!---->");
 <root>
     <div />
 </root>
+*/ const $template_12 = new TemplateMaker(function () {
+    let $node = $html_1.make();
+    let $node_0 = $node.content.firstChild;
+    return {
+        el: $node,
+        position: new SlotPosition(1, $node_0)
+    };
+});
+/*
+<root>
+    <div />
+</root>
 */ const $template_13 = new TemplateMaker(function () {
-    let $node = $html_0.make();
+    let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     return {
         el: $node,
@@ -249,27 +249,27 @@ const $html_12 = new HTMLMaker("<!----><!----><!---->");
 export class TestContent extends Component {
     booleanProp = true;
     testTemplateResultContent() {
-        return new CompiledTemplateResult($template_1, []);
+        return new CompiledTemplateResult($template_0, []);
     }
     testTemplateResultListContent() {
-        return new CompiledTemplateResult($template_3, []);
+        return new CompiledTemplateResult($template_2, []);
     }
     testMixedContent() {
         trackGet(this, "booleanProp");
-        return new CompiledTemplateResult($template_5, [
-            this.booleanProp ? '1' : new CompiledTemplateResult($template_4, [])
+        return new CompiledTemplateResult($template_4, [
+            this.booleanProp ? '1' : new CompiledTemplateResult($template_5, [])
         ]);
     }
     testMultipleContents() {
-        return new CompiledTemplateResult($template_7, []);
+        return new CompiledTemplateResult($template_6, []);
     }
     testNeighborContents() {
-        return new CompiledTemplateResult($template_10, []);
+        return new CompiledTemplateResult($template_8, []);
     }
     testNeighborIfContents() {
         trackGet(this, "booleanProp");
-        return new CompiledTemplateResult($template_12, [
-            this.booleanProp ? new CompiledTemplateResult($template_13, []) : null
+        return new CompiledTemplateResult($template_11, [
+            this.booleanProp ? new CompiledTemplateResult($template_12, []) : null
         ]);
     }
 }

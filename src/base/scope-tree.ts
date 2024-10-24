@@ -8,7 +8,7 @@ import {definePostVisitCallback, definePreVisitCallback} from './visitor-callbac
 import {Scope} from './scope'
 
 
-interface HashItem {
+export interface HashItem {
 
 	/** Unique name. */
 	name: string
@@ -16,7 +16,7 @@ interface HashItem {
 	/** The variable declaration scopes that current node used. */
 	usedScopes: Scope[]
 
-	/** The variable declaration visiting indices that current node used. */
+	/** The variable declaration visit indices that current node used. */
 	usedIndices: number[]
 }
 
@@ -170,41 +170,31 @@ export namespace ScopeTree {
 	 * Get hash of raw node, which has a visit index.
 	 * Note hashing will transform `a?.b` -> `a.b`.
 	 */
-	export function hashNode(rawNode: TS.Node, mergeListStructKey: boolean = false): HashItem {
+	export function hashNode(rawNode: TS.Node): HashItem {
 		let index = VisitTree.getIndex(rawNode)
-		return hashIndex(index, mergeListStructKey)
+		return hashIndex(index)
 	}
 
 	/** 
 	 * Get hash of node at the specified visit index.
 	 * Note hashing will transform `a?.b` -> `a.b`.
-	 * If `mergeListStructKey` is true
 	 */
-	export function hashIndex(index: number, mergeListStructKey: boolean = false): HashItem {
+	export function hashIndex(index: number): HashItem {
 		if (HashMap.has(index)) {
 			return HashMap.get(index)!
 		}
 
-		let hashed = doHashingOfNode(VisitTree.getNode(index), mergeListStructKey)
+		let hashed = doHashingOfNode(VisitTree.getNode(index))
 		HashMap.set(index, hashed)
 
 		return hashed
 	}
 
 	/** Hash a node, normalize and add a unique suffix to all variable nodes. */
-	function doHashingOfNode(rawNode: TS.Node, mergeListStructKey: boolean): HashItem {
+	function doHashingOfNode(rawNode: TS.Node): HashItem {
 		let usedScopes: Scope[] = []
 		let usedIndices: number[] = []
 		let node = rawNode
-
-		// `a[0] -> a['']`
-		// `map.get -> map['']`
-		if (mergeListStructKey
-			&& Helper.access.isAccess(rawNode)
-			&& Helper.access.isListStruct(rawNode.expression)
-		) {
-			node = factory.createElementAccessExpression(rawNode.expression, factory.createStringLiteral(''))
-		}
 
 		let hashVisited = ts.visitNode(node, (n: TS.Node) => {
 			return hashNodeVisitor(n, usedScopes, usedIndices)

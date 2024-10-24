@@ -17,10 +17,10 @@ export namespace Modifier {
 	/** All imports. */
 	const Imports: ListMap<string, string> = new ListMap()
 
-	/** The visiting indices the node at where will be moved. */
+	/** The visit indices the node at where will be moved. */
 	const RemovedIndices: Set<number> = new Set()
 
-	/** The visiting indices the node at where have been persisted. */
+	/** The visit indices the node at where have been persisted. */
 	const PersistedImportIndices: Set<number> = new Set()
 
 

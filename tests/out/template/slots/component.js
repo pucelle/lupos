@@ -48,28 +48,16 @@ const $html_1 = new HTMLMaker("<div>Rest Content</div>");
 });
 /*
 <root>
-    <div />
-</root>
-*/ const $template_2 = new TemplateMaker(function () {
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
-    return {
-        el: $node,
-        position: new SlotPosition(1, $node_0)
-    };
-});
-/*
-<root>
     <ChildComponent>Rest Content</ChildComponent>
 </root>
-*/ const $template_3 = new TemplateMaker(function ($context) {
+*/ const $template_2 = new TemplateMaker(function ($context) {
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node_0.firstChild;
     let $com_0 = new ChildComponent({}, $node_0);
     let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context, 0);
     $com_0.__applyRestSlotRangeNodes($node_1);
-    $slot_0.update(new CompiledTemplateResult($template_2, []));
+    $slot_0.update(new CompiledTemplateResult($template_3, []));
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),
@@ -77,6 +65,18 @@ const $html_1 = new HTMLMaker("<div>Rest Content</div>");
             [$com_0, 1],
             [$slot_0, 0]
         ]
+    };
+});
+/*
+<root>
+    <div />
+</root>
+*/ const $template_3 = new TemplateMaker(function () {
+    let $node = $html_0.make();
+    let $node_0 = $node.content.firstChild;
+    return {
+        el: $node,
+        position: new SlotPosition(1, $node_0)
     };
 });
 export class TestComponent extends Component {
@@ -91,7 +91,7 @@ export class TestComponent extends Component {
         return new CompiledTemplateResult($template_1, []);
     }
     testRestSlotContentWithPrecedingTemplateSlot() {
-        return new CompiledTemplateResult($template_3, []);
+        return new CompiledTemplateResult($template_2, []);
     }
 }
 class ChildComponent extends Component {

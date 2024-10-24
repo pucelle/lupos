@@ -1,7 +1,8 @@
 import type TS from 'typescript'
-import {factory, Modifier} from '../../../base'
+import {factory, Helper, Modifier, VisitTree} from '../../../base'
 import {FlowControlBase} from './base'
 import {SlotContentType} from '../../../enums'
+import {ForceTrackType, TrackingPatch} from '../../../ff'
 
 
 export class ForFlowControl extends FlowControlBase {
@@ -30,8 +31,26 @@ export class ForFlowControl extends FlowControlBase {
 			this.slot.diagnoseNormal('<lu:for ${...}> must accept a parameter as loop data!')
 		}
 
+		// Force tracking members of array.
+		else {
+			let ofValueNode = this.template.values.getRawValue(ofValueIndex)
+			let ofValueNodeIndex = VisitTree.getIndex(ofValueNode)
+			TrackingPatch.forceTrack(ofValueNodeIndex, ForceTrackType.Members)
+		}
+
 		if (fnValueIndex === null) {
 			this.slot.diagnoseNormal('<lu:for>${...}</> must accept a parameter as child item renderer!')
+		}
+		else {
+			let fnValueNode = this.template.values.getRawValue(fnValueIndex)
+
+			if (Helper.isFunctionLike(fnValueNode)) {
+				let firstParameter = fnValueNode.parameters[0]
+				if (firstParameter) {
+					let firstParameterIndex = VisitTree.getIndex(firstParameter)
+					TrackingPatch.forceTrack(firstParameterIndex, ForceTrackType.Self)
+				}
+			}
 		}
 
 		this.ofValueIndex = ofValueIndex
