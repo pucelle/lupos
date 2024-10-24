@@ -160,10 +160,10 @@ export class TestOptimizing extends Component {
     preventMoveIterationConditionOutward() {
         let props = [this.prop, this.prop];
         for (let i = 0; i < props[i].value; i++) {
-            trackGet(props, "");
             trackGet(props[i], "value");
         }
         trackGet(this, "prop");
+        trackGet(props, "");
         return 0;
     }
     moveIterationIncreasementOutward() {
@@ -193,10 +193,10 @@ export class TestOptimizing extends Component {
         let props = [this.prop, this.prop];
         for (let i = 0; i < 1; i++) {
             props[i].value;
-            trackGet(props, "");
             trackGet(props[i], "value");
         }
         trackGet(this, "prop");
+        trackGet(props, "");
         return 0;
     }
 }

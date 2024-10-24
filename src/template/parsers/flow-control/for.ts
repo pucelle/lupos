@@ -35,7 +35,7 @@ export class ForFlowControl extends FlowControlBase {
 		else {
 			let ofValueNode = this.template.values.getRawValue(ofValueIndex)
 			let ofValueNodeIndex = VisitTree.getIndex(ofValueNode)
-			TrackingPatch.forceTrack(ofValueNodeIndex, ForceTrackType.Members)
+			TrackingPatch.forceRecheck(ofValueNodeIndex, ForceTrackType.Members)
 		}
 
 		if (fnValueIndex === null) {
@@ -48,7 +48,7 @@ export class ForFlowControl extends FlowControlBase {
 				let firstParameter = fnValueNode.parameters[0]
 				if (firstParameter) {
 					let firstParameterIndex = VisitTree.getIndex(firstParameter)
-					TrackingPatch.forceTrack(firstParameterIndex, ForceTrackType.Self)
+					TrackingPatch.forceRecheck(firstParameterIndex, ForceTrackType.Self)
 				}
 			}
 		}

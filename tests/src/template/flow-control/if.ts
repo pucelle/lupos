@@ -5,6 +5,7 @@ export class TestIf extends Component {
 
 	prop: number = 1
 	content: string = ''
+	item: {value: number[]} | undefined = {value: [1]}
 
 	testIf() {
 		return html`
@@ -37,6 +38,14 @@ export class TestIf extends Component {
 			<lu:elseif ${this.prop}>Then Content 1</lu:elseif>
 			<lu:elseif ${this.prop}>Then Content 2</lu:elseif>
 			<lu:else>Then Content</lu:else>
+		`
+	}
+
+	testIfContentTracking() {
+		return html`
+			<lu:if ${this.item && this.item.value.length > 0}>
+				${this.item!.value.map(v => html`<div>${v}</div>`)}
+			</lu:if>
 		`
 	}
 }

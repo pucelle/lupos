@@ -38,9 +38,9 @@ export namespace TrackingPatch {
 
 	/** 
 	 * Force tracking node at specified visit index.
-	 * If `visitMembers` is true, for array type, will track members.
+	 * If tracking type is `Members`, for array type, will track members.
 	 */
-	export function forceTrack(index: number, type: ForceTrackType) {
+	export function forceRecheck(index: number, type: ForceTrackType) {
 		ForceTracked.set(index, type)
 	}
 

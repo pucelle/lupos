@@ -7,28 +7,28 @@ import {Context} from './context'
 
 
 
-function hashCapturedItem(item: CapturedItem): HashItem {
-	if (item.expIndex !== undefined) {
-		let hash = ScopeTree.hashIndex(item.index)
-		let name = item.keys!.map(key => `[${key}]`).join('')
-
-		return {
-			...hash,
-			name,
-		}
-	}
-	else {
-		return ScopeTree.hashIndex(item.index)
-	}
-}
-
-
 /** 
  * It attaches to each context,
  * Captures get and set expressions, and remember reference variables.
  */
 export class ContextCapturerOperator {
 
+	/** Hash a captured item. */
+	static hashCapturedItem(item: CapturedItem): HashItem {
+		if (item.expIndex !== undefined) {
+			let hash = ScopeTree.hashIndex(item.expIndex)
+			let name = hash.name + item.keys!.map(key => `[${key}]`).join('')
+	
+			return {
+				...hash,
+				name,
+			}
+		}
+		else {
+			return ScopeTree.hashIndex(item.index)
+		}
+	}
+		
 	/** Get intersected items across capturers. */
 	static intersectCapturedItems(capturers: ContextCapturer[]): CapturedItem[] {
 		let map: Map<string, number>
@@ -45,7 +45,7 @@ export class ContextCapturerOperator {
 					continue
 				}
 
-				let hashName = hashCapturedItem(item).name + '_of_capture_type_' + item.type
+				let hashName = ContextCapturerOperator.hashCapturedItem(item).name + '_of_capture_type_' + item.type
 				ownMap.set(hashName, item.index)
 			}
 
@@ -111,7 +111,7 @@ export class ContextCapturerOperator {
 		let residualItems: CapturedItem[] = []
 
 		for (let item of items) {
-			let hashed = hashCapturedItem(item)
+			let hashed = ContextCapturerOperator.hashCapturedItem(item)
 
 			// Leave contexts contain any referenced variable.
 			if (hashed.usedScopes.some(i => scopesLeaved.includes(i))) {
@@ -150,7 +150,7 @@ export class ContextCapturerOperator {
 					continue
 				}
 
-				let hashName = hashCapturedItem(item).name
+				let hashName = ContextCapturerOperator.hashCapturedItem(item).name
 
 				if (ownHashes.has(hashName)) {
 					removeFromList(group.items, item)
