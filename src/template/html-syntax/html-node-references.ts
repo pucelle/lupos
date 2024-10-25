@@ -18,13 +18,19 @@ export interface ReferenceItem {
 	node: HTMLNode
 
 	/** The node where visit from. */
-	visitFromNode: HTMLNode
+	fromNode: HTMLNode
 
-	/** 
-	 * The child index sequence, can be `-1` when been the last child.
-	 * If should ignore node when doing output, like template node, be `null`.
-	 */
-	visitSteps: number[] | null
+	/** Steps visit from `visitFromNode`. */
+	visitSteps: VisitStep[] | null
+}
+
+/** 
+ * The child node and index sequence, index can be `-1` when been the last child.
+ * If should ignore node when doing output, like template node, be `null`.
+ */
+interface VisitStep {
+	node: HTMLNode
+	index: number
 }
 
 export enum ReferenceItemTypeMask {
@@ -119,22 +125,22 @@ export class HTMLNodeReferences {
 	}
 
 	/** `steps` doesn't include current item sibling index. */
-	private *walkReferenceItem(item: DeepReferenceItem, visitFromNode: HTMLNode, parentalSteps: number[]): Iterable<ReferenceItem> {
+	private *walkReferenceItem(item: DeepReferenceItem, visitFromNode: HTMLNode, parentalSteps: VisitStep[]): Iterable<ReferenceItem> {
 		let node = item.node
-		let steps: number[] = [...parentalSteps]
-		let visitSteps: number[] | null = steps
+		let steps: VisitStep[] = [...parentalSteps]
+		let trueSteps: VisitStep[] | null = steps
 		let type: ReferenceItemTypeMask | 0 = 0
 
 		// No visit step for tree.
 		if (node !== this.root) {
-			steps.push(item.siblingIndex)
+			steps.push({node: item.node, index: item.siblingIndex})
 		}
 
 		// Template tags get removed, no visit steps, but still iterate them.
 		if (node.tagName === 'template'
 			&& node.parent === this.root
 		) {
-			visitSteps = null
+			trueSteps = null
 		}
 
 		// Output directly.
@@ -151,7 +157,7 @@ export class HTMLNodeReferences {
 		// f = a.b.c
 		// f.d
 		// f.e
-		if (item.children.length > 1 && node !== this.root && visitSteps !== null) {
+		if (item.children.length > 1 && node !== this.root && trueSteps !== null) {
 			type |= ReferenceItemTypeMask.PassingBy
 		}
 
@@ -162,12 +168,12 @@ export class HTMLNodeReferences {
 			yield {
 				type,
 				node,
-				visitFromNode,
-				visitSteps,
+				fromNode: visitFromNode,
+				visitSteps: trueSteps,
 			}
 			
 			for (let child of item.children) {
-				if (visitSteps) {
+				if (trueSteps) {
 					yield* this.walkReferenceItem(child, node, [])
 				}
 				else {

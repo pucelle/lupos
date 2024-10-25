@@ -295,7 +295,7 @@ export class TreeOutputHandler {
 	private outputHTMLReferences(): OutputNodeList {
 		let list: OutputNodeList = []
 
-		for (let {node, visitFromNode, visitSteps} of this.tree.references.output()) {
+		for (let {node, fromNode: visitFromNode, visitSteps} of this.tree.references.output()) {
 
 			// $node_0
 			let nodeName = this.tree.references.getRefedName(node)
@@ -336,14 +336,14 @@ export class TreeOutputHandler {
 			}
 
 			// $node.content.firstChild.lastChild.childNodes[0]
-			for (let step of visitSteps) {
-				if (step === 0) {
+			for (let {node, index} of visitSteps) {
+				if (index === 0) {
 					fromExp = factory.createPropertyAccessExpression(
 						fromExp,
 						'firstChild'
 					)
 				}
-				else if (step === -1) {
+				else if (index === -1) {
 					fromExp = factory.createPropertyAccessExpression(
 						fromExp,
 						'lastChild'
@@ -355,7 +355,15 @@ export class TreeOutputHandler {
 							fromExp,
 							factory.createIdentifier('childNodes')
 						),
-						factory.createNumericLiteral(step)
+						factory.createNumericLiteral(index)
+					)
+				}
+
+				// Access `template.content`.
+				if (node.tagName === 'template' || node.tagName === 'lu:portal') {
+					fromExp = factory.createPropertyAccessExpression(
+						fromExp,
+						'content'
 					)
 				}
 			}

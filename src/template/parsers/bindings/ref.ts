@@ -1,3 +1,4 @@
+import type TS from 'typescript'
 import {factory, Helper, TemplateSlotPlaceholder, ts, VisitTree} from '../../../base'
 import {BindingBase, BindingUpdateCallWith} from './base'
 import {TrackingPatch} from '../../../ff'
@@ -36,10 +37,23 @@ export class RefBinding extends BindingBase {
 		super.preInit()
 	}
 
+	private getRawValueNode(): TS.Expression | undefined {
+		let rawValueNode = this.slot.getFirstRawValueNode()
+
+		// `a!` -> `a`
+		if (rawValueNode && ts.isNonNullExpression(rawValueNode)) {
+			rawValueNode = rawValueNode.expression
+		}
+
+		return rawValueNode
+	}
+
 	/** Init things for `:ref`. */
 	private initRef() {
-		let rawValueNode = this.slot.getFirstRawValueNode()
+		let rawValueNode = this.getRawValueNode()
 		let beComponent = TemplateSlotPlaceholder.isComponent(this.node.tagName!)
+
+		
 
 		// If declare property as `XXXElement`, force ref element.
 		if (rawValueNode && beComponent) {
@@ -98,7 +112,7 @@ export class RefBinding extends BindingBase {
 	}
 	
 	protected patchCallMethodAndValues(callWith: BindingUpdateCallWith): BindingUpdateCallWith {
-		let rawValueNode = this.slot.getFirstRawValueNode()!
+		let rawValueNode = this.getRawValueNode()!
 		let callValue = callWith.values[0]
 
 		// this.refName ->
