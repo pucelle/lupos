@@ -203,7 +203,7 @@ export class Scope {
 	findClosestThisScope(): Scope {
 		let scope: Scope = this
 
-		while (!Helper.isFunctionLike(scope.node) && !ts.isSourceFile(scope.node)) {
+		while (!Helper.isNonArrowFunctionLike(scope.node) && !ts.isSourceFile(scope.node)) {
 			scope = scope.parent!
 		}
 

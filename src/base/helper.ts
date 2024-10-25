@@ -129,15 +129,19 @@ export namespace Helper {
 	}
 
 
-	/** Whether be function, method, or get/set accessor. */
+	/** Whether be function, method, or get/set accessor, or arrow function. */
 	export function isFunctionLike(node: TS.Node): node is TS.FunctionLikeDeclaration {
+		return isNonArrowFunctionLike(node)
+			|| ts.isArrowFunction(node)
+	}
+
+	/** Whether be function, method, or get/set accessor, but arrow function is excluded. */
+	export function isNonArrowFunctionLike(node: TS.Node): node is TS.FunctionLikeDeclaration {
 		return ts.isMethodDeclaration(node)
 			|| ts.isMethodSignature(node)
 			|| ts.isFunctionDeclaration(node)
 			|| ts.isFunctionExpression(node)
 			|| ts.isGetAccessorDeclaration(node)
-			|| ts.isSetAccessorDeclaration(node)
-			|| ts.isArrowFunction(node)
 			|| ts.isConstructorDeclaration(node)
 	}
 

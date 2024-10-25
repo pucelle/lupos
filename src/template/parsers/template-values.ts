@@ -34,7 +34,7 @@ export class TemplateValues {
 
 	/** Returns whether the value at specified index can turn from mutable to static. */
 	isIndexCanTurnStatic(valueIndex: number): boolean {
-		return (this.indicesMutable.get(valueIndex)! & MutableMask.CantTransfer) === 0
+		return (this.indicesMutable.get(valueIndex)! & MutableMask.CantTransferRead) === 0
 	}
 
 	/** Returns whether the value at specified index has been outputted as mutable. */
@@ -241,7 +241,7 @@ export class TemplateValues {
 	outputRawValue(rawNode: TS.Expression, valueIndex: number, forceStatic: boolean = false): TS.Expression {
 		let mutableMask = ScopeTree.testMutable(rawNode)
 		let mutable = (mutableMask & MutableMask.Mutable) > 0
-		let canTurn = (mutableMask & MutableMask.CantTransfer) === 0
+		let canTurn = (mutableMask & MutableMask.CantTransferRead) === 0
 		let asStatic = !mutable || forceStatic && canTurn
 
 		return this.outValueNodeOfIndex(rawNode, valueIndex, asStatic)

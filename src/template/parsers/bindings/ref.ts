@@ -7,8 +7,8 @@ import {getLatestBindingInfo, LatestBindingInfo} from './latest-binding'
 
 export class RefBinding extends BindingBase {
 
-	/** :ref=${access | variable}. */
-	private useAccess: boolean = false
+	/** :ref=${access}. */
+	private useContextAccess: boolean = false
 
 	/** Previous binding information. */
 	private previousBindingInfo: LatestBindingInfo | null = null
@@ -16,7 +16,7 @@ export class RefBinding extends BindingBase {
 	outputValue(forceStatic: boolean = false) {
 
 		// Ignore original ref value output.
-		if (this.useAccess) {
+		if (this.useContextAccess) {
 			return {
 				joint: factory.createNull(),
 				valueNodes: [],
@@ -53,8 +53,6 @@ export class RefBinding extends BindingBase {
 		let rawValueNode = this.getRawValueNode()
 		let beComponent = TemplateSlotPlaceholder.isComponent(this.node.tagName!)
 
-		
-
 		// If declare property as `XXXElement`, force ref element.
 		if (rawValueNode && beComponent) {
 			let type = Helper.types.typeOf(rawValueNode)
@@ -76,22 +74,38 @@ export class RefBinding extends BindingBase {
 		}
 
 		// Will be compiled as a function and become static.
-		if (rawValueNode &&
-			(Helper.access.isAccess(rawValueNode)
-				&& Helper.symbol.resolveDeclaration(rawValueNode, Helper.isPropertyLike)
-				|| Helper.variable.isVariableIdentifier(rawValueNode)
-			)
-		) {
-			this.useAccess = true
+		if (rawValueNode && this.shouldUseContextAccess(rawValueNode)) {
+			this.useContextAccess = true
 			TrackingPatch.ignore(VisitTree.getIndex(rawValueNode))
 		}
+	}
+
+	private shouldUseContextAccess(rawValueNode: TS.Expression): boolean {
+		if (!rawValueNode) {
+			return false
+		}
+
+		let beProperty = Helper.access.isAccess(rawValueNode)
+			&& Helper.symbol.resolveDeclaration(rawValueNode, Helper.isPropertyLike)
+		
+		if (!beProperty) {
+			return false
+		}
+
+		let topmost = rawValueNode
+		while (Helper.access.isAccess(topmost)) {
+			topmost = topmost.expression
+		}
+
+		// Only this.xxx.xxx
+		return topmost.kind === ts.SyntaxKind.ThisKeyword
 	}
 
 	protected initParameters() {
 		super.initParameters()
 
 		// Be overwritten by built expressions.
-		if (this.useAccess) {
+		if (this.useContextAccess) {
 			this.parameterList = null
 		}
 
@@ -106,7 +120,7 @@ export class RefBinding extends BindingBase {
 	}
 
 	protected initLatestVariableNames() {
-		if (!this.useAccess) {
+		if (!this.useContextAccess) {
 			super.initLatestVariableNames()
 		}
 	}
@@ -117,7 +131,7 @@ export class RefBinding extends BindingBase {
 
 		// this.refName ->
 		// function(){ this.refName = previousBinding }
-		if (this.previousBindingInfo && this.useAccess) {
+		if (this.previousBindingInfo && this.useContextAccess) {
 			callValue = factory.createFunctionExpression(
 				undefined,
 				undefined,
@@ -195,7 +209,7 @@ export class RefBinding extends BindingBase {
 
 		// this.refName ->
 		// function(refed){ this.refName = refed }
-		else if (this.useAccess) {
+		else if (this.useContextAccess) {
 			callValue = factory.createFunctionExpression(
 				undefined,
 				undefined,

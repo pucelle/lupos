@@ -39,7 +39,7 @@ export enum MutableMask {
 	 * 
 	 * This mask byte is available only when Mutable byte is 1.
 	 */
-	CantTransfer = 2,
+	CantTransferRead = 2,
 }
 
 
@@ -250,15 +250,7 @@ export namespace ScopeTree {
 	 * then the hashing is unique across whole source file.
 	 */
 	function hashVariableName(rawNode: TS.Identifier | TS.ThisExpression): {name: string, scope: Scope} {
-		let scope: Scope
-
-		if (rawNode.kind === ts.SyntaxKind.ThisKeyword) {
-			scope = findClosestByNode(rawNode).findClosestThisScope()
-		}
-		else {
-			scope = findDeclaredScope(rawNode) || findClosestByNode(rawNode)
-		}
-
+		let scope = findDeclaredScope(rawNode) || findClosestByNode(rawNode)
 		let name = Helper.getFullText(rawNode)
 		let suffix = scope.visitIndex
 
@@ -284,8 +276,11 @@ export namespace ScopeTree {
 	
 	
 	/** Check at which scope the specified named variable declared. */
-	export function findDeclaredScope(rawNode: TS.Identifier, fromScope = findClosestByNode(rawNode)): Scope | null {
-		if (fromScope.hasLocalVariable(rawNode.text)) {
+	export function findDeclaredScope(rawNode: TS.Identifier | TS.ThisExpression, fromScope = findClosestByNode(rawNode)): Scope | null {
+		if (rawNode.kind === ts.SyntaxKind.ThisKeyword) {
+			return fromScope.findClosestThisScope()
+		}
+		else if (fromScope.hasLocalVariable(rawNode.text)) {
 			return fromScope
 		}
 		else if (fromScope.parent) {
@@ -394,7 +389,7 @@ export namespace ScopeTree {
 			// Become mutable and can't transfer.
 			else {
 				mutable |= MutableMask.Mutable
-				mutable |= MutableMask.CantTransfer
+				mutable |= MutableMask.CantTransferRead
 			}
 		}
 
@@ -457,7 +452,7 @@ export namespace ScopeTree {
 		}
 
 		// If enters non-arrow function declaration, cause can't replace `this`, otherwise can't.
-		canReplaceThis &&= !(Helper.isFunctionLike(node) && !ts.isArrowFunction(node))
+		canReplaceThis &&= !Helper.isNonArrowFunctionLike(node)
 
 		return ts.visitEachChild(node, (node: TS.Node) => {
 			return transferToTopmostScopeVisitor(node, rawTopNode, canReplaceThis, replacer, insideFunctionScope)
