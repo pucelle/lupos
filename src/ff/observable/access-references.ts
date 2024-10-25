@@ -100,7 +100,7 @@ export namespace AccessReferences {
 
 		// `a?.b` has been replaced to `a.b`
 		if (Helper.access.isAccess(node) || Helper.variable.isVariableIdentifier(node)) {
-			let hashName = ScopeTree.hashNode(node, true).name
+			let hashName = ScopeTree.hashNode(node).name
 			referenceMap.add(hashName, topIndex)
 		}
 
@@ -116,7 +116,7 @@ export namespace AccessReferences {
 	export function visitAssignment(node: TS.Expression) {
 		if (Helper.access.isAccess(node) || Helper.variable.isVariableIdentifier(node)) {
 			let mutableIndex = VisitTree.getIndex(node)
-			let hashName = ScopeTree.hashNode(node, true).name
+			let hashName = ScopeTree.hashNode(node).name
 			let refIndices = referenceMap.get(hashName)
 			
 			// For all the existing references before current assignment.

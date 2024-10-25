@@ -74,7 +74,7 @@ export class KeyedFlowControl extends FlowControlBase {
 
 		// Add it as a value item to original template, and returned it's reference.
 		let toResultValue = resultValue
-			? this.template.values.outputCustomValue(resultValue)
+			? this.slot.outputCustomValue(resultValue)
 			: factory.createNull()
 
 		// $block_0.update(newKey, $values[i])

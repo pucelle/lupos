@@ -52,11 +52,17 @@ export class TestEvent extends Component {
 	}
 
 	testInlineEventHandler() {
-		return html`<div @click=${() => this.booleanValue = true} />`
+		return html`<div @click=${() => {this.booleanValue = true}} />`
 	}
 
 	testInlineCallMethod() {
 		return html`<div @click=${() => this.handleEventWithParameter(this.booleanValue)} />`
+	}
+
+	testLocalAssignment() {
+		let value: any
+		value
+		return html`<div @click=${(e: any) => value = e} />`
 	}
 }
 

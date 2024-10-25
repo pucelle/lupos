@@ -52,6 +52,12 @@ export class TestRefBinding extends Component {
 			:ref.binding=${this.refBinding}
 		/>`
 	}
+
+	testRefAsLocal() {
+		let value: any
+
+		return html`<div :ref=${value} />`
+	}
 }
 
 class ChildComponent extends Component {}

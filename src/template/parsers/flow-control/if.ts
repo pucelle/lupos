@@ -142,7 +142,7 @@ export class IfFlowControl extends FlowControlBase {
 		let value = Helper.pack.toConditionalExpression(conditions, contents)
 
 		// Add it as a value item to original template, and returned it's reference.
-		let toValue = this.template.values.outputCustomValue(value)
+		let toValue = this.slot.outputCustomValue(value)
 
 		return toValue
 	}

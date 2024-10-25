@@ -38,6 +38,9 @@ export abstract class SlotParserBase {
 	/** Whether slot attach to an dynamic component. */
 	private readonly onDynamicComponent: boolean
 
+	/** Has any custom value outputted. */
+	private customValueOutputted: boolean = false
+
 	constructor(
 		name: string | null,
 		strings: string[] | null,
@@ -101,6 +104,7 @@ export abstract class SlotParserBase {
 	isAnyValueOutputAsMutable(): boolean {
 		return this.valueIndices !== null
 			&& this.valueIndices.some(index => this.template.values.isIndexOutputAsMutable(index))
+			|| this.customValueOutputted
 	}
 
 	/** 
@@ -141,6 +145,7 @@ export abstract class SlotParserBase {
 			}
 
 			hashes.push(hash)
+
 			return this.tree.makeUniqueLatestName()
 		})
 
@@ -232,11 +237,20 @@ export abstract class SlotParserBase {
 	 * Get value node, either `$values[0]`, or `"..."`.
 	 * Can only use it when outputting update.
 	 */
-	outputValue(forceStatic: boolean = false): {
+	outputValue(asCallback: boolean = false): {
 		joint: TS.Expression,
 		valueNodes: TS.Expression[],
 	} {
-		return this.template.values.outputValue(this.strings, this.valueIndices, forceStatic)
+		return this.template.values.outputValue(this.strings, this.valueIndices, asCallback)
+	}
+
+	/** 
+	 * Add a custom value to value list,
+	 * and return reference of this value.
+	 */
+	outputCustomValue(node: TS.Expression) {
+		this.customValueOutputted = true
+		return this.template.values.outputCustomValue(node)
 	}
 
 	/** `$latest_0 !== $values[0], ...` */
@@ -446,6 +460,7 @@ export abstract class SlotParserBase {
 	}
 
 
+	/** Diagnose missing component import of current node. */
 	diagnoseMissingTagImport(message: string) {
 		let start = this.node.start + 1
 		let length = this.node.tagName!.length
@@ -453,6 +468,7 @@ export abstract class SlotParserBase {
 		DiagnosticModifier.addMissingImport(start, length, message)
 	}
 
+	/** Diagnose normal of current node. */
 	diagnoseNormal(message: string) {
 		let start = this.node.start + 1
 		let length = this.node.tagName!.length

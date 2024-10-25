@@ -7,16 +7,22 @@ import {getLatestBindingInfo, LatestBindingInfo} from './latest-binding'
 
 export class RefBinding extends BindingBase {
 
-	/** :ref=${access}. */
+	/** :ref=${xxx}. */
+	private useAccess: boolean = false
+
+	/** :ref=${this.xxx}. */
 	private useContextAccess: boolean = false
+
+	/** :ref=${localVariable}. */
+	private useLocalAccess: boolean = false
 
 	/** Previous binding information. */
 	private previousBindingInfo: LatestBindingInfo | null = null
 
-	outputValue(forceStatic: boolean = false) {
+	outputValue(asCallback: boolean = false) {
 
-		// Ignore original ref value output.
-		if (this.useContextAccess) {
+		// Ignore original ref value output and avoid output original access node.
+		if (this.useAccess) {
 			return {
 				joint: factory.createNull(),
 				valueNodes: [],
@@ -24,7 +30,7 @@ export class RefBinding extends BindingBase {
 		}
 
 		else {
-			return super.outputValue(forceStatic)
+			return super.outputValue(asCallback)
 		}
 	}
 
@@ -74,23 +80,26 @@ export class RefBinding extends BindingBase {
 		}
 
 		// Will be compiled as a function and become static.
-		if (rawValueNode && this.shouldUseContextAccess(rawValueNode)) {
-			this.useContextAccess = true
-			TrackingPatch.ignore(VisitTree.getIndex(rawValueNode))
+		if (rawValueNode) {
+			this.initAccessUsing(rawValueNode)
+			
+			if (this.useAccess) {
+				TrackingPatch.ignore(VisitTree.getIndex(rawValueNode))
+			}
 		}
 	}
 
-	private shouldUseContextAccess(rawValueNode: TS.Expression): boolean {
+	private initAccessUsing(rawValueNode: TS.Expression) {
 		if (!rawValueNode) {
-			return false
+			return
 		}
 
-		let beProperty = Helper.access.isAccess(rawValueNode)
-			&& Helper.symbol.resolveDeclaration(rawValueNode, Helper.isPropertyLike)
-		
-		if (!beProperty) {
-			return false
-		}
+		let bePropertyOrVariable = Helper.access.isAccess(rawValueNode)
+				&& !!Helper.symbol.resolveDeclaration(rawValueNode, Helper.isPropertyLike)
+			|| Helper.variable.isVariableIdentifier(rawValueNode)
+				&& !!Helper.symbol.resolveDeclaration(rawValueNode, ts.isVariableDeclaration)
+
+		this.useAccess = bePropertyOrVariable
 
 		let topmost = rawValueNode
 		while (Helper.access.isAccess(topmost)) {
@@ -98,14 +107,15 @@ export class RefBinding extends BindingBase {
 		}
 
 		// Only this.xxx.xxx
-		return topmost.kind === ts.SyntaxKind.ThisKeyword
+		this.useContextAccess = topmost.kind === ts.SyntaxKind.ThisKeyword
+		this.useLocalAccess = !this.useContextAccess
 	}
 
 	protected initParameters() {
 		super.initParameters()
 
 		// Be overwritten by built expressions.
-		if (this.useContextAccess) {
+		if (this.useAccess) {
 			this.parameterList = null
 		}
 
@@ -120,7 +130,7 @@ export class RefBinding extends BindingBase {
 	}
 
 	protected initLatestVariableNames() {
-		if (!this.useContextAccess) {
+		if (!this.useAccess) {
 			super.initLatestVariableNames()
 		}
 	}
@@ -131,7 +141,7 @@ export class RefBinding extends BindingBase {
 
 		// this.refName ->
 		// function(){ this.refName = previousBinding }
-		if (this.previousBindingInfo && this.useContextAccess) {
+		if (this.previousBindingInfo && this.useAccess) {
 			callValue = factory.createFunctionExpression(
 				undefined,
 				undefined,
@@ -209,7 +219,7 @@ export class RefBinding extends BindingBase {
 
 		// this.refName ->
 		// function(refed){ this.refName = refed }
-		else if (this.useContextAccess) {
+		else if (this.useAccess) {
 			callValue = factory.createFunctionExpression(
 				undefined,
 				undefined,
@@ -236,6 +246,11 @@ export class RefBinding extends BindingBase {
 					false
 				)
 			)
+		}
+
+		// Output ref binding function as a dynamic value.
+		if (this.useLocalAccess) {
+			callValue = this.slot.outputCustomValue(callValue)
 		}
 
 		// () => {...}

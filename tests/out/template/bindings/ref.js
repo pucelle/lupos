@@ -177,6 +177,25 @@ const $html_0 = new HTMLMaker("<div></div>");
         ]
     };
 });
+/*
+<root>
+    <div :ref=${value} />
+</root>
+*/ const $template_8 = new TemplateMaker(function ($context) {
+    let $node = $html_0.make();
+    let $node_0 = $node.content.firstChild;
+    let $binding_0 = new RefBinding($node_0, $context, ["el"]);
+    return {
+        el: $node,
+        position: new SlotPosition(1, $node_0),
+        update($values) {
+            $binding_0.update($values[0]);
+        },
+        parts: [
+            [$binding_0, 1]
+        ]
+    };
+});
 export class TestRefBinding extends Component {
     refEl;
     refCom;
@@ -210,6 +229,12 @@ export class TestRefBinding extends Component {
         trackGet(this, "shouldTransition");
         return new CompiledTemplateResult($template_7, [
             this.shouldTransition
+        ]);
+    }
+    testRefAsLocal() {
+        let value;
+        return new CompiledTemplateResult($template_8, [
+            function (refed) { value = refed; }
         ]);
     }
 }

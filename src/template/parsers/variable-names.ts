@@ -1,10 +1,10 @@
-import {DoubleKeysMap} from "../../utils"
+import {DoubleKeysMap} from '../../utils'
+
 
 export namespace VariableNames {
 
 	export const context = '$context'
 	export const values = '$values'
-	export const latestValues = '$latestValues'
 	export const html = '$html'
 	export const template = '$template'
 	export const node = '$node'

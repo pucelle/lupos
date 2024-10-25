@@ -180,15 +180,12 @@ const $html_2 = new HTMLMaker("<!----><div></div><!---->");
 });
 /*
 <root>
-    <div @click=${() => this.booleanValue = true} />
+    <div @click=${() => {this.booleanValue = true}} />
 </root>
 */ const $template_10 = new TemplateMaker(function ($context) {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
-    $node_0.addEventListener("click", (() => {
-        trackSet($context, "booleanValue");
-        return $context.booleanValue = true;
-    }).bind($context));
+    $node_0.addEventListener("click", (() => { $context.booleanValue = true; trackSet($context, "booleanValue"); }).bind($context));
     return {
         el: $node,
         position: new SlotPosition(1, $node_0)
@@ -205,6 +202,25 @@ const $html_2 = new HTMLMaker("<!----><div></div><!---->");
     return {
         el: $node,
         position: new SlotPosition(1, $node_0)
+    };
+});
+/*
+<root>
+    <div @click=${(e: any) => value = e} />
+</root>
+*/ const $template_12 = new TemplateMaker(function ($context) {
+    let $latest_0;
+    let $node = $html_0.make();
+    let $node_0 = $node.content.firstChild;
+    $node_0.addEventListener("click", (...args) => {
+        $latest_0.call($context, ...args);
+    });
+    return {
+        el: $node,
+        position: new SlotPosition(1, $node_0),
+        update($values) {
+            $latest_0 = $values[0];
+        }
     };
 });
 export class TestEvent extends Component {
@@ -258,6 +274,13 @@ export class TestEvent extends Component {
     }
     testInlineCallMethod() {
         return new CompiledTemplateResult($template_11, []);
+    }
+    testLocalAssignment() {
+        let value;
+        value;
+        return new CompiledTemplateResult($template_12, [
+            (e) => value = e
+        ]);
     }
 }
 class Com1 extends Component {

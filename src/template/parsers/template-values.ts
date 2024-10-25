@@ -1,21 +1,24 @@
 import type TS from 'typescript'
 import {factory, Helper, Interpolator, MutableMask, ScopeTree, ts} from '../../base'
 import {VariableNames} from './variable-names'
+import {TreeParser} from './tree'
 
 
 /** Help to manage all value nodes. */
 export class TemplateValues {
 
 	readonly rawValueNodes: TS.Expression[]
+	readonly tree: TreeParser
 
 	private valueHash: Map<string, number> = new Map()
 	private outputNodes: TS.Expression[] = []
 	private indicesMutable: Map<number, MutableMask> = new Map()
 	private indicesOutputAsMutable: Set<number> = new Set()
-	private indicesTransferredWithinFunction: Set<number> = new Set()
+	private transferredLatestNames: Map<string, number> = new Map()
 
-	constructor(valueNodes: TS.Expression[]) {
+	constructor(valueNodes: TS.Expression[], tree: TreeParser) {
 		this.rawValueNodes = valueNodes
+		this.tree = tree
 		this.checkIndicesMutable()
 	}
 	
@@ -34,17 +37,12 @@ export class TemplateValues {
 
 	/** Returns whether the value at specified index can turn from mutable to static. */
 	isIndexCanTurnStatic(valueIndex: number): boolean {
-		return (this.indicesMutable.get(valueIndex)! & MutableMask.CantTransferRead) === 0
+		return (this.indicesMutable.get(valueIndex)! & MutableMask.CantTransfer) === 0
 	}
 
 	/** Returns whether the value at specified index has been outputted as mutable. */
 	isIndexOutputAsMutable(valueIndex: number): boolean {
 		return this.indicesOutputAsMutable.has(valueIndex)!
-	}
-
-	/** Returns whether value at any index has been transferred to topmost scope. */
-	isAnyIndexTransferredWithinFunction(): boolean {
-		return this.indicesTransferredWithinFunction.size > 0
 	}
 
 	/** Get raw value node at index. */
@@ -69,10 +67,14 @@ export class TemplateValues {
 	/** 
 	 * Use value node at index, either `$values[0]`, or static raw node.
 	 * Can only use it when outputting update.
-	 * If `forceStatic`, will treat it as static value node,
+	 * If `asCallback`, will treat it as static value node,
 	 * must check `isIndexCanTurnStatic()` firstly and ensure it can.
 	 */
-	outputValue(strings: string[] | null = null, valueIndices: number[] | null, forceStatic: boolean = false): {
+	outputValue(
+		strings: string[] | null = null,
+		valueIndices: number[] | null,
+		asCallback: boolean = false
+	): {
 		joint: TS.Expression,
 		valueNodes: TS.Expression[],
 	} {
@@ -96,7 +98,7 @@ export class TemplateValues {
 			let rawValueNode = this.rawValueNodes[valueIndex]
 			let mutable = this.isIndexMutable(valueIndex)
 			let canTurn = this.isIndexCanTurnStatic(valueIndex)
-			let asStatic = !mutable || forceStatic && canTurn
+			let asStatic = !mutable || asCallback && canTurn
 
 			return this.outValueNodeOfIndex(rawValueNode, valueIndex, asStatic)
 		})
@@ -118,6 +120,7 @@ export class TemplateValues {
 
 	/** Output a raw node of full or partial specified index. */
 	private outValueNodeOfIndex(rawValueNode: TS.Expression, valueIndex: number, asStatic: boolean): TS.Expression {
+
 		// Output static node.
 		if (asStatic) {
 			let interpolated = Interpolator.outputNodeSelf(rawValueNode) as TS.Expression
@@ -125,7 +128,7 @@ export class TemplateValues {
 			let transferred = ScopeTree.transferToTopmostScope(
 				interpolated,
 				rawValueNode,
-				this.transferNodeToTopmostScope.bind(this, valueIndex)
+				this.transferNodeToTopmostScope.bind(this)
 			)
 
 			return transferred
@@ -143,14 +146,13 @@ export class TemplateValues {
 	 * `this.onClick` -> `$context.onClick`
 	 * `localVariableName` -> `$values[...]`, and add it to output value list.
 	 */
-	private transferNodeToTopmostScope(valueIndex: number, node: TS.Identifier | TS.ThisExpression, insideFunction: boolean): TS.Expression {
+	private transferNodeToTopmostScope(
+		node: TS.Identifier | TS.ThisExpression,
+		insideFunction: boolean, 
+	): TS.Expression {
 
 		// Move variable name as an item to output value list.
 		if (ts.isIdentifier(node)) {
-			if (insideFunction) {
-				this.indicesTransferredWithinFunction.add(valueIndex)
-			}
-
 			return this.outputNodeAsValue(node, insideFunction)
 		}
 
@@ -180,14 +182,17 @@ export class TemplateValues {
 			this.valueHash.set(hash, valueIndex)
 		}
 
-		let valueName = transferringWithinFunction
-			? VariableNames.latestValues
-			: VariableNames.values
-
-		return factory.createElementAccessExpression(
-			factory.createIdentifier(valueName),
-			factory.createNumericLiteral(valueIndex)
-		)
+		if (transferringWithinFunction) {
+			let latestName = this.tree.makeUniqueLatestName()
+			this.transferredLatestNames.set(latestName, valueIndex)
+			return factory.createIdentifier(latestName)
+		}
+		else {
+			return factory.createElementAccessExpression(
+				factory.createIdentifier(VariableNames.values),
+				factory.createNumericLiteral(valueIndex)
+			)
+		}
 	}
 
 	/** 
@@ -230,6 +235,7 @@ export class TemplateValues {
 	outputCustomValue(node: TS.Expression): TS.Expression {
 		let valueIndex = this.outputNodes.length
 		this.outputNodes.push(node)
+		this.indicesOutputAsMutable.add(valueIndex)
 
 		return factory.createElementAccessExpression(
 			factory.createIdentifier(VariableNames.values),
@@ -238,11 +244,11 @@ export class TemplateValues {
 	}
 
 	/** Output a single value from a raw node. */
-	outputRawValue(rawNode: TS.Expression, valueIndex: number, forceStatic: boolean = false): TS.Expression {
+	outputRawValue(rawNode: TS.Expression, valueIndex: number, asCallback: boolean = false): TS.Expression {
 		let mutableMask = ScopeTree.testMutable(rawNode)
 		let mutable = (mutableMask & MutableMask.Mutable) > 0
-		let canTurn = (mutableMask & MutableMask.CantTransferRead) === 0
-		let asStatic = !mutable || forceStatic && canTurn
+		let canTurn = (mutableMask & MutableMask.CantTransfer) === 0
+		let asStatic = !mutable || asCallback && canTurn
 
 		return this.outValueNodeOfIndex(rawNode, valueIndex, asStatic)
 	}
@@ -252,9 +258,14 @@ export class TemplateValues {
 	 * Use for passing several parameters to a binding,
 	 * like `:binding=${value1, value2}`, or `:binding=${(value1, value2)}`.
 	 */
-	outputRawValueList(rawNodes: TS.Expression[], valueIndex: number, forceStatic: boolean = false): TS.Expression[] {
-		let valueNodes = rawNodes.map(rawNode => this.outputRawValue(rawNode, valueIndex, forceStatic))
+	outputRawValueList(rawNodes: TS.Expression[], valueIndex: number, asCallback: boolean = false): TS.Expression[] {
+		let valueNodes = rawNodes.map(rawNode => this.outputRawValue(rawNode, valueIndex, asCallback))
 		return valueNodes
+	}
+
+	/** Output latest names and associated value indices. */
+	outputTransferredLatestNames(): Iterable<[string, number]> {
+		return this.transferredLatestNames.entries()
 	}
 
 	/** Output all values to an array. */

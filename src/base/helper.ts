@@ -618,7 +618,7 @@ export namespace Helper {
 		 * get the value assigning from.
 		 * `b` of `a = b`
 		 */
-		export function getFrom(node: AssignmentNode): TS.Expression {
+		export function getFromExpression(node: AssignmentNode): TS.Expression {
 			if (ts.isBinaryExpression(node)) {
 				return node.right
 			}

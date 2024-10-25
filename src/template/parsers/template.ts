@@ -27,19 +27,18 @@ export class TemplateParser {
 
 	constructor(type: TemplateType, root: HTMLRoot, values: TS.Expression[], rawNode: TS.Node) {
 		this.type = type
-		this.values = new TemplateValues(values)
 		this.rawNode = rawNode
-		this.addTreeParser(root, null, null)
+
+		let tree = this.addTreeParser(root, null, null)
+		this.values = new TemplateValues(values, tree)
+		tree.init()
 	}
 
 	/** Add a root and parent tree parser. */
 	addTreeParser(root: HTMLRoot, parent: TreeParser | null, fromNode: HTMLNode | null): TreeParser {
-		let parser = new TreeParser(this, root, parent, fromNode)
-		
-		this.treeParsers.push(parser)
-		parser.init()
-		
-		return parser
+		let tree = new TreeParser(this, root, parent, fromNode)
+		this.treeParsers.push(tree)
+		return tree
 	}
 
 	/** 

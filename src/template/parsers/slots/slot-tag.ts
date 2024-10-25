@@ -14,11 +14,6 @@ export class SlotTagSlotParser extends SlotParserBase {
 	/** $slot_0 */
 	private slotVariableName: string = ''
 
-	/** Named slot should be updated dynamically. */
-	isAnyValueOutputAsMutable(): boolean {
-		return !!this.name
-	}
-
 	preInit() {
 
 		// Slot default content.
@@ -140,7 +135,7 @@ export class SlotTagSlotParser extends SlotParserBase {
 		}
 
 		// Add it as a value item to original template, and returned it's reference.
-		let toValue = this.template.values.outputCustomValue(value)
+		let toValue = this.outputCustomValue(value)
 
 		// $slot_0.update($values[0])
 		return factory.createCallExpression(

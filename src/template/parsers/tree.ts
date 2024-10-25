@@ -508,9 +508,11 @@ export class TreeParser {
 	 * */
 	separateChildrenAsSubTree(node: HTMLNode): TreeParser {
 		let root = HTMLRoot.fromSeparatingChildren(node)
-		return this.template.addTreeParser(root, this, node)
-	}
+		let tree = this.template.addTreeParser(root, this, node)
+		tree.init()
 
+		return tree
+	}
 	
 
 	/** Return variable name to reference current template maker, like `$template_0`. */

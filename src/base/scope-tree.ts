@@ -39,7 +39,7 @@ export enum MutableMask {
 	 * 
 	 * This mask byte is available only when Mutable byte is 1.
 	 */
-	CantTransferRead = 2,
+	CantTransfer = 2,
 }
 
 
@@ -357,10 +357,10 @@ export namespace ScopeTree {
 
 	/** Test whether expression represented value is mutable. */
 	export function testMutable(rawNode: TS.Expression): MutableMask {
-		return testMutableVisitor(rawNode, false)
+		return testMutableVisitor(rawNode, false, false)
 	}
 
-	function testMutableVisitor(rawNode: TS.Node, insideFunctionScope: boolean): MutableMask {
+	function testMutableVisitor(rawNode: TS.Node, insideFunctionScope: boolean, insideAssignmentTo: boolean): MutableMask {
 		let mutable: MutableMask = 0
 
 		// Inside of a function scope.
@@ -369,7 +369,23 @@ export namespace ScopeTree {
 		// Com from typescript library.
 		if (Helper.symbol.isOfTypescriptLib(rawNode)) {}
 
-		// Variable or property accessing
+		// `a` of `a.b = xx`
+		else if (insideFunctionScope && insideAssignmentTo && Helper.variable.isVariableIdentifier(rawNode)) {
+			let declaredInTopmostScope = isDeclaredInTopmostScope(rawNode)
+
+			// Assignment is mutable.
+			if (declaredInTopmostScope) {
+				mutable |= MutableMask.Mutable
+			}
+
+			// Assign to local variable and can't transfer.
+			else {
+				mutable |= MutableMask.Mutable
+				mutable |= MutableMask.CantTransfer
+			}
+		}
+
+		// `a.b` or `a`
 		else if (Helper.variable.isVariableIdentifier(rawNode)
 			|| Helper.access.isAccess(rawNode)
 		) {
@@ -378,7 +394,8 @@ export namespace ScopeTree {
 			let declaredAsConst = isDeclaredAsConstLike(rawNode)
 
 			// Declared as const, or reference at a function, not mutable.
-			if (declaredAsConst || insideFunctionScope ) {}
+			// If inside a function but also inside an assignment, not ignore it.
+			if (declaredAsConst || insideFunctionScope) {}
 
 			// If reference variable in function scope, become mutable, and can transfer.
 			// If declared in topmost scope, also mutable, and can transfer.
@@ -389,14 +406,26 @@ export namespace ScopeTree {
 			// Become mutable and can't transfer.
 			else {
 				mutable |= MutableMask.Mutable
-				mutable |= MutableMask.CantTransferRead
+				mutable |= MutableMask.CantTransfer
 			}
 		}
 
-		ts.visitEachChild(rawNode, (node: TS.Node) => {
-			mutable |= testMutableVisitor(node, insideFunctionScope)
-			return node
-		}, transformContext)
+		// `a = b`
+		if (Helper.assign.isAssignment(rawNode)) {
+			for (let to of Helper.assign.getToExpressions(rawNode)) {
+				mutable |= testMutableVisitor(to, insideFunctionScope, true)
+			}
+
+			mutable |= testMutableVisitor(Helper.assign.getFromExpression(rawNode), insideFunctionScope, false)
+		}
+
+		// Others.
+		else {
+			ts.visitEachChild(rawNode, (node: TS.Node) => {
+				mutable |= testMutableVisitor(node, insideFunctionScope, insideAssignmentTo)
+				return node
+			}, transformContext)
+		}
 
 		return mutable
 	}

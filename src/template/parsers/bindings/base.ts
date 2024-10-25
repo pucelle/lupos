@@ -84,7 +84,7 @@ export class BindingBase {
 	 * Get value node, either `$values[0]`, or `"..."`.
 	 * Can only use it when outputting update.
 	 */
-	outputValue(forceStatic: boolean = false): {
+	outputValue(asCallback: boolean = false): {
 		joint: TS.Expression,
 		valueNodes: TS.Expression[],
 	} {
@@ -100,7 +100,7 @@ export class BindingBase {
 			}
 		}
 		else {
-			return this.slot.outputValue(forceStatic)
+			return this.slot.outputValue(asCallback)
 		}
 	}
 

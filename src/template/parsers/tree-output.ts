@@ -52,7 +52,7 @@ export class TreeOutputHandler {
 		let {init, moreInit, staticUpdate, update} = this.outputSlots(slots)
 
 		// Output `$latest_values = $values` if needed.
-		this.outputLatestValues(update)
+		this.outputTransferredLatestValues(update)
 
 		// let $node = $html_0.make()
 		let {node: rootNode, output: outputHTML} = this.outputRootHTML()
@@ -218,14 +218,17 @@ export class TreeOutputHandler {
 		}
 	}
 
-	private outputLatestValues(update: OutputNodeList) {
+	private outputTransferredLatestValues(update: OutputNodeList) {
 
-		// Should output `$latest_values = $values`
-		if (this.template.values.isAnyIndexTransferredWithinFunction()) {
+		// Output `$latest_value_i = $values[i]`
+		for (let [latestName, valueIndex] of this.template.values.outputTransferredLatestNames()) {
 			update.unshift(factory.createBinaryExpression(
-				factory.createIdentifier(VariableNames.latestValues),
+				factory.createIdentifier(latestName),
 				factory.createToken(ts.SyntaxKind.EqualsToken),
-				factory.createIdentifier(VariableNames.values)
+				factory.createElementAccessExpression(
+					factory.createIdentifier(VariableNames.values),
+					factory.createNumericLiteral(valueIndex)
+				)
 			))
 		}
 	}
@@ -502,17 +505,6 @@ export class TreeOutputHandler {
 				undefined,
 				undefined,
 				factory.createIdentifier(VariableNames.context),
-				undefined,
-				undefined,
-				undefined
-			))
-		}
-
-		if (this.template.values.isAnyIndexTransferredWithinFunction()) {
-			params.push(factory.createParameterDeclaration(
-				undefined,
-				undefined,
-				factory.createIdentifier(VariableNames.latestValues),
 				undefined,
 				undefined,
 				undefined
