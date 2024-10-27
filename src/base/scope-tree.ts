@@ -302,6 +302,13 @@ export namespace ScopeTree {
 	}
 
 
+	/** Where before or after `rawNode`, it has or will be assigned. */
+	export function haveOrWillBeAssigned(rawNode: AccessNode | TS.Identifier | TS.ThisExpression): boolean {
+		let hashName = ScopeTree.hashNode(rawNode).name
+		return AssignmentMap.hasOf(hashName)
+	}
+
+
 	/** 
 	 * Try get raw node by variable name.
 	 * `fromRawNode` specifies where to query the variable from.
@@ -399,10 +406,10 @@ export namespace ScopeTree {
 
 	/** Test whether expression represented value is mutable. */
 	export function testMutable(rawNode: TS.Expression): MutableMask {
-		return testMutableVisitor(rawNode, false, false)
+		return testMutableVisitor(rawNode, false)
 	}
 
-	function testMutableVisitor(rawNode: TS.Node, insideFunctionScope: boolean, insideAssignmentTo: boolean): MutableMask {
+	function testMutableVisitor(rawNode: TS.Node, insideFunctionScope: boolean): MutableMask {
 		let mutable: MutableMask = 0
 
 		// Inside of a function scope.
@@ -411,33 +418,23 @@ export namespace ScopeTree {
 		// Com from typescript library.
 		if (Helper.symbol.isOfTypescriptLib(rawNode)) {}
 
-		// `a` of `a.b = xx`
-		else if (insideFunctionScope && insideAssignmentTo && Helper.variable.isVariableIdentifier(rawNode)) {
-			let declaredInTopmostScope = isDeclaredInTopmostScope(rawNode)
-
-			// Assignment is mutable.
-			if (declaredInTopmostScope) {
-				mutable |= MutableMask.Mutable
-			}
-
-			// Assign to local variable and can't transfer.
-			else {
-				mutable |= MutableMask.Mutable
-				mutable |= MutableMask.CantTransfer
-			}
-		}
-
 		// `a.b` or `a`
-		else if (Helper.variable.isVariableIdentifier(rawNode)
+		if (Helper.variable.isVariableIdentifier(rawNode)
 			|| Helper.access.isAccess(rawNode)
 		) {
 
 			let declaredInTopmostScope = isDeclaredInTopmostScope(rawNode)
 			let declaredAsConst = isDeclaredAsConstLike(rawNode)
 
+			// Local variable, and it has or will be assigned.
+			if (Helper.variable.isVariableIdentifier(rawNode) && haveOrWillBeAssigned(rawNode)) {
+				mutable |= MutableMask.Mutable
+				mutable |= MutableMask.CantTransfer
+			}
+
 			// Declared as const, or reference at a function, not mutable.
 			// If inside a function but also inside an assignment, not ignore it.
-			if (declaredAsConst || insideFunctionScope) {}
+			else if (declaredAsConst || insideFunctionScope) {}
 
 			// If reference variable in function scope, become mutable, and can transfer.
 			// If declared in topmost scope, also mutable, and can transfer.
@@ -452,22 +449,10 @@ export namespace ScopeTree {
 			}
 		}
 
-		// `a = b`
-		if (Helper.assign.isAssignment(rawNode)) {
-			for (let to of Helper.assign.getToExpressions(rawNode)) {
-				mutable |= testMutableVisitor(to, insideFunctionScope, true)
-			}
-
-			mutable |= testMutableVisitor(Helper.assign.getFromExpression(rawNode), insideFunctionScope, false)
-		}
-
-		// Others.
-		else {
-			ts.visitEachChild(rawNode, (node: TS.Node) => {
-				mutable |= testMutableVisitor(node, insideFunctionScope, insideAssignmentTo)
-				return node
-			}, transformContext)
-		}
+		ts.visitEachChild(rawNode, (node: TS.Node) => {
+			mutable |= testMutableVisitor(node, insideFunctionScope)
+			return node
+		}, transformContext)
 
 		return mutable
 	}
