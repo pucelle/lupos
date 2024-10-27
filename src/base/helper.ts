@@ -179,6 +179,11 @@ export namespace Helper {
 		return ts.isTypeAliasDeclaration(node) || ts.isInterfaceDeclaration(node)
 	}
 
+	/** Whether be `this`. */
+	export function isThis(node: TS.Node): node is TS.ThisExpression {
+		return node.kind === ts.SyntaxKind.ThisKeyword
+	}
+
 
 	/** 
 	 * Make a property name node by property name string.
@@ -575,6 +580,35 @@ export namespace Helper {
 			let nameNode = getNameNode(node)
 			return getText(nameNode)
 		}
+
+		/** 
+		 * `a.b.c` -> `a`.
+		 * `a.b!.c` -> `a`
+		 * `(a.b as any).c` -> `a`
+		 */
+		export function getTopmost(node: AccessNode): TS.Expression {
+			let topmost: TS.Expression = node
+
+			while (true) {
+				if (Helper.access.isAccess(topmost)) {
+					topmost = topmost.expression
+				}
+				else if (ts.isParenthesizedExpression(topmost)) {
+					topmost = topmost.expression
+				}
+				else if (ts.isAsExpression(topmost)) {
+					topmost = topmost.expression
+				}
+				else if (ts.isNonNullExpression(topmost)) {
+					topmost = topmost.expression
+				}
+				else {
+					break
+				}
+			}
+
+			return topmost
+		}
 	}
 
 
@@ -703,6 +737,7 @@ export namespace Helper {
 
 			return true
 		}
+		
 
 
 		/**
@@ -1727,7 +1762,7 @@ export namespace Helper {
 			else if (ts.isIdentifier(node)) {
 				return factory.createIdentifier(getFullText(node)) as TS.Node as T
 			}
-			else if (node.kind === ts.SyntaxKind.ThisKeyword) {
+			else if (isThis(node)) {
 				return factory.createThis() as TS.Node as T
 			}
 

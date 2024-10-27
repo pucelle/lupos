@@ -54,6 +54,9 @@ export namespace ScopeTree {
 	/** Visit index -> node hash result. */
 	const HashMap: Map<number, HashItem> = new Map()
 
+	/** Cache assignment expression hash name -> node. */
+	const AssignmentMap: ListMap<string, number> = new ListMap()
+
 	/** All added variable names, via scope. */
 	const AddedVariableNames: ListMap<Scope, string> = new ListMap()
 
@@ -64,6 +67,7 @@ export namespace ScopeTree {
 		current = null
 		ScopeMap.clear()
 		HashMap.clear()
+		AssignmentMap.clear()
 		AddedVariableNames.clear()
 	}
 
@@ -93,7 +97,21 @@ export namespace ScopeTree {
 	}
 
 	/** To parent. */
-	export function toParent() {
+	export function toParent(currentNode: TS.Node) {
+
+		// Must after visited all descendant nodes.
+		// Assignment expressions like `a.b = c`
+		if (Helper.assign.isAssignment(currentNode)) {
+			let assignTo = Helper.assign.getToExpressions(currentNode)
+			
+			for (let to of assignTo) {
+				let hash = hashNode(to)
+
+				// Cache all assign node position.
+				AssignmentMap.add(hash.name, VisitTree.getIndex(currentNode))
+			}
+		}
+		
 		current = stack.pop()!
 	}
 
@@ -229,7 +247,7 @@ export namespace ScopeTree {
 		}
 
 		// this -> this_123
-		else if (node.kind === ts.SyntaxKind.ThisKeyword) {
+		else if (Helper.isThis(node)) {
 			let {name, scope} = hashVariableName(node as TS.ThisExpression)
 			addToList(usedScopes, scope)
 
@@ -262,6 +280,29 @@ export namespace ScopeTree {
 
 
 	/** 
+	 * Where later after `rawNode`, it will be assigned.
+	 * Return the earliest assign visit index.
+	 */
+	export function whereWillBeAssigned(rawNode: AccessNode | TS.Identifier | TS.ThisExpression): number | undefined {
+		let hashName = ScopeTree.hashNode(rawNode).name
+		let assignments = AssignmentMap.get(hashName)
+		let nodeIndex = VisitTree.getIndex(rawNode)
+
+		if (!assignments) {
+			return undefined
+		}
+
+		for (let assignIndex of assignments) {
+			if (VisitTree.isPrecedingOfInChildFirstOrder(nodeIndex, assignIndex)) {
+				return assignIndex
+			}
+		}
+
+		return undefined
+	}
+
+
+	/** 
 	 * Try get raw node by variable name.
 	 * `fromRawNode` specifies where to query the variable from.
 	 */
@@ -275,9 +316,9 @@ export namespace ScopeTree {
 	}
 	
 	
-	/** Check at which scope the specified named variable declared. */
+	/** Check at which scope the specified named variable or this declared. */
 	export function findDeclaredScope(rawNode: TS.Identifier | TS.ThisExpression, fromScope = findClosestByNode(rawNode)): Scope | null {
-		if (rawNode.kind === ts.SyntaxKind.ThisKeyword) {
+		if (Helper.isThis(rawNode)) {
 			return fromScope.findClosestThisScope()
 		}
 		else if (fromScope.hasLocalVariable(rawNode.text)) {
@@ -291,13 +332,14 @@ export namespace ScopeTree {
 		}
 	}
 
+
 	/** Returns whether declared variable or access node in topmost scope. */
 	function isDeclaredInTopmostScope(rawNode: TS.Identifier | AccessNode | TS.ThisExpression): boolean {
 		if (Helper.access.isAccess(rawNode)) {
 			let exp = rawNode.expression
 			return isDeclaredInTopmostScope(exp as TS.Identifier | AccessNode | TS.ThisExpression)
 		}
-		else if (rawNode.kind === ts.SyntaxKind.ThisKeyword) {
+		else if (Helper.isThis(rawNode)) {
 			return false
 		}
 		else if (ts.isIdentifier(rawNode)) {
@@ -322,7 +364,7 @@ export namespace ScopeTree {
 			let exp = rawNode.expression
 			return isDeclaredAsConstLike(exp as TS.Identifier | AccessNode | TS.ThisExpression)
 		}
-		else if (rawNode.kind === ts.SyntaxKind.ThisKeyword) {
+		else if (Helper.isThis(rawNode)) {
 			return true
 		}
 		else if (ts.isIdentifier(rawNode)) {
@@ -476,7 +518,7 @@ export namespace ScopeTree {
 		}
 
 		// this
-		else if (canReplaceThis && node.kind === ts.SyntaxKind.ThisKeyword) {
+		else if (canReplaceThis && Helper.isThis(node)) {
 			return replacer(node as TS.ThisExpression, insideFunctionScope)
 		}
 

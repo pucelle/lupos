@@ -157,7 +157,7 @@ export class ContextState {
 	shouldIgnoreSetTracking(node: AccessNode | TS.Identifier): boolean {
 		if (this.withinLifeFunction) {
 			if (Helper.access.isAccess(node)
-				&& node.expression.kind === ts.SyntaxKind.ThisKeyword
+				&& Helper.isThis(node.expression)
 			) {
 				return true
 			}
@@ -170,7 +170,7 @@ export class ContextState {
 	shouldIgnoreGetTracking(node: AccessNode | TS.Identifier): boolean {
 		if (this.withinLifeFunction) {
 			if (Helper.access.isAccess(node)
-				&& node.expression.kind === ts.SyntaxKind.ThisKeyword
+				&& Helper.isThis(node.expression)
 			) {
 				return true
 			}

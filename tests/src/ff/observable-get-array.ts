@@ -83,5 +83,3 @@ export class TestArrayBroadcastingObservedToMapFn extends Component {
 		return this.prop.map(function(v){return v.value}).join('')
 	}
 }
-
-

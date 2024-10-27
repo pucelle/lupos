@@ -102,13 +102,13 @@ export class RefBinding extends BindingBase {
 		if (bePropertyOrVariable) {
 			this.useAccess = true
 
-			let topmost = rawValueNode
-			while (Helper.access.isAccess(topmost)) {
-				topmost = topmost.expression
-			}
+			if (Helper.access.isAccess(rawValueNode)) {
+				let topmost = Helper.access.getTopmost(rawValueNode)
 
-			// Only this.xxx.xxx
-			this.useContextAccess = topmost.kind === ts.SyntaxKind.ThisKeyword
+				// `this.xxx.xxx`
+				this.useContextAccess = Helper.isThis(topmost)
+			}
+	
 			this.useLocalAccess = !this.useContextAccess
 		}
 	}

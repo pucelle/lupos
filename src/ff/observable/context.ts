@@ -135,12 +135,10 @@ export class Context {
 		else if (Helper.assign.isAssignment(node)) {
 			let assignTo = Helper.assign.getToExpressions(node)
 			
-			for (let node of assignTo) {
-				if (Helper.access.isAccess(node)) {
-					this.mayAddSetTracking(node)
+			for (let to of assignTo) {
+				if (Helper.access.isAccess(to)) {
+					this.mayAddSetTracking(to)
 				}
-				
-				AccessReferences.visitAssignment(node)
 			}
 		}
 

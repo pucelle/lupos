@@ -79,7 +79,7 @@ export function transformer(program: TS.Program, extras: TransformerExtras) {
 				ts.visitEachChild(node, initVisitor, ctx)
 				
 				VisitTree.toParent()
-				ScopeTree.toParent()
+				ScopeTree.toParent(node)
 
 				// Returned result has no matter.
 				return node

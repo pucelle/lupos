@@ -16,7 +16,7 @@ export class Scope {
 	readonly parent: Scope | null
 	readonly visitIndex: number
 
-	/** All variables declared here. */
+	/** All variables declared here, `variable name -> node`. */
 	private variables: Map<string, TS.Node | null> = new Map()
 
 	constructor(

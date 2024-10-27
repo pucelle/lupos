@@ -284,7 +284,7 @@ export namespace ObservedChecker {
 
 		// `this`
 		// `a`
-		else if (rawNode.kind === ts.SyntaxKind.ThisKeyword
+		else if (Helper.isThis(rawNode)
 			|| Helper.variable.isVariableIdentifier(rawNode)
 		) {
 			return isIdentifierObserved(rawNode as TS.Identifier | TS.ThisExpression)
@@ -429,7 +429,7 @@ export namespace ObservedChecker {
 	export function isIdentifierObserved(rawNode: TS.Identifier | TS.ThisExpression): boolean {
 		let context = ContextTree.findClosestByNode(rawNode)
 
-		if (rawNode.kind === ts.SyntaxKind.ThisKeyword) {
+		if (Helper.isThis(rawNode)) {
 			return context.variables.thisObserved
 		}
 

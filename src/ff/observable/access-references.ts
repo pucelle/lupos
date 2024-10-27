@@ -2,7 +2,6 @@ import {AccessNode, factory, Helper, InterpolationContentType, Interpolator, Mod
 import type TS from 'typescript'
 import {ContextTree} from './context-tree'
 import {Context} from './context'
-import {ListMap} from '../../utils'
 
 
 /** 
@@ -10,12 +9,6 @@ import {ListMap} from '../../utils'
  * and replace an access node to reference if needed.
  */
 export namespace AccessReferences {
-
-	/** 
-	 * The referenced expressions like `a`, `a.b` of `a.b.c`,
-	 * and the mapped visit index of original expression `a.b.c`.
-	 */
-	const referenceMap: ListMap<string, number> = new ListMap()
 
 	/** 
 	 * Remember visit indices that have been visited.
@@ -27,34 +20,33 @@ export namespace AccessReferences {
 	 * 
 	 * By avoid visiting a node twice, will only reference `a`.
 	 */
-	const visitedNodes: Set<TS.Node> = new Set()
+	const VisitedNodes: Set<TS.Node> = new Set()
 
 	/** 
 	 * If access as `a.b`, and later assign `a`, then node `a` of `a.b` become mutable.
-	 * Mutable visit index -> Assignment visit index.
+	 * Node visit index -> Assignment visit index.
 	 */
-	const mutableIndices: Map<number, number> = new Map()
+	const WillBeAssignedIndices: Map<number, number> = new Map()
 
 	/** Indices where access nodes have been referenced. */
-	const referencedIndices: Set<number> = new Set()
+	const ReferencedIndices: Set<number> = new Set()
 
 	/** Node visit indices that have tested reference. */
-	const referencedTested: Set<number> = new Set()
+	const ReferencedTested: Set<number> = new Set()
 
 
 	/** Initialize after enter a new source file. */
 	export function init() {
-		referenceMap.clear()
-		visitedNodes.clear()
-		mutableIndices.clear()
-		referencedIndices.clear()
-		referencedTested.clear()
+		VisitedNodes.clear()
+		WillBeAssignedIndices.clear()
+		ReferencedIndices.clear()
+		ReferencedTested.clear()
 	}
 
 
 	/** Whether any descendant access node has been referenced. */
 	export function isDescendantAccessReferenced(index: number, ignoreListStructKey: boolean): boolean {
-		if (referencedIndices.has(index)) {
+		if (ReferencedIndices.has(index)) {
 			return true
 		}
 
@@ -92,40 +84,21 @@ export namespace AccessReferences {
 	 * Later, when one of these nodes assigned, we will reference this access node.
 	 */
 	function visitAssessVisitor(node: TS.Node, topIndex: number): TS.Node {
-		if (visitedNodes.has(node)) {
+		if (VisitedNodes.has(node)) {
 			return node
 		}
 
-		visitedNodes.add(node)
+		VisitedNodes.add(node)
 
 		// `a?.b` has been replaced to `a.b`
 		if (Helper.access.isAccess(node) || Helper.variable.isVariableIdentifier(node)) {
-			let hashName = ScopeTree.hashNode(node).name
-			referenceMap.add(hashName, topIndex)
+			let assignIndex = ScopeTree.whereWillBeAssigned(node)
+			if (assignIndex !== undefined) {
+				WillBeAssignedIndices.set(topIndex, assignIndex)
+			}
 		}
 
 		return ts.visitEachChild(node, (n: TS.Node) => visitAssessVisitor(n, topIndex), transformContext)
-	}
-
-
-	/** 
-	 * Visit assess node part of an assignment, and it may make several mutable items.
-	 * It supports simply `a.b = ...` or `a = ...`, not `(a || b).c = ...`
-	 * Otherwise, `a.b; a = ...; a.b;`, only the first `a` will be referenced.
-	 */
-	export function visitAssignment(node: TS.Expression) {
-		if (Helper.access.isAccess(node) || Helper.variable.isVariableIdentifier(node)) {
-			let mutableIndex = VisitTree.getIndex(node)
-			let hashName = ScopeTree.hashNode(node).name
-			let refIndices = referenceMap.get(hashName)
-			
-			// For all the existing references before current assignment.
-			if (refIndices) {
-				for (let refIndex of refIndices) {
-					mutableIndices.set(refIndex, mutableIndex)
-				}
-			}
-		}
 	}
 
 
@@ -137,7 +110,7 @@ export namespace AccessReferences {
 		}
 
 		// Avoid after tested, move to outer and test again.
-		if (referencedTested.has(index)) {
+		if (ReferencedTested.has(index)) {
 			return
 		}
 
@@ -148,16 +121,16 @@ export namespace AccessReferences {
 		// Use a reference variable to replace expression.
 		if (shouldReference(expIndex, toIndex)) {
 			reference(expIndex, context)
-			referencedIndices.add(expIndex)
+			ReferencedIndices.add(expIndex)
 		}
 
 		// Use a reference variable to replace name.
 		if (shouldReference(nameIndex, toIndex)) {
 			reference(nameIndex, context)
-			referencedIndices.add(nameIndex)
+			ReferencedIndices.add(nameIndex)
 		}
 
-		referencedTested.add(index)
+		ReferencedTested.add(index)
 	}
 
 
@@ -172,12 +145,12 @@ export namespace AccessReferences {
 			return true
 		}
 
-		if (!mutableIndices.has(index)) {
+		if (!WillBeAssignedIndices.has(index)) {
 			return false
 		}
 
 		// Mutable when output after assignment
-		let assignmentIndex = mutableIndices.get(index)!
+		let assignmentIndex = WillBeAssignedIndices.get(index)!
 		return VisitTree.isPrecedingOfInChildFirstOrder(assignmentIndex, toIndex)
 	}
 	
