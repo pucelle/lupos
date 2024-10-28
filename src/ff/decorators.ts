@@ -20,17 +20,21 @@ defineVisitor(function(node: TS.Node, index: number) {
 		return
 	}
 
+	let memberName = Helper.getFullText(node.name)
+	let superCls = Helper.cls.getSuper(node.parent as TS.ClassDeclaration)
+	let isOverwritten = !!superCls && !!Helper.cls.getMember(superCls, memberName, true)
+
 	Modifier.removeImportOf(decorator)
 	let replace: () => TS.Node[]
 
 	if (decoName === 'computed') {
-		replace = compileComputedDecorator(node as TS.GetAccessorDeclaration)
+		replace = compileComputedDecorator(node as TS.GetAccessorDeclaration, isOverwritten)
 	}
 	else if (decoName === 'effect') {
-		replace = compileEffectDecorator(node as TS.MethodDeclaration)
+		replace = compileEffectDecorator(node as TS.MethodDeclaration, isOverwritten)
 	}
 	else {
-		replace = compileWatchDecorator(decoName, node as TS.MethodDeclaration, decorator)
+		replace = compileWatchDecorator(decoName, node as TS.MethodDeclaration, decorator, isOverwritten)
 	}
 
 	Interpolator.replace(index, InterpolationContentType.Normal, replace)
@@ -43,27 +47,27 @@ defineVisitor(function(node: TS.Node, index: number) {
 Compile `@computed prop(){...}` to:
 
 onWillDisconnect() {
-	this.#reset_prop2()
-	untrack(this.#reset_prop, this)
+	this.$reset_prop2()
+	untrack(this.$reset_prop, this)
 }
 
-#prop: any = undefined
-#needs_compute_prop: boolean = true
+$prop: any = undefined
+$needs_compute_prop: boolean = true
 
-#compute_prop() {...}
+$compute_prop() {...}
 
-#reset_prop() {this.#prop = undefined}
+$reset_prop() {this.$prop = undefined}
 
 get prop(): any {
-    if (!this.#needs_compute_prop) {
-        return this.#prop
+    if (!this.$needs_compute_prop) {
+        return this.$prop
     }
     
-    beginTrack(this.#reset_prop, this)
+    beginTrack(this.$reset_prop, this)
     try {
-		let newValue = this.#compute_prop()
-		if (newValue !== this.#prop) {
-			this.#prop = newValue
+		let newValue = this.$compute_prop()
+		if (newValue !== this.$prop) {
+			this.$prop = newValue
 			trackSet(this, 'prop')
 		}
     }
@@ -74,11 +78,11 @@ get prop(): any {
         endTrack()
     }
 
-	this.#needs_compute_prop = false
+	this.$needs_compute_prop = false
 }
 ```
 */
-function compileComputedDecorator(methodDecl: TS.GetAccessorDeclaration): () => TS.Node[] {
+function compileComputedDecorator(methodDecl: TS.GetAccessorDeclaration, isOverwritten: boolean): () => TS.Node[] {
 	Modifier.addImport('beginTrack', '@pucelle/ff')
 	Modifier.addImport('endTrack', '@pucelle/ff')
 	Modifier.addImport('trackSet', '@pucelle/ff')
@@ -89,7 +93,7 @@ function compileComputedDecorator(methodDecl: TS.GetAccessorDeclaration): () => 
 
 		let property = factory.createPropertyDeclaration(
 			undefined,
-			factory.createPrivateIdentifier('#' + propName),
+			factory.createIdentifier('$' + propName),
 			undefined,
 			factory.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword),
 			factory.createIdentifier('undefined')
@@ -97,7 +101,7 @@ function compileComputedDecorator(methodDecl: TS.GetAccessorDeclaration): () => 
 
 		let needsComputeProperty = factory.createPropertyDeclaration(
 			undefined,
-			factory.createPrivateIdentifier('#needs_compute_' + propName),
+			factory.createIdentifier('$needs_compute_' + propName),
 			undefined,
 			factory.createKeywordTypeNode(ts.SyntaxKind.BooleanKeyword),
 			factory.createIdentifier('true')
@@ -106,7 +110,7 @@ function compileComputedDecorator(methodDecl: TS.GetAccessorDeclaration): () => 
 		let computeMethod = factory.createMethodDeclaration(
 			undefined,
 			undefined,
-			factory.createPrivateIdentifier('#compute_' + propName),
+			factory.createIdentifier('$compute_' + propName),
 			undefined,
 			undefined,
 			[],
@@ -117,7 +121,7 @@ function compileComputedDecorator(methodDecl: TS.GetAccessorDeclaration): () => 
 		let resetMethod = factory.createMethodDeclaration(
 			undefined,
 			undefined,
-			factory.createPrivateIdentifier('#reset_' + propName),
+			factory.createIdentifier('$reset_' + propName),
 			undefined,
 			undefined,
 			[],
@@ -126,7 +130,7 @@ function compileComputedDecorator(methodDecl: TS.GetAccessorDeclaration): () => 
 				[factory.createExpressionStatement(factory.createBinaryExpression(
 					factory.createPropertyAccessExpression(
 						factory.createThis(),
-						factory.createPrivateIdentifier('#needs_compute_' + propName)
+						factory.createIdentifier('$needs_compute_' + propName)
 					),
 					factory.createToken(ts.SyntaxKind.EqualsToken),
 					factory.createIdentifier('true')
@@ -147,13 +151,13 @@ function compileComputedDecorator(methodDecl: TS.GetAccessorDeclaration): () => 
 							ts.SyntaxKind.ExclamationToken,
 							factory.createPropertyAccessExpression(
 								factory.createThis(),
-								factory.createPrivateIdentifier('#needs_compute_' + propName)
+								factory.createIdentifier('$needs_compute_' + propName)
 							)
 						),
 						factory.createBlock(
 							[factory.createReturnStatement(factory.createPropertyAccessExpression(
 								factory.createThis(),
-								factory.createPrivateIdentifier('#' + propName)
+								factory.createIdentifier('$' + propName)
 							))],
 							true
 						),
@@ -165,7 +169,7 @@ function compileComputedDecorator(methodDecl: TS.GetAccessorDeclaration): () => 
 						[
 							factory.createPropertyAccessExpression(
 								factory.createThis(),
-								factory.createPrivateIdentifier('#reset_' + propName)
+								factory.createIdentifier('$reset_' + propName)
 							),
 							factory.createThis()
 						]
@@ -183,7 +187,7 @@ function compileComputedDecorator(methodDecl: TS.GetAccessorDeclaration): () => 
 											factory.createCallExpression(
 												factory.createPropertyAccessExpression(
 													factory.createThis(),
-													factory.createPrivateIdentifier('#compute_' + propName)
+													factory.createIdentifier('$compute_' + propName)
 												),
 												undefined,
 												[]
@@ -198,7 +202,7 @@ function compileComputedDecorator(methodDecl: TS.GetAccessorDeclaration): () => 
 										factory.createToken(ts.SyntaxKind.ExclamationEqualsEqualsToken),
 										factory.createPropertyAccessExpression(
 											factory.createThis(),
-											factory.createPrivateIdentifier('#' + propName)
+											factory.createIdentifier('$' + propName)
 										)
 									),
 									factory.createBlock(
@@ -206,7 +210,7 @@ function compileComputedDecorator(methodDecl: TS.GetAccessorDeclaration): () => 
 											factory.createExpressionStatement(factory.createBinaryExpression(
 												factory.createPropertyAccessExpression(
 													factory.createThis(),
-													factory.createPrivateIdentifier('#' + propName)
+													factory.createIdentifier('$' + propName)
 												),
 												factory.createToken(ts.SyntaxKind.EqualsToken),
 												factory.createIdentifier('newValue')
@@ -258,21 +262,26 @@ function compileComputedDecorator(methodDecl: TS.GetAccessorDeclaration): () => 
 					factory.createExpressionStatement(factory.createBinaryExpression(
 						factory.createPropertyAccessExpression(
 							factory.createThis(),
-							factory.createPrivateIdentifier('#needs_compute_' + propName)
+							factory.createIdentifier('$needs_compute_' + propName)
 						),
 						factory.createToken(ts.SyntaxKind.EqualsToken),
 						factory.createFalse()
 					)),
 					factory.createReturnStatement(factory.createPropertyAccessExpression(
 						factory.createThis(),
-						factory.createPrivateIdentifier('#' + propName)
+						factory.createIdentifier('$' + propName)
 					))
 				],
 				true
 			)
 		)
 
-		return [property, needsComputeProperty, computeMethod, resetMethod, getter]
+		if (isOverwritten) {
+			return [computeMethod]
+		}
+		else {
+			return [property, needsComputeProperty, computeMethod, resetMethod, getter]
+		}
 	}
 }
 
@@ -282,15 +291,15 @@ function compileComputedDecorator(methodDecl: TS.GetAccessorDeclaration): () => 
 Compile `@effect effectFn(){...}` to:
 
 onWillDisconnect() {
-	untrack(this.#enqueue_effectFn, this)
+	untrack(this.$enqueue_effectFn, this)
 }
 
-#enqueue_effectFn() {
-	enqueueUpdate(this.effectFn, this)
+$enqueue_effectFn() {
+	enqueueUpdate(this.$run_effectFn, this)
 }
 
-effectFn() {
-    beginTrack(this.#enqueue_effectFn, this)
+$run_effectFn() {
+    beginTrack(this.$enqueue_effectFn, this)
     try {
         ...
     }
@@ -301,9 +310,11 @@ effectFn() {
         endTrack()
     }
 }
+
+effectFn(){...}
 ```
 */
-function compileEffectDecorator(methodDecl: TS.MethodDeclaration): () => TS.Node[] {
+function compileEffectDecorator(methodDecl: TS.MethodDeclaration, isOverwritten: boolean): () => TS.Node[] {
 	Modifier.addImport('beginTrack', '@pucelle/ff')
 	Modifier.addImport('endTrack', '@pucelle/ff')
 	Modifier.addImport('enqueueUpdate', '@pucelle/ff')
@@ -315,7 +326,7 @@ function compileEffectDecorator(methodDecl: TS.MethodDeclaration): () => TS.Node
 		let enqueueMethod = factory.createMethodDeclaration(
 			undefined,
 			undefined,
-			factory.createPrivateIdentifier('#enqueue_' + methodName),
+			factory.createIdentifier('$enqueue_' + methodName),
 			undefined,
 			undefined,
 			[],
@@ -328,7 +339,7 @@ function compileEffectDecorator(methodDecl: TS.MethodDeclaration): () => TS.Node
 						[
 							factory.createPropertyAccessExpression(
 								factory.createThis(),
-								factory.createIdentifier(methodName)
+								factory.createIdentifier('$run_' + methodName)
 							),
 							factory.createThis()
 						]
@@ -338,10 +349,10 @@ function compileEffectDecorator(methodDecl: TS.MethodDeclaration): () => TS.Node
 			)
 		)
 		
-		let effectMethod = factory.createMethodDeclaration(
+		let runEffectMethod = factory.createMethodDeclaration(
 			undefined,
 			undefined,
-			factory.createIdentifier(methodName),
+			factory.createIdentifier('$run_' + methodName),
 			undefined,
 			undefined,
 			[],
@@ -354,13 +365,23 @@ function compileEffectDecorator(methodDecl: TS.MethodDeclaration): () => TS.Node
 						[
 							factory.createPropertyAccessExpression(
 								factory.createThis(),
-								factory.createPrivateIdentifier('#enqueue_' + methodName)
+								factory.createIdentifier('$enqueue_' + methodName)
 							),
 							factory.createThis()
 						]
 					)),
 					factory.createTryStatement(
-						newBody,
+						factory.createBlock(
+							[factory.createExpressionStatement(factory.createCallExpression(
+								factory.createPropertyAccessExpression(
+									factory.createThis(),
+									factory.createIdentifier(methodName)
+								),
+								undefined,
+								[]
+							))],
+							true
+						),
 						factory.createCatchClause(
 							factory.createVariableDeclaration(
 								factory.createIdentifier('err'),
@@ -394,7 +415,23 @@ function compileEffectDecorator(methodDecl: TS.MethodDeclaration): () => TS.Node
 			)
 		)
 
-		return [enqueueMethod, effectMethod]
+		// Undecorated original method.
+		let newMethodDecl = factory.createMethodDeclaration(
+			undefined,
+			undefined,
+			factory.createIdentifier(methodName),
+			undefined,
+			undefined,
+			methodDecl.parameters,
+			undefined,
+			newBody
+		)
+
+		if (isOverwritten) {
+			return [newMethodDecl]
+		}
+
+		return [enqueueMethod, runEffectMethod, newMethodDecl]
 	}
 }
 
@@ -404,21 +441,21 @@ function compileEffectDecorator(methodDecl: TS.MethodDeclaration): () => TS.Node
 Compile `@watch('prop' / function(){...}) onWatchChange(){...}` to:
 
 onConnected() {
-	this.#enqueue_onWatchChange()
+	this.$enqueue_onWatchChange()
 }
 
 onWillDisconnect() {
-	untrack(this.#enqueue_onWatchChange, this)
+	untrack(this.$enqueue_onWatchChange, this)
 }
 
-#property_onWatchChange = undefined
+$property_onWatchChange = undefined
 
-#enqueue_onWatchChange() {
+$enqueue_onWatchChange() {
 	enqueueUpdate(this.onWatchChange, this)
 }
 
-#compare_onWatchChange() {
-	beginTrack(this.#enqueue_onWatchChange, this)
+$compare_onWatchChange() {
+	beginTrack(this.$enqueue_onWatchChange, this)
 	let new_value = undefined
     try {
         new_value = this.prop
@@ -431,8 +468,8 @@ onWillDisconnect() {
         endTrack()
     }
 
-	if (new_value !== this.#property_onWatchChange) {
-		this.#property_onWatchChange = new_value
+	if (new_value !== this.$property_onWatchChange) {
+		this.$property_onWatchChange = new_value
 		...
 		this.onWatchChange(new_value)
 	}
@@ -443,7 +480,7 @@ onWatchChange(prop) {
 }
 ```
 */
-function compileWatchDecorator(decoName: string, methodDecl: TS.MethodDeclaration, decorator: TS.Decorator): () => TS.Node[] {
+function compileWatchDecorator(decoName: string, methodDecl: TS.MethodDeclaration, decorator: TS.Decorator, isOverwritten: boolean): () => TS.Node[] {
 	Modifier.addImport('beginTrack', '@pucelle/ff')
 	Modifier.addImport('endTrack', '@pucelle/ff')
 	Modifier.addImport('enqueueUpdate', '@pucelle/ff')
@@ -475,10 +512,10 @@ function compileWatchDecorator(decoName: string, methodDecl: TS.MethodDeclaratio
 			)
 			: undefined
 
-		// #values_XXX = [] / undefined
+		// $values_XXX = [] / undefined
 		let valueDecl = factory.createPropertyDeclaration(
 			undefined,
-			factory.createPrivateIdentifier('#values_' + methodName),
+			factory.createIdentifier('$values_' + methodName),
 			undefined,
 			undefined,
 			valueInit	  
@@ -536,7 +573,7 @@ function compileWatchDecorator(decoName: string, methodDecl: TS.MethodDeclaratio
 		let enqueueMethod = factory.createMethodDeclaration(
 			undefined,
 			undefined,
-			factory.createPrivateIdentifier('#enqueue_' + methodName),
+			factory.createIdentifier('$enqueue_' + methodName),
 			undefined,
 			undefined,
 			[],
@@ -548,7 +585,7 @@ function compileWatchDecorator(decoName: string, methodDecl: TS.MethodDeclaratio
 					[
 						factory.createPropertyAccessExpression(
 							factory.createThis(),
-							factory.createIdentifier('#compare_' + methodName)
+							factory.createIdentifier('$compare_' + methodName)
 						),
 						factory.createThis()
 					]
@@ -590,7 +627,7 @@ function compileWatchDecorator(decoName: string, methodDecl: TS.MethodDeclaratio
 				factory.createElementAccessExpression(
 					factory.createPropertyAccessExpression(
 						factory.createThis(),
-						factory.createIdentifier('#values_' + methodName)
+						factory.createIdentifier('$values_' + methodName)
 					),
 					factory.createNumericLiteral(i)
 				),
@@ -601,7 +638,7 @@ function compileWatchDecorator(decoName: string, methodDecl: TS.MethodDeclaratio
 					factory.createElementAccessExpression(
 						factory.createPropertyAccessExpression(
 							factory.createThis(),
-							factory.createIdentifier('#values_' + methodName)
+							factory.createIdentifier('$values_' + methodName)
 						),
 						factory.createNumericLiteral(i)
 					),
@@ -611,7 +648,7 @@ function compileWatchDecorator(decoName: string, methodDecl: TS.MethodDeclaratio
 			)
 		}
 
-		// if (value_0 !== this.#values_XXX) {...}
+		// if (value_0 !== this.$values_XXX) {...}
 		let compareStatement = factory.createIfStatement(
 			Helper.pack.bundleBinaryExpressions(compareExps, ts.SyntaxKind.BarBarToken),
 			factory.createBlock(
@@ -633,14 +670,14 @@ function compileWatchDecorator(decoName: string, methodDecl: TS.MethodDeclaratio
 			undefined
 		)
 
-		// if (!this.#value_XXX) {...} else 
+		// if (!this.$value_XXX) {...} else 
 		if (!immediateWatch) {
 			compareStatement = factory.createIfStatement(
 				factory.createPrefixUnaryExpression(
 					ts.SyntaxKind.ExclamationToken,
 					factory.createPropertyAccessExpression(
 						factory.createThis(),
-						factory.createPrivateIdentifier('#values_' + methodName)
+						factory.createIdentifier('$values_' + methodName)
 					)
 				),
 				factory.createBlock(
@@ -648,7 +685,7 @@ function compileWatchDecorator(decoName: string, methodDecl: TS.MethodDeclaratio
 						factory.createBinaryExpression(
 							factory.createPropertyAccessExpression(
 								factory.createThis(),
-								factory.createPrivateIdentifier('#values_' + methodName)
+								factory.createIdentifier('$values_' + methodName)
 							),
 							factory.createToken(ts.SyntaxKind.EqualsToken),
 							factory.createNewExpression(
@@ -665,11 +702,11 @@ function compileWatchDecorator(decoName: string, methodDecl: TS.MethodDeclaratio
 			)  
 		}
 
-		// #compare_XXX() {...}
+		// $compare_XXX() {...}
 		let compareMethod = factory.createMethodDeclaration(
 			undefined,
 			undefined,
-			factory.createIdentifier('#compare_' + methodName),
+			factory.createIdentifier('$compare_' + methodName),
 			undefined,
 			undefined,
 			[],
@@ -682,7 +719,7 @@ function compileWatchDecorator(decoName: string, methodDecl: TS.MethodDeclaratio
 						[
 							factory.createPropertyAccessExpression(
 								factory.createThis(),
-								factory.createPrivateIdentifier('#enqueue_' + methodName)
+								factory.createIdentifier('$enqueue_' + methodName)
 							),
 							factory.createThis()
 						]
@@ -736,7 +773,7 @@ function compileWatchDecorator(decoName: string, methodDecl: TS.MethodDeclaratio
 			)
 		)
 
-		// Original method.
+		// Undecorated original method.
 		let newMethodDecl = factory.createMethodDeclaration(
 			undefined,
 			undefined,
@@ -747,6 +784,10 @@ function compileWatchDecorator(decoName: string, methodDecl: TS.MethodDeclaratio
 			undefined,
 			newBody
 		)
+
+		if (isOverwritten) {
+			return [newMethodDecl]
+		}
 
 		return [valueDecl, enqueueMethod, compareMethod, newMethodDecl]
 	}

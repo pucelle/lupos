@@ -426,38 +426,26 @@ export namespace ScopeTree {
 			let declaredInTopmostScope = isDeclaredInTopmostScope(rawNode)
 			let declaredAsConst = isDeclaredAsConstLike(rawNode)
 
-			// Declared as const, or reference at a function, not mutable, otherwise mutable.
-			// If reference inside a function, the function itself is not mutable.
-			if (!declaredAsConst && !insideFunctionScope) {
+			// Local variable, and it has or will be assigned.
+			if (Helper.variable.isVariableIdentifier(rawNode) && haveOrWillBeAssigned(rawNode)) {
 				mutable |= MutableMask.Mutable
+				mutable |= MutableMask.CantTransfer
 			}
+
+			// Declared as const, or reference at a function, not mutable.
+			// If inside a function but also inside an assignment, not ignore it.
+			else if (declaredAsConst || insideFunctionScope) {}
 
 			// If reference variable in function scope, become mutable, and can transfer.
 			// If declared in topmost scope, also mutable, and can transfer.
 			else if (declaredInTopmostScope) {
-				
+				mutable |= MutableMask.Mutable
 			}
 
 			// Become mutable and can't transfer.
 			else {
 				mutable |= MutableMask.Mutable
 				mutable |= MutableMask.CantTransfer
-			}
-
-			// If declared in topmost scope, always can transfer.
-			if (!declaredInTopmostScope) {
-
-				// Directly use make it can't transfer.
-				if (!insideFunctionScope) {
-					mutable |= MutableMask.CantTransfer
-				}
-			
-				// Local variable, and which has or will be assigned.
-				else if (Helper.variable.isVariableIdentifier(rawNode)
-					&& haveOrWillBeAssigned(rawNode)
-				) {
-					mutable |= MutableMask.CantTransfer
-				}
 			}
 		}
 

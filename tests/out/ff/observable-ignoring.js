@@ -84,31 +84,31 @@ export class TestIgnoringOfPrivateComputedProperty extends Component {
     prop = 1;
     onConnected() {
         super.onConnected();
-        this.#reset_computedProp();
+        this.$reset_computedProp();
     }
     onWillDisconnect() {
         super.onWillDisconnect();
-        untrack(this.#reset_computedProp, this);
+        untrack(this.$reset_computedProp, this);
     }
     readMethod() {
         trackGet(this, "computedProp");
         return this.computedProp;
     }
-    #computedProp = undefined;
-    #needs_compute_computedProp = true;
-    #compute_computedProp() {
+    $computedProp = undefined;
+    $needs_compute_computedProp = true;
+    $compute_computedProp() {
         return this.prop;
     }
-    #reset_computedProp() { this.#needs_compute_computedProp = true; }
+    $reset_computedProp() { this.$needs_compute_computedProp = true; }
     get computedProp() {
-        if (!this.#needs_compute_computedProp) {
-            return this.#computedProp;
+        if (!this.$needs_compute_computedProp) {
+            return this.$computedProp;
         }
-        beginTrack(this.#reset_computedProp, this);
+        beginTrack(this.$reset_computedProp, this);
         try {
-            let newValue = this.#compute_computedProp();
-            if (newValue !== this.#computedProp) {
-                this.#computedProp = newValue;
+            let newValue = this.$compute_computedProp();
+            if (newValue !== this.$computedProp) {
+                this.$computedProp = newValue;
                 trackSet(this, "computedProp");
             }
         }
@@ -118,8 +118,8 @@ export class TestIgnoringOfPrivateComputedProperty extends Component {
         finally {
             endTrack();
         }
-        this.#needs_compute_computedProp = false;
-        return this.#computedProp;
+        this.$needs_compute_computedProp = false;
+        return this.$computedProp;
     }
 }
 export class TestIgnoringNonPrimitiveObject extends Component {

@@ -12,17 +12,17 @@ export class Parent extends Component {
     }
 }
 export class Child extends Component {
-    #prop_declared_by = undefined;
+    $prop_declared_by = undefined;
     get prop() {
-        return this.#prop_declared_by?.["prop"];
+        return this.$prop_declared_by?.["prop"];
     }
     onConnected() {
         super.onConnected();
-        this.#prop_declared_by = Component.getContextVariableDeclared(this, "prop");
+        this.$prop_declared_by = Component.getContextVariableDeclared(this, "prop");
     }
     onWillDisconnect() {
         super.onWillDisconnect();
-        this.#prop_declared_by = undefined;
+        this.$prop_declared_by = undefined;
         Component.deleteContextVariables(this);
     }
 }

@@ -89,11 +89,11 @@ function hasLifeDecorators(node: TS.ClassDeclaration) {
 Compile `@effect effectFn(){...}` to:
 
 onConnected() {
-	this.#enqueue_effectFn()
+	this.$enqueue_effectFn()
 }
 
 onWillDisconnect() {
-	untrack(this.#enqueue_effectFn, this)
+	untrack(this.$enqueue_effectFn, this)
 }
 ```
 
@@ -103,11 +103,11 @@ or
 Compile `@watch('prop' / function(){...}) onWatchChange(){...}` to:
 
 onConnected() {
-	this.#enqueue_onWatchChange()
+	this.$enqueue_onWatchChange()
 }
 
 onWillDisconnect() {
-	untrack(this.#enqueue_onWatchChange, this)
+	untrack(this.$enqueue_onWatchChange, this)
 }
 
 ```
@@ -119,12 +119,19 @@ function compileComputedEffectWatchDecorator(
 	disconnect: MethodOverwrite | null
 ) {
 	let methodName = Helper.getFullText(decl.name)
-	let connectCallName = decoName === 'computed' ? '#reset_' + methodName
+	let superCls = Helper.cls.getSuper(decl.parent as TS.ClassDeclaration)
+	let isOverwritten = !!superCls && !!Helper.cls.getMember(superCls, methodName, true)
+
+	if (isOverwritten) {
+		return
+	}
+
+	let connectCallName = decoName === 'computed' ? '$reset_' + methodName
 		: decoName === 'effect'
-		? methodName
-		: '#compare_' + methodName
+		? '$run_' + methodName
+		: '$compare_' + methodName
 		
-	let disconnectCallName = decoName === 'computed' ? '#reset_' + methodName : '#enqueue_' + methodName
+	let disconnectCallName = decoName === 'computed' ? '$reset_' + methodName : '$enqueue_' + methodName
 
 	// No need to reset in constructor function
 	let ignoreConnect = connect.name === 'constructor' && decoName === 'computed'
@@ -147,7 +154,7 @@ function compileComputedEffectWatchDecorator(
 			[
 				factory.createPropertyAccessExpression(
 					factory.createThis(),
-					factory.createPrivateIdentifier(disconnectCallName)
+					factory.createIdentifier(disconnectCallName)
 				),
 				factory.createThis()
 			]
@@ -224,12 +231,12 @@ Compile `@useContext prop` to:
 
 onConnected() {
 	super.onConnected()
-	this.#prop_declared = Component.getContextVariableDeclared(this, 'prop')
+	this.$prop_declared = Component.getContextVariableDeclared(this, 'prop')
 }
 
 onWillDisconnect() {
 	super.onWillDisconnect()
-	this.#prop_declared_by = undefined
+	this.$prop_declared_by = undefined
 	Component.deleteContextVariables(this)
 }
 ```
@@ -248,7 +255,7 @@ function compileUseContextDecorator(
 		let connectStatement = factory.createExpressionStatement(factory.createBinaryExpression(
 			factory.createPropertyAccessExpression(
 				factory.createThis(),
-				factory.createPrivateIdentifier('#' + propName + '_declared_by')
+				factory.createIdentifier('$' + propName + '_declared_by')
 			),
 			factory.createToken(ts.SyntaxKind.EqualsToken),
 			factory.createCallExpression(
@@ -273,7 +280,7 @@ function compileUseContextDecorator(
 				factory.createBinaryExpression(
 					factory.createPropertyAccessExpression(
 						factory.createThis(),
-						factory.createPrivateIdentifier('#' + propName + '_declared_by')
+						factory.createIdentifier('$' + propName + '_declared_by')
 				),
 				factory.createToken(ts.SyntaxKind.EqualsToken),
 				factory.createIdentifier("undefined")

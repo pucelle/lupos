@@ -57,11 +57,11 @@ function compileSetContextDecorator(propDecl: TS.PropertyDeclaration): TS.Node[]
 ```ts
 Compile `@useContext prop` to:
 
-#prop_declared_by: any = undefined
+$prop_declared_by: any = undefined
 
 // @useContext
 get prop(): any {
-	return this.#prop_declared_by?.['prop']
+	return this.$prop_declared_by?.['prop']
 }
 ```
 */
@@ -70,7 +70,7 @@ function compileUseContextDecorator(propDecl: TS.PropertyDeclaration): TS.Node[]
 
 	let propDeclaredBy = factory.createPropertyDeclaration(
 		undefined,
-		factory.createPrivateIdentifier('#' + propName + '_declared_by'),
+		factory.createIdentifier('$' + propName + '_declared_by'),
 		undefined,
 		factory.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword),
 		factory.createIdentifier('undefined')
@@ -85,7 +85,7 @@ function compileUseContextDecorator(propDecl: TS.PropertyDeclaration): TS.Node[]
 			factory.createReturnStatement(factory.createElementAccessChain(
 				factory.createPropertyAccessExpression(
 			  		factory.createThis(),
-			  		factory.createPrivateIdentifier('#' + propName + '_declared_by')
+			  		factory.createIdentifier('$' + propName + '_declared_by')
 				),
 				factory.createToken(ts.SyntaxKind.QuestionDotToken),
 				factory.createStringLiteral(propName)
