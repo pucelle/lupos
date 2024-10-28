@@ -233,7 +233,7 @@ export namespace ScopeTree {
 		if (!VisitTree.hasNode(node)) {}
 
 		// a -> a_123
-		else if (Helper.variable.isVariableIdentifier(node)) {
+		else if (Helper.isVariableIdentifier(node)) {
 			let {name, scope} = hashVariableName(node)
 			let declNode = scope.getDeclarationByName(node.text)
 
@@ -419,7 +419,7 @@ export namespace ScopeTree {
 		if (Helper.symbol.isOfTypescriptLib(rawNode)) {}
 
 		// `a.b` or `a`
-		if (Helper.variable.isVariableIdentifier(rawNode)
+		if (Helper.isVariableIdentifier(rawNode)
 			|| Helper.access.isAccess(rawNode)
 		) {
 
@@ -427,7 +427,7 @@ export namespace ScopeTree {
 			let declaredAsConst = isDeclaredAsConstLike(rawNode)
 
 			// Local variable, and it has or will be assigned.
-			if (Helper.variable.isVariableIdentifier(rawNode) && haveOrWillBeAssigned(rawNode)) {
+			if (Helper.isVariableIdentifier(rawNode) && haveOrWillBeAssigned(rawNode)) {
 				mutable |= MutableMask.Mutable
 				mutable |= MutableMask.CantTransfer
 			}
@@ -487,7 +487,7 @@ export namespace ScopeTree {
 		insideFunctionScope ||= Helper.isFunctionLike(node)
 		
 		// Raw variable
-		if (VisitTree.hasNode(node) && Helper.variable.isVariableIdentifier(node)) {
+		if (VisitTree.hasNode(node) && Helper.isVariableIdentifier(node)) {
 
 			// If declared in top scope, can still visit after transferred,
 			// no need to replace it.

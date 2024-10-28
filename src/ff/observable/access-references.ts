@@ -91,7 +91,7 @@ export namespace AccessReferences {
 		VisitedNodes.add(node)
 
 		// `a?.b` has been replaced to `a.b`
-		if (Helper.access.isAccess(node) || Helper.variable.isVariableIdentifier(node)) {
+		if (Helper.access.isAccess(node) || Helper.isVariableIdentifier(node)) {
 			let assignIndex = ScopeTree.whereWillBeAssigned(node)
 			if (assignIndex !== undefined) {
 				WillBeAssignedIndices.set(topIndex, assignIndex)

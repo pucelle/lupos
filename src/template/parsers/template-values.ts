@@ -237,6 +237,10 @@ export class TemplateValues {
 		this.outputNodes.push(node)
 		this.indicesOutputAsMutable.add(valueIndex)
 
+		if (Helper.getFullText(node) === '$values[1]') {
+			throw new Error('')
+		}
+
 		return factory.createElementAccessExpression(
 			factory.createIdentifier(VariableNames.values),
 			factory.createNumericLiteral(valueIndex)

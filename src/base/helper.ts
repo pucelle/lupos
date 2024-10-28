@@ -112,6 +112,67 @@ export namespace Helper {
 	}
 
 
+	/** Test whether a node is an variable name identifier. */
+	export function isVariableIdentifier(node: TS.Node): node is TS.Identifier {
+		if (!ts.isIdentifier(node)) {
+			return false
+		}
+
+		// `a.b`, b is identifier, but not a variable identifier.
+		if (node.parent
+			&& ts.isPropertyAccessExpression(node.parent)
+			&& node === node.parent.name
+		) {
+			return false
+		}
+
+		// {a: 1}, a is identifier, but not variable identifier.
+		if (node.parent
+			&& (ts.isPropertyAssignment(node.parent) || ts.isPropertySignature(node.parent))
+			&& node === node.parent.name
+		) {
+			return false
+		}
+
+		// Type node, not variable.
+		if (node.parent
+			&& ts.isTypeReferenceNode(node.parent)
+		) {
+			return false
+		}
+
+		// Identifier of type query node.
+		if (ts.isTypeQueryNode(node.parent)
+			&& node === node.parent.exprName
+		) {
+			return false
+		}
+
+		// Name of declaration of a class or interface, property, method, function name, get or set name.
+		if ((ts.isClassDeclaration(node.parent)
+				|| ts.isInterfaceDeclaration(node.parent)
+				|| ts.isVariableDeclaration(node.parent)
+				|| ts.isMethodDeclaration(node.parent)
+				|| ts.isPropertyDeclaration(node.parent)
+				|| ts.isFunctionDeclaration(node.parent)
+				|| ts.isGetAccessorDeclaration(node.parent)
+				|| ts.isSetAccessorDeclaration(node.parent)
+				|| ts.isImportSpecifier(node.parent)
+			)
+			&& node === node.parent.name
+		) {
+			return false
+		}
+
+		// `undefined` is an identifier.
+		if (node.text === 'undefined') {
+			return false
+		}
+
+		return true
+	}
+	
+
 	/** Visit node and all descendant nodes, find a node match test fn. */
 	export function findInward(node: TS.Node, test: (node: TS.Node) => boolean) : TS.Node | null {
 		if (test(node)) {
@@ -701,45 +762,6 @@ export namespace Helper {
 	/** Variable declarations. */
 	export namespace variable {
 
-		/** Test whether a node is an variable name identifier. */
-		export function isVariableIdentifier(node: TS.Node): node is TS.Identifier {
-			if (!ts.isIdentifier(node)) {
-				return false
-			}
-
-			// `a.b`, b is identifier, but not a variable identifier.
-			if (node.parent
-				&& ts.isPropertyAccessExpression(node.parent)
-				&& node === node.parent.name
-			) {
-				return false
-			}
-
-			// {a: 1}, a is identifier, but not variable identifier.
-			if (node.parent
-				&& (ts.isPropertyAssignment(node.parent) || ts.isPropertySignature(node.parent))
-				&& node === node.parent.name
-			) {
-				return false
-			}
-
-			// Type node.
-			if (node.parent
-				&& ts.isTypeReferenceNode(node.parent)
-			) {
-				return false
-			}
-
-			// `undefined` is an identifier.
-			if (node.text === 'undefined') {
-				return false
-			}
-
-			return true
-		}
-		
-
-
 		/**
 		 * `let {a: b} = c` =>
 		 * - name: b
@@ -813,7 +835,7 @@ export namespace Helper {
 			}
 
 			// `let a: Type`
-			else if (variable.isVariableIdentifier(node)) {
+			else if (isVariableIdentifier(node)) {
 				typeNode = symbol.resolveDeclaration(node, ts.isVariableDeclaration)?.type
 			}
 

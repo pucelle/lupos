@@ -96,7 +96,7 @@ export class RefBinding extends BindingBase {
 
 		let bePropertyOrVariable = Helper.access.isAccess(rawValueNode)
 				&& !!Helper.symbol.resolveDeclaration(rawValueNode, Helper.isPropertyLike)
-			|| Helper.variable.isVariableIdentifier(rawValueNode)
+			|| Helper.isVariableIdentifier(rawValueNode)
 				&& !!Helper.symbol.resolveDeclaration(rawValueNode, ts.isVariableDeclaration)
 
 		if (bePropertyOrVariable) {

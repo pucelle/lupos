@@ -285,7 +285,7 @@ export namespace ObservedChecker {
 		// `this`
 		// `a`
 		else if (Helper.isThis(rawNode)
-			|| Helper.variable.isVariableIdentifier(rawNode)
+			|| Helper.isVariableIdentifier(rawNode)
 		) {
 			return isIdentifierObserved(rawNode as TS.Identifier | TS.ThisExpression)
 		}
