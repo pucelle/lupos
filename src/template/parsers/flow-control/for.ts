@@ -98,7 +98,7 @@ export class ForFlowControl extends FlowControlBase {
 						factory.createExpressionStatement(factory.createCallExpression(
 							factory.createPropertyAccessExpression(
 								factory.createIdentifier(this.blockVariableName),
-								factory.createIdentifier('updateRenderFnRenderFn')
+								factory.createIdentifier('updateRenderFn')
 							),
 							undefined,
 							[
@@ -189,8 +189,20 @@ export class ForFlowControl extends FlowControlBase {
 			templateSlot
 		)
 
+		let forBlockInit = this.slot.createVariableAssignment(
+			this.blockVariableName,
+			factory.createNewExpression(
+				factory.createIdentifier('ForBlock'),
+				undefined,
+				[
+					factory.createIdentifier(this.slotVariableName),
+				]
+			)
+		)
+
 		return [
 			slotInit,
+			forBlockInit,
 			...this.fnValueIndexMutableAndCantTurn ? [] : [this.outputFnUpdate()],
 			...this.ofValueIndexMutableAndCantTurn ? [] : [this.outputOfUpdate()],
 		]

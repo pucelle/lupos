@@ -28,6 +28,7 @@ const $html_1 = new HTMLMaker("<!----><!---->");
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
     let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context, 1);
+    let $block_0 = new ForBlock($slot_0);
     $block_0.updateRenderFn($context.renderItem);
     $block_0.updateData([1, 2, 3]);
     return {
@@ -47,6 +48,7 @@ const $html_1 = new HTMLMaker("<!----><!---->");
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
     let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context, 1);
+    let $block_0 = new ForBlock($slot_0);
     $block_0.updateRenderFn((n) => {
         trackGet($context, "prop");
         return new CompiledTemplateResult($template_3, [
@@ -89,6 +91,7 @@ const $html_1 = new HTMLMaker("<!----><!---->");
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
     let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context, 1);
+    let $block_0 = new ForBlock($slot_0);
     $block_0.updateRenderFn((n) => new CompiledTemplateResult($template_5, [
         n + $latest_0
     ]));
@@ -131,6 +134,7 @@ const $html_1 = new HTMLMaker("<!----><!---->");
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
     let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context, 1);
+    let $block_0 = new ForBlock($slot_0);
     $block_0.updateRenderFn((item) => {
         trackGet(item, "value");
         return new CompiledTemplateResult($template_7, [
