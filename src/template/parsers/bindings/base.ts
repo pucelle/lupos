@@ -1,6 +1,6 @@
 import type TS from 'typescript'
 import {HTMLNode} from '../../html-syntax'
-import {TreeParser} from '../tree'
+import {PartType, TreeParser} from '../tree'
 import {BindingSlotParser} from '../slots'
 import {DiagnosticModifier, factory, Helper, Modifier, ScopeTree, ts} from '../../../base'
 import {TemplateParser} from '../template'
@@ -128,11 +128,11 @@ export class BindingBase {
 			this.delegatorVariableName = this.tree.makeUniqueDelegatorName()
 
 			if (this.implementsPart) {
-				this.tree.addPart(this.delegatorVariableName, this.node)
+				this.tree.addPart(this.delegatorVariableName, this.node, PartType.Delegator)
 			}
 		}
 		else if (this.implementsPart) {
-			this.tree.addPart(this.bindingVariableName, this.node)
+			this.tree.addPart(this.bindingVariableName, this.node, PartType.Binding)
 		}
 		
 		setLatestBindingInfo(this.node, this.bindingVariableName, this.queryParameter)

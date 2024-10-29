@@ -1,6 +1,6 @@
 import type TS from 'typescript'
 import {HTMLAttribute, HTMLNode, HTMLNodeType} from '../../html-syntax'
-import {TreeParser} from '../tree'
+import {PartType, TreeParser} from '../tree'
 import {DiagnosticModifier, factory, Helper, Modifier, MutableMask, ScopeTree, TemplateSlotPlaceholder, ts} from '../../../base'
 import {VariableNames} from '../variable-names'
 import {TemplateParser} from '../template'
@@ -121,7 +121,7 @@ export abstract class SlotParserBase {
 	 */
 	makeSlotName(): string {
 		let name = this.tree.makeUniqueSlotName()
-		this.tree.addPart(name, this.node)
+		this.tree.addPart(name, this.node, PartType.Slot)
 
 		return name
 	}	

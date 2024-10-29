@@ -1,10 +1,10 @@
 import type TS from 'typescript'
-import {TreeParser} from './tree'
+import {Part, TreeParser} from './tree'
 import {HTMLNode, HTMLNodeType, HTMLRoot} from '../html-syntax'
 import {factory, Helper, Modifier, Scope, TemplateSlotPlaceholder, ts} from '../../base'
 import {SlotParserBase} from './slots'
 import {VariableNames} from './variable-names'
-import {PartPositionType, SlotPositionType} from '../../enums'
+import {SlotPositionType} from '../../enums'
 import {HTMLOutputHandler} from './html-output'
 import {TemplateParser} from './template'
 
@@ -40,7 +40,7 @@ export class TreeOutputHandler {
 	prepareToOutput(
 		slots: SlotParserBase[],
 		varNames: string[],
-		parts: [string, PartPositionType][],
+		parts: Part[],
 		scope: Scope
 	): () => void {
 		Modifier.addImport('TemplateMaker', '@pucelle/lupos.js')
@@ -411,7 +411,7 @@ export class TreeOutputHandler {
 	private outputTemplateInitResult(
 		position: TS.Expression | null,
 		update: OutputNodeList,
-		parts: [string, PartPositionType][]
+		parts: Part[]
 	) {
 		
 		// position part.
@@ -450,8 +450,8 @@ export class TreeOutputHandler {
 		if (parts.length > 0) {
 			let partExp: TS.Expression = factory.createArrayLiteralExpression(
 				parts.map(part => factory.createArrayLiteralExpression([
-					factory.createIdentifier(part[0]),
-					factory.createNumericLiteral(part[1])
+					factory.createIdentifier(part.name),
+					factory.createNumericLiteral(part.position)
 				], false)),
 				true
 			)

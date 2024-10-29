@@ -41,6 +41,25 @@ enum SlotType {
 	Binding,
 }
 
+/** Parts can be connected or disconnected. */
+export interface Part {
+	type: PartType
+	name: string
+	position: PartPositionType
+	node: HTMLNode
+}
+
+/** 
+ * Type of part.
+ * `Binding` must in the preceding of `Component`.
+ */
+export enum PartType {
+	Binding,
+	Component,
+	Delegator,
+	Slot,
+}
+
 
 /** 
  * One template may be separated to several trees,
@@ -64,7 +83,7 @@ export class TreeParser {
 	private preDeclaredVariableNames: string[] = []
 
 	/** Second value is whether direct child of template context. */
-	private parts: [string, PartPositionType][] = []
+	private parts: Part[] = []
 
 	/** Node referenced component name. */
 	private refedComponentMap: Map<HTMLNode, string> = new Map()
@@ -558,9 +577,15 @@ export class TreeParser {
 	}
 
 	/** Add a variable name to `parts`. */
-	addPart(name: string, node: HTMLNode) {
-		let positionType = this.getPartPositionType(node)
-		this.parts.push([name, positionType])
+	addPart(name: string, node: HTMLNode, type: PartType) {
+		let position = this.getPartPositionType(node)
+
+		this.parts.push({
+			type,
+			name,
+			position,
+			node,
+		})
 	}
 
 	/** Whether be the direct child of template content. */
@@ -607,7 +632,7 @@ export class TreeParser {
 
 		// For dynamic component, uses a slot to reference component as part.
 		if (!TemplateSlotPlaceholder.isDynamicComponent(node.tagName!)) {
-			this.addPart(comName, node)
+			this.addPart(comName, node, PartType.Component)
 		}
 
 		return comName
@@ -625,10 +650,19 @@ export class TreeParser {
 	prepareToOutput(scope: Scope): () => void {
 		this.references.determine()
 
+		let parts = this.parts
+		parts.sort((a, b) => {
+			if (a.node !== b.node) {
+				return 0
+			}
+
+			return a.type - b.type
+		})
+
 		return this.outputHandler.prepareToOutput(
 			this.slots,
 			this.preDeclaredVariableNames,
-			this.parts,
+			parts,
 			scope
 		)
 	}

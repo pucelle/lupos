@@ -32,8 +32,8 @@ const $html_0 = new HTMLMaker("<div></div>");
         el: $node,
         position: new SlotPosition(1, $node_0),
         parts: [
-            [$com_0, 1],
-            [$binding_0, 1]
+            [$binding_0, 1],
+            [$com_0, 1]
         ]
     };
 });
@@ -51,8 +51,8 @@ const $html_0 = new HTMLMaker("<div></div>");
         el: $node,
         position: new SlotPosition(1, $node_0),
         parts: [
-            [$com_0, 1],
-            [$binding_0, 1]
+            [$binding_0, 1],
+            [$com_0, 1]
         ]
     };
 });
@@ -70,8 +70,8 @@ const $html_0 = new HTMLMaker("<div></div>");
         el: $node,
         position: new SlotPosition(1, $node_0),
         parts: [
-            [$com_0, 1],
-            [$binding_0, 1]
+            [$binding_0, 1],
+            [$com_0, 1]
         ]
     };
 });
@@ -91,8 +91,8 @@ const $html_0 = new HTMLMaker("<div></div>");
         el: $node,
         position: new SlotPosition(1, $node_0),
         parts: [
-            [$com_0, 1],
-            [$binding_1, 1]
+            [$binding_1, 1],
+            [$com_0, 1]
         ]
     };
 });
@@ -129,8 +129,8 @@ const $html_0 = new HTMLMaker("<div></div>");
         el: $node,
         position: new SlotPosition(1, $node_0),
         parts: [
-            [$com_0, 1],
-            [$binding_1, 1]
+            [$binding_1, 1],
+            [$com_0, 1]
         ]
     };
 });
