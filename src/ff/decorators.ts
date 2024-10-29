@@ -140,7 +140,7 @@ function compileComputedDecorator(methodDecl: TS.GetAccessorDeclaration, isOverw
 		)
 
 		let getter = factory.createGetAccessorDeclaration(
-			undefined,
+			methodDecl.modifiers?.filter(m => !ts.isDecorator(m)),
 			factory.createIdentifier(propName),
 			[],
 			factory.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword),
@@ -417,7 +417,7 @@ function compileEffectDecorator(methodDecl: TS.MethodDeclaration, isOverwritten:
 
 		// Undecorated original method.
 		let newMethodDecl = factory.createMethodDeclaration(
-			undefined,
+			methodDecl.modifiers?.filter(m => !ts.isDecorator(m)),
 			undefined,
 			factory.createIdentifier(methodName),
 			undefined,
@@ -775,7 +775,7 @@ function compileWatchDecorator(decoName: string, methodDecl: TS.MethodDeclaratio
 
 		// Undecorated original method.
 		let newMethodDecl = factory.createMethodDeclaration(
-			undefined,
+			methodDecl.modifiers?.filter(m => !ts.isDecorator(m)),
 			undefined,
 			factory.createIdentifier(methodName),
 			undefined,
