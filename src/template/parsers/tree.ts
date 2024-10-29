@@ -273,6 +273,10 @@ export class TreeParser {
 			let {name, value, quoted} = attr
 			let type: SlotType | null = null
 
+			if (name === 'tagName') {
+				continue
+			}
+
 			// `<tag ...=${...}>
 			// `<tag ...="...${...}...">
 			let strings = value !== null ? TemplateSlotPlaceholder.parseTemplateStrings(value, quoted) : null

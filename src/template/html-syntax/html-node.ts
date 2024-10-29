@@ -296,6 +296,13 @@ export class HTMLNode {
 				tagName = 'div'
 			}
 
+			// Specifies custom tagName.
+			let tagNameAttr = this.attrs!.find(attr => attr.name === 'tagName')
+			if (tagNameAttr) {
+				tagName = tagNameAttr.value ?? tagName
+				this.removeAttr(tagNameAttr)
+			}
+	
 			if (HTMLTokenParser.SelfClosingTags.includes(tagName)) {
 				return `<${tagName}${this.toStringOfAttrs(false)} />`
 			}
