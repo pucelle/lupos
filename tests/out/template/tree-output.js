@@ -88,7 +88,7 @@ export class TestTemplateOutput extends Component {
         */ const $template_4 = new TemplateMaker(function () {
             let $node = $html_4.make();
             let $node_0 = $node.content.firstChild;
-            let $com_0 = new Child({}, $node_0);
+            let $com_0 = new Child($node_0);
             return {
                 el: $node,
                 position: new SlotPosition(1, $node_0),

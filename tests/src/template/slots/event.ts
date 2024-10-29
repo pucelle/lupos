@@ -75,5 +75,5 @@ class Com1 extends Component<ComEvents> {}
 class Com2 extends Component {}
 
 interface ComConstructor {
-	new(args: any[]): Com1 | Com2
+	new(): Com1 | Com2
 }

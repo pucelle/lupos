@@ -65,7 +65,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 */ const $template_3 = new TemplateMaker(function () {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
-    let $com_0 = new Com({}, $node_0);
+    let $com_0 = new Com($node_0);
     $node_0.classList.add("className");
     return {
         el: $node,

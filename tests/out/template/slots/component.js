@@ -9,7 +9,7 @@ const $html_0 = new HTMLMaker("<div></div>");
     let $latest_0;
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
-    let $com_0 = new ChildComponent({}, $node_0);
+    let $com_0 = new ChildComponent($node_0);
     let $binding_0 = new ClassBinding($node_0);
     $binding_0.updateString('className');
     return {
@@ -36,7 +36,7 @@ const $html_1 = new HTMLMaker("<div>Rest Content</div>");
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node_0.firstChild;
-    let $com_0 = new ChildComponent({}, $node_0);
+    let $com_0 = new ChildComponent($node_0);
     $com_0.__applyRestSlotRangeNodes($node_1);
     return {
         el: $node,
@@ -54,7 +54,7 @@ const $html_1 = new HTMLMaker("<div>Rest Content</div>");
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node_0.firstChild;
-    let $com_0 = new ChildComponent({}, $node_0);
+    let $com_0 = new ChildComponent($node_0);
     let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context, 0);
     $com_0.__applyRestSlotRangeNodes($node_1);
     $slot_0.update(new CompiledTemplateResult($template_3, []));

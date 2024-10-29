@@ -25,7 +25,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 */ const $template_1 = new TemplateMaker(function ($context) {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
-    let $com_0 = new ChildComponent({}, $node_0);
+    let $com_0 = new ChildComponent($node_0);
     let $binding_0 = new RefBinding($node_0, $context, ["com"]);
     $binding_0.update(function (refed) { this.refCom = refed; trackSet(this, "refCom"); });
     return {
@@ -44,7 +44,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 */ const $template_2 = new TemplateMaker(function ($context) {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
-    let $com_0 = new ChildComponent({}, $node_0);
+    let $com_0 = new ChildComponent($node_0);
     let $binding_0 = new RefBinding($node_0, $context, ["el"]);
     $binding_0.update(function (refed) { this.refEl = refed; trackSet(this, "refEl"); });
     return {
@@ -63,7 +63,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 */ const $template_3 = new TemplateMaker(function ($context) {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
-    let $com_0 = new ChildComponent({}, $node_0);
+    let $com_0 = new ChildComponent($node_0);
     let $binding_0 = new RefBinding($node_0, $context, ["el"]);
     $binding_0.update(function (refed) { this.refElByType = refed; trackSet(this, "refElByType"); });
     return {
@@ -82,7 +82,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 */ const $template_4 = new TemplateMaker(function ($context) {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
-    let $com_0 = new ChildComponent({}, $node_0);
+    let $com_0 = new ChildComponent($node_0);
     let $binding_0 = new ClassBinding($node_0);
     let $binding_1 = new RefBinding($node_0, $context, ["binding"]);
     $binding_0.updateString("className");
@@ -120,7 +120,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 */ const $template_6 = new TemplateMaker(function ($context) {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
-    let $com_0 = new ChildComponent({}, $node_0);
+    let $com_0 = new ChildComponent($node_0);
     let $binding_0 = new ClassBinding($node_0);
     let $binding_1 = new RefBinding($node_0, $context, ["binding"]);
     $binding_0.updateString("className");
@@ -142,7 +142,7 @@ const $html_0 = new HTMLMaker("<div></div>");
     let $latest_0, $latest_1;
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
-    let $com_0 = new ChildComponent({}, $node_0);
+    let $com_0 = new ChildComponent($node_0);
     let $binding_0 = new TransitionBinding($node_0, $context);
     let $delegator_0 = new PartDelegator();
     let $binding_1 = new RefBinding($node_0, $context, ["binding"]);
