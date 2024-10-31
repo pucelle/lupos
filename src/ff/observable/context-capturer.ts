@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {InterpolationContentType, AccessNode, Helper, Interpolator, InterpolationPosition, VisitTree, ts, FlowInterruptionTypeMask, ScopeTree, sourceFile} from '../../base'
+import {InterpolationContentType, AccessNode, Helper, Interpolator, InterpolationPosition, VisitTree, ts, FlowInterruptionTypeMask, ScopeTree} from '../../base'
 import {Context} from './context'
 import {ContextTree, ContextTypeMask} from './context-tree'
 import {AccessGrouper} from './access-grouper'
@@ -146,11 +146,6 @@ export class ContextCapturer {
 
 		let index = VisitTree.getIndex(node)
 		let expIndex = exp ? VisitTree.getIndex(exp) : undefined
-
-		if (sourceFile.fileName.includes('notification')) {
-			console.log(type, this.captureType, Helper.getFullText(node))
-		}
-		
 
 		// Remove repetitive item, normally `a.b = c`,
 		// `a.b` has been captured as get type, and later set type.
