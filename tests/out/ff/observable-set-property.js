@@ -140,5 +140,3 @@ let com = new TestNew();
 com.prop = 1;
 let com2 = com.getInstance();
 com2.prop = 2;
-trackSet(com, "prop");
-trackSet(com2, "prop");

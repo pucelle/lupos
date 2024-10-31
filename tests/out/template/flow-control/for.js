@@ -129,7 +129,6 @@ const $html_1 = new HTMLMaker("<!----><!---->");
     <lu:for ${this.items} />
 </root>
 */ const $template_6 = new TemplateMaker(function ($context) {
-    let $latest_0;
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
@@ -145,10 +144,7 @@ const $html_1 = new HTMLMaker("<!----><!---->");
         el: $node,
         position: new SlotPosition(1, $node_0),
         update($values) {
-            if ($latest_0 !== $values[0]) {
-                $block_0.updateData($values[0]);
-                $latest_0 = $values[0];
-            }
+            $block_0.updateData($values[0]);
         },
         parts: [
             [$slot_0, 1]

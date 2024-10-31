@@ -25,11 +25,8 @@ export class Context {
 	readonly variables: ContextVariables
 	readonly capturer: ContextCapturer
 
-	/** 
-	 * Self or closest ancestral context, which's type is function-like,
-	 * or node is a source file.
-	 */
-	readonly closestFunctionLike: Context
+	/** Self or closest ancestral context, which's type is function-like. */
+	readonly closestFunctionLike: Context | null
 
 	constructor(type: ContextTypeMask, rawNode: TS.Node, index: number, parent: Context | null) {
 		this.type = type
@@ -41,9 +38,9 @@ export class Context {
 		this.variables = new ContextVariables(this)
 		this.capturer = new ContextCapturer(this, this.state)
 
-		this.closestFunctionLike = (type & ContextTypeMask.FunctionLike) || (type & ContextTypeMask.SourceFile)
+		this.closestFunctionLike = (type & ContextTypeMask.FunctionLike)
 			? this
-			: parent!.closestFunctionLike
+			: parent?.closestFunctionLike ?? null
 
 		if (parent) {
 			parent.enterChild(this)

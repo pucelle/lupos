@@ -45,7 +45,7 @@ export class ContextCapturer {
 	/** These properties can only be visited outside by `ContextCapturerOperator`. */
 	captured: CapturedGroup[]
 	latestCaptured!: CapturedGroup
-	captureType: 'get' | 'set' | 'both' = 'get'
+	captureType: 'get' | 'set' | 'both' | 'none' = 'none'
 
 	constructor(context: Context, state: ContextState) {
 		this.context = context
@@ -69,16 +69,26 @@ export class ContextCapturer {
 	private initCaptureType(state: ContextState) {
 		let parent = this.context.parent
 		if (!parent) {
-			return
+			this.captureType = 'none'
 		}
 
 		// Inside a `@effect method(){...}`.
-		if (state.effectDecorated) {
+		else if (state.effectDecorated) {
 			this.captureType = 'both'
 		}
 
-		// Broadcast downward capture type within a function-like context.
-		else if ((parent.type & ContextTypeMask.FunctionLike) === 0) {
+		// function-like context inherit non `none` capture type.
+		else if (this.context.type & ContextTypeMask.FunctionLike) {
+			if (parent.capturer.captureType === 'none') {
+				this.captureType = 'get'
+			}
+			else {
+				this.captureType = parent.capturer.captureType
+			}
+		}
+
+		// Broadcast downward capture type from function-like context.
+		else {
 			this.captureType = parent.capturer.captureType
 		}
 	}
@@ -86,9 +96,10 @@ export class ContextCapturer {
 	/** Every time capture a new index, check type and may toggle capture type. */
 	private addCaptureType(type: 'get' | 'set') {
 		if (type === 'set' && this.captureType === 'get') {
-			let closest = this.context.closestFunctionLike
+			let closest = this.context.closestFunctionLike!
 
-			// Broadcast downward from closest function-like context, to all get-type descendants.
+			// Broadcast downward from closest function-like context,
+			// to all get-type descendants.
 			let walking = ContextTree.walkInwardChildFirst(closest,
 				c => c.capturer.captureType === 'get'
 			)
@@ -101,6 +112,12 @@ export class ContextCapturer {
 
 	/** Whether should capture indices in specified type. */
 	shouldCapture(type: 'get' | 'set'): boolean {
+
+		// If not within a function-like, should never capture.
+		if (this.captureType === 'none') {
+			return false
+		}
+
 		if (this.captureType === 'set' && type === 'get') {
 			return false
 		}
