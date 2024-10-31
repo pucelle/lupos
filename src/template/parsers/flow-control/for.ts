@@ -22,7 +22,6 @@ export class ForFlowControl extends FlowControlBase {
 	private ofValueIndexMutableAndCantTurn: boolean = false
 	private fnValueIndexMutableAndCantTurn: boolean = false
 
-	private ofLatestVariableName: string | null = null
 	private fnLatestVariableName: string | null = null
 
 	preInit() {
@@ -69,10 +68,6 @@ export class ForFlowControl extends FlowControlBase {
 		this.fnValueIndexMutableAndCantTurn = fnValueIndex !== null
 			&& this.template.values.isIndexMutable(fnValueIndex)
 			&& !this.template.values.isIndexCanTurnStatic(fnValueIndex)
-
-		if (this.ofValueIndexMutableAndCantTurn) {
-			this.ofLatestVariableName = this.tree.makeUniqueLatestName()
-		}
 
 		if (this.fnValueIndexMutableAndCantTurn) {
 			this.fnLatestVariableName = this.tree.makeUniqueLatestName()
@@ -132,46 +127,18 @@ export class ForFlowControl extends FlowControlBase {
 		let ofValueIndices = this.ofValueIndex !== null ? [this.ofValueIndex] : null
 		let value = this.template.values.outputValue(null, ofValueIndices)
 
-		// if ($latest_0 !== $values[0]) {
-		//   $block_0.updateData($values[0])
-		//   $latest_0 = $values[0]
-		// }
-		if (this.ofLatestVariableName) {
-			return factory.createIfStatement(
-				this.slot.outputLatestComparison([this.ofLatestVariableName], value.valueNodes),
-				factory.createBlock(
-					[
-						factory.createExpressionStatement(factory.createCallExpression(
-							factory.createPropertyAccessExpression(
-								factory.createIdentifier(this.blockVariableName),
-								factory.createIdentifier('updateData')
-							),
-							undefined,
-							[
-								value.joint
-							]
-						)),
-						...this.slot.outputLatestAssignments([this.ofLatestVariableName], value.valueNodes),
-					],
-					true
-				),
-				undefined
-			)
-		}
-		else {
-
-			// $block_0.updateData(data)
-			return factory.createCallExpression(
-				factory.createPropertyAccessExpression(
-					factory.createIdentifier(this.blockVariableName),
-					factory.createIdentifier('updateData')
-				),
-				undefined,
-				[
-					value.joint,
-				]
-			)
-		}
+		// Not compare, update directly.
+		// $block_0.updateData(data)
+		return factory.createCallExpression(
+			factory.createPropertyAccessExpression(
+				factory.createIdentifier(this.blockVariableName),
+				factory.createIdentifier('updateData')
+			),
+			undefined,
+			[
+				value.joint,
+			]
+		)
 	}
 
 	outputInit() {

@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {InterpolationContentType, AccessNode, Helper, Interpolator, InterpolationPosition, VisitTree, ts, FlowInterruptionTypeMask, ScopeTree} from '../../base'
+import {InterpolationContentType, AccessNode, Helper, Interpolator, InterpolationPosition, VisitTree, ts, FlowInterruptionTypeMask, ScopeTree, sourceFile} from '../../base'
 import {Context} from './context'
 import {ContextTree, ContextTypeMask} from './context-tree'
 import {AccessGrouper} from './access-grouper'
@@ -83,6 +83,22 @@ export class ContextCapturer {
 		}
 	}
 
+	/** Every time capture a new index, check type and may toggle capture type. */
+	private addCaptureType(type: 'get' | 'set') {
+		if (type === 'set' && this.captureType === 'get') {
+			let closest = this.context.closestFunctionLike
+
+			// Broadcast downward from closest function-like context, to all get-type descendants.
+			let walking = ContextTree.walkInwardChildFirst(closest,
+				c => c.capturer.captureType === 'get'
+			)
+			
+			for (let descent of walking) {
+				descent.capturer.applySetCaptureTypeFromGet()
+			}
+		}
+	}
+
 	/** Whether should capture indices in specified type. */
 	shouldCapture(type: 'get' | 'set'): boolean {
 		if (this.captureType === 'set' && type === 'get') {
@@ -100,6 +116,8 @@ export class ContextCapturer {
 		keys: (string | number)[] | undefined,
 		type: 'get' | 'set'
 	) {
+		this.addCaptureType(type)
+
 		// `a[0]` -> `trackGet(a, '')`
 		if (Helper.access.isAccess(node)
 			&& !exp
@@ -112,7 +130,10 @@ export class ContextCapturer {
 		let index = VisitTree.getIndex(node)
 		let expIndex = exp ? VisitTree.getIndex(exp) : undefined
 
-		this.addCaptureType(type)
+		if (sourceFile.fileName.includes('notification')) {
+			console.log(type, this.captureType, Helper.getFullText(node))
+		}
+		
 
 		// Remove repetitive item, normally `a.b = c`,
 		// `a.b` has been captured as get type, and later set type.
@@ -140,23 +161,6 @@ export class ContextCapturer {
 	/** Whether has captured some indices. */
 	hasCaptured(): boolean {
 		return this.captured.some(item => item.items.length > 0)
-	}
-
-	/** Every time capture a new index, check type and may toggle capture type. */
-	private addCaptureType(type: 'get' | 'set') {
-		if (type === 'set' && this.captureType === 'get') {
-			let closest = this.context.closestFunctionLike
-
-			// Broadcast downward from closest function-like context, to all get-type descendants.
-			let walking = ContextTree.walkInwardChildFirst(closest,
-				c => c.closestFunctionLike === closest
-					&& c.capturer.captureType === 'get'
-			)
-			
-			for (let descent of walking) {
-				descent.capturer.applySetCaptureTypeFromGet()
-			}
-		}
 	}
 
 	/** Apply capture type to `set` from 'get. */
