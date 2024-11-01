@@ -46,17 +46,32 @@ defineVisitor(function(node: TS.Node, index: number) {
 ```ts
 Compile `@computed prop(){...}` to:
 
+onConnected() {
+	this.$compare_prop()
+}
+
 onWillDisconnect() {
-	this.$reset_prop2()
 	untrack(this.$reset_prop, this)
 }
 
-$prop: any = undefined
-$needs_compute_prop: boolean = true
+$prop = undefined
+$tracking_values_prop = null
+$needs_compute_prop = true
 
 $compute_prop() {...}
 
-$reset_prop() {this.$prop = undefined}
+$compare_prop() {
+	if (!this.needs_compute_prop) {
+		if (compareTrackingValues(this.reset_prop, this, this.$tracking_values_prop)) {
+			this.$reset_prop()
+		}
+	}
+}
+
+$reset_prop() {
+	this.$needs_compute_prop = true
+	this.$tracking_values_prop = null
+}
 
 get prop(): any {
     if (!this.$needs_compute_prop) {
@@ -79,6 +94,9 @@ get prop(): any {
     }
 
 	this.$needs_compute_prop = false
+	this.$tracking_values_prop = computeTrackingValues(this.$reset_prop, this)
+
+	return this.$prop
 }
 ```
 */
@@ -86,6 +104,8 @@ function compileComputedDecorator(methodDecl: TS.GetAccessorDeclaration, isOverw
 	Modifier.addImport('beginTrack', '@pucelle/ff')
 	Modifier.addImport('endTrack', '@pucelle/ff')
 	Modifier.addImport('trackSet', '@pucelle/ff')
+	Modifier.addImport('computeTrackingValues', '@pucelle/ff')
+	Modifier.addImport('compareTrackingValues', '@pucelle/ff')
 
 	return () => {
 		let propName = Helper.getFullText(methodDecl.name)
@@ -95,15 +115,23 @@ function compileComputedDecorator(methodDecl: TS.GetAccessorDeclaration, isOverw
 			undefined,
 			factory.createIdentifier('$' + propName),
 			undefined,
-			factory.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword),
+			undefined,
 			factory.createIdentifier('undefined')
+		)
+
+		let valuesProperty = factory.createPropertyDeclaration(
+			undefined,
+			factory.createIdentifier('$tracking_values_' + propName),
+			undefined,
+			undefined,
+			factory.createNull()
 		)
 
 		let needsComputeProperty = factory.createPropertyDeclaration(
 			undefined,
 			factory.createIdentifier('$needs_compute_' + propName),
 			undefined,
-			factory.createKeywordTypeNode(ts.SyntaxKind.BooleanKeyword),
+			undefined,
 			factory.createIdentifier('true')
 		)
 
@@ -117,6 +145,61 @@ function compileComputedDecorator(methodDecl: TS.GetAccessorDeclaration, isOverw
 			undefined,
 			newBody
 		)
+
+		let compareMethod = factory.createMethodDeclaration(
+			undefined,
+			undefined,
+			factory.createIdentifier('$compare_' + propName),
+			undefined,
+			undefined,
+			[],
+			undefined,
+			factory.createBlock(
+				[factory.createIfStatement(
+					factory.createPrefixUnaryExpression(
+						ts.SyntaxKind.ExclamationToken,
+						factory.createPropertyAccessExpression(
+							factory.createThis(),
+							factory.createIdentifier('needs_compute_' + propName)
+						)
+					),
+					factory.createBlock(
+						[factory.createIfStatement(
+							factory.createCallExpression(
+								factory.createIdentifier('compareTrackingValues'),
+								undefined,
+								[
+									factory.createPropertyAccessExpression(
+										factory.createThis(),
+										factory.createIdentifier('$reset_' + propName)
+									),
+									factory.createThis(),
+									factory.createPropertyAccessExpression(
+										factory.createThis(),
+										factory.createIdentifier('$tracking_values_' + propName)
+									)
+								]
+							),
+							factory.createBlock(
+								[factory.createExpressionStatement(factory.createCallExpression(
+									factory.createPropertyAccessExpression(
+										factory.createThis(),
+										factory.createIdentifier('$reset_' + propName)
+									),
+									undefined,
+									[]
+								))],
+								true
+							),
+							undefined
+						)],
+						true
+					),
+					undefined
+				)],
+				true
+			)
+		)
 		
 		let resetMethod = factory.createMethodDeclaration(
 			undefined,
@@ -127,15 +210,25 @@ function compileComputedDecorator(methodDecl: TS.GetAccessorDeclaration, isOverw
 			[],
 			undefined,
 			factory.createBlock(
-				[factory.createExpressionStatement(factory.createBinaryExpression(
-					factory.createPropertyAccessExpression(
-						factory.createThis(),
-						factory.createIdentifier('$needs_compute_' + propName)
-					),
-					factory.createToken(ts.SyntaxKind.EqualsToken),
-					factory.createIdentifier('true')
-				))],
-				false
+				[
+					factory.createExpressionStatement(factory.createBinaryExpression(
+						factory.createPropertyAccessExpression(
+							factory.createThis(),
+							factory.createIdentifier('$needs_compute_' + propName)
+						),
+						factory.createToken(ts.SyntaxKind.EqualsToken),
+						factory.createIdentifier('true')
+					)),
+					factory.createExpressionStatement(factory.createBinaryExpression(
+						factory.createPropertyAccessExpression(
+							factory.createThis(),
+							factory.createIdentifier('$tracking_values_' + propName)
+						),
+						factory.createToken(ts.SyntaxKind.EqualsToken),
+						factory.createNull()
+					))
+				],
+				true
 			)
 		)
 
@@ -267,6 +360,24 @@ function compileComputedDecorator(methodDecl: TS.GetAccessorDeclaration, isOverw
 						factory.createToken(ts.SyntaxKind.EqualsToken),
 						factory.createFalse()
 					)),
+					factory.createExpressionStatement(factory.createBinaryExpression(
+						factory.createPropertyAccessExpression(
+							factory.createThis(),
+							factory.createIdentifier('$tracking_values_' + propName)
+						),
+						factory.createToken(ts.SyntaxKind.EqualsToken),
+						factory.createCallExpression(
+							factory.createIdentifier('computeTrackingValues'),
+							undefined,
+							[
+								factory.createPropertyAccessExpression(
+									factory.createThis(),
+									factory.createIdentifier('$reset_' + propName)
+								),
+								factory.createThis()
+							]
+						)
+					)),
 					factory.createReturnStatement(factory.createPropertyAccessExpression(
 						factory.createThis(),
 						factory.createIdentifier('$' + propName)
@@ -280,7 +391,15 @@ function compileComputedDecorator(methodDecl: TS.GetAccessorDeclaration, isOverw
 			return [computeMethod]
 		}
 		else {
-			return [property, needsComputeProperty, computeMethod, resetMethod, getter]
+			return [
+				property,
+				valuesProperty,
+				needsComputeProperty,
+				computeMethod,
+				compareMethod,
+				resetMethod,
+				getter
+			]
 		}
 	}
 }
@@ -290,12 +409,24 @@ function compileComputedDecorator(methodDecl: TS.GetAccessorDeclaration, isOverw
 ```ts
 Compile `@effect effectFn(){...}` to:
 
+onConnected() {
+	this.$compare_prop()
+}
+
 onWillDisconnect() {
 	untrack(this.$enqueue_effectFn, this)
 }
 
 $enqueue_effectFn() {
 	enqueueUpdate(this.$run_effectFn, this)
+}
+
+$tracking_values_prop = null
+
+$compare_prop() {
+	if (compareTrackingValues(this.run_effectFn, this, this.$tracking_values_prop)) {
+		this.$run_effectFn()
+	}
 }
 
 $run_effectFn() {
@@ -309,6 +440,8 @@ $run_effectFn() {
     finally {
         endTrack()
     }
+
+	this.$tracking_values_prop =  (this.$reset_prop, this)
 }
 
 effectFn(){...}
@@ -322,6 +455,66 @@ function compileEffectDecorator(methodDecl: TS.MethodDeclaration, isOverwritten:
 	return () => {
 		let methodName = Helper.getFullText(methodDecl.name)
 		let newBody = Interpolator.outputChildren(VisitTree.getIndex(methodDecl.body!)) as TS.Block
+		
+		let valuesProperty = factory.createPropertyDeclaration(
+			undefined,
+			factory.createIdentifier('$tracking_values_' + methodName),
+			undefined,
+			undefined,
+			factory.createNull()
+		)
+
+		let compareMethod = factory.createMethodDeclaration(
+			undefined,
+			undefined,
+			factory.createIdentifier('$compare_' + methodName),
+			undefined,
+			undefined,
+			[],
+			undefined,
+			factory.createBlock(
+				[factory.createIfStatement(
+					factory.createBinaryExpression(
+						factory.createPrefixUnaryExpression(
+							ts.SyntaxKind.ExclamationToken,
+							factory.createPropertyAccessExpression(
+								factory.createThis(),
+								factory.createIdentifier('$tracking_values_' + methodName)
+						  	)
+						),
+						factory.createToken(ts.SyntaxKind.BarBarToken),
+						factory.createCallExpression(
+							factory.createIdentifier('compareTrackingValues'),
+							undefined,
+							[
+								factory.createPropertyAccessExpression(
+									factory.createThis(),
+									factory.createIdentifier('$enqueue_' + methodName)
+								),
+								factory.createThis(),
+								factory.createPropertyAccessExpression(
+									factory.createThis(),
+									factory.createIdentifier('$tracking_values_' + methodName)
+								)
+							]
+						)
+					),
+					factory.createBlock(
+						[factory.createExpressionStatement(factory.createCallExpression(
+							factory.createPropertyAccessExpression(
+								factory.createThis(),
+								factory.createIdentifier('$run_' + methodName)
+							),
+							undefined,
+							[]
+						))],
+						true
+					),
+					undefined
+				)],
+				true
+			)
+		)
 
 		let enqueueMethod = factory.createMethodDeclaration(
 			undefined,
@@ -409,7 +602,25 @@ function compileEffectDecorator(methodDecl: TS.MethodDeclaration, isOverwritten:
 							))],
 							true
 						)
-					)
+					),
+					factory.createExpressionStatement(factory.createBinaryExpression(
+						factory.createPropertyAccessExpression(
+							factory.createThis(),
+							factory.createIdentifier('$tracking_values_' + methodName)
+						),
+						factory.createToken(ts.SyntaxKind.EqualsToken),
+						factory.createCallExpression(
+							factory.createIdentifier('computeTrackingValues'),
+							undefined,
+							[
+								factory.createPropertyAccessExpression(
+									factory.createThis(),
+									factory.createIdentifier('$enqueue_' + methodName)
+								),
+								factory.createThis()
+							]
+						)
+					)),
 				],
 				true
 			)
@@ -431,7 +642,7 @@ function compileEffectDecorator(methodDecl: TS.MethodDeclaration, isOverwritten:
 			return [newMethodDecl]
 		}
 
-		return [enqueueMethod, runEffectMethod, newMethodDecl]
+		return [valuesProperty, compareMethod, enqueueMethod, runEffectMethod, newMethodDecl]
 	}
 }
 

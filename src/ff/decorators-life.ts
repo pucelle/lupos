@@ -126,11 +126,7 @@ function compileComputedEffectWatchDecorator(
 		return
 	}
 
-	let connectCallName = decoName === 'computed' ? '$reset_' + methodName
-		: decoName === 'effect'
-		? '$run_' + methodName
-		: '$compare_' + methodName
-		
+	let connectCallName = '$compare_' + methodName
 	let disconnectCallName = decoName === 'computed' ? '$reset_' + methodName : '$enqueue_' + methodName
 
 	// No need to reset in constructor function

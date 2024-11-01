@@ -1,14 +1,25 @@
-import { untrack, beginTrack, endTrack, trackSet, enqueueUpdate, trackGet } from '@pucelle/ff';
+import { untrack, beginTrack, endTrack, trackSet, computeTrackingValues, compareTrackingValues, enqueueUpdate, trackGet } from '@pucelle/ff';
 import { Component } from '@pucelle/lupos.js';
 export class TestComputed extends Component {
     prop = 1;
     $prop2 = undefined;
+    $tracking_values_prop2 = null;
     $needs_compute_prop2 = true;
     $compute_prop2() {
         trackGet(this, "prop");
         return this.prop + 1;
     }
-    $reset_prop2() { this.$needs_compute_prop2 = true; }
+    $compare_prop2() {
+        if (!this.needs_compute_prop2) {
+            if (compareTrackingValues(this.$reset_prop2, this, this.$tracking_values_prop2)) {
+                this.$reset_prop2();
+            }
+        }
+    }
+    $reset_prop2() {
+        this.$needs_compute_prop2 = true;
+        this.$tracking_values_prop2 = null;
+    }
     get prop2() {
         if (!this.$needs_compute_prop2) {
             return this.$prop2;
@@ -28,11 +39,12 @@ export class TestComputed extends Component {
             endTrack();
         }
         this.$needs_compute_prop2 = false;
+        this.$tracking_values_prop2 = computeTrackingValues(this.$reset_prop2, this);
         return this.$prop2;
     }
     onConnected() {
         super.onConnected();
-        this.$reset_prop2();
+        this.$compare_prop2();
     }
     onWillDisconnect() {
         super.onWillDisconnect();
@@ -50,11 +62,17 @@ export class TestEffect extends Component {
     propWrite = 1;
     onConnected() {
         super.onConnected();
-        this.$run_onPropChangeEffect();
+        this.$compare_onPropChangeEffect();
     }
     onWillDisconnect() {
         super.onWillDisconnect();
         untrack(this.$enqueue_onPropChangeEffect, this);
+    }
+    $tracking_values_onPropChangeEffect = null;
+    $compare_onPropChangeEffect() {
+        if (!this.$tracking_values_onPropChangeEffect || compareTrackingValues(this.$enqueue_onPropChangeEffect, this, this.$tracking_values_onPropChangeEffect)) {
+            this.$run_onPropChangeEffect();
+        }
     }
     $enqueue_onPropChangeEffect() {
         enqueueUpdate(this.$run_onPropChangeEffect, this);
@@ -70,6 +88,7 @@ export class TestEffect extends Component {
         finally {
             endTrack();
         }
+        this.$tracking_values_onPropChangeEffect = computeTrackingValues(this.$enqueue_onPropChangeEffect, this);
     }
     onPropChangeEffect() {
         this.propWrite = this.propRead;
@@ -238,7 +257,13 @@ export class TestWatchCallbackDerived extends TestWatchCallback {
 export class TestObservedImplemented {
     prop = 1;
     constructor() {
-        this.$run_onPropChangeEffect();
+        this.$compare_onPropChangeEffect();
+    }
+    $tracking_values_onPropChangeEffect = null;
+    $compare_onPropChangeEffect() {
+        if (!this.$tracking_values_onPropChangeEffect || compareTrackingValues(this.$enqueue_onPropChangeEffect, this, this.$tracking_values_onPropChangeEffect)) {
+            this.$run_onPropChangeEffect();
+        }
     }
     $enqueue_onPropChangeEffect() {
         enqueueUpdate(this.$run_onPropChangeEffect, this);
@@ -254,6 +279,7 @@ export class TestObservedImplemented {
         finally {
             endTrack();
         }
+        this.$tracking_values_onPropChangeEffect = computeTrackingValues(this.$enqueue_onPropChangeEffect, this);
     }
     onPropChangeEffect() {
         console.log(this.prop);

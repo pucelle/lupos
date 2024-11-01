@@ -1,5 +1,5 @@
 import { Component } from '@pucelle/lupos.js';
-import { untrack, beginTrack, endTrack, trackSet, trackGet } from '@pucelle/ff';
+import { untrack, beginTrack, endTrack, trackSet, computeTrackingValues, compareTrackingValues, trackGet } from '@pucelle/ff';
 export class TestIgnoringStringIndex extends Component {
     prop = '1';
     ignoreStringIndex() {
@@ -84,7 +84,7 @@ export class TestIgnoringOfPrivateComputedProperty extends Component {
     prop = 1;
     onConnected() {
         super.onConnected();
-        this.$reset_computedProp();
+        this.$compare_computedProp();
     }
     onWillDisconnect() {
         super.onWillDisconnect();
@@ -95,11 +95,22 @@ export class TestIgnoringOfPrivateComputedProperty extends Component {
         return this.computedProp;
     }
     $computedProp = undefined;
+    $tracking_values_computedProp = null;
     $needs_compute_computedProp = true;
     $compute_computedProp() {
         return this.prop;
     }
-    $reset_computedProp() { this.$needs_compute_computedProp = true; }
+    $compare_computedProp() {
+        if (!this.needs_compute_computedProp) {
+            if (compareTrackingValues(this.$reset_computedProp, this, this.$tracking_values_computedProp)) {
+                this.$reset_computedProp();
+            }
+        }
+    }
+    $reset_computedProp() {
+        this.$needs_compute_computedProp = true;
+        this.$tracking_values_computedProp = null;
+    }
     get computedProp() {
         if (!this.$needs_compute_computedProp) {
             return this.$computedProp;
@@ -119,6 +130,7 @@ export class TestIgnoringOfPrivateComputedProperty extends Component {
             endTrack();
         }
         this.$needs_compute_computedProp = false;
+        this.$tracking_values_computedProp = computeTrackingValues(this.$reset_computedProp, this);
         return this.$computedProp;
     }
 }
