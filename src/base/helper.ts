@@ -245,6 +245,29 @@ export namespace Helper {
 		return node.kind === ts.SyntaxKind.ThisKeyword
 	}
 
+	/** Test whether be `Map` or `Set`, or of `Array` type. */
+	export function isListStruct(rawNode: TS.Node) {
+		let type = Helper.types.typeOf(rawNode)
+		let typeNode = Helper.types.getOrMakeTypeNode(rawNode)
+		let objName = typeNode ? Helper.types.getTypeNodeReferenceName(typeNode) : undefined
+
+		return objName === 'Map'
+			|| objName === 'Set'
+			|| Helper.types.isArrayType(type)
+	}
+
+	/** Test whether of `Array` type. */
+	export function isArray(rawNode: TS.Node) {
+		let type = Helper.types.typeOf(rawNode)
+		return Helper.types.isArrayType(type)
+	}
+
+	/** Test whether be element of `[a...]`. */
+	export function isArraySpreadElement(rawNode: TS.Node) {
+		return rawNode.parent && ts.isSpreadElement(rawNode.parent)
+			&& rawNode.parent.parent && ts.isArrayLiteralExpression(rawNode.parent.parent)
+	}
+	
 
 	/** 
 	 * Make a property name node by property name string.
@@ -618,17 +641,6 @@ export namespace Helper {
 				|| ts.isElementAccessExpression(node)
 		}
 
-		/** Test whether be `Map` or `Set`, or of `Array` type. */
-		export function isListStruct(rawNode: TS.Node) {
-			let type = Helper.types.typeOf(rawNode)
-			let typeNode = Helper.types.getOrMakeTypeNode(rawNode)
-			let objName = typeNode ? Helper.types.getTypeNodeReferenceName(typeNode) : undefined
-
-			return objName === 'Map'
-				|| objName === 'Set'
-				|| Helper.types.isArrayType(type)
-		}
-	
 		/** get accessing name node. */
 		export function getNameNode(node: AccessNode): TS.Expression {
 			return ts.isPropertyAccessExpression(node)

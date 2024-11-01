@@ -199,4 +199,13 @@ export class TestOptimizing extends Component {
         trackGet(props, "");
         return 0;
     }
+    moveArrayMapContentTrackingOuter() {
+        let a = [0];
+        a.map(v => {
+            return v + this.prop.value;
+        });
+        trackGet(this, "prop");
+        trackGet(this.prop, "value");
+        return 0;
+    }
 }

@@ -53,6 +53,15 @@ export namespace Optimizer {
 			moveIterationContentCapturedOutward(context)
 		}
 
+		// This optimizing has low risk, array methods may not run when have no items.
+		if (context.type & ContextTypeMask.FunctionLike
+			&& ts.isCallExpression(context.node.parent)
+			&& Helper.access.isAccess(context.node.parent.expression)
+			&& Helper.isArray(context.node.parent.expression.expression)
+		) {
+			moveArrayMethodsCapturedOutward(context)
+		}
+
 		// Eliminate repetitive.
 		if (context.type & ContextTypeMask.FunctionLike) {
 			eliminateRepetitiveCapturedRecursively(context)
@@ -173,6 +182,19 @@ export namespace Optimizer {
 
 		// parent of iteration.
 		let targetContext = context.parent!.parent!
+
+		context.capturer.operator.moveCapturedOutwardTo(targetContext.capturer)
+	}
+
+
+	/** Move array methods content tracking outward. */
+	function moveArrayMethodsCapturedOutward(context: Context) {
+		if (!context.capturer.hasCaptured()) {
+			return
+		}
+
+		// parent of array method.
+		let targetContext = context.parent!
 
 		context.capturer.operator.moveCapturedOutwardTo(targetContext.capturer)
 	}

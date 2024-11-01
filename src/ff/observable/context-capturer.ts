@@ -135,13 +135,21 @@ export class ContextCapturer {
 	) {
 		this.addCaptureType(type)
 
-		// `a[0]` -> `trackGet(a, '')`
-		if (Helper.access.isAccess(node)
-			&& !exp
-			&& Helper.access.isListStruct(node.expression)
-		) {
-			exp = node.expression
-			keys = ['']
+		if (!exp) {
+
+			// `a[0]` -> `trackGet(a, '')`
+			if (Helper.access.isAccess(node)
+				&& Helper.isListStruct(node.expression)
+			) {
+				exp = node.expression
+				keys = ['']
+			}
+
+			// `[...a]`
+			else if (Helper.isArraySpreadElement(node)) {
+				exp = node
+				keys = ['']
+			}
 		}
 
 		let index = VisitTree.getIndex(node)

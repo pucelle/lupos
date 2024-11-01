@@ -232,7 +232,7 @@ export namespace ObservedChecker {
 
 		// `a.b`
 		let callFrom = exp.expression
-		if (!Helper.access.isListStruct(callFrom)) {
+		if (!Helper.isListStruct(callFrom)) {
 			return false
 		}
 
@@ -349,7 +349,7 @@ export namespace ObservedChecker {
 	export function isAccessObserved(rawNode: AccessNode, parental: boolean = false): boolean {
 
 		// `[]`, `Map`, `Set`.
-		if (Helper.access.isListStruct(rawNode.expression)) {
+		if (Helper.isListStruct(rawNode.expression)) {
 			return isObserved(rawNode.expression, true)
 		}
 

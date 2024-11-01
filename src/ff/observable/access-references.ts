@@ -54,7 +54,7 @@ export namespace AccessReferences {
 
 		if (ignoreListStructKey
 			&& Helper.access.isAccess(node)
-			&& Helper.access.isListStruct(node.expression)
+			&& Helper.isListStruct(node.expression)
 		) {
 			return isDescendantAccessReferenced(VisitTree.getIndex(node.expression), false)
 		}
