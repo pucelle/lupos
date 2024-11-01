@@ -69,7 +69,7 @@ export namespace Optimizer {
 
 		// Eliminate private and don't have both get and set tracking types.
 		if (context.type & ContextTypeMask.Class) {
-			eliminateUniqueTrackingTypePrivate(context)
+			eliminatePrivateUniqueTrackingType(context)
 		}
 	}
 
@@ -207,7 +207,7 @@ export namespace Optimizer {
 
 
 	/** Eliminate private and don't have both get and set tracking types. */
-	function eliminateUniqueTrackingTypePrivate(context: Context) {
+	function eliminatePrivateUniqueTrackingType(context: Context) {
 		enum TypeMask {
 			Get = 1,
 			Set = 2,
