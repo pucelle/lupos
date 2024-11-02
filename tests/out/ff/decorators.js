@@ -108,12 +108,10 @@ export class TestWatchProperty extends Component {
     onConnected() {
         super.onConnected();
         this.$compare_onPropChange();
-        this.$compare_onImmediatePropChange();
     }
     onWillDisconnect() {
         super.onWillDisconnect();
         untrack(this.$enqueue_onPropChange, this);
-        untrack(this.$enqueue_onImmediatePropChange, this);
     }
     $values_onPropChange;
     $enqueue_onPropChange() {
@@ -147,37 +145,9 @@ export class TestWatchProperty extends Component {
     onPropChange(prop) {
         console.log(prop);
     }
-    $values_onImmediatePropChange = new Array(1);
-    $enqueue_onImmediatePropChange() {
-        enqueueUpdate(this.$compare_onImmediatePropChange, this);
-    }
-    $compare_onImmediatePropChange() {
-        beginTrack(this.$enqueue_onImmediatePropChange, this);
-        let values_0;
-        try {
-            values_0 = this.prop;
-            trackGet(this, "prop");
-        }
-        catch (err) {
-            console.error(err);
-        }
-        finally {
-            endTrack();
-        }
-        if (values_0 !== this.$values_onImmediatePropChange[0]) {
-            this.$values_onImmediatePropChange[0] = values_0;
-            this.onImmediatePropChange(values_0);
-        }
-    }
-    onImmediatePropChange(prop) {
-        console.log(prop);
-    }
 }
 export class TestWatchPropertyDerived extends TestWatchProperty {
     onPropChange(prop) {
-        console.log(prop + 1);
-    }
-    onImmediatePropChange(prop) {
         console.log(prop + 1);
     }
 }
@@ -186,12 +156,10 @@ export class TestWatchCallback extends Component {
     onConnected() {
         super.onConnected();
         this.$compare_onPropChange();
-        this.$compare_onImmediatePropChange();
     }
     onWillDisconnect() {
         super.onWillDisconnect();
         untrack(this.$enqueue_onPropChange, this);
-        untrack(this.$enqueue_onImmediatePropChange, this);
     }
     $values_onPropChange;
     $enqueue_onPropChange() {
@@ -221,36 +189,9 @@ export class TestWatchCallback extends Component {
     onPropChange(prop) {
         console.log(prop);
     }
-    $values_onImmediatePropChange = new Array(1);
-    $enqueue_onImmediatePropChange() {
-        enqueueUpdate(this.$compare_onImmediatePropChange, this);
-    }
-    $compare_onImmediatePropChange() {
-        beginTrack(this.$enqueue_onImmediatePropChange, this);
-        let values_0;
-        try {
-            values_0 = function () { trackGet(this, "prop"); return this.prop; }.call(this);
-        }
-        catch (err) {
-            console.error(err);
-        }
-        finally {
-            endTrack();
-        }
-        if (values_0 !== this.$values_onImmediatePropChange[0]) {
-            this.$values_onImmediatePropChange[0] = values_0;
-            this.onImmediatePropChange(values_0);
-        }
-    }
-    onImmediatePropChange(prop) {
-        console.log(prop);
-    }
 }
 export class TestWatchCallbackDerived extends TestWatchCallback {
     onPropChange(prop) {
-        console.log(prop + 1);
-    }
-    onImmediatePropChange(prop) {
         console.log(prop + 1);
     }
 }

@@ -44,7 +44,7 @@ defineVisitor(function(node: TS.Node, _index: number) {
 			continue
 		}
 
-		if (['computed', 'effect', 'watch', 'immediateWatch'].includes(decoName)
+		if (['computed', 'effect', 'watch'].includes(decoName)
 			&& (ts.isMethodDeclaration(member) || ts.isGetAccessorDeclaration(member))
 		) {
 			compileComputedEffectWatchDecorator(decoName, member, connect, disconnect)
@@ -75,7 +75,7 @@ function hasLifeDecorators(node: TS.ClassDeclaration) {
 		}
 
 		let decoName = Helper.deco.getFirstName(member)
-		if (decoName && ['computed', 'effect', 'watch', 'immediateWatch', 'useContext', 'setContext'].includes(decoName)) {
+		if (decoName && ['computed', 'effect', 'watch', 'useContext', 'setContext'].includes(decoName)) {
 			return true
 		}
 

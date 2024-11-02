@@ -16,7 +16,7 @@ defineVisitor(function(node: TS.Node, index: number) {
 	}
 
 	let decoName = Helper.deco.getName(decorator)
-	if (!decoName || !['computed', 'effect', 'watch', 'immediateWatch'].includes(decoName)) {
+	if (!decoName || !['computed', 'effect', 'watch'].includes(decoName)) {
 		return
 	}
 
@@ -34,7 +34,7 @@ defineVisitor(function(node: TS.Node, index: number) {
 		replace = compileEffectDecorator(node as TS.MethodDeclaration, isOverwritten)
 	}
 	else {
-		replace = compileWatchDecorator(decoName, node as TS.MethodDeclaration, decorator, isOverwritten)
+		replace = compileWatchDecorator(node as TS.MethodDeclaration, decorator, isOverwritten)
 	}
 
 	Interpolator.replace(index, InterpolationContentType.Normal, replace)
@@ -691,12 +691,11 @@ onWatchChange(prop) {
 }
 ```
 */
-function compileWatchDecorator(decoName: string, methodDecl: TS.MethodDeclaration, decorator: TS.Decorator, isOverwritten: boolean): () => TS.Node[] {
+function compileWatchDecorator(methodDecl: TS.MethodDeclaration, decorator: TS.Decorator, isOverwritten: boolean): () => TS.Node[] {
 	Modifier.addImport('beginTrack', '@pucelle/ff')
 	Modifier.addImport('endTrack', '@pucelle/ff')
 	Modifier.addImport('enqueueUpdate', '@pucelle/ff')
 
-	let immediateWatch = decoName === 'immediateWatch'
 	let methodName = Helper.getFullText(methodDecl.name)
 
 	if (!ts.isCallExpression(decorator.expression)) {
@@ -714,22 +713,13 @@ function compileWatchDecorator(decoName: string, methodDecl: TS.MethodDeclaratio
 	return () => {
 		let newBody = Interpolator.outputChildren(VisitTree.getIndex(methodDecl.body!)) as TS.Block
 
-		// [] / undefined
-		let valueInit = immediateWatch
-			? factory.createNewExpression(
-				factory.createIdentifier('Array'),
-				undefined,
-				[factory.createNumericLiteral(propertyGetArgs.length)]
-			)
-			: undefined
-
 		// $values_XXX = [] / undefined
 		let valueDecl = factory.createPropertyDeclaration(
 			undefined,
 			factory.createIdentifier('$values_' + methodName),
 			undefined,
 			undefined,
-			valueInit	  
+			undefined	  
 		)
 		
 
@@ -882,36 +872,34 @@ function compileWatchDecorator(decoName: string, methodDecl: TS.MethodDeclaratio
 		)
 
 		// if (!this.$value_XXX) {...} else 
-		if (!immediateWatch) {
-			compareStatement = factory.createIfStatement(
-				factory.createPrefixUnaryExpression(
-					ts.SyntaxKind.ExclamationToken,
-					factory.createPropertyAccessExpression(
-						factory.createThis(),
-						factory.createIdentifier('$values_' + methodName)
-					)
-				),
-				factory.createBlock(
-				  	Helper.pack.toStatements([
-						factory.createBinaryExpression(
-							factory.createPropertyAccessExpression(
-								factory.createThis(),
-								factory.createIdentifier('$values_' + methodName)
-							),
-							factory.createToken(ts.SyntaxKind.EqualsToken),
-							factory.createNewExpression(
-								factory.createIdentifier('Array'),
-								undefined,
-								[factory.createNumericLiteral(propertyGetters.length)]
-							)
+		let compareValueStatement = factory.createIfStatement(
+			factory.createPrefixUnaryExpression(
+				ts.SyntaxKind.ExclamationToken,
+				factory.createPropertyAccessExpression(
+					factory.createThis(),
+					factory.createIdentifier('$values_' + methodName)
+				)
+			),
+			factory.createBlock(
+				Helper.pack.toStatements([
+					factory.createBinaryExpression(
+						factory.createPropertyAccessExpression(
+							factory.createThis(),
+							factory.createIdentifier('$values_' + methodName)
 						),
-						...valuePropAssignExps,		  
-					]),
-				  	true
-				),
-				compareStatement
-			)  
-		}
+						factory.createToken(ts.SyntaxKind.EqualsToken),
+						factory.createNewExpression(
+							factory.createIdentifier('Array'),
+							undefined,
+							[factory.createNumericLiteral(propertyGetters.length)]
+						)
+					),
+					...valuePropAssignExps,		  
+				]),
+				true
+			),
+			compareStatement
+		)
 
 		// $compare_XXX() {...}
 		let compareMethod = factory.createMethodDeclaration(
@@ -978,7 +966,7 @@ function compileWatchDecorator(decoName: string, methodDecl: TS.MethodDeclaratio
 							true
 						)
 					),
-					compareStatement,
+					compareValueStatement,
 				],
 				true
 			)
