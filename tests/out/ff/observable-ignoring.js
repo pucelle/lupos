@@ -1,5 +1,5 @@
 import { Component } from '@pucelle/lupos.js';
-import { untrack, beginTrack, endTrack, trackSet, computeTrackingValues, compareTrackingValues, trackGet } from '@pucelle/ff';
+import { ComputedMaker, trackGet } from '@pucelle/ff';
 export class TestIgnoringStringIndex extends Component {
     prop = '1';
     ignoreStringIndex() {
@@ -82,56 +82,25 @@ export class TestIgnoringWriteonlyPrivate extends Component {
 }
 export class TestIgnoringOfPrivateComputedProperty extends Component {
     prop = 1;
+    onCreated() {
+        super.onCreated();
+        this.$computedProp_computer = new ComputedMaker(this.$compute_computedProp, this);
+    }
     onConnected() {
         super.onConnected();
-        this.$compare_computedProp();
+        this.$computedProp_computer.connect();
     }
     onWillDisconnect() {
         super.onWillDisconnect();
-        untrack(this.$reset_computedProp, this);
+        this.$computedProp_computer.disconnect();
     }
     readMethod() {
         trackGet(this, "computedProp");
         return this.computedProp;
     }
-    $computedProp = undefined;
-    $tracking_values_computedProp = null;
-    $needs_compute_computedProp = true;
+    $computedProp_computer = undefined;
     $compute_computedProp() {
         return this.prop;
-    }
-    $compare_computedProp() {
-        if (!this.needs_compute_computedProp) {
-            if (compareTrackingValues(this.$reset_computedProp, this, this.$tracking_values_computedProp)) {
-                this.$reset_computedProp();
-            }
-        }
-    }
-    $reset_computedProp() {
-        this.$needs_compute_computedProp = true;
-        this.$tracking_values_computedProp = null;
-    }
-    get computedProp() {
-        if (!this.$needs_compute_computedProp) {
-            return this.$computedProp;
-        }
-        beginTrack(this.$reset_computedProp, this);
-        try {
-            let newValue = this.$compute_computedProp();
-            if (newValue !== this.$computedProp) {
-                this.$computedProp = newValue;
-                trackSet(this, "computedProp");
-            }
-        }
-        catch (err) {
-            console.error(err);
-        }
-        finally {
-            endTrack();
-        }
-        this.$needs_compute_computedProp = false;
-        this.$tracking_values_computedProp = computeTrackingValues(this.$reset_computedProp, this);
-        return this.$computedProp;
     }
 }
 export class TestIgnoringNonPrimitiveObject extends Component {

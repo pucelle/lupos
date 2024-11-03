@@ -83,7 +83,8 @@ export class TestObservedImplemented implements Observed {
 
 	prop: number = 1
 
-	@effect onPropChangeEffect() {
+	@effect
+	onPropChangeEffect() {
 		console.log(this.prop)
 	}
 }

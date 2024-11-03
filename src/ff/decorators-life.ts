@@ -1,5 +1,6 @@
 import type TS from 'typescript'
-import {ts, defineVisitor, Modifier, Helper, factory, Interpolator, VisitTree, MethodOverwrite} from '../base'
+import {ts, defineVisitor, Helper, factory, Interpolator, VisitTree, MethodOverwrite, Modifier, MethodInsertPosition} from '../base'
+import {ProcessorClassNameMap, ProcessorPropNameMap} from './decorators-shared'
 
 
 // Add some decorator compiled part to `constructor` or `onConnected` and `onWillDisconnect`.
@@ -13,17 +14,19 @@ defineVisitor(function(node: TS.Node, _index: number) {
 		return
 	}
 
-	let connect: MethodOverwrite
+	let create: MethodOverwrite
+	let connect: MethodOverwrite | null = null
 	let disconnect: MethodOverwrite | null = null
 	let hasDeletedContextVariables = false
 
 	// Be a component.
 	if (Helper.cls.isDerivedOf(node, 'Component', '@pucelle/lupos.js')) {
+		create = new MethodOverwrite(node, 'onCreated')
 		connect = new MethodOverwrite(node, 'onConnected')
 		disconnect = new MethodOverwrite(node, 'onWillDisconnect')
 	}
 	else {
-		connect = new MethodOverwrite(node, 'constructor')
+		create = new MethodOverwrite(node, 'constructor')
 	}
 
 	for (let member of node.members) {
@@ -47,20 +50,21 @@ defineVisitor(function(node: TS.Node, _index: number) {
 		if (['computed', 'effect', 'watch'].includes(decoName)
 			&& (ts.isMethodDeclaration(member) || ts.isGetAccessorDeclaration(member))
 		) {
-			compileComputedEffectWatchDecorator(decoName, member, connect, disconnect)
+			compileComputedEffectWatchDecorator(deco, decoName, member, create, connect, disconnect)
 		}
 		else if (decoName === 'setContext' && ts.isPropertyDeclaration(member)) {
-			compileSetContextDecorator(member, connect, disconnect, hasDeletedContextVariables)
+			compileSetContextDecorator(member, create, connect, disconnect, hasDeletedContextVariables)
 			Interpolator.remove(VisitTree.getIndex(deco))
 			hasDeletedContextVariables = true
 		}
 		else if (decoName === 'useContext' && ts.isPropertyDeclaration(member)) {
-			compileUseContextDecorator(member, connect, disconnect, hasDeletedContextVariables)
+			compileUseContextDecorator(member, create, connect, disconnect, hasDeletedContextVariables)
 			hasDeletedContextVariables = true
 		}
 	}
 
-	connect.output()
+	create.output()
+	connect?.output()
 	disconnect?.output()
 })
 
@@ -113,9 +117,11 @@ onWillDisconnect() {
 ```
 */
 function compileComputedEffectWatchDecorator(
+	deco: TS.Decorator,
 	decoName: string,
 	decl: TS.MethodDeclaration | TS.GetAccessorDeclaration,
-	connect: MethodOverwrite,
+	create: MethodOverwrite,
+	connect: MethodOverwrite | null,
 	disconnect: MethodOverwrite | null
 ) {
 	let methodName = Helper.getFullText(decl.name)
@@ -126,38 +132,176 @@ function compileComputedEffectWatchDecorator(
 		return
 	}
 
-	let connectCallName = '$compare_' + methodName
-	let disconnectCallName = decoName === 'computed' ? '$reset_' + methodName : '$enqueue_' + methodName
+	let processorClassName = ProcessorClassNameMap[decoName]
+	let processorPropName = '$' + methodName + '_' + ProcessorPropNameMap[decoName]
+	let makerParameters = makeMakerParameters(deco, decoName, decl)
 
-	// No need to reset in constructor function
-	let ignoreConnect = connect.name === 'constructor' && decoName === 'computed'
+	Modifier.addImport(processorClassName, '@pucelle/ff')
 
-	if (connect && !ignoreConnect) {
-		let connectStatement = factory.createExpressionStatement(factory.createCallExpression(
-			Helper.createAccessNode(factory.createThis(), connectCallName),
+	let createStatementGetter = () => factory.createExpressionStatement(factory.createBinaryExpression(
+		factory.createPropertyAccessExpression(
+			factory.createThis(),
+			factory.createIdentifier(processorPropName)
+		),
+		factory.createToken(ts.SyntaxKind.EqualsToken),
+		factory.createNewExpression(
+			factory.createIdentifier(processorClassName),
+			undefined,
+			makerParameters()
+		)
+	))
+	  
+	let insertAfterSuper = decoName === 'computed'
+	let insertPosition: MethodInsertPosition = insertAfterSuper ? 'after-super' : 'end'
+	create.insert(() => [createStatementGetter()], insertPosition)
+
+
+	// this.$prop_computer.connect()
+	let connectStatement = factory.createExpressionStatement(factory.createCallExpression(
+		Helper.createAccessNode(
+			Helper.createAccessNode(factory.createThis(), processorPropName),
+			'connect'
+		),
+		undefined,
+		[]
+	));
+
+	(connect || create).insert(() => [connectStatement], insertPosition)
+	
+
+	if (disconnect) {
+		let disconnectStatement = factory.createExpressionStatement(factory.createCallExpression(
+			Helper.createAccessNode(
+				Helper.createAccessNode(factory.createThis(), processorPropName),
+				'disconnect'
+			),
 			undefined,
 			[]
 		))
-
-		let insertAfterSuper = decoName === 'computed'
-		connect.add([connectStatement], insertAfterSuper ? 'after-super' : 'end')
+		
+		disconnect.insert(() => [disconnectStatement], 'end')
 	}
-	
-	if (disconnect) {
-		let disconnectStatement = factory.createExpressionStatement(factory.createCallExpression(
-			factory.createIdentifier('untrack'),
-			undefined,
-			[
+}
+
+
+function makeMakerParameters(
+	deco: TS.Decorator,
+	decoName: string,
+	decl: TS.MethodDeclaration | TS.GetAccessorDeclaration
+): () => TS.Expression[] {
+	let methodName = Helper.getFullText(decl.name)
+	let watchGetters = compileWatchGetters(deco)
+
+	return () => {
+		if (decoName === 'computed') {
+			return [
 				factory.createPropertyAccessExpression(
 					factory.createThis(),
-					factory.createIdentifier(disconnectCallName)
+					factory.createIdentifier('$compute_' + methodName)
 				),
-				factory.createThis()
+				factory.createThis(),
 			]
-		))
-		
-		disconnect.add([disconnectStatement], 'end')
-		Modifier.addImport('untrack', '@pucelle/ff')
+		}
+		else if (decoName === 'effect') {
+			return [
+				factory.createPropertyAccessExpression(
+					factory.createThis(),
+					factory.createIdentifier(methodName)
+				),
+				factory.createThis(),
+			]
+		}
+		else if (decoName === 'watch') {
+			return [
+				factory.createArrayLiteralExpression(watchGetters(), true),
+				factory.createPropertyAccessExpression(
+					factory.createThis(),
+					factory.createIdentifier(methodName)
+				),
+				factory.createThis(),
+			]
+		}
+		else {
+			return []
+		}
+	}
+}
+
+
+/** Compile `@watch(...)` to new WatchMultipleMaker([...]). */
+function compileWatchGetters(deco: TS.Decorator): () => TS.FunctionExpression[] {
+	if (!ts.isCallExpression(deco.expression)) {
+		return () => []
+	}
+
+	let decoArgs = deco.expression.arguments
+
+	if (decoArgs.some(arg => ts.isStringLiteral(arg))) {
+		Modifier.addImport('trackGet', '@pucelle/ff')
+	}
+
+	return () => {
+		let getters: TS.FunctionExpression[] = []
+
+		for (let arg of decoArgs) {
+			if (ts.isStringLiteral(arg)) {
+
+				// function(){trackGet(this, 'prop'); return this.prop}
+				getters.push(factory.createFunctionExpression(
+					undefined,
+					undefined,
+					undefined,
+					undefined,
+					[],
+					undefined,
+					factory.createBlock(
+						[
+							factory.createExpressionStatement(factory.createCallExpression(
+								factory.createIdentifier('trackGet'),
+								undefined,
+								[
+									factory.createThis(),
+									arg
+								]
+							)),
+							factory.createReturnStatement(factory.createPropertyAccessExpression(
+								factory.createThis(),
+								factory.createIdentifier(arg.text)
+							))
+						],
+						false
+					)
+				  )
+				)
+			}
+
+			// function(){...}
+			else if (ts.isFunctionExpression(arg)) {
+				let getterIndex = VisitTree.getIndex(arg)
+				let getter = Interpolator.outputChildren(getterIndex) as TS.FunctionExpression
+
+				getters.push(getter)
+			}
+
+			// function(){return undefined}
+			else {
+				getters.push(factory.createFunctionExpression(
+					undefined,
+					undefined,
+					undefined,
+					undefined,
+					[],
+					undefined,
+					factory.createBlock(
+					  	[factory.createReturnStatement(factory.createIdentifier("undefined"))],
+					  	false
+					)
+				  )
+				)
+			}
+		}
+
+		return getters
 	}
 }
 
@@ -179,7 +323,8 @@ onWillDisconnect() {
 */
 function compileSetContextDecorator(
 	propDecl: TS.PropertyDeclaration,
-	connect: MethodOverwrite,
+	create: MethodOverwrite,
+	connect: MethodOverwrite | null,
 	disconnect: MethodOverwrite | null,
 	hasDeletedContextVariables: boolean
 ) {
@@ -187,21 +332,19 @@ function compileSetContextDecorator(
 	let extended = Helper.cls.getExtends(propDecl.parent as TS.ClassDeclaration)!
 	let classExp = extended.expression
 		
-	if (connect) {
-		let connectStatement = factory.createExpressionStatement(factory.createCallExpression(
-			factory.createPropertyAccessExpression(
-				classExp,
-				factory.createIdentifier('setContextVariable')
-			),
-			undefined,
-			[
-				factory.createThis(),
-				factory.createStringLiteral(propName)
-			]
-		))
+	let connectStatement = factory.createExpressionStatement(factory.createCallExpression(
+		factory.createPropertyAccessExpression(
+			classExp,
+			factory.createIdentifier('setContextVariable')
+		),
+		undefined,
+		[
+			factory.createThis(),
+			factory.createStringLiteral(propName)
+		]
+	));
 
-		connect.add([connectStatement], 'end')
-	}
+	(connect || create).insert(() => [connectStatement], 'end')
 	
 	if (disconnect && !hasDeletedContextVariables) {
 		let disconnectStatement = factory.createExpressionStatement(factory.createCallExpression(
@@ -215,7 +358,7 @@ function compileSetContextDecorator(
 			]
 		))
 		
-		disconnect.add([disconnectStatement], 'end')
+		disconnect.insert(() => [disconnectStatement], 'end')
 	}
 }
 
@@ -239,7 +382,8 @@ onWillDisconnect() {
 */
 function compileUseContextDecorator(
 	propDecl: TS.PropertyDeclaration,
-	connect: MethodOverwrite,
+	create: MethodOverwrite,
+	connect: MethodOverwrite | null,
 	disconnect: MethodOverwrite | null,
 	hasDeletedContextVariables: boolean
 ) {
@@ -247,29 +391,28 @@ function compileUseContextDecorator(
 	let extended = Helper.cls.getExtends(propDecl.parent as TS.ClassDeclaration)!
 	let classExp = extended.expression
 	
-	if (connect) {
-		let connectStatement = factory.createExpressionStatement(factory.createBinaryExpression(
+	let connectStatement = factory.createExpressionStatement(factory.createBinaryExpression(
+		factory.createPropertyAccessExpression(
+			factory.createThis(),
+			factory.createIdentifier('$' + propName + '_declared_by')
+		),
+		factory.createToken(ts.SyntaxKind.EqualsToken),
+		factory.createCallExpression(
 			factory.createPropertyAccessExpression(
-				factory.createThis(),
-				factory.createIdentifier('$' + propName + '_declared_by')
+				classExp,
+				factory.createIdentifier('getContextVariableDeclared')
 			),
-			factory.createToken(ts.SyntaxKind.EqualsToken),
-			factory.createCallExpression(
-				factory.createPropertyAccessExpression(
-					classExp,
-					factory.createIdentifier('getContextVariableDeclared')
-				),
-				undefined,
-				[
-				  factory.createThis(),
-				  factory.createStringLiteral(propName)
-				]
-			)
-		))
+			undefined,
+			[
+				factory.createThis(),
+				factory.createStringLiteral(propName)
+			]
+		)
+	));
 
-		connect.add([connectStatement], 'end')
-	}
+	(connect || create).insert(() => [connectStatement], 'end')
 	
+
 	if (disconnect && !hasDeletedContextVariables) {
 		let disconnectStatements = [
 			factory.createExpressionStatement(
@@ -298,6 +441,6 @@ function compileUseContextDecorator(
 			)
 		}
 		
-		disconnect.add(disconnectStatements, 'end')
+		disconnect.insert(() => disconnectStatements, 'end')
 	}
 }

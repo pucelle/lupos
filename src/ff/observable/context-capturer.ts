@@ -286,7 +286,7 @@ export class ContextCapturer {
 	 * Previous step may move indices forward or backward.
 	 */
 	private postProcessCaptured() {
-		this.interpolateCaptured()
+		this.outputCaptured()
 	}
 	
 	/** Check captured indices and reference if needs. */
@@ -299,18 +299,18 @@ export class ContextCapturer {
 	}
 
 	/** Add `captured` as interpolation items. */
-	private interpolateCaptured() {
+	private outputCaptured() {
 		for (let item of this.captured) {
 			if (item.items.length === 0) {
 				continue
 			}
 
-			this.interpolateCapturedGroup(item)
+			this.outputCapturedGroup(item)
 		}
 	}
 
 	/** Add each `captured` group. */
-	private interpolateCapturedGroup(group: CapturedGroup) {
+	private outputCapturedGroup(group: CapturedGroup) {
 		let oldToIndex = group.toIndex
 		let newToIndex = this.findBetterInsertPosition(oldToIndex)!
 		let itemsInsertToOldPosition: CapturedItem[] = []
@@ -346,7 +346,7 @@ export class ContextCapturer {
 			Interpolator.add(newToIndex, {
 				position: group.position,
 				contentType: InterpolationContentType.Tracking,
-				exps: () => this.outputCaptured(itemsInsertToNewPosition),
+				exps: () => this.makeCapturedExps(itemsInsertToNewPosition),
 			})
 		}
 
@@ -354,7 +354,7 @@ export class ContextCapturer {
 			Interpolator.add(oldToIndex, {
 				position: group.position,
 				contentType: InterpolationContentType.Tracking,
-				exps: () => this.outputCaptured(itemsInsertToOldPosition),
+				exps: () => this.makeCapturedExps(itemsInsertToOldPosition),
 			})
 		}
 
@@ -388,7 +388,7 @@ export class ContextCapturer {
 	}
 
 	/** Transfer specified indices to specified position. */
-	private outputCaptured(items: CapturedItem[]): TS.Expression[] {
+	private makeCapturedExps(items: CapturedItem[]): TS.Expression[] {
 		let getItems = items.filter(index => index.type === 'get')
 		let setItems = items.filter(index => index.type === 'set')
 

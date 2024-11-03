@@ -4,15 +4,20 @@ import {ts, Helper, factory, Interpolator, VisitTree, InterpolationContentType} 
 
 export type MethodInsertPosition = 'before-super' | 'after-super' | 'end'
 
+export interface MethodInsertInserted {
+	statementsGetter: () => TS.Statement[]
+	position: MethodInsertPosition
+}
+
 export class MethodOverwrite {
 
 	readonly classNode: TS.ClassDeclaration
 	readonly name: string
+	readonly rawNode: TS.ConstructorDeclaration | TS.MethodDeclaration | null
 
-	private rawNode: TS.ConstructorDeclaration | TS.MethodDeclaration | null
 	private newNode: TS.ConstructorDeclaration | TS.MethodDeclaration | null = null
 	private superIndex: number = 0
-	private inserted: boolean = false
+	private inserted: MethodInsertInserted[] = []
 
 	constructor(classNode: TS.ClassDeclaration, name: string) {
 		this.classNode = classNode
@@ -93,26 +98,34 @@ export class MethodOverwrite {
 	}
 
 	/** Add a list of statements to a method content end. */
-	add(statements: TS.Statement[], position: MethodInsertPosition) {
-		if (statements.length === 0) {
+	insert(statementsGetter: () => TS.Statement[], position: MethodInsertPosition) {
+		this.inserted.push({statementsGetter, position})
+	}
+
+	output() {
+		if (this.inserted.length === 0) {
 			return
 		}
 
 		if (this.rawNode) {
-			this.addToRaw(statements, position)
+			this.outputToRaw()
 		}
 		else {
-			this.addToNew(statements, position)
+			this.outputToNew()
 		}
-
-		this.inserted = true
 	}
 
-	private addToRaw(statements: TS.Statement[], position: MethodInsertPosition) {
+	private outputToRaw() {
+		for (let item of this.inserted) {
+			this.outputItemToRaw(item.statementsGetter, item.position)
+		}
+	}
+
+	private outputItemToRaw(statementsGetter: () => TS.Statement[], position: MethodInsertPosition) {
 		let blockIndex = VisitTree.getIndex(this.rawNode!.body!)
 
 		if (position === 'end') {
-			Interpolator.append(blockIndex, InterpolationContentType.Normal, () => statements)
+			Interpolator.append(blockIndex, InterpolationContentType.Normal, statementsGetter)
 		}
 		else {
 			let superCall = this.rawNode!.body!.statements[this.superIndex]
@@ -121,65 +134,19 @@ export class MethodOverwrite {
 				let superCallIndex = VisitTree.getIndex(superCall)
 
 				if (position === 'before-super') {
-					Interpolator.before(superCallIndex, InterpolationContentType.Normal, () => statements)
+					Interpolator.before(superCallIndex, InterpolationContentType.Normal, statementsGetter)
 				}
 				else if (position === 'after-super') {
-					Interpolator.after(superCallIndex, InterpolationContentType.Normal, () => statements)
+					Interpolator.after(superCallIndex, InterpolationContentType.Normal, statementsGetter)
 				}
 			}
 			else {
-				Interpolator.prepend(blockIndex, InterpolationContentType.Normal, () => statements)
+				Interpolator.prepend(blockIndex, InterpolationContentType.Normal, statementsGetter)
 			}
 		}
 	}
 
-	private addToNew(statements: TS.Statement[], position: MethodInsertPosition) {
-		if (statements.length === 0) {
-			return
-		}
-
-		let method = this.newNode!
-		let newStatements = [...method.body!.statements]
-
-		if (position === 'end') {
-			newStatements.push(...statements)
-		}
-		else if (position === 'before-super') {
-			newStatements.splice(this.superIndex, 0, ...statements)
-			this.superIndex += statements.length
-		}
-		else if (position === 'after-super') {
-			newStatements.splice(this.superIndex + 1, 0, ...statements)
-		}
-
-		if (ts.isConstructorDeclaration(method)) {
-			this.newNode = factory.updateConstructorDeclaration(
-				method,
-				method.modifiers,
-				method.parameters,
-				factory.createBlock(newStatements, true)
-			)
-		}
-		else {
-			this.newNode = factory.updateMethodDeclaration(
-				method,
-				method.modifiers,
-				method.asteriskToken,
-				method.name,
-				method.questionToken,
-				method.typeParameters,
-				method.parameters,
-				method.type,
-				factory.createBlock(newStatements, true)
-			)
-		}
-	}
-
-	output() {
-		if (!this.newNode || !this.inserted) {
-			return
-		}
-
+	private outputToNew() {
 		let classIndex = VisitTree.getIndex(this.classNode)
 
 		let firstNonStaticMethod = this.classNode.members.find(member => {
@@ -197,11 +164,65 @@ export class MethodOverwrite {
 
 		if (firstNonStaticMethod) {
 			let firstNonStaticMethodIndex = VisitTree.getIndex(firstNonStaticMethod)
-			Interpolator.before(firstNonStaticMethodIndex, InterpolationContentType.Normal, () => this.newNode!)
+			Interpolator.before(firstNonStaticMethodIndex, InterpolationContentType.Normal, () => this.outputToNewNode())
 		}
 		else {
-			Interpolator.append(classIndex, InterpolationContentType.Normal, () => this.newNode!)
+			Interpolator.append(classIndex, InterpolationContentType.Normal, () => this.outputToNewNode())
 		}
 	}
+
+	private outputToNewNode(): TS.Node {
+		for (let item of this.inserted) {
+			let statements = item.statementsGetter()
+			let position = item.position
+
+			this.addStatementsToNew(statements, position)
+		}
+
+		return this.newNode!
+	}
+
+	private addStatementsToNew(statements: TS.Statement[], position: MethodInsertPosition) {
+		if (statements.length === 0) {
+			return
+		}
+
+		let newNode = this.newNode!
+		let newStatements = [...newNode.body!.statements]
+
+		if (position === 'end') {
+			newStatements.push(...statements)
+		}
+		else if (position === 'before-super') {
+			newStatements.splice(this.superIndex, 0, ...statements)
+			this.superIndex += statements.length
+		}
+		else if (position === 'after-super') {
+			newStatements.splice(this.superIndex + 1, 0, ...statements)
+		}
+
+		if (ts.isConstructorDeclaration(newNode)) {
+			this.newNode = factory.updateConstructorDeclaration(
+				newNode,
+				newNode.modifiers,
+				newNode.parameters,
+				factory.createBlock(newStatements, true)
+			)
+		}
+		else {
+			this.newNode = factory.updateMethodDeclaration(
+				newNode,
+				newNode.modifiers,
+				newNode.asteriskToken,
+				newNode.name,
+				newNode.questionToken,
+				newNode.typeParameters,
+				newNode.parameters,
+				newNode.type,
+				factory.createBlock(newStatements, true)
+			)
+		}
+	}
+
 }
 

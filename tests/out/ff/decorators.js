@@ -1,54 +1,23 @@
-import { untrack, beginTrack, endTrack, trackSet, computeTrackingValues, compareTrackingValues, enqueueUpdate, trackGet } from '@pucelle/ff';
+import { ComputedMaker, EffectMaker, trackGet, WatchMultipleMaker, trackSet } from '@pucelle/ff';
 import { Component } from '@pucelle/lupos.js';
 export class TestComputed extends Component {
     prop = 1;
-    $prop2 = undefined;
-    $tracking_values_prop2 = null;
-    $needs_compute_prop2 = true;
+    $prop2_computer = undefined;
     $compute_prop2() {
         trackGet(this, "prop");
         return this.prop + 1;
     }
-    $compare_prop2() {
-        if (!this.needs_compute_prop2) {
-            if (compareTrackingValues(this.$reset_prop2, this, this.$tracking_values_prop2)) {
-                this.$reset_prop2();
-            }
-        }
-    }
-    $reset_prop2() {
-        this.$needs_compute_prop2 = true;
-        this.$tracking_values_prop2 = null;
-    }
-    get prop2() {
-        if (!this.$needs_compute_prop2) {
-            return this.$prop2;
-        }
-        beginTrack(this.$reset_prop2, this);
-        try {
-            let newValue = this.$compute_prop2();
-            if (newValue !== this.$prop2) {
-                this.$prop2 = newValue;
-                trackSet(this, "prop2");
-            }
-        }
-        catch (err) {
-            console.error(err);
-        }
-        finally {
-            endTrack();
-        }
-        this.$needs_compute_prop2 = false;
-        this.$tracking_values_prop2 = computeTrackingValues(this.$reset_prop2, this);
-        return this.$prop2;
+    onCreated() {
+        super.onCreated();
+        this.$prop2_computer = new ComputedMaker(this.$compute_prop2, this);
     }
     onConnected() {
         super.onConnected();
-        this.$compare_prop2();
+        this.$prop2_computer.connect();
     }
     onWillDisconnect() {
         super.onWillDisconnect();
-        untrack(this.$reset_prop2, this);
+        this.$prop2_computer.disconnect();
     }
 }
 export class TestComputedDerived extends TestComputed {
@@ -60,36 +29,19 @@ export class TestComputedDerived extends TestComputed {
 export class TestEffect extends Component {
     propRead = 1;
     propWrite = 1;
+    onCreated() {
+        super.onCreated();
+        this.$onPropChangeEffect_effector = new EffectMaker(this.onPropChangeEffect, this);
+    }
     onConnected() {
         super.onConnected();
-        this.$compare_onPropChangeEffect();
+        this.$onPropChangeEffect_effector.connect();
     }
     onWillDisconnect() {
         super.onWillDisconnect();
-        untrack(this.$enqueue_onPropChangeEffect, this);
+        this.$onPropChangeEffect_effector.disconnect();
     }
-    $tracking_values_onPropChangeEffect = null;
-    $compare_onPropChangeEffect() {
-        if (!this.$tracking_values_onPropChangeEffect || compareTrackingValues(this.$enqueue_onPropChangeEffect, this, this.$tracking_values_onPropChangeEffect)) {
-            this.$run_onPropChangeEffect();
-        }
-    }
-    $enqueue_onPropChangeEffect() {
-        enqueueUpdate(this.$run_onPropChangeEffect, this);
-    }
-    $run_onPropChangeEffect() {
-        beginTrack(this.$enqueue_onPropChangeEffect, this);
-        try {
-            this.onPropChangeEffect();
-        }
-        catch (err) {
-            console.error(err);
-        }
-        finally {
-            endTrack();
-        }
-        this.$tracking_values_onPropChangeEffect = computeTrackingValues(this.$enqueue_onPropChangeEffect, this);
-    }
+    $onPropChangeEffect_effector = undefined;
     onPropChangeEffect() {
         this.propWrite = this.propRead;
         trackGet(this, "propRead");
@@ -105,123 +57,64 @@ export class TestEffectDerived extends TestEffect {
 }
 export class TestWatchProperty extends Component {
     prop = 1;
+    onCreated() {
+        super.onCreated();
+        this.$onPropChange_watcher = new WatchMultipleMaker([
+            function () { trackGet(this, 'prop'); return this.prop; },
+            function () { trackGet(this, 'prop'); return this.prop; }
+        ], this.onPropChange, this);
+    }
     onConnected() {
         super.onConnected();
-        this.$compare_onPropChange();
+        this.$onPropChange_watcher.connect();
     }
     onWillDisconnect() {
         super.onWillDisconnect();
-        untrack(this.$enqueue_onPropChange, this);
+        this.$onPropChange_watcher.disconnect();
     }
-    $values_onPropChange;
-    $enqueue_onPropChange() {
-        enqueueUpdate(this.$compare_onPropChange, this);
-    }
-    $compare_onPropChange() {
-        beginTrack(this.$enqueue_onPropChange, this);
-        let values_0, values_1;
-        try {
-            values_0 = this.prop;
-            values_1 = this.prop;
-            trackGet(this, "prop");
-        }
-        catch (err) {
-            console.error(err);
-        }
-        finally {
-            endTrack();
-        }
-        if (!this.$values_onPropChange) {
-            this.$values_onPropChange = new Array(2);
-            this.$values_onPropChange[0] = values_0;
-            this.$values_onPropChange[1] = values_1;
-        }
-        else if (values_0 !== this.$values_onPropChange[0] || values_1 !== this.$values_onPropChange[1]) {
-            this.$values_onPropChange[0] = values_0;
-            this.$values_onPropChange[1] = values_1;
-            this.onPropChange(values_0, values_1);
-        }
-    }
-    onPropChange(prop) {
+    $onPropChange_watcher = undefined;
+    onPropChange() {
         console.log(prop);
     }
 }
 export class TestWatchPropertyDerived extends TestWatchProperty {
-    onPropChange(prop) {
+    onPropChange() {
         console.log(prop + 1);
     }
 }
 export class TestWatchCallback extends Component {
     prop = 1;
+    onCreated() {
+        super.onCreated();
+        this.$onPropChange_watcher = new WatchMultipleMaker([
+            function () { trackGet(this, "prop"); return this.prop; }
+        ], this.onPropChange, this);
+    }
     onConnected() {
         super.onConnected();
-        this.$compare_onPropChange();
+        this.$onPropChange_watcher.connect();
     }
     onWillDisconnect() {
         super.onWillDisconnect();
-        untrack(this.$enqueue_onPropChange, this);
+        this.$onPropChange_watcher.disconnect();
     }
-    $values_onPropChange;
-    $enqueue_onPropChange() {
-        enqueueUpdate(this.$compare_onPropChange, this);
-    }
-    $compare_onPropChange() {
-        beginTrack(this.$enqueue_onPropChange, this);
-        let values_0;
-        try {
-            values_0 = function () { trackGet(this, "prop"); return this.prop; }.call(this);
-        }
-        catch (err) {
-            console.error(err);
-        }
-        finally {
-            endTrack();
-        }
-        if (!this.$values_onPropChange) {
-            this.$values_onPropChange = new Array(1);
-            this.$values_onPropChange[0] = values_0;
-        }
-        else if (values_0 !== this.$values_onPropChange[0]) {
-            this.$values_onPropChange[0] = values_0;
-            this.onPropChange(values_0);
-        }
-    }
-    onPropChange(prop) {
+    $onPropChange_watcher = undefined;
+    onPropChange() {
         console.log(prop);
     }
 }
 export class TestWatchCallbackDerived extends TestWatchCallback {
-    onPropChange(prop) {
+    onPropChange() {
         console.log(prop + 1);
     }
 }
 export class TestObservedImplemented {
     prop = 1;
     constructor() {
-        this.$compare_onPropChangeEffect();
+        this.$onPropChangeEffect_effector = new EffectMaker(this.onPropChangeEffect, this);
+        this.$onPropChangeEffect_effector.connect();
     }
-    $tracking_values_onPropChangeEffect = null;
-    $compare_onPropChangeEffect() {
-        if (!this.$tracking_values_onPropChangeEffect || compareTrackingValues(this.$enqueue_onPropChangeEffect, this, this.$tracking_values_onPropChangeEffect)) {
-            this.$run_onPropChangeEffect();
-        }
-    }
-    $enqueue_onPropChangeEffect() {
-        enqueueUpdate(this.$run_onPropChangeEffect, this);
-    }
-    $run_onPropChangeEffect() {
-        beginTrack(this.$enqueue_onPropChangeEffect, this);
-        try {
-            this.onPropChangeEffect();
-        }
-        catch (err) {
-            console.error(err);
-        }
-        finally {
-            endTrack();
-        }
-        this.$tracking_values_onPropChangeEffect = computeTrackingValues(this.$enqueue_onPropChangeEffect, this);
-    }
+    $onPropChangeEffect_effector = undefined;
     onPropChangeEffect() {
         console.log(this.prop);
         trackGet(this, "prop");
