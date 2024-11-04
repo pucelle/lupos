@@ -652,16 +652,16 @@ export namespace Helper {
 				|| ts.isElementAccessExpression(node)
 		}
 
-		/** get accessing name node. */
-		export function getNameNode(node: AccessNode): TS.Expression {
+		/** get accessing property node. */
+		export function getPropertyNode(node: AccessNode): TS.Expression {
 			return ts.isPropertyAccessExpression(node)
 				? node.name
 				: node.argumentExpression
 		}
 
-		/** get property accessing name text. */
-		export function getNameText(node: AccessNode): string {
-			let nameNode = getNameNode(node)
+		/** get property accessing property text. */
+		export function getPropertyText(node: AccessNode): string {
+			let nameNode = getPropertyNode(node)
 			return getText(nameNode)
 		}
 

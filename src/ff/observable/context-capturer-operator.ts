@@ -214,7 +214,7 @@ export class ContextCapturerOperator {
 				
 				let name: string | null = null
 				if (Helper.access.isAccess(node)) {
-					name = Helper.access.getNameText(node)
+					name = Helper.access.getPropertyText(node)
 				}
 
 				// `let {value} = this`

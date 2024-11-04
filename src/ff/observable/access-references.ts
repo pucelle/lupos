@@ -71,7 +71,7 @@ export namespace AccessReferences {
 	/** Visit an assess node, and it may make several reference items. */
 	export function visitAssess(node: AccessNode) {
 		let expIndex = VisitTree.getIndex(node.expression)!
-		let nameNode = Helper.access.getNameNode(node)
+		let nameNode = Helper.access.getPropertyNode(node)
 		let nameIndex = VisitTree.getIndex(nameNode)
 
 		visitAssessVisitor(node.expression, expIndex)
@@ -115,7 +115,7 @@ export namespace AccessReferences {
 		}
 
 		let expIndex = VisitTree.getIndex(node.expression)!
-		let nameNode = Helper.access.getNameNode(node)
+		let nameNode = Helper.access.getPropertyNode(node)
 		let nameIndex = VisitTree.getIndex(nameNode)
 
 		// Use a reference variable to replace expression.

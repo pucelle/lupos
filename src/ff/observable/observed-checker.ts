@@ -361,8 +361,13 @@ export namespace ObservedChecker {
 		// Only check when directly visiting the node.
 		if (!parental) {
 
-			// Will never observe private identifier like `a.#b`.
+			// Will not observe private property like `a.#b`.
 			if (ts.isPropertyAccessExpression(rawNode) && ts.isPrivateIdentifier(rawNode.name)) {
+				return false
+			}
+
+			// Will not observe property starts with '$' like `a.$b`.
+			if (Helper.access.getPropertyText(rawNode).startsWith('$')) {
 				return false
 			}
 
@@ -477,7 +482,7 @@ export namespace ObservedChecker {
 		let expType = Helper.types.typeOf(rawNode.expression)
 		let expTypeNode = Helper.types.getOrMakeTypeNode(rawNode.expression)
 		let objName = expTypeNode ? Helper.types.getTypeNodeReferenceName(expTypeNode) : undefined
-		let propName = Helper.access.getNameText(rawNode)
+		let propName = Helper.access.getPropertyText(rawNode)
 
 		if (objName === 'Map') {
 			return propName === 'has' || propName === 'get' || propName === 'size'
@@ -505,7 +510,7 @@ export namespace ObservedChecker {
 		let expType = Helper.types.typeOf(rawNode.expression)
 		let expTypeNode = Helper.types.getOrMakeTypeNode(rawNode.expression)
 		let objName = expTypeNode ? Helper.types.getTypeNodeReferenceName(expTypeNode) : undefined
-		let propName = Helper.access.getNameText(rawNode)
+		let propName = Helper.access.getPropertyText(rawNode)
 
 		if (objName === 'Map') {
 			return propName === 'set' || propName === 'clear'
