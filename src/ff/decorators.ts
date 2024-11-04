@@ -74,24 +74,50 @@ function compileComputedEffectWatchDecorator(
 			factory.createIdentifier('undefined')
 		)
 
-		let computeMethod = factory.createMethodDeclaration(
-			undefined,
+		let modifiers = decl.modifiers?.filter(m => !ts.isDecorator(m))
+
+		let newMethod = factory.createMethodDeclaration(
+			modifiers,
 			undefined,
 			factory.createIdentifier(overwrittenMethodName),
 			undefined,
 			undefined,
-			[],
+			decl.parameters,
 			undefined,
 			newBody
 		)
 
+		let getter = decoName === 'computed' ? [
+			factory.createGetAccessorDeclaration(
+				undefined,
+				factory.createIdentifier(propName),
+				[],
+				undefined,
+				factory.createBlock(
+					[factory.createReturnStatement(factory.createCallExpression(
+						factory.createPropertyAccessExpression(
+							factory.createPropertyAccessExpression(
+								factory.createThis(),
+								factory.createIdentifier(processorPropName)
+							),
+							factory.createIdentifier('get')
+						),
+						undefined,
+						[]
+					))],
+					true
+				)
+			)
+		] : []
+
 		if (isOverwritten) {
-			return [computeMethod]
+			return [newMethod]
 		}
 		else {
 			return [
 				property,
-				computeMethod,
+				newMethod,
+				...getter,
 			]
 		}
 	}
