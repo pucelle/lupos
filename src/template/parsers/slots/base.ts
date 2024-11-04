@@ -101,9 +101,9 @@ export abstract class SlotParserBase {
 	}
 
 	/** Returns whether current value has been outputted as mutable. */
-	isAnyValueOutputAsMutable(): boolean {
+	isAnyValueOutputted(): boolean {
 		return this.valueIndices !== null
-			&& this.valueIndices.some(index => this.template.values.isIndexOutputAsMutable(index))
+			&& this.valueIndices.some(index => this.template.values.isIndexOutputted(index))
 			|| this.customValueOutputted
 	}
 

@@ -24,9 +24,6 @@ export interface HashItem {
 /** Whether a expression be mutable, and whether it can turn. */
 export enum MutableMask {
 
-	/** `1`, use `const a`, use `import a`, use global declared `a`, `this.onClick`. */
-	Static = 0,
-
 	/** If referenced variable value is mutable, and need to update for multiple times. */
 	Mutable = 1,
 
@@ -405,12 +402,12 @@ export namespace ScopeTree {
 
 
 	/** Test whether expression represented value is mutable. */
-	export function testMutable(rawNode: TS.Expression): MutableMask {
+	export function testMutable(rawNode: TS.Expression): MutableMask | 0 {
 		return testMutableVisitor(rawNode, false)
 	}
 
-	function testMutableVisitor(rawNode: TS.Node, insideFunctionScope: boolean): MutableMask {
-		let mutable: MutableMask = 0
+	function testMutableVisitor(rawNode: TS.Node, insideFunctionScope: boolean): MutableMask | 0{
+		let mutable: MutableMask | 0 = 0
 
 		// Inside of a function scope.
 		insideFunctionScope ||= Helper.isFunctionLike(rawNode)

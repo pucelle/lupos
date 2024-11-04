@@ -12,8 +12,8 @@ export class TemplateValues {
 
 	private valueHash: Map<string, number> = new Map()
 	private outputNodes: TS.Expression[] = []
-	private indicesMutable: Map<number, MutableMask> = new Map()
-	private indicesOutputAsMutable: Set<number> = new Set()
+	private indicesMutable: Map<number, MutableMask | 0> = new Map()
+	private indicesOutputted: Set<number> = new Set()
 	private transferredLatestNames: Map<string, number> = new Map()
 
 	constructor(valueNodes: TS.Expression[], tree: TreeParser) {
@@ -41,8 +41,8 @@ export class TemplateValues {
 	}
 
 	/** Returns whether the value at specified index has been outputted as mutable. */
-	isIndexOutputAsMutable(valueIndex: number): boolean {
-		return this.indicesOutputAsMutable.has(valueIndex)!
+	isIndexOutputted(valueIndex: number): boolean {
+		return this.indicesOutputted.has(valueIndex)!
 	}
 
 	/** Get raw value node at index. */
@@ -128,7 +128,7 @@ export class TemplateValues {
 			let transferred = ScopeTree.transferToTopmostScope(
 				interpolated,
 				rawValueNode,
-				this.transferNodeToTopmostScope.bind(this)
+				this.transferNodeToTopmostScope.bind(this, valueIndex)
 			)
 
 			return transferred
@@ -136,7 +136,7 @@ export class TemplateValues {
 
 		// Output from value list.
 		else {
-			this.indicesOutputAsMutable.add(valueIndex)
+			this.indicesOutputted.add(valueIndex)
 			return this.outputNodeAsValue(rawValueNode, false)
 		}
 	}
@@ -147,12 +147,14 @@ export class TemplateValues {
 	 * `localVariableName` -> `$values[...]`, and add it to output value list.
 	 */
 	private transferNodeToTopmostScope(
+		valueIndex: number,
 		node: TS.Identifier | TS.ThisExpression,
 		insideFunction: boolean, 
 	): TS.Expression {
 
 		// Move variable name as an item to output value list.
 		if (ts.isIdentifier(node)) {
+			this.indicesOutputted.add(valueIndex)
 			return this.outputNodeAsValue(node, insideFunction)
 		}
 
@@ -235,11 +237,7 @@ export class TemplateValues {
 	outputCustomValue(node: TS.Expression): TS.Expression {
 		let valueIndex = this.outputNodes.length
 		this.outputNodes.push(node)
-		this.indicesOutputAsMutable.add(valueIndex)
-
-		if (Helper.getFullText(node) === '$values[1]') {
-			throw new Error('')
-		}
+		this.indicesOutputted.add(valueIndex)
 
 		return factory.createElementAccessExpression(
 			factory.createIdentifier(VariableNames.values),
