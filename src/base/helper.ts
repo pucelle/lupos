@@ -245,8 +245,30 @@ export namespace Helper {
 		return node.kind === ts.SyntaxKind.ThisKeyword
 	}
 
+	/** Test whether of `Array` type. */
+	export function isArray(rawNode: TS.Node): boolean {
+		let type = Helper.types.typeOf(rawNode)
+		return Helper.types.isArrayType(type)
+	}
+
+	/** Test whether be element of `[a...]`. */
+	export function isArraySpreadElement(node: TS.Node): boolean {
+		return node.parent && ts.isSpreadElement(node.parent)
+			&& node.parent.parent && ts.isArrayLiteralExpression(node.parent.parent)
+	}
+
+	/** Whether function will instantly run. */
+	export function isInstantlyRunFunction(node: TS.Node): node is TS.FunctionLikeDeclaration {
+
+		// [...].map(fn)
+		return isFunctionLike(node)
+			&& ts.isCallExpression(node.parent)
+			&& Helper.access.isAccess(node.parent.expression)
+			&& isArray(node.parent.expression.expression)
+	}
+
 	/** Test whether be `Map` or `Set`, or of `Array` type. */
-	export function isListStruct(rawNode: TS.Node) {
+	export function isListStruct(rawNode: TS.Node): boolean {
 		let type = Helper.types.typeOf(rawNode)
 		let typeNode = Helper.types.getOrMakeTypeNode(rawNode)
 		let objName = typeNode ? Helper.types.getTypeNodeReferenceName(typeNode) : undefined
@@ -256,18 +278,7 @@ export namespace Helper {
 			|| Helper.types.isArrayType(type)
 	}
 
-	/** Test whether of `Array` type. */
-	export function isArray(rawNode: TS.Node) {
-		let type = Helper.types.typeOf(rawNode)
-		return Helper.types.isArrayType(type)
-	}
 
-	/** Test whether be element of `[a...]`. */
-	export function isArraySpreadElement(rawNode: TS.Node) {
-		return rawNode.parent && ts.isSpreadElement(rawNode.parent)
-			&& rawNode.parent.parent && ts.isArrayLiteralExpression(rawNode.parent.parent)
-	}
-	
 
 	/** 
 	 * Make a property name node by property name string.

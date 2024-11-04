@@ -12,50 +12,54 @@ export enum ContextTypeMask {
 	Class = 2 ** 1,
 
 	/** 
+	 * Function.
 	 * Normally help to process parameters.
 	 * or for ArrowFunction has no block-type body exist.
 	 */
 	FunctionLike = 2 ** 2,
 
+	/** Function, but it should instantly run. */
+	InstantlyRunFunction = 2 ** 3,
+
 	/** 
 	 * `if`, `case`, `default`,
 	 * or binary expressions like `a && b`, `a || b`, `a ?? b`.
 	 */
-	Conditional = 2 ** 3,
+	Conditional = 2 ** 4,
 
 	/** 
 	 * Content of `if`, `else`;
 	 * Whole `case ...`, `default ...`.
 	 * Right part of binary expressions like `a && b`, `a || b`, `a ?? b`.
 	 */
-	ConditionalContent = 2 ** 4,
+	ConditionalContent = 2 ** 5,
 
 	/** `case ...: ...`, `default ...` */
-	CaseDefaultContent = 2 ** 5,
+	CaseDefaultContent = 2 ** 6,
 
 	/** Process For iteration initializer, condition, incrementor. */
-	Iteration = 2 ** 6,
+	Iteration = 2 ** 7,
 
 	/** `for (let...)` */
-	IterationInitializer = 2 ** 7,
+	IterationInitializer = 2 ** 8,
 
 	/** `while (...)`, `for (; ...; )` */
-	IterationCondition = 2 ** 8,
+	IterationCondition = 2 ** 9,
 
 	/** `for (; ; ...)` */
-	IterationIncreasement = 2 ** 9,
+	IterationIncreasement = 2 ** 10,
 
 	/** `for (let xxx of ...)` */
-	IterationExpression = 2 ** 10,
+	IterationExpression = 2 ** 11,
 
 	/** 
 	 * `while () ...`, `for () ...`, May run for none, 1 time, multiple times.
 	 * Content itself can be a block, or a normal expression.
 	 */
-	IterationContent = 2 ** 11,
+	IterationContent = 2 ** 12,
 
 	/** `return`, `break`, `continue`, `yield `, `await`, and with content. */
-	FlowInterruption = 2 ** 12,
+	FlowInterruption = 2 ** 13,
 }
 
 /** Content and a visit index position. */
@@ -99,6 +103,10 @@ export namespace ContextTree {
 		// Function like
 		else if (Helper.isFunctionLike(node)) {
 			type |= ContextTypeMask.FunctionLike
+
+			if (Helper.isInstantlyRunFunction(node)) {
+				type |= ContextTypeMask.InstantlyRunFunction
+			}
 		}
 
 		// For `if...else if...`
@@ -280,11 +288,11 @@ export namespace ContextTree {
 	 * Always walk descendants before self.
 	 */
 	export function* walkInwardChildFirst(context: Context, filter?: (context: Context) => boolean): Iterable<Context> {
-		for (let child of context.children) {
-			yield* walkInwardChildFirst(child, filter)
-		}
-
 		if (!filter || filter(context)) {
+			for (let child of context.children) {
+				yield* walkInwardChildFirst(child, filter)
+			}
+	
 			yield context
 		}
 	}
@@ -296,10 +304,10 @@ export namespace ContextTree {
 	export function* walkInwardSelfFirst(context: Context, filter?: (context: Context) => boolean): Iterable<Context> {
 		if (!filter || filter(context)) {
 			yield context
-		}
-
-		for (let child of context.children) {
-			yield* walkInwardSelfFirst(child, filter)
+		
+			for (let child of context.children) {
+				yield* walkInwardSelfFirst(child, filter)
+			}
 		}
 	}
 

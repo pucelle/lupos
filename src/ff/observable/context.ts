@@ -25,8 +25,11 @@ export class Context {
 	readonly variables: ContextVariables
 	readonly capturer: ContextCapturer
 
-	/** Self or closest ancestral context, which's type is function-like. */
-	readonly closestFunctionLike: Context | null
+	/** 
+	 * Self or closest ancestral context, which's type is function-like,
+	 * and should normally non-instantly run.
+	 */
+	readonly closestNonInstantlyRunFunction: Context | null
 
 	constructor(type: ContextTypeMask, rawNode: TS.Node, index: number, parent: Context | null) {
 		this.type = type
@@ -38,9 +41,12 @@ export class Context {
 		this.variables = new ContextVariables(this)
 		this.capturer = new ContextCapturer(this, this.state)
 
-		this.closestFunctionLike = (type & ContextTypeMask.FunctionLike)
+		let beNonInstantlyRunFunction = (type & ContextTypeMask.FunctionLike)
+			&& (type & ContextTypeMask.InstantlyRunFunction) === 0
+		
+		this.closestNonInstantlyRunFunction = beNonInstantlyRunFunction
 			? this
-			: parent?.closestFunctionLike ?? null
+			: parent?.closestNonInstantlyRunFunction ?? null
 
 		if (parent) {
 			parent.enterChild(this)

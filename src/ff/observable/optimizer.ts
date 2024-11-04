@@ -54,12 +54,8 @@ export namespace Optimizer {
 		}
 
 		// This optimizing has low risk, array methods may not run when have no items.
-		if (context.type & ContextTypeMask.FunctionLike
-			&& ts.isCallExpression(context.node.parent)
-			&& Helper.access.isAccess(context.node.parent.expression)
-			&& Helper.isArray(context.node.parent.expression.expression)
-		) {
-			moveArrayMethodsCapturedOutward(context)
+		if (context.type & ContextTypeMask.InstantlyRunFunction) {
+			moveInstantlyRunFunctionCapturedOutward(context)
 		}
 
 		// Eliminate repetitive.
@@ -174,7 +170,7 @@ export namespace Optimizer {
 	}
 
 
-	/** Move iteration content tracking outward. */
+	/** Move iteration tracking outward. */
 	function moveIterationContentCapturedOutward(context: Context) {
 		if (!context.capturer.hasCaptured()) {
 			return
@@ -187,8 +183,8 @@ export namespace Optimizer {
 	}
 
 
-	/** Move array methods content tracking outward. */
-	function moveArrayMethodsCapturedOutward(context: Context) {
+	/** Move instantly run function like array methods tracking outward. */
+	function moveInstantlyRunFunctionCapturedOutward(context: Context) {
 		if (!context.capturer.hasCaptured()) {
 			return
 		}

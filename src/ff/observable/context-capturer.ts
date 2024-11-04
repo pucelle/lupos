@@ -45,7 +45,7 @@ export class ContextCapturer {
 	/** These properties can only be visited outside by `ContextCapturerOperator`. */
 	captured: CapturedGroup[]
 	latestCaptured!: CapturedGroup
-	captureType: 'get' | 'set' | 'both' | 'none' = 'none'
+	captureType: 'get' | 'set' | 'both' | 'none' | 'not-determined' = 'not-determined'
 
 	constructor(context: Context, state: ContextState) {
 		this.context = context
@@ -68,6 +68,8 @@ export class ContextCapturer {
 	/** Transfer from some captured properties to child. */
 	private initCaptureType(state: ContextState) {
 		let parent = this.context.parent
+
+		// Source file.
 		if (!parent) {
 			this.captureType = 'none'
 		}
@@ -77,17 +79,13 @@ export class ContextCapturer {
 			this.captureType = 'both'
 		}
 
-		// function-like context inherit non `none` capture type.
+		// Not instantly run function-like context not inherit capture type.
 		else if (this.context.type & ContextTypeMask.FunctionLike) {
-			if (parent.capturer.captureType === 'none') {
-				this.captureType = 'get'
-			}
-			else {
-				this.captureType = parent.capturer.captureType
-			}
+			this.captureType = 'not-determined'
 		}
 
-		// Broadcast downward capture type from function-like context.
+		// Broadcast downward capture type from function-like context,
+		// or instantly run function-like context like function not exist.
 		else {
 			this.captureType = parent.capturer.captureType
 		}
@@ -95,17 +93,31 @@ export class ContextCapturer {
 
 	/** Every time capture a new index, check type and may toggle capture type. */
 	private addCaptureType(type: 'get' | 'set') {
+		if (this.captureType === 'not-determined') {
+			this.captureType = type
+		}
+		
+		// Broadcast downward from closest function-like context,
+		// to all get-type descendants exclude non-instantly run functions.
 		if (type === 'set' && this.captureType === 'get') {
-			let closest = this.context.closestFunctionLike!
+			let closest = this.context.closestNonInstantlyRunFunction!
 
-			// Broadcast downward from closest function-like context,
-			// to all get-type descendants.
-			let walking = ContextTree.walkInwardChildFirst(closest,
-				c => c.capturer.captureType === 'get'
-			)
+			let walking = ContextTree.walkInwardChildFirst(closest, c => {
+				if (c.capturer.captureType !== 'get') {
+					return false
+				}
+
+				if (c.type & ContextTypeMask.FunctionLike
+					&& (c.type & ContextTypeMask.InstantlyRunFunction) === 0
+				) {
+					return false
+				}
+
+				return true
+			})
 			
 			for (let descent of walking) {
-				descent.capturer.applySetCaptureTypeFromGet()
+				descent.capturer.switchFromGetToSetCaptureType()
 			}
 		}
 	}
@@ -183,8 +195,8 @@ export class ContextCapturer {
 		return this.captured.some(item => item.items.length > 0)
 	}
 
-	/** Apply capture type to `set` from 'get. */
-	private applySetCaptureTypeFromGet() {
+	/** Switch capture type to `set` from `get`. */
+	private switchFromGetToSetCaptureType() {
 		this.captureType = 'set'
 		this.latestCaptured.items = []
 		this.captured = [this.latestCaptured]
