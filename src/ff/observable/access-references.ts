@@ -45,7 +45,7 @@ export namespace AccessReferences {
 
 
 	/** Whether any descendant access node has been referenced. */
-	export function isDescendantAccessReferenced(index: number, ignoreListStructKey: boolean): boolean {
+	export function hasExternalAccessReferenced(index: number, ignoreListStructKey: boolean): boolean {
 		if (ReferencedIndices.has(index)) {
 			return true
 		}
@@ -56,7 +56,7 @@ export namespace AccessReferences {
 			&& Helper.access.isAccess(node)
 			&& Helper.isListStruct(node.expression)
 		) {
-			return isDescendantAccessReferenced(VisitTree.getIndex(node.expression), false)
+			return hasExternalAccessReferenced(VisitTree.getIndex(node.expression), false)
 		}
 
 		let childIndices = VisitTree.getChildIndices(index)
@@ -64,7 +64,7 @@ export namespace AccessReferences {
 			return false
 		}
 
-		return childIndices.some(i => isDescendantAccessReferenced(i, false))
+		return childIndices.some(i => hasExternalAccessReferenced(i, false))
 	}
 
 

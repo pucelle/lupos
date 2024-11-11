@@ -16,7 +16,7 @@ export namespace DiagnosticModifier {
 	const RemovedIndices: Set<number> = new Set()
 
 
-	/** Initialize before visit a new source file. */
+	/** Initialize for only once. */
 	export function initialize() {
 		for (let diag of extras.diagnostics) {
 			if (diag.start !== undefined) {

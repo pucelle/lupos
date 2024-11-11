@@ -41,7 +41,7 @@ export class ContextCapturerOperator {
 			for (let item of capturer.captured[0].items) {
 
 				// Has been referenced, ignore always.
-				if (AccessReferences.isDescendantAccessReferenced(item.index, true)) {
+				if (AccessReferences.hasExternalAccessReferenced(item.index, true)) {
 					continue
 				}
 
@@ -146,7 +146,7 @@ export class ContextCapturerOperator {
 			for (let item of [...group.items]) {
 
 				// Has been referenced, ignore always.
-				if (AccessReferences.isDescendantAccessReferenced(item.index, true)) {
+				if (AccessReferences.hasExternalAccessReferenced(item.index, true)) {
 					continue
 				}
 
