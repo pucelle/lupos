@@ -7,6 +7,9 @@ export class TestComputed extends Component {
         trackGet(this, "prop");
         return this.prop + 1;
     }
+    get prop2() {
+        return this.$prop2_computer.get();
+    }
     onCreated() {
         super.onCreated();
         this.$prop2_computer = new ComputedMaker(this.$compute_prop2, this);
@@ -73,12 +76,12 @@ export class TestWatchProperty extends Component {
         this.$onPropChange_watcher.disconnect();
     }
     $onPropChange_watcher = undefined;
-    onPropChange() {
+    onPropChange(prop) {
         console.log(prop);
     }
 }
 export class TestWatchPropertyDerived extends TestWatchProperty {
-    onPropChange() {
+    onPropChange(prop) {
         console.log(prop + 1);
     }
 }
@@ -99,12 +102,12 @@ export class TestWatchCallback extends Component {
         this.$onPropChange_watcher.disconnect();
     }
     $onPropChange_watcher = undefined;
-    onPropChange() {
+    onPropChange(prop) {
         console.log(prop);
     }
 }
 export class TestWatchCallbackDerived extends TestWatchCallback {
-    onPropChange() {
+    onPropChange(prop) {
         console.log(prop + 1);
     }
 }

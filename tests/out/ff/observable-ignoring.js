@@ -102,6 +102,9 @@ export class TestIgnoringOfPrivateComputedProperty extends Component {
     $compute_computedProp() {
         return this.prop;
     }
+    get computedProp() {
+        return this.$computedProp_computer.get();
+    }
 }
 export class TestIgnoringNonPrimitiveObject extends Component {
     el = document.body;
