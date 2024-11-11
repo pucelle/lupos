@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {defineVisitor, ts} from '../../base'
+import {defineVisitor, ts} from '../../core'
 import {ContextTree} from './context-tree'
 import {AccessReferences} from './access-references'
 import {TrackingPatch} from './tracking-patch'

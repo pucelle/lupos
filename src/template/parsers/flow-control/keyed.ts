@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {factory, Modifier} from '../../../base'
+import {factory, Modifier} from '../../../core'
 import {FlowControlBase} from './base'
 import {TemplateParser} from '../template'
 import {SlotContentType} from '../../../enums'

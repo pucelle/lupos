@@ -1,5 +1,5 @@
 import {SlotParserBase} from './base'
-import {factory, Helper, TemplateSlotPlaceholder, ts} from '../../../base'
+import {factory, Helper, TemplateSlotPlaceholder, ts} from '../../../core'
 import {cleanList} from '../../../utils'
 
 

@@ -1,6 +1,6 @@
 import type TS from 'typescript'
 import {ObservedChecker} from './observed-checker'
-import {Helper, ts, VisitTree} from '../../base'
+import {Helper, ts, VisitTree} from '../../core'
 import {Context} from './context'
 import {ContextTypeMask} from './context-tree'
 import {TrackingPatch} from './tracking-patch'

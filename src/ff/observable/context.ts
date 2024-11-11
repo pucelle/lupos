@@ -1,6 +1,6 @@
 import type TS from 'typescript'
 import {ObservedChecker} from './observed-checker'
-import {Helper, AccessNode, ts, FlowInterruptionTypeMask, ScopeTree, VisitTree} from '../../base'
+import {Helper, AccessNode, ts, FlowInterruptionTypeMask, ScopeTree, VisitTree} from '../../core'
 import {ContextState} from './context-state'
 import {ContextTypeMask} from './context-tree'
 import {ContextVariables} from './context-variables'

@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {Helper, defineVisitor, ts, Modifier, factory} from '../base'
+import {Helper, defineVisitor, ts, Modifier, factory} from '../core'
 import {SlotContentType} from '../enums'
 
 

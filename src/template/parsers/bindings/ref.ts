@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {factory, Helper, TemplateSlotPlaceholder, ts, VisitTree} from '../../../base'
+import {factory, Helper, TemplateSlotPlaceholder, ts, VisitTree} from '../../../core'
 import {BindingBase, BindingUpdateCallWith} from './base'
 import {TrackingPatch} from '../../../ff'
 import {getLatestBindingInfo, LatestBindingInfo} from './latest-binding'

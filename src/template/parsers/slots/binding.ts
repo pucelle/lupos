@@ -1,7 +1,7 @@
 import {SlotParserBase} from './base'
 import {BindingBase, ClassBinding, RefBinding, StyleBinding} from '../bindings'
 import {HTMLAttribute} from '../../html-syntax'
-import {DiagnosticModifier} from '../../../base'
+import {DiagnosticModifier} from '../../../core'
 
 
 export class BindingSlotParser extends SlotParserBase {

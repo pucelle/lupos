@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {factory, Helper, Modifier, VisitTree} from '../../../base'
+import {factory, Helper, Modifier, VisitTree} from '../../../core'
 import {FlowControlBase} from './base'
 import {SlotContentType} from '../../../enums'
 import {ForceTrackType, TrackingPatch} from '../../../ff'

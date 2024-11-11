@@ -1,6 +1,6 @@
 import type TS from 'typescript'
 import {SlotParserBase} from './base'
-import {DiagnosticModifier, factory, Modifier, ScopeTree, ts} from '../../../base'
+import {DiagnosticModifier, factory, Modifier, ScopeTree, ts} from '../../../core'
 
 
 export class ComponentSlotParser extends SlotParserBase {

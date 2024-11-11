@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {factory, Helper, Interpolator, MutableMask, ScopeTree, ts} from '../../base'
+import {factory, Helper, Interpolator, MutableMask, ScopeTree, ts} from '../../core'
 import {VariableNames} from './variable-names'
 import {TreeParser} from './tree'
 

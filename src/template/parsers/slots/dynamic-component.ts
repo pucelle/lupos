@@ -1,6 +1,6 @@
 import type TS from 'typescript'
 import {SlotParserBase} from './base'
-import {factory, Modifier, ts} from '../../../base'
+import {factory, Modifier, ts} from '../../../core'
 import {HTMLNode, HTMLNodeType} from '../../html-syntax'
 import {SlotPositionType} from '../../../enums'
 

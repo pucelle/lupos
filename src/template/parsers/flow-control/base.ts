@@ -2,7 +2,7 @@ import type TS from 'typescript'
 import {HTMLNode, HTMLNodeType} from '../../html-syntax'
 import {TreeParser} from '../tree'
 import {FlowControlSlotParser} from '../slots'
-import {factory, TemplateSlotPlaceholder} from '../../../base'
+import {factory, TemplateSlotPlaceholder} from '../../../core'
 import {TemplateParser} from '../template'
 
 

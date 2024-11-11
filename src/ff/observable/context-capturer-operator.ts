@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {Helper, VisitTree, ts, FlowInterruptionTypeMask, ScopeTree, HashItem} from '../../base'
+import {Helper, VisitTree, ts, FlowInterruptionTypeMask, ScopeTree, HashItem} from '../../core'
 import {AccessReferences} from './access-references'
 import {removeFromList} from '../../utils'
 import {CapturedItem, ContextCapturer} from './context-capturer'

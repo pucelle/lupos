@@ -1,4 +1,4 @@
-import {factory, Helper} from '../../../base'
+import {factory, Helper} from '../../../core'
 import {BindingBase, BindingUpdateCallWith} from './base'
 
 

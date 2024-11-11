@@ -1,6 +1,6 @@
 import type TS from 'typescript'
-import {AccessNode} from '../../base/helper'
-import {ts, Helper, typeChecker} from '../../base'
+import {AccessNode} from '../../core/helper'
+import {ts, Helper, typeChecker} from '../../core'
 import {ContextTree} from './context-tree'
 import {GenericType} from 'typescript'
 

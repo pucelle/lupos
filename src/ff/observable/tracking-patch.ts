@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {Helper} from '../../base'
+import {Helper} from '../../core'
 import {ObservedChecker} from './observed-checker'
 import {AccessGrouper} from './access-grouper'
 

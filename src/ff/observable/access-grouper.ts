@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {AccessNode, factory, Helper, Modifier, ts} from '../../base'
+import {AccessNode, factory, Helper, Modifier, ts} from '../../core'
 import {groupBy} from '../../utils'
 
 

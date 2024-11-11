@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {ts, defineVisitor, Helper, factory, Interpolator, InterpolationContentType} from '../base'
+import {ts, defineVisitor, Helper, factory, Interpolator, InterpolationContentType} from '../core'
 
 
 // Add `Com.ensureStyle()` after class declaration.

@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {Helper, Modifier, ts} from '../../base'
+import {Helper, Modifier, ts} from '../../core'
 import {Context} from './context'
 import {ContextTree, ContextTypeMask} from './context-tree'
 import {ContextCapturerOperator} from './context-capturer-operator'

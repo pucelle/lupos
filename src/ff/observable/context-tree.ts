@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {Helper, ts, VisitTree} from '../../base'
+import {Helper, ts, VisitTree} from '../../core'
 import {Context} from './context'
 
 

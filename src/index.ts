@@ -1,6 +1,6 @@
 import type TS from 'typescript'
 import type {TransformerExtras, PluginConfig} from 'ts-patch'
-import {transformer} from './base'
+import {transformer} from './core'
 import './ff'
 import './lupos.js'
 import './template'

@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {definePreVisitCallback, factory, Modifier, ScopeTree, ts} from '../../base'
+import {definePreVisitCallback, factory, Modifier, ScopeTree, ts} from '../../core'
 import {TreeParser} from './tree'
 import {DoubleKeysMap} from '../../utils'
 

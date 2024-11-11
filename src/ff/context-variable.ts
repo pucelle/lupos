@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {Helper, ts, defineVisitor, factory, Interpolator, InterpolationContentType, Modifier} from '../base'
+import {Helper, ts, defineVisitor, factory, Interpolator, InterpolationContentType, Modifier} from '../core'
 
 
 defineVisitor(function(node: TS.Node, index: number) {

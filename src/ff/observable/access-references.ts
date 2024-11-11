@@ -1,4 +1,4 @@
-import {AccessNode, factory, Helper, InterpolationContentType, Interpolator, Modifier, transformContext, ts, VisitTree, ScopeTree} from '../../base'
+import {AccessNode, factory, Helper, InterpolationContentType, Interpolator, Modifier, transformContext, ts, VisitTree, ScopeTree} from '../../core'
 import type TS from 'typescript'
 import {ContextTree} from './context-tree'
 import {Context} from './context'

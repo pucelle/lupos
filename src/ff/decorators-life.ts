@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {ts, defineVisitor, Helper, factory, Interpolator, VisitTree, MethodOverwrite, Modifier, MethodInsertPosition} from '../base'
+import {ts, defineVisitor, Helper, factory, Interpolator, VisitTree, MethodOverwrite, Modifier, MethodInsertPosition} from '../core'
 import {ProcessorClassNameMap, ProcessorPropNameMap} from './decorators-shared'
 
 
