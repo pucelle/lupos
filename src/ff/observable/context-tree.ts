@@ -21,45 +21,55 @@ export enum ContextTypeMask {
 	/** Function, but it should instantly run. */
 	InstantlyRunFunction = 2 ** 3,
 
-	/** 
-	 * `if`, `case`, `default`,
-	 * or binary expressions like `a && b`, `a || b`, `a ?? b`.
-	 */
+	/** `if`, or binary expressions like `a && b`, `a || b`, `a ?? b`. */
 	Conditional = 2 ** 4,
 
 	/** 
-	 * Content of `if`, `else`;
-	 * Whole `case ...`, `default ...`.
+	 * Content of `if`, `else`.
 	 * Right part of binary expressions like `a && b`, `a || b`, `a ?? b`.
 	 */
 	ConditionalContent = 2 ** 5,
 
-	/** `case ...: ...`, `default ...` */
-	CaseDefaultContent = 2 ** 6,
+	/** `Switch`. */
+	Switch = 2 ** 6,
+
+	/** `case` or `default`. */
+	CaseDefault = 2 ** 7,
+
+	/** Content of `case xxx ...`, `default ...`. */
+	CaseDefaultContent = 2 ** 8,
+
+	/** 
+	 * Like content of `case xxx: ...`, `default ...`,
+	 * or a specified range to contain partial of a template literal.
+	 * A context with `ContentRange` must have `rangeStartNode` and `rangeEndNode` nodes.
+	 * And `node` is the container node contains both `rangeStartNode` and `rangeEndNode` nodes.
+	 */
+	ContentRange = 2 ** 9,
 
 	/** Process For iteration initializer, condition, incrementor. */
-	Iteration = 2 ** 7,
+	Iteration = 2 ** 10,
 
 	/** `for (let...)` */
-	IterationInitializer = 2 ** 8,
+	IterationInitializer = 2 ** 11,
 
 	/** `while (...)`, `for (; ...; )` */
-	IterationCondition = 2 ** 9,
+	IterationCondition = 2 ** 12,
 
 	/** `for (; ; ...)` */
-	IterationIncreasement = 2 ** 10,
+	IterationIncreasement = 2 ** 13,
 
 	/** `for (let xxx of ...)` */
-	IterationExpression = 2 ** 11,
+	IterationExpression = 2 ** 14,
 
 	/** 
 	 * `while () ...`, `for () ...`, May run for none, 1 time, multiple times.
 	 * Content itself can be a block, or a normal expression.
 	 */
-	IterationContent = 2 ** 12,
+	IterationContent = 2 ** 15,
 
 	/** `return`, `break`, `continue`, `yield `, `await`, and with content. */
-	FlowInterruption = 2 ** 13,
+	FlowInterruption = 2 ** 16,
 }
 
 /** Content and a visit index position. */
@@ -72,7 +82,10 @@ export interface ContextTargetPosition{
 export namespace ContextTree {
 
 	let contextStack: (Context | null)[] = []
-	let current: Context | null = null
+	export let current: Context | null = null
+
+	/** All content ranges. */
+	let contentRanges: {start: TS.Node, end: TS.Node}[] = []
 
 	/** Visit index -> Context. */
 	const ContextMap: Map<number, Context> = new Map()
@@ -82,8 +95,33 @@ export namespace ContextTree {
 	export function init() {
 		contextStack = []
 		current = null
+		contentRanges = []
 		ContextMap.clear()
 	}
+
+
+	/** 
+	 * Mark a node range, later will be made as a `ContentRange` context.
+	 * Note must mark before context visitor visit it.
+	 */
+	export function markContentRange(startNode: TS.Node, endNode: TS.Node) {
+		contentRanges.push({start: startNode, end: endNode})
+	}
+
+	/** Try get a content range by start node. */
+	export function getContentRangeByStartNode(startNode: TS.Node): {start: TS.Node, end: TS.Node} | undefined {
+		let range = contentRanges.find(r => r.start === startNode)
+		return range
+	}
+
+	/** Remove a content range by start node. */
+	export function removeContentRangeByStartNode(startNode: TS.Node) {
+		let rangeIndex = contentRanges.findIndex(r => r.start === startNode)
+		if (rangeIndex > -1) {
+			contentRanges.splice(rangeIndex, 1)
+		}
+	}
+
 
 	/** Check Context type of a node. */
 	export function checkContextType(node: TS.Node): ContextTypeMask | 0 {
@@ -132,17 +170,12 @@ export namespace ContextTree {
 
 		// `switch(...) {...}`
 		else if (ts.isSwitchStatement(node)) {
-			type |= ContextTypeMask.Conditional
+			type |= ContextTypeMask.Switch
 		}
 
 		// `case ...`, `default ...`.
-		// Note for case expression `case ...`,
-		// It's tracking expressions will be captured by whole context,
-		// and insert to following statements.
-		// This cause some risks, but normally we assume that `case ...`
-		// should always work with static condition expression.
 		else if (ts.isCaseOrDefaultClause(node)) {
-			type |= (ContextTypeMask.ConditionalContent | ContextTypeMask.CaseDefaultContent)
+			type |= ContextTypeMask.CaseDefault
 		}
 
 		// Iteration
@@ -235,22 +268,55 @@ export namespace ContextTree {
 			}
 		}
 
+		// Make a content range.
+		if (getContentRangeByStartNode(node)) {
+			type |= ContextTypeMask.ContentRange
+
+			// Content of case or default.
+			if (ts.isCaseOrDefaultClause(parent)) {
+				type |= ContextTypeMask.CaseDefaultContent
+			}
+		}
+
 		return type
 	}
-	
+
 	/** Create a context from node and push to stack. */
 	export function createContext(type: ContextTypeMask, node: TS.Node): Context {
 		let index = VisitTree.getIndex(node)
-		let context = new Context(type, node, index, current)
+		let startNode = null, endNode = null
+
+		// Initialize content range.
+		if (type & ContextTypeMask.ContentRange) {
+			let range = getContentRangeByStartNode(node)
+			if (range) {
+				startNode = range.start
+				endNode = range.end
+			}
+		}
+
+		let context = new Context(type, node, index, current, startNode, endNode)
 
 		ContextMap.set(index, context)
 		contextStack.push(current)
+
+		// Child `case/default` statements start a content range.
+		if (ts.isCaseOrDefaultClause(node)) {
+			let statements = node.statements
+			if (statements.length > 0) {
+				markContentRange(statements[0], statements[statements.length - 1])
+			}
+		}
 
 		return current = context
 	}
 
 	/** Pop context. */
 	export function pop() {
+		if (current && (current.type & ContextTypeMask.ContentRange)) {
+			removeContentRangeByStartNode(current.rangeStartNode!)
+		}
+
 		current!.beforeExit()
 		current = contextStack.pop()!
 	}

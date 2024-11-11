@@ -32,6 +32,8 @@ export class TestIfStatement extends Component {
 export class TestSwitchBlock extends Component {
 
 	cond: string = '1'
+	case1: string = '1'
+	case2: string = '2'
 	prop: string = 'Text'
 
 	fixedCond() {
@@ -48,6 +50,15 @@ export class TestSwitchBlock extends Component {
 		switch (this.cond) {
 			case '1': return this.prop
 			case '2': return this.prop
+		}
+
+		return 0
+	}
+
+	variableCase() {
+		switch (this.cond) {
+			case this.case1: return this.prop
+			case this.case2: return this.prop
 		}
 
 		return 0

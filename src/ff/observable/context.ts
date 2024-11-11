@@ -20,6 +20,8 @@ export class Context {
 	readonly visitIndex: number
 	readonly node: TS.Node
 	readonly parent: Context | null
+	readonly rangeStartNode: TS.Node | null
+	readonly rangeEndNode: TS.Node | null
 	readonly children: Context[] = []
 	readonly state: ContextState
 	readonly variables: ContextVariables
@@ -31,11 +33,20 @@ export class Context {
 	 */
 	readonly closestNonInstantlyRunFunction: Context | null
 
-	constructor(type: ContextTypeMask, rawNode: TS.Node, index: number, parent: Context | null) {
+	constructor(
+		type: ContextTypeMask,
+		rawNode: TS.Node,
+		index: number,
+		parent: Context | null,
+		rangeStartNode: TS.Node | null,
+		rangeEndNode: TS.Node | null
+	) {
 		this.type = type
 		this.visitIndex = index
 		this.node = rawNode
 		this.parent = parent
+		this.rangeStartNode = rangeStartNode
+		this.rangeEndNode = rangeEndNode
 
 		this.state = new ContextState(this)
 		this.variables = new ContextVariables(this)

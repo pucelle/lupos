@@ -1,6 +1,6 @@
 import type TS from 'typescript'
 import {defineVisitor, ts} from '../../core'
-import {ContextTree} from './context-tree'
+import {ContextTree, ContextTypeMask} from './context-tree'
 import {AccessReferences} from './access-references'
 import {TrackingPatch} from './tracking-patch'
 
@@ -20,13 +20,26 @@ defineVisitor(function(node: TS.Node) {
 	if (type !== 0) {
 		ContextTree.createContext(type, node)
 	}
-
+	
 	// after visited children.
 	return () => {
 		ContextTree.visitNode(node)
 
-		if (type !== 0) {
+		// Non content range type.
+		if (type !== 0
+			&& (type & ContextTypeMask.ContentRange) === 0
+		) {
 			ContextTree.pop()
+		}
+
+		// Current context is a content range.
+		// It get popped on when match range end node.
+		if (ContextTree.current
+			&& (ContextTree.current.type & ContextTypeMask.ContentRange)
+		) {
+			if (node === ContextTree.current.rangeEndNode) {
+				ContextTree.pop()
+			}
 		}
 	}
 })

@@ -4,8 +4,6 @@ import {ContextTypeMask} from './context-tree'
 import {AccessNode, FlowInterruptionTypeMask, Helper, ts, VisitTree} from '../../core'
 
 
-
-
 export class ContextState {
 
 	readonly context: Context
@@ -131,7 +129,8 @@ export class ContextState {
 		if (type & FlowInterruptionTypeMask.BreakLike) {
 
 			// Break would not broadcast out of `iteration` and `case`, `default`.
-			if (!(this.context.type & ContextTypeMask.IterationContent
+			if (!(
+				this.context.type & ContextTypeMask.IterationContent
 				|| this.context.type & ContextTypeMask.CaseDefaultContent
 			)) {
 				this.flowInterruptionType |= FlowInterruptionTypeMask.BreakLike

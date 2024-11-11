@@ -2,6 +2,7 @@ import type TS from 'typescript'
 import {Helper} from '../../core'
 import {ObservedChecker} from './observed-checker'
 import {AccessGrouper} from './access-grouper'
+import {ContextTree} from './context-tree'
 
 
 export enum ForceTrackType {

@@ -1,4 +1,4 @@
 import './decorators'
 import './decorators-life'
-import './context-variable'
+import './use-context-variable'
 export * from './observable'

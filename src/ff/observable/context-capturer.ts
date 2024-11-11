@@ -266,6 +266,7 @@ export class ContextCapturer {
 		// This codes can avoid error occurred even no optimization.
 		else if (this.context.type & ContextTypeMask.FlowInterruption
 			|| this.context.type & ContextTypeMask.Conditional
+			|| this.context.type & ContextTypeMask.Switch
 		) {
 			item.position = InterpolationPosition.Before
 		}
