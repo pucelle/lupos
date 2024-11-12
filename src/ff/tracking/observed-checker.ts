@@ -1,7 +1,7 @@
 import type TS from 'typescript'
 import {AccessNode} from '../../core/helper'
 import {ts, Helper, typeChecker} from '../../core'
-import {ContextTree} from './context-tree'
+import {TrackingScopeTree} from './scope-tree'
 import {GenericType} from 'typescript'
 
 
@@ -218,7 +218,7 @@ export namespace ObservedChecker {
 			return false
 		}
 
-		// Now enters parent context.
+		// Now enters parent scope.
 		let calling = fn.parent
 		if (!ts.isCallExpression(calling)) {
 			return false
@@ -236,7 +236,7 @@ export namespace ObservedChecker {
 			return false
 		}
 
-		// Must use parent context.
+		// Must use parent scope.
 		return isObserved(callFrom)
 	}
 
@@ -432,14 +432,14 @@ export namespace ObservedChecker {
 	 * E.g., for `a.b.c`, sub identifier `b` or `c` is not allowed.
 	 */
 	export function isIdentifierObserved(rawNode: TS.Identifier | TS.ThisExpression): boolean {
-		let context = ContextTree.findClosestByNode(rawNode)
+		let scope = TrackingScopeTree.findClosestByNode(rawNode)
 
 		if (Helper.isThis(rawNode)) {
-			return context.variables.thisObserved
+			return scope.variables.thisObserved
 		}
 
 		let name = rawNode.text
-		return context.variables.isVariableObserved(name)
+		return scope.variables.isVariableObserved(name)
 	}
 
 	

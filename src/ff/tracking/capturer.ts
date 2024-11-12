@@ -1,14 +1,14 @@
 import type TS from 'typescript'
 import {InterpolationContentType, AccessNode, Helper, Interpolator, InterpolationPosition, VisitTree, ts, FlowInterruptionTypeMask, ScopeTree} from '../../core'
-import {Context} from './context'
-import {ContextTree, ContextTypeMask} from './context-tree'
+import {TrackingScope} from './scope'
+import {TrackingScopeTree, TrackingScopeTypeMask} from './scope-tree'
 import {AccessGrouper} from './access-grouper'
 import {AccessReferences} from './access-references'
 import {Optimizer} from './optimizer'
 import {removeFromList} from '../../utils'
-import {ContextState} from './context-state'
-import {ContextCapturerOperator} from './context-capturer-operator'
-import {TrackingPatch} from './tracking-patch'
+import {TrackingScopeState} from './scope-state'
+import {TrackingCapturerOperator} from './capturer-operator'
+import {TrackingPatch} from './patch'
 
 
 /** Captured item, will be inserted to a position. */
@@ -34,22 +34,22 @@ export interface CapturedItem {
 
 
 /** 
- * It attaches to each context,
+ * It attaches to each scope,
  * Captures get and set expressions, and remember reference variables.
  */
-export class ContextCapturer {
+export class TrackingCapturer {
 
-	readonly context: Context
-	readonly operator: ContextCapturerOperator
+	readonly scope: TrackingScope
+	readonly operator: TrackingCapturerOperator
 
-	/** These properties can only be visited outside by `ContextCapturerOperator`. */
+	/** These properties can only be visited outside by `TrackingCapturerOperator`. */
 	captured: CapturedGroup[]
 	latestCaptured!: CapturedGroup
 	captureType: 'get' | 'set' | 'both' | 'none' | 'not-determined' = 'not-determined'
 
-	constructor(context: Context, state: ContextState) {
-		this.context = context
-		this.operator = new ContextCapturerOperator(this)
+	constructor(scope: TrackingScope, state: TrackingScopeState) {
+		this.scope = scope
+		this.operator = new TrackingCapturerOperator(this)
 
 		this.resetLatestCaptured()
 		this.captured = [this.latestCaptured]
@@ -66,8 +66,8 @@ export class ContextCapturer {
 	}
 
 	/** Transfer from some captured properties to child. */
-	private initCaptureType(state: ContextState) {
-		let parent = this.context.parent
+	private initCaptureType(state: TrackingScopeState) {
+		let parent = this.scope.parent
 
 		// Source file.
 		if (!parent) {
@@ -79,13 +79,13 @@ export class ContextCapturer {
 			this.captureType = 'both'
 		}
 
-		// Not instantly run function-like context not inherit capture type.
-		else if (this.context.type & ContextTypeMask.FunctionLike) {
+		// Not instantly run function-like scope not inherit capture type.
+		else if (this.scope.type & TrackingScopeTypeMask.FunctionLike) {
 			this.captureType = 'not-determined'
 		}
 
-		// Broadcast downward capture type from function-like context,
-		// or instantly run function-like context like function not exist.
+		// Broadcast downward capture type from function-like scope,
+		// or instantly run function-like scope like function not exist.
 		else {
 			this.captureType = parent.capturer.captureType
 		}
@@ -97,18 +97,18 @@ export class ContextCapturer {
 			this.captureType = type
 		}
 		
-		// Broadcast downward from closest function-like context,
+		// Broadcast downward from closest function-like scope,
 		// to all get-type descendants exclude non-instantly run functions.
 		if (type === 'set' && this.captureType === 'get') {
-			let closest = this.context.closestNonInstantlyRunFunction!
+			let closest = this.scope.closestNonInstantlyRunFunction!
 
-			let walking = ContextTree.walkInwardChildFirst(closest, c => {
+			let walking = TrackingScopeTree.walkInwardChildFirst(closest, c => {
 				if (c.capturer.captureType !== 'get') {
 					return false
 				}
 
-				if (c.type & ContextTypeMask.FunctionLike
-					&& (c.type & ContextTypeMask.InstantlyRunFunction) === 0
+				if (c.type & TrackingScopeTypeMask.FunctionLike
+					&& (c.type & TrackingScopeTypeMask.InstantlyRunFunction) === 0
 				) {
 					return false
 				}
@@ -209,8 +209,8 @@ export class ContextCapturer {
 
 		// Conditional can't be break, it captures only condition expression.
 		// This is required, or inner captured can't be moved to head.
-		if (this.context.type & ContextTypeMask.Conditional
-			|| this.context.type & ContextTypeMask.Switch
+		if (this.scope.type & TrackingScopeTypeMask.Conditional
+			|| this.scope.type & TrackingScopeTypeMask.Switch
 		) {
 			return
 		}
@@ -221,19 +221,19 @@ export class ContextCapturer {
 		this.captured.push(this.latestCaptured)
 	}
 
-	/** Before each context will exit. */
+	/** Before each scope will exit. */
 	beforeExit() {
 		this.endCapture()
 
-		if (this.context.type & ContextTypeMask.SourceFile) {
+		if (this.scope.type & TrackingScopeTypeMask.SourceFile) {
 
 			// Do referencing and optimization, ensure child-first then self.
-			for (let descent of ContextTree.walkInwardChildFirst(this.context)) {
+			for (let descent of TrackingScopeTree.walkInwardChildFirst(this.scope)) {
 				descent.capturer.preProcessCaptured()
 			}
 
 			// Do output, either child-first or self-first should be OK.
-			for (let descent of ContextTree.walkInwardSelfFirst(this.context)) {
+			for (let descent of TrackingScopeTree.walkInwardSelfFirst(this.scope)) {
 				descent.capturer.postProcessCaptured()
 			}
 		}
@@ -242,13 +242,13 @@ export class ContextCapturer {
 	/** Prepare latest captured item. */
 	private endCapture() {
 		let item = this.latestCaptured
-		let index = this.context.visitIndex
-		let node = this.context.node
+		let index = this.scope.visitIndex
+		let node = this.scope.node
 
 		item.toIndex = index
 
 		// For function declaration, insert to function body.
-		if (this.context.type & ContextTypeMask.FunctionLike) {
+		if (this.scope.type & TrackingScopeTypeMask.FunctionLike) {
 			let body = (node as TS.FunctionLikeDeclarationBase).body
 
 			// Abstract function or function type declaration has no body.
@@ -267,9 +267,9 @@ export class ContextCapturer {
 		// Insert before whole content of target capturer.
 		// Normally codes will be moved outward on optimization step.
 		// This codes can avoid error occurred even no optimization.
-		else if (this.context.type & ContextTypeMask.FlowInterruption
-			|| this.context.type & ContextTypeMask.Conditional
-			|| this.context.type & ContextTypeMask.Switch
+		else if (this.scope.type & TrackingScopeTypeMask.FlowInterruption
+			|| this.scope.type & TrackingScopeTypeMask.Conditional
+			|| this.scope.type & TrackingScopeTypeMask.Switch
 		) {
 			item.position = InterpolationPosition.Before
 		}
@@ -293,8 +293,8 @@ export class ContextCapturer {
 		this.checkAccessReferences()
 
 		// Must after reference step, reference step will look for position,
-		// which requires indices stay at their context.
-		Optimizer.optimize(this.context)
+		// which requires indices stay at their scope.
+		Optimizer.optimize(this.scope)
 	}
 
 	/** 
@@ -309,7 +309,7 @@ export class ContextCapturer {
 	private checkAccessReferences() {
 		for (let item of this.captured) {
 			for (let {index} of item.items) {
-				AccessReferences.mayReferenceAccess(index, item.toIndex, this.context)
+				AccessReferences.mayReferenceAccess(index, item.toIndex, this.scope)
 			}
 		}
 	}
@@ -387,13 +387,13 @@ export class ContextCapturer {
 
 	/** Try to find a better position to insert captured. */
 	private findBetterInsertPosition(index: number): number | null {
-		let position = ContextTree.findClosestPositionToAddStatements(index, this.context)
+		let position = TrackingScopeTree.findClosestPositionToAddStatements(index, this.scope)
 		if (!position) {
 			return null
 		}
 
-		// Must in same context.
-		if (position.context !== this.context) {
+		// Must in same scope.
+		if (position.scope !== this.scope) {
 			return null
 		}
 

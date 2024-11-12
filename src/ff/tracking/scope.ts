@@ -1,43 +1,43 @@
 import type TS from 'typescript'
 import {ObservedChecker} from './observed-checker'
 import {Helper, AccessNode, ts, FlowInterruptionTypeMask, ScopeTree, VisitTree} from '../../core'
-import {ContextState} from './context-state'
-import {ContextTypeMask} from './context-tree'
-import {ContextVariables} from './context-variables'
-import {ContextCapturer} from './context-capturer'
+import {TrackingScopeState} from './scope-state'
+import {TrackingScopeTypeMask} from './scope-tree'
+import {TrackingScopeVariables} from './scope-variables'
+import {TrackingCapturer} from './capturer'
 import {AccessReferences} from './access-references'
-import {ForceTrackType, TrackingPatch} from './tracking-patch'
+import {ForceTrackType, TrackingPatch} from './patch'
 
 
 /** 
  * A source file, a method, or a namespace, a function, an arrow function
- * create a context.
- * Otherwise, a logic or flow statement will also create a context.
+ * initialize a tracking scope.
+ * Otherwise, a logic or a flow statement will also initialize a tracking scope.
  */
-export class Context {
+export class TrackingScope {
 
-	readonly type: ContextTypeMask
+	readonly type: TrackingScopeTypeMask
 	readonly visitIndex: number
 	readonly node: TS.Node
-	readonly parent: Context | null
+	readonly parent: TrackingScope | null
 	readonly rangeStartNode: TS.Node | null
 	readonly rangeEndNode: TS.Node | null
-	readonly children: Context[] = []
-	readonly state: ContextState
-	readonly variables: ContextVariables
-	readonly capturer: ContextCapturer
+	readonly children: TrackingScope[] = []
+	readonly state: TrackingScopeState
+	readonly variables: TrackingScopeVariables
+	readonly capturer: TrackingCapturer
 
 	/** 
-	 * Self or closest ancestral context, which's type is function-like,
+	 * Self or closest ancestral scope, which's type is function-like,
 	 * and should normally non-instantly run.
 	 */
-	readonly closestNonInstantlyRunFunction: Context | null
+	readonly closestNonInstantlyRunFunction: TrackingScope | null
 
 	constructor(
-		type: ContextTypeMask,
+		type: TrackingScopeTypeMask,
 		rawNode: TS.Node,
 		index: number,
-		parent: Context | null,
+		parent: TrackingScope | null,
 		rangeStartNode: TS.Node | null,
 		rangeEndNode: TS.Node | null
 	) {
@@ -48,12 +48,12 @@ export class Context {
 		this.rangeStartNode = rangeStartNode
 		this.rangeEndNode = rangeEndNode
 
-		this.state = new ContextState(this)
-		this.variables = new ContextVariables(this)
-		this.capturer = new ContextCapturer(this, this.state)
+		this.state = new TrackingScopeState(this)
+		this.variables = new TrackingScopeVariables(this)
+		this.capturer = new TrackingCapturer(this, this.state)
 
-		let beNonInstantlyRunFunction = (type & ContextTypeMask.FunctionLike)
-			&& (type & ContextTypeMask.InstantlyRunFunction) === 0
+		let beNonInstantlyRunFunction = (type & TrackingScopeTypeMask.FunctionLike)
+			&& (type & TrackingScopeTypeMask.InstantlyRunFunction) === 0
 		
 		this.closestNonInstantlyRunFunction = beNonInstantlyRunFunction
 			? this
@@ -65,8 +65,9 @@ export class Context {
 	}
 
 	/** 
-	 * Get scope for putting declarations.
-	 * For function context, it returns the scope of function body.
+	 * Get normal scope for putting declarations.
+	 * For function scope, it returns the scope of function body.
+	 * Note it's not tracking scope.
 	 */
 	getDeclarationScope() {
 		if (Helper.isFunctionLike(this.node) && this.node.body) {
@@ -78,8 +79,8 @@ export class Context {
 	}
 
 	/** 
-	 * Call after children contexts are ready,
-	 * and current context will exit.
+	 * Call after children scopes are ready,
+	 * and current scope will exit.
 	 */
 	beforeExit() {
 		this.capturer.beforeExit()
@@ -89,14 +90,14 @@ export class Context {
 		}
 	}
 
-	/** Enter a child context. */
-	enterChild(child: Context) {
+	/** Enter a child scope. */
+	enterChild(child: TrackingScope) {
 		this.children.push(child)
 	}
 
-	/** Leave a child context. */
-	leaveChild(child: Context) {
-		this.state.mergeChildContext(child)
+	/** Leave a child scope. */
+	leaveChild(child: TrackingScope) {
+		this.state.mergeChildScope(child)
 
 		if (child.state.isFlowInterrupted()) {
 			this.capturer.breakCaptured(child.visitIndex, child.state.flowInterruptionType)
@@ -104,7 +105,7 @@ export class Context {
 	}
 
 	/** 
-	 * Visit context node and each descendant node inside current context.
+	 * Visit scope node and each descendant node inside current scope.
 	 * When visiting a node, child nodes of this node have visited.
 	 */
 	visitNode(node: TS.Node) {

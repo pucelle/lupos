@@ -1,7 +1,7 @@
 import {AccessNode, factory, Helper, InterpolationContentType, Interpolator, Modifier, transformContext, ts, VisitTree, ScopeTree} from '../../core'
 import type TS from 'typescript'
-import {ContextTree} from './context-tree'
-import {Context} from './context'
+import {TrackingScopeTree} from './scope-tree'
+import {TrackingScope} from './scope'
 
 
 /** 
@@ -103,7 +103,7 @@ export namespace AccessReferences {
 
 
 	/** Visit an assess node, reference after determined should reference. */
-	export function mayReferenceAccess(index: number, toIndex: number, context: Context) {
+	export function mayReferenceAccess(index: number, toIndex: number, scope: TrackingScope) {
 		let node = VisitTree.getNode(index)
 		if (!Helper.access.isAccess(node)) {
 			return
@@ -120,13 +120,13 @@ export namespace AccessReferences {
 
 		// Use a reference variable to replace expression.
 		if (shouldReference(expIndex, toIndex)) {
-			reference(expIndex, context)
+			reference(expIndex, scope)
 			ReferencedIndices.add(expIndex)
 		}
 
 		// Use a reference variable to replace name.
 		if (shouldReference(nameIndex, toIndex)) {
-			reference(nameIndex, context)
+			reference(nameIndex, scope)
 			ReferencedIndices.add(nameIndex)
 		}
 
@@ -205,8 +205,8 @@ export namespace AccessReferences {
 	 * 	   `a.b().c`-> `$ref_0 = a.b(); ... $ref_`
 	 *     `a[b++]` -> `$ref_0 = b++; ... a[$ref_0]`
 	 */
-	function reference(index: number, context: Context) {
-		let varDeclListIndex = VisitTree.findOutwardMatch(index, context.visitIndex, ts.isVariableDeclaration)
+	function reference(index: number, scope: TrackingScope) {
+		let varDeclListIndex = VisitTree.findOutwardMatch(index, scope.visitIndex, ts.isVariableDeclaration)
 		let varScope = ScopeTree.findClosest(index).findClosestToAddStatements()
 		let refName = varScope.makeUniqueVariable('$ref_')
 
@@ -223,8 +223,8 @@ export namespace AccessReferences {
 		// Insert two: `var $ref_0`, and `$ref_0 = ...`
 		else {
 			
-			let refPosition = ContextTree.findClosestPositionToAddStatements(index, context)
-			let declAssignTogether = varScope.node === refPosition.context.node
+			let refPosition = TrackingScopeTree.findClosestPositionToAddStatements(index, scope)
+			let declAssignTogether = varScope.node === refPosition.scope.node
 
 			if (declAssignTogether) {
 

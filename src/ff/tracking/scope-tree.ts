@@ -1,9 +1,9 @@
 import type TS from 'typescript'
 import {Helper, ts, VisitTree} from '../../core'
-import {Context} from './context'
+import {TrackingScope} from './scope'
 
 
-export enum ContextTypeMask {
+export enum TrackingScopeTypeMask {
 
 	/** Source file. */
 	SourceFile = 2 ** 0,
@@ -51,7 +51,7 @@ export enum ContextTypeMask {
 	/** 
 	 * Like content of `case xxx: ...`, `default ...`,
 	 * or a specified range to contain partial of a template literal.
-	 * A context with `ContentRange` must have `rangeStartNode` and `rangeEndNode` nodes.
+	 * A scope with `ContentRange` must have `rangeStartNode` and `rangeEndNode` nodes.
 	 * And `node` is the container node contains both `rangeStartNode` and `rangeEndNode` nodes.
 	 */
 	ContentRange = 2 ** 12,
@@ -81,37 +81,37 @@ export enum ContextTypeMask {
 	FlowInterruption = 2 ** 19,
 }
 
-/** Content and a visit index position. */
-export interface ContextTargetPosition{
-	context: Context
+/** Tracking scope and a visit index position. */
+export interface TrackingScopeTargetPosition{
+	scope: TrackingScope
 	index: number
 }
 
 
-export namespace ContextTree {
+export namespace TrackingScopeTree {
 
-	let contextStack: (Context | null)[] = []
-	export let current: Context | null = null
+	let stack: (TrackingScope | null)[] = []
+	export let current: TrackingScope | null = null
 
 	/** All content ranges. */
 	let contentRanges: {start: TS.Node, end: TS.Node}[] = []
 
-	/** Visit index -> Context. */
-	const ContextMap: Map<number, Context> = new Map()
+	/** Visit index -> scope. */
+	const ScopeMap: Map<number, TrackingScope> = new Map()
 
 
 	/** Initialize before visiting a new source file. */
 	export function init() {
-		contextStack = []
+		stack = []
 		current = null
 		contentRanges = []
-		ContextMap.clear()
+		ScopeMap.clear()
 	}
 
 
 	/** 
-	 * Mark a node range, later will be made as a `ContentRange` context.
-	 * Note must mark before context visitor visit it.
+	 * Mark a node range, later will be made as a `ContentRange` scope.
+	 * Note must mark before scope visitor visit it.
 	 */
 	export function markContentRange(startNode: TS.Node, endNode: TS.Node) {
 		contentRanges.push({start: startNode, end: endNode})
@@ -132,38 +132,38 @@ export namespace ContextTree {
 	}
 
 
-	/** Check Context type of a node. */
-	export function checkContextType(node: TS.Node): ContextTypeMask | 0 {
+	/** Check tracking scope type of a node. */
+	export function checkType(node: TS.Node): TrackingScopeTypeMask | 0 {
 		let parent = node.parent
 		let type = 0
 
 		// Source file
 		if (ts.isSourceFile(node)) {
-			type |= ContextTypeMask.SourceFile
+			type |= TrackingScopeTypeMask.SourceFile
 		}
 
 		// Class
 		else if (ts.isClassLike(node)) {
-			type |= ContextTypeMask.Class
+			type |= TrackingScopeTypeMask.Class
 		}
 
 		// Function like
 		else if (Helper.isFunctionLike(node)) {
-			type |= ContextTypeMask.FunctionLike
+			type |= TrackingScopeTypeMask.FunctionLike
 
 			if (Helper.isInstantlyRunFunction(node)) {
-				type |= ContextTypeMask.InstantlyRunFunction
+				type |= TrackingScopeTypeMask.InstantlyRunFunction
 			}
 		}
 
 		// For `if...else if...`
 		else if (ts.isIfStatement(node)) {
-			type |= ContextTypeMask.Conditional
+			type |= TrackingScopeTypeMask.Conditional
 		}
 
 		// `a ? b : c`
 		else if (ts.isConditionalExpression(node)) {
-			type |= ContextTypeMask.Conditional
+			type |= TrackingScopeTypeMask.Conditional
 		}
 
 		//  `a && b`, `a || b`, `a ?? b`
@@ -174,17 +174,17 @@ export namespace ContextTree {
 				|| node.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken
 			)
 		) {
-			type |= ContextTypeMask.Conditional
+			type |= TrackingScopeTypeMask.Conditional
 		}
 
 		// `switch(...) {...}`
 		else if (ts.isSwitchStatement(node)) {
-			type |= ContextTypeMask.Switch
+			type |= TrackingScopeTypeMask.Switch
 		}
 
 		// `case ...`, `default ...`.
 		else if (ts.isCaseOrDefaultClause(node)) {
-			type |= ContextTypeMask.CaseDefault
+			type |= TrackingScopeTypeMask.CaseDefault
 		}
 
 		// Iteration
@@ -194,13 +194,13 @@ export namespace ContextTree {
 			|| ts.isWhileStatement(node)
 			|| ts.isDoStatement(node)
 		) {
-			type |= ContextTypeMask.Iteration
+			type |= TrackingScopeTypeMask.Iteration
 		}
 
 		// Flow stop, and has content.
-		// `break` and `continue` contains no expressions, so should not be a context type.
+		// `break` and `continue` contains no expressions, so should not be a scope type.
 		else if (Helper.pack.getFlowInterruptionType(node) > 0) {
-			type |= ContextTypeMask.FlowInterruption
+			type |= TrackingScopeTypeMask.FlowInterruption
 		}
 
 
@@ -211,20 +211,20 @@ export namespace ContextTree {
 		// `if (...) ...`
 		if (ts.isIfStatement(parent)) {
 			if (node === parent.expression) {
-				type |= ContextTypeMask.ConditionalCondition
+				type |= TrackingScopeTypeMask.ConditionalCondition
 			}
 			else if (node === parent.thenStatement || node === parent.elseStatement) {
-				type |= ContextTypeMask.ConditionalContent
+				type |= TrackingScopeTypeMask.ConditionalContent
 			}
 		}
 
 		// `a ? b : c`
 		else if (ts.isConditionalExpression(parent)) {
 			if (node === parent.condition) {
-				type |= ContextTypeMask.ConditionalCondition
+				type |= TrackingScopeTypeMask.ConditionalCondition
 			}
 			else if (node === parent.whenTrue || node === parent.whenFalse) {
-				type |= ContextTypeMask.ConditionalContent
+				type |= TrackingScopeTypeMask.ConditionalContent
 			}
 		}
 
@@ -235,7 +235,7 @@ export namespace ContextTree {
 				|| parent.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken)
 			) {
 				if (node === parent.right) {
-					type |= ContextTypeMask.ConditionalContent
+					type |= TrackingScopeTypeMask.ConditionalContent
 				}
 			}
 		}
@@ -243,16 +243,16 @@ export namespace ContextTree {
 		// `for (;;) ...`
 		else if (ts.isForStatement(parent)) {
 			if (node === parent.initializer) {
-				type |= ContextTypeMask.IterationInitializer
+				type |= TrackingScopeTypeMask.IterationInitializer
 			}
 			else if (node === parent.condition) {
-				type |= ContextTypeMask.IterationCondition
+				type |= TrackingScopeTypeMask.IterationCondition
 			}
 			else if (node === parent.incrementor) {
-				type |= ContextTypeMask.IterationIncreasement
+				type |= TrackingScopeTypeMask.IterationIncreasement
 			}
 			else if (node === parent.statement) {
-				type |= ContextTypeMask.IterationContent
+				type |= TrackingScopeTypeMask.IterationContent
 			}
 		}
 
@@ -261,13 +261,13 @@ export namespace ContextTree {
 			|| ts.isForInStatement(parent)
 		) {
 			if (node === parent.initializer) {
-				type |= ContextTypeMask.IterationInitializer
+				type |= TrackingScopeTypeMask.IterationInitializer
 			}
 			else if (node === parent.expression) {
-				type |= ContextTypeMask.IterationExpression
+				type |= TrackingScopeTypeMask.IterationExpression
 			}
 			else if (node === parent.statement) {
-				type |= ContextTypeMask.IterationContent
+				type |= TrackingScopeTypeMask.IterationContent
 			}
 		}
 
@@ -276,55 +276,55 @@ export namespace ContextTree {
 			|| ts.isDoStatement(parent)
 		) {
 			if (node === parent.expression) {
-				type |= ContextTypeMask.IterationExpression
+				type |= TrackingScopeTypeMask.IterationExpression
 			}
 			else if (node === parent.statement) {
-				type |= ContextTypeMask.IterationContent
+				type |= TrackingScopeTypeMask.IterationContent
 			}
 		}
 
 		// `switch (...) ...`
 		else if (ts.isSwitchStatement(parent)) {
 			if (node === parent.expression) {
-				type |= ContextTypeMask.SwitchCondition
+				type |= TrackingScopeTypeMask.SwitchCondition
 			}
 		}
 
 		// `case (...) ...`
 		else if (ts.isCaseClause(parent)) {
 			if (node === parent.expression) {
-				type |= ContextTypeMask.CaseCondition
+				type |= TrackingScopeTypeMask.CaseCondition
 			}
 		}
 
 		return type
 	}
 
-	/** Check range content context type of a node. */
-	export function checkRangedContextType(node: TS.Node): ContextTypeMask | 0 {
+	/** Check range content scope type of a node. */
+	export function checkRangedType(node: TS.Node): TrackingScopeTypeMask | 0 {
 		let parent = node.parent
 		let type = 0
 
 		// Make a content range.
 		if (getContentRangeByStartNode(node)) {
-			type |= ContextTypeMask.ContentRange
+			type |= TrackingScopeTypeMask.ContentRange
 
 			// Content of case or default.
 			if (ts.isCaseOrDefaultClause(parent)) {
-				type |= ContextTypeMask.CaseDefaultContent
+				type |= TrackingScopeTypeMask.CaseDefaultContent
 			}
 		}
 
 		return type
 	}
 
-	/** Create a context from node and push to stack. */
-	export function createContext(type: ContextTypeMask, node: TS.Node): Context {
+	/** Create a scope from node and push to stack. */
+	export function createScope(type: TrackingScopeTypeMask, node: TS.Node): TrackingScope {
 		let index = VisitTree.getIndex(node)
 		let startNode = null, endNode = null
 
 		// Initialize content range.
-		if (type & ContextTypeMask.ContentRange) {
+		if (type & TrackingScopeTypeMask.ContentRange) {
 			let range = getContentRangeByStartNode(node)
 			if (range) {
 				startNode = range.start
@@ -332,10 +332,10 @@ export namespace ContextTree {
 			}
 		}
 
-		let context = new Context(type, node, index, current, startNode, endNode)
+		let scope = new TrackingScope(type, node, index, current, startNode, endNode)
 
-		ContextMap.set(index, context)
-		contextStack.push(current)
+		ScopeMap.set(index, scope)
+		stack.push(current)
 
 		// Child `case/default` statements start a content range.
 		if (ts.isCaseOrDefaultClause(node)) {
@@ -345,22 +345,22 @@ export namespace ContextTree {
 			}
 		}
 
-		return current = context
+		return current = scope
 	}
 
-	/** Pop context. */
+	/** Pop scope. */
 	export function pop() {
-		if (current && (current.type & ContextTypeMask.ContentRange)) {
+		if (current && (current.type & TrackingScopeTypeMask.ContentRange)) {
 			removeContentRangeByStartNode(current.rangeStartNode!)
 		}
 
 		current!.beforeExit()
-		current = contextStack.pop()!
+		current = stack.pop()!
 	}
 
 	/** 
-	 * Visit context node and each descendant node within current context.
-	 * Recently all child contexts have been visited.
+	 * Visit scope node and each descendant node within current scope.
+	 * Recently all child scopes have been visited.
 	 */
 	export function visitNode(node: TS.Node) {
 		if (current) {
@@ -369,46 +369,46 @@ export namespace ContextTree {
 	}
 
 
-	/** Find closest Context contains or equals node with specified visit index. */
-	export function findClosest(index: number): Context {
-		let context = ContextMap.get(index)
+	/** Find closest scope contains or equals node with specified visit index. */
+	export function findClosest(index: number): TrackingScope {
+		let scope = ScopeMap.get(index)
 
-		while (!context) {
+		while (!scope) {
 			index = VisitTree.getParentIndex(index)!
-			context = ContextMap.get(index)
+			scope = ScopeMap.get(index)
 		}
 
-		return context
+		return scope
 	}
 
-	/** Find closest context contains or equals node. */
-	export function findClosestByNode(node: TS.Node): Context {
+	/** Find closest scope contains or equals node. */
+	export function findClosestByNode(node: TS.Node): TrackingScope {
 		return findClosest(VisitTree.getIndex(node))
 	}
 
 	/** 
-	 * Walk context itself and descendants.
+	 * Walk scope itself and descendants.
 	 * Always walk descendants before self.
 	 */
-	export function* walkInwardChildFirst(context: Context, filter?: (context: Context) => boolean): Iterable<Context> {
-		if (!filter || filter(context)) {
-			for (let child of context.children) {
+	export function* walkInwardChildFirst(scope: TrackingScope, filter?: (scope: TrackingScope) => boolean): Iterable<TrackingScope> {
+		if (!filter || filter(scope)) {
+			for (let child of scope.children) {
 				yield* walkInwardChildFirst(child, filter)
 			}
 	
-			yield context
+			yield scope
 		}
 	}
 
 	/** 
-	 * Walk context itself and descendants.
+	 * Walk scope itself and descendants.
 	 * Always walk descendants after self.
 	 */
-	export function* walkInwardSelfFirst(context: Context, filter?: (context: Context) => boolean): Iterable<Context> {
-		if (!filter || filter(context)) {
-			yield context
+	export function* walkInwardSelfFirst(scope: TrackingScope, filter?: (scope: TrackingScope) => boolean): Iterable<TrackingScope> {
+		if (!filter || filter(scope)) {
+			yield scope
 		
-			for (let child of context.children) {
+			for (let child of scope.children) {
 				yield* walkInwardSelfFirst(child, filter)
 			}
 		}
@@ -416,17 +416,17 @@ export namespace ContextTree {
 
 
 	/** 
-	 * Find an ancestral index and context, which can move statements to before it.
-	 * Must before current position, and must not cross any conditional or iteration context.
+	 * Find an ancestral index and scope, which can move statements to before it.
+	 * Must before current position, and must not cross any conditional or iteration scope.
 	 */
-	export function findClosestPositionToAddStatements(index: number, from: Context): ContextTargetPosition {
-		let context = from
+	export function findClosestPositionToAddStatements(index: number, from: TrackingScope): TrackingScopeTargetPosition {
+		let scope = from
 		let parameterIndex = VisitTree.findOutwardMatch(index, from.visitIndex, ts.isParameter)
 
 		// Parameter initializer, no place to insert statements, returns position itself.
 		if (parameterIndex !== undefined) {
 			return {
-				context,
+				scope,
 				index,
 			}
 		}
@@ -448,34 +448,34 @@ export namespace ContextTree {
 			// `{...}`, insert before node.
 			if (Helper.pack.canPutStatements(node.parent)) {
 
-				// Context of node.parent.
-				if (node === context.node) {
-					context = context.parent!
+				// scope of node.parent.
+				if (node === scope.node) {
+					scope = scope.parent!
 				}
 				break
 			}
 
-			// To outer context.
-			if (node === context.node) {
+			// To outer scope.
+			if (node === scope.node) {
 				
 				// Can't across these types of node, end at the inner start of it.
-				if (context.type & ContextTypeMask.ConditionalContent
-					|| context.type & ContextTypeMask.IterationCondition
-					|| context.type & ContextTypeMask.IterationIncreasement
-					|| context.type & ContextTypeMask.IterationExpression
-					|| context.type & ContextTypeMask.IterationContent
+				if (scope.type & TrackingScopeTypeMask.ConditionalContent
+					|| scope.type & TrackingScopeTypeMask.IterationCondition
+					|| scope.type & TrackingScopeTypeMask.IterationIncreasement
+					|| scope.type & TrackingScopeTypeMask.IterationExpression
+					|| scope.type & TrackingScopeTypeMask.IterationContent
 				) {
 					break
 				}
 
-				context = context.parent!
+				scope = scope.parent!
 			}
 
 			node = node.parent
 		}
 
 		return {
-			context,
+			scope,
 			index: VisitTree.getIndex(node),
 		}
 	}

@@ -1,12 +1,12 @@
 import type TS from 'typescript'
-import {Context} from './context'
-import {ContextTypeMask} from './context-tree'
+import {TrackingScope} from './scope'
+import {TrackingScopeTypeMask} from './scope-tree'
 import {AccessNode, FlowInterruptionTypeMask, Helper, ts, VisitTree} from '../../core'
 
 
-export class ContextState {
+export class TrackingScopeState {
 
-	readonly context: Context
+	readonly scope: TrackingScope
 
 	/** Whether be included in a constructor function */
 	readonly withinLifeFunction: boolean
@@ -14,7 +14,7 @@ export class ContextState {
 	/** 
 	 * Whether inside a function that has nothing returned.
 	 * If a function returns nothing, we stop tracking it's property getting.
-	 * Initialize from a function-like type of context, and broadcast to descendants.
+	 * Initialize from a function-like type of scope, and broadcast to descendants.
 	 * A generator returns an `Iterable`, so it is not nothing returned.
 	 */
 	readonly stopGetTracking: boolean
@@ -26,26 +26,26 @@ export class ContextState {
 	 */
 	readonly effectDecorated: boolean
 
-	/** How flow inside of a context was interrupted. */
+	/** How flow inside of a scope was interrupted. */
 	flowInterruptionType: FlowInterruptionTypeMask | 0 = 0
 
-	constructor(context: Context) {
-		this.context = context
+	constructor(scope: TrackingScope) {
+		this.scope = scope
 		this.withinLifeFunction = this.checkWithinLifeFunction()
 		this.stopGetTracking = this.checkStopGetTracking()
 		this.effectDecorated = this.checkEffectDecorated()
 
-		if (context.type & ContextTypeMask.FlowInterruption) {
-			this.flowInterruptionType = Helper.pack.getFlowInterruptionType(context.node)
+		if (scope.type & TrackingScopeTypeMask.FlowInterruption) {
+			this.flowInterruptionType = Helper.pack.getFlowInterruptionType(scope.node)
 		}
 	}
 
 	private checkWithinLifeFunction(): boolean {
-		let node = this.context.node
+		let node = this.scope.node
 
-		// Inherit from parent context.
-		if ((this.context.type & ContextTypeMask.FunctionLike) === 0) {
-			return this.context.parent?.state.withinLifeFunction ?? false
+		// Inherit from parent scope.
+		if ((this.scope.type & TrackingScopeTypeMask.FunctionLike) === 0) {
+			return this.scope.parent?.state.withinLifeFunction ?? false
 		}
 
 		if (ts.isConstructorDeclaration(node)) {
@@ -70,21 +70,21 @@ export class ContextState {
 	}
 
 	private checkStopGetTracking(): boolean {
-		let node = this.context.node
-		let parent = this.context.parent
+		let node = this.scope.node
+		let parent = this.scope.parent
 
 		if (!parent) {
 			return false
 		}
 
-		// Self is not function, inherit from parent context.
-		if ((this.context.type & ContextTypeMask.FunctionLike) === 0) {
+		// Self is not function, inherit from parent scope.
+		if ((this.scope.type & TrackingScopeTypeMask.FunctionLike) === 0) {
 			return parent.state.stopGetTracking ?? false
 		}
 
-		// If current context was included by a decorator, treat parent as global context.
+		// If current scope was included by a decorator, treat parent as global scope.
 		let decorator = VisitTree.findOutwardMatch(
-			this.context.visitIndex,
+			this.scope.visitIndex,
 			parent.visitIndex,
 			ts.isDecorator
 		)
@@ -96,7 +96,7 @@ export class ContextState {
 		let isVoidReturning = Helper.types.isVoidReturning(node as TS.FunctionLikeDeclaration)
 
 		// An instantly run function should inherit whether stop get tracking.
-		if (this.context.type & ContextTypeMask.InstantlyRunFunction) {
+		if (this.scope.type & TrackingScopeTypeMask.InstantlyRunFunction) {
 			return parent.state.stopGetTracking || isVoidReturning
 		}
 		else {
@@ -105,11 +105,11 @@ export class ContextState {
 	}
 
 	private checkEffectDecorated(): boolean {
-		let node = this.context.node
+		let node = this.scope.node
 
-		// Inherit from parent context.
+		// Inherit from parent scope.
 		if (!ts.isMethodDeclaration(node)) {
-			return this.context.parent?.state.effectDecorated ?? false
+			return this.scope.parent?.state.effectDecorated ?? false
 		}
 
 		let decoName = Helper.deco.getFirstName(node)
@@ -118,7 +118,7 @@ export class ContextState {
 
 	/** Union with internal contents type. */
 	unionFlowInterruptionType(type: FlowInterruptionTypeMask | 0) {
-		if (this.context.type & ContextTypeMask.FunctionLike) {
+		if (this.scope.type & TrackingScopeTypeMask.FunctionLike) {
 			return 
 		}
 
@@ -130,8 +130,8 @@ export class ContextState {
 
 			// Break would not broadcast out of `iteration` and `case`, `default`.
 			if (!(
-				this.context.type & ContextTypeMask.IterationContent
-				|| this.context.type & ContextTypeMask.CaseDefaultContent
+				this.scope.type & TrackingScopeTypeMask.IterationContent
+				|| this.scope.type & TrackingScopeTypeMask.CaseDefaultContent
 			)) {
 				this.flowInterruptionType |= FlowInterruptionTypeMask.BreakLike
 			}
@@ -143,10 +143,10 @@ export class ContextState {
 	}
 
 	/** 
-	 * After a child context is visiting completed, visit it.
+	 * After a child scope is visiting completed, visit it.
 	 * returns whether break or return or yield.
 	 */
-	mergeChildContext(child: Context) {
+	mergeChildScope(child: TrackingScope) {
 		this.unionFlowInterruptionType(child.state.flowInterruptionType)
 	}
 

@@ -1,42 +1,42 @@
 import type TS from 'typescript'
 import {ObservedChecker} from './observed-checker'
 import {Helper, ts, VisitTree} from '../../core'
-import {Context} from './context'
-import {ContextTypeMask} from './context-tree'
-import {TrackingPatch} from './tracking-patch'
+import {TrackingScope} from './scope'
+import {TrackingScopeTypeMask} from './scope-tree'
+import {TrackingPatch} from './patch'
 
 
-/** Mark all variables with a context. */
-export class ContextVariables {
+/** Mark all variables with a scope. */
+export class TrackingScopeVariables {
 
-	readonly context: Context
+	readonly scope: TrackingScope
 
 	/** 
 	 * All local variable names, and whether each one was observed.
-	 * It can also help to query in which context special variable exists.
+	 * It can also help to query in which scope special variable exists.
 	 */
 	private variableObserved: Map<string, boolean> = new Map()
 
 	/** 
 	 * Whether `this` is observed.
-	 * Broadcast to descendant non-function contexts.
+	 * Broadcast to descendant non-function scopes.
 	 */
 	readonly thisObserved: boolean
 
-	constructor(context: Context) {
-		this.context = context
+	constructor(scope: TrackingScope) {
+		this.scope = scope
 		this.thisObserved = this.checkThisObserved()
 	}
 
 	/** Check whether `this` should be observed. */
 	private checkThisObserved(): boolean {
-		let node = this.context.node
+		let node = this.scope.node
 
-		// Inherit from parent context but not function, but arrow function is allowed.
-		if ((this.context.type & ContextTypeMask.FunctionLike) === 0
+		// Inherit from parent scope but not function, but arrow function is allowed.
+		if ((this.scope.type & TrackingScopeTypeMask.FunctionLike) === 0
 			|| ts.isArrowFunction(node)
 		) {
-			return this.context.parent?.variables.thisObserved ?? false
+			return this.scope.parent?.variables.thisObserved ?? false
 		}
 
 		// Get this parameter.
@@ -66,15 +66,15 @@ export class ContextVariables {
 
 	/** 
 	 * Get whether has observed a declared variable by name.
-	 * If current context has no specified variable declared, try find parent context.
+	 * If current scope has no specified variable declared, try find parent scope.
 	 */
 	isVariableObserved(name: string): boolean {
 		if (this.variableObserved.has(name)) {
 			return this.variableObserved.get(name)!
 		}
 
-		if (this.context.parent) {
-			return this.context.parent.variables.isVariableObserved(name)
+		if (this.scope.parent) {
+			return this.scope.parent.variables.isVariableObserved(name)
 		}
 		
 		return false
@@ -89,15 +89,15 @@ export class ContextVariables {
 	}
 
 	/** Visit a variable. */
-	visitVariable(node: TS.VariableDeclaration, fromContext: Context | null = null) {
+	visitVariable(node: TS.VariableDeclaration, fromScope: TrackingScope | null = null) {
 
 		// For Initializer registers variables for whole For Iteration can visit.
-		if (this.context.type & ContextTypeMask.IterationInitializer) {
-			this.context.parent!.variables.visitVariable(node, this.context)
+		if (this.scope.type & TrackingScopeTypeMask.IterationInitializer) {
+			this.scope.parent!.variables.visitVariable(node, this.scope)
 			return
 		}
 	
-		let observed = this.checkVariableObserved(node, fromContext)
+		let observed = this.checkVariableObserved(node, fromScope)
 			|| TrackingPatch.isIndexForceTracked(VisitTree.getIndex(node))
 
 		let names = Helper.variable.walkDeclarationNames(node)
@@ -109,12 +109,12 @@ export class ContextVariables {
 	}
 
 	/** Check whether a variable declaration node should be observed. */
-	private checkVariableObserved(node: TS.VariableDeclaration, fromContext: Context | null = null): boolean {
+	private checkVariableObserved(node: TS.VariableDeclaration, fromScope: TrackingScope | null = null): boolean {
 
 		// `for (item of items)`, broadcast observed from items to item.
-		if (fromContext && (fromContext.type & ContextTypeMask.IterationInitializer) > 0) {
-			if (ts.isForOfStatement(this.context.node)) {
-				return ObservedChecker.isObserved(this.context.node.expression, true)
+		if (fromScope && (fromScope.type & TrackingScopeTypeMask.IterationInitializer) > 0) {
+			if (ts.isForOfStatement(this.scope.node)) {
+				return ObservedChecker.isObserved(this.scope.node.expression, true)
 			}
 		}
 

@@ -2,16 +2,16 @@ import type TS from 'typescript'
 import {Helper, VisitTree, ts, FlowInterruptionTypeMask, ScopeTree, HashItem} from '../../core'
 import {AccessReferences} from './access-references'
 import {removeFromList} from '../../utils'
-import {CapturedItem, ContextCapturer} from './context-capturer'
-import {Context} from './context'
+import {CapturedItem, TrackingCapturer} from './capturer'
+import {TrackingScope} from './scope'
 
 
 
 /** 
- * It attaches to each context,
- * Captures get and set expressions, and remember reference variables.
+ * It attaches to each capturer,
+ * help to move and modify captured.
  */
-export class ContextCapturerOperator {
+export class TrackingCapturerOperator {
 
 	/** Hash a captured item. */
 	static hashCapturedItem(item: CapturedItem): HashItem {
@@ -30,7 +30,7 @@ export class ContextCapturerOperator {
 	}
 		
 	/** Get intersected items across capturers. */
-	static intersectCapturedItems(capturers: ContextCapturer[]): CapturedItem[] {
+	static intersectCapturedItems(capturers: TrackingCapturer[]): CapturedItem[] {
 		if (capturers.length === 0) {
 			return []
 		}
@@ -49,7 +49,7 @@ export class ContextCapturerOperator {
 					continue
 				}
 
-				let hashName = ContextCapturerOperator.hashCapturedItem(item).name + '_of_capture_type_' + item.type
+				let hashName = TrackingCapturerOperator.hashCapturedItem(item).name + '_of_capture_type_' + item.type
 				ownMap.set(hashName, item.index)
 			}
 
@@ -74,19 +74,19 @@ export class ContextCapturerOperator {
 	}
 
 
-	readonly capturer: ContextCapturer
-	readonly context: Context
+	readonly capturer: TrackingCapturer
+	readonly scope: TrackingScope
 	
-	constructor(capturer: ContextCapturer) {
+	constructor(capturer: TrackingCapturer) {
 		this.capturer = capturer
-		this.context = capturer.context
+		this.scope = capturer.scope
 	}
 
 	/** 
 	 * Move captured indices to an ancestral, target capturer.
 	 * If a node with captured index use local variables and can't be moved, leave it.
 	 */
-	safelyMoveCapturedOutwardTo(toCapturer: ContextCapturer) {
+	safelyMoveCapturedOutwardTo(toCapturer: TrackingCapturer) {
 		let indices = this.capturer.captured[0].items
 		if (indices.length === 0) {
 			return
@@ -101,23 +101,25 @@ export class ContextCapturerOperator {
 	 * `fromCapturer` locates where indices move from.
 	 * Returns residual indices that failed to move.
 	 */
-	safelyMoveSomeCapturedOutwardFrom(items: CapturedItem[], fromCapturer: ContextCapturer): CapturedItem[] {
+	safelyMoveSomeCapturedOutwardFrom(items: CapturedItem[], fromCapturer: TrackingCapturer): CapturedItem[] {
 
 		// Locate which captured item should move indices to.
 		// Find the first item `toIndex` larger in child-first order.
 		let group = this.capturer.captured.find(item => {
-			return VisitTree.isFollowingOfOrEqualInChildFirstOrder(item.toIndex, fromCapturer.context.visitIndex)
+			return VisitTree.isFollowingOfOrEqualInChildFirstOrder(item.toIndex, fromCapturer.scope.visitIndex)
 		}) ?? this.capturer.latestCaptured
 
-		let fromScope = fromCapturer.context.getDeclarationScope()
-		let toScope = this.context.getDeclarationScope()
+		// Note these are not tracking scopes.
+		let fromScope = fromCapturer.scope.getDeclarationScope()
+		let toScope = this.scope.getDeclarationScope()
+
 		let scopesLeaved = ScopeTree.findWalkingOutwardLeaves(fromScope, toScope)
 		let residualItems: CapturedItem[] = []
 
 		for (let item of items) {
-			let hashed = ContextCapturerOperator.hashCapturedItem(item)
+			let hashed = TrackingCapturerOperator.hashCapturedItem(item)
 
-			// Leave contexts contain any referenced variable.
+			// Leave scopes which contain any referenced variable.
 			if (hashed.usedScopes.some(i => scopesLeaved.includes(i))) {
 				residualItems.push(item)
 			}
@@ -130,7 +132,7 @@ export class ContextCapturerOperator {
 	}
 
 	/** Move captured indices to an sibling capturer. */
-	moveCapturedBackwardTo(toCapturer: ContextCapturer) {
+	moveCapturedBackwardTo(toCapturer: TrackingCapturer) {
 		let indices = this.capturer.captured[0].items
 		if (indices.length === 0) {
 			return
@@ -154,7 +156,7 @@ export class ContextCapturerOperator {
 					continue
 				}
 
-				let hashName = ContextCapturerOperator.hashCapturedItem(item).name
+				let hashName = TrackingCapturerOperator.hashCapturedItem(item).name
 
 				if (ownHashes.has(hashName)) {
 					removeFromList(group.items, item)
@@ -171,8 +173,8 @@ export class ContextCapturerOperator {
 
 			// Every time after update hash set,
 			// recursively eliminating not processed child contexts in the preceding.
-			for (; startChildIndex < this.context.children.length; startChildIndex++) {
-				let child = this.context.children[startChildIndex]
+			for (; startChildIndex < this.scope.children.length; startChildIndex++) {
+				let child = this.scope.children[startChildIndex]
 
 				if (!VisitTree.isPrecedingOfOrEqual(child.visitIndex, group.toIndex)) {
 					break
@@ -183,8 +185,8 @@ export class ContextCapturerOperator {
 		}
 
 		// Last captured item may have wrong `toIndex`, here ensure to visit all child contexts.
-		for (; startChildIndex < this.context.children.length; startChildIndex++) {
-			let child = this.context.children[startChildIndex]
+		for (; startChildIndex < this.scope.children.length; startChildIndex++) {
+			let child = this.scope.children[startChildIndex]
 			child.capturer.operator.eliminateRepetitiveRecursively(ownHashes)
 		}
 	}
@@ -238,7 +240,7 @@ export class ContextCapturerOperator {
 			}
 		}
 
-		for (let child of this.context.children) {
+		for (let child of this.scope.children) {
 			yield* child.capturer.operator.walkPrivateCaptured(ofClass)
 		}
 	}
@@ -251,7 +253,7 @@ export class ContextCapturerOperator {
 			})
 		}
 
-		for (let child of this.context.children) {
+		for (let child of this.scope.children) {
 			child.capturer.operator.removeCapturedIndicesRecursively(toRemove)
 		}
 	}
