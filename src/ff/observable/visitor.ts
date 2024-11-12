@@ -15,7 +15,13 @@ defineVisitor(function(node: TS.Node) {
 		TrackingPatch.init()
 	}
 
-	// Check contextual state, must after observable state pushing.
+	// Check context type.
+	let rangedType = ContextTree.checkRangedContextType(node)
+	if (rangedType !== 0) {
+		ContextTree.createContext(rangedType, node)
+	}
+
+	// Check context type.
 	let type = ContextTree.checkContextType(node)
 	if (type !== 0) {
 		ContextTree.createContext(type, node)
@@ -26,9 +32,7 @@ defineVisitor(function(node: TS.Node) {
 		ContextTree.visitNode(node)
 
 		// Non content range type.
-		if (type !== 0
-			&& (type & ContextTypeMask.ContentRange) === 0
-		) {
+		if (type !== 0) {
 			ContextTree.pop()
 		}
 

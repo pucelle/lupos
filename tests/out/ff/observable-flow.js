@@ -52,14 +52,10 @@ export class TestSwitchBlock extends Component {
         return 0;
     }
     variableCase() {
-        trackGet(this, "cond", "prop");
+        trackGet(this, "cond", "case1", "case2", "prop");
         switch (this.cond) {
-            case this.case1:
-                trackGet(this, "case1");
-                return this.prop;
-            case this.case2:
-                trackGet(this, "case2");
-                return this.prop;
+            case this.case1: return this.prop;
+            case this.case2: return this.prop;
         }
         return 0;
     }

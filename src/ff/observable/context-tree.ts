@@ -24,20 +24,29 @@ export enum ContextTypeMask {
 	/** `if`, or binary expressions like `a && b`, `a || b`, `a ?? b`. */
 	Conditional = 2 ** 4,
 
+	/** `if`, or binary expressions like `a && b`, `a || b`, `a ?? b`. */
+	ConditionalCondition = 2 ** 5,
+
 	/** 
-	 * Content of `if`, `else`.
-	 * Right part of binary expressions like `a && b`, `a || b`, `a ?? b`.
+	 * Condition of of `if`, `else`.
+	 * Left part of binary expressions like `a && b`, `a || b`, `a ?? b`.
 	 */
-	ConditionalContent = 2 ** 5,
+	ConditionalContent = 2 ** 6,
 
 	/** `Switch`. */
-	Switch = 2 ** 6,
+	Switch = 2 ** 7,
+
+	/** `Switch`. */
+	SwitchCondition = 2 ** 8,
 
 	/** `case` or `default`. */
-	CaseDefault = 2 ** 7,
+	CaseDefault = 2 ** 9,
+
+	/** Condition of `case` or `default`. */
+	CaseCondition = 2 ** 10,
 
 	/** Content of `case xxx ...`, `default ...`. */
-	CaseDefaultContent = 2 ** 8,
+	CaseDefaultContent = 2 ** 11,
 
 	/** 
 	 * Like content of `case xxx: ...`, `default ...`,
@@ -45,31 +54,31 @@ export enum ContextTypeMask {
 	 * A context with `ContentRange` must have `rangeStartNode` and `rangeEndNode` nodes.
 	 * And `node` is the container node contains both `rangeStartNode` and `rangeEndNode` nodes.
 	 */
-	ContentRange = 2 ** 9,
+	ContentRange = 2 ** 12,
 
 	/** Process For iteration initializer, condition, incrementor. */
-	Iteration = 2 ** 10,
+	Iteration = 2 ** 13,
 
 	/** `for (let...)` */
-	IterationInitializer = 2 ** 11,
+	IterationInitializer = 2 ** 14,
 
 	/** `while (...)`, `for (; ...; )` */
-	IterationCondition = 2 ** 12,
+	IterationCondition = 2 ** 15,
 
 	/** `for (; ; ...)` */
-	IterationIncreasement = 2 ** 13,
+	IterationIncreasement = 2 ** 16,
 
 	/** `for (let xxx of ...)` */
-	IterationExpression = 2 ** 14,
+	IterationExpression = 2 ** 17,
 
 	/** 
 	 * `while () ...`, `for () ...`, May run for none, 1 time, multiple times.
 	 * Content itself can be a block, or a normal expression.
 	 */
-	IterationContent = 2 ** 15,
+	IterationContent = 2 ** 18,
 
 	/** `return`, `break`, `continue`, `yield `, `await`, and with content. */
-	FlowInterruption = 2 ** 16,
+	FlowInterruption = 2 ** 19,
 }
 
 /** Content and a visit index position. */
@@ -201,14 +210,20 @@ export namespace ContextTree {
 
 		// `if (...) ...`
 		if (ts.isIfStatement(parent)) {
-			if (node === parent.thenStatement || node === parent.elseStatement) {
+			if (node === parent.expression) {
+				type |= ContextTypeMask.ConditionalCondition
+			}
+			else if (node === parent.thenStatement || node === parent.elseStatement) {
 				type |= ContextTypeMask.ConditionalContent
 			}
 		}
 
 		// `a ? b : c`
 		else if (ts.isConditionalExpression(parent)) {
-			if (node === parent.whenTrue || node === parent.whenFalse) {
+			if (node === parent.condition) {
+				type |= ContextTypeMask.ConditionalCondition
+			}
+			else if (node === parent.whenTrue || node === parent.whenFalse) {
 				type |= ContextTypeMask.ConditionalContent
 			}
 		}
@@ -267,6 +282,28 @@ export namespace ContextTree {
 				type |= ContextTypeMask.IterationContent
 			}
 		}
+
+		// `switch (...) ...`
+		else if (ts.isSwitchStatement(parent)) {
+			if (node === parent.expression) {
+				type |= ContextTypeMask.SwitchCondition
+			}
+		}
+
+		// `case (...) ...`
+		else if (ts.isCaseClause(parent)) {
+			if (node === parent.expression) {
+				type |= ContextTypeMask.CaseCondition
+			}
+		}
+
+		return type
+	}
+
+	/** Check range content context type of a node. */
+	export function checkRangedContextType(node: TS.Node): ContextTypeMask | 0 {
+		let parent = node.parent
+		let type = 0
 
 		// Make a content range.
 		if (getContentRangeByStartNode(node)) {
@@ -423,10 +460,9 @@ export namespace ContextTree {
 				
 				// Can't across these types of node, end at the inner start of it.
 				if (context.type & ContextTypeMask.ConditionalContent
-					|| context.type & (ContextTypeMask.IterationCondition
-						| ContextTypeMask.IterationIncreasement
-						| ContextTypeMask.IterationExpression
-					)
+					|| context.type & ContextTypeMask.IterationCondition
+					|| context.type & ContextTypeMask.IterationIncreasement
+					|| context.type & ContextTypeMask.IterationExpression
 					|| context.type & ContextTypeMask.IterationContent
 				) {
 					break

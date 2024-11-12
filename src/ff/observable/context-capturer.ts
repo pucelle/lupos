@@ -208,7 +208,10 @@ export class ContextCapturer {
 		// Later may append indices to this item.
 
 		// Conditional can't be break, it captures only condition expression.
-		if (this.context.type & ContextTypeMask.Conditional) {
+		// This is required, or inner captured can't be moved to head.
+		if (this.context.type & ContextTypeMask.Conditional
+			|| this.context.type & ContextTypeMask.Switch
+		) {
 			return
 		}
 
@@ -313,12 +316,12 @@ export class ContextCapturer {
 
 	/** Add `captured` as interpolation items. */
 	private outputCaptured() {
-		for (let item of this.captured) {
-			if (item.items.length === 0) {
+		for (let group of this.captured) {
+			if (group.items.length === 0) {
 				continue
 			}
 
-			this.outputCapturedGroup(item)
+			this.outputCapturedGroup(group)
 		}
 	}
 
@@ -341,6 +344,8 @@ export class ContextCapturer {
 		if (newToIndex !== null) {
 			for (let index of items) {
 				let hashed = ScopeTree.hashIndex(index.index)
+
+				// Only when all used indices in the preceding of new index.
 				let canMove = hashed.usedIndices.every(usedIndex => VisitTree.isPrecedingOf(usedIndex, newToIndex))
 
 				if (canMove) {

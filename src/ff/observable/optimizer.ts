@@ -7,10 +7,10 @@ import {ContextCapturerOperator} from './context-capturer-operator'
 
 /**
  * 0. Should find a way to hash access expression.
- * 1. If parent context has a tracking, child contexts should eliminate it.
- * 2. If all conditional contexts have same tracking, move it higher.
- * 3. Try to move tracking from iteration context higher.
- * 4. If previous captured has a tracking, should eliminate it from following captured.
+ * 1. If parent context has a captured, child contexts should eliminate it.
+ * 2. If all conditional contexts have same captured, move it higher.
+ * 3. Try to move captured from iteration context higher.
+ * 4. If previous captured has a captured, should eliminate it from following captured.
  */
 export namespace Optimizer {
 
@@ -25,28 +25,23 @@ export namespace Optimizer {
 			moveFlowInterruptionCapturedOutward(context)
 		}
 
-		// `if (...) {a.b} else {a.b}` -> `track(a.b), if ...`
-		// `if (a.b) ...`-> `track(a.b), if ...`
+		// `if (...) {a.b} else {a.b}` -> `track(a.b); if ...`
 		if (context.type & ContextTypeMask.Conditional) {
 			mergeConditionalContentCapturedBranches(context)
+		}
 
-			// `if (A) {B} else {C}`
-			// B & C can merge to outer.
-
-			// `if (A) {B} else if (C) {D} else {E}`
-			// D & E can merge to outer to before `if (C)`, but can't move outer again.
-
-			if ((context.type & ContextTypeMask.ConditionalContent) === 0) {
-				moveConditionalOrSwitchCapturedOutward(context)
-			}
+		// `if (a.b) ...`-> `track(a.b); if ...`
+		if (context.type & ContextTypeMask.ConditionalCondition
+			|| context.type & ContextTypeMask.SwitchCondition
+		) {
+			moveAnyConditionCapturedOutward(context)
 		}
 
 		// `case a.b: ... case a.b + 1: ...` -> `track(a.b); ...`
-		// `if (a.b) ...`-> `track(a.b), if ...`
+		// `if (a.b) ...`-> `track(a.b); if ...`
 		if (context.type & ContextTypeMask.Switch) {
-			mergeCaseConditionCapturedBranches(context)
+			moveCaseConditionCapturedBranchesOutward(context)
 			mergeCaseContentCapturedBranches(context)
-			moveConditionalOrSwitchCapturedOutward(context)
 		}
 
 		// `for(let c = a.b;)` -> `track(a.b); for ...`.
@@ -82,7 +77,7 @@ export namespace Optimizer {
 			eliminateRepetitiveCapturedRecursively(context)
 		}
 
-		// Eliminate private and don't have both get and set tracking types.
+		// Eliminate private and don't have both get and set capture types.
 		// `class {private prop}`, has only `prop` getting, or only setting -> remove it.
 		if (context.type & ContextTypeMask.Class) {
 			eliminatePrivateUniqueTrackingType(context)
@@ -91,7 +86,7 @@ export namespace Optimizer {
 
 
 	/** 
-	 * Move flow interruption tracking outward.
+	 * Move flow interruption captured outward.
 	 * `return a.b` -> `track(a.b); return ...`
 	 */
 	function moveFlowInterruptionCapturedOutward(context: Context) {
@@ -99,35 +94,43 @@ export namespace Optimizer {
 			return
 		}
 
+		// Can't across conditional content.
+		if (context.type & ContextTypeMask.ConditionalContent) {
+			return
+		}
+
 		// parent of flow interruption.
 		let targetContext = context.parent!
 
-		context.capturer.operator.moveCapturedOutwardTo(targetContext.capturer)
+		context.capturer.operator.safelyMoveCapturedOutwardTo(targetContext.capturer)
 	}
 
 
 	/** 
-	 * Move conditional or switch tracking outward.
-	 * `if (a.b) ...`-> `track(a.b), if ...`
-	 * `switch (a.b) ...`-> `track(a.b), switch ...`
-	 * 
-	 * Note it will move conditional branches merged outer,
-	 * so must ensure content is `Conditional` only, not `ConditionalContent`.
+	 * Move condition of conditional or switch captured outward.
+	 * `if (a.b) ...`-> `track(a.b); if ...`
+	 * `switch (a.b) ...`-> `track(a.b); switch ...`
 	 */
-	function moveConditionalOrSwitchCapturedOutward(context: Context) {
+	function moveAnyConditionCapturedOutward(context: Context) {
 		if (!context.capturer.hasCaptured()) {
 			return
 		}
 
-		// parent of conditional.
-		let targetContext = context.parent!
-		context.capturer.operator.moveCapturedOutwardTo(targetContext.capturer)
+		// parent of conditional or switch.
+		let targetContext = context.parent!.parent!
+
+		// Can't across `ConditionalContent`, move to Conditional.
+		if (context.parent!.type & ContextTypeMask.ConditionalContent) {
+			targetContext = context.parent!
+		}
+
+		context.capturer.operator.safelyMoveCapturedOutwardTo(targetContext.capturer)
 	}
 
 
 	/** 
-	 * Merge all branches tracking and move outward.
-	 * `if (...) {a.b} else {a.b}` -> `track(a.b), if ...`
+	 * Merge all branches captured and move outward.
+	 * `if (...) {a.b} else {a.b}` -> `track(a.b); if ...`
 	 */
 	function mergeConditionalContentCapturedBranches(context: Context) {
 		let contentChildren = context.children.filter(child => {
@@ -147,32 +150,30 @@ export namespace Optimizer {
 			return
 		}
 
-		context.capturer.operator.moveCapturedOutwardFrom(shared, contentChildren[0].capturer)
+		context.capturer.operator.safelyMoveSomeCapturedOutwardFrom(shared, contentChildren[0].capturer)
 	}
 
 
 	/** 
-	 * Merge all case tracking and move outward.
-	 * `case a.b: ... case a.b + 1: ...` -> `track(a.b); ...`
+	 * Move all case condition captured and move outward.
+	 * `case a.b: ... case a.c: ...` -> `track(a.b, a.c); ...`
 	 */
-	function mergeCaseConditionCapturedBranches(context: Context) {
-		let caseChildren = context.children.filter(child => {
-			return child.type & ContextTypeMask.CaseDefault
+	function moveCaseConditionCapturedBranchesOutward(context: Context) {
+		let caseConditionChildren = context.children.map(child => child.children).flat().filter(child => {
+			return child.type & ContextTypeMask.CaseCondition
 		})
 
-		let capturers = caseChildren.map(c => c.capturer)
-		let shared = ContextCapturerOperator.intersectCapturedItems(capturers)
+		let capturers = caseConditionChildren.map(c => c.capturer)
+		let targetContext = context.parent!
 
-		if (shared.length === 0) {
-			return
+		for (let capturer of capturers) {
+			capturer.operator.safelyMoveCapturedOutwardTo(targetContext.capturer)
 		}
-
-		context.capturer.operator.moveCapturedOutwardFrom(shared, caseChildren[0].capturer)
 	}
 
 
 	/** 
-	 * Merge all case content tracking and move outward.
+	 * Merge all case content captured and move outward.
 	 * `case xxx: a.b; case xxx: a.b` -> `track(a.b); ...`
 	 */
 	function mergeCaseContentCapturedBranches(context: Context) {
@@ -187,7 +188,8 @@ export namespace Optimizer {
 			return
 		}
 
-		context.capturer.operator.moveCapturedOutwardFrom(shared, caseContentChildren[0].capturer)
+		let targetContext = context.parent!
+		targetContext.capturer.operator.safelyMoveSomeCapturedOutwardFrom(shared, caseContentChildren[0].capturer)
 	}
 
 
@@ -205,11 +207,11 @@ export namespace Optimizer {
 		)
 
 		Modifier.moveOnce(context.visitIndex, toPosition.index)
-		context.capturer.operator.moveCapturedOutwardTo(toPosition.context.capturer)
+		context.capturer.operator.safelyMoveCapturedOutwardTo(toPosition.context.capturer)
 	}
 
 
-	/** Move iteration condition or increasement or expression tracking outward. */
+	/** Move iteration condition or increasement or expression captured outward. */
 	function moveIterationConditionIncreasementExpressionOutward(context: Context) {
 		if (!context.capturer.hasCaptured()) {
 			return
@@ -218,12 +220,12 @@ export namespace Optimizer {
 		// parent of iteration.
 		let targetContext = context.parent!.parent!
 
-		context.capturer.operator.moveCapturedOutwardTo(targetContext.capturer)
+		context.capturer.operator.safelyMoveCapturedOutwardTo(targetContext.capturer)
 	}
 
 
 	/** 
-	 * Move iteration condition or increasement or expression tracking inward to iteration content.
+	 * Move iteration condition or increasement or expression captured inward to iteration content.
 	 * `for (let a = xx; a.b; )` -> `for (...) {track(a.b); ...}`
 	 */
 	function moveIterationConditionIncreasementExpressionToIteration(context: Context) {
@@ -240,7 +242,7 @@ export namespace Optimizer {
 
 
 	/** 
-	 * Move iteration tracking outward.
+	 * Move iteration captured outward.
 	 * `for (...) {a.b}` -> `track(a.b); for ...`
 	 */
 	function moveIterationContentCapturedOutward(context: Context) {
@@ -251,12 +253,12 @@ export namespace Optimizer {
 		// parent of iteration.
 		let targetContext = context.parent!.parent!
 
-		context.capturer.operator.moveCapturedOutwardTo(targetContext.capturer)
+		context.capturer.operator.safelyMoveCapturedOutwardTo(targetContext.capturer)
 	}
 
 
 	/** 
-	 * Move instantly run function like array methods tracking outward.
+	 * Move instantly run function like array methods captured outward.
 	 * `[].map(i => {i + a.b})` -> `track(a.b); [].map...`
 	 */
 	function moveInstantlyRunFunctionCapturedOutward(context: Context) {
@@ -267,7 +269,7 @@ export namespace Optimizer {
 		// parent of array method.
 		let targetContext = context.parent!
 
-		context.capturer.operator.moveCapturedOutwardTo(targetContext.capturer)
+		context.capturer.operator.safelyMoveCapturedOutwardTo(targetContext.capturer)
 	}
 
 
@@ -281,7 +283,7 @@ export namespace Optimizer {
 
 
 	/** 
-	 * Eliminate private and don't have both get and set tracking types.
+	 * Eliminate private and don't have both get and set capture types.
 	 * `class {private prop}`, has only `prop` getting, or only setting -> remove it.
 	 */
 	function eliminatePrivateUniqueTrackingType(context: Context) {

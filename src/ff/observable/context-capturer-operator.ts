@@ -31,6 +31,10 @@ export class ContextCapturerOperator {
 		
 	/** Get intersected items across capturers. */
 	static intersectCapturedItems(capturers: ContextCapturer[]): CapturedItem[] {
+		if (capturers.length === 0) {
+			return []
+		}
+
 		let map: Map<string, number>
 
 		for (let i = 0; i < capturers.length; i++) {
@@ -82,13 +86,13 @@ export class ContextCapturerOperator {
 	 * Move captured indices to an ancestral, target capturer.
 	 * If a node with captured index use local variables and can't be moved, leave it.
 	 */
-	moveCapturedOutwardTo(toCapturer: ContextCapturer) {
+	safelyMoveCapturedOutwardTo(toCapturer: ContextCapturer) {
 		let indices = this.capturer.captured[0].items
 		if (indices.length === 0) {
 			return
 		}
 
-		let residualIndices = toCapturer.operator.moveCapturedOutwardFrom(indices, this.capturer)
+		let residualIndices = toCapturer.operator.safelyMoveSomeCapturedOutwardFrom(indices, this.capturer)
 		this.capturer.captured[0].items = residualIndices
 	}
 
@@ -97,7 +101,7 @@ export class ContextCapturerOperator {
 	 * `fromCapturer` locates where indices move from.
 	 * Returns residual indices that failed to move.
 	 */
-	moveCapturedOutwardFrom(items: CapturedItem[], fromCapturer: ContextCapturer): CapturedItem[] {
+	safelyMoveSomeCapturedOutwardFrom(items: CapturedItem[], fromCapturer: ContextCapturer): CapturedItem[] {
 
 		// Locate which captured item should move indices to.
 		// Find the first item `toIndex` larger in child-first order.
