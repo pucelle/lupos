@@ -24,25 +24,28 @@ export enum TrackingScopeTypeMask {
 	/** `if`, or binary expressions like `a && b`, `a || b`, `a ?? b`. */
 	Conditional = 2 ** 4,
 
-	/** `if`, or binary expressions like `a && b`, `a || b`, `a ?? b`. */
+	/** 
+	 * Condition of  `if (...)`,
+	 * or left part of binary expressions like `a && b`, `a || b`, `a ?? b`.
+	 */
 	ConditionalCondition = 2 ** 5,
 
 	/** 
-	 * Condition of of `if`, `else`.
-	 * Left part of binary expressions like `a && b`, `a || b`, `a ?? b`.
+	 * Content of `if`, `else`,
+	 * or right part of binary expressions like `a && b`, `a || b`, `a ?? b`.
 	 */
 	ConditionalContent = 2 ** 6,
 
-	/** `Switch`. */
+	/** `switch`. */
 	Switch = 2 ** 7,
 
-	/** `Switch`. */
+	/** Condition of `switch ...`. */
 	SwitchCondition = 2 ** 8,
 
 	/** `case` or `default`. */
 	CaseDefault = 2 ** 9,
 
-	/** Condition of `case` or `default`. */
+	/** Condition of `case ...`. */
 	CaseCondition = 2 ** 10,
 
 	/** Content of `case xxx ...`, `default ...`. */
