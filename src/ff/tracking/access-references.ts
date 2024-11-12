@@ -141,7 +141,7 @@ export namespace AccessReferences {
 	 */
 	function shouldReference(index: number, toIndex: number): boolean {
 		let node = VisitTree.getNode(index)
-		if (shouldReferenceComplex(node)) {
+		if (shouldReferenceInternal(node)) {
 			return true
 		}
 
@@ -160,7 +160,7 @@ export namespace AccessReferences {
 	 * `a().b` -> `var $ref_; ...; $ref_ = a(); $ref_.b`
 	 * or `a[i++]` -> `var _ref; ... ; $ref_ = i++; a[_ref]`
 	 */
-	function shouldReferenceComplex(node: TS.Node): boolean {
+	function shouldReferenceInternal(node: TS.Node): boolean {
 
 		// `a && b`, `a || b`, `a ?? b`, `a + b`, `a, b`.
 		if (ts.isBinaryExpression(node)) {
@@ -174,12 +174,12 @@ export namespace AccessReferences {
 
 		// `(...)`
 		else if (ts.isParenthesizedExpression(node)) {
-			return shouldReferenceComplex(node.expression)
+			return shouldReferenceInternal(node.expression)
 		}
 
 		// `(a as Observed<{b: number}>).b`
 		else if (ts.isAsExpression(node)) {
-			return shouldReferenceComplex(node.expression)
+			return shouldReferenceInternal(node.expression)
 		}
 
 		// `a ? b : c`

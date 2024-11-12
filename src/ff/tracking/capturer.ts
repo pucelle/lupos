@@ -362,7 +362,10 @@ export class TrackingCapturer {
 
 		if (itemsInsertToNewPosition.length > 0) {
 			Interpolator.add(newToIndex, {
-				position: group.position,
+
+				// For new position, always insert to `Before`.
+				position: InterpolationPosition.Before,
+
 				contentType: InterpolationContentType.Tracking,
 				exps: () => this.makeCapturedExps(itemsInsertToNewPosition),
 			})
@@ -389,11 +392,6 @@ export class TrackingCapturer {
 	private findBetterInsertPosition(index: number): number | null {
 		let position = TrackingScopeTree.findClosestPositionToAddStatements(index, this.scope)
 		if (!position) {
-			return null
-		}
-
-		// Must in same scope.
-		if (position.scope !== this.scope) {
 			return null
 		}
 

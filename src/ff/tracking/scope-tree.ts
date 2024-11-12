@@ -91,6 +91,7 @@ export interface TrackingScopeTargetPosition{
 export namespace TrackingScopeTree {
 
 	let stack: (TrackingScope | null)[] = []
+	
 	export let current: TrackingScope | null = null
 
 	/** All content ranges. */
@@ -234,7 +235,10 @@ export namespace TrackingScopeTree {
 				|| parent.operatorToken.kind === ts.SyntaxKind.BarBarToken
 				|| parent.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken)
 			) {
-				if (node === parent.right) {
+				if (node === parent.left) {
+					type |= TrackingScopeTypeMask.ConditionalCondition
+				}
+				else if (node === parent.right) {
 					type |= TrackingScopeTypeMask.ConditionalContent
 				}
 			}
@@ -416,7 +420,8 @@ export namespace TrackingScopeTree {
 
 
 	/** 
-	 * Find an ancestral index and scope, which can move statements to before it.
+	 * Find an ancestral index and scope, which can add statements to before it.
+	 * If current position can add statements, return current position.
 	 * Must before current position, and must not cross any conditional or iteration scope.
 	 */
 	export function findClosestPositionToAddStatements(index: number, from: TrackingScope): TrackingScopeTargetPosition {
@@ -435,13 +440,11 @@ export namespace TrackingScopeTree {
 
 		while (true) {
 
-			// Source file.
-			if (ts.isSourceFile(node)) {
-				break
-			}
-
-			// Can extend from `if()...` to `if(){...}`, insert before node.
-			if (Helper.pack.canExtendToPutStatements(node)) {
+			// Can put statements ,
+			// or can extend from `if()...` to `if(){...}`, insert before node.
+			if (Helper.pack.canPutStatements(node)
+				|| Helper.pack.canExtendToPutStatements(node)
+			) {
 				break
 			}
 
@@ -458,7 +461,7 @@ export namespace TrackingScopeTree {
 			// To outer scope.
 			if (node === scope.node) {
 				
-				// Can't across these types of node, end at the inner start of it.
+				// Can't across these types of scope, will end at the inner start of them.
 				if (scope.type & TrackingScopeTypeMask.ConditionalContent
 					|| scope.type & TrackingScopeTypeMask.IterationCondition
 					|| scope.type & TrackingScopeTypeMask.IterationIncreasement

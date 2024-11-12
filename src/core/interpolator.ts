@@ -348,11 +348,9 @@ export namespace Interpolator {
 			}
 		}
 
-		// if (ts.isVariableDeclaration(VisitTree.getNode(VisitTree.getParentIndex(index)!))) {
-		// 	console.log('-------------------------------------')
-		// 	console.log('TO', Helper.getText(VisitTree.getNode(index)))
-		// 	console.log('ADD', Array.isArray(node) ? node.map(n => Helper.getText(n)) : node ? Helper.getText((node)) : 'NONE')
-		// }
+		// console.log('-------------------------------------')
+		// console.log('FROM', Helper.getText(VisitTree.getNode(index)))
+		// console.log('TO', Array.isArray(node) ? node.map(n => Helper.getText(n)) : node ? Helper.getText((node)) : 'NONE')
 
 		return node && Array.isArray(node) && node.length === 1 ? node[0] : node
 	}
@@ -404,6 +402,12 @@ export namespace Interpolator {
 				Helper.pack.toStatements(list),
 				true
 			)
+		}
+
+		// Parent is a parenthesize expression already, should join with comma token.
+		else if (ts.isParenthesizedExpression(rawParent)) {
+			let list = arrangeNeighborNodes(node, beforeNodes, afterNodes, true)
+			return Helper.pack.bundleBinaryExpressions(list, ts.SyntaxKind.CommaToken)
 		}
 
 		// Parenthesize it, and move returned node to the end part.

@@ -55,20 +55,20 @@ export class TestRef extends Component {
     }
     multipleConditionalRef() {
         let $ref_0, $ref_1, $ref_2;
-        $ref_2 = this.getProp();
-        trackGet($ref_2, "value");
-        return $ref_2.value
-            ? ($ref_0 = this.getNextProp(0), trackGet($ref_0, "value"), $ref_0.value
+        $ref_0 = this.getProp();
+        trackGet($ref_0, "value");
+        return $ref_0.value
+            ? ($ref_1 = this.getNextProp(0), trackGet($ref_1, "value"), $ref_1.value
                 ? 1
-                : 2) : ($ref_1 = this.getNextProp(1), trackGet($ref_1, "value"), $ref_1.value
+                : 2) : ($ref_2 = this.getNextProp(1), trackGet($ref_2, "value"), $ref_2.value
             ? 3
             : 4);
     }
     multipleBinaryRef() {
         let $ref_0, $ref_1, $ref_2;
-        $ref_1 = this.getProp();
-        trackGet($ref_1, "value");
-        return $ref_1.value || ($ref_0 = this.getNextProp(0), trackGet($ref_0, "value"), $ref_0.value) || ($ref_2 = this.getNextProp(1), trackGet($ref_2, "value"), $ref_2.value);
+        $ref_0 = this.getProp();
+        trackGet($ref_0, "value");
+        return $ref_0.value || ($ref_1 = this.getNextProp(0), trackGet($ref_1, "value"), $ref_1.value) || ($ref_2 = this.getNextProp(1), trackGet($ref_2, "value"), $ref_2.value);
     }
     deepRef() {
         let $ref_0, $ref_1;

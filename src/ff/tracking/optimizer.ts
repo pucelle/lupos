@@ -116,12 +116,23 @@ export namespace Optimizer {
 			return
 		}
 
+		// `a && b && c`, ancestor's types of `a`:
+		// ConditionalCondition =>
+		// Conditional & ConditionalCondition =>
+		// Conditional
+
+		// Look for the end of `ConditionalCondition` chain.
+		let conditionScope = scope
+		while (conditionScope.parent!.type & TrackingScopeTypeMask.ConditionalCondition) {
+			conditionScope = conditionScope.parent!
+		}
+
 		// parent of conditional or switch.
-		let targetScope = scope.parent!.parent!
+		let targetScope = conditionScope.parent!.parent!
 
 		// Can't across `ConditionalContent`, move to Conditional.
-		if (scope.parent!.type & TrackingScopeTypeMask.ConditionalContent) {
-			targetScope = scope.parent!
+		if (conditionScope.parent!.type & TrackingScopeTypeMask.ConditionalContent) {
+			targetScope = conditionScope.parent!
 		}
 
 		scope.capturer.operator.safelyMoveCapturedOutwardTo(targetScope.capturer)
@@ -150,7 +161,15 @@ export namespace Optimizer {
 			return
 		}
 
-		scope.capturer.operator.safelyMoveSomeCapturedOutwardFrom(shared, contentChildren[0].capturer)
+		// parent of conditional or switch.
+		let targetScope = scope.parent!
+
+		// Can't across `ConditionalContent`, move to Conditional.
+		if (scope.type & TrackingScopeTypeMask.ConditionalContent) {
+			targetScope = scope
+		}
+
+		targetScope.capturer.operator.safelyMoveSomeCapturedOutwardFrom(shared, contentChildren[0].capturer)
 	}
 
 

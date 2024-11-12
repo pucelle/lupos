@@ -65,7 +65,7 @@ export class TrackingScope {
 	}
 
 	/** 
-	 * Get normal scope for putting declarations.
+	 * Get declaration scope for putting declarations.
 	 * For function scope, it returns the scope of function body.
 	 * Note it's not tracking scope.
 	 */
