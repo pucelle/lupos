@@ -164,11 +164,6 @@ export class TrackingCapturerOperator {
 				else {
 					ownHashes.add(hashName)
 				}
-
-				// Break by yield or await.
-				if ((group.flowInterruptedBy & FlowInterruptionTypeMask.YieldLike) > 0) {
-					ownHashes.clear()
-				}
 			}
 
 			// Every time after update hash set,
@@ -181,6 +176,11 @@ export class TrackingCapturerOperator {
 				}
 
 				child.capturer.operator.eliminateRepetitiveRecursively(ownHashes)
+			}
+			
+			// Break by yield or await.
+			if (group.flowInterruptedBy & FlowInterruptionTypeMask.YieldLike) {
+				ownHashes.clear()
 			}
 		}
 

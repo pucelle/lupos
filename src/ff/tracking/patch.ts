@@ -3,7 +3,6 @@ import {Helper} from '../../core'
 import {ObservedChecker} from './observed-checker'
 import {AccessGrouper} from './access-grouper'
 import {TrackingScopeTree} from './scope-tree'
-import {CapturedOutputWay} from './capturer'
 
 
 export enum ForceTrackType {
@@ -76,11 +75,6 @@ export namespace TrackingPatch {
 	/** Get force tracking type of specified node. */
 	export function getForceTrackType(rawNode: TS.Node): ForceTrackType | undefined {
 		return ForceTracked.get(rawNode)
-	}
-
-	/** Mark a custom outputted scope by a node range, later will be made as a `Range` scope. */
-	export function markRange(node: TS.Node, startNode: TS.Node, endNode: TS.Node) {
-		TrackingScopeTree.markRange(node, startNode, endNode, CapturedOutputWay.Custom)
 	}
 
 	/** Output isolated tracking expressions. */

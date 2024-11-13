@@ -124,6 +124,13 @@ export class TestOptimizing extends Component {
         trackGet(this, "prop");
         return 0;
     }
+    eliminateContentByConditionBinaryAndRight() {
+        if (this.prop && (trackGet(this.prop, "value"), this.prop.value) && this.prop) {
+            this.prop.value;
+        }
+        trackGet(this, "prop");
+        return 0;
+    }
     avoidEliminatingSameNameButDifferentVariable() {
         let prop = { value: 1 };
         prop.value;

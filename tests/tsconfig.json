@@ -20,5 +20,5 @@
 			{"transform": "../src/index.ts"},
 		]
 	},
-	"include": ["src/**/if.ts"],
+	"include": ["src/**/*.ts"],
 }

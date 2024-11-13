@@ -310,7 +310,7 @@ export class TestIf extends Component {
     testIfContentTracking() {
         trackGet(this, "item");
         return new CompiledTemplateResult($template_14, [
-            this.item && (trackGet(this.item, "value"), this.item.value) ? (trackGet(this.item, "value"), trackGet(this.item.value, ""), new CompiledTemplateResult($template_15, [
+            this.item && (trackGet(this.item, "value"), this.item.value) ? (trackGet(this.item.value, ""), new CompiledTemplateResult($template_15, [
                 this.item.value.map(v => new CompiledTemplateResult($template_16, [
                     v
                 ]))

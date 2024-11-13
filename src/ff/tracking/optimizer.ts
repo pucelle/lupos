@@ -37,6 +37,11 @@ export namespace Optimizer {
 			moveAnyConditionCapturedOutward(scope)
 		}
 
+		// `if (a.b && a.c) {a.c}` -> Remove `track(a.c)` from content.`
+		if (scope.type & TrackingScopeTypeMask.ConditionalContent) {
+			eliminateRepetitiveFromContentByCondition(scope)
+		}
+
 		// `case a.b: ... case a.b + 1: ...` -> `track(a.b); ...`
 		// `if (a.b) ...`-> `track(a.b); if ...`
 		if (scope.type & TrackingScopeTypeMask.Switch) {
@@ -136,6 +141,64 @@ export namespace Optimizer {
 		}
 
 		scope.capturer.operator.safelyMoveCapturedOutwardTo(targetScope.capturer)
+	}
+
+
+	/** 
+	 * Eliminate capture from conditional content, when repetitive with binary and right part.
+	 * `if (a.b && a.c) {a.c}` -> Remove `track(a.c)` from content.
+	 */
+	function eliminateRepetitiveFromContentByCondition(scope: TrackingScope) {
+		let condition = scope.parent!.children.find(s => s.type & TrackingScopeTypeMask.ConditionalCondition)
+		let content = scope
+
+		if (!condition || !content) {
+			return
+		}
+	
+		let mustRunParts = [...walkForMustRunParts(condition)]
+		if (mustRunParts.length === 0) {
+			return
+		}
+
+		let hashSet: Set<string> = new Set()
+
+		for (let scope of mustRunParts) {
+			for (let name of scope.capturer.iterateImmediateCapturedHashNames()) {
+				hashSet.add(name)
+			}
+		}
+
+		content.capturer.operator.eliminateRepetitiveRecursively(hashSet)
+	}
+
+	/** Walk for partial scopes that must run. */
+	function *walkForMustRunParts(scope: TrackingScope): Iterable<TrackingScope> {
+		if (scope.type & TrackingScopeTypeMask.CaseDefaultContent) {
+			return
+		}
+
+		yield scope
+
+		if (scope.type & TrackingScopeTypeMask.Conditional) {
+
+			// Both parts of `a && b`.
+			if (ts.isBinaryExpression(scope.node)
+				&& scope.node.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken
+			) {
+				for (let child of scope.children) {
+					yield* walkForMustRunParts(child)
+				}
+			}
+
+			// Left parts of `a && b`, or `a ? b : c`.
+			else {
+				let condition = scope.children.find(s => s.type & TrackingScopeTypeMask.ConditionalCondition)
+				if (condition) {
+					yield *walkForMustRunParts(condition)
+				}
+			}
+		}
 	}
 
 

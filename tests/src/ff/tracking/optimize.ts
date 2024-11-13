@@ -150,6 +150,14 @@ export class TestOptimizing extends Component {
 		return 0
 	}
 
+	eliminateContentByConditionBinaryAndRight() {
+		if (this.prop && this.prop.value && this.prop) {
+			this.prop.value
+		}
+
+		return 0
+	}
+
 	avoidEliminatingSameNameButDifferentVariable() {
 		let prop: Observed<{value: number}> = {value: 1}
 		prop.value

@@ -1,7 +1,7 @@
 import type TS from 'typescript'
 import {InterpolationContentType, AccessNode, Helper, Interpolator, InterpolationPosition, VisitTree, ts, FlowInterruptionTypeMask, ScopeTree} from '../../core'
 import {TrackingScope} from './scope'
-import {TrackingScopeTree, TrackingScopeTypeMask} from './scope-tree'
+import {CapturedOutputWay, TrackingScopeTree, TrackingScopeTypeMask} from './scope-tree'
 import {AccessGrouper} from './access-grouper'
 import {AccessReferences} from './access-references'
 import {Optimizer} from './optimizer'
@@ -30,12 +30,6 @@ export interface CapturedItem {
 	 */
 	expIndex?: number
 	keys?: (string | number)[]
-}
-
-/** How to output captured. */
-export enum CapturedOutputWay {
-	FollowNode,
-	Custom,
 }
 
 
@@ -211,7 +205,7 @@ export class TrackingCapturer {
 	}
 
 	/** Insert captured indices to specified position. */
-	breakCaptured(atIndex: number, flowInterruptedBy: number) {
+	breakCaptured(atIndex: number, flowInterruptedBy: FlowInterruptionTypeMask | 0) {
 		// Even no indices captured, still break.
 		// Later may append indices to this item.
 
@@ -290,6 +284,30 @@ export class TrackingCapturer {
 		// Insert to the end.
 		else {
 			item.position = InterpolationPosition.After
+		}
+	}
+
+	/** 
+	 * Iterate hash names of captured.
+	 * If meet `await` or `yield`, stop iteration.
+	 */
+	*iterateImmediateCapturedHashNames(): Iterable<string> {
+		for (let group of this.captured) {
+			for (let item of [...group.items]) {
+
+				// Has been referenced, ignore always.
+				if (AccessReferences.hasExternalAccessReferenced(item.index, true)) {
+					continue
+				}
+
+				let hashName = TrackingCapturerOperator.hashCapturedItem(item).name
+				yield hashName
+			}
+
+			// Break by yield or await.
+			if (group.flowInterruptedBy & FlowInterruptionTypeMask.YieldLike) {
+				return
+			}
 		}
 	}
 

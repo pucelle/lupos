@@ -4,7 +4,7 @@ import {TreeParser} from '../tree'
 import {FlowControlSlotParser} from '../slots'
 import {factory, TemplateSlotPlaceholder} from '../../../core'
 import {TemplateParser} from '../template'
-import {TrackingPatch} from '../../../ff'
+import {CapturedOutputWay, TrackingScopeTree, TrackingScopeTypeMask} from '../../../ff'
 
 
 export abstract class FlowControlBase {
@@ -97,10 +97,12 @@ export abstract class FlowControlBase {
 		let rawValueNodes = this.template.values.rawValueNodes
 		
 		if (subValueIndices) {
-			TrackingPatch.markRange(
+			TrackingScopeTree.markRange(
 				this.template.rawNode,
 				rawValueNodes[subValueIndices[0]].parent,
-				rawValueNodes[subValueIndices[subValueIndices.length - 1]].parent
+				rawValueNodes[subValueIndices[subValueIndices.length - 1]].parent,
+				TrackingScopeTypeMask.ConditionalContent,
+				CapturedOutputWay.Custom
 			)
 
 			return rawValueNodes[subValueIndices[0]].parent

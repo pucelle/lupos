@@ -450,7 +450,7 @@ export namespace ObservedChecker {
 	 * E.g., for `a.b.c`, sub identifier `b` or `c` is not allowed.
 	 */
 	function isIdentifierObserved(rawNode: TS.Identifier | TS.ThisExpression): boolean {
-		let scope = TrackingScopeTree.findClosestByNode(rawNode)
+		let scope = TrackingScopeTree.findClosest(rawNode)
 
 		if (Helper.isThis(rawNode)) {
 			return scope.variables.thisObserved

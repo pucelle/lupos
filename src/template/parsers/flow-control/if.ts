@@ -3,7 +3,7 @@ import {factory, Helper, Interpolator, Modifier} from '../../../core'
 import {FlowControlBase} from './base'
 import {TemplateParser} from '../template'
 import {SlotContentType} from '../../../enums'
-import {TrackingPatch} from '../../../ff'
+import {TrackingPatch, TrackingScopeTree, TrackingScopeTypeMask} from '../../../ff'
 
 
 export class IfFlowControl extends FlowControlBase {
@@ -51,6 +51,12 @@ export class IfFlowControl extends FlowControlBase {
 
 			this.valueIndices.push(valueIndex)
 			lastValueIndex = valueIndex
+
+			// Add a custom condition scope.
+			if (valueIndex !== null) {
+				let valueNode = this.template.values.rawValueNodes[valueIndex]
+				TrackingScopeTree.specifyType(valueNode, TrackingScopeTypeMask.ConditionalCondition)
+			}
 	
 			if (child.children.length > 0) {
 				let rangeStartNode = this.markTrackingRangeBeforeSeparation(child)
