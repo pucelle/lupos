@@ -213,6 +213,33 @@ export class HTMLNode {
 		return true
 	}
 
+	/** Get string which still include slot indices. */
+	toString(): string {
+		if (this.type === HTMLNodeType.Tag) {
+			let tagName = this.tagName!
+			let children = this.children
+
+			return `<${tagName}${this.toStringOfAttrs(true)}${children.length === 0 ? ' /' : ''}>`
+				+ children.map(child => child.toString()).join('')
+				+ (children.length > 0
+					? `</${TemplateSlotPlaceholder.isDynamicComponent(tagName) ? '' : tagName}>`
+					: ''
+				)
+		}
+		else if (this.type === HTMLNodeType.Text) {
+			return this.text || ''
+		}
+		else {
+			return `<!--${this.text || ''}-->`
+		}
+	}
+
+	/** Get content string which still include slot indices. */
+	getContentString(): string {
+		return this.children.map(child => child.toString()).join('')
+	}
+
+	/** Get readable string for identifying. */
 	toReadableString(rawValueNodes: TS.Node[], tab = ''): string {
 		if (this.type === HTMLNodeType.Tag) {
 			let tagName = this.tagName!
@@ -277,7 +304,8 @@ export class HTMLNode {
 		return joined.map(v => ' ' + v).join('')
 	}
 
-	toTemplateString(): string {
+	/** Get string for building HTML nodes. */
+	toHTMLString(): string {
 		if (this.type === HTMLNodeType.Tag) {
 			let tagName = this.tagName!
 
@@ -307,7 +335,7 @@ export class HTMLNode {
 				return `<${tagName}${this.toStringOfAttrs(false)} />`
 			}
 
-			let contents = this.children.map(child => child.toTemplateString()).join('')
+			let contents = this.children.map(child => child.toHTMLString()).join('')
 			return `<${tagName}${this.toStringOfAttrs(false)}>${contents}</${tagName}>`
 		}
 		else if (this.type === HTMLNodeType.Text) {
@@ -318,8 +346,8 @@ export class HTMLNode {
 		}
 	}
 
-	/** Get string of all the contents. */
-	getContentString() {
-		return this.children.map(child => child.toTemplateString()).join('')
+	/** Get html string of all the contents. */
+	getContentHTMLString() {
+		return this.children.map(child => child.toHTMLString()).join('')
 	}
 }

@@ -1,10 +1,10 @@
 import type TS from 'typescript'
 import {ObservedChecker} from './observed-checker'
-import {Helper, AccessNode, ts, FlowInterruptionTypeMask, ScopeTree, VisitTree} from '../../core'
+import {Helper, AccessNode, ts, FlowInterruptionTypeMask, ScopeTree} from '../../core'
 import {TrackingScopeState} from './scope-state'
 import {TrackingScopeTypeMask} from './scope-tree'
 import {TrackingScopeVariables} from './scope-variables'
-import {TrackingCapturer} from './capturer'
+import {CapturedOutputWay, TrackingCapturer} from './capturer'
 import {AccessReferences} from './access-references'
 import {ForceTrackType, TrackingPatch} from './patch'
 
@@ -39,7 +39,8 @@ export class TrackingScope {
 		index: number,
 		parent: TrackingScope | null,
 		rangeStartNode: TS.Node | null,
-		rangeEndNode: TS.Node | null
+		rangeEndNode: TS.Node | null,
+		outputWay: CapturedOutputWay
 	) {
 		this.type = type
 		this.visitIndex = index
@@ -50,7 +51,7 @@ export class TrackingScope {
 
 		this.state = new TrackingScopeState(this)
 		this.variables = new TrackingScopeVariables(this)
-		this.capturer = new TrackingCapturer(this, this.state)
+		this.capturer = new TrackingCapturer(this, this.state, outputWay)
 
 		let beNonInstantlyRunFunction = (type & TrackingScopeTypeMask.FunctionLike)
 			&& (type & TrackingScopeTypeMask.InstantlyRunFunction) === 0
@@ -109,7 +110,6 @@ export class TrackingScope {
 	 * When visiting a node, child nodes of this node have visited.
 	 */
 	visitNode(node: TS.Node) {
-		let index = VisitTree.getIndex(node)
 
 		// Add parameters.
 		if (ts.isParameter(node)) {
@@ -168,17 +168,6 @@ export class TrackingScope {
 			this.state.unionFlowInterruptionType(FlowInterruptionTypeMask.BreakLike)
 			this.capturer.breakCaptured(this.visitIndex, FlowInterruptionTypeMask.BreakLike)
 		}
-
-		// Force tracking node.
-		if (TrackingPatch.isIndexForceTracked(index)) {
-			let type = TrackingPatch.getIndexForceTrackType(index)!
-			if (type === ForceTrackType.Members) {
-				this.mayAddGetTracking(node as AccessNode | TS.Identifier, node as TS.Expression, [''])
-			}
-			else {
-				this.mayAddGetTracking(node as AccessNode | TS.Identifier)
-			}
-		}
 	}
 
 	/** Add a property access expression. */
@@ -191,8 +180,15 @@ export class TrackingScope {
 			return
 		}
 
+		// Normal tracking.
 		if (ObservedChecker.isObserved(node)) {
 			this.capturer.capture(node, exp, keys, 'get')
+		}
+
+		// Force tracking.
+		let type = TrackingPatch.getForceTrackType(node)
+		if (type === ForceTrackType.Elements) {
+			this.capturer.capture(node, node as TS.Expression, [''], 'get')
 		}
 	}
 

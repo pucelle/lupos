@@ -130,7 +130,7 @@ export namespace Optimizer {
 		// parent of conditional or switch.
 		let targetScope = conditionScope.parent!.parent!
 
-		// Can't across `ConditionalContent`, move to Conditional.
+		// Can't across `ConditionalContent`, so move to Conditional.
 		if (conditionScope.parent!.type & TrackingScopeTypeMask.ConditionalContent) {
 			targetScope = conditionScope.parent!
 		}

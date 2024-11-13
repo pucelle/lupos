@@ -211,7 +211,7 @@ const $html_13 = new HTMLMaker("Then Content");
 });
 /*
 <root>
-    <lu:if ${this.item && this.item.value.length > 0} />
+    <lu:if ${this.item && this.item.value} />
 </root>
 */ const $template_14 = new TemplateMaker(function ($context) {
     let $node = $html_0.make();
@@ -288,11 +288,11 @@ export class TestIf extends Component {
         ]);
     }
     testDynamicIfContent() {
-        trackGet(this, "prop", "content");
+        trackGet(this, "prop");
         return new CompiledTemplateResult($template_4, [
-            this.prop ? new CompiledTemplateResult($template_5, [
+            this.prop ? (trackGet(this, "content"), new CompiledTemplateResult($template_5, [
                 this.content
-            ]) : null
+            ])) : null
         ]);
     }
     testIfElse() {
@@ -309,14 +309,12 @@ export class TestIf extends Component {
     }
     testIfContentTracking() {
         trackGet(this, "item");
-        trackGet(this.item, "value");
-        trackGet(this.item.value, "");
         return new CompiledTemplateResult($template_14, [
-            this.item && this.item.value.length > 0 ? new CompiledTemplateResult($template_15, [
+            this.item && (trackGet(this.item, "value"), this.item.value) ? (trackGet(this.item, "value"), trackGet(this.item.value, ""), new CompiledTemplateResult($template_15, [
                 this.item.value.map(v => new CompiledTemplateResult($template_16, [
                     v
                 ]))
-            ]) : null
+            ])) : null
         ]);
     }
 }

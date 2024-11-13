@@ -2,11 +2,13 @@ import type TS from 'typescript'
 import {Helper} from '../../core'
 import {ObservedChecker} from './observed-checker'
 import {AccessGrouper} from './access-grouper'
+import {TrackingScopeTree} from './scope-tree'
+import {CapturedOutputWay} from './capturer'
 
 
 export enum ForceTrackType {
 	Self,
-	Members,
+	Elements,
 }
 
 
@@ -16,8 +18,8 @@ export enum ForceTrackType {
  */
 export namespace TrackingPatch {
 
-	const Ignored: Set<number> = new Set()
-	const ForceTracked: Map<number, ForceTrackType> = new Map()
+	const Ignored: Set<TS.Node> = new Set()
+	const ForceTracked: Map<TS.Node, ForceTrackType> = new Map()
 
 
 	/** Initialize after each time source file updated. */
@@ -26,32 +28,59 @@ export namespace TrackingPatch {
 		ForceTracked.clear()
 	}
 
-	/** Ignore outputting tracking node by it's visit index. */
-	export function ignore(index: number) {
-		Ignored.add(index)
+	/** 
+	 * Ignore outputting tracking node by it's visit index.
+	 * Note it ignores outputting, not prevent observe checking.
+	 */
+	export function ignore(rawNode: TS.Node) {
+		Ignored.add(rawNode)
 	}
 
 	/** Check whether ignored outputting specified visit index. */
-	export function isIndexIgnored(index: number): boolean {
-		return Ignored.has(index)
+	export function isIgnored(rawNode: TS.Node): boolean {
+		return Ignored.has(rawNode)
 	}
 
 	/** 
-	 * Force tracking node at specified visit index.
-	 * If tracking type is `Members`, for array type, will track members.
+	 * Force re-check node at specified visit index.
+	 * 
+	 * If tracking type is `Elements`, for array type, will track elements,
+	 * and it would apply additional elements get tracking.
 	 */
-	export function forceRecheck(index: number, type: ForceTrackType) {
-		ForceTracked.set(index, type)
+	export function forceTrack(rawNode: TS.Node, type: ForceTrackType) {
+		ForceTracked.set(rawNode, type)
 	}
 
-	/** Check whether force tracking specified visit index. */
-	export function isIndexForceTracked(index: number): boolean {
-		return ForceTracked.has(index)
+	/** 
+	 * Check whether force tracking specified visit index.
+	 * 
+	 * `parental` specifies whether are visiting parent node of original
+	 * to determine whether elements should be observed.
+	 */
+	export function isForceTracked(rawNode: TS.Node, parental: boolean = false): boolean {
+		let type = ForceTracked.get(rawNode)
+		if (type === undefined) {
+			return false
+		}
+
+		if (type === ForceTrackType.Elements && parental) {
+			return true
+		}
+		else if (type === ForceTrackType.Self && !parental) {
+			return true
+		}
+
+		return false
 	}
 
-	/** Check whether force tracking members of specified visit index. */
-	export function getIndexForceTrackType(index: number): ForceTrackType | undefined {
-		return ForceTracked.get(index)
+	/** Get force tracking type of specified node. */
+	export function getForceTrackType(rawNode: TS.Node): ForceTrackType | undefined {
+		return ForceTracked.get(rawNode)
+	}
+
+	/** Mark a custom outputted scope by a node range, later will be made as a `Range` scope. */
+	export function markRange(node: TS.Node, startNode: TS.Node, endNode: TS.Node) {
+		TrackingScopeTree.markRange(node, startNode, endNode, CapturedOutputWay.Custom)
 	}
 
 	/** Output isolated tracking expressions. */
@@ -60,11 +89,21 @@ export namespace TrackingPatch {
 			return []
 		}
 
-		if (!ObservedChecker.isAccessObserved(rawNode)) {
+		if (!ObservedChecker.isObserved(rawNode)) {
 			return []
 		}
 
 		AccessGrouper.addImport(type)
 		return AccessGrouper.makeExpressions([rawNode], type)
+	}
+
+	/** Output custom range tracking expressions by. */
+	export function outputCustomRangeTracking(startNode: TS.Node): TS.Expression[] {
+		let scope = TrackingScopeTree.getRangeScopeByStartNode(startNode)
+		if (!scope) {
+			return []
+		}
+
+		return scope.capturer.outputCustomCaptured()
 	}
 }

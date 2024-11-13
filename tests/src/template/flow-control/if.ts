@@ -43,7 +43,7 @@ export class TestIf extends Component {
 
 	testIfContentTracking() {
 		return html`
-			<lu:if ${this.item && this.item.value.length > 0}>
+			<lu:if ${this.item && this.item.value}>
 				${this.item!.value.map(v => html`<div>${v}</div>`)}
 			</lu:if>
 		`

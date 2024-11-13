@@ -1,6 +1,8 @@
 import type TS from 'typescript'
 import {Helper, ts, VisitTree} from '../../core'
 import {TrackingScope} from './scope'
+import {CapturedOutputWay} from './capturer'
+import {ListMap} from '../../utils'
 
 
 export enum TrackingScopeTypeMask {
@@ -54,10 +56,10 @@ export enum TrackingScopeTypeMask {
 	/** 
 	 * Like content of `case xxx: ...`, `default ...`,
 	 * or a specified range to contain partial of a template literal.
-	 * A scope with `ContentRange` must have `rangeStartNode` and `rangeEndNode` nodes.
+	 * A scope with `Range` must have `rangeStartNode` and `rangeEndNode` nodes.
 	 * And `node` is the container node contains both `rangeStartNode` and `rangeEndNode` nodes.
 	 */
-	ContentRange = 2 ** 12,
+	Range = 2 ** 12,
 
 	/** Process For iteration initializer, condition, incrementor. */
 	Iteration = 2 ** 13,
@@ -90,6 +92,14 @@ export interface TrackingScopeTargetPosition{
 	index: number
 }
 
+/** Describe a tracking range. */
+interface TrackingRange {
+	node: TS.Node
+	startNode: TS.Node
+	endNode: TS.Node
+	outputWay: CapturedOutputWay
+}
+
 
 export namespace TrackingScopeTree {
 
@@ -97,42 +107,51 @@ export namespace TrackingScopeTree {
 	
 	export let current: TrackingScope | null = null
 
-	/** All content ranges. */
-	let contentRanges: {start: TS.Node, end: TS.Node}[] = []
+	/** Visit index -> scope list. */
+	const ScopeMap: ListMap<number, TrackingScope> = new ListMap()
 
-	/** Visit index -> scope. */
-	const ScopeMap: Map<number, TrackingScope> = new Map()
+	/** All content ranges. */
+	let ranges: TrackingRange[] = []
+
+	/** Range start node -> scope. */
+	const RangeStartNodeMap: Map<TS.Node, TrackingScope> = new Map()
 
 
 	/** Initialize before visiting a new source file. */
 	export function init() {
 		stack = []
 		current = null
-		contentRanges = []
+		ranges = []
 		ScopeMap.clear()
+		RangeStartNodeMap.clear()
 	}
 
 
 	/** 
-	 * Mark a node range, later will be made as a `ContentRange` scope.
+	 * Mark a scope by node range, later will be made as a `Range` scope.
 	 * Note must mark before scope visitor visit it.
 	 */
-	export function markContentRange(startNode: TS.Node, endNode: TS.Node) {
-		contentRanges.push({start: startNode, end: endNode})
+	export function markRange(node: TS.Node, startNode: TS.Node, endNode: TS.Node, outputWay: CapturedOutputWay) {
+		ranges.push({node, startNode, endNode, outputWay})
 	}
 
 	/** Try get a content range by start node. */
-	export function getContentRangeByStartNode(startNode: TS.Node): {start: TS.Node, end: TS.Node} | undefined {
-		let range = contentRanges.find(r => r.start === startNode)
+	export function getRangeByStartNode(startNode: TS.Node): TrackingRange | undefined {
+		let range = ranges.find(r => r.startNode === startNode)
 		return range
 	}
 
 	/** Remove a content range by start node. */
-	export function removeContentRangeByStartNode(startNode: TS.Node) {
-		let rangeIndex = contentRanges.findIndex(r => r.start === startNode)
+	export function removeRangeByStartNode(startNode: TS.Node) {
+		let rangeIndex = ranges.findIndex(r => r.startNode === startNode)
 		if (rangeIndex > -1) {
-			contentRanges.splice(rangeIndex, 1)
+			ranges.splice(rangeIndex, 1)
 		}
+	}
+
+	/** Get tracking scope by range start node. */
+	export function getRangeScopeByStartNode(startNode: TS.Node): TrackingScope | undefined {
+		return RangeStartNodeMap.get(startNode)
 	}
 
 
@@ -313,8 +332,8 @@ export namespace TrackingScopeTree {
 		let type = 0
 
 		// Make a content range.
-		if (getContentRangeByStartNode(node)) {
-			type |= TrackingScopeTypeMask.ContentRange
+		if (getRangeByStartNode(node)) {
+			type |= TrackingScopeTypeMask.Range
 
 			// Content of case or default.
 			if (ts.isCaseOrDefaultClause(parent)) {
@@ -328,27 +347,34 @@ export namespace TrackingScopeTree {
 	/** Create a scope from node and push to stack. */
 	export function createScope(type: TrackingScopeTypeMask, node: TS.Node): TrackingScope {
 		let index = VisitTree.getIndex(node)
-		let startNode = null, endNode = null
+		let startNode = null
+		let endNode = null
+		let outputWay = CapturedOutputWay.FollowNode
 
 		// Initialize content range.
-		if (type & TrackingScopeTypeMask.ContentRange) {
-			let range = getContentRangeByStartNode(node)
+		if (type & TrackingScopeTypeMask.Range) {
+			let range = getRangeByStartNode(node)
 			if (range) {
-				startNode = range.start
-				endNode = range.end
+				startNode = range.startNode
+				endNode = range.endNode
+				outputWay = range.outputWay
 			}
 		}
 
-		let scope = new TrackingScope(type, node, index, current, startNode, endNode)
+		let scope = new TrackingScope(type, node, index, current, startNode, endNode, outputWay)
 
-		ScopeMap.set(index, scope)
+		ScopeMap.add(index, scope)
 		stack.push(current)
+
+		if (startNode) {
+			RangeStartNodeMap.set(startNode, scope)
+		}
 
 		// Child `case/default` statements start a content range.
 		if (ts.isCaseOrDefaultClause(node)) {
 			let statements = node.statements
 			if (statements.length > 0) {
-				markContentRange(statements[0], statements[statements.length - 1])
+				markRange(node, statements[0], statements[statements.length - 1], CapturedOutputWay.FollowNode)
 			}
 		}
 
@@ -357,8 +383,8 @@ export namespace TrackingScopeTree {
 
 	/** Pop scope. */
 	export function pop() {
-		if (current && (current.type & TrackingScopeTypeMask.ContentRange)) {
-			removeContentRangeByStartNode(current.rangeStartNode!)
+		if (current && (current.type & TrackingScopeTypeMask.Range)) {
+			removeRangeByStartNode(current.rangeStartNode!)
 		}
 
 		current!.beforeExit()
@@ -376,16 +402,19 @@ export namespace TrackingScopeTree {
 	}
 
 
-	/** Find closest scope contains or equals node with specified visit index. */
+	/** 
+	 * Find closest scope contains or equals node with specified visit index.
+	 * Note it's not fit for finding `Range` type of scopes.
+	 */
 	export function findClosest(index: number): TrackingScope {
-		let scope = ScopeMap.get(index)
+		let scopes = ScopeMap.get(index)
 
-		while (!scope) {
+		while (!scopes) {
 			index = VisitTree.getParentIndex(index)!
-			scope = ScopeMap.get(index)
+			scopes = ScopeMap.get(index)
 		}
 
-		return scope
+		return scopes[scopes.length - 1]
 	}
 
 	/** Find closest scope contains or equals node. */

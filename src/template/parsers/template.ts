@@ -16,7 +16,12 @@ export type TemplateType = 'html' | 'svg'
 export class TemplateParser {
 
 	readonly type: TemplateType
+	readonly root: HTMLRoot
+
+	/** All value nodes even for sub template. */
 	readonly values: TemplateValues
+
+	/** Raw template node even for sub template. */
 	readonly rawNode: TS.Node
 
 	private readonly treeParsers: TreeParser[] = []
@@ -27,6 +32,7 @@ export class TemplateParser {
 
 	constructor(type: TemplateType, root: HTMLRoot, values: TS.Expression[], rawNode: TS.Node) {
 		this.type = type
+		this.root = root
 		this.rawNode = rawNode
 
 		let tree = this.addTreeParser(root, null, null)

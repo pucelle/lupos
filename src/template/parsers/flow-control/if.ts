@@ -3,6 +3,7 @@ import {factory, Helper, Interpolator, Modifier} from '../../../core'
 import {FlowControlBase} from './base'
 import {TemplateParser} from '../template'
 import {SlotContentType} from '../../../enums'
+import {TrackingPatch} from '../../../ff'
 
 
 export class IfFlowControl extends FlowControlBase {
@@ -19,6 +20,7 @@ export class IfFlowControl extends FlowControlBase {
 	private cacheable: boolean = false
 	private valueIndices: (number | null)[] = []
 	private contentTemplates: (TemplateParser | null)[] = []
+	private contentRangeStartNodes: (TS.Node | null)[] = []
 
 	preInit() {
 		this.blockVariableName = this.tree.makeUniqueBlockName()
@@ -27,20 +29,18 @@ export class IfFlowControl extends FlowControlBase {
 
 		let nextNodes = this.eatNext('lu:elseif', 'lu:else')
 		let allNodes = [this.node, ...nextNodes]
-		let valueIndices: (number | null)[] = []
 		let lastValueIndex: number | null = null
-		let contentTemplates: (TemplateParser | null)[] = []
 
-		for (let node of allNodes) {
-			let valueIndex = this.getAttrValueIndex(node)
+		for (let child of allNodes) {
+			let valueIndex = this.getAttrValueIndex(child)
 			
-			if (valueIndex === null && node.tagName !== 'lu:else') {
-				this.slot.diagnoseNormal('<' + node.tagName + ' ${...}> must accept a parameter as condition!')
+			if (valueIndex === null && child.tagName !== 'lu:else') {
+				this.slot.diagnoseNormal('<' + child.tagName + ' ${...}> must accept a parameter as condition!')
 				break
 			}
 
-			if (valueIndex !== null && node.tagName === 'lu:else') {
-				this.slot.diagnoseNormal('<' + node.tagName + '> should not accept any parameter!')
+			if (valueIndex !== null && child.tagName === 'lu:else') {
+				this.slot.diagnoseNormal('<lu:else> should not accept any parameter!')
 				break
 			}
 
@@ -49,25 +49,25 @@ export class IfFlowControl extends FlowControlBase {
 				break
 			}
 
-			valueIndices.push(valueIndex)
+			this.valueIndices.push(valueIndex)
 			lastValueIndex = valueIndex
 	
-			if (node.children.length > 0) {
-				let template = this.template.separateChildrenAsTemplate(node)
-				contentTemplates.push(template)
+			if (child.children.length > 0) {
+				let rangeStartNode = this.markTrackingRangeBeforeSeparation(child)
+				let template = this.template.separateChildrenAsTemplate(child)
+				
+				this.contentTemplates.push(template)
+				this.contentRangeStartNodes.push(rangeStartNode)
 			}
 			else {
-				contentTemplates.push(null)
+				this.contentTemplates.push(null)
 			}
 		}
 
 		// Ensure always have an `else` branch.
 		if (lastValueIndex !== null) {
-			contentTemplates.push(null)
+			this.contentTemplates.push(null)
 		}
-
-		this.contentTemplates = contentTemplates
-		this.valueIndices = valueIndices
 
 		let allBeResult = this.contentTemplates.every(t => t)
 		let slotContentType = allBeResult ? SlotContentType.TemplateResult : null
@@ -129,12 +129,16 @@ export class IfFlowControl extends FlowControlBase {
 			}
 		})
 
-		let contents = this.contentTemplates.map(template => {
+		let contents = this.contentTemplates.map((template, index) => {
+			let rangeStartNode = this.contentRangeStartNodes[index]
+			let trackingExps = rangeStartNode ? TrackingPatch.outputCustomRangeTracking(rangeStartNode) : []
+
 			if (template === null) {
 				return factory.createNull()
 			}
 			else {
-				return template.outputReplaced()
+				let output = template.outputReplaced()
+				return Helper.pack.parenthesizeExpressions(...trackingExps, output)
 			}
 		})
 

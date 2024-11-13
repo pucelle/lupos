@@ -32,6 +32,12 @@ export interface CapturedItem {
 	keys?: (string | number)[]
 }
 
+/** How to output captured. */
+export enum CapturedOutputWay {
+	FollowNode,
+	Custom,
+}
+
 
 /** 
  * It attaches to each scope,
@@ -41,15 +47,17 @@ export class TrackingCapturer {
 
 	readonly scope: TrackingScope
 	readonly operator: TrackingCapturerOperator
+	readonly outputWay: CapturedOutputWay
 
 	/** These properties can only be visited outside by `TrackingCapturerOperator`. */
 	captured: CapturedGroup[]
 	latestCaptured!: CapturedGroup
 	captureType: 'get' | 'set' | 'both' | 'none' | 'not-determined' = 'not-determined'
 
-	constructor(scope: TrackingScope, state: TrackingScopeState) {
+	constructor(scope: TrackingScope, state: TrackingScopeState, outputWay: CapturedOutputWay) {
 		this.scope = scope
 		this.operator = new TrackingCapturerOperator(this)
+		this.outputWay = outputWay
 
 		this.resetLatestCaptured()
 		this.captured = [this.latestCaptured]
@@ -302,6 +310,12 @@ export class TrackingCapturer {
 	 * Previous step may move indices forward or backward.
 	 */
 	private postProcessCaptured() {
+
+		// Output customized.
+		if (this.outputWay === CapturedOutputWay.Custom) {
+			return
+		}
+
 		this.outputCaptured()
 	}
 	
@@ -333,12 +347,7 @@ export class TrackingCapturer {
 		let itemsInsertToNewPosition: CapturedItem[] = []
 
 		let items = group.items.filter(item => {
-			if (item.expIndex !== undefined) {
-				return !TrackingPatch.isIndexIgnored(item.expIndex)
-			}
-			else {
-				return !TrackingPatch.isIndexIgnored(item.index)
-			}
+			return !TrackingPatch.isIgnored(VisitTree.getNode(item.expIndex ?? item.index))
 		})
 
 		if (newToIndex !== null) {
@@ -441,5 +450,24 @@ export class TrackingCapturer {
 			
 			return [node]
 		}
+	}
+
+	/** Output captured as tracking expressions. */
+	outputCustomCaptured(): TS.Expression[] {
+		if (this.outputWay !== CapturedOutputWay.Custom) {
+			throw new Error(`Only capturer in "Custom" output way can output custom captured!`)
+		}
+
+		let exps: TS.Expression[] = []
+
+		for (let group of this.captured) {
+			if (group.items.length === 0) {
+				continue
+			}
+
+			exps.push(...this.makeCapturedExps(group.items))
+		}
+
+		return exps
 	}
 }

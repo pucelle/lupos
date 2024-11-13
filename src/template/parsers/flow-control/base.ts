@@ -4,6 +4,7 @@ import {TreeParser} from '../tree'
 import {FlowControlSlotParser} from '../slots'
 import {factory, TemplateSlotPlaceholder} from '../../../core'
 import {TemplateParser} from '../template'
+import {TrackingPatch} from '../../../ff'
 
 
 export abstract class FlowControlBase {
@@ -81,6 +82,31 @@ export abstract class FlowControlBase {
 	/** Make a maker node by a maker name. */
 	protected outputMakerNode(templateName: string | null): TS.Identifier | TS.NullLiteral {
 		return templateName ? factory.createIdentifier(templateName) : factory.createNull()
+	}
+
+	/** 
+	 * Mark as independent tracking range.
+	 * Must before separation as sub template.
+	 * Returns start node of range.
+	 */
+	protected markTrackingRangeBeforeSeparation(node: HTMLNode): TS.Node | null {
+
+		// Get raw content string to get used indices.
+		let contentString = node.getContentString()
+		let subValueIndices = TemplateSlotPlaceholder.getSlotIndices(contentString)
+		let rawValueNodes = this.template.values.rawValueNodes
+		
+		if (subValueIndices) {
+			TrackingPatch.markRange(
+				this.template.rawNode,
+				rawValueNodes[subValueIndices[0]].parent,
+				rawValueNodes[subValueIndices[subValueIndices.length - 1]].parent
+			)
+
+			return rawValueNodes[subValueIndices[0]].parent
+		}
+
+		return null
 	}
 
 	preInit() {}

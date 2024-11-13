@@ -3,6 +3,7 @@ import {factory, Helper, Modifier, ts} from '../../../core'
 import {FlowControlBase} from './base'
 import {TemplateParser} from '../template'
 import {SlotContentType} from '../../../enums'
+import {TrackingPatch} from '../../../ff'
 
 
 export class SwitchFlowControl extends FlowControlBase {
@@ -20,6 +21,7 @@ export class SwitchFlowControl extends FlowControlBase {
 	private switchValueIndex: number | null = null
 	private valueIndices: (number | null)[] = []
 	private contentTemplates: (TemplateParser | null)[] = []
+	private contentRangeStartNodes: (TS.Node | null)[] = []
 
 	preInit() {
 		this.blockVariableName = this.tree.makeUniqueBlockName()
@@ -33,9 +35,7 @@ export class SwitchFlowControl extends FlowControlBase {
 		this.switchValueIndex = switchValueIndex
 
 		let childNodes = this.node.children
-		let valueIndices: (number | null)[] = []
 		let lastValueIndex: number | null = null
-		let contentTemplates: (TemplateParser | null)[] = []
 
 		for (let child of childNodes) {
 			let valueIndex = this.getAttrValueIndex(child)
@@ -54,15 +54,18 @@ export class SwitchFlowControl extends FlowControlBase {
 				break
 			}
 
-			valueIndices.push(valueIndex)
+			this.valueIndices.push(valueIndex)
 			lastValueIndex = valueIndex
 	
 			if (child.children.length > 0) {
+				let rangeStartNode = this.markTrackingRangeBeforeSeparation(child)
 				let template = this.template.separateChildrenAsTemplate(child)
-				contentTemplates.push(template)
+				
+				this.contentTemplates.push(template)
+				this.contentRangeStartNodes.push(rangeStartNode)
 			}
 			else {
-				contentTemplates.push(null)
+				this.contentTemplates.push(null)
 			}
 
 			if (child.tagName === 'lu:default' || valueIndex === null) {
@@ -72,14 +75,12 @@ export class SwitchFlowControl extends FlowControlBase {
 
 		// Ensure always have an `else` branch.
 		if (lastValueIndex !== null) {
-			contentTemplates.push(null)
+			this.contentTemplates.push(null)
 		}
 
 		this.node.empty()
-		this.contentTemplates = contentTemplates
-		this.valueIndices = valueIndices
 
-		let allBeResult = contentTemplates.every(t => t)
+		let allBeResult = this.contentTemplates.every(t => t)
 		let slotContentType = allBeResult ? SlotContentType.TemplateResult : null
 		this.templateSlotGetter = this.slot.prepareTemplateSlot(slotContentType)
 	}
@@ -156,12 +157,16 @@ export class SwitchFlowControl extends FlowControlBase {
 			}
 		})
 
-		let contents = this.contentTemplates.map(template => {
+		let contents = this.contentTemplates.map((template, index) => {
+			let rangeStartNode = this.contentRangeStartNodes[index]
+			let trackingExps = rangeStartNode ? TrackingPatch.outputCustomRangeTracking(rangeStartNode) : []
+
 			if (template === null) {
 				return factory.createNull()
 			}
 			else {
-				return template.outputReplaced()
+				let output = template.outputReplaced()
+				return Helper.pack.parenthesizeExpressions(...trackingExps, output)
 			}
 		})
 

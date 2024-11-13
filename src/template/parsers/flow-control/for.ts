@@ -1,8 +1,8 @@
 import type TS from 'typescript'
-import {factory, Helper, Modifier, VisitTree} from '../../../core'
+import {factory, Helper, Modifier} from '../../../core'
 import {FlowControlBase} from './base'
 import {SlotContentType} from '../../../enums'
-import {ForceTrackType, TrackingPatch} from '../../../ff'
+import {ForceTrackType, ObservedChecker, TrackingPatch} from '../../../ff'
 
 
 export class ForFlowControl extends FlowControlBase {
@@ -31,6 +31,7 @@ export class ForFlowControl extends FlowControlBase {
 
 		let ofValueIndex = this.getAttrValueIndex(this.node)
 		let fnValueIndex = this.getUniqueChildValueIndex(this.node)
+		let shouldObserveElements = false
 
 		if (ofValueIndex === null) {
 			this.slot.diagnoseNormal('<lu:for ${...}> must accept a parameter as loop data!')
@@ -39,8 +40,11 @@ export class ForFlowControl extends FlowControlBase {
 		// Force tracking members of array.
 		else {
 			let ofValueNode = this.template.values.getRawValue(ofValueIndex)
-			let ofValueNodeIndex = VisitTree.getIndex(ofValueNode)
-			TrackingPatch.forceRecheck(ofValueNodeIndex, ForceTrackType.Members)
+
+			shouldObserveElements = ObservedChecker.isObserved(ofValueNode, true)
+			if (shouldObserveElements) {
+				TrackingPatch.forceTrack(ofValueNode, ForceTrackType.Elements)
+			}
 		}
 
 		if (fnValueIndex === null) {
@@ -52,8 +56,9 @@ export class ForFlowControl extends FlowControlBase {
 			if (Helper.isFunctionLike(fnValueNode)) {
 				let firstParameter = fnValueNode.parameters[0]
 				if (firstParameter) {
-					let firstParameterIndex = VisitTree.getIndex(firstParameter)
-					TrackingPatch.forceRecheck(firstParameterIndex, ForceTrackType.Self)
+					if (shouldObserveElements) {
+						TrackingPatch.forceTrack(firstParameter, ForceTrackType.Self)
+					}
 				}
 			}
 		}

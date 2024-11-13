@@ -3,6 +3,7 @@ import {AccessNode} from '../../core/helper'
 import {ts, Helper, typeChecker} from '../../core'
 import {TrackingScopeTree} from './scope-tree'
 import {GenericType} from 'typescript'
+import {TrackingPatch} from './patch'
 
 
 /** 
@@ -127,6 +128,11 @@ export namespace ObservedChecker {
 		// `var a = {b:1} as Observed<{b: number}>`, observed.
 		// `var a: Observed<{b: number}> = {b:1}`, observed.
 		// Note here: `Observed` must appear directly, reference or alias is not working.
+		
+		// Force track.
+		if (TrackingPatch.isForceTracked(rawNode, false)) {
+			return true
+		}
 
 		let typeNode = rawNode.type
 		if (typeNode && isTypeNodeObserved(typeNode)) {
@@ -243,6 +249,12 @@ export namespace ObservedChecker {
 
 	/** Whether parameter declaration should be observed. */
 	export function isParameterObserved(rawNode: TS.ParameterDeclaration): boolean {
+		
+		// Force track.
+		if (TrackingPatch.isForceTracked(rawNode, false)) {
+			return true
+		}
+
 		let typeNode = rawNode.type
 		if (typeNode && isTypeNodeObserved(typeNode)) {
 			return true
@@ -271,9 +283,15 @@ export namespace ObservedChecker {
 	 * - a conditional expression
 	 * - an as expression
 	 * 
-	 * `parental` specifies whether are visiting parent node of original to determine observed.
+	 * `parental` specifies whether are visiting parent node of original to determine whether elements
+	 * should be observed, if visiting elements of an `Array` or `Map`, `Set`, should also specified as `true`.
 	 */
 	export function isObserved(rawNode: TS.Node, parental: boolean = false): rawNode is CanObserveNode {
+
+		// Force track.
+		if (TrackingPatch.isForceTracked(rawNode, parental)) {
+			return true
+		}
 
 		// `a.b`
 		// `(a ? b : c).d`
@@ -346,7 +364,7 @@ export namespace ObservedChecker {
 	 * Returns whether a property accessing should be observed, for internal use only.
 	 * `parental` specifies whether are visiting parent node of original to determine observed.
 	 */
-	export function isAccessObserved(rawNode: AccessNode, parental: boolean = false): boolean {
+	function isAccessObserved(rawNode: AccessNode, parental: boolean = false): boolean {
 
 		// `[]`, `Map`, `Set`.
 		if (Helper.isListStruct(rawNode.expression)) {
@@ -431,7 +449,7 @@ export namespace ObservedChecker {
 	 * Node must be the top most property access expression.
 	 * E.g., for `a.b.c`, sub identifier `b` or `c` is not allowed.
 	 */
-	export function isIdentifierObserved(rawNode: TS.Identifier | TS.ThisExpression): boolean {
+	function isIdentifierObserved(rawNode: TS.Identifier | TS.ThisExpression): boolean {
 		let scope = TrackingScopeTree.findClosestByNode(rawNode)
 
 		if (Helper.isThis(rawNode)) {

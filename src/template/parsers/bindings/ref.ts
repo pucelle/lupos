@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {factory, Helper, TemplateSlotPlaceholder, ts, VisitTree} from '../../../core'
+import {factory, Helper, TemplateSlotPlaceholder, ts} from '../../../core'
 import {BindingBase, BindingUpdateCallWith} from './base'
 import {TrackingPatch} from '../../../ff'
 import {getLatestBindingInfo, LatestBindingInfo} from './latest-binding'
@@ -84,7 +84,7 @@ export class RefBinding extends BindingBase {
 			this.initAccessUsing(rawValueNode)
 			
 			if (this.useAccess) {
-				TrackingPatch.ignore(VisitTree.getIndex(rawValueNode))
+				TrackingPatch.ignore(rawValueNode)
 			}
 		}
 	}

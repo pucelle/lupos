@@ -1,9 +1,8 @@
 import type TS from 'typescript'
 import {ObservedChecker} from './observed-checker'
-import {Helper, ts, VisitTree} from '../../core'
+import {Helper, ts} from '../../core'
 import {TrackingScope} from './scope'
 import {TrackingScopeTypeMask} from './scope-tree'
-import {TrackingPatch} from './patch'
 
 
 /** Mark all variables with a scope. */
@@ -83,8 +82,6 @@ export class TrackingScopeVariables {
 	/** Visit a parameter. */
 	visitParameter(node: TS.ParameterDeclaration) {
 		let observed = ObservedChecker.isParameterObserved(node)
-			|| TrackingPatch.isIndexForceTracked(VisitTree.getIndex(node))
-
 		this.variableObserved.set(Helper.getFullText(node.name), observed)
 	}
 
@@ -98,8 +95,6 @@ export class TrackingScopeVariables {
 		}
 	
 		let observed = this.checkVariableObserved(node, fromScope)
-			|| TrackingPatch.isIndexForceTracked(VisitTree.getIndex(node))
-
 		let names = Helper.variable.walkDeclarationNames(node)
 
 		for (let {node, name} of names) {

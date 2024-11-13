@@ -36,10 +36,10 @@ defineVisitor(function(node: TS.Node) {
 			TrackingScopeTree.pop()
 		}
 
-		// Current scope is a content range.
-		// It get popped on when match range end node.
+		// If current scope is range type,
+		// it get popped on when match range end node.
 		if (TrackingScopeTree.current
-			&& (TrackingScopeTree.current.type & TrackingScopeTypeMask.ContentRange)
+			&& TrackingScopeTree.current.type & TrackingScopeTypeMask.Range
 		) {
 			if (node === TrackingScopeTree.current.rangeEndNode) {
 				TrackingScopeTree.pop()
