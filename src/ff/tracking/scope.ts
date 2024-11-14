@@ -2,11 +2,12 @@ import type TS from 'typescript'
 import {ObservedChecker} from './observed-checker'
 import {Helper, AccessNode, ts, FlowInterruptionTypeMask, ScopeTree} from '../../core'
 import {TrackingScopeState} from './scope-state'
-import {CapturedOutputWay, TrackingScopeTypeMask} from './scope-tree'
+import {TrackingScopeTypeMask} from './scope-tree'
 import {TrackingScopeVariables} from './scope-variables'
 import {TrackingCapturer} from './capturer'
 import {AccessReferences} from './access-references'
 import {ForceTrackType, TrackingPatch} from './patch'
+import {CapturedOutputWay, TrackingRange} from './ranges'
 
 
 /** 
@@ -20,8 +21,7 @@ export class TrackingScope {
 	readonly visitIndex: number
 	readonly node: TS.Node
 	readonly parent: TrackingScope | null
-	readonly rangeStartNode: TS.Node | null
-	readonly rangeEndNode: TS.Node | null
+	readonly range: TrackingRange | null
 	readonly children: TrackingScope[] = []
 	readonly state: TrackingScopeState
 	readonly variables: TrackingScopeVariables
@@ -38,20 +38,17 @@ export class TrackingScope {
 		rawNode: TS.Node,
 		index: number,
 		parent: TrackingScope | null,
-		rangeStartNode: TS.Node | null,
-		rangeEndNode: TS.Node | null,
-		outputWay: CapturedOutputWay
+		range: TrackingRange | null
 	) {
 		this.type = type
 		this.visitIndex = index
 		this.node = rawNode
 		this.parent = parent
-		this.rangeStartNode = rangeStartNode
-		this.rangeEndNode = rangeEndNode
+		this.range = range
 
 		this.state = new TrackingScopeState(this)
 		this.variables = new TrackingScopeVariables(this)
-		this.capturer = new TrackingCapturer(this, this.state, outputWay)
+		this.capturer = new TrackingCapturer(this, this.state, range?.outputWay ?? CapturedOutputWay.FollowNode)
 
 		let beNonInstantlyRunFunction = (type & TrackingScopeTypeMask.FunctionLike)
 			&& (type & TrackingScopeTypeMask.InstantlyRunFunction) === 0

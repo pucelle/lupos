@@ -1921,17 +1921,17 @@ export namespace Helper {
 
 		/**
 		 * Create `cond1 ? exp1 : cond2 ? exp2 ...`.
-		 * Must ensure `condExps.length` equals `exps.length - 1`
+		 * Must ensure `condExps.length` and `trackingExps.length` equals `exps.length - 1`
 		 */
-		export function toConditionalExpression(condExps: TS.Expression[], exps: TS.Expression[]): TS.Expression {
+		export function toConditionalExpression(condExps: TS.Expression[], exps: TS.Expression[], trackingExps: TS.Expression[][]): TS.Expression {
 
 			// Last expression.
 			let last: TS.Expression = exps[exps.length - 1]
 
 			for (let i = exps.length - 2; i >= 0; i--) {
 				let conditionNode = condExps[i]
-
 				let thenNode = exps[i]
+				let trackingExp = trackingExps[i]
 
 				last = factory.createConditionalExpression(
 					conditionNode,
@@ -1939,7 +1939,9 @@ export namespace Helper {
 					thenNode,
 					factory.createToken(ts.SyntaxKind.ColonToken),
 					last
-				)  
+				)
+
+				last = Helper.pack.parenthesizeExpressions(...trackingExp, last)
 			}
 
 			return last

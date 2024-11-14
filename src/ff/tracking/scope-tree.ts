@@ -2,6 +2,7 @@ import type TS from 'typescript'
 import {Helper, ts, VisitTree} from '../../core'
 import {TrackingScope} from './scope'
 import {ListMap} from '../../utils'
+import {CapturedOutputWay, TrackingRange, TrackingRanges} from './ranges'
 
 
 export enum TrackingScopeTypeMask {
@@ -91,21 +92,6 @@ export interface TrackingScopeTargetPosition{
 	index: number
 }
 
-/** Describe a tracking range. */
-interface TrackingRange {
-	node: TS.Node
-	startNode: TS.Node
-	endNode: TS.Node
-	additionalType: 0 | TrackingScopeTypeMask
-	outputWay: CapturedOutputWay
-}
-
-/** How to output captured. */
-export enum CapturedOutputWay {
-	FollowNode,
-	Custom,
-}
-
 
 export namespace TrackingScopeTree {
 
@@ -119,12 +105,6 @@ export namespace TrackingScopeTree {
 	/** Visit index -> scope list. */
 	const SpecifiedAdditionalScopeType: Map<TS.Node, 0 | TrackingScopeTypeMask> = new Map()
 
-	/** All content ranges. */
-	let ranges: TrackingRange[] = []
-
-	/** Range start node -> scope. */
-	const RangeStartNodeMap: Map<TS.Node, TrackingScope> = new Map()
-
 
 	/** Initialize before visiting a new source file. */
 	export function init() {
@@ -132,44 +112,7 @@ export namespace TrackingScopeTree {
 		current = null
 		ScopeMap.clear()
 		SpecifiedAdditionalScopeType.clear()
-		ranges = []
-		RangeStartNodeMap.clear()
 	}
-
-
-	/** 
-	 * Mark a scope by node range, later will be made as a `Range` scope.
-	 * Note must mark before scope visitor visit it.
-	 */
-	export function markRange(
-		node: TS.Node,
-		startNode: TS.Node,
-		endNode: TS.Node,
-		additionalType: 0 | TrackingScopeTypeMask,
-		outputWay: CapturedOutputWay
-	) {
-		ranges.push({node, startNode, endNode, additionalType, outputWay})
-	}
-
-	/** Try get a content range by start node. */
-	export function getRangeByStartNode(startNode: TS.Node): TrackingRange | undefined {
-		let range = ranges.find(r => r.startNode === startNode)
-		return range
-	}
-
-	/** Remove a content range by start node. */
-	export function removeRangeByStartNode(startNode: TS.Node) {
-		let rangeIndex = ranges.findIndex(r => r.startNode === startNode)
-		if (rangeIndex > -1) {
-			ranges.splice(rangeIndex, 1)
-		}
-	}
-
-	/** Get tracking scope by range start node. */
-	export function getRangeScopeByStartNode(startNode: TS.Node): TrackingScope | undefined {
-		return RangeStartNodeMap.get(startNode)
-	}
-
 
 	/** Specifies additional type for a node. */
 	export function specifyType(node: TS.Node, additionalType: TrackingScopeTypeMask | 0) {
@@ -351,51 +294,29 @@ export namespace TrackingScopeTree {
 		return type
 	}
 
-	/** Check range content scope type of a node. */
-	export function checkRangedType(node: TS.Node): TrackingScopeTypeMask | 0 {
-		let type = 0
-
-		// Make a content range.
-		let range = getRangeByStartNode(node)
-		if (range) {
-			type |= TrackingScopeTypeMask.Range
-			type |= range.additionalType
-		}
-
-		return type
-	}
-
 	/** Create a scope from node and push to stack. */
-	export function createScope(type: TrackingScopeTypeMask, node: TS.Node): TrackingScope {
+	export function createScope(type: TrackingScopeTypeMask, node: TS.Node, range: TrackingRange | null = null): TrackingScope {
 		let index = VisitTree.getIndex(node)
-		let startNode = null
-		let endNode = null
-		let outputWay = CapturedOutputWay.FollowNode
-
-		// Initialize content range.
-		if (type & TrackingScopeTypeMask.Range) {
-			let range = getRangeByStartNode(node)
-			if (range) {
-				startNode = range.startNode
-				endNode = range.endNode
-				outputWay = range.outputWay
-			}
-		}
-
-		let scope = new TrackingScope(type, node, index, current, startNode, endNode, outputWay)
+		let scope = new TrackingScope(type, node, index, current, range)
 
 		ScopeMap.add(node, scope)
 		stack.push(current)
 
-		if (startNode) {
-			RangeStartNodeMap.set(startNode, scope)
+		if (range) {
+			TrackingRanges.setScopeByRangeId(range.id, scope)
 		}
 
 		// Child `case/default` statements start a content range.
 		if (ts.isCaseOrDefaultClause(node)) {
 			let statements = node.statements
 			if (statements.length > 0) {
-				markRange(node, statements[0], statements[statements.length - 1], TrackingScopeTypeMask.CaseDefaultContent, CapturedOutputWay.FollowNode)
+				TrackingRanges.markRange(
+					node,
+					statements[0],
+					statements[statements.length - 1],
+					TrackingScopeTypeMask.CaseDefaultContent,
+					CapturedOutputWay.FollowNode
+				)
 			}
 		}
 
@@ -404,10 +325,6 @@ export namespace TrackingScopeTree {
 
 	/** Pop scope. */
 	export function pop() {
-		if (current && (current.type & TrackingScopeTypeMask.Range)) {
-			removeRangeByStartNode(current.rangeStartNode!)
-		}
-
 		current!.beforeExit()
 		current = stack.pop()!
 	}

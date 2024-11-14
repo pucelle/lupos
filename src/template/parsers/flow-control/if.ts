@@ -1,69 +1,77 @@
 import type TS from 'typescript'
-import {factory, Helper, Interpolator, Modifier} from '../../../core'
+import {factory, Helper, Interpolator, Modifier, TemplateSlotPlaceholder} from '../../../core'
 import {FlowControlBase} from './base'
 import {TemplateParser} from '../template'
 import {SlotContentType} from '../../../enums'
-import {TrackingPatch, TrackingScopeTree, TrackingScopeTypeMask} from '../../../ff'
+import {CapturedOutputWay, TrackingPatch, TrackingRanges, TrackingScopeTree, TrackingScopeTypeMask} from '../../../ff'
+import {HTMLNode} from '../../html-syntax'
 
 
 export class IfFlowControl extends FlowControlBase {
 
 	/** $block_0 */
-	private blockVariableName: string = ''
+	protected blockVariableName: string = ''
 
 	/** $slot_0 */
-	private slotVariableName: string = ''
+	protected slotVariableName: string = ''
 
 	/** new TemplateSlot(...) */
-	private templateSlotGetter!: () => TS.Expression
+	protected templateSlotGetter!: () => TS.Expression
 
-	private cacheable: boolean = false
-	private valueIndices: (number | null)[] = []
-	private contentTemplates: (TemplateParser | null)[] = []
-	private contentRangeStartNodes: (TS.Node | null)[] = []
+	protected cacheable: boolean = false
+	protected conditionIndices: (number | null)[] = []
+	protected contentTemplates: (TemplateParser | null)[] = []
+	protected contentRangeIds: (number | null)[] = []
+	protected conditionalRangeIds: (number | null)[] = []
 
 	preInit() {
+		let tags = ['lu:elseif', 'lu:else']
+		let nextNodes = this.eatNext(...tags)
+		let allNodes = [this.node, ...nextNodes]
+
+		this.initByNodesAndTags(allNodes, tags)
+	}
+
+	protected initByNodesAndTags(allNodes: HTMLNode[], tags: string[]) {
 		this.blockVariableName = this.tree.makeUniqueBlockName()
 		this.slotVariableName = this.slot.makeSlotName()
 		this.cacheable = this.hasAttrValue(this.node, 'cache')
 
-		let nextNodes = this.eatNext('lu:elseif', 'lu:else')
-		let allNodes = [this.node, ...nextNodes]
-		let lastValueIndex: number | null = null
+		let conditionIndices: (number | null)[] = []
+		let lastConditionIndex: number | null = null
+		let contentStrings: (string | null)[] = []
 
 		for (let child of allNodes) {
-			let valueIndex = this.getAttrValueIndex(child)
+			let conditionIndex = this.getAttrValueIndex(child)
 			
-			if (valueIndex === null && child.tagName !== 'lu:else') {
-				this.slot.diagnoseNormal('<' + child.tagName + ' ${...}> must accept a parameter as condition!')
-				break
+			if (conditionIndex === null && child.tagName === tags[0]) {
+				this.slot.diagnoseNormal(`<${tags[0]} \${...}> must accept a parameter as condition!`, child)
+			}
+			else if (conditionIndex !== null && child.tagName === tags[1]) {
+				this.slot.diagnoseNormal(`<${tags[1]}> should not accept any parameter!`, child)
+			}
+			else if (conditionIndex === null && lastConditionIndex === null) {
+				this.slot.diagnoseNormal(`<${tags[1]}> is allowed only one to exist on the tail!`, child)
 			}
 
-			if (valueIndex !== null && child.tagName === 'lu:else') {
-				this.slot.diagnoseNormal('<lu:else> should not accept any parameter!')
-				break
-			}
+			conditionIndices.push(conditionIndex)
+			lastConditionIndex = conditionIndex
 
-			if (valueIndex === null && lastValueIndex === null) {
-				this.slot.diagnoseNormal('<lu:else> is allowed only one to exist on the tail!')
-				break
-			}
-
-			this.valueIndices.push(valueIndex)
-			lastValueIndex = valueIndex
-
-			// Add a custom condition scope.
-			if (valueIndex !== null) {
-				let valueNode = this.template.values.rawValueNodes[valueIndex]
-				TrackingScopeTree.specifyType(valueNode, TrackingScopeTypeMask.ConditionalCondition)
-			}
-	
 			if (child.children.length > 0) {
-				let rangeStartNode = this.markTrackingRangeBeforeSeparation(child)
+				contentStrings.push(child.getContentString())
+			}
+			else {
+				contentStrings.push(null)
+			}
+		}
+
+		this.initTrackingRanges(conditionIndices, contentStrings)
+		this.conditionIndices = conditionIndices
+
+		for (let child of allNodes) {
+			if (child.children.length > 0) {
 				let template = this.template.separateChildrenAsTemplate(child)
-				
 				this.contentTemplates.push(template)
-				this.contentRangeStartNodes.push(rangeStartNode)
 			}
 			else {
 				this.contentTemplates.push(null)
@@ -71,7 +79,7 @@ export class IfFlowControl extends FlowControlBase {
 		}
 
 		// Ensure always have an `else` branch.
-		if (lastValueIndex !== null) {
+		if (lastConditionIndex !== null) {
 			this.contentTemplates.push(null)
 		}
 
@@ -80,8 +88,68 @@ export class IfFlowControl extends FlowControlBase {
 		this.templateSlotGetter = this.slot.prepareTemplateSlot(slotContentType)
 	}
 
+	protected initTrackingRanges(conditionIndices: (number | null)[], contentStrings: (string | null)[]) {
+		let contentIndicesList = contentStrings.map(s => s ? TemplateSlotPlaceholder.getSlotIndices(s) ?? [] : [])
+		let flatContentIndices = contentIndicesList.flat()
+		let rawValueNodes = this.template.values.rawValueNodes
+		let endContentIndex = flatContentIndices.length > 0 ? flatContentIndices[flatContentIndices.length - 1] : null
+
+		for (let i = 0; i < conditionIndices.length; i++) {
+			let conditionIndex = conditionIndices[i]
+			let contentIndices = contentIndicesList[i]
+
+
+			if (conditionIndex !== null) {
+				let valueNode = rawValueNodes[conditionIndex]
+				TrackingScopeTree.specifyType(valueNode, TrackingScopeTypeMask.ConditionalCondition)
+			}
+
+
+			if (contentIndices.length > 0) {
+				let contentRangeId = TrackingRanges.markRange(
+					this.template.rawNode,
+					rawValueNodes[contentIndices[0]].parent,
+					rawValueNodes[contentIndices[contentIndices.length - 1]].parent,
+					TrackingScopeTypeMask.ConditionalContent,
+					CapturedOutputWay.Custom
+				)
+
+				this.contentRangeIds.push(contentRangeId)
+			}
+			else {
+				this.contentRangeIds.push(null)
+			}
+
+
+			if (conditionIndex !== null && contentIndices.length > 0) {
+				let type = TrackingScopeTypeMask.Conditional
+				
+				if (i > 0) {
+					type |= TrackingScopeTypeMask.ConditionalContent
+				}
+
+				let conditionalRangeId = TrackingRanges.markRange(
+					this.template.rawNode,
+					rawValueNodes[conditionIndex].parent,
+					rawValueNodes[endContentIndex!].parent,
+					type,
+					CapturedOutputWay.Custom
+				)
+
+				this.conditionalRangeIds.push(conditionalRangeId)
+			}
+			else {
+				this.conditionalRangeIds.push(null)
+			}
+		}
+	}
+
 	outputInit() {
 		let blockClassName = this.cacheable ? 'CacheableIfBlock' : 'IfBlock'
+		return this.outputInitByClassName(blockClassName)
+	}
+
+	protected outputInitByClassName(blockClassName: string) {
 		Modifier.addImport(blockClassName, '@pucelle/lupos.js')
 
 		// let $block_0 = new IfBlock / CacheableIfBlock(
@@ -109,7 +177,7 @@ export class IfFlowControl extends FlowControlBase {
 		]
 	}
 
-	outputUpdate() {
+	outputUpdate(): TS.Statement | TS.Expression | (TS.Statement| TS.Expression)[] {
 		let toValue = this.outputConditionalExpression()
 
 		// $block_0.update($values[0])
@@ -124,8 +192,8 @@ export class IfFlowControl extends FlowControlBase {
 	}
 
 	/** Make an index output function by an if condition value index sequence. */
-	private outputConditionalExpression(): TS.Expression {
-		let conditions = this.valueIndices.map(index => {
+	protected outputConditionalExpression(): TS.Expression {
+		let conditions = this.conditionIndices.map(index => {
 			if (index === null) {
 				return factory.createNull()
 			}
@@ -136,24 +204,40 @@ export class IfFlowControl extends FlowControlBase {
 		})
 
 		let contents = this.contentTemplates.map((template, index) => {
-			let rangeStartNode = this.contentRangeStartNodes[index]
-			let trackingExps = rangeStartNode ? TrackingPatch.outputCustomRangeTracking(rangeStartNode) : []
+			let rangeId = this.contentRangeIds[index]
+			let contentTrackingExps = rangeId ? TrackingPatch.outputCustomRangeTracking(rangeId) : []
 
 			if (template === null) {
 				return factory.createNull()
 			}
 			else {
 				let output = template.outputReplaced()
-				return Helper.pack.parenthesizeExpressions(...trackingExps, output)
+				return Helper.pack.parenthesizeExpressions(...contentTrackingExps, output)
 			}
 		})
 
-		// Make a new expression: `cond1 ? content1 : cond2 ? content2 : ...`
-		let value = Helper.pack.toConditionalExpression(conditions, contents)
+		let conditionalTrackings = this.conditionalRangeIds.map(rangeId => rangeId ? TrackingPatch.outputCustomRangeTracking(rangeId) : [])
+
+		// Make a new expression: `(track1, cond1 ? content1 : (track2, cond2 ? content2 : ...))`
+		let value = Helper.pack.toConditionalExpression(conditions, contents, conditionalTrackings)
 
 		// Add it as a value item to original template, and returned it's reference.
 		let toValue = this.slot.outputCustomValue(value)
 
 		return toValue
+	}
+
+	protected outputConditionsExps() {
+		let conditions = this.conditionIndices.map(index => {
+			if (index === null) {
+				return factory.createNull()
+			}
+			else {
+				let rawNode = this.template.values.getRawValue(index)
+				return Interpolator.outputNodeSelf(rawNode) as TS.Expression
+			}
+		})
+
+		return conditions
 	}
 }

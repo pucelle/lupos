@@ -3,6 +3,7 @@ import {defineVisitor, ts} from '../../core'
 import {TrackingScopeTree, TrackingScopeTypeMask} from './scope-tree'
 import {AccessReferences} from './access-references'
 import {TrackingPatch} from './patch'
+import {TrackingRanges} from './ranges'
 
 
 /** It add dependency tracking codes to source file. */
@@ -11,14 +12,17 @@ defineVisitor(function(node: TS.Node) {
 	// Initialize
 	if (ts.isSourceFile(node)) {
 		TrackingScopeTree.init()
+		TrackingRanges.init()
 		AccessReferences.init()
 		TrackingPatch.init()
 	}
 
 	// Check scope type.
-	let rangedType = TrackingScopeTree.checkRangedType(node)
-	if (rangedType !== 0) {
-		TrackingScopeTree.createScope(rangedType, node)
+	let ranges = TrackingRanges.getRangesByStartNode(node)
+	if (ranges) {
+		for (let range of ranges) {
+			TrackingScopeTree.createScope(range.scopeType, node, range)
+		}
 	}
 
 	// Check scope type.
@@ -38,11 +42,14 @@ defineVisitor(function(node: TS.Node) {
 
 		// If current scope is range type,
 		// it get popped on when match range end node.
-		if (TrackingScopeTree.current
+		while (TrackingScopeTree.current
 			&& TrackingScopeTree.current.type & TrackingScopeTypeMask.Range
 		) {
-			if (node === TrackingScopeTree.current.rangeEndNode) {
+			if (node === TrackingScopeTree.current.range!.endNode) {
 				TrackingScopeTree.pop()
+			}
+			else {
+				break
 			}
 		}
 	}

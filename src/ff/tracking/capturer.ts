@@ -1,7 +1,7 @@
 import type TS from 'typescript'
 import {InterpolationContentType, AccessNode, Helper, Interpolator, InterpolationPosition, VisitTree, ts, FlowInterruptionTypeMask, ScopeTree} from '../../core'
 import {TrackingScope} from './scope'
-import {CapturedOutputWay, TrackingScopeTree, TrackingScopeTypeMask} from './scope-tree'
+import {TrackingScopeTree, TrackingScopeTypeMask} from './scope-tree'
 import {AccessGrouper} from './access-grouper'
 import {AccessReferences} from './access-references'
 import {Optimizer} from './optimizer'
@@ -9,6 +9,7 @@ import {removeFromList} from '../../utils'
 import {TrackingScopeState} from './scope-state'
 import {TrackingCapturerOperator} from './capturer-operator'
 import {TrackingPatch} from './patch'
+import {CapturedOutputWay} from './ranges'
 
 
 /** Captured item, will be inserted to a position. */

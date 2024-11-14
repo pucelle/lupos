@@ -101,13 +101,13 @@ export class TestSwitch extends Component {
     testCaseOnly() {
         trackGet(this, "value");
         return new CompiledTemplateResult($template_0, [
-            this.value === 1 ? new CompiledTemplateResult($template_1, []) : this.value === 2 ? new CompiledTemplateResult($template_2, []) : null
+            1 ? new CompiledTemplateResult($template_1, []) : 2 ? new CompiledTemplateResult($template_2, []) : null
         ]);
     }
     testCaseDefault() {
         trackGet(this, "value");
         return new CompiledTemplateResult($template_3, [
-            this.value === 1 ? new CompiledTemplateResult($template_4, []) : this.value === 2 ? new CompiledTemplateResult($template_5, []) : new CompiledTemplateResult($template_6, [])
+            1 ? new CompiledTemplateResult($template_4, []) : 2 ? new CompiledTemplateResult($template_5, []) : new CompiledTemplateResult($template_6, [])
         ]);
     }
 }

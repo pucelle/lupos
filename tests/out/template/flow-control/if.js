@@ -250,14 +250,31 @@ const $html_13 = new HTMLMaker("Then Content");
         ]
     };
 });
-const $html_16 = new HTMLMaker("<div> </div>");
+/*
+<root>${this.content}</root>
+*/ const $template_16 = new TemplateMaker(function () {
+    let $latest_0;
+    let $node = $html_5.make();
+    let $node_0 = $node.content.firstChild;
+    return {
+        el: $node,
+        position: new SlotPosition(1, $node_0),
+        update($values) {
+            if ($latest_0 !== $values[0]) {
+                $node_0.data = $values[0];
+                $latest_0 = $values[0];
+            }
+        }
+    };
+});
+const $html_17 = new HTMLMaker("<div> </div>");
 /*
 <root>
     <div>${v}</div>
 </root>
-*/ const $template_16 = new TemplateMaker(function () {
+*/ const $template_17 = new TemplateMaker(function () {
     let $latest_0;
-    let $node = $html_16.make();
+    let $node = $html_17.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node_0.firstChild;
     return {
@@ -311,10 +328,12 @@ export class TestIf extends Component {
         trackGet(this, "item");
         return new CompiledTemplateResult($template_14, [
             this.item && (trackGet(this.item, "value"), this.item.value) ? (trackGet(this.item.value, ""), new CompiledTemplateResult($template_15, [
-                this.item.value.map(v => new CompiledTemplateResult($template_16, [
+                this.item.value.map(v => new CompiledTemplateResult($template_17, [
                     v
                 ]))
-            ])) : null
+            ])) : (trackGet(this, "content"), this.content ? new CompiledTemplateResult($template_16, [
+                this.content
+            ]) : null)
         ]);
     }
 }

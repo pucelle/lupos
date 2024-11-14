@@ -46,6 +46,9 @@ export class TestIf extends Component {
 			<lu:if ${this.item && this.item.value}>
 				${this.item!.value.map(v => html`<div>${v}</div>`)}
 			</lu:if>
+			<lu:elseif ${this.content}>
+				${this.content}
+			</lu:elseif>
 		`
 	}
 }

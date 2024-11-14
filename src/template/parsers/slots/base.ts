@@ -461,17 +461,17 @@ export abstract class SlotParserBase {
 
 
 	/** Diagnose missing component import of current node. */
-	diagnoseMissingTagImport(message: string) {
-		let start = this.node.start + 1
-		let length = this.node.tagName!.length
+	diagnoseMissingTagImport(message: string, ofNode: HTMLNode = this.node) {
+		let start = ofNode.start + 1
+		let length = ofNode.tagName!.length
 
 		DiagnosticModifier.addMissingImport(start, length, message)
 	}
 
 	/** Diagnose normal of current node. */
-	diagnoseNormal(message: string) {
-		let start = this.node.start + 1
-		let length = this.node.tagName!.length
+	diagnoseNormal(message: string, ofNode: HTMLNode = this.node) {
+		let start = ofNode.start + 1
+		let length = ofNode.tagName!.length
 
 		DiagnosticModifier.addNormal(start, length, message)
 	}

@@ -2,7 +2,7 @@ import type TS from 'typescript'
 import {Helper} from '../../core'
 import {ObservedChecker} from './observed-checker'
 import {AccessGrouper} from './access-grouper'
-import {TrackingScopeTree} from './scope-tree'
+import {TrackingRanges} from './ranges'
 
 
 export enum ForceTrackType {
@@ -92,8 +92,8 @@ export namespace TrackingPatch {
 	}
 
 	/** Output custom range tracking expressions by. */
-	export function outputCustomRangeTracking(startNode: TS.Node): TS.Expression[] {
-		let scope = TrackingScopeTree.getRangeScopeByStartNode(startNode)
+	export function outputCustomRangeTracking(rangeId: number): TS.Expression[] {
+		let scope = TrackingRanges.getScopeByRangeId(rangeId)
 		if (!scope) {
 			return []
 		}
