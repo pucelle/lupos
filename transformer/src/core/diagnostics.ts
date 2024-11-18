@@ -71,6 +71,7 @@ export namespace DiagnosticModifier {
 
 	/** Add usage of a import specifier node, remove it's diagnostic. */
 	export function removeNeverRead(node: TS.Node) {
+
 		// If all imported members are not read,
 		// diagnostic located at import declaration.
 		if (ts.isImportSpecifier(node)) {

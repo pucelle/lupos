@@ -96,20 +96,25 @@ export class TrackingCapturer {
 
 	/** Every time capture a new index, check type and may toggle capture type. */
 	private addCaptureType(type: 'get' | 'set') {
-		if (this.captureType === 'not-determined') {
-			this.captureType = type
-		}
-		
+
 		// Broadcast downward from closest function-like scope,
 		// to all get-type descendants exclude non-instantly run functions.
-		if (type === 'set' && this.captureType === 'get') {
+		if (type === 'set' && (this.captureType === 'get' || this.captureType === 'not-determined')) {
 			let closest = this.scope.closestNonInstantlyRunFunction!
 
 			let walking = TrackingScopeTree.walkInwardChildFirst(closest, c => {
-				if (c.capturer.captureType !== 'get') {
+
+				// Topmost scope is always persist.
+				if (c === closest) {
+					return true
+				}
+
+				// Skip set region.
+				if (c.capturer.captureType === 'set') {
 					return false
 				}
 
+				// Skip inner function.
 				if (c.type & TrackingScopeTypeMask.FunctionLike
 					&& (c.type & TrackingScopeTypeMask.InstantlyRunFunction) === 0
 				) {
@@ -122,6 +127,9 @@ export class TrackingCapturer {
 			for (let descent of walking) {
 				descent.capturer.switchFromGetToSetCaptureType()
 			}
+		}
+		else if (this.captureType === 'not-determined') {
+			this.captureType = type
 		}
 	}
 
