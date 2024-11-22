@@ -11,9 +11,12 @@
 	},
 	"main": "./out/index.js",
 	"scripts": {
-		"build": "tsc -b",
-		"watch": "tsc -b -w",
-		"prepublish": "tsc -b",
+		"build": "cd compiler && tsc -b && cd transformer && tsc -b",
+		"build-compiler": "cd compiler && tsc -b",
+		"build-transformer": "cd transformer && tsc -b",
+		"watch-compiler": "cd compiler && tsc -b -w",
+		"watch-transformer": "cd transformer && tsc -b -w",
+		"prepublish": "npm run build",
 		"test": "cd tests && node ../bin/tscl.js && echo Compare git changes to get test result"
 	},
 	"bin": {
