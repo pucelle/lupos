@@ -8,14 +8,14 @@
 		"outDir": "out",
 		"allowJs": true,
 		"esModuleInterop": true, 
-		"declaration": false,
+		"declaration": true,
 		"strict": true,
 		"noUnusedLocals": true,
 		"noUnusedParameters": true,
 		"noImplicitReturns": true,
 		"noFallthroughCasesInSwitch": true,
 		"noImplicitAny": true,
-		"noImplicitThis": true
+		"noImplicitThis": true,
 	},
 	"exclude": [
 		"node_modules",

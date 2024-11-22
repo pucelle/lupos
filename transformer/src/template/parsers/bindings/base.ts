@@ -2,7 +2,7 @@ import type TS from 'typescript'
 import {HTMLNode} from '../../html-syntax'
 import {PartType, TreeParser} from '../tree'
 import {BindingSlotParser} from '../slots'
-import {DiagnosticModifier, factory, Helper, Modifier, ScopeTree, ts} from '../../../core'
+import {SourceFileDiagnosticModifier, factory, Helper, Modifier, ScopeTree, ts} from '../../../core'
 import {TemplateParser} from '../template'
 import {VariableNames} from '../variable-names'
 import {setLatestBindingInfo} from './latest-binding'
@@ -180,7 +180,7 @@ export class BindingBase {
 					Modifier.persistImport(decl)
 				}
 
-				DiagnosticModifier.removeNeverRead(decl)
+				SourceFileDiagnosticModifier.removeNeverRead(decl)
 
 				let bindingModuleName = Helper.symbol.resolveImport(decl)
 				let bindingClass = Helper.symbol.resolveDeclaration(decl, ts.isClassDeclaration)!
@@ -233,7 +233,7 @@ export class BindingBase {
 		// May unused comma expression of a for `${a, b}`, here remove it.
 		if (rawValueNodes.length > 1) {
 			for (let i = 0; i < rawValueNodes.length - 1; i++) {
-				DiagnosticModifier.removeUnusedComma(rawValueNodes[i])
+				SourceFileDiagnosticModifier.removeUnusedComma(rawValueNodes[i])
 			}
 		}
 

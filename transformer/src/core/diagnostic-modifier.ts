@@ -1,6 +1,6 @@
 import type TS from 'typescript'
 import {definePreVisitCallback} from './visitor-callbacks'
-import {extras, sourceFile, ts} from './global'
+import {diagnosticModifier, sourceFile, ts} from './global'
 import {Helper} from './helper'
 
 
@@ -8,30 +8,31 @@ import {Helper} from './helper'
 // https://github.com/microsoft/TypeScript/blob/v5.6.3/src/compiler/diagnosticMessages.json
 
 
-export namespace DiagnosticModifier {
+export namespace SourceFileDiagnosticModifier {
 
-	const DiagnosticMap: Map<number, TS.Diagnostic> = new Map()
-
-	const ErrorNames: Set<number> = new Set()
-	const RemovedIndices: Set<number> = new Set()
-
-
-	/** Initialize for only once. */
-	export function initialize() {
-		for (let diag of extras.diagnostics) {
-			if (diag.start !== undefined) {
-				DiagnosticMap.set(diag.start, diag)
-			}
-		}
-	}
+	const DiagnosticByStartPosition: Map<number, TS.Diagnostic> = new Map()
+	const AddedStartIndices: Set<number> = new Set()
+	const RemovedStartIndices: Set<number> = new Set()
 
 
 	/** Initialize before visit a new source file. */
-	export function preSourceFileInitialize() {
-		ErrorNames.clear()
-		RemovedIndices.clear()
-	}
+	export function initialize() {
+		DiagnosticByStartPosition.clear()
+		AddedStartIndices.clear()
+		RemovedStartIndices.clear()
+		diagnosticModifier.beforeVisitSourceFile(sourceFile)
 
+		let diags = diagnosticModifier.getOfFile(sourceFile)
+		if (!diags) {
+			return
+		}
+
+		for (let diag of diags) {
+			if (diag.start !== undefined) {
+				DiagnosticByStartPosition.set(diag.start, diag)
+			}
+		}
+	}
 
 	/** Add a never read diagnostic. */
 	export function addNeverRead(node: TS.Node, message: string) {
@@ -51,7 +52,7 @@ export namespace DiagnosticModifier {
 
 	/** Add a missing import diagnostic. */
 	function add(start: number, length: number, code: number, message: string) {
-		if (ErrorNames.has(start)) {
+		if (AddedStartIndices.has(start)) {
 			return
 		}
 
@@ -64,8 +65,8 @@ export namespace DiagnosticModifier {
 			length,
 		}
 
-		extras.addDiagnostic(diag)
-		ErrorNames.add(start)
+		diagnosticModifier.add(diag)
+		AddedStartIndices.add(start)
 	}
 
 
@@ -79,7 +80,7 @@ export namespace DiagnosticModifier {
 
 			if (ts.isImportDeclaration(importDecl)) {
 				let start = importDecl.getStart()
-				let diag = DiagnosticMap.get(start)
+				let diag = DiagnosticByStartPosition.get(start)
 
 				if (diag && diag.code === 6133) {
 					remove(importDecl, [6133])
@@ -101,28 +102,22 @@ export namespace DiagnosticModifier {
 		remove(node, [2695])
 	}
 
-
+	/** Remove diagnostic at specified node and code in limited codes. */
 	function remove(node: TS.Node, codes: number[]) {
 		let start = node.getStart()
 
-		if (RemovedIndices.has(start)) {
+		if (RemovedStartIndices.has(start)) {
 			return
 		}
 
-		for (let i = 0; i < extras.diagnostics.length; i++) {
-			let diag = extras.diagnostics[i]
-			if (diag.file !== sourceFile) {
-				continue
-			}
+		let diag = DiagnosticByStartPosition.get(start)
 
-			if (diag.start === start && codes.includes(diag.code)) {
-				extras.removeDiagnostic(i)
-				RemovedIndices.add(start)
-				break
-			}
+		if (diag && diag.start === start && codes.includes(diag.code)) {
+			diagnosticModifier.delete(diag)
+			RemovedStartIndices.add(start)
 		}
 	}
 }
 
 
-definePreVisitCallback(DiagnosticModifier.preSourceFileInitialize)
+definePreVisitCallback(SourceFileDiagnosticModifier.initialize)

@@ -1,7 +1,7 @@
 import type TS from 'typescript'
 import {HTMLAttribute, HTMLNode, HTMLNodeType} from '../../html-syntax'
 import {PartType, TreeParser} from '../tree'
-import {DiagnosticModifier, factory, Helper, Modifier, MutableMask, ScopeTree, TemplateSlotPlaceholder, ts} from '../../../core'
+import {SourceFileDiagnosticModifier, factory, Helper, Modifier, MutableMask, ScopeTree, TemplateSlotPlaceholder, ts} from '../../../core'
 import {VariableNames} from '../variable-names'
 import {TemplateParser} from '../template'
 import {SlotPositionType} from '../../../enums'
@@ -465,7 +465,7 @@ export abstract class SlotParserBase {
 		let start = ofNode.start + 1
 		let length = ofNode.tagName!.length
 
-		DiagnosticModifier.addMissingImport(start, length, message)
+		SourceFileDiagnosticModifier.addMissingImport(start, length, message)
 	}
 
 	/** Diagnose normal of current node. */
@@ -473,7 +473,7 @@ export abstract class SlotParserBase {
 		let start = ofNode.start + 1
 		let length = ofNode.tagName!.length
 
-		DiagnosticModifier.addNormal(start, length, message)
+		SourceFileDiagnosticModifier.addNormal(start, length, message)
 	}
 
 

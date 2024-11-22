@@ -1,27 +1,25 @@
-import {TransformerExtras} from 'ts-patch'
-import type TS from 'typescript'
+import TS from 'typescript'
+import {DiagnosticModifier, TransformerExtras} from '../../../compiler/out/patch'
 
 
 export let typeChecker: TS.TypeChecker
-export let ts: typeof TS
-export let printer: TS.Printer
+export let diagnosticModifier: DiagnosticModifier
+export let ts = TS	// May switch to a patched typescript.
+export let printer: TS.Printer = ts.createPrinter()
 export let factory: TS.NodeFactory
 export let transformContext: TS.TransformationContext
 export let sourceFile: TS.SourceFile
-export let extras: TransformerExtras
 
 
-export function setGlobal(program: TS.Program, extrasParam: TransformerExtras) {
-	typeChecker = program.getTypeChecker()
-	extras = extrasParam
-	ts = extrasParam.ts
-	factory = ts.factory
-	printer = ts.createPrinter()
+export function setTransformProgram(extras: TransformerExtras) {
+	typeChecker = extras.program.getProgram().getTypeChecker()
+	diagnosticModifier = extras.diagnosticModifier
 }
 
 
 export function setTransformContext(ctx: TS.TransformationContext) {
 	transformContext = ctx
+	factory = ctx.factory
 }
 
 

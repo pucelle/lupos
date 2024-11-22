@@ -1,7 +1,7 @@
 import {SlotParserBase} from './base'
 import {BindingBase, ClassBinding, RefBinding, StyleBinding} from '../bindings'
 import {HTMLAttribute} from '../../html-syntax'
-import {DiagnosticModifier} from '../../../core'
+import {SourceFileDiagnosticModifier} from '../../../core'
 
 
 export class BindingSlotParser extends SlotParserBase {
@@ -17,7 +17,7 @@ export class BindingSlotParser extends SlotParserBase {
 		let start = this.attr.start
 		let length = this.attr.name.replace(/\..+/, '').length
 
-		DiagnosticModifier.addMissingImport(
+		SourceFileDiagnosticModifier.addMissingImport(
 			start, length, `Please make sure to import or declare binding ":${this.name}"!`
 		)
 	}

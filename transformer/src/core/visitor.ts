@@ -1,11 +1,10 @@
-import type TS from 'typescript'
+import TS from 'typescript'
 import {VisitTree} from './visit-tree'
 import {Interpolator} from './interpolator'
-import {TransformerExtras} from 'ts-patch'
-import {setGlobal, setSourceFile, setTransformContext} from './global'
+import {setTransformProgram as setTransformExtras, setSourceFile, setTransformContext} from './global'
 import {ScopeTree} from './scope-tree'
 import {callVisitedSourceFileCallbacks, runPostVisitCallbacks, runPreVisitCallbacks} from './visitor-callbacks'
-import {DiagnosticModifier} from './diagnostics'
+import {TransformerExtras} from '../../../compiler/out/patch'
 
 
 /** 
@@ -54,58 +53,52 @@ function applyVisitors(node: TS.Node): () => void {
 
 
 /** Transformer entry. */
-export function transformer(program: TS.Program, extras: TransformerExtras) {
-	let {ts} = extras
-	setGlobal(program, extras)
+export function transformer(context: TS.TransformationContext, extras: TransformerExtras): TS.Transformer<TS.SourceFile> {
+	let ts = TS
+	setTransformExtras(extras)
+	setTransformContext(context)
 
-	// Must after `setGlobal`.
-	DiagnosticModifier.initialize()
+	return (sourceFile: TS.SourceFile) => {
+		setSourceFile(sourceFile)
+		runPreVisitCallbacks()
 
-	return (ctx: TS.TransformationContext) => {
-		setTransformContext(ctx)
+		// In the first visiting initialize visit and scope tree.
+		function initVisitor(node: TS.Node): TS.Node {
+			VisitTree.toNext(node)
+			ScopeTree.toNext(node)
 
-		return (sourceFile: TS.SourceFile) => {
-			setSourceFile(sourceFile)
-			runPreVisitCallbacks()
+			VisitTree.toChild()
+			ScopeTree.toChild()
 
-			// In the first visiting initialize visit and scope tree.
-			function initVisitor(node: TS.Node): TS.Node {
-				VisitTree.toNext(node)
-				ScopeTree.toNext(node)
+			ts.visitEachChild(node, initVisitor, context)
+			
+			VisitTree.toParent()
+			ScopeTree.toParent(node)
 
-				VisitTree.toChild()
-				ScopeTree.toChild()
+			// Returned result has no matter.
+			return node
+		}
 
-				ts.visitEachChild(node, initVisitor, ctx)
-				
-				VisitTree.toParent()
-				ScopeTree.toParent(node)
+		function visitor(node: TS.Node): TS.Node {
+			let doMoreAfterVisitedChildren = applyVisitors(node)
+			ts.visitEachChild(node, visitor, context)
+			doMoreAfterVisitedChildren()
 
-				// Returned result has no matter.
-				return node
-			}
+			// Returned result has no matter.
+			return node
+		}
 
-			function visitor(node: TS.Node): TS.Node {
-				let doMoreAfterVisitedChildren = applyVisitors(node)
-				ts.visitEachChild(node, visitor, ctx)
-				doMoreAfterVisitedChildren()
+		try {
+			ts.visitNode(sourceFile, initVisitor)
+			ts.visitNode(sourceFile, visitor)
+			callVisitedSourceFileCallbacks()
+			runPostVisitCallbacks()
 
-				// Returned result has no matter.
-				return node
-			}
-
-			try {
-				ts.visitNode(sourceFile, initVisitor)
-				ts.visitNode(sourceFile, visitor)
-				callVisitedSourceFileCallbacks()
-				runPostVisitCallbacks()
-
-				return Interpolator.outputSelf(0) as TS.SourceFile
-			}
-			catch (err) {
-				console.warn(`Failed to transform source file "${sourceFile.fileName}"!`)
-				throw err
-			}
+			return Interpolator.outputSelf(0) as TS.SourceFile
+		}
+		catch (err) {
+			console.warn(`Failed to transform source file "${sourceFile.fileName}"!`)
+			throw err
 		}
 	}
 }
