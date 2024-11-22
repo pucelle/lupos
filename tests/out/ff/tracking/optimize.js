@@ -1,4 +1,4 @@
-import { trackGet } from '@pucelle/ff';
+import { trackGet, trackSet } from '@pucelle/ff';
 import { Component } from '@pucelle/lupos.js';
 export class TestOptimizing extends Component {
     prop = { value: 1 };
@@ -214,5 +214,13 @@ export class TestOptimizing extends Component {
         trackGet(this, "prop");
         trackGet(this.prop, "value");
         return 0;
+    }
+    preventTrackingOfCallback() {
+        this.prop.value = 1;
+        trackSet(this.prop, "value");
+        return () => {
+            this.prop.value = 2;
+            trackSet(this.prop, "value");
+        };
     }
 }

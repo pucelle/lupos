@@ -4,6 +4,7 @@ import {AccessReferences} from './access-references'
 import {removeFromList} from '../../utils'
 import {CapturedItem, TrackingCapturer} from './capturer'
 import {TrackingScope} from './scope'
+import {TrackingScopeTypeMask} from './scope-tree'
 
 
 
@@ -187,7 +188,13 @@ export class TrackingCapturerOperator {
 		// Last captured item may have wrong `toIndex`, here ensure to visit all child contexts.
 		for (; startChildIndex < this.scope.children.length; startChildIndex++) {
 			let child = this.scope.children[startChildIndex]
-			child.capturer.operator.eliminateRepetitiveRecursively(ownHashes)
+
+			// not function, or instantly run function.
+			if ((child.type & TrackingScopeTypeMask.FunctionLike) === 0
+				|| (child.type & TrackingScopeTypeMask.InstantlyRunFunction)
+			) {
+				child.capturer.operator.eliminateRepetitiveRecursively(ownHashes)
+			}
 		}
 	}
 

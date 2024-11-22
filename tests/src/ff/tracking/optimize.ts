@@ -239,4 +239,12 @@ export class TestOptimizing extends Component {
 
 		return 0
 	}
+
+	preventTrackingOfCallback() {
+		this.prop.value = 1
+
+		return () => {
+			this.prop.value = 2
+		}
+	}
 }
