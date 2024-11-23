@@ -1,7 +1,7 @@
 import type TS from 'typescript'
 import {definePreVisitCallback} from './visitor-callbacks'
 import {diagnosticModifier, sourceFile, ts} from './global'
-import {Helper} from './helper'
+import {Helper} from '../lupos-ts-module'
 
 
 // Where to find diagnostic codes:

@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {Helper, ts, VisitTree} from '../../core'
+import {Helper, Packer, ts, VisitTree} from '../../core'
 import {TrackingScope} from './scope'
 import {ListMap} from '../../utils'
 import {CapturedOutputWay, TrackingRange, TrackingRanges} from './ranges'
@@ -187,7 +187,7 @@ export namespace TrackingScopeTree {
 
 		// Flow stop, and has content.
 		// `break` and `continue` contains no expressions, so should not be a scope type.
-		else if (Helper.pack.getFlowInterruptionType(node) > 0) {
+		else if (Packer.getFlowInterruptionType(node) > 0) {
 			type |= TrackingScopeTypeMask.FlowInterruption
 		}
 
@@ -403,14 +403,14 @@ export namespace TrackingScopeTree {
 
 			// Can put statements ,
 			// or can extend from `if()...` to `if(){...}`, insert before node.
-			if (Helper.pack.canPutStatements(node)
-				|| Helper.pack.canExtendToPutStatements(node)
+			if (Packer.canPutStatements(node)
+				|| Packer.canExtendToPutStatements(node)
 			) {
 				break
 			}
 
 			// `{...}`, insert before node.
-			if (Helper.pack.canPutStatements(node.parent)) {
+			if (Packer.canPutStatements(node.parent)) {
 
 				// scope of node.parent.
 				if (node === scope.node) {

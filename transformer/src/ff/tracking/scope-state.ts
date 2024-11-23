@@ -1,7 +1,7 @@
 import type TS from 'typescript'
 import {TrackingScope} from './scope'
 import {TrackingScopeTypeMask} from './scope-tree'
-import {AccessNode, FlowInterruptionTypeMask, Helper, ts, VisitTree} from '../../core'
+import {AccessNode, FlowInterruptionTypeMask, Helper, Packer, ts, VisitTree} from '../../core'
 
 
 export class TrackingScopeState {
@@ -36,7 +36,7 @@ export class TrackingScopeState {
 		this.effectDecorated = this.checkEffectDecorated()
 
 		if (scope.type & TrackingScopeTypeMask.FlowInterruption) {
-			this.flowInterruptionType = Helper.pack.getFlowInterruptionType(scope.node)
+			this.flowInterruptionType = Packer.getFlowInterruptionType(scope.node)
 		}
 	}
 

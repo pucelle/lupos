@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {factory, Helper, Interpolator, Modifier, TemplateSlotPlaceholder} from '../../../core'
+import {factory, Interpolator, Modifier, Packer, TemplateSlotPlaceholder} from '../../../core'
 import {FlowControlBase} from './base'
 import {TemplateParser} from '../template'
 import {SlotContentType} from '../../../enums'
@@ -212,14 +212,14 @@ export class IfFlowControl extends FlowControlBase {
 			}
 			else {
 				let output = template.outputReplaced()
-				return Helper.pack.parenthesizeExpressions(...contentTrackingExps, output)
+				return Packer.parenthesizeExpressions(...contentTrackingExps, output)
 			}
 		})
 
 		let conditionalTrackings = this.conditionalRangeIds.map(rangeId => rangeId ? TrackingPatch.outputCustomRangeTracking(rangeId) : [])
 
 		// Make a new expression: `(track1, cond1 ? content1 : (track2, cond2 ? content2 : ...))`
-		let value = Helper.pack.toConditionalExpression(conditions, contents, conditionalTrackings)
+		let value = Packer.toConditionalExpression(conditions, contents, conditionalTrackings)
 
 		// Add it as a value item to original template, and returned it's reference.
 		let toValue = this.slot.outputCustomValue(value)

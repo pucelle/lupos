@@ -1,5 +1,5 @@
 import {SlotParserBase} from './base'
-import {factory, Helper, TemplateSlotPlaceholder, ts} from '../../../core'
+import {factory, Helper, Packer, TemplateSlotPlaceholder, ts} from '../../../core'
 import {cleanList} from '../../../utils'
 
 
@@ -102,7 +102,7 @@ export class AttributeSlotParser extends SlotParserBase {
 		
 		return styles.map(([name, value]) => {
 			return factory.createBinaryExpression(
-				Helper.createAccessNode(
+				Packer.createAccessNode(
 					styleNode,
 					name
 				),

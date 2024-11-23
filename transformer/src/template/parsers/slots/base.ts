@@ -1,7 +1,7 @@
 import type TS from 'typescript'
 import {HTMLAttribute, HTMLNode, HTMLNodeType} from '../../html-syntax'
 import {PartType, TreeParser} from '../tree'
-import {SourceFileDiagnosticModifier, factory, Helper, Modifier, MutableMask, ScopeTree, TemplateSlotPlaceholder, ts} from '../../../core'
+import {SourceFileDiagnosticModifier, factory, Helper, Modifier, MutableMask, ScopeTree, TemplateSlotPlaceholder, ts, Packer} from '../../../core'
 import {VariableNames} from '../variable-names'
 import {TemplateParser} from '../template'
 import {SlotPositionType} from '../../../enums'
@@ -272,7 +272,7 @@ export abstract class SlotParserBase {
 			))
 		}
 
-		return Helper.pack.bundleBinaryExpressions(exps, ts.SyntaxKind.BarBarToken)
+		return Packer.bundleBinaryExpressions(exps, ts.SyntaxKind.BarBarToken)
 	}
 
 	/** `$latest_0 = $values[0], ...` */
@@ -294,7 +294,7 @@ export abstract class SlotParserBase {
 			))
 		}
 
-		return Helper.pack.toStatements(exps)
+		return Packer.toStatements(exps)
 	}
 
 	/** Return a callback to get `new TemplateSlot(...)`. */

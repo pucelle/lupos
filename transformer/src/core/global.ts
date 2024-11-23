@@ -4,8 +4,7 @@ import {DiagnosticModifier, TransformerExtras} from '../../../compiler/out/patch
 
 export let typeChecker: TS.TypeChecker
 export let diagnosticModifier: DiagnosticModifier
-export let ts = TS	// May switch to a patched typescript.
-export let printer: TS.Printer = ts.createPrinter()
+export let ts = TS	// May switch to a patched typescript like `ts-patch`.
 export let factory: TS.NodeFactory
 export let transformContext: TS.TransformationContext
 export let sourceFile: TS.SourceFile

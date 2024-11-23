@@ -1,6 +1,7 @@
 import type TS from 'typescript'
 import {ts, defineVisitor, Helper, factory, Interpolator, VisitTree, MethodOverwrite, Modifier, MethodInsertPosition} from '../core'
 import {ProcessorClassNameMap, ProcessorPropNameMap} from './decorators-shared'
+import {Packer} from '../core/packer'
 
 
 // Add some decorator compiled part to `constructor` or `onConnected` and `onWillDisconnect`.
@@ -158,8 +159,8 @@ function compileComputedEffectWatchDecorator(
 
 	// this.$prop_computer.connect()
 	let connectStatement = factory.createExpressionStatement(factory.createCallExpression(
-		Helper.createAccessNode(
-			Helper.createAccessNode(factory.createThis(), processorPropName),
+		Packer.createAccessNode(
+			Packer.createAccessNode(factory.createThis(), processorPropName),
 			'connect'
 		),
 		undefined,
@@ -171,8 +172,8 @@ function compileComputedEffectWatchDecorator(
 
 	if (disconnect) {
 		let disconnectStatement = factory.createExpressionStatement(factory.createCallExpression(
-			Helper.createAccessNode(
-				Helper.createAccessNode(factory.createThis(), processorPropName),
+			Packer.createAccessNode(
+				Packer.createAccessNode(factory.createThis(), processorPropName),
 				'disconnect'
 			),
 			undefined,

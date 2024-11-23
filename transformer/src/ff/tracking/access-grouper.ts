@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {AccessNode, factory, Helper, Modifier, ts} from '../../core'
+import {AccessNode, factory, Helper, Modifier, Packer, ts} from '../../core'
 import {groupBy} from '../../utils'
 
 
@@ -16,7 +16,7 @@ export namespace AccessGrouper {
 
 	/** Group expressions to lately insert a position. */
 	export function makeExpressions(nodes: AccessNode[], type: 'get' | 'set'): TS.Expression[] {
-		nodes = nodes.map(node => Helper.pack.normalize(node, true) as AccessNode)
+		nodes = nodes.map(node => Packer.normalize(node, true) as AccessNode)
 
 		let grouped = groupExpressions(nodes)
 		let made = grouped.map(item => createGroupedExpression(item, type))
@@ -62,7 +62,7 @@ export namespace AccessGrouper {
 		// `a?.b` -> `a && trackGet(a, 'b')`
 		if (node.questionDotToken) {
 			return factory.createBinaryExpression(
-				Helper.pack.removeAccessComments(node.expression),
+				Packer.removeAccessComments(node.expression),
 				factory.createToken(ts.SyntaxKind.AmpersandAmpersandToken),
 				trackGet
 			)
@@ -80,7 +80,7 @@ export namespace AccessGrouper {
 		let nameExps = [...group.values()].map(nodes => getAccessNodeNameProperty(nodes[0]))
 
 		return [
-			Helper.pack.removeAccessComments(node.expression),
+			Packer.removeAccessComments(node.expression),
 			...nameExps,
 		]
 	}
@@ -113,7 +113,7 @@ export namespace AccessGrouper {
 			name = factory.createStringLiteral(Helper.getFullText(node.name))
 		}
 		else {
-			name = Helper.pack.removeAccessComments(node.argumentExpression)
+			name = Packer.removeAccessComments(node.argumentExpression)
 		}
 
 		return name

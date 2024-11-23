@@ -1,7 +1,7 @@
 import type TS from 'typescript'
 import {Part, TreeParser} from './tree'
 import {HTMLNode, HTMLNodeType, HTMLRoot} from '../html-syntax'
-import {factory, Helper, Modifier, Scope, TemplateSlotPlaceholder, ts} from '../../core'
+import {factory, Helper, Modifier, Packer, Scope, TemplateSlotPlaceholder, ts} from '../../core'
 import {SlotParserBase} from './slots'
 import {VariableNames} from './variable-names'
 import {SlotPositionType} from '../../enums'
@@ -65,7 +65,7 @@ export class TreeOutputHandler {
 		// Must after others.
 		let varStatements = this.outputVarNames(varNames)
 
-		let initStatements = Helper.pack.toStatements([
+		let initStatements = Packer.toStatements([
 			varStatements,
 			rootNode,
 			nodeRefs,
@@ -150,7 +150,7 @@ export class TreeOutputHandler {
 		for (let i = 0; i < slots.length; i++) {
 			let slot = slots[i]
 			let attached = this.outputDynamicComponentAttached(slots, i, update)
-			let attachedInitStatements = Helper.pack.toStatements(attached.init.flat())
+			let attachedInitStatements = Packer.toStatements(attached.init.flat())
 			let initNodes = slot.outputInit(attachedInitStatements)
 			let moreInitNodes = slot.outputMoreInit()
 			let updateNodes = slot.outputUpdate()
@@ -424,7 +424,7 @@ export class TreeOutputHandler {
 		}
 
 		let updateBlock = factory.createBlock(
-			Helper.pack.toStatements(update),
+			Packer.toStatements(update),
 			true
 		)
 

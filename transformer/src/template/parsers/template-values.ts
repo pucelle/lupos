@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {factory, Helper, Interpolator, MutableMask, ScopeTree, ts} from '../../core'
+import {factory, Helper, Interpolator, MutableMask, Packer, ScopeTree, ts} from '../../core'
 import {VariableNames} from './variable-names'
 import {TreeParser} from './tree'
 
@@ -227,7 +227,7 @@ export class TemplateValues {
 		}
 
 		
-		return Helper.pack.bundleBinaryExpressions(parts, ts.SyntaxKind.PlusToken)
+		return Packer.bundleBinaryExpressions(parts, ts.SyntaxKind.PlusToken)
 	}
 
 	/** 

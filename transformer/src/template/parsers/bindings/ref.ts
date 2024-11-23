@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {factory, Helper, TemplateSlotPlaceholder, ts} from '../../../core'
+import {factory, Helper, Packer, TemplateSlotPlaceholder, ts} from '../../../core'
 import {BindingBase, BindingUpdateCallWith} from './base'
 import {TrackingPatch} from '../../../ff'
 import {getLatestBindingInfo, LatestBindingInfo} from './latest-binding'
@@ -171,7 +171,7 @@ export class RefBinding extends BindingBase {
 								factory.createNull()
 							)
 						)),
-						...Helper.pack.toStatements(TrackingPatch.outputIsolatedTracking(rawValueNode, 'set'))
+						...Packer.toStatements(TrackingPatch.outputIsolatedTracking(rawValueNode, 'set'))
 					],
 					false
 				)
@@ -243,7 +243,7 @@ export class RefBinding extends BindingBase {
 							factory.createToken(ts.SyntaxKind.EqualsToken),
 							factory.createIdentifier('refed')
 						)),
-						...Helper.pack.toStatements(TrackingPatch.outputIsolatedTracking(rawValueNode, 'set'))
+						...Packer.toStatements(TrackingPatch.outputIsolatedTracking(rawValueNode, 'set'))
 					],
 					false
 				)

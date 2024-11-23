@@ -1,5 +1,5 @@
 import type TS from 'typescript'
-import {InterpolationContentType, AccessNode, Helper, Interpolator, InterpolationPosition, VisitTree, ts, FlowInterruptionTypeMask, ScopeTree} from '../../core'
+import {InterpolationContentType, AccessNode, Helper, Interpolator, InterpolationPosition, VisitTree, ts, FlowInterruptionTypeMask, ScopeTree, Packer} from '../../core'
 import {TrackingScope} from './scope'
 import {TrackingScopeTree, TrackingScopeTypeMask} from './scope-tree'
 import {AccessGrouper} from './access-grouper'
@@ -286,7 +286,7 @@ export class TrackingCapturer {
 		}
 
 		// Can put statements, insert to the end of statements.
-		else if (Helper.pack.canPutStatements(node)) {
+		else if (Packer.canPutStatements(node)) {
 			item.position = InterpolationPosition.Append
 		}
 
@@ -462,10 +462,10 @@ export class TrackingCapturer {
 			let node = Interpolator.outputSelf(item.expIndex) as TS.Expression
 			let keys = item.keys!
 
-			node = Helper.pack.extractFinalParenthesized(node) as AccessNode
+			node = Packer.extractFinalParenthesized(node) as AccessNode
 
 			for (let key of keys) {
-				node = Helper.createAccessNode(node, key)
+				node = Packer.createAccessNode(node, key)
 				nodes.push(node as AccessNode)
 			}
 
@@ -473,7 +473,7 @@ export class TrackingCapturer {
 		}
 		else {
 			let node = Interpolator.outputChildren(item.index) as AccessNode
-			node = Helper.pack.extractFinalParenthesized(node) as AccessNode
+			node = Packer.extractFinalParenthesized(node) as AccessNode
 			
 			return [node]
 		}

@@ -2,8 +2,9 @@ import type TS from 'typescript'
 import {ListMap} from '../utils'
 import {factory, transformContext, ts} from './global'
 import {VisitTree} from './visit-tree'
-import {Helper} from './helper'
+import {Helper} from '../lupos-ts-module'
 import {definePreVisitCallback} from './visitor-callbacks'
+import {Packer} from './packer'
 
 
 export interface InterpolationItem {
@@ -168,9 +169,9 @@ export namespace Interpolator {
 			return factory.updateBlock(
 				node, 
 				[
-					...Helper.pack.toStatements(prependNodes),
+					...Packer.toStatements(prependNodes),
 					...node.statements,
-					...Helper.pack.toStatements(appendNodes),
+					...Packer.toStatements(appendNodes),
 				]
 			)
 		}
@@ -386,20 +387,20 @@ export namespace Interpolator {
 		let rawParent = rawNode.parent
 
 		// Insert statements.
-		if (Helper.pack.canPutStatements(rawParent)) {
+		if (Packer.canPutStatements(rawParent)) {
 			let list = arrangeNeighborNodes(node, beforeNodes, afterNodes)
-			return Helper.pack.toStatements(list)
+			return Packer.toStatements(list)
 		}
 
 		// Extend to block and insert statements.
-		else if (Helper.pack.canExtendToPutStatements(rawNode)) {
+		else if (Packer.canExtendToPutStatements(rawNode)) {
 			if (ts.isArrowFunction(rawParent)) {
 				node = factory.createReturnStatement(node as TS.Expression)
 			}
 			let list = arrangeNeighborNodes(node, beforeNodes, afterNodes)
 
 			return factory.createBlock(
-				Helper.pack.toStatements(list),
+				Packer.toStatements(list),
 				true
 			)
 		}
@@ -407,13 +408,13 @@ export namespace Interpolator {
 		// Parent is a parenthesize expression already, should join with comma token.
 		else if (ts.isParenthesizedExpression(rawParent)) {
 			let list = arrangeNeighborNodes(node, beforeNodes, afterNodes, true)
-			return Helper.pack.bundleBinaryExpressions(list, ts.SyntaxKind.CommaToken)
+			return Packer.bundleBinaryExpressions(list, ts.SyntaxKind.CommaToken)
 		}
 
 		// Parenthesize it, and move returned node to the end part.
-		else if (Helper.pack.shouldBeUnique(rawNode)) {
+		else if (Packer.shouldBeUnique(rawNode)) {
 			let list = arrangeNeighborNodes(node, beforeNodes, afterNodes, true)
-			return Helper.pack.parenthesizeExpressions(...list)
+			return Packer.parenthesizeExpressions(...list)
 		}
 
 		// Otherwise, return list directly.
@@ -456,7 +457,7 @@ export namespace Interpolator {
 		}
 
 		// `(a) -> a`
-		list = list.map(node => Helper.pack.normalize(node, false) as TS.Expression)
+		list = list.map(node => Packer.normalize(node, false) as TS.Expression)
 
 		return list
 	}

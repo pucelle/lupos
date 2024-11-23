@@ -1,6 +1,6 @@
 import type TS from 'typescript'
 import {SlotParserBase} from './base'
-import {factory, Helper, Modifier, TemplateSlotPlaceholder, ts} from '../../../core'
+import {factory, Helper, Modifier, Packer, TemplateSlotPlaceholder, ts} from '../../../core'
 
 
 export class PropertySlotParser extends SlotParserBase {
@@ -114,7 +114,7 @@ export class PropertySlotParser extends SlotParserBase {
 							value.joint
 						)),
 						...this.outputLatestAssignments(this.latestVariableNames, value.valueNodes),
-						...Helper.pack.toStatements(setTracking),
+						...Packer.toStatements(setTracking),
 					],
 					true
 				),

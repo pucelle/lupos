@@ -2,7 +2,7 @@ import type TS from 'typescript'
 import {HTMLNode} from '../../html-syntax'
 import {PartType, TreeParser} from '../tree'
 import {BindingSlotParser} from '../slots'
-import {SourceFileDiagnosticModifier, factory, Helper, Modifier, ScopeTree, ts} from '../../../core'
+import {SourceFileDiagnosticModifier, factory, Helper, Modifier, ScopeTree, ts, Packer} from '../../../core'
 import {TemplateParser} from '../template'
 import {VariableNames} from '../variable-names'
 import {setLatestBindingInfo} from './latest-binding'
@@ -228,7 +228,7 @@ export class BindingBase {
 			rawValueNode = rawValueNode.expression
 		}
 
-		let rawValueNodes = Helper.pack.unBundleCommaBinaryExpressions(rawValueNode)
+		let rawValueNodes = Packer.unBundleCommaBinaryExpressions(rawValueNode)
 
 		// May unused comma expression of a for `${a, b}`, here remove it.
 		if (rawValueNodes.length > 1) {
@@ -403,7 +403,7 @@ export class BindingBase {
 			updateIf = factory.createIfStatement(
 				queryValue,
 				factory.createBlock(
-					[Helper.pack.toStatement(update)],
+					[Packer.toStatement(update)],
 					true
 				),
 				undefined
@@ -425,7 +425,7 @@ export class BindingBase {
 				),
 				factory.createBlock(
 					[
-						...(isStaticUpdate ? [Helper.pack.toStatement(update)] : []),
+						...(isStaticUpdate ? [Packer.toStatement(update)] : []),
 						factory.createExpressionStatement(factory.createCallExpression(
 							factory.createPropertyAccessExpression(
 								factory.createIdentifier(this.delegatorVariableName!),

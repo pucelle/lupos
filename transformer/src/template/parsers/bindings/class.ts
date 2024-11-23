@@ -1,4 +1,5 @@
 import {factory, Helper} from '../../../core'
+import {Packer} from '../../../core'
 import {BindingBase, BindingUpdateCallWith} from './base'
 
 
@@ -12,7 +13,7 @@ export class ClassBinding extends BindingBase {
 				method: 'updateObject',
 				values: [factory.createObjectLiteralExpression(
 					[factory.createPropertyAssignment(
-						Helper.createPropertyName(this.modifiers[0]),
+						Packer.createPropertyName(this.modifiers[0]),
 						value
 					)],
 					false

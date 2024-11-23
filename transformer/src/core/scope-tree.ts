@@ -3,9 +3,10 @@ import {addToList, ListMap} from '../utils'
 import {factory, sourceFile, transformContext, ts} from './global'
 import {VisitTree} from './visit-tree'
 import {InterpolationContentType, Interpolator} from './interpolator'
-import {AccessNode, Helper} from './helper'
+import {AccessNode, Helper} from '../lupos-ts-module'
 import {definePostVisitCallback, definePreVisitCallback} from './visitor-callbacks'
 import {Scope} from './scope'
+import {Packer} from './packer'
 
 
 export interface HashItem {
@@ -215,7 +216,7 @@ export namespace ScopeTree {
 			return hashNodeVisitor(n, usedScopes, usedIndices)
 		})!
 
-		node = Helper.pack.normalize(hashVisited, true)
+		node = Packer.normalize(hashVisited, true)
 
 		return {
 			name: Helper.getFullText(node),

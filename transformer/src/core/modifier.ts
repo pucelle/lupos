@@ -1,11 +1,12 @@
 import {ListMap} from '../utils'
 import type TS from 'typescript'
-import {factory, ts} from './global'
-import {Helper} from './helper'
+import {factory, sourceFile, ts} from './global'
+import {Helper} from '../lupos-ts-module'
 import {InterpolationContentType, Interpolator} from './interpolator'
 import {VisitTree} from './visit-tree'
 import {definePostVisitCallback, definePreVisitCallback} from './visitor-callbacks'
 import {ScopeTree} from './scope-tree'
+import {Packer} from './packer'
 
 
 /** 
@@ -117,7 +118,7 @@ export namespace Modifier {
 	export function addVariableAssignmentToList(fromIndex: number, toIndex: number, varName: string) {
 		Interpolator.before(toIndex, InterpolationContentType.Declaration, () => {
 			let node = Interpolator.outputChildren(fromIndex) as TS.Expression
-			node = Helper.pack.normalize(node, false) as TS.Expression
+			node = Packer.normalize(node, false) as TS.Expression
 			
 			return factory.createVariableDeclaration(
 				factory.createIdentifier(varName),
@@ -135,7 +136,7 @@ export namespace Modifier {
 	export function addVariableAssignment(fromIndex: number, toIndex: number, varName: string) {
 		Interpolator.before(toIndex, InterpolationContentType.Declaration, () => {
 			let node = Interpolator.outputChildren(fromIndex) as TS.Expression
-			node = Helper.pack.normalize(node, false) as TS.Expression
+			node = Packer.normalize(node, false) as TS.Expression
 			
 			return factory.createVariableDeclarationList(
 				[factory.createVariableDeclaration(
@@ -156,7 +157,7 @@ export namespace Modifier {
 	export function addReferenceAssignment(fromIndex: number, toIndex: number, refName: string) {
 		Interpolator.before(toIndex, InterpolationContentType.Reference, () => {
 			let node = Interpolator.outputChildren(fromIndex) as TS.Expression
-			node = Helper.pack.normalize(node, false) as TS.Expression
+			node = Packer.normalize(node, false) as TS.Expression
 
 			return factory.createBinaryExpression(
 				factory.createIdentifier(refName),
@@ -253,7 +254,7 @@ export namespace Modifier {
 
 	/** Get `import {...}` node by module name. */
 	function getNamedImportDeclaration(moduleName: string): TS.ImportDeclaration | undefined {
-		let importDecl = Helper.imports.getImportFromModule(moduleName)
+		let importDecl = Helper.imports.getImportFromModule(moduleName, sourceFile)
 		if (!importDecl) {
 			return undefined
 		}
