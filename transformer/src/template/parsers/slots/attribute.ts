@@ -1,8 +1,7 @@
 import {SlotParserBase} from './base'
-import {factory, Packer, TemplateSlotPlaceholder} from '../../../core'
-import {Helper} from '../../../lupos-ts-module'
+import {factory, Packer, TemplateSlotPlaceholder, helper} from '../../../core'
 import {cleanList} from '../../../utils'
-import ts = require('typescript')
+import * as ts from 'typescript'
 
 
 export class AttributeSlotParser extends SlotParserBase {
@@ -41,7 +40,7 @@ export class AttributeSlotParser extends SlotParserBase {
 
 	outputUpdate() {
 		let slotNode = this.getFirstRawValueNode()
-		let slotNodeType = slotNode ? Helper.types.typeOf(slotNode) : null
+		let slotNodeType = slotNode ? helper.types.typeOf(slotNode) : null
 
 		// class="..."
 		if (this.isSharedModification && this.hasString()) {
@@ -61,7 +60,7 @@ export class AttributeSlotParser extends SlotParserBase {
 		}
 
 		// `$values[0]` is not nullable
-		else if (this.hasString() || slotNodeType && Helper.types.isNonNullableValueType(slotNodeType!)) {
+		else if (this.hasString() || slotNodeType && helper.types.isNonNullableValueType(slotNodeType!)) {
 			return this.outputNonNullableValueUpdate()
 		}
 

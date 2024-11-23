@@ -1,6 +1,5 @@
 import * as ts from 'typescript'
-import {defineVisitor, Interpolator, InterpolationContentType, TemplateSlotPlaceholder, Modifier, onVisitedSourceFile} from '../core'
-import {Helper} from '../lupos-ts-module'
+import {defineVisitor, Interpolator, InterpolationContentType, TemplateSlotPlaceholder, Modifier, onVisitedSourceFile, helper} from '../core'
 import {TemplateParser} from './parsers'
 import {VariableNames} from './parsers/variable-names'
 import {HTMLRoot} from './html-syntax'
@@ -16,7 +15,7 @@ defineVisitor(function(node: ts.Node, index: number) {
 		return
 	}
 
-	let nm = Helper.symbol.resolveImport(node.tag)
+	let nm = helper.symbol.resolveImport(node.tag)
 	if (!nm) {
 		return
 	}

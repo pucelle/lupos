@@ -2,8 +2,7 @@ import * as ts from 'typescript'
 import {HTMLNode} from '../../html-syntax'
 import {PartType, TreeParser} from '../tree'
 import {BindingSlotParser} from '../slots'
-import {SourceFileDiagnosticModifier, factory, Modifier, ScopeTree, Packer} from '../../../core'
-import {Helper} from '../../../lupos-ts-module'
+import {SourceFileDiagnosticModifier, factory, Modifier, ScopeTree, Packer, helper} from '../../../core'
 import {TemplateParser} from '../template'
 import {VariableNames} from '../variable-names'
 import {setLatestBindingInfo} from './latest-binding'
@@ -183,18 +182,18 @@ export class BindingBase {
 
 				SourceFileDiagnosticModifier.removeNeverRead(decl)
 
-				let bindingModuleName = Helper.symbol.resolveImport(decl)
-				let bindingClass = Helper.symbol.resolveDeclaration(decl, ts.isClassDeclaration)!
+				let bindingModuleName = helper.symbol.resolveImport(decl)
+				let bindingClass = helper.symbol.resolveDeclaration(decl, ts.isClassDeclaration)!
 
 				this.template.addRefedDeclaration(decl)
 
 				if (bindingClass
-					&& Helper.cls.isImplemented(bindingClass, 'Part', '@pucelle/lupos.js', bindingModuleName?.moduleName)
+					&& helper.class.isImplemented(bindingClass, 'Part', '@pucelle/lupos.js', bindingModuleName?.moduleName)
 				) {
 					this.implementsPart = true
 				}
 
-				let bindingClassParams = bindingClass ? Helper.cls.getConstructorParameters(bindingClass) : null
+				let bindingClassParams = bindingClass ? helper.class.getConstructorParameters(bindingClass) : null
 				this.bindingClassParameterCount = bindingClassParams ? bindingClassParams.length : null
 			}
 		}

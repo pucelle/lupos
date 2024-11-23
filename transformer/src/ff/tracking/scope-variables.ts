@@ -1,6 +1,6 @@
 import * as ts from 'typescript'
 import {ObservedChecker} from './observed-checker'
-import {Helper} from '../../lupos-ts-module'
+import {helper} from '../../core'
 import {TrackingScope} from './scope'
 import {TrackingScopeTypeMask} from './scope-tree'
 
@@ -55,7 +55,7 @@ export class TrackingScopeVariables {
 
 		// If is method of an observed class.
 		else if (ts.isClassDeclaration(node.parent)
-			&& Helper.cls.isImplemented(node.parent, 'Observed', '@pucelle/ff')
+			&& helper.class.isImplemented(node.parent, 'Observed', '@pucelle/ff')
 		) {
 			return true
 		}
@@ -82,7 +82,7 @@ export class TrackingScopeVariables {
 	/** Visit a parameter. */
 	visitParameter(node: ts.ParameterDeclaration) {
 		let observed = ObservedChecker.isParameterObserved(node)
-		this.variableObserved.set(Helper.getFullText(node.name), observed)
+		this.variableObserved.set(helper.getFullText(node.name), observed)
 	}
 
 	/** Visit a variable. */
@@ -95,7 +95,7 @@ export class TrackingScopeVariables {
 		}
 	
 		let observed = this.checkVariableObserved(node, fromScope)
-		let names = Helper.variable.walkDeclarationNames(node)
+		let names = helper.variable.walkDeclarationNames(node)
 
 		for (let {node, name} of names) {
 			let nameObserved = ObservedChecker.isDestructedVariableDeclarationObserved(node, observed)

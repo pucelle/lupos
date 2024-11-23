@@ -1,8 +1,7 @@
 import * as ts from 'typescript'
 import {Part, TreeParser} from './tree'
 import {HTMLNode, HTMLNodeType, HTMLRoot} from '../html-syntax'
-import {factory, Modifier, Packer, Scope, TemplateSlotPlaceholder} from '../../core'
-import {Helper} from '../../lupos-ts-module'
+import {factory, Modifier, Packer, Scope, TemplateSlotPlaceholder, helper} from '../../core'
 import {SlotParserBase} from './slots'
 import {VariableNames} from './variable-names'
 import {SlotPositionType} from '../../enums'
@@ -479,7 +478,7 @@ export class TreeOutputHandler {
 
 	/** Output parameters `(?$values)` of update function. */
 	private outputUpdateParameters(block: ts.Block): ts.ParameterDeclaration[] {
-		let hasValuesRef = !!Helper.findInward(block, node => ts.isIdentifier(node) && node.text === VariableNames.values)
+		let hasValuesRef = !!helper.findInward(block, node => ts.isIdentifier(node) && node.text === VariableNames.values)
 		let params: ts.ParameterDeclaration[] = []
 
 		if (hasValuesRef) {
@@ -498,7 +497,7 @@ export class TreeOutputHandler {
 
 	/** Output parameters `(?$context, ?$latestValues)` of template maker init function. */
 	private outputTemplateInitParameters(block: ts.Block): ts.ParameterDeclaration[] {
-		let hasContextRef = !!Helper.findInward(block, node => ts.isIdentifier(node) && node.text === VariableNames.context)
+		let hasContextRef = !!helper.findInward(block, node => ts.isIdentifier(node) && node.text === VariableNames.context)
 		let params: ts.ParameterDeclaration[] = []
 
 		if (hasContextRef) {

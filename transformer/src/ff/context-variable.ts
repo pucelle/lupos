@@ -1,6 +1,5 @@
 import * as ts from 'typescript'
-import {defineVisitor, factory, Interpolator, InterpolationContentType, Modifier} from '../core'
-import {Helper} from '../lupos-ts-module'
+import {defineVisitor, factory, Interpolator, InterpolationContentType, Modifier, helper} from '../core'
 
 
 defineVisitor(function(node: ts.Node, index: number) {
@@ -10,12 +9,12 @@ defineVisitor(function(node: ts.Node, index: number) {
 		return
 	}
 
-	let decorator = Helper.deco.getFirst(node)!
+	let decorator = helper.deco.getFirst(node)!
 	if (!decorator) {
 		return
 	}
 
-	let decoName = Helper.deco.getName(decorator)
+	let decoName = helper.deco.getName(decorator)
 	if (!decoName || !['setContext', 'useContext'].includes(decoName)) {
 		return
 	}
@@ -67,7 +66,7 @@ get prop(): any {
 ```
 */
 function compileUseContextDecorator(propDecl: ts.PropertyDeclaration): ts.Node[] {
-	let propName = Helper.getFullText(propDecl.name)
+	let propName = helper.getFullText(propDecl.name)
 
 	let propDeclaredBy = factory.createPropertyDeclaration(
 		undefined,

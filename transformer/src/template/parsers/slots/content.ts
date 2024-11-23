@@ -1,8 +1,7 @@
 import type * as ts from 'typescript'
 import {SlotParserBase} from './base'
-import {factory} from '../../../core'
+import {factory, helper} from '../../../core'
 import {SlotContentType} from '../../../enums'
-import {Helper} from '../../../lupos-ts-module'
 
 
 export class ContentSlotParser extends SlotParserBase {
@@ -37,8 +36,8 @@ export class ContentSlotParser extends SlotParserBase {
 
 	private identifySlotContentType(): number | null {
 		let valueNode = this.getFirstRawValueNode()
-		let valueType = valueNode ? Helper.types.typeOf(valueNode) : null
-		let typeText = valueType ? Helper.types.getTypeFullText(valueType) : null
+		let valueType = valueNode ? helper.types.typeOf(valueNode) : null
+		let typeText = valueType ? helper.types.getTypeFullText(valueType) : null
 		let slotContentType: number | null = null
 
 		if (typeText === 'TemplateResult') {
@@ -48,7 +47,7 @@ export class ContentSlotParser extends SlotParserBase {
 			slotContentType = SlotContentType.TemplateResultList
 		}
 		else if (typeText === 'string' || typeText === 'number'
-			|| valueType && Helper.types.isNonNullableValueType(valueType)
+			|| valueType && helper.types.isNonNullableValueType(valueType)
 		) {
 			slotContentType = SlotContentType.Text
 		}

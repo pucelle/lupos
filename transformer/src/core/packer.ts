@@ -1,6 +1,6 @@
 import * as ts from 'typescript'
-import {factory, transformContext} from './global'
-import {AccessNode, Helper} from '../lupos-ts-module'
+import {factory, transformContext, helper} from './global'
+import {AccessNode} from '../lupos-ts-module'
 
 
 /** How the flow was interrupted. */
@@ -363,9 +363,9 @@ export namespace Packer {
 			}
 		}
 		else if (ts.isIdentifier(node)) {
-			return factory.createIdentifier(Helper.getFullText(node)) as ts.Node as T
+			return factory.createIdentifier(helper.getFullText(node)) as ts.Node as T
 		}
-		else if (Helper.isThis(node)) {
+		else if (helper.isThis(node)) {
 			return factory.createThis() as ts.Node as T
 		}
 
@@ -385,7 +385,7 @@ export namespace Packer {
 			return factory.createExpressionStatement(node)
 		}
 		else {
-			throw new Error(`Don't know how to pack "${Helper.getFullText(node)}" to a statement!`)
+			throw new Error(`Don't know how to pack "${helper.getFullText(node)}" to a statement!`)
 		}
 	}
 

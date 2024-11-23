@@ -1,6 +1,6 @@
 import * as ts from 'typescript'
 import {VisitTree} from './visit-tree'
-import {Helper} from '../lupos-ts-module'
+import {helper} from './global'
 import {ScopeTree} from './scope-tree'
 import {InterpolationContentType, Interpolator} from './interpolator'
 
@@ -33,37 +33,37 @@ export class Scope {
 
 		// Variable declaration.
 		if (ts.isVariableDeclaration(node)) {
-			for (let {name} of Helper.variable.walkDeclarationNames(node)) {
+			for (let {name} of helper.variable.walkDeclarationNames(node)) {
 				this.variables.set(name, node)
 			}
 		}
 
 		// Parameter.
 		else if (ts.isParameter(node)) {
-			this.variables.set(Helper.getFullText(node.name), node)
+			this.variables.set(helper.getFullText(node.name), node)
 		}
 
 		// `import {a as b}`,  `import {a}`
 		else if (ts.isImportSpecifier(node)) {
-			this.variables.set(Helper.getFullText(node.name), node)
+			this.variables.set(helper.getFullText(node.name), node)
 		}
 
 		// `import a`
 		else if (ts.isImportClause(node)) {
 			if (node.name) {
-				this.variables.set(Helper.getFullText(node.name), node)
+				this.variables.set(helper.getFullText(node.name), node)
 			}
 		}
 
 		// `import * as a`
 		else if (ts.isNamespaceImport(node)) {
-			this.variables.set(Helper.getFullText(node.name), node)
+			this.variables.set(helper.getFullText(node.name), node)
 		}
 
 		// Class or function declaration
 		else if (ts.isClassDeclaration(node) || ts.isFunctionDeclaration(node)) {
 			if (node.name) {
-				this.variables.set(Helper.getFullText(node.name), node)
+				this.variables.set(helper.getFullText(node.name), node)
 			}
 		}
 	}
@@ -75,7 +75,7 @@ export class Scope {
 
 	/** Whether can add more statements inside. */
 	canAddStatements(): boolean {
-		return !Helper.isFunctionLike(this.node)
+		return !helper.isFunctionLike(this.node)
 			&& !ts.isForStatement(this.node)
 			&& !ts.isForOfStatement(this.node)
 			&& !ts.isForInStatement(this.node)
@@ -202,7 +202,7 @@ export class Scope {
 	findClosestThisScope(): Scope {
 		let scope: Scope = this
 
-		while (!Helper.isNonArrowFunctionLike(scope.node) && !ts.isSourceFile(scope.node)) {
+		while (!helper.isNonArrowFunctionLike(scope.node) && !ts.isSourceFile(scope.node)) {
 			scope = scope.parent!
 		}
 

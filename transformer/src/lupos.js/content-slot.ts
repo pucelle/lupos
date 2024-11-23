@@ -1,6 +1,5 @@
 import * as ts from 'typescript'
-import {defineVisitor, Modifier, factory} from '../core'
-import {Helper} from '../lupos-ts-module'
+import {defineVisitor, Modifier, factory, helper} from '../core'
 import {SlotContentType} from '../enums'
 
 
@@ -10,28 +9,28 @@ defineVisitor(function(node: ts.Node, _index: number) {
 	}
 
 	// Be a component.
-	if (!Helper.cls.isDerivedOf(node, 'Component', '@pucelle/lupos.js')) {
+	if (!helper.class.isDerivedOf(node, 'Component', '@pucelle/lupos.js')) {
 		return
 	}
 
 	// Must not specify `ContentSlotType: ...` itself.
-	let contentSlotProperty = Helper.cls.getProperty(node, 'ContentSlotType')
+	let contentSlotProperty = helper.class.getProperty(node, 'ContentSlotType')
 	if (contentSlotProperty && contentSlotProperty.modifiers?.some(m => m.kind === ts.SyntaxKind.StaticKeyword)) {
 		return
 	}
 
 	// Must specify `render(): ...`
-	let renderMethod = Helper.cls.getMethod(node, 'render')
+	let renderMethod = helper.class.getMethod(node, 'render')
 	if (!renderMethod) {
 		return
 	}
 
-	let renderType = Helper.types.getReturnType(renderMethod)
+	let renderType = helper.types.getReturnType(renderMethod)
 	if (!renderType) {
 		return
 	}
 
-	let typeText = Helper.types.getTypeFullText(renderType)
+	let typeText = helper.types.getTypeFullText(renderType)
 	let slotType: SlotContentType | null = null
 
 	// Check Slot Type.
@@ -42,7 +41,7 @@ defineVisitor(function(node: ts.Node, _index: number) {
 		slotType = SlotContentType.TemplateResultList
 	}
 	else if (typeText === 'string' || typeText === 'number'
-		|| Helper.types.isNonNullableValueType(renderType)
+		|| helper.types.isNonNullableValueType(renderType)
 	) {
 		slotType = SlotContentType.Text
 	}

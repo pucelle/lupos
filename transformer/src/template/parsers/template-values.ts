@@ -1,6 +1,5 @@
 import * as ts from 'typescript'
-import {factory, Interpolator, MutableMask, Packer, ScopeTree} from '../../core'
-import {Helper} from '../../lupos-ts-module'
+import {factory, Interpolator, MutableMask, Packer, ScopeTree, helper} from '../../core'
 import {VariableNames} from './variable-names'
 import {TreeParser} from './tree'
 
@@ -222,7 +221,7 @@ export class TemplateValues {
 
 		// '' + ... if it's not a string type of value.
 		if (!ts.isStringLiteral(parts[0])
-			&& !Helper.types.isStringType(Helper.types.typeOf(firstRawNode))
+			&& !helper.types.isStringType(helper.types.typeOf(firstRawNode))
 		) {
 			parts.unshift(factory.createStringLiteral(''))
 		}

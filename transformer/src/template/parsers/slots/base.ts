@@ -1,8 +1,7 @@
 import * as ts from 'typescript'
 import {HTMLAttribute, HTMLNode, HTMLNodeType} from '../../html-syntax'
 import {PartType, TreeParser} from '../tree'
-import {SourceFileDiagnosticModifier, factory, Modifier, MutableMask, ScopeTree, TemplateSlotPlaceholder, Packer} from '../../../core'
-import {Helper} from '../../../lupos-ts-module'
+import {SourceFileDiagnosticModifier, factory, Modifier, MutableMask, ScopeTree, TemplateSlotPlaceholder, Packer, helper} from '../../../core'
 import {VariableNames} from '../variable-names'
 import {TemplateParser} from '../template'
 import {SlotPositionType} from '../../../enums'
@@ -436,7 +435,7 @@ export abstract class SlotParserBase {
 				return
 			}
 
-			let decls = Helper.symbol.resolveDeclarations(ref, ts.isClassDeclaration)
+			let decls = helper.symbol.resolveDeclarations(ref, ts.isClassDeclaration)
 			if (decls) {
 				yield* decls
 			}
@@ -445,16 +444,16 @@ export abstract class SlotParserBase {
 		// Resolve instance type of constructor interface.
 		else {
 			let ref = this.template.values.getRawValue(TemplateSlotPlaceholder.getUniqueSlotIndex(tagName)!)
-			let decls = Helper.symbol.resolveDeclarations(ref, ts.isClassDeclaration)
+			let decls = helper.symbol.resolveDeclarations(ref, ts.isClassDeclaration)
 			if (decls && decls.length > 0) {
 				yield* decls
 				return
 			}
 
 			// Note made type node can't be resolved.
-			let typeNode = Helper.types.getOrMakeTypeNode(ref)
+			let typeNode = helper.types.getOrMakeTypeNode(ref)
 			if (typeNode) {
-				yield* Helper.symbol.resolveInstanceDeclarations(typeNode)
+				yield* helper.symbol.resolveInstanceDeclarations(typeNode)
 				return
 			}
 		}

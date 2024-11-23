@@ -1,7 +1,7 @@
 import * as ts from 'typescript'
 import {ObservedChecker} from './observed-checker'
-import {FlowInterruptionTypeMask, ScopeTree} from '../../core'
-import {AccessNode, Helper} from '../../lupos-ts-module'
+import {FlowInterruptionTypeMask, ScopeTree, helper} from '../../core'
+import {AccessNode} from '../../lupos-ts-module'
 import {TrackingScopeState} from './scope-state'
 import {TrackingScopeTypeMask} from './scope-tree'
 import {TrackingScopeVariables} from './scope-variables'
@@ -69,7 +69,7 @@ export class TrackingScope {
 	 * Note it's not tracking scope.
 	 */
 	getDeclarationScope() {
-		if (Helper.isFunctionLike(this.node) && this.node.body) {
+		if (helper.isFunctionLike(this.node) && this.node.body) {
 			return ScopeTree.findClosestByNode(this.node.body)
 		}
 		else {
@@ -120,7 +120,7 @@ export class TrackingScope {
 
 			// let {a} = b
 			if (node.initializer) {
-				let names = Helper.variable.walkDeclarationNames(node)
+				let names = helper.variable.walkDeclarationNames(node)
 
 				for (let {node: nameNode, keys} of names) {
 					this.mayAddGetTracking(nameNode, node.initializer, keys)
@@ -129,7 +129,7 @@ export class TrackingScope {
 		}
 
 		// Test and add property access nodes.
-		else if (Helper.access.isAccess(node)) {
+		else if (helper.access.isAccess(node)) {
 
 			// `[].push`, `map.set`, `set.set`
 			if (ObservedChecker.isListStructWriteAccess(node)) {
@@ -145,11 +145,11 @@ export class TrackingScope {
 		}
 
 		// Test and add property assignment nodes.
-		else if (Helper.assign.isAssignment(node)) {
-			let assignTo = Helper.assign.getToExpressions(node)
+		else if (helper.assign.isAssignment(node)) {
+			let assignTo = helper.assign.getToExpressions(node)
 			
 			for (let to of assignTo) {
-				if (Helper.access.isAccess(to)) {
+				if (helper.access.isAccess(to)) {
 					this.mayAddSetTracking(to)
 				}
 			}

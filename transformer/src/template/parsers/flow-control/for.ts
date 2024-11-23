@@ -1,6 +1,5 @@
 import type * as ts from 'typescript'
-import {factory, Modifier} from '../../../core'
-import {Helper} from '../../../lupos-ts-module'
+import {factory, Modifier, helper} from '../../../core'
 import {FlowControlBase} from './base'
 import {SlotContentType} from '../../../enums'
 import {ForceTrackType, ObservedChecker, TrackingPatch} from '../../../ff'
@@ -54,7 +53,7 @@ export class ForFlowControl extends FlowControlBase {
 		else {
 			let fnValueNode = this.template.values.getRawValue(fnValueIndex)
 
-			if (Helper.isFunctionLike(fnValueNode)) {
+			if (helper.isFunctionLike(fnValueNode)) {
 				let firstParameter = fnValueNode.parameters[0]
 				if (firstParameter) {
 					if (shouldObserveElements) {

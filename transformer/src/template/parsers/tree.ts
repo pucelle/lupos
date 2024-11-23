@@ -1,5 +1,4 @@
-import {Scope, TemplateSlotPlaceholder} from '../../core'
-import {Helper} from '../../lupos-ts-module'
+import {Scope, TemplateSlotPlaceholder, helper} from '../../core'
 import {PartPositionType} from '../../enums'
 import {HTMLNode, HTMLNodeType, HTMLRoot, HTMLNodeReferences, HTMLAttribute} from '../html-syntax'
 import {SlotParserBase, DynamicComponentSlotParser, FlowControlSlotParser, PropertySlotParser, BindingSlotParser, EventSlotParser, AttributeSlotParser, TextSlotParser, ContentSlotParser, ComponentSlotParser, SlotTagSlotParser} from './slots'
@@ -521,9 +520,9 @@ export class TreeParser {
 	/** Check whether a value index represents a value type of node. */
 	private isValueIndexValueType(index: number): boolean {
 		let rawNode = this.template.values.getRawValue(index)
-		let type = Helper.types.typeOf(rawNode)
+		let type = helper.types.typeOf(rawNode)
 
-		return Helper.types.isValueType(type)
+		return helper.types.isValueType(type)
 	}
 
 	/** 

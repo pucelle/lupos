@@ -1,6 +1,5 @@
 import * as ts from 'typescript'
-import {VisitTree, FlowInterruptionTypeMask, ScopeTree, HashItem} from '../../core'
-import {Helper} from '../../lupos-ts-module'
+import {VisitTree, FlowInterruptionTypeMask, ScopeTree, HashItem, helper} from '../../core'
 import {AccessReferences} from './access-references'
 import {removeFromList} from '../../utils'
 import {CapturedItem, TrackingCapturer} from './capturer'
@@ -207,7 +206,7 @@ export class TrackingCapturerOperator {
 			for (let {index, type, keys} of item.items) {
 				let node = VisitTree.getNode(index)
 
-				let propDecls = Helper.symbol.resolveDeclarations(node, Helper.isPropertyOrGetSetAccessor)
+				let propDecls = helper.symbol.resolveDeclarations(node, helper.isPropertyOrGetSetAccessor)
 				if (!propDecls || propDecls.length === 0) {
 					continue
 				}
@@ -227,8 +226,8 @@ export class TrackingCapturerOperator {
 				}
 				
 				let name: string | null = null
-				if (Helper.access.isAccess(node)) {
-					name = Helper.access.getPropertyText(node)
+				if (helper.access.isAccess(node)) {
+					name = helper.access.getPropertyText(node)
 				}
 
 				// `let {value} = this`

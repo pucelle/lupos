@@ -1,6 +1,5 @@
 import * as ts from 'typescript'
-import {defineVisitor, factory, Interpolator, InterpolationContentType, TemplateSlotPlaceholder} from '../core'
-import {Helper} from '../lupos-ts-module'
+import {defineVisitor, factory, Interpolator, InterpolationContentType, TemplateSlotPlaceholder, helper} from '../core'
 
 
 defineVisitor(function(node: ts.Node, index: number) {
@@ -8,7 +7,7 @@ defineVisitor(function(node: ts.Node, index: number) {
 		return
 	}
 
-	if (!Helper.symbol.isImportedFrom(node.tag, 'css', '@pucelle/lupos.js')) {
+	if (!helper.symbol.isImportedFrom(node.tag, 'css', '@pucelle/lupos.js')) {
 		return
 	}
 

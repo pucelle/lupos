@@ -1,6 +1,6 @@
 import * as ts from 'typescript'
 import {DiagnosticModifier, TransformerExtras} from '../../../compiler/out/patch'
-import {Helper} from '../lupos-ts-module'
+import {helperOfContext} from '../lupos-ts-module'
 
 
 export let typeChecker: ts.TypeChecker
@@ -8,6 +8,7 @@ export let diagnosticModifier: DiagnosticModifier
 export let factory: ts.NodeFactory
 export let transformContext: ts.TransformationContext
 export let sourceFile: ts.SourceFile
+export let helper: ReturnType<typeof helperOfContext>
 
 
 export function setTransformContext(ctx: ts.TransformationContext, extras: TransformerExtras) {
@@ -15,8 +16,7 @@ export function setTransformContext(ctx: ts.TransformationContext, extras: Trans
 	factory = ctx.factory
 	typeChecker = extras.program.getProgram().getTypeChecker()
 	diagnosticModifier = extras.diagnosticModifier
-
-	Helper.setContext(ts, typeChecker, ctx)
+	helper = helperOfContext(ts, typeChecker, ctx)
 }
 
 

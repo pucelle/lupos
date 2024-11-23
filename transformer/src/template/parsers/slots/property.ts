@@ -1,7 +1,6 @@
 import * as ts from 'typescript'
 import {SlotParserBase} from './base'
-import {factory, Modifier, Packer, TemplateSlotPlaceholder} from '../../../core'
-import {Helper} from '../../../lupos-ts-module'
+import {factory, Modifier, Packer, TemplateSlotPlaceholder, helper} from '../../../core'
 
 
 export class PropertySlotParser extends SlotParserBase {
@@ -46,7 +45,7 @@ export class PropertySlotParser extends SlotParserBase {
 		}
 
 		for (let classDecl of classDeclarations) {
-			let interfaceAndClassDecls = Helper.symbol.resolveChainedClassesAndInterfaces(classDecl)
+			let interfaceAndClassDecls = helper.symbol.resolveChainedClassesAndInterfaces(classDecl)
 
 			for (let decl of interfaceAndClassDecls) {
 				for (let member of decl.members) {
@@ -54,7 +53,7 @@ export class PropertySlotParser extends SlotParserBase {
 						continue
 					}
 
-					if (Helper.getFullText(member.name) === this.name) {
+					if (helper.getFullText(member.name) === this.name) {
 						return 'component'
 					}
 				}

@@ -1,7 +1,6 @@
 import * as ts from 'typescript'
 import {AccessNode} from '../../lupos-ts-module'
-import {typeChecker} from '../../core'
-import {Helper} from '../../lupos-ts-module'
+import {typeChecker, helper} from '../../core'
 import {TrackingScopeTree} from './scope-tree'
 import {GenericType} from 'typescript'
 import {TrackingPatch} from './patch'
@@ -43,7 +42,7 @@ export namespace ObservedChecker {
 		}
 
 		// `Observed<>`, must use it directly.
-		if (Helper.symbol.isImportedFrom(typeNode, 'Observed', '@pucelle/ff')) {
+		if (helper.symbol.isImportedFrom(typeNode, 'Observed', '@pucelle/ff')) {
 			return true
 		}
 
@@ -54,7 +53,7 @@ export namespace ObservedChecker {
 			resolveFrom = typeNode.typeName
 		}
 
-		let decl = Helper.symbol.resolveDeclaration(resolveFrom)
+		let decl = helper.symbol.resolveDeclaration(resolveFrom)
 		if (!decl) {
 			return false
 		}
@@ -91,7 +90,7 @@ export namespace ObservedChecker {
 			return false
 		}
 
-		let decl = Helper.symbol.resolveDeclarationBySymbol(symbol)
+		let decl = helper.symbol.resolveDeclarationBySymbol(symbol)
 		if (!decl) {
 			return false
 		}
@@ -115,7 +114,7 @@ export namespace ObservedChecker {
 
 		// `Component` like.
 		if (ts.isClassDeclaration(decl)
-			&& Helper.cls.isImplemented(decl, 'Observed', '@pucelle/ff')
+			&& helper.class.isImplemented(decl, 'Observed', '@pucelle/ff')
 		) {
 			return true 
 		}
@@ -140,7 +139,7 @@ export namespace ObservedChecker {
 			return true
 		}
 
-		let type = Helper.types.typeOf(rawNode)
+		let type = helper.types.typeOf(rawNode)
 		if (type && isTypeObserved(type)) {
 			return true
 		}
@@ -163,7 +162,7 @@ export namespace ObservedChecker {
 		}
 
 		// Typescript lib.
-		if (Helper.symbol.isOfTypescriptLib(rawNode)) {
+		if (helper.symbol.isOfTypescriptLib(rawNode)) {
 			return false
 		}
 		
@@ -179,7 +178,7 @@ export namespace ObservedChecker {
 
 		// `class A{p: Observed}` -> `this.p` and `this['p']` is observed.
 		// `interface A{p: Observed}` -> `this.p` and `this['p']` is observed.
-		let propDecl = Helper.symbol.resolveDeclaration(rawNode, Helper.isPropertyOrGetAccessor)
+		let propDecl = helper.symbol.resolveDeclaration(rawNode, helper.isPropertyOrGetAccessor)
 		if (!propDecl) {
 			return false
 		}
@@ -192,7 +191,7 @@ export namespace ObservedChecker {
 
 		// Return type of declaration.
 		if (ts.isGetAccessorDeclaration(propDecl)) {
-			let returnType = Helper.types.getReturnType(propDecl)
+			let returnType = helper.types.getReturnType(propDecl)
 			if (returnType &&isTypeObserved(returnType)) {
 				return true
 			}
@@ -233,13 +232,13 @@ export namespace ObservedChecker {
 
 		// `a.b.map`
 		let exp = calling.expression
-		if (!Helper.access.isAccess(exp)) {
+		if (!helper.access.isAccess(exp)) {
 			return false
 		}
 
 		// `a.b`
 		let callFrom = exp.expression
-		if (!Helper.isListStruct(callFrom)) {
+		if (!helper.isListStruct(callFrom)) {
 			return false
 		}
 
@@ -297,14 +296,14 @@ export namespace ObservedChecker {
 		// `a.b`
 		// `(a ? b : c).d`
 		// `(a ?? b).b`
-		if (Helper.access.isAccess(rawNode)) {
+		if (helper.access.isAccess(rawNode)) {
 			return isAccessObserved(rawNode, parental)
 		}
 
 		// `this`
 		// `a`
-		else if (Helper.isThis(rawNode)
-			|| Helper.isVariableIdentifier(rawNode)
+		else if (helper.isThis(rawNode)
+			|| helper.isVariableIdentifier(rawNode)
 		) {
 			return isIdentifierObserved(rawNode as ts.Identifier | ts.ThisExpression)
 		}
@@ -332,7 +331,7 @@ export namespace ObservedChecker {
 		// `(a as Observed<{b: number}>).b`
 		else if (ts.isAsExpression(rawNode)) {
 			let typeNode = rawNode.type
-			return typeNode && Helper.symbol.isImportedFrom(typeNode, 'Observed', '@pucelle/ff')
+			return typeNode && helper.symbol.isImportedFrom(typeNode, 'Observed', '@pucelle/ff')
 		}
 
 		// `a ? b : c`, can observe only if both b & c can observe.
@@ -368,12 +367,12 @@ export namespace ObservedChecker {
 	function isAccessObserved(rawNode: AccessNode, parental: boolean = false): boolean {
 
 		// `[]`, `Map`, `Set`.
-		if (Helper.isListStruct(rawNode.expression)) {
+		if (helper.isListStruct(rawNode.expression)) {
 			return isObserved(rawNode.expression, true)
 		}
 
 		// Typescript lib.
-		if (Helper.symbol.isOfTypescriptLib(rawNode)) {
+		if (helper.symbol.isOfTypescriptLib(rawNode)) {
 			return false
 		}
 
@@ -386,21 +385,21 @@ export namespace ObservedChecker {
 			}
 
 			// Will not observe property starts with '$' like `a.$b`.
-			if (Helper.access.getPropertyText(rawNode).startsWith('$')) {
+			if (helper.access.getPropertyText(rawNode).startsWith('$')) {
 				return false
 			}
 
 			// Ignore get and set accessor, except `@computed` decorated.
-			let decl = Helper.symbol.resolveDeclaration(rawNode, ts.isAccessor)
+			let decl = helper.symbol.resolveDeclaration(rawNode, ts.isAccessor)
 			if (decl) {
-				let decoName = Helper.deco.getFirstName(decl)
+				let decoName = helper.deco.getFirstName(decl)
 				if (decoName !== 'computed') {
 					return false
 				}
 			}
 
 			// Readonly properties are not observe.
-			let readonly = Helper.types.isReadonly(rawNode)
+			let readonly = helper.types.isReadonly(rawNode)
 			if (readonly) {
 				return false
 			}
@@ -420,12 +419,12 @@ export namespace ObservedChecker {
 		let expType = typeChecker.getTypeAtLocation(exp)
 
 		// Visiting like string index will not get observed.
-		if (Helper.types.isValueType(expType)) {
+		if (helper.types.isValueType(expType)) {
 			return false
 		}
 
 		// Method declarations will always not been observe.
-		if (Helper.symbol.resolveDeclaration(rawNode, Helper.isMethodLike)) {
+		if (helper.symbol.resolveDeclaration(rawNode, helper.isMethodLike)) {
 			return false
 		}
 
@@ -437,7 +436,7 @@ export namespace ObservedChecker {
 		// This codes get commented, so no matter what class instance,
 		// once it appears as a property, it will be observed.
 		// let clsDecl = helper.symbol.resolveDeclarationByType(type, ts.isClassDeclaration)
-		// if (clsDecl && !helper.cls.isImplemented(clsDecl, 'Observed', '@pucelle/ff')) {
+		// if (clsDecl && !helper.class.isImplemented(clsDecl, 'Observed', '@pucelle/ff')) {
 		// 	return false
 		// }
 
@@ -453,7 +452,7 @@ export namespace ObservedChecker {
 	function isIdentifierObserved(rawNode: ts.Identifier | ts.ThisExpression): boolean {
 		let scope = TrackingScopeTree.findClosest(rawNode)
 
-		if (Helper.isThis(rawNode)) {
+		if (helper.isThis(rawNode)) {
 			return scope.variables.thisObserved
 		}
 
@@ -464,7 +463,7 @@ export namespace ObservedChecker {
 	
 	/** Returns whether a call expression returned result should be observed. */
 	function isCallObserved(rawNode: ts.CallExpression): boolean {
-		let decl = Helper.symbol.resolveDeclaration(rawNode.expression, Helper.isFunctionLike)
+		let decl = helper.symbol.resolveDeclaration(rawNode.expression, helper.isFunctionLike)
 		if (!decl) {
 			return false
 		}
@@ -476,7 +475,7 @@ export namespace ObservedChecker {
 		}
 
 		// Test call method returned type.
-		let returnType = Helper.types.getReturnType(decl)
+		let returnType = helper.types.getReturnType(decl)
 		if (returnType && isTypeObserved(returnType)) {
 			return true
 		}
@@ -487,8 +486,8 @@ export namespace ObservedChecker {
 
 	/** Returns whether instance of a reference of a class is observed. */
 	function isInstanceObserved(rawNode: ts.Identifier | ts.ClassExpression): boolean {
-		let clsDecl = Helper.symbol.resolveDeclaration(rawNode, ts.isClassDeclaration)
-		if (clsDecl && Helper.cls.isImplemented(clsDecl, 'Observed', '@pucelle/ff')) {
+		let clsDecl = helper.symbol.resolveDeclaration(rawNode, ts.isClassDeclaration)
+		if (clsDecl && helper.class.isImplemented(clsDecl, 'Observed', '@pucelle/ff')) {
 			return true 
 		}
 
@@ -498,10 +497,10 @@ export namespace ObservedChecker {
 
 	/** Test whether calls reading process of `Map`, `Set`, `Array`. */
 	export function isListStructReadAccess(rawNode: AccessNode): boolean {
-		let expType = Helper.types.typeOf(rawNode.expression)
-		let expTypeNode = Helper.types.getOrMakeTypeNode(rawNode.expression)
-		let objName = expTypeNode ? Helper.types.getTypeNodeReferenceName(expTypeNode) : undefined
-		let propName = Helper.access.getPropertyText(rawNode)
+		let expType = helper.types.typeOf(rawNode.expression)
+		let expTypeNode = helper.types.getOrMakeTypeNode(rawNode.expression)
+		let objName = expTypeNode ? helper.types.getTypeNodeReferenceName(expTypeNode) : undefined
+		let propName = helper.access.getPropertyText(rawNode)
 
 		if (objName === 'Map') {
 			return propName === 'has' || propName === 'get' || propName === 'size'
@@ -509,8 +508,8 @@ export namespace ObservedChecker {
 		else if (objName === 'Set') {
 			return propName === 'has' || propName === 'size'
 		}
-		else if (Helper.types.isArrayType(expType)) {
-			let methodDecl = Helper.symbol.resolveDeclaration(rawNode, Helper.isMethodLike)
+		else if (helper.types.isArrayType(expType)) {
+			let methodDecl = helper.symbol.resolveDeclaration(rawNode, helper.isMethodLike)
 
 			return !methodDecl || !(
 				propName === 'push'
@@ -526,10 +525,10 @@ export namespace ObservedChecker {
 
 	/** Test whether calls `Map.set`, or `Set.set`. */
 	export function isListStructWriteAccess(rawNode: AccessNode) {
-		let expType = Helper.types.typeOf(rawNode.expression)
-		let expTypeNode = Helper.types.getOrMakeTypeNode(rawNode.expression)
-		let objName = expTypeNode ? Helper.types.getTypeNodeReferenceName(expTypeNode) : undefined
-		let propName = Helper.access.getPropertyText(rawNode)
+		let expType = helper.types.typeOf(rawNode.expression)
+		let expTypeNode = helper.types.getOrMakeTypeNode(rawNode.expression)
+		let objName = expTypeNode ? helper.types.getTypeNodeReferenceName(expTypeNode) : undefined
+		let propName = helper.access.getPropertyText(rawNode)
 
 		if (objName === 'Map') {
 			return propName === 'set' || propName === 'clear'
@@ -537,8 +536,8 @@ export namespace ObservedChecker {
 		else if (objName === 'Set') {
 			return propName === 'add' || propName === 'clear'
 		}
-		else if (Helper.types.isArrayType(expType)) {
-			let methodDecl = Helper.symbol.resolveDeclaration(rawNode, Helper.isMethodLike)
+		else if (helper.types.isArrayType(expType)) {
+			let methodDecl = helper.symbol.resolveDeclaration(rawNode, helper.isMethodLike)
 
 			return !!methodDecl && (
 				propName === 'push'

@@ -1,5 +1,5 @@
-import {factory, InterpolationContentType, Interpolator, Modifier, transformContext, VisitTree, ScopeTree} from '../../core'
-import {AccessNode, Helper} from '../../lupos-ts-module'
+import {factory, InterpolationContentType, Interpolator, Modifier, transformContext, VisitTree, ScopeTree, helper} from '../../core'
+import {AccessNode} from '../../lupos-ts-module'
 import * as ts from 'typescript'
 import {TrackingScopeTree} from './scope-tree'
 import {TrackingScope} from './scope'
@@ -54,8 +54,8 @@ export namespace AccessReferences {
 		let node = VisitTree.getNode(index)
 
 		if (ignoreListStructKey
-			&& Helper.access.isAccess(node)
-			&& Helper.isListStruct(node.expression)
+			&& helper.access.isAccess(node)
+			&& helper.isListStruct(node.expression)
 		) {
 			return hasExternalAccessReferenced(VisitTree.getIndex(node.expression), false)
 		}
@@ -72,7 +72,7 @@ export namespace AccessReferences {
 	/** Visit an assess node, and it may make several reference items. */
 	export function visitAssess(node: AccessNode) {
 		let expIndex = VisitTree.getIndex(node.expression)!
-		let nameNode = Helper.access.getPropertyNode(node)
+		let nameNode = helper.access.getPropertyNode(node)
 		let nameIndex = VisitTree.getIndex(nameNode)
 
 		visitAssessVisitor(node.expression, expIndex)
@@ -92,7 +92,7 @@ export namespace AccessReferences {
 		VisitedNodes.add(node)
 
 		// `a?.b` has been replaced to `a.b`
-		if (Helper.access.isAccess(node) || Helper.isVariableIdentifier(node)) {
+		if (helper.access.isAccess(node) || helper.isVariableIdentifier(node)) {
 			let assignIndex = ScopeTree.whereWillBeAssigned(node)
 			if (assignIndex !== undefined) {
 				WillBeAssignedIndices.set(topIndex, assignIndex)
@@ -106,7 +106,7 @@ export namespace AccessReferences {
 	/** Visit an assess node, reference after determined should reference. */
 	export function mayReferenceAccess(index: number, toIndex: number, scope: TrackingScope) {
 		let node = VisitTree.getNode(index)
-		if (!Helper.access.isAccess(node)) {
+		if (!helper.access.isAccess(node)) {
 			return
 		}
 
@@ -116,7 +116,7 @@ export namespace AccessReferences {
 		}
 
 		let expIndex = VisitTree.getIndex(node.expression)!
-		let nameNode = Helper.access.getPropertyNode(node)
+		let nameNode = helper.access.getPropertyNode(node)
 		let nameIndex = VisitTree.getIndex(nameNode)
 
 		// Use a reference variable to replace expression.

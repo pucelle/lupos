@@ -1,8 +1,8 @@
 import * as ts from 'typescript'
 import {TrackingScope} from './scope'
 import {TrackingScopeTypeMask} from './scope-tree'
-import {FlowInterruptionTypeMask, Packer, VisitTree} from '../../core'
-import {AccessNode, Helper} from '../../lupos-ts-module'
+import {FlowInterruptionTypeMask, Packer, VisitTree, helper} from '../../core'
+import {AccessNode} from '../../lupos-ts-module'
 
 
 export class TrackingScopeState {
@@ -62,11 +62,11 @@ export class TrackingScopeState {
 			return false
 		}
 
-		if (!Helper.cls.isDerivedOf(classNode, 'Component', '@pucelle/lupos.js')) {
+		if (!helper.class.isDerivedOf(classNode, 'Component', '@pucelle/lupos.js')) {
 			return false
 		}
 
-		let methodName = Helper.getText(node.name)
+		let methodName = helper.getText(node.name)
 		return ['onCreated', 'onConnected', 'onWillDisconnect'].includes(methodName)
 	}
 
@@ -94,7 +94,7 @@ export class TrackingScopeState {
 			return false
 		}
 
-		let isVoidReturning = Helper.types.isVoidReturning(node as ts.FunctionLikeDeclaration)
+		let isVoidReturning = helper.types.isVoidReturning(node as ts.FunctionLikeDeclaration)
 
 		// An instantly run function should inherit whether stop get tracking.
 		if (this.scope.type & TrackingScopeTypeMask.InstantlyRunFunction) {
@@ -113,7 +113,7 @@ export class TrackingScopeState {
 			return this.scope.parent?.state.effectDecorated ?? false
 		}
 
-		let decoName = Helper.deco.getFirstName(node)
+		let decoName = helper.deco.getFirstName(node)
 		return decoName === 'effect'
 	}
 
@@ -154,8 +154,8 @@ export class TrackingScopeState {
 	/** Whether should ignore set tracking. */
 	shouldIgnoreSetTracking(node: AccessNode | ts.Identifier): boolean {
 		if (this.withinLifeFunction) {
-			if (Helper.access.isAccess(node)
-				&& Helper.isThis(node.expression)
+			if (helper.access.isAccess(node)
+				&& helper.isThis(node.expression)
 			) {
 				return true
 			}
@@ -167,8 +167,8 @@ export class TrackingScopeState {
 	/** Whether should ignore get tracking. */
 	shouldIgnoreGetTracking(node: AccessNode | ts.Identifier): boolean {
 		if (this.withinLifeFunction) {
-			if (Helper.access.isAccess(node)
-				&& Helper.isThis(node.expression)
+			if (helper.access.isAccess(node)
+				&& helper.isThis(node.expression)
 			) {
 				return true
 			}

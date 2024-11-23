@@ -1,6 +1,6 @@
 import * as ts from 'typescript'
-import {InterpolationContentType, Interpolator, InterpolationPosition, VisitTree, FlowInterruptionTypeMask, ScopeTree, Packer} from '../../core'
-import {AccessNode, Helper} from '../../lupos-ts-module'
+import {InterpolationContentType, Interpolator, InterpolationPosition, VisitTree, FlowInterruptionTypeMask, ScopeTree, Packer, helper} from '../../core'
+import {AccessNode} from '../../lupos-ts-module'
 import {TrackingScope} from './scope'
 import {TrackingScopeTree, TrackingScopeTypeMask} from './scope-tree'
 import {AccessGrouper} from './access-grouper'
@@ -162,15 +162,15 @@ export class TrackingCapturer {
 		if (!exp) {
 
 			// `a[0]` -> `trackGet(a, '')`
-			if (Helper.access.isAccess(node)
-				&& Helper.isListStruct(node.expression)
+			if (helper.access.isAccess(node)
+				&& helper.isListStruct(node.expression)
 			) {
 				exp = node.expression
 				keys = ['']
 			}
 
 			// `[...a]`
-			else if (Helper.isArraySpreadElement(node)) {
+			else if (helper.isArraySpreadElement(node)) {
 				exp = node
 				keys = ['']
 			}

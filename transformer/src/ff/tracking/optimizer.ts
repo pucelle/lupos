@@ -1,6 +1,5 @@
 import * as ts from 'typescript'
-import {Modifier} from '../../core'
-import {Helper} from '../../lupos-ts-module'
+import {Modifier, helper} from '../../core'
 import {TrackingScope} from './scope'
 import {TrackingScopeTree, TrackingScopeTypeMask} from './scope-tree'
 import {TrackingCapturerOperator} from './capturer-operator'
@@ -402,14 +401,14 @@ export namespace Optimizer {
 				continue
 			}
 
-			let name = Helper.getText(member.name)
+			let name = helper.getText(member.name)
 			let nameMapItem = nameMap.get(name)
 			if (!nameMapItem) {
 				continue
 			}
 
-			let decorators = Helper.deco.getDecorators(member)
-			let computed = decorators.find(deco => Helper.deco.getName(deco) === 'computed')
+			let decorators = helper.deco.getDecorators(member)
+			let computed = decorators.find(deco => helper.deco.getName(deco) === 'computed')
 			if (!computed) {
 				continue
 			}

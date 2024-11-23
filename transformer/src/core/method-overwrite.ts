@@ -1,6 +1,5 @@
 import * as ts from 'typescript'
-import {Helper} from '../lupos-ts-module'
-import {factory} from './global'
+import {factory, helper} from './global'
 import {VisitTree} from './visit-tree'
 import {InterpolationContentType, Interpolator} from './interpolator'
 
@@ -27,15 +26,15 @@ export class MethodOverwrite {
 		this.name = name
 
 		if (name === 'constructor') {
-			this.rawNode = Helper.cls.getConstructor(classNode) ?? null
+			this.rawNode = helper.class.getConstructor(classNode) ?? null
 		}
 		else {
-			this.rawNode = Helper.cls.getMethod(classNode, name) ?? null
+			this.rawNode = helper.class.getMethod(classNode, name) ?? null
 		}
 
 		if (this.rawNode) {
 			this.superIndex = this.rawNode!.body!.statements.findIndex(s => {
-				Helper.getFullText(s).startsWith('super')
+				helper.getFullText(s).startsWith('super')
 			})
 		}
 		else {
@@ -50,9 +49,9 @@ export class MethodOverwrite {
 
 	/** Create a constructor function. */
 	private createConstructor(): ts.ConstructorDeclaration {
-		let parameters = Helper.cls.getConstructorParameters(this.classNode) ?? []
+		let parameters = helper.class.getConstructorParameters(this.classNode) ?? []
 		let statements: ts.Statement[] = []
-		let superCls = Helper.cls.getSuper(this.classNode)
+		let superCls = helper.class.getSuper(this.classNode)
 
 		if (superCls) {
 			let callSuper = factory.createExpressionStatement(factory.createCallExpression(

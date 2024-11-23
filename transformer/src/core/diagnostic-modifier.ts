@@ -1,7 +1,6 @@
 import * as ts from 'typescript'
 import {definePreVisitCallback} from './visitor-callbacks'
-import {diagnosticModifier, sourceFile} from './global'
-import {Helper} from '../lupos-ts-module/helper'
+import {diagnosticModifier, sourceFile, helper} from './global'
 
 
 // Where to find diagnostic codes:
@@ -92,7 +91,7 @@ export namespace SourceFileDiagnosticModifier {
 		}
 
 		// Diagnostic normally locate at declaration identifier.
-		node = Helper.getIdentifier(node) ?? node
+		node = helper.getIdentifier(node) ?? node
 
 		remove(node, [6133, 6196])
 	}

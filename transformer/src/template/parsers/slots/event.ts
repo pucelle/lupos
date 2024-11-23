@@ -1,7 +1,6 @@
 import * as ts from 'typescript'
 import {SlotParserBase} from './base'
-import {factory, Modifier, TemplateSlotPlaceholder} from '../../../core'
-import {Helper} from '../../../lupos-ts-module'
+import {factory, Modifier, TemplateSlotPlaceholder, helper} from '../../../core'
 import {VariableNames} from '../variable-names'
 
 
@@ -66,14 +65,14 @@ export class EventSlotParser extends SlotParserBase {
 		}
 
 		for (let classDecl of classDeclarations) {
-			let interfaceDecls = Helper.symbol.resolveExtendedInterfaceLikeTypeParameters(classDecl, 'EventFirer', 0)
+			let interfaceDecls = helper.symbol.resolveExtendedInterfaceLikeTypeParameters(classDecl, 'EventFirer', 0)
 			for (let decl of interfaceDecls) {
 				for (let member of decl.members) {
 					if (!member.name) {
 						continue
 					}
 
-					if (Helper.getText(member.name) === this.name) {
+					if (helper.getText(member.name) === this.name) {
 						return 'component'
 					}
 				}

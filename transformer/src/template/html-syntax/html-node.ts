@@ -1,6 +1,5 @@
 import * as ts from 'typescript'
-import {TemplateSlotPlaceholder} from '../../core'
-import {Helper} from '../../lupos-ts-module'
+import {TemplateSlotPlaceholder, helper} from '../../core'
 import {removeFromList} from '../../utils'
 import {HTMLAttribute, HTMLTokenParser} from './html-token-parser'
 
@@ -203,9 +202,9 @@ export class HTMLNode {
 			// First part is value, and the value is not object type.
 			if (valueIndices && (!strings || !strings[0])) {
 				let firstRawNode = rawValueNodes[valueIndices[0]]
-				let type = Helper.types.typeOf(firstRawNode)
+				let type = helper.types.typeOf(firstRawNode)
 
-				if (!Helper.types.isValueType(type)) {
+				if (!helper.types.isValueType(type)) {
 					return false
 				}
 			}
@@ -254,7 +253,7 @@ export class HTMLNode {
 			return tab
 				+ TemplateSlotPlaceholder.replaceTemplateString(
 					`<${tagName}${this.toStringOfAttrs(true)}${children.length === 0 ? ' /' : ''}>`,
-					(index: number) => '${' + Helper.getFullText(rawValueNodes[index]) + '}'
+					(index: number) => '${' + helper.getFullText(rawValueNodes[index]) + '}'
 				)
 				+ children.map(child => child.toReadableString(rawValueNodes, wrap ? tab + '\t' : ''))
 					.map(v => wrap + v).join('')
@@ -267,7 +266,7 @@ export class HTMLNode {
 		else if (this.desc) {
 			return TemplateSlotPlaceholder.replaceTemplateString(
 				tab + this.desc,
-				(index: number) => '${' + Helper.getFullText(rawValueNodes[index]) + '}'
+				(index: number) => '${' + helper.getFullText(rawValueNodes[index]) + '}'
 			)
 		}
 		else if (this.type === HTMLNodeType.Text && this.text) {

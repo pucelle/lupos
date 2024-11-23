@@ -1,8 +1,7 @@
 import * as ts from 'typescript'
 import {ListMap} from '../utils'
-import {factory, transformContext} from './global'
+import {factory, transformContext, helper} from './global'
 import {VisitTree} from './visit-tree'
-import {Helper} from '../lupos-ts-module'
 import {definePreVisitCallback} from './visitor-callbacks'
 import {Packer} from './packer'
 
@@ -176,7 +175,7 @@ export namespace Interpolator {
 			)
 		}
 		else {
-			throw new Error(`Don't know how to add child nodes for "${Helper.getFullText(node)}"!`)
+			throw new Error(`Don't know how to add child nodes for "${helper.getFullText(node)}"!`)
 		}
 	}
 
@@ -316,7 +315,7 @@ export namespace Interpolator {
 
 		let replace = items.filter(item => item.position === InterpolationPosition.Replace)
 		if (replace.length > 1) {
-			throw new Error(`Only one replace is allowed, happened at position "${Helper.getFullText(VisitTree.getNode(index))}"!`)
+			throw new Error(`Only one replace is allowed, happened at position "${helper.getFullText(VisitTree.getNode(index))}"!`)
 		}
 
 		let node: ts.Node | ts.Node[] | undefined
@@ -326,7 +325,7 @@ export namespace Interpolator {
 
 			if (prependNodes.length > 0 || appendNodes.length > 0) {
 				let childNodes = [...prependNodes, ...appendNodes]
-				console.warn(`Child nodes "${childNodes.map(n => Helper.getFullText(n)).join(', ')}" have been dropped!`)
+				console.warn(`Child nodes "${childNodes.map(n => helper.getFullText(n)).join(', ')}" have been dropped!`)
 			}
 		}
 		else {
@@ -350,8 +349,8 @@ export namespace Interpolator {
 		}
 
 		// console.log('-------------------------------------')
-		// console.log('FROM', Helper.getText(VisitTree.getNode(index)))
-		// console.log('TO', Array.isArray(node) ? node.map(n => Helper.getText(n)) : node ? Helper.getText((node)) : 'NONE')
+		// console.log('FROM', helper.getText(VisitTree.getNode(index)))
+		// console.log('TO', Array.isArray(node) ? node.map(n => helper.getText(n)) : node ? helper.getText((node)) : 'NONE')
 
 		return node && Array.isArray(node) && node.length === 1 ? node[0] : node
 	}
@@ -368,11 +367,11 @@ export namespace Interpolator {
 		let node = Interpolator.outputSelf(index, false)
 
 		if (!node) {
-			throw new Error(`"${Helper.getFullText(rawNode)}" has been removed!`)
+			throw new Error(`"${helper.getFullText(rawNode)}" has been removed!`)
 		}
 
 		if (Array.isArray(node)) {
-			throw new Error(`"${Helper.getFullText(rawNode)}" has been replaced to several!`)
+			throw new Error(`"${helper.getFullText(rawNode)}" has been replaced to several!`)
 		}
 
 		return node

@@ -1,6 +1,5 @@
 import * as ts from 'typescript'
-import {defineVisitor, factory, Interpolator, VisitTree, MethodOverwrite, Modifier, MethodInsertPosition} from '../core'
-import {Helper} from '../lupos-ts-module'
+import {defineVisitor, factory, Interpolator, VisitTree, MethodOverwrite, Modifier, MethodInsertPosition, helper} from '../core'
 import {ProcessorClassNameMap, ProcessorPropNameMap} from './decorators-shared'
 import {Packer} from '../core/packer'
 
@@ -22,7 +21,7 @@ defineVisitor(function(node: ts.Node, _index: number) {
 	let hasDeletedContextVariables = false
 
 	// Be a component.
-	if (Helper.cls.isDerivedOf(node, 'Component', '@pucelle/lupos.js')) {
+	if (helper.class.isDerivedOf(node, 'Component', '@pucelle/lupos.js')) {
 		create = new MethodOverwrite(node, 'onCreated')
 		connect = new MethodOverwrite(node, 'onConnected')
 		disconnect = new MethodOverwrite(node, 'onWillDisconnect')
@@ -39,12 +38,12 @@ defineVisitor(function(node: ts.Node, _index: number) {
 			continue
 		}
 
-		let deco = Helper.deco.getFirst(member)
+		let deco = helper.deco.getFirst(member)
 		if (!deco) {
 			continue
 		}
 
-		let decoName = Helper.deco.getName(deco)
+		let decoName = helper.deco.getName(deco)
 		if (!decoName) {
 			continue
 		}
@@ -80,7 +79,7 @@ function hasLifeDecorators(node: ts.ClassDeclaration) {
 			return false
 		}
 
-		let decoName = Helper.deco.getFirstName(member)
+		let decoName = helper.deco.getFirstName(member)
 		if (decoName && ['computed', 'effect', 'watch', 'useContext', 'setContext'].includes(decoName)) {
 			return true
 		}
@@ -126,9 +125,9 @@ function compileComputedEffectWatchDecorator(
 	connect: MethodOverwrite | null,
 	disconnect: MethodOverwrite | null
 ) {
-	let methodName = Helper.getFullText(decl.name)
-	let superCls = Helper.cls.getSuper(decl.parent as ts.ClassDeclaration)
-	let isOverwritten = !!superCls && !!Helper.cls.getMember(superCls, methodName, true)
+	let methodName = helper.getFullText(decl.name)
+	let superCls = helper.class.getSuper(decl.parent as ts.ClassDeclaration)
+	let isOverwritten = !!superCls && !!helper.class.getMember(superCls, methodName, true)
 
 	if (isOverwritten) {
 		return
@@ -191,7 +190,7 @@ function makeMakerParameters(
 	decoName: string,
 	decl: ts.MethodDeclaration | ts.GetAccessorDeclaration
 ): () => ts.Expression[] {
-	let methodName = Helper.getFullText(decl.name)
+	let methodName = helper.getFullText(decl.name)
 	let watchGetters = compileWatchGetters(deco)
 
 	return () => {
@@ -330,8 +329,8 @@ function compileSetContextDecorator(
 	disconnect: MethodOverwrite | null,
 	hasDeletedContextVariables: boolean
 ) {
-	let propName = Helper.getFullText(propDecl.name)
-	let extended = Helper.cls.getExtends(propDecl.parent as ts.ClassDeclaration)!
+	let propName = helper.getFullText(propDecl.name)
+	let extended = helper.class.getExtends(propDecl.parent as ts.ClassDeclaration)!
 	let classExp = extended.expression
 		
 	let connectStatement = factory.createExpressionStatement(factory.createCallExpression(
@@ -389,8 +388,8 @@ function compileUseContextDecorator(
 	disconnect: MethodOverwrite | null,
 	hasDeletedContextVariables: boolean
 ) {
-	let propName = Helper.getFullText(propDecl.name)
-	let extended = Helper.cls.getExtends(propDecl.parent as ts.ClassDeclaration)!
+	let propName = helper.getFullText(propDecl.name)
+	let extended = helper.class.getExtends(propDecl.parent as ts.ClassDeclaration)!
 	let classExp = extended.expression
 	
 	let connectStatement = factory.createExpressionStatement(factory.createBinaryExpression(

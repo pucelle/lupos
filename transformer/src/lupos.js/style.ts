@@ -1,6 +1,5 @@
 import * as ts from 'typescript'
-import {defineVisitor, factory, Interpolator, InterpolationContentType} from '../core'
-import {Helper} from '../lupos-ts-module'
+import {defineVisitor, factory, Interpolator, InterpolationContentType, helper} from '../core'
 
 
 // Add `Com.ensureStyle()` after class declaration.
@@ -15,12 +14,12 @@ defineVisitor(function(node: ts.Node, index: number) {
 	}
 
 	// Be a component.
-	if (!Helper.cls.isDerivedOf(node, 'Component', '@pucelle/lupos.js')) {
+	if (!helper.class.isDerivedOf(node, 'Component', '@pucelle/lupos.js')) {
 		return
 	}
 
 	// Must has own style declared.
-	let style = Helper.cls.getMember(node, 'style')
+	let style = helper.class.getMember(node, 'style')
 	if (!style
 		|| !ts.isPropertyDeclaration(style) && !ts.isMethodDeclaration(style)
 		|| !style.modifiers?.some(m => m.kind === ts.SyntaxKind.StaticKeyword)

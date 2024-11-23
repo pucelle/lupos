@@ -1,7 +1,7 @@
 import * as ts from 'typescript'
-import {factory, Modifier, Packer} from '../../core'
-import {AccessNode, Helper} from '../../lupos-ts-module'
+import {factory, Modifier, Packer, helper} from '../../core'
 import {groupBy} from '../../utils'
+import {AccessNode} from '../../lupos-ts-module'
 
 
 export namespace AccessGrouper {
@@ -39,7 +39,7 @@ export namespace AccessGrouper {
 	/** Make a key by a property accessing node. */
 	function getExpressionKey(node: AccessNode) {
 		let exp = node.expression
-		let key = Helper.getFullText(exp).trim()
+		let key = helper.getFullText(exp).trim()
 
 		if (node.questionDotToken) {
 			key += '?.'
@@ -102,7 +102,7 @@ export namespace AccessGrouper {
 			return `"${name.text}"`
 		}
 
-		return Helper.getFullText(name)
+		return helper.getFullText(name)
 	}
 
 
@@ -111,7 +111,7 @@ export namespace AccessGrouper {
 		let name: ts.Expression
 
 		if (ts.isPropertyAccessExpression(node)) {
-			name = factory.createStringLiteral(Helper.getFullText(node.name))
+			name = factory.createStringLiteral(helper.getFullText(node.name))
 		}
 		else {
 			name = Packer.removeAccessComments(node.argumentExpression)

@@ -1,6 +1,5 @@
 import * as ts from 'typescript'
-import {factory, Packer, TemplateSlotPlaceholder} from '../../../core'
-import {Helper} from '../../../lupos-ts-module'
+import {factory, Packer, TemplateSlotPlaceholder, helper} from '../../../core'
 import {BindingBase, BindingUpdateCallWith} from './base'
 import {TrackingPatch} from '../../../ff'
 import {getLatestBindingInfo, LatestBindingInfo} from './latest-binding'
@@ -62,8 +61,8 @@ export class RefBinding extends BindingBase {
 
 		// If declare property as `XXXElement`, force ref element.
 		if (rawValueNode && beComponent) {
-			let type = Helper.types.typeOf(rawValueNode)
-			let typeText = Helper.types.getTypeFullText(type)
+			let type = helper.types.typeOf(rawValueNode)
+			let typeText = helper.types.getTypeFullText(type)
 
 			if (/^\w*?Element$/.test(typeText)) {
 				this.modifiers = ['el']
@@ -95,19 +94,19 @@ export class RefBinding extends BindingBase {
 			return
 		}
 
-		let bePropertyOrVariable = Helper.access.isAccess(rawValueNode)
-				&& !!Helper.symbol.resolveDeclaration(rawValueNode, Helper.isPropertyLike)
-			|| Helper.isVariableIdentifier(rawValueNode)
-				&& !!Helper.symbol.resolveDeclaration(rawValueNode, ts.isVariableDeclaration)
+		let bePropertyOrVariable = helper.access.isAccess(rawValueNode)
+				&& !!helper.symbol.resolveDeclaration(rawValueNode, helper.isPropertyLike)
+			|| helper.isVariableIdentifier(rawValueNode)
+				&& !!helper.symbol.resolveDeclaration(rawValueNode, ts.isVariableDeclaration)
 
 		if (bePropertyOrVariable) {
 			this.useAccess = true
 
-			if (Helper.access.isAccess(rawValueNode)) {
-				let topmost = Helper.access.getTopmost(rawValueNode)
+			if (helper.access.isAccess(rawValueNode)) {
+				let topmost = helper.access.getTopmost(rawValueNode)
 
 				// `this.xxx.xxx`
-				this.useContextAccess = Helper.isThis(topmost)
+				this.useContextAccess = helper.isThis(topmost)
 			}
 	
 			this.useLocalAccess = !this.useContextAccess

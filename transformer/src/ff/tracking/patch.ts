@@ -2,7 +2,7 @@ import * as ts from 'typescript'
 import {ObservedChecker} from './observed-checker'
 import {AccessGrouper} from './access-grouper'
 import {TrackingRanges} from './ranges'
-import {Helper} from '../../lupos-ts-module'
+import {helper} from '../../core'
 
 
 export enum ForceTrackType {
@@ -79,7 +79,7 @@ export namespace TrackingPatch {
 
 	/** Output isolated tracking expressions. */
 	export function outputIsolatedTracking(rawNode: ts.Expression, type: 'get' | 'set'): ts.Expression[] {
-		if (!Helper.access.isAccess(rawNode)) {
+		if (!helper.access.isAccess(rawNode)) {
 			return []
 		}
 

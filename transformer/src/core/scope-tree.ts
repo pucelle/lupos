@@ -1,9 +1,9 @@
 import * as ts from 'typescript'
 import {addToList, ListMap} from '../utils'
-import {factory, sourceFile, transformContext} from './global'
+import {factory, sourceFile, transformContext, helper} from './global'
 import {VisitTree} from './visit-tree'
 import {InterpolationContentType, Interpolator} from './interpolator'
-import {AccessNode, Helper} from '../lupos-ts-module'
+import {AccessNode} from '../lupos-ts-module'
 import {definePostVisitCallback, definePreVisitCallback} from './visitor-callbacks'
 import {Scope} from './scope'
 import {Packer} from './packer'
@@ -75,7 +75,7 @@ export namespace ScopeTree {
 		let index = VisitTree.getIndex(node)
 
 		if (ts.isSourceFile(node)
-			|| Helper.isFunctionLike(node)
+			|| helper.isFunctionLike(node)
 			|| ts.isForStatement(node)
 			|| ts.isForOfStatement(node)
 			|| ts.isForInStatement(node)
@@ -99,8 +99,8 @@ export namespace ScopeTree {
 
 		// Must after visited all descendant nodes.
 		// Assignment expressions like `a.b = c`
-		if (Helper.assign.isAssignment(currentNode)) {
-			let assignTo = Helper.assign.getToExpressions(currentNode)
+		if (helper.assign.isAssignment(currentNode)) {
+			let assignTo = helper.assign.getToExpressions(currentNode)
 			
 			for (let to of assignTo) {
 				let hash = hashNode(to)
@@ -219,7 +219,7 @@ export namespace ScopeTree {
 		node = Packer.normalize(hashVisited, true)
 
 		return {
-			name: Helper.getFullText(node),
+			name: helper.getFullText(node),
 			usedScopes,
 			usedIndices,
 		}
@@ -231,7 +231,7 @@ export namespace ScopeTree {
 		if (!VisitTree.hasNode(node)) {}
 
 		// a -> a_123
-		else if (Helper.isVariableIdentifier(node)) {
+		else if (helper.isVariableIdentifier(node)) {
 			let {name, scope} = hashVariableName(node)
 			let declNode = scope.getDeclarationByName(node.text)
 
@@ -245,7 +245,7 @@ export namespace ScopeTree {
 		}
 
 		// this -> this_123
-		else if (Helper.isThis(node)) {
+		else if (helper.isThis(node)) {
 			let {name, scope} = hashVariableName(node as ts.ThisExpression)
 			addToList(usedScopes, scope)
 
@@ -267,7 +267,7 @@ export namespace ScopeTree {
 	 */
 	function hashVariableName(rawNode: ts.Identifier | ts.ThisExpression): {name: string, scope: Scope} {
 		let scope = findDeclaredScope(rawNode) || findClosestByNode(rawNode)
-		let name = Helper.getFullText(rawNode)
+		let name = helper.getFullText(rawNode)
 		let suffix = scope.visitIndex
 
 		return {
@@ -323,7 +323,7 @@ export namespace ScopeTree {
 	
 	/** Check at which scope the specified named variable or this declared. */
 	export function findDeclaredScope(rawNode: ts.Identifier | ts.ThisExpression, fromScope = findClosestByNode(rawNode)): Scope | null {
-		if (Helper.isThis(rawNode)) {
+		if (helper.isThis(rawNode)) {
 			return fromScope.findClosestThisScope()
 		}
 		else if (fromScope.hasLocalVariable(rawNode.text)) {
@@ -340,11 +340,11 @@ export namespace ScopeTree {
 
 	/** Returns whether declared variable or access node in topmost scope. */
 	function isDeclaredInTopmostScope(rawNode: ts.Identifier | AccessNode | ts.ThisExpression): boolean {
-		if (Helper.access.isAccess(rawNode)) {
+		if (helper.access.isAccess(rawNode)) {
 			let exp = rawNode.expression
 			return isDeclaredInTopmostScope(exp as ts.Identifier | AccessNode | ts.ThisExpression)
 		}
-		else if (Helper.isThis(rawNode)) {
+		else if (helper.isThis(rawNode)) {
 			return false
 		}
 		else if (ts.isIdentifier(rawNode)) {
@@ -358,9 +358,9 @@ export namespace ScopeTree {
 
 	/** Returns whether a variable node or an access node was declared as const. */
 	function isDeclaredAsConstLike(rawNode: ts.Identifier | AccessNode | ts.ThisExpression): boolean {
-		if (Helper.access.isAccess(rawNode)) {
-			let readonly = Helper.symbol.resolveDeclaration(rawNode, Helper.isPropertyLike) && Helper.types.isReadonly(rawNode)
-			let beMethod = Helper.symbol.resolveDeclaration(rawNode, Helper.isMethodLike) && !ts.isCallExpression(rawNode.parent)
+		if (helper.access.isAccess(rawNode)) {
+			let readonly = helper.symbol.resolveDeclaration(rawNode, helper.isPropertyLike) && helper.types.isReadonly(rawNode)
+			let beMethod = helper.symbol.resolveDeclaration(rawNode, helper.isMethodLike) && !ts.isCallExpression(rawNode.parent)
 
 			if (!readonly && !beMethod) {
 				return false
@@ -369,7 +369,7 @@ export namespace ScopeTree {
 			let exp = rawNode.expression
 			return isDeclaredAsConstLike(exp as ts.Identifier | AccessNode | ts.ThisExpression)
 		}
-		else if (Helper.isThis(rawNode)) {
+		else if (helper.isThis(rawNode)) {
 			return true
 		}
 		else if (ts.isIdentifier(rawNode)) {
@@ -411,21 +411,21 @@ export namespace ScopeTree {
 		let mutable: MutableMask | 0 = 0
 
 		// Inside of a function scope.
-		insideFunctionScope ||= Helper.isFunctionLike(rawNode)
+		insideFunctionScope ||= helper.isFunctionLike(rawNode)
 
 		// Com from typescript library.
-		if (Helper.symbol.isOfTypescriptLib(rawNode)) {}
+		if (helper.symbol.isOfTypescriptLib(rawNode)) {}
 
 		// `a.b` or `a`
-		if (Helper.isVariableIdentifier(rawNode)
-			|| Helper.access.isAccess(rawNode)
+		if (helper.isVariableIdentifier(rawNode)
+			|| helper.access.isAccess(rawNode)
 		) {
 
 			let declaredInTopmostScope = isDeclaredInTopmostScope(rawNode)
 			let declaredAsConst = isDeclaredAsConstLike(rawNode)
 
 			// Local variable, and it has or will be assigned.
-			if (Helper.isVariableIdentifier(rawNode) && haveOrWillBeAssigned(rawNode)) {
+			if (helper.isVariableIdentifier(rawNode) && haveOrWillBeAssigned(rawNode)) {
 				mutable |= MutableMask.Mutable
 				mutable |= MutableMask.CantTransfer
 			}
@@ -482,10 +482,10 @@ export namespace ScopeTree {
 	): ts.Node {
 
 		// Inside of a function scope.
-		insideFunctionScope ||= Helper.isFunctionLike(node)
+		insideFunctionScope ||= helper.isFunctionLike(node)
 		
 		// Raw variable
-		if (VisitTree.hasNode(node) && Helper.isVariableIdentifier(node)) {
+		if (VisitTree.hasNode(node) && helper.isVariableIdentifier(node)) {
 
 			// If declared in top scope, can still visit after transferred,
 			// no need to replace it.
@@ -501,12 +501,12 @@ export namespace ScopeTree {
 		}
 
 		// this
-		else if (canReplaceThis && Helper.isThis(node)) {
+		else if (canReplaceThis && helper.isThis(node)) {
 			return replacer(node as ts.ThisExpression, insideFunctionScope)
 		}
 
 		// If enters non-arrow function declaration, cause can't replace `this`, otherwise can't.
-		canReplaceThis &&= !Helper.isNonArrowFunctionLike(node)
+		canReplaceThis &&= !helper.isNonArrowFunctionLike(node)
 
 		return ts.visitEachChild(node, (node: ts.Node) => {
 			return transferToTopmostScopeVisitor(node, rawTopNode, canReplaceThis, replacer, insideFunctionScope)

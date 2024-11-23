@@ -1,7 +1,6 @@
 import {ListMap} from '../utils'
 import * as ts from 'typescript'
-import {factory, sourceFile} from './global'
-import {Helper} from '../lupos-ts-module'
+import {factory, sourceFile, helper} from './global'
 import {InterpolationContentType, Interpolator} from './interpolator'
 import {VisitTree} from './visit-tree'
 import {definePostVisitCallback, definePreVisitCallback} from './visitor-callbacks'
@@ -34,7 +33,7 @@ export namespace Modifier {
 
 	/** Remove import node of specified node. */
 	export function removeImportOf(fromNode: ts.Node) {
-		let importNode = Helper.symbol.resolveDeclaration(fromNode, ts.isImportSpecifier, false)
+		let importNode = helper.symbol.resolveDeclaration(fromNode, ts.isImportSpecifier, false)
 		if (importNode) {
 			let index = VisitTree.getIndex(importNode)
 			removeOnce(index)
@@ -67,8 +66,8 @@ export namespace Modifier {
 	/** Add or replace a member to a class declaration. */
 	export function addClassMember(classNode: ts.ClassDeclaration, member: ts.ClassElement, preferInsertToHead: boolean = false) {
 		let classIndex = VisitTree.getIndex(classNode)
-		let name = Helper.cls.getMemberName(member)
-		let existing = classNode.members.find(m => Helper.cls.getMemberName(m) === name)
+		let name = helper.class.getMemberName(member)
+		let existing = classNode.members.find(m => helper.class.getMemberName(m) === name)
 
 		if (existing) {
 			let toIndex = VisitTree.getIndex(existing)
@@ -254,7 +253,7 @@ export namespace Modifier {
 
 	/** Get `import {...}` node by module name. */
 	function getNamedImportDeclaration(moduleName: string): ts.ImportDeclaration | undefined {
-		let importDecl = Helper.imports.getImportFromModule(moduleName, sourceFile)
+		let importDecl = helper.imports.getImportFromModule(moduleName, sourceFile)
 		if (!importDecl) {
 			return undefined
 		}
@@ -282,7 +281,7 @@ export namespace Modifier {
 		}
 
 		for (let specifier of namedBindings.elements) {
-			let type = Helper.symbol.resolveDeclaration(specifier, Helper.isTypeDeclaration)
+			let type = helper.symbol.resolveDeclaration(specifier, helper.isTypeDeclaration)
 			if (type) {
 				removeOnce(VisitTree.getIndex(specifier))
 			}

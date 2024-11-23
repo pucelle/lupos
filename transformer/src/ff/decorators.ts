@@ -1,6 +1,5 @@
 import * as ts from 'typescript'
-import {defineVisitor, Modifier, factory, Interpolator, InterpolationContentType, VisitTree} from '../core'
-import {Helper} from '../lupos-ts-module'
+import {defineVisitor, Modifier, factory, Interpolator, InterpolationContentType, VisitTree, helper} from '../core'
 import {ProcessorPropNameMap} from './decorators-shared'
 
 
@@ -11,19 +10,19 @@ defineVisitor(function(node: ts.Node, index: number) {
 		return
 	}
 
-	let decorator = Helper.deco.getFirst(node)!
+	let decorator = helper.deco.getFirst(node)!
 	if (!decorator) {
 		return
 	}
 
-	let decoName = Helper.deco.getName(decorator)
+	let decoName = helper.deco.getName(decorator)
 	if (!decoName || !['computed', 'effect', 'watch'].includes(decoName)) {
 		return
 	}
 
-	let memberName = Helper.getFullText(node.name)
-	let superCls = Helper.cls.getSuper(node.parent as ts.ClassDeclaration)
-	let isOverwritten = !!superCls && !!Helper.cls.getMember(superCls, memberName, true)
+	let memberName = helper.getFullText(node.name)
+	let superCls = helper.class.getSuper(node.parent as ts.ClassDeclaration)
+	let isOverwritten = !!superCls && !!helper.class.getMember(superCls, memberName, true)
 
 	Modifier.removeImportOf(decorator)
 	let replace: () => ts.Node[]
@@ -60,7 +59,7 @@ function compileComputedEffectWatchDecorator(
 	decl: ts.GetAccessorDeclaration | ts.MethodDeclaration,
 	isOverwritten: boolean
 ): () => ts.Node[] {
-	let propName = Helper.getFullText(decl.name)
+	let propName = helper.getFullText(decl.name)
 	let processorPropName = '$' + propName + '_' + ProcessorPropNameMap[decoName]
 	let overwrittenMethodName = decoName === 'computed' ? '$compute_' + propName : propName
 

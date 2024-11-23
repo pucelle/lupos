@@ -1,6 +1,5 @@
 import * as ts from 'typescript'
-import {Packer, VisitTree} from '../../core'
-import {Helper} from '../../lupos-ts-module'
+import {Packer, VisitTree, helper} from '../../core'
 import {TrackingScope} from './scope'
 import {ListMap} from '../../utils'
 import {CapturedOutputWay, TrackingRange, TrackingRanges} from './ranges'
@@ -137,10 +136,10 @@ export namespace TrackingScopeTree {
 		}
 
 		// Function like
-		else if (Helper.isFunctionLike(node)) {
+		else if (helper.isFunctionLike(node)) {
 			type |= TrackingScopeTypeMask.FunctionLike
 
-			if (Helper.isInstantlyRunFunction(node)) {
+			if (helper.isInstantlyRunFunction(node)) {
 				type |= TrackingScopeTypeMask.InstantlyRunFunction
 			}
 		}
