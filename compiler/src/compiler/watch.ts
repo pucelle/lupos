@@ -2,7 +2,7 @@
 //// From https://github.com/microsoft/TypeScript/blob/main/src/compiler/watch.ts
 
 
-import ts from 'typescript';
+import * as ts from 'typescript';
 import {ForegroundColorEscapeSequences, formatColorAndReset} from './program';
 import {contains} from './core';
 

@@ -1,6 +1,6 @@
-import type TS from 'typescript'
+import * as ts from 'typescript'
 import {AccessNode} from '../../lupos-ts-module'
-import {ts, typeChecker} from '../../core'
+import {typeChecker} from '../../core'
 import {Helper} from '../../lupos-ts-module'
 import {TrackingScopeTree} from './scope-tree'
 import {GenericType} from 'typescript'
@@ -18,17 +18,17 @@ import {TrackingPatch} from './patch'
  * `[observed][0]`
  */
 export type CanObserveNode = AccessNode
-	| TS.Identifier | TS.ThisExpression
-	| TS.CallExpression | TS.ParenthesizedExpression
-	| TS.BinaryExpression | TS.ConditionalExpression
-	| TS.AsExpression
+	| ts.Identifier | ts.ThisExpression
+	| ts.CallExpression | ts.ParenthesizedExpression
+	| ts.BinaryExpression | ts.ConditionalExpression
+	| ts.AsExpression
 
 	
 /** Help to check observed state. */
 export namespace ObservedChecker {
 
 	/** Whether a type node represented node should be observed. */
-	export function isTypeNodeObserved(typeNode: TS.TypeNode): boolean {
+	export function isTypeNodeObserved(typeNode: ts.TypeNode): boolean {
 
 		// A | B
 		if (ts.isUnionTypeNode(typeNode)
@@ -47,7 +47,7 @@ export namespace ObservedChecker {
 			return true
 		}
 
-		let resolveFrom: TS.Node = typeNode
+		let resolveFrom: ts.Node = typeNode
 
 		// Resolve type reference name.
 		if (ts.isTypeReferenceNode(typeNode)) {
@@ -68,7 +68,7 @@ export namespace ObservedChecker {
 	 * A newly made `TypeNode` can't resolve symbol and declaration,
 	 * so need the type observed checker.
 	 */
-	export function isTypeObserved(type: TS.Type): boolean {
+	export function isTypeObserved(type: ts.Type): boolean {
 
 		// A | B, A & B
 		if (type.isUnionOrIntersection()) {
@@ -101,7 +101,7 @@ export namespace ObservedChecker {
 
 
 	/** Whether a type or type node resolved declaration should be observed. */
-	function isTypeOrTypeNodeResolvedObserved(decl: TS.Node): boolean {
+	function isTypeOrTypeNodeResolvedObserved(decl: ts.Node): boolean {
 		if (!decl) {
 			return false
 		}
@@ -125,7 +125,7 @@ export namespace ObservedChecker {
 
 
 	/** Whether a variable declaration should be observed. */
-	export function isVariableDeclarationObserved(rawNode: TS.VariableDeclaration): boolean {
+	export function isVariableDeclarationObserved(rawNode: ts.VariableDeclaration): boolean {
 		// `var a = {b:1} as Observed<{b: number}>`, observed.
 		// `var a: Observed<{b: number}> = {b:1}`, observed.
 		// Note here: `Observed` must appear directly, reference or alias is not working.
@@ -155,7 +155,7 @@ export namespace ObservedChecker {
 
 
 	/** Whether destructed variable declaration should be observed. */
-	export function isDestructedVariableDeclarationObserved(rawNode: TS.Node, initializerObserved: boolean): boolean {
+	export function isDestructedVariableDeclarationObserved(rawNode: ts.Node, initializerObserved: boolean): boolean {
 
 		// Property declaration has specified as observed type or has observed initializer.
 		if (isPropertyDeclaredAsObserved(rawNode)) {
@@ -175,7 +175,7 @@ export namespace ObservedChecker {
 	 * Check whether a property or get accessor resolve from node has been declared as observed.
 	 * It ignores modifiers, only check declaration type.
 	 */
-	function isPropertyDeclaredAsObserved(rawNode: TS.Node): boolean {
+	function isPropertyDeclaredAsObserved(rawNode: ts.Node): boolean {
 
 		// `class A{p: Observed}` -> `this.p` and `this['p']` is observed.
 		// `interface A{p: Observed}` -> `this.p` and `this['p']` is observed.
@@ -212,7 +212,7 @@ export namespace ObservedChecker {
 
 
 	/** Broadcast observed from parent calling expression to all parameters. */
-	function isParameterObservedByCallingBroadcasted(rawNode: TS.ParameterDeclaration): boolean {
+	function isParameterObservedByCallingBroadcasted(rawNode: ts.ParameterDeclaration): boolean {
 
 		// `a.b.map((item) => {return item.value})`
 		// `a.b.map(item => item.value)`
@@ -249,7 +249,7 @@ export namespace ObservedChecker {
 
 
 	/** Whether parameter declaration should be observed. */
-	export function isParameterObserved(rawNode: TS.ParameterDeclaration): boolean {
+	export function isParameterObserved(rawNode: ts.ParameterDeclaration): boolean {
 		
 		// Force track.
 		if (TrackingPatch.isForceTracked(rawNode, false)) {
@@ -287,7 +287,7 @@ export namespace ObservedChecker {
 	 * `parental` specifies whether are visiting parent node of original to determine whether elements
 	 * should be observed, if visiting elements of an `Array` or `Map`, `Set`, should also specified as `true`.
 	 */
-	export function isObserved(rawNode: TS.Node, parental: boolean = false): rawNode is CanObserveNode {
+	export function isObserved(rawNode: ts.Node, parental: boolean = false): rawNode is CanObserveNode {
 
 		// Force track.
 		if (TrackingPatch.isForceTracked(rawNode, parental)) {
@@ -306,7 +306,7 @@ export namespace ObservedChecker {
 		else if (Helper.isThis(rawNode)
 			|| Helper.isVariableIdentifier(rawNode)
 		) {
-			return isIdentifierObserved(rawNode as TS.Identifier | TS.ThisExpression)
+			return isIdentifierObserved(rawNode as ts.Identifier | ts.ThisExpression)
 		}
 
 		// `a && b`, `a || b`, `a ?? b`, can observe only if both a & b can observe.
@@ -450,7 +450,7 @@ export namespace ObservedChecker {
 	 * Node must be the top most property access expression.
 	 * E.g., for `a.b.c`, sub identifier `b` or `c` is not allowed.
 	 */
-	function isIdentifierObserved(rawNode: TS.Identifier | TS.ThisExpression): boolean {
+	function isIdentifierObserved(rawNode: ts.Identifier | ts.ThisExpression): boolean {
 		let scope = TrackingScopeTree.findClosest(rawNode)
 
 		if (Helper.isThis(rawNode)) {
@@ -463,7 +463,7 @@ export namespace ObservedChecker {
 
 	
 	/** Returns whether a call expression returned result should be observed. */
-	function isCallObserved(rawNode: TS.CallExpression): boolean {
+	function isCallObserved(rawNode: ts.CallExpression): boolean {
 		let decl = Helper.symbol.resolveDeclaration(rawNode.expression, Helper.isFunctionLike)
 		if (!decl) {
 			return false
@@ -486,7 +486,7 @@ export namespace ObservedChecker {
 
 
 	/** Returns whether instance of a reference of a class is observed. */
-	function isInstanceObserved(rawNode: TS.Identifier | TS.ClassExpression): boolean {
+	function isInstanceObserved(rawNode: ts.Identifier | ts.ClassExpression): boolean {
 		let clsDecl = Helper.symbol.resolveDeclaration(rawNode, ts.isClassDeclaration)
 		if (clsDecl && Helper.cls.isImplemented(clsDecl, 'Observed', '@pucelle/ff')) {
 			return true 

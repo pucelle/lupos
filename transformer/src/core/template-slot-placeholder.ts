@@ -1,5 +1,4 @@
-import type TS from 'typescript'
-import {ts} from './global'
+import * as ts from 'typescript'
 import {PositionMapper} from '../utils'
 
 
@@ -10,7 +9,7 @@ export namespace TemplateSlotPlaceholder {
 	 * Will add `$LUPOS_START_\d$ to indicate start of each template part.
 	 * Template slots have been replaced to placeholder `$LUPOS_SLOT_INDEX_\d$`.
 	 */
-	export function toTemplateString(tem: TS.TaggedTemplateExpression): {string: string, mapper: PositionMapper} {
+	export function toTemplateString(tem: ts.TaggedTemplateExpression): {string: string, mapper: PositionMapper} {
 		let template = tem.template
 		let string = ''
 		let mapper = new PositionMapper()
@@ -68,9 +67,9 @@ export namespace TemplateSlotPlaceholder {
 
 
 	/** Extract all expression interpolations from a template. */
-	export function extractTemplateValues(tem: TS.TaggedTemplateExpression): TS.Expression[] {
+	export function extractTemplateValues(tem: ts.TaggedTemplateExpression): ts.Expression[] {
 		let template = tem.template
-		let values: TS.Expression[] = []
+		let values: ts.Expression[] = []
 
 		if (!ts.isTemplateExpression(template)) {
 			return values

@@ -1,4 +1,4 @@
-import type TS from 'typescript'
+import type * as ts from 'typescript'
 import {VisitTree} from '../../core'
 import {TrackingScope} from './scope'
 import {ListMap} from '../../utils'
@@ -8,9 +8,9 @@ import {TrackingScopeTypeMask} from './scope-tree'
 /** Describe a tracking range. */
 export interface TrackingRange {
 	id: number
-	container: TS.Node
-	startNode: TS.Node
-	endNode: TS.Node
+	container: ts.Node
+	startNode: ts.Node
+	endNode: ts.Node
 	scopeType: TrackingScopeTypeMask
 	outputWay: CapturedOutputWay
 }
@@ -27,7 +27,7 @@ export namespace TrackingRanges {
 	let rangeIdSeed = 0
 
 	/** All ranges, group by start node. */
-	const RangesByStartNode: ListMap<TS.Node, TrackingRange> = new ListMap()
+	const RangesByStartNode: ListMap<ts.Node, TrackingRange> = new ListMap()
 
 	/** Range id -> scope. */
 	const ScopeByRangeIdMap: Map<number, TrackingScope> = new Map()
@@ -46,9 +46,9 @@ export namespace TrackingRanges {
 	 * Return range id.
 	 */
 	export function markRange(
-		container: TS.Node,
-		startNode: TS.Node,
-		endNode: TS.Node,
+		container: ts.Node,
+		startNode: ts.Node,
+		endNode: ts.Node,
 		scopeType: 0 | TrackingScopeTypeMask,
 		outputWay: CapturedOutputWay
 	): number {
@@ -87,7 +87,7 @@ export namespace TrackingRanges {
 	}
 
 	/** Get content ranges by start node. */
-	export function getRangesByStartNode(startNode: TS.Node): TrackingRange[] | undefined {
+	export function getRangesByStartNode(startNode: ts.Node): TrackingRange[] | undefined {
 		let ranges = RangesByStartNode.get(startNode)
 		return ranges
 	}

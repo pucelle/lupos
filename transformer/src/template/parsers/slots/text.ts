@@ -1,5 +1,6 @@
 import {SlotParserBase} from './base'
-import {factory, ts} from '../../../core'
+import {factory} from '../../../core'
+import ts = require('typescript')
 
 
 export class TextSlotParser extends SlotParserBase {

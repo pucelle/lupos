@@ -1,7 +1,7 @@
-import type TS from 'typescript'
+import * as ts from 'typescript'
 import {TrackingScope} from './scope'
 import {TrackingScopeTypeMask} from './scope-tree'
-import {FlowInterruptionTypeMask, Packer, ts, VisitTree} from '../../core'
+import {FlowInterruptionTypeMask, Packer, VisitTree} from '../../core'
 import {AccessNode, Helper} from '../../lupos-ts-module'
 
 
@@ -94,7 +94,7 @@ export class TrackingScopeState {
 			return false
 		}
 
-		let isVoidReturning = Helper.types.isVoidReturning(node as TS.FunctionLikeDeclaration)
+		let isVoidReturning = Helper.types.isVoidReturning(node as ts.FunctionLikeDeclaration)
 
 		// An instantly run function should inherit whether stop get tracking.
 		if (this.scope.type & TrackingScopeTypeMask.InstantlyRunFunction) {
@@ -152,7 +152,7 @@ export class TrackingScopeState {
 	}
 
 	/** Whether should ignore set tracking. */
-	shouldIgnoreSetTracking(node: AccessNode | TS.Identifier): boolean {
+	shouldIgnoreSetTracking(node: AccessNode | ts.Identifier): boolean {
 		if (this.withinLifeFunction) {
 			if (Helper.access.isAccess(node)
 				&& Helper.isThis(node.expression)
@@ -165,7 +165,7 @@ export class TrackingScopeState {
 	}
 
 	/** Whether should ignore get tracking. */
-	shouldIgnoreGetTracking(node: AccessNode | TS.Identifier): boolean {
+	shouldIgnoreGetTracking(node: AccessNode | ts.Identifier): boolean {
 		if (this.withinLifeFunction) {
 			if (Helper.access.isAccess(node)
 				&& Helper.isThis(node.expression)

@@ -1,10 +1,10 @@
-import type TS from 'typescript'
-import {ts, defineVisitor, Modifier, factory, Interpolator, InterpolationContentType, VisitTree} from '../core'
+import * as ts from 'typescript'
+import {defineVisitor, Modifier, factory, Interpolator, InterpolationContentType, VisitTree} from '../core'
 import {Helper} from '../lupos-ts-module'
 import {ProcessorPropNameMap} from './decorators-shared'
 
 
-defineVisitor(function(node: TS.Node, index: number) {
+defineVisitor(function(node: ts.Node, index: number) {
 		
 	// Method or getter and decorated.
 	if (!ts.isMethodDeclaration(node) && !ts.isGetAccessorDeclaration(node)) {
@@ -22,13 +22,13 @@ defineVisitor(function(node: TS.Node, index: number) {
 	}
 
 	let memberName = Helper.getFullText(node.name)
-	let superCls = Helper.cls.getSuper(node.parent as TS.ClassDeclaration)
+	let superCls = Helper.cls.getSuper(node.parent as ts.ClassDeclaration)
 	let isOverwritten = !!superCls && !!Helper.cls.getMember(superCls, memberName, true)
 
 	Modifier.removeImportOf(decorator)
-	let replace: () => TS.Node[]
+	let replace: () => ts.Node[]
 
-	replace = compileComputedEffectWatchDecorator(decoName, node as TS.GetAccessorDeclaration, isOverwritten)
+	replace = compileComputedEffectWatchDecorator(decoName, node as ts.GetAccessorDeclaration, isOverwritten)
 	Interpolator.replace(index, InterpolationContentType.Normal, replace)
 })
 
@@ -57,15 +57,15 @@ $compute_prop() {...}
 */
 function compileComputedEffectWatchDecorator(
 	decoName: string,
-	decl: TS.GetAccessorDeclaration | TS.MethodDeclaration,
+	decl: ts.GetAccessorDeclaration | ts.MethodDeclaration,
 	isOverwritten: boolean
-): () => TS.Node[] {
+): () => ts.Node[] {
 	let propName = Helper.getFullText(decl.name)
 	let processorPropName = '$' + propName + '_' + ProcessorPropNameMap[decoName]
 	let overwrittenMethodName = decoName === 'computed' ? '$compute_' + propName : propName
 
 	return () => {
-		let newBody = Interpolator.outputChildren(VisitTree.getIndex(decl.body!)) as TS.Block
+		let newBody = Interpolator.outputChildren(VisitTree.getIndex(decl.body!)) as ts.Block
 
 		let property = factory.createPropertyDeclaration(
 			undefined,

@@ -1,5 +1,5 @@
-import type TS from 'typescript'
-import {factory, Interpolator, MutableMask, Packer, ScopeTree, ts} from '../../core'
+import * as ts from 'typescript'
+import {factory, Interpolator, MutableMask, Packer, ScopeTree} from '../../core'
 import {Helper} from '../../lupos-ts-module'
 import {VariableNames} from './variable-names'
 import {TreeParser} from './tree'
@@ -8,16 +8,16 @@ import {TreeParser} from './tree'
 /** Help to manage all value nodes. */
 export class TemplateValues {
 
-	readonly rawValueNodes: TS.Expression[]
+	readonly rawValueNodes: ts.Expression[]
 	readonly tree: TreeParser
 
 	private valueHash: Map<string, number> = new Map()
-	private outputNodes: TS.Expression[] = []
+	private outputNodes: ts.Expression[] = []
 	private indicesMutable: Map<number, MutableMask | 0> = new Map()
 	private indicesOutputted: Set<number> = new Set()
 	private transferredLatestNames: Map<string, number> = new Map()
 
-	constructor(valueNodes: TS.Expression[], tree: TreeParser) {
+	constructor(valueNodes: ts.Expression[], tree: TreeParser) {
 		this.rawValueNodes = valueNodes
 		this.tree = tree
 		this.checkIndicesMutable()
@@ -47,7 +47,7 @@ export class TemplateValues {
 	}
 
 	/** Get raw value node at index. */
-	getRawValue(valueIndex: number): TS.Expression {
+	getRawValue(valueIndex: number): ts.Expression {
 		return this.rawValueNodes[valueIndex]
 	}
 
@@ -55,7 +55,7 @@ export class TemplateValues {
 	 * For binding parameter list like `:binding=${a, b}` or `:binding=${(a, b)}`,
 	 * get mutable state of each of `a, b`.
 	 */
-	getRawParameterListMutable(rawParamNodes: TS.Expression[], valueIndex: number): boolean[] {
+	getRawParameterListMutable(rawParamNodes: ts.Expression[], valueIndex: number): boolean[] {
 		if (rawParamNodes.length <= 1) {
 			return rawParamNodes.map(() => this.isIndexMutable(valueIndex))
 		}
@@ -76,8 +76,8 @@ export class TemplateValues {
 		valueIndices: number[] | null,
 		asCallback: boolean = false
 	): {
-		joint: TS.Expression,
-		valueNodes: TS.Expression[],
+		joint: ts.Expression,
+		valueNodes: ts.Expression[],
 	} {
 
 		// Like `.booleanProp`.
@@ -104,7 +104,7 @@ export class TemplateValues {
 			return this.outValueNodeOfIndex(rawValueNode, valueIndex, asStatic)
 		})
 
-		let joint: TS.Expression
+		let joint: ts.Expression
 
 		if (strings) {
 			joint = this.bundleStringsAndValueNodes(strings, valueIndices, valueNodes)
@@ -120,11 +120,11 @@ export class TemplateValues {
 	}
 
 	/** Output a raw node of full or partial specified index. */
-	private outValueNodeOfIndex(rawValueNode: TS.Expression, valueIndex: number, asStatic: boolean): TS.Expression {
+	private outValueNodeOfIndex(rawValueNode: ts.Expression, valueIndex: number, asStatic: boolean): ts.Expression {
 
 		// Output static node.
 		if (asStatic) {
-			let interpolated = Interpolator.outputNodeSelf(rawValueNode) as TS.Expression
+			let interpolated = Interpolator.outputNodeSelf(rawValueNode) as ts.Expression
 
 			let transferred = ScopeTree.transferToTopmostScope(
 				interpolated,
@@ -149,9 +149,9 @@ export class TemplateValues {
 	 */
 	private transferNodeToTopmostScope(
 		valueIndex: number,
-		node: TS.Identifier | TS.ThisExpression,
+		node: ts.Identifier | ts.ThisExpression,
 		insideFunction: boolean, 
-	): TS.Expression {
+	): ts.Expression {
 
 		// Move variable name as an item to output value list.
 		if (ts.isIdentifier(node)) {
@@ -170,7 +170,7 @@ export class TemplateValues {
 	 * and returns it's reference value item.
 	 * If `transferringWithinFunction`, move value to topmost scope and add referenced value to value list.
 	 */
-	private outputNodeAsValue(rawNode: TS.Expression, transferringWithinFunction: boolean): TS.Expression {
+	private outputNodeAsValue(rawNode: ts.Expression, transferringWithinFunction: boolean): ts.Expression {
 		let hash = ScopeTree.hashNode(rawNode).name
 		let valueIndex: number
 
@@ -178,7 +178,7 @@ export class TemplateValues {
 			valueIndex = this.valueHash.get(hash)!
 		}
 		else {
-			let interpolated = Interpolator.outputNodeSelf(rawNode) as TS.Expression
+			let interpolated = Interpolator.outputNodeSelf(rawNode) as ts.Expression
 
 			valueIndex = this.outputNodes.length
 			this.outputNodes.push(interpolated)
@@ -203,8 +203,8 @@ export class TemplateValues {
 	 * It uses `indices[0]` as new index.
 	 * `...${value}...` -> `${'...' + value + '...'}`
 	 */
-	private bundleStringsAndValueNodes(strings: string[], valueIndices: number[], valueNodes: TS.Expression[]): TS.Expression {
-		let parts: TS.Expression[] = []
+	private bundleStringsAndValueNodes(strings: string[], valueIndices: number[], valueNodes: ts.Expression[]): ts.Expression {
+		let parts: ts.Expression[] = []
 
 		// string[0] + values[0] + strings[1] + ...
 		for (let i = 0; i < strings.length; i++) {
@@ -235,7 +235,7 @@ export class TemplateValues {
 	 * Add a custom value to value list,
 	 * and return reference of this value.
 	 */
-	outputCustomValue(node: TS.Expression): TS.Expression {
+	outputCustomValue(node: ts.Expression): ts.Expression {
 		let valueIndex = this.outputNodes.length
 		this.outputNodes.push(node)
 		this.indicesOutputted.add(valueIndex)
@@ -247,7 +247,7 @@ export class TemplateValues {
 	}
 
 	/** Output a single value from a raw node. */
-	outputRawValue(rawNode: TS.Expression, valueIndex: number, asCallback: boolean = false): TS.Expression {
+	outputRawValue(rawNode: ts.Expression, valueIndex: number, asCallback: boolean = false): ts.Expression {
 		let mutableMask = ScopeTree.testMutable(rawNode)
 		let mutable = (mutableMask & MutableMask.Mutable) > 0
 		let canTurn = (mutableMask & MutableMask.CantTransfer) === 0
@@ -261,7 +261,7 @@ export class TemplateValues {
 	 * Use for passing several parameters to a binding,
 	 * like `:binding=${value1, value2}`, or `:binding=${(value1, value2)}`.
 	 */
-	outputRawValueList(rawNodes: TS.Expression[], valueIndex: number, asCallback: boolean = false): TS.Expression[] {
+	outputRawValueList(rawNodes: ts.Expression[], valueIndex: number, asCallback: boolean = false): ts.Expression[] {
 		let valueNodes = rawNodes.map(rawNode => this.outputRawValue(rawNode, valueIndex, asCallback))
 		return valueNodes
 	}
@@ -272,7 +272,7 @@ export class TemplateValues {
 	}
 
 	/** Output all values to an array. */
-	output(): TS.ArrayLiteralExpression {
+	output(): ts.ArrayLiteralExpression {
 		return factory.createArrayLiteralExpression(
 			this.outputNodes,
 			true

@@ -6,8 +6,6 @@
 		"lib": ["ESNext", "DOM", "DOM.Iterable"],
 		"rootDir": "src",
 		"outDir": "out",
-		"allowJs": true,
-		"esModuleInterop": true, 
 		"declaration": false,
 		"strict": true,
 		"noUnusedLocals": true,
@@ -17,5 +15,5 @@
 		"noImplicitAny": true,
 		"noImplicitThis": true
 	},
-	"include": ["src/**/optimize.ts"],
+	"include": ["src/**/*.ts"],
 }

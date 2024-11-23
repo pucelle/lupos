@@ -1,5 +1,5 @@
-import type TS from 'typescript'
-import {definePreVisitCallback, factory, Modifier, ScopeTree, ts} from '../../core'
+import * as ts from 'typescript'
+import {definePreVisitCallback, factory, Modifier, ScopeTree} from '../../core'
 import {TreeParser} from './tree'
 import {DoubleKeysMap} from '../../utils'
 
@@ -35,7 +35,7 @@ export namespace HTMLOutputHandler {
 		}
 
 		// $html_0
-		let parameters: TS.Expression[] = [factory.createStringLiteral(htmlString)]
+		let parameters: ts.Expression[] = [factory.createStringLiteral(htmlString)]
 
 		// Template get wrapped.
 		if (wrapped) {

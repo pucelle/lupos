@@ -1,9 +1,9 @@
-import type TS from 'typescript'
-import {defineVisitor, ts, factory, Interpolator, InterpolationContentType, TemplateSlotPlaceholder} from '../core'
+import * as ts from 'typescript'
+import {defineVisitor, factory, Interpolator, InterpolationContentType, TemplateSlotPlaceholder} from '../core'
 import {Helper} from '../lupos-ts-module'
 
 
-defineVisitor(function(node: TS.Node, index: number) {
+defineVisitor(function(node: ts.Node, index: number) {
 	if (!ts.isTaggedTemplateExpression(node)) {
 		return
 	}
@@ -17,7 +17,7 @@ defineVisitor(function(node: TS.Node, index: number) {
 
 
 /** Parse a css template literal. */
-function parseCSSTemplate(node: TS.TaggedTemplateExpression, index: number) {
+function parseCSSTemplate(node: ts.TaggedTemplateExpression, index: number) {
 	let string = TemplateSlotPlaceholder.toTemplateString(node).string
 	let parsed = minifyCSSString(parseStyleString(string))
 	let parts = TemplateSlotPlaceholder.parseTemplateStrings(parsed)!
@@ -25,7 +25,7 @@ function parseCSSTemplate(node: TS.TaggedTemplateExpression, index: number) {
 	let template = node.template
 
 	Interpolator.replace(index, InterpolationContentType.Normal, () => {
-		let replaced: TS.TaggedTemplateExpression | null = null
+		let replaced: ts.TaggedTemplateExpression | null = null
 
 		if (ts.isNoSubstitutionTemplateLiteral(template)) {
 			replaced = factory.createTaggedTemplateExpression(
@@ -56,7 +56,7 @@ function parseCSSTemplate(node: TS.TaggedTemplateExpression, index: number) {
 					)
 
 				return factory.createTemplateSpan(
-					Interpolator.outputNodeSelf(oldSpan.expression) as TS.Expression,
+					Interpolator.outputNodeSelf(oldSpan.expression) as ts.Expression,
 					middleOrTail
 				)
 			})

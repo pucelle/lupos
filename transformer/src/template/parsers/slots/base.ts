@@ -1,7 +1,7 @@
-import type TS from 'typescript'
+import * as ts from 'typescript'
 import {HTMLAttribute, HTMLNode, HTMLNodeType} from '../../html-syntax'
 import {PartType, TreeParser} from '../tree'
-import {SourceFileDiagnosticModifier, factory, Modifier, MutableMask, ScopeTree, TemplateSlotPlaceholder, ts, Packer} from '../../../core'
+import {SourceFileDiagnosticModifier, factory, Modifier, MutableMask, ScopeTree, TemplateSlotPlaceholder, Packer} from '../../../core'
 import {Helper} from '../../../lupos-ts-module'
 import {VariableNames} from '../variable-names'
 import {TemplateParser} from '../template'
@@ -112,7 +112,7 @@ export abstract class SlotParserBase {
 	 * Get first of raw value nodes,
 	 * can only use returned node to identify type, cant output.
 	 */
-	getFirstRawValueNode(): TS.Expression | undefined {
+	getFirstRawValueNode(): ts.Expression | undefined {
 		return this.valueIndices ? this.template.values.getRawValue(this.valueIndices[0]) : undefined
 	}
 
@@ -154,7 +154,7 @@ export abstract class SlotParserBase {
 	}
 
 	/** Get a group of latest names by an expression list. */
-	makeCustomGroupOfLatestNames(exps: TS.Expression[]): (string | null)[] {
+	makeCustomGroupOfLatestNames(exps: ts.Expression[]): (string | null)[] {
 		let hashes: string[] = []
 
 		let names = exps.map((exp) => {
@@ -208,7 +208,7 @@ export abstract class SlotParserBase {
 	}
 
 	/** Create a variable assignment, either declare variable, or pre-declare and assign.  */
-	createVariableAssignment(name: string, exp: TS.Expression, preDeclare = this.onDynamicComponent): TS.Expression | TS.Statement {
+	createVariableAssignment(name: string, exp: ts.Expression, preDeclare = this.onDynamicComponent): ts.Expression | ts.Statement {
 		if (preDeclare) {
 			this.tree.addPreDeclaredVariableName(name)
 			
@@ -239,8 +239,8 @@ export abstract class SlotParserBase {
 	 * Can only use it when outputting update.
 	 */
 	outputValue(asCallback: boolean = false): {
-		joint: TS.Expression,
-		valueNodes: TS.Expression[],
+		joint: ts.Expression,
+		valueNodes: ts.Expression[],
 	} {
 		return this.template.values.outputValue(this.strings, this.valueIndices, asCallback)
 	}
@@ -249,14 +249,14 @@ export abstract class SlotParserBase {
 	 * Add a custom value to value list,
 	 * and return reference of this value.
 	 */
-	outputCustomValue(node: TS.Expression) {
+	outputCustomValue(node: ts.Expression) {
 		this.customValueOutputted = true
 		return this.template.values.outputCustomValue(node)
 	}
 
 	/** `$latest_0 !== $values[0], ...` */
-	outputLatestComparison(latestVariableNames: (string | null)[], valueNodes: TS.Expression[]):  TS.Expression {
-		let exps: TS.Expression[] = []
+	outputLatestComparison(latestVariableNames: (string | null)[], valueNodes: ts.Expression[]):  ts.Expression {
+		let exps: ts.Expression[] = []
 
 		for (let i = 0; i < latestVariableNames.length; i++) {
 			let name = latestVariableNames[i]
@@ -277,8 +277,8 @@ export abstract class SlotParserBase {
 	}
 
 	/** `$latest_0 = $values[0], ...` */
-	outputLatestAssignments(latestVariableNames: (string | null)[], valueNodes: TS.Expression[]):  TS.Statement[] {
-		let exps: TS.Expression[] = []
+	outputLatestAssignments(latestVariableNames: (string | null)[], valueNodes: ts.Expression[]):  ts.Statement[] {
+		let exps: ts.Expression[] = []
 
 		for (let i = 0; i < latestVariableNames.length; i++) {
 			let name = latestVariableNames[i]
@@ -299,7 +299,7 @@ export abstract class SlotParserBase {
 	}
 
 	/** Return a callback to get `new TemplateSlot(...)`. */
-	prepareTemplateSlot(slotContentType: number | null): () => TS.Expression {
+	prepareTemplateSlot(slotContentType: number | null): () => ts.Expression {
 		Modifier.addImport('TemplateSlot', '@pucelle/lupos.js')
 		Modifier.addImport('SlotPosition', '@pucelle/lupos.js')
 
@@ -383,7 +383,7 @@ export abstract class SlotParserBase {
 	 * Prepare nodes for `SlotRange`, and return a getter,
 	 * call which will get slot range node.
 	 */
-	protected prepareNodesSlotRangeNodes(): (() => TS.Expression[]) | null {
+	protected prepareNodesSlotRangeNodes(): (() => ts.Expression[]) | null {
 		if (this.node.children.length === 0) {
 			return null
 		}
@@ -420,7 +420,7 @@ export abstract class SlotParserBase {
 	}
 
 	/** Try resolve component declarations. */
-	protected* resolveComponentDeclarations(): Iterable<TS.ClassDeclaration> {
+	protected* resolveComponentDeclarations(): Iterable<ts.ClassDeclaration> {
 		let tagName = this.node.tagName!
 		let isNamedComponent = TemplateSlotPlaceholder.isNamedComponent(tagName)
 		let isDynamicComponent = TemplateSlotPlaceholder.isDynamicComponent(tagName)
@@ -501,17 +501,17 @@ export abstract class SlotParserBase {
 	 * `nodeAttrInits` are all the attribute, binding applied to current node,
 	 * it will be applied only for component or dynamic component slot.
 	 */
-	outputInit(_nodeAttrInits: TS.Statement[]): TS.Statement | TS.Expression | (TS.Statement| TS.Expression)[] {
+	outputInit(_nodeAttrInits: ts.Statement[]): ts.Statement | ts.Expression | (ts.Statement| ts.Expression)[] {
 		return []
 	}
 
 	/** Also output init codes, but output them later than all normal init codes. */
-	outputMoreInit(): TS.Statement | TS.Expression | (TS.Statement| TS.Expression)[] {
+	outputMoreInit(): ts.Statement | ts.Expression | (ts.Statement| ts.Expression)[] {
 		return []
 	}
 
 	/** Output update codes. */
-	outputUpdate(): TS.Statement | TS.Expression | (TS.Statement| TS.Expression)[] {
+	outputUpdate(): ts.Statement | ts.Expression | (ts.Statement| ts.Expression)[] {
 		return []
 	}
 }

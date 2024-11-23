@@ -1,5 +1,5 @@
-import type TS from 'typescript'
-import {Modifier, ts} from '../../core'
+import * as ts from 'typescript'
+import {Modifier} from '../../core'
 import {Helper} from '../../lupos-ts-module'
 import {TrackingScope} from './scope'
 import {TrackingScopeTree, TrackingScopeTypeMask} from './scope-tree'
@@ -375,7 +375,7 @@ export namespace Optimizer {
 			Set = 2,
 		}
 
-		let classNode = scope.node as TS.ClassLikeDeclaration
+		let classNode = scope.node as ts.ClassLikeDeclaration
 		let nameMap: Map<string, {indices: number[], typeMask: TypeMask | 0}> = new Map()
 
 

@@ -1,7 +1,7 @@
-import type TS from 'typescript'
+import * as ts from 'typescript'
 import {Part, TreeParser} from './tree'
 import {HTMLNode, HTMLNodeType, HTMLRoot} from '../html-syntax'
-import {factory, Modifier, Packer, Scope, TemplateSlotPlaceholder, ts} from '../../core'
+import {factory, Modifier, Packer, Scope, TemplateSlotPlaceholder} from '../../core'
 import {Helper} from '../../lupos-ts-module'
 import {SlotParserBase} from './slots'
 import {VariableNames} from './variable-names'
@@ -10,8 +10,8 @@ import {HTMLOutputHandler} from './html-output'
 import {TemplateParser} from './template'
 
 
-type OutputNodes = TS.Expression | TS.Statement | (TS.Expression | TS.Statement)[]
-type OutputNodeList = (TS.Expression | TS.Statement)[]
+type OutputNodes = ts.Expression | ts.Statement | (ts.Expression | ts.Statement)[]
+type OutputNodeList = (ts.Expression | ts.Statement)[]
 
 
 export class TreeOutputHandler {
@@ -235,7 +235,7 @@ export class TreeOutputHandler {
 	}
 
 	/** Make `new SlotPosition(...)` to indicate the start inner position of template. */
-	private outputSlotPosition(): TS.Expression | null {
+	private outputSlotPosition(): ts.Expression | null {
 		Modifier.addImport('SlotPosition', '@pucelle/lupos.js')
 
 		let position = SlotPositionType.Before
@@ -305,7 +305,7 @@ export class TreeOutputHandler {
 			let nodeName = this.tree.references.getRefedName(node)
 	
 			// $node.firstChild
-			let fromExp: TS.Expression | undefined
+			let fromExp: ts.Expression | undefined
 
 			// When visiting template.content.firstChild,
 			// uses `$context.el` to represent it.
@@ -410,13 +410,13 @@ export class TreeOutputHandler {
 
 	/** TemplateInitResult, `{el, position, update, parts}`. */
 	private outputTemplateInitResult(
-		position: TS.Expression | null,
+		position: ts.Expression | null,
 		update: OutputNodeList,
 		parts: Part[]
 	) {
 		
 		// position part.
-		let positionNode: TS.PropertyAssignment | null = null
+		let positionNode: ts.PropertyAssignment | null = null
 		if (position) {
 			positionNode = factory.createPropertyAssignment(
 				factory.createIdentifier('position'),
@@ -432,7 +432,7 @@ export class TreeOutputHandler {
 		let updateParameters = this.outputUpdateParameters(updateBlock)
 
 		// `update` part.
-		let updateNode: TS.MethodDeclaration | null = null
+		let updateNode: ts.MethodDeclaration | null = null
 		if (update.length > 0) {
 			updateNode = factory.createMethodDeclaration(
 				undefined,
@@ -447,9 +447,9 @@ export class TreeOutputHandler {
 		}
 
 		// `parts` part, list of all parts.
-		let partsNode: TS.PropertyAssignment | null = null
+		let partsNode: ts.PropertyAssignment | null = null
 		if (parts.length > 0) {
-			let partExp: TS.Expression = factory.createArrayLiteralExpression(
+			let partExp: ts.Expression = factory.createArrayLiteralExpression(
 				parts.map(part => factory.createArrayLiteralExpression([
 					factory.createIdentifier(part.name),
 					factory.createNumericLiteral(part.position)
@@ -478,9 +478,9 @@ export class TreeOutputHandler {
 	}
 
 	/** Output parameters `(?$values)` of update function. */
-	private outputUpdateParameters(block: TS.Block): TS.ParameterDeclaration[] {
+	private outputUpdateParameters(block: ts.Block): ts.ParameterDeclaration[] {
 		let hasValuesRef = !!Helper.findInward(block, node => ts.isIdentifier(node) && node.text === VariableNames.values)
-		let params: TS.ParameterDeclaration[] = []
+		let params: ts.ParameterDeclaration[] = []
 
 		if (hasValuesRef) {
 			params.push(factory.createParameterDeclaration(
@@ -497,9 +497,9 @@ export class TreeOutputHandler {
 	}
 
 	/** Output parameters `(?$context, ?$latestValues)` of template maker init function. */
-	private outputTemplateInitParameters(block: TS.Block): TS.ParameterDeclaration[] {
+	private outputTemplateInitParameters(block: ts.Block): ts.ParameterDeclaration[] {
 		let hasContextRef = !!Helper.findInward(block, node => ts.isIdentifier(node) && node.text === VariableNames.context)
-		let params: TS.ParameterDeclaration[] = []
+		let params: ts.ParameterDeclaration[] = []
 
 		if (hasContextRef) {
 			params.push(factory.createParameterDeclaration(

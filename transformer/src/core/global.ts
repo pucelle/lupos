@@ -1,27 +1,25 @@
-import TS from 'typescript'
+import * as ts from 'typescript'
 import {DiagnosticModifier, TransformerExtras} from '../../../compiler/out/patch'
+import {Helper} from '../lupos-ts-module'
 
 
-export let typeChecker: TS.TypeChecker
+export let typeChecker: ts.TypeChecker
 export let diagnosticModifier: DiagnosticModifier
-export let ts = TS	// May switch to a patched typescript like `ts-patch`.
-export let factory: TS.NodeFactory
-export let transformContext: TS.TransformationContext
-export let sourceFile: TS.SourceFile
+export let factory: ts.NodeFactory
+export let transformContext: ts.TransformationContext
+export let sourceFile: ts.SourceFile
 
 
-export function setTransformProgram(extras: TransformerExtras) {
-	typeChecker = extras.program.getProgram().getTypeChecker()
-	diagnosticModifier = extras.diagnosticModifier
-}
-
-
-export function setTransformContext(ctx: TS.TransformationContext) {
+export function setTransformContext(ctx: ts.TransformationContext, extras: TransformerExtras) {
 	transformContext = ctx
 	factory = ctx.factory
+	typeChecker = extras.program.getProgram().getTypeChecker()
+	diagnosticModifier = extras.diagnosticModifier
+
+	Helper.setContext(typeChecker, ctx)
 }
 
 
-export function setSourceFile(file: TS.SourceFile) {
+export function setSourceFile(file: ts.SourceFile) {
 	sourceFile = file
 }

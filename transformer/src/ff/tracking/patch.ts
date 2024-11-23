@@ -1,4 +1,4 @@
-import type TS from 'typescript'
+import * as ts from 'typescript'
 import {ObservedChecker} from './observed-checker'
 import {AccessGrouper} from './access-grouper'
 import {TrackingRanges} from './ranges'
@@ -17,8 +17,8 @@ export enum ForceTrackType {
  */
 export namespace TrackingPatch {
 
-	const Ignored: Set<TS.Node> = new Set()
-	const ForceTracked: Map<TS.Node, ForceTrackType> = new Map()
+	const Ignored: Set<ts.Node> = new Set()
+	const ForceTracked: Map<ts.Node, ForceTrackType> = new Map()
 
 
 	/** Initialize after each time source file updated. */
@@ -31,12 +31,12 @@ export namespace TrackingPatch {
 	 * Ignore outputting tracking node by it's visit index.
 	 * Note it ignores outputting, not prevent observe checking.
 	 */
-	export function ignore(rawNode: TS.Node) {
+	export function ignore(rawNode: ts.Node) {
 		Ignored.add(rawNode)
 	}
 
 	/** Check whether ignored outputting specified visit index. */
-	export function isIgnored(rawNode: TS.Node): boolean {
+	export function isIgnored(rawNode: ts.Node): boolean {
 		return Ignored.has(rawNode)
 	}
 
@@ -46,7 +46,7 @@ export namespace TrackingPatch {
 	 * If tracking type is `Elements`, for array type, will track elements,
 	 * and it would apply additional elements get tracking.
 	 */
-	export function forceTrack(rawNode: TS.Node, type: ForceTrackType) {
+	export function forceTrack(rawNode: ts.Node, type: ForceTrackType) {
 		ForceTracked.set(rawNode, type)
 	}
 
@@ -56,7 +56,7 @@ export namespace TrackingPatch {
 	 * `parental` specifies whether are visiting parent node of original
 	 * to determine whether elements should be observed.
 	 */
-	export function isForceTracked(rawNode: TS.Node, parental: boolean = false): boolean {
+	export function isForceTracked(rawNode: ts.Node, parental: boolean = false): boolean {
 		let type = ForceTracked.get(rawNode)
 		if (type === undefined) {
 			return false
@@ -73,12 +73,12 @@ export namespace TrackingPatch {
 	}
 
 	/** Get force tracking type of specified node. */
-	export function getForceTrackType(rawNode: TS.Node): ForceTrackType | undefined {
+	export function getForceTrackType(rawNode: ts.Node): ForceTrackType | undefined {
 		return ForceTracked.get(rawNode)
 	}
 
 	/** Output isolated tracking expressions. */
-	export function outputIsolatedTracking(rawNode: TS.Expression, type: 'get' | 'set'): TS.Expression[] {
+	export function outputIsolatedTracking(rawNode: ts.Expression, type: 'get' | 'set'): ts.Expression[] {
 		if (!Helper.access.isAccess(rawNode)) {
 			return []
 		}
@@ -92,7 +92,7 @@ export namespace TrackingPatch {
 	}
 
 	/** Output custom range tracking expressions by. */
-	export function outputCustomRangeTracking(rangeId: number): TS.Expression[] {
+	export function outputCustomRangeTracking(rangeId: number): ts.Expression[] {
 		let scope = TrackingRanges.getScopeByRangeId(rangeId)
 		if (!scope) {
 			return []

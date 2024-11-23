@@ -1,5 +1,5 @@
-import type TS from 'typescript'
-import {factory, Packer, TemplateSlotPlaceholder, ts} from '../../../core'
+import * as ts from 'typescript'
+import {factory, Packer, TemplateSlotPlaceholder} from '../../../core'
 import {Helper} from '../../../lupos-ts-module'
 import {BindingBase, BindingUpdateCallWith} from './base'
 import {TrackingPatch} from '../../../ff'
@@ -44,7 +44,7 @@ export class RefBinding extends BindingBase {
 		super.preInit()
 	}
 
-	private getRawValueNode(): TS.Expression | undefined {
+	private getRawValueNode(): ts.Expression | undefined {
 		let rawValueNode = this.slot.getFirstRawValueNode()
 
 		// `a!` -> `a`
@@ -90,7 +90,7 @@ export class RefBinding extends BindingBase {
 		}
 	}
 
-	private initAccessUsing(rawValueNode: TS.Expression) {
+	private initAccessUsing(rawValueNode: ts.Expression) {
 		if (!rawValueNode) {
 			return
 		}

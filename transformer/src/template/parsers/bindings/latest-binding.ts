@@ -1,11 +1,11 @@
-import type TS from 'typescript'
+import type * as ts from 'typescript'
 import {HTMLNode} from '../../html-syntax'
 
 
 export interface LatestBindingInfo {
 	name: string
 	node: HTMLNode
-	queryParameter: TS.Expression | null
+	queryParameter: ts.Expression | null
 }
 
 
@@ -13,7 +13,7 @@ let latest: LatestBindingInfo | null = null
 
 
 /** Can only set when doing `init`. */
-export function setLatestBindingInfo(node: HTMLNode, name: string, queryParameter: TS.Expression | null) {
+export function setLatestBindingInfo(node: HTMLNode, name: string, queryParameter: ts.Expression | null) {
 	latest = {
 		node,
 		name,

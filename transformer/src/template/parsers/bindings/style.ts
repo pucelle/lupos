@@ -1,4 +1,5 @@
-import {factory, Packer, ts} from '../../../core'
+import ts = require('typescript')
+import {factory, Packer} from '../../../core'
 import {Helper} from '../../../lupos-ts-module'
 import {BindingBase, BindingUpdateCallWith} from './base'
 

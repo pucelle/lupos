@@ -1,5 +1,5 @@
-import type TS from 'typescript'
-import {InterpolationContentType, Interpolator, InterpolationPosition, VisitTree, ts, FlowInterruptionTypeMask, ScopeTree, Packer} from '../../core'
+import * as ts from 'typescript'
+import {InterpolationContentType, Interpolator, InterpolationPosition, VisitTree, FlowInterruptionTypeMask, ScopeTree, Packer} from '../../core'
 import {AccessNode, Helper} from '../../lupos-ts-module'
 import {TrackingScope} from './scope'
 import {TrackingScopeTree, TrackingScopeTypeMask} from './scope-tree'
@@ -152,8 +152,8 @@ export class TrackingCapturer {
 
 	/** Capture a node. */
 	capture(
-		node: AccessNode | TS.Identifier,
-		exp: TS.Expression | undefined,
+		node: AccessNode | ts.Identifier,
+		exp: ts.Expression | undefined,
 		keys: (string | number)[] | undefined,
 		type: 'get' | 'set'
 	) {
@@ -261,7 +261,7 @@ export class TrackingCapturer {
 
 		// For function declaration, insert to function body.
 		if (this.scope.type & TrackingScopeTypeMask.FunctionLike) {
-			let body = (node as TS.FunctionLikeDeclarationBase).body
+			let body = (node as ts.FunctionLikeDeclarationBase).body
 
 			// Abstract function or function type declaration has no body.
 			if (body) {
@@ -441,7 +441,7 @@ export class TrackingCapturer {
 	}
 
 	/** Transfer specified indices to specified position. */
-	private makeCapturedExps(items: CapturedItem[]): TS.Expression[] {
+	private makeCapturedExps(items: CapturedItem[]): ts.Expression[] {
 		let getItems = items.filter(index => index.type === 'get')
 		let setItems = items.filter(index => index.type === 'set')
 
@@ -460,7 +460,7 @@ export class TrackingCapturer {
 			let nodes: AccessNode[] = []
 
 			// Expression of an access node may be totally replaced after been referenced as `$ref_0`.
-			let node = Interpolator.outputSelf(item.expIndex) as TS.Expression
+			let node = Interpolator.outputSelf(item.expIndex) as ts.Expression
 			let keys = item.keys!
 
 			node = Packer.extractFinalParenthesized(node) as AccessNode
@@ -481,12 +481,12 @@ export class TrackingCapturer {
 	}
 
 	/** Output captured as tracking expressions. */
-	outputCustomCaptured(): TS.Expression[] {
+	outputCustomCaptured(): ts.Expression[] {
 		if (this.outputWay !== CapturedOutputWay.Custom) {
 			throw new Error(`Only capturer in "Custom" output way can output custom captured!`)
 		}
 
-		let exps: TS.Expression[] = []
+		let exps: ts.Expression[] = []
 
 		for (let group of this.captured) {
 			if (group.items.length === 0) {

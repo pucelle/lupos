@@ -1,6 +1,6 @@
-import type TS from 'typescript'
+import * as ts from 'typescript'
 import {SlotParserBase} from './base'
-import {factory, Modifier, ts} from '../../../core'
+import {factory, Modifier} from '../../../core'
 import {VariableNames} from '../variable-names'
 import {SlotContentType, SlotPositionType} from '../../../enums'
 import {TemplateParser} from '../template'
@@ -114,7 +114,7 @@ export class SlotTagSlotParser extends SlotParserBase {
 		Modifier.addImport('TemplateSlot', '@pucelle/lupos.js')
 
 		// `this.__getSlotElement(slotName)`
-		let value: TS.Expression = factory.createCallExpression(
+		let value: ts.Expression = factory.createCallExpression(
 			factory.createPropertyAccessExpression(
 				factory.createThis(),
 				factory.createIdentifier('__getSlotElement')

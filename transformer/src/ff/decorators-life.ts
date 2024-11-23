@@ -1,12 +1,12 @@
-import type TS from 'typescript'
-import {ts, defineVisitor, factory, Interpolator, VisitTree, MethodOverwrite, Modifier, MethodInsertPosition} from '../core'
+import * as ts from 'typescript'
+import {defineVisitor, factory, Interpolator, VisitTree, MethodOverwrite, Modifier, MethodInsertPosition} from '../core'
 import {Helper} from '../lupos-ts-module'
 import {ProcessorClassNameMap, ProcessorPropNameMap} from './decorators-shared'
 import {Packer} from '../core/packer'
 
 
 // Add some decorator compiled part to `constructor` or `onConnected` and `onWillDisconnect`.
-defineVisitor(function(node: TS.Node, _index: number) {
+defineVisitor(function(node: ts.Node, _index: number) {
 	if (!ts.isClassDeclaration(node)) {
 		return
 	}
@@ -71,7 +71,7 @@ defineVisitor(function(node: TS.Node, _index: number) {
 })
 
 
-function hasLifeDecorators(node: TS.ClassDeclaration) {
+function hasLifeDecorators(node: ts.ClassDeclaration) {
 	return node.members.some(member => {
 		if (!ts.isMethodDeclaration(member)
 			&& !ts.isPropertyDeclaration(member)
@@ -119,15 +119,15 @@ onWillDisconnect() {
 ```
 */
 function compileComputedEffectWatchDecorator(
-	deco: TS.Decorator,
+	deco: ts.Decorator,
 	decoName: string,
-	decl: TS.MethodDeclaration | TS.GetAccessorDeclaration,
+	decl: ts.MethodDeclaration | ts.GetAccessorDeclaration,
 	create: MethodOverwrite,
 	connect: MethodOverwrite | null,
 	disconnect: MethodOverwrite | null
 ) {
 	let methodName = Helper.getFullText(decl.name)
-	let superCls = Helper.cls.getSuper(decl.parent as TS.ClassDeclaration)
+	let superCls = Helper.cls.getSuper(decl.parent as ts.ClassDeclaration)
 	let isOverwritten = !!superCls && !!Helper.cls.getMember(superCls, methodName, true)
 
 	if (isOverwritten) {
@@ -187,10 +187,10 @@ function compileComputedEffectWatchDecorator(
 
 
 function makeMakerParameters(
-	deco: TS.Decorator,
+	deco: ts.Decorator,
 	decoName: string,
-	decl: TS.MethodDeclaration | TS.GetAccessorDeclaration
-): () => TS.Expression[] {
+	decl: ts.MethodDeclaration | ts.GetAccessorDeclaration
+): () => ts.Expression[] {
 	let methodName = Helper.getFullText(decl.name)
 	let watchGetters = compileWatchGetters(deco)
 
@@ -231,7 +231,7 @@ function makeMakerParameters(
 
 
 /** Compile `@watch(...)` to new WatchMultipleMaker([...]). */
-function compileWatchGetters(deco: TS.Decorator): () => TS.FunctionExpression[] {
+function compileWatchGetters(deco: ts.Decorator): () => ts.FunctionExpression[] {
 	if (!ts.isCallExpression(deco.expression)) {
 		return () => []
 	}
@@ -243,7 +243,7 @@ function compileWatchGetters(deco: TS.Decorator): () => TS.FunctionExpression[] 
 	}
 
 	return () => {
-		let getters: TS.FunctionExpression[] = []
+		let getters: ts.FunctionExpression[] = []
 
 		for (let arg of decoArgs) {
 			if (ts.isStringLiteral(arg)) {
@@ -280,7 +280,7 @@ function compileWatchGetters(deco: TS.Decorator): () => TS.FunctionExpression[] 
 			// function(){...}
 			else if (ts.isFunctionExpression(arg)) {
 				let getterIndex = VisitTree.getIndex(arg)
-				let getter = Interpolator.outputChildren(getterIndex) as TS.FunctionExpression
+				let getter = Interpolator.outputChildren(getterIndex) as ts.FunctionExpression
 
 				getters.push(getter)
 			}
@@ -324,14 +324,14 @@ onWillDisconnect() {
 ```
 */
 function compileSetContextDecorator(
-	propDecl: TS.PropertyDeclaration,
+	propDecl: ts.PropertyDeclaration,
 	create: MethodOverwrite,
 	connect: MethodOverwrite | null,
 	disconnect: MethodOverwrite | null,
 	hasDeletedContextVariables: boolean
 ) {
 	let propName = Helper.getFullText(propDecl.name)
-	let extended = Helper.cls.getExtends(propDecl.parent as TS.ClassDeclaration)!
+	let extended = Helper.cls.getExtends(propDecl.parent as ts.ClassDeclaration)!
 	let classExp = extended.expression
 		
 	let connectStatement = factory.createExpressionStatement(factory.createCallExpression(
@@ -383,14 +383,14 @@ onWillDisconnect() {
 ```
 */
 function compileUseContextDecorator(
-	propDecl: TS.PropertyDeclaration,
+	propDecl: ts.PropertyDeclaration,
 	create: MethodOverwrite,
 	connect: MethodOverwrite | null,
 	disconnect: MethodOverwrite | null,
 	hasDeletedContextVariables: boolean
 ) {
 	let propName = Helper.getFullText(propDecl.name)
-	let extended = Helper.cls.getExtends(propDecl.parent as TS.ClassDeclaration)!
+	let extended = Helper.cls.getExtends(propDecl.parent as ts.ClassDeclaration)!
 	let classExp = extended.expression
 	
 	let connectStatement = factory.createExpressionStatement(factory.createBinaryExpression(

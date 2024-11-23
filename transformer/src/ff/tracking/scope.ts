@@ -1,6 +1,6 @@
-import type TS from 'typescript'
+import * as ts from 'typescript'
 import {ObservedChecker} from './observed-checker'
-import {ts, FlowInterruptionTypeMask, ScopeTree} from '../../core'
+import {FlowInterruptionTypeMask, ScopeTree} from '../../core'
 import {AccessNode, Helper} from '../../lupos-ts-module'
 import {TrackingScopeState} from './scope-state'
 import {TrackingScopeTypeMask} from './scope-tree'
@@ -20,7 +20,7 @@ export class TrackingScope {
 
 	readonly type: TrackingScopeTypeMask
 	readonly visitIndex: number
-	readonly node: TS.Node
+	readonly node: ts.Node
 	readonly parent: TrackingScope | null
 	readonly range: TrackingRange | null
 	readonly children: TrackingScope[] = []
@@ -36,7 +36,7 @@ export class TrackingScope {
 
 	constructor(
 		type: TrackingScopeTypeMask,
-		rawNode: TS.Node,
+		rawNode: ts.Node,
 		index: number,
 		parent: TrackingScope | null,
 		range: TrackingRange | null
@@ -107,7 +107,7 @@ export class TrackingScope {
 	 * Visit scope node and each descendant node inside current scope.
 	 * When visiting a node, child nodes of this node have visited.
 	 */
-	visitNode(node: TS.Node) {
+	visitNode(node: ts.Node) {
 
 		// Add parameters.
 		if (ts.isParameter(node)) {
@@ -169,7 +169,7 @@ export class TrackingScope {
 	}
 
 	/** Add a property access expression. */
-	private mayAddGetTracking(node: AccessNode | TS.Identifier, exp?: TS.Expression, keys?: (string | number)[]) {
+	private mayAddGetTracking(node: AccessNode | ts.Identifier, exp?: ts.Expression, keys?: (string | number)[]) {
 		if (this.state.shouldIgnoreGetTracking(node)) {
 			return
 		}
@@ -186,12 +186,12 @@ export class TrackingScope {
 		// Force tracking.
 		let type = TrackingPatch.getForceTrackType(node)
 		if (type === ForceTrackType.Elements) {
-			this.capturer.capture(node, node as TS.Expression, [''], 'get')
+			this.capturer.capture(node, node as ts.Expression, [''], 'get')
 		}
 	}
 
 	/** Add a property assignment expression. */
-	private mayAddSetTracking(node: AccessNode | TS.Identifier, exp?: TS.Expression, keys?: (string | number)[]) {
+	private mayAddSetTracking(node: AccessNode | ts.Identifier, exp?: ts.Expression, keys?: (string | number)[]) {
 		if (this.state.shouldIgnoreSetTracking(node)) {
 			return
 		}

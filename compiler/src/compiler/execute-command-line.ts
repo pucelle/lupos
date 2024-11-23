@@ -1,8 +1,8 @@
 //// From https://github.com/microsoft/TypeScript/blob/main/src/compiler/executeCommandLine.ts
 
 
-import ts from 'typescript';
-import fs from 'node:fs';
+import * as ts from 'typescript'
+import * as fs from 'node:fs';
 import {createDiagnosticReporter, createWatchStatusReporter} from './watch';
 import {hasProperty} from './core';
 import {DiagnosticModifier, ExtendedTransformerFactory, interpolateHostCreateProgram} from '../patch';

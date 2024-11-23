@@ -1,6 +1,6 @@
-import {factory, InterpolationContentType, Interpolator, Modifier, transformContext, ts, VisitTree, ScopeTree} from '../../core'
+import {factory, InterpolationContentType, Interpolator, Modifier, transformContext, VisitTree, ScopeTree} from '../../core'
 import {AccessNode, Helper} from '../../lupos-ts-module'
-import type TS from 'typescript'
+import * as ts from 'typescript'
 import {TrackingScopeTree} from './scope-tree'
 import {TrackingScope} from './scope'
 
@@ -21,7 +21,7 @@ export namespace AccessReferences {
 	 * 
 	 * By avoid visiting a node twice, will only reference `a`.
 	 */
-	const VisitedNodes: Set<TS.Node> = new Set()
+	const VisitedNodes: Set<ts.Node> = new Set()
 
 	/** 
 	 * If access as `a.b`, and later assign `a`, then node `a` of `a.b` become mutable.
@@ -84,7 +84,7 @@ export namespace AccessReferences {
 	 * and build a map of all the referenced variables/accessing, to current node.
 	 * Later, when one of these nodes assigned, we will reference this access node.
 	 */
-	function visitAssessVisitor(node: TS.Node, topIndex: number): TS.Node {
+	function visitAssessVisitor(node: ts.Node, topIndex: number): ts.Node {
 		if (VisitedNodes.has(node)) {
 			return node
 		}
@@ -99,7 +99,7 @@ export namespace AccessReferences {
 			}
 		}
 
-		return ts.visitEachChild(node, (n: TS.Node) => visitAssessVisitor(n, topIndex), transformContext)
+		return ts.visitEachChild(node, (n: ts.Node) => visitAssessVisitor(n, topIndex), transformContext)
 	}
 
 
@@ -161,7 +161,7 @@ export namespace AccessReferences {
 	 * `a().b` -> `var $ref_; ...; $ref_ = a(); $ref_.b`
 	 * or `a[i++]` -> `var _ref; ... ; $ref_ = i++; a[_ref]`
 	 */
-	function shouldReferenceInternal(node: TS.Node): boolean {
+	function shouldReferenceInternal(node: ts.Node): boolean {
 
 		// `a && b`, `a || b`, `a ?? b`, `a + b`, `a, b`.
 		if (ts.isBinaryExpression(node)) {

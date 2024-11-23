@@ -1,5 +1,5 @@
-import type TS from 'typescript'
-import {factory, Modifier, Packer, ts} from '../../core'
+import * as ts from 'typescript'
+import {factory, Modifier, Packer} from '../../core'
 import {AccessNode, Helper} from '../../lupos-ts-module'
 import {groupBy} from '../../utils'
 
@@ -16,7 +16,7 @@ export namespace AccessGrouper {
 	
 
 	/** Group expressions to lately insert a position. */
-	export function makeExpressions(nodes: AccessNode[], type: 'get' | 'set'): TS.Expression[] {
+	export function makeExpressions(nodes: AccessNode[], type: 'get' | 'set'): ts.Expression[] {
 		nodes = nodes.map(node => Packer.normalize(node, true) as AccessNode)
 
 		let grouped = groupExpressions(nodes)
@@ -50,7 +50,7 @@ export namespace AccessGrouper {
 
 
 	/** Create a `trackGet` or `trackSet` call. */
-	function createGroupedExpression(nodes: AccessNode[], type: 'get' | 'set'): TS.Expression {
+	function createGroupedExpression(nodes: AccessNode[], type: 'get' | 'set'): ts.Expression {
 		let node = nodes[0]
 		let parameters = createNameParameter(nodes)
 		
@@ -75,7 +75,7 @@ export namespace AccessGrouper {
 
 
 	/** Create a parameter for `trackGet` or `trackSet` by a group of nodes. */
-	function createNameParameter(nodes: AccessNode[]): TS.Expression[] {
+	function createNameParameter(nodes: AccessNode[]): ts.Expression[] {
 		let node = nodes[0]
 		let group = groupNameExpressionKeys(nodes)
 		let nameExps = [...group.values()].map(nodes => getAccessNodeNameProperty(nodes[0]))
@@ -107,8 +107,8 @@ export namespace AccessGrouper {
 
 
 	/** Get name of property expression. */
-	function getAccessNodeNameProperty(node: AccessNode): TS.Expression {
-		let name: TS.Expression
+	function getAccessNodeNameProperty(node: AccessNode): ts.Expression {
+		let name: ts.Expression
 
 		if (ts.isPropertyAccessExpression(node)) {
 			name = factory.createStringLiteral(Helper.getFullText(node.name))

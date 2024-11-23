@@ -1,6 +1,6 @@
-import type TS from 'typescript'
+import * as ts from 'typescript'
 import {SlotParserBase} from './base'
-import {factory, Modifier, ts} from '../../../core'
+import {factory, Modifier} from '../../../core'
 import {HTMLNode, HTMLNodeType} from '../../html-syntax'
 import {SlotPositionType} from '../../../enums'
 
@@ -14,10 +14,10 @@ export class DynamicComponentSlotParser extends SlotParserBase {
 	private slotVariableName: string = ''
 
 	/** new TemplateSlot(...) */
-	private templateSlotGetter!: () => TS.Expression
+	private templateSlotGetter!: () => ts.Expression
 
 	/** Nodes parameters for `new SlotRange(...)` */
-	private slotRangeNodesGetter: (() => TS.Expression[]) | null = null
+	private slotRangeNodesGetter: (() => ts.Expression[]) | null = null
 
 	preInit() {
 		this.refAsComponent()
@@ -65,7 +65,7 @@ export class DynamicComponentSlotParser extends SlotParserBase {
 		}
 	}
 
-	outputInit(nodeAttrInits: TS.Statement[]) {
+	outputInit(nodeAttrInits: ts.Statement[]) {
 		Modifier.addImport('DynamicComponentBlock', '@pucelle/lupos.js')
 
 		let hasNodeRefed = this.hasNodeRefed()

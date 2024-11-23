@@ -1,5 +1,5 @@
-import type TS from 'typescript'
-import {Packer, ts, VisitTree} from '../../core'
+import * as ts from 'typescript'
+import {Packer, VisitTree} from '../../core'
 import {Helper} from '../../lupos-ts-module'
 import {TrackingScope} from './scope'
 import {ListMap} from '../../utils'
@@ -101,10 +101,10 @@ export namespace TrackingScopeTree {
 	export let current: TrackingScope | null = null
 
 	/** Visit index -> scope list. */
-	const ScopeMap: ListMap<TS.Node, TrackingScope> = new ListMap()
+	const ScopeMap: ListMap<ts.Node, TrackingScope> = new ListMap()
 
 	/** Visit index -> scope list. */
-	const SpecifiedAdditionalScopeType: Map<TS.Node, 0 | TrackingScopeTypeMask> = new Map()
+	const SpecifiedAdditionalScopeType: Map<ts.Node, 0 | TrackingScopeTypeMask> = new Map()
 
 
 	/** Initialize before visiting a new source file. */
@@ -116,13 +116,13 @@ export namespace TrackingScopeTree {
 	}
 
 	/** Specifies additional type for a node. */
-	export function specifyType(node: TS.Node, additionalType: TrackingScopeTypeMask | 0) {
+	export function specifyType(node: ts.Node, additionalType: TrackingScopeTypeMask | 0) {
 		SpecifiedAdditionalScopeType.set(node, additionalType)
 	}
 
 
 	/** Check tracking scope type of a node. */
-	export function checkType(node: TS.Node): TrackingScopeTypeMask | 0 {
+	export function checkType(node: ts.Node): TrackingScopeTypeMask | 0 {
 		let parent = node.parent
 		let type = 0
 
@@ -296,7 +296,7 @@ export namespace TrackingScopeTree {
 	}
 
 	/** Create a scope from node and push to stack. */
-	export function createScope(type: TrackingScopeTypeMask, node: TS.Node, range: TrackingRange | null = null): TrackingScope {
+	export function createScope(type: TrackingScopeTypeMask, node: ts.Node, range: TrackingRange | null = null): TrackingScope {
 		let index = VisitTree.getIndex(node)
 		let scope = new TrackingScope(type, node, index, current, range)
 
@@ -334,14 +334,14 @@ export namespace TrackingScopeTree {
 	 * Visit scope node and each descendant node within current scope.
 	 * Recently all child scopes have been visited.
 	 */
-	export function visitNode(node: TS.Node) {
+	export function visitNode(node: ts.Node) {
 		if (current) {
 			current.visitNode(node)
 		}
 	}
 
 	/** Find closest scope contains or equals node. */
-	export function findClosest(node: TS.Node): TrackingScope {
+	export function findClosest(node: ts.Node): TrackingScope {
 		let scopes = ScopeMap.get(node)
 
 		while (!scopes) {

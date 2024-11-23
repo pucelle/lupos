@@ -1,12 +1,12 @@
-import type TS from 'typescript'
-import {defineVisitor, ts, Interpolator, InterpolationContentType, TemplateSlotPlaceholder, Modifier, onVisitedSourceFile} from '../core'
+import * as ts from 'typescript'
+import {defineVisitor, Interpolator, InterpolationContentType, TemplateSlotPlaceholder, Modifier, onVisitedSourceFile} from '../core'
 import {Helper} from '../lupos-ts-module'
 import {TemplateParser} from './parsers'
 import {VariableNames} from './parsers/variable-names'
 import {HTMLRoot} from './html-syntax'
 
 
-defineVisitor(function(node: TS.Node, index: number) {
+defineVisitor(function(node: ts.Node, index: number) {
 	if (ts.isSourceFile(node)) {
 		VariableNames.init()
 		return
@@ -43,7 +43,7 @@ defineVisitor(function(node: TS.Node, index: number) {
 
 
 /** Parse a html template literal. */
-function parseHTMLTemplate(node: TS.TaggedTemplateExpression, index: number, templateType: 'html' | 'svg') {
+function parseHTMLTemplate(node: ts.TaggedTemplateExpression, index: number, templateType: 'html' | 'svg') {
 	let {string, mapper} = TemplateSlotPlaceholder.toTemplateString(node)
 	let values = TemplateSlotPlaceholder.extractTemplateValues(node)
 	let root = HTMLRoot.fromString(string, mapper)

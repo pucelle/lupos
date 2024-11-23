@@ -1,4 +1,4 @@
-import type TS from 'typescript'
+import * as ts from 'typescript'
 import {HTMLNode, HTMLRoot} from '../html-syntax'
 import {TreeParser} from './tree'
 import {TemplateValues} from './template-values'
@@ -22,7 +22,7 @@ export class TemplateParser {
 	readonly values: TemplateValues
 
 	/** Raw template node even for sub template. */
-	readonly rawNode: TS.Node
+	readonly rawNode: ts.Node
 
 	private readonly treeParsers: TreeParser[] = []
 	private readonly subTemplates: TemplateParser[] = []
@@ -30,7 +30,7 @@ export class TemplateParser {
 	/** Which scope should insert contents. */
 	private innerMostScope: Scope = ScopeTree.getTopmost()
 
-	constructor(type: TemplateType, root: HTMLRoot, values: TS.Expression[], rawNode: TS.Node) {
+	constructor(type: TemplateType, root: HTMLRoot, values: ts.Expression[], rawNode: ts.Node) {
 		this.type = type
 		this.root = root
 		this.rawNode = rawNode
@@ -64,7 +64,7 @@ export class TemplateParser {
 	 * If a template uses a local component,
 	 * then generated codes can't be appended to topmost scope.
 	 */
-	addRefedDeclaration(node: TS.Node) {
+	addRefedDeclaration(node: ts.Node) {
 		let scope = ScopeTree.findClosestByNode(node)
 		if (!scope) {
 			return
@@ -115,7 +115,7 @@ export class TemplateParser {
 	 * Returns a expression to replace original template literal.
 	 * Must after `outputCompiled`.
 	 */
-	outputReplaced(): TS.Expression {
+	outputReplaced(): ts.Expression {
 		let mainTreeParser = this.treeParsers[0]
 		let makerName = mainTreeParser.makeTemplateRefName()
 		let valuesNodes = this.values.output()

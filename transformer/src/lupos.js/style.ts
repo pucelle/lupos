@@ -1,10 +1,10 @@
-import type TS from 'typescript'
-import {ts, defineVisitor, factory, Interpolator, InterpolationContentType} from '../core'
+import * as ts from 'typescript'
+import {defineVisitor, factory, Interpolator, InterpolationContentType} from '../core'
 import {Helper} from '../lupos-ts-module'
 
 
 // Add `Com.ensureStyle()` after class declaration.
-defineVisitor(function(node: TS.Node, index: number) {
+defineVisitor(function(node: ts.Node, index: number) {
 	if (!ts.isClassDeclaration(node)) {
 		return
 	}

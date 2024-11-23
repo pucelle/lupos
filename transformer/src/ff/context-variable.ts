@@ -1,9 +1,9 @@
-import type TS from 'typescript'
-import {ts, defineVisitor, factory, Interpolator, InterpolationContentType, Modifier} from '../core'
+import * as ts from 'typescript'
+import {defineVisitor, factory, Interpolator, InterpolationContentType, Modifier} from '../core'
 import {Helper} from '../lupos-ts-module'
 
 
-defineVisitor(function(node: TS.Node, index: number) {
+defineVisitor(function(node: ts.Node, index: number) {
 		
 	// Property and decorated.
 	if (!ts.isPropertyDeclaration(node)) {
@@ -41,7 +41,7 @@ Compile `@setContext prop: type = xxx` to:
 prop: type = xxx
 ```
 */
-function compileSetContextDecorator(propDecl: TS.PropertyDeclaration): TS.Node[] {
+function compileSetContextDecorator(propDecl: ts.PropertyDeclaration): ts.Node[] {
 	let prop = factory.createPropertyDeclaration(
 		undefined,
 		propDecl.name,
@@ -66,7 +66,7 @@ get prop(): any {
 }
 ```
 */
-function compileUseContextDecorator(propDecl: TS.PropertyDeclaration): TS.Node[] {
+function compileUseContextDecorator(propDecl: ts.PropertyDeclaration): ts.Node[] {
 	let propName = Helper.getFullText(propDecl.name)
 
 	let propDeclaredBy = factory.createPropertyDeclaration(

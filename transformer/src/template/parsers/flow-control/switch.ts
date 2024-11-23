@@ -1,5 +1,5 @@
-import type TS from 'typescript'
-import {factory, Interpolator, ts} from '../../../core'
+import * as ts from 'typescript'
+import {factory, Interpolator} from '../../../core'
 import {IfFlowControl} from './if'
 
 
@@ -54,7 +54,7 @@ export class SwitchFlowControl extends IfFlowControl {
 				return factory.createBinaryExpression(
 					switchValue,
 					factory.createToken(ts.SyntaxKind.EqualsEqualsEqualsToken),
-					Interpolator.outputNodeSelf(rawNode) as TS.Expression
+					Interpolator.outputNodeSelf(rawNode) as ts.Expression
 				)
 			}
 		})

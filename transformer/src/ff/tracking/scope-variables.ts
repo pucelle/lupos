@@ -1,6 +1,5 @@
-import type TS from 'typescript'
+import * as ts from 'typescript'
 import {ObservedChecker} from './observed-checker'
-import {ts} from '../../core'
 import {Helper} from '../../lupos-ts-module'
 import {TrackingScope} from './scope'
 import {TrackingScopeTypeMask} from './scope-tree'
@@ -40,7 +39,7 @@ export class TrackingScopeVariables {
 		}
 
 		// Get this parameter.
-		let thisParameter = (node as TS.FunctionLikeDeclaration).parameters.find(param => {
+		let thisParameter = (node as ts.FunctionLikeDeclaration).parameters.find(param => {
 			return ts.isIdentifier(param.name) && param.name.text === 'this'
 		})
 
@@ -81,13 +80,13 @@ export class TrackingScopeVariables {
 	}
 
 	/** Visit a parameter. */
-	visitParameter(node: TS.ParameterDeclaration) {
+	visitParameter(node: ts.ParameterDeclaration) {
 		let observed = ObservedChecker.isParameterObserved(node)
 		this.variableObserved.set(Helper.getFullText(node.name), observed)
 	}
 
 	/** Visit a variable. */
-	visitVariable(node: TS.VariableDeclaration, fromScope: TrackingScope | null = null) {
+	visitVariable(node: ts.VariableDeclaration, fromScope: TrackingScope | null = null) {
 
 		// For Initializer registers variables for whole For Iteration can visit.
 		if (this.scope.type & TrackingScopeTypeMask.IterationInitializer) {
@@ -105,7 +104,7 @@ export class TrackingScopeVariables {
 	}
 
 	/** Check whether a variable declaration node should be observed. */
-	private checkVariableObserved(node: TS.VariableDeclaration, fromScope: TrackingScope | null = null): boolean {
+	private checkVariableObserved(node: ts.VariableDeclaration, fromScope: TrackingScope | null = null): boolean {
 
 		// `for (item of items)`, broadcast observed from items to item.
 		if (fromScope && (fromScope.type & TrackingScopeTypeMask.IterationInitializer) > 0) {

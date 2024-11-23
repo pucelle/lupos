@@ -1,6 +1,6 @@
-import type TS from 'typescript'
+import * as ts from 'typescript'
 import {SlotParserBase} from './base'
-import {factory, Modifier, Packer, TemplateSlotPlaceholder, ts} from '../../../core'
+import {factory, Modifier, Packer, TemplateSlotPlaceholder} from '../../../core'
 import {Helper} from '../../../lupos-ts-module'
 
 
@@ -65,7 +65,7 @@ export class PropertySlotParser extends SlotParserBase {
 	}
 
 	outputUpdate() {
-		let target: TS.Identifier
+		let target: ts.Identifier
 
 		// trackSet
 		if (this.targetType === 'component' && this.latestVariableNames) {

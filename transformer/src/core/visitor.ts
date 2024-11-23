@@ -1,7 +1,7 @@
-import TS from 'typescript'
+import * as ts from 'typescript'
 import {VisitTree} from './visit-tree'
 import {Interpolator} from './interpolator'
-import {setTransformProgram as setTransformExtras, setSourceFile, setTransformContext} from './global'
+import {setSourceFile, setTransformContext} from './global'
 import {ScopeTree} from './scope-tree'
 import {callVisitedSourceFileCallbacks, runPostVisitCallbacks, runPreVisitCallbacks} from './visitor-callbacks'
 import {TransformerExtras} from '../../../compiler/out/patch'
@@ -12,7 +12,7 @@ import {TransformerExtras} from '../../../compiler/out/patch'
  * can either return a function, which will be called after visited all children,
  * or return void to do nothing more.
  */
-type VisitFunction = (node: TS.Node, index: number) => (() => void) | void
+type VisitFunction = (node: ts.Node, index: number) => (() => void) | void
 
 
 /** All defined visitors. */
@@ -33,7 +33,7 @@ export function defineVisitor(visitor: VisitFunction) {
  * Apply defined visitors to a node.
  * Returns a function, which will be called after visited all children.
  */
-function applyVisitors(node: TS.Node): () => void {
+function applyVisitors(node: ts.Node): () => void {
 	let doMoreAfterVisitedChildren: Function[] = []
 	let index = VisitTree.getIndex(node)
 
@@ -53,17 +53,15 @@ function applyVisitors(node: TS.Node): () => void {
 
 
 /** Transformer entry. */
-export function transformer(context: TS.TransformationContext, extras: TransformerExtras): TS.Transformer<TS.SourceFile> {
-	let ts = TS
-	setTransformExtras(extras)
-	setTransformContext(context)
+export function transformer(context: ts.TransformationContext, extras: TransformerExtras): ts.Transformer<ts.SourceFile> {
+	setTransformContext(context, extras)
 
-	return (sourceFile: TS.SourceFile) => {
+	return (sourceFile: ts.SourceFile) => {
 		setSourceFile(sourceFile)
 		runPreVisitCallbacks()
 
 		// In the first visiting initialize visit and scope tree.
-		function initVisitor(node: TS.Node): TS.Node {
+		function initVisitor(node: ts.Node): ts.Node {
 			VisitTree.toNext(node)
 			ScopeTree.toNext(node)
 
@@ -79,7 +77,7 @@ export function transformer(context: TS.TransformationContext, extras: Transform
 			return node
 		}
 
-		function visitor(node: TS.Node): TS.Node {
+		function visitor(node: ts.Node): ts.Node {
 			let doMoreAfterVisitedChildren = applyVisitors(node)
 			ts.visitEachChild(node, visitor, context)
 			doMoreAfterVisitedChildren()
@@ -94,7 +92,7 @@ export function transformer(context: TS.TransformationContext, extras: Transform
 			callVisitedSourceFileCallbacks()
 			runPostVisitCallbacks()
 
-			return Interpolator.outputSelf(0) as TS.SourceFile
+			return Interpolator.outputSelf(0) as ts.SourceFile
 		}
 		catch (err) {
 			console.warn(`Failed to transform source file "${sourceFile.fileName}"!`)

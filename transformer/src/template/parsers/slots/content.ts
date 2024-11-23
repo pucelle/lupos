@@ -1,4 +1,4 @@
-import type TS from 'typescript'
+import type * as ts from 'typescript'
 import {SlotParserBase} from './base'
 import {factory} from '../../../core'
 import {SlotContentType} from '../../../enums'
@@ -14,7 +14,7 @@ export class ContentSlotParser extends SlotParserBase {
 	private latestVariableNames: (string | null)[] | null = null
 
 	/** new TemplateSlot(...) */
-	private templateSlotGetter!: () => TS.Expression
+	private templateSlotGetter!: () => ts.Expression
 
 	preInit() {
 		let slotContentType = this.identifySlotContentType()

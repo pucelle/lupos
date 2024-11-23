@@ -1,10 +1,10 @@
-import type TS from 'typescript'
-import {defineVisitor, ts, Modifier, factory} from '../core'
+import * as ts from 'typescript'
+import {defineVisitor, Modifier, factory} from '../core'
 import {Helper} from '../lupos-ts-module'
 import {SlotContentType} from '../enums'
 
 
-defineVisitor(function(node: TS.Node, _index: number) {
+defineVisitor(function(node: ts.Node, _index: number) {
 	if (!ts.isClassDeclaration(node)) {
 		return
 	}

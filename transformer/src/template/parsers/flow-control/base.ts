@@ -1,4 +1,4 @@
-import type TS from 'typescript'
+import type * as ts from 'typescript'
 import {HTMLNode, HTMLNodeType} from '../../html-syntax'
 import {TreeParser} from '../tree'
 import {FlowControlSlotParser} from '../slots'
@@ -71,7 +71,7 @@ export abstract class FlowControlBase {
 	}
 
 	/** Make a maker array nodes by maker names. */
-	protected outputMakerNodes(templateNames: (string | null)[]): TS.ArrayLiteralExpression {
+	protected outputMakerNodes(templateNames: (string | null)[]): ts.ArrayLiteralExpression {
 		return factory.createArrayLiteralExpression(
 			templateNames.map(name => this.outputMakerNode(name)),
 			false
@@ -79,16 +79,16 @@ export abstract class FlowControlBase {
 	}
 
 	/** Make a maker node by a maker name. */
-	protected outputMakerNode(templateName: string | null): TS.Identifier | TS.NullLiteral {
+	protected outputMakerNode(templateName: string | null): ts.Identifier | ts.NullLiteral {
 		return templateName ? factory.createIdentifier(templateName) : factory.createNull()
 	}
 
 	preInit() {}
 	postInit() {}
-	outputInit(): TS.Statement | TS.Expression | (TS.Statement| TS.Expression)[] {
+	outputInit(): ts.Statement | ts.Expression | (ts.Statement| ts.Expression)[] {
 		return []
 	}
-	outputUpdate(): TS.Statement | TS.Expression | (TS.Statement| TS.Expression)[] {
+	outputUpdate(): ts.Statement | ts.Expression | (ts.Statement| ts.Expression)[] {
 		return []
 	}
 }

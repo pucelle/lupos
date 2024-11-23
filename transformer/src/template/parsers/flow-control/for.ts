@@ -1,4 +1,4 @@
-import type TS from 'typescript'
+import type * as ts from 'typescript'
 import {factory, Modifier} from '../../../core'
 import {Helper} from '../../../lupos-ts-module'
 import {FlowControlBase} from './base'
@@ -15,7 +15,7 @@ export class ForFlowControl extends FlowControlBase {
 	private slotVariableName: string = ''
 
 	/** new TemplateSlot(...) */
-	private templateSlotGetter!: () => TS.Expression
+	private templateSlotGetter!: () => ts.Expression
 
 	private ofValueIndex: number | null = null
 	private fnValueIndex: number | null = null

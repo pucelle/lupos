@@ -1,4 +1,4 @@
-import type TS from 'typescript'
+import type * as ts from 'typescript'
 import {factory, Interpolator, Modifier, Packer, TemplateSlotPlaceholder} from '../../../core'
 import {FlowControlBase} from './base'
 import {TemplateParser} from '../template'
@@ -16,7 +16,7 @@ export class IfFlowControl extends FlowControlBase {
 	protected slotVariableName: string = ''
 
 	/** new TemplateSlot(...) */
-	protected templateSlotGetter!: () => TS.Expression
+	protected templateSlotGetter!: () => ts.Expression
 
 	protected cacheable: boolean = false
 	protected conditionIndices: (number | null)[] = []
@@ -177,7 +177,7 @@ export class IfFlowControl extends FlowControlBase {
 		]
 	}
 
-	outputUpdate(): TS.Statement | TS.Expression | (TS.Statement| TS.Expression)[] {
+	outputUpdate(): ts.Statement | ts.Expression | (ts.Statement| ts.Expression)[] {
 		let toValue = this.outputConditionalExpression()
 
 		// $block_0.update($values[0])
@@ -192,14 +192,14 @@ export class IfFlowControl extends FlowControlBase {
 	}
 
 	/** Make an index output function by an if condition value index sequence. */
-	protected outputConditionalExpression(): TS.Expression {
+	protected outputConditionalExpression(): ts.Expression {
 		let conditions = this.conditionIndices.map(index => {
 			if (index === null) {
 				return factory.createNull()
 			}
 			else {
 				let rawNode = this.template.values.getRawValue(index)
-				return Interpolator.outputNodeSelf(rawNode) as TS.Expression
+				return Interpolator.outputNodeSelf(rawNode) as ts.Expression
 			}
 		})
 
@@ -234,7 +234,7 @@ export class IfFlowControl extends FlowControlBase {
 			}
 			else {
 				let rawNode = this.template.values.getRawValue(index)
-				return Interpolator.outputNodeSelf(rawNode) as TS.Expression
+				return Interpolator.outputNodeSelf(rawNode) as ts.Expression
 			}
 		})
 

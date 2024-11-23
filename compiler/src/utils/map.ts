@@ -1,4 +1,3 @@
-
 /** `K => V[]` Map Struct. */
 export class ListMap<K, V> {
 

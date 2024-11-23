@@ -1,4 +1,4 @@
-import type TS from 'typescript'
+import * as ts from 'typescript'
 import {TemplateSlotPlaceholder} from '../../core'
 import {Helper} from '../../lupos-ts-module'
 import {removeFromList} from '../../utils'
@@ -166,7 +166,7 @@ export class HTMLNode {
 	 * Whether preceding position of current node is stable.
 	 * Means will not remove, or insert other nodes before it.
 	 */
-	isPrecedingPositionStable(rawValueNodes: TS.Node[]): boolean {
+	isPrecedingPositionStable(rawValueNodes: ts.Node[]): boolean {
 		if (this.type === HTMLNodeType.Comment) {
 			return false
 		}
@@ -241,7 +241,7 @@ export class HTMLNode {
 	}
 
 	/** Get readable string for identifying. */
-	toReadableString(rawValueNodes: TS.Node[], tab = ''): string {
+	toReadableString(rawValueNodes: ts.Node[], tab = ''): string {
 		if (this.type === HTMLNodeType.Tag) {
 			let tagName = this.tagName!
 			let children = this.children.filter(child => child.type === HTMLNodeType.Tag || child.desc || child.text)

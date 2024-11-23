@@ -1,5 +1,5 @@
-import type TS from 'typescript'
-import {defineVisitor, ts} from '../../core'
+import * as ts from 'typescript'
+import {defineVisitor} from '../../core'
 import {TrackingScopeTree, TrackingScopeTypeMask} from './scope-tree'
 import {AccessReferences} from './access-references'
 import {TrackingPatch} from './patch'
@@ -7,7 +7,7 @@ import {TrackingRanges} from './ranges'
 
 
 /** It add dependency tracking codes to source file. */
-defineVisitor(function(node: TS.Node) {
+defineVisitor(function(node: ts.Node) {
 
 	// Initialize
 	if (ts.isSourceFile(node)) {

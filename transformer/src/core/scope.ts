@@ -1,12 +1,11 @@
-import type TS from 'typescript'
-import {ts} from './global'
+import * as ts from 'typescript'
 import {VisitTree} from './visit-tree'
 import {Helper} from '../lupos-ts-module'
 import {ScopeTree} from './scope-tree'
 import {InterpolationContentType, Interpolator} from './interpolator'
 
 
-type ScopeNode = TS.FunctionLikeDeclaration | TS.ForStatement | TS.ForOfStatement | TS.ForInStatement | TS.Block | TS.SourceFile
+type ScopeNode = ts.FunctionLikeDeclaration | ts.ForStatement | ts.ForOfStatement | ts.ForInStatement | ts.Block | ts.SourceFile
 
 
 /** Mark all variables with a context. */
@@ -17,7 +16,7 @@ export class Scope {
 	readonly visitIndex: number
 
 	/** All variables declared here, `variable name -> node`. */
-	private variables: Map<string, TS.Node | null> = new Map()
+	private variables: Map<string, ts.Node | null> = new Map()
 
 	constructor(
 		node: ScopeNode,
@@ -30,7 +29,7 @@ export class Scope {
 	}
 
 	/** Visit a descendant node. */
-	visitNode(node: TS.Node) {
+	visitNode(node: ts.Node) {
 
 		// Variable declaration.
 		if (ts.isVariableDeclaration(node)) {
@@ -125,7 +124,7 @@ export class Scope {
 	}
 
 	/** Try get raw node by it's variable name. */
-	getDeclarationByName(name: string): TS.Node | undefined {
+	getDeclarationByName(name: string): ts.Node | undefined {
 		if (this.variables.has(name)) {
 			return this.variables.get(name) ?? undefined
 		}
@@ -179,7 +178,7 @@ export class Scope {
 	 * If current scope can't add statements, will try parent scope.
 	 * Several variable declarations will be stacked to a variable statement.
 	 */
-	addStatements(stats: TS.Statement[], order?: number) {
+	addStatements(stats: ts.Statement[], order?: number) {
 		let toIndex = this.getIndexToAddStatements()
 		Interpolator.before(toIndex, InterpolationContentType.Declaration, () => stats, order)
 	}
@@ -190,7 +189,7 @@ export class Scope {
 
 		// Insert before the first not import statements.
 		if (this.isTopmost()) {
-			let beforeNode = (this.node as TS.SourceFile).statements.find(n => !ts.isImportDeclaration(n))
+			let beforeNode = (this.node as ts.SourceFile).statements.find(n => !ts.isImportDeclaration(n))
 			if (beforeNode) {
 				toIndex = VisitTree.getIndex(beforeNode)
 			}

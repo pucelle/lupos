@@ -1,12 +1,12 @@
-import type TS from 'typescript'
+import * as ts from 'typescript'
 import {SlotParserBase} from './base'
-import {SourceFileDiagnosticModifier, factory, Modifier, ScopeTree, ts} from '../../../core'
+import {SourceFileDiagnosticModifier, factory, Modifier, ScopeTree} from '../../../core'
 
 
 export class ComponentSlotParser extends SlotParserBase {
 
 	/** Nodes parameters for `new SlotRange(...)` */
-	private slotRangeNodesGetter: (() => TS.Expression[]) | null = null
+	private slotRangeNodesGetter: (() => ts.Expression[]) | null = null
 
 	preInit() {
 		let comName = this.node.tagName!

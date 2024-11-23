@@ -1,6 +1,6 @@
 import {ListMap} from '../utils'
-import type TS from 'typescript'
-import {factory, sourceFile, ts} from './global'
+import * as ts from 'typescript'
+import {factory, sourceFile} from './global'
 import {Helper} from '../lupos-ts-module'
 import {InterpolationContentType, Interpolator} from './interpolator'
 import {VisitTree} from './visit-tree'
@@ -33,7 +33,7 @@ export namespace Modifier {
 
 
 	/** Remove import node of specified node. */
-	export function removeImportOf(fromNode: TS.Node) {
+	export function removeImportOf(fromNode: ts.Node) {
 		let importNode = Helper.symbol.resolveDeclaration(fromNode, ts.isImportSpecifier, false)
 		if (importNode) {
 			let index = VisitTree.getIndex(importNode)
@@ -65,7 +65,7 @@ export namespace Modifier {
 
 
 	/** Add or replace a member to a class declaration. */
-	export function addClassMember(classNode: TS.ClassDeclaration, member: TS.ClassElement, preferInsertToHead: boolean = false) {
+	export function addClassMember(classNode: ts.ClassDeclaration, member: ts.ClassElement, preferInsertToHead: boolean = false) {
 		let classIndex = VisitTree.getIndex(classNode)
 		let name = Helper.cls.getMemberName(member)
 		let existing = classNode.members.find(m => Helper.cls.getMemberName(m) === name)
@@ -96,7 +96,7 @@ export namespace Modifier {
 	 * An import may be removed by typescript compiling because of no use.
 	 * Use this can persist it.
 	 */
-	export function persistImport(node: TS.ImportSpecifier) {
+	export function persistImport(node: ts.ImportSpecifier) {
 		let index = VisitTree.getIndex(node)
 
 		if (PersistedImportIndices.has(index)) {
@@ -117,8 +117,8 @@ export namespace Modifier {
 	 */
 	export function addVariableAssignmentToList(fromIndex: number, toIndex: number, varName: string) {
 		Interpolator.before(toIndex, InterpolationContentType.Declaration, () => {
-			let node = Interpolator.outputChildren(fromIndex) as TS.Expression
-			node = Packer.normalize(node, false) as TS.Expression
+			let node = Interpolator.outputChildren(fromIndex) as ts.Expression
+			node = Packer.normalize(node, false) as ts.Expression
 			
 			return factory.createVariableDeclaration(
 				factory.createIdentifier(varName),
@@ -135,8 +135,8 @@ export namespace Modifier {
 	 */
 	export function addVariableAssignment(fromIndex: number, toIndex: number, varName: string) {
 		Interpolator.before(toIndex, InterpolationContentType.Declaration, () => {
-			let node = Interpolator.outputChildren(fromIndex) as TS.Expression
-			node = Packer.normalize(node, false) as TS.Expression
+			let node = Interpolator.outputChildren(fromIndex) as ts.Expression
+			node = Packer.normalize(node, false) as ts.Expression
 			
 			return factory.createVariableDeclarationList(
 				[factory.createVariableDeclaration(
@@ -156,8 +156,8 @@ export namespace Modifier {
 	 */
 	export function addReferenceAssignment(fromIndex: number, toIndex: number, refName: string) {
 		Interpolator.before(toIndex, InterpolationContentType.Reference, () => {
-			let node = Interpolator.outputChildren(fromIndex) as TS.Expression
-			node = Packer.normalize(node, false) as TS.Expression
+			let node = Interpolator.outputChildren(fromIndex) as ts.Expression
+			node = Packer.normalize(node, false) as ts.Expression
 
 			return factory.createBinaryExpression(
 				factory.createIdentifier(refName),
@@ -172,7 +172,7 @@ export namespace Modifier {
 	/** Apply imports to do interpolation. */
 	export function applyInterpolation() {
 		let sourceFileIndex = ScopeTree.getTopmost().getIndexToAddStatements()
-		let modifiedImportDecls: Set<TS.ImportDeclaration> = new Set()
+		let modifiedImportDecls: Set<ts.ImportDeclaration> = new Set()
 
 
 		// A ts bug here: if insert some named import identifiers,
@@ -182,11 +182,11 @@ export namespace Modifier {
 
 		for (let [moduleName, names] of Imports.entries()) {
 			let existingImportDecl = getNamedImportDeclaration(moduleName)
-			let existingNames: Map<string, TS.ImportSpecifier> = new Map()
+			let existingNames: Map<string, ts.ImportSpecifier> = new Map()
 
 			// Removes existing names.
 			if (existingImportDecl) {
-				for (let element of (existingImportDecl.importClause!.namedBindings as TS.NamedImports).elements) {
+				for (let element of (existingImportDecl.importClause!.namedBindings as ts.NamedImports).elements) {
 					existingNames.set(element.name.text, element)
 				}
 			}
@@ -237,7 +237,7 @@ export namespace Modifier {
 		}
 
 		for (let specifierIndex of PersistedImportIndices) {
-			let specifier = VisitTree.getNode(specifierIndex) as TS.ImportSpecifier
+			let specifier = VisitTree.getNode(specifierIndex) as ts.ImportSpecifier
 			let importDecl = specifier.parent.parent.parent
 
 			if (ts.isImportDeclaration(importDecl)) {
@@ -253,7 +253,7 @@ export namespace Modifier {
 	}
 
 	/** Get `import {...}` node by module name. */
-	function getNamedImportDeclaration(moduleName: string): TS.ImportDeclaration | undefined {
+	function getNamedImportDeclaration(moduleName: string): ts.ImportDeclaration | undefined {
 		let importDecl = Helper.imports.getImportFromModule(moduleName, sourceFile)
 		if (!importDecl) {
 			return undefined
@@ -275,7 +275,7 @@ export namespace Modifier {
 	}
 
 	/** Remove all type imports. */
-	function removeTypedImports(node: TS.ImportDeclaration) {
+	function removeTypedImports(node: ts.ImportDeclaration) {
 		let namedBindings = node.importClause?.namedBindings
 		if (!namedBindings || !ts.isNamedImports(namedBindings)) {
 			return 

@@ -1,4 +1,4 @@
-import type TS from 'typescript'
+import type * as ts from 'typescript'
 import {ListMap} from '../utils'
 import {definePreVisitCallback} from './visitor-callbacks'
 
@@ -28,10 +28,10 @@ export namespace VisitTree {
 	const ParentMap: Map<number, number> = new Map()
 
 	/** Node visit index -> Node. */
-	const NodeMap: Map<number, TS.Node> = new Map()
+	const NodeMap: Map<number, ts.Node> = new Map()
 
 	/** Node -> Node visit index. */
-	const IndexMap: Map<TS.Node, number> = new Map()
+	const IndexMap: Map<ts.Node, number> = new Map()
 
 	let current: VisitItem = {
 		index: -1,
@@ -53,7 +53,7 @@ export namespace VisitTree {
 	}
 
 	/** To next sibling. */
-	export function toNext(node: TS.Node) {
+	export function toNext(node: ts.Node) {
 		let index = ++indexSeed
 		current.index = index
 
@@ -110,7 +110,7 @@ export namespace VisitTree {
 	}
 
 	/** Get all child visit indices. */
-	export function getChildNodes(parentIndex: number): TS.Node[] | undefined {
+	export function getChildNodes(parentIndex: number): ts.Node[] | undefined {
 		let childIndices = ChildMap.get(parentIndex)
 		if (childIndices === undefined) {
 			return undefined
@@ -159,17 +159,17 @@ export namespace VisitTree {
 	}
 
 	/** Test whether have raw node by visit index. */
-	export function hasNode(node: TS.Node): boolean {
+	export function hasNode(node: ts.Node): boolean {
 		return IndexMap.has(node)
 	}
 
 	/** Get raw node by visit index. */
-	export function getNode(index: number): TS.Node {
+	export function getNode(index: number): ts.Node {
 		return NodeMap.get(index)!
 	}
 
 	/** Get visit index by a raw node. */
-	export function getIndex(rawNode: TS.Node): number {
+	export function getIndex(rawNode: ts.Node): number {
 		return IndexMap.get(rawNode)!
 	}
 
@@ -277,7 +277,7 @@ export namespace VisitTree {
 	
 
 	/** Look outward for a visit index, and the node at where match test fn. */
-	export function findOutwardMatch(fromIndex: number, untilIndex: number | undefined, test: (node: TS.Node) => boolean) : number | undefined {
+	export function findOutwardMatch(fromIndex: number, untilIndex: number | undefined, test: (node: ts.Node) => boolean) : number | undefined {
 		let index: number | undefined = fromIndex
 
 		// Look outward for a node which can pass test.

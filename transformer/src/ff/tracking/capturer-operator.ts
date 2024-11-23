@@ -1,5 +1,5 @@
-import type TS from 'typescript'
-import {VisitTree, ts, FlowInterruptionTypeMask, ScopeTree, HashItem} from '../../core'
+import * as ts from 'typescript'
+import {VisitTree, FlowInterruptionTypeMask, ScopeTree, HashItem} from '../../core'
 import {Helper} from '../../lupos-ts-module'
 import {AccessReferences} from './access-references'
 import {removeFromList} from '../../utils'
@@ -200,7 +200,7 @@ export class TrackingCapturerOperator {
 	}
 
 	/** Find private class property declaration from captured. */
-	*walkPrivateCaptured(ofClass: TS.ClassLikeDeclaration):
+	*walkPrivateCaptured(ofClass: ts.ClassLikeDeclaration):
 		Iterable<{name: string, index: number, type: 'get' | 'set'}>
 	{
 		for (let item of this.capturer.captured) {
@@ -219,7 +219,7 @@ export class TrackingCapturerOperator {
 
 				let allBePrivate = propDecls.every(p => {
 					return p.modifiers
-						&& p.modifiers.find((n: TS.ModifierLike) => n.kind === ts.SyntaxKind.PrivateKeyword)
+						&& p.modifiers.find((n: ts.ModifierLike) => n.kind === ts.SyntaxKind.PrivateKeyword)
 				})
 
 				if (!allBePrivate) {

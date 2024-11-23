@@ -1,6 +1,6 @@
-import type TS from 'typescript'
+import * as ts from 'typescript'
 import {SlotParserBase} from './base'
-import {factory, Modifier, TemplateSlotPlaceholder, ts} from '../../../core'
+import {factory, Modifier, TemplateSlotPlaceholder} from '../../../core'
 import {Helper} from '../../../lupos-ts-module'
 import {VariableNames} from '../variable-names'
 
@@ -133,7 +133,7 @@ export class EventSlotParser extends SlotParserBase {
 		}
 	}
 
-	private outputLatestHandler(): TS.ArrowFunction {
+	private outputLatestHandler(): ts.ArrowFunction {
 
 		// (...args) => {$latest_0.call($context, ...args)}
 		return factory.createArrowFunction(

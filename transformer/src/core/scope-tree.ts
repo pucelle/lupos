@@ -1,6 +1,6 @@
-import type TS from 'typescript'
+import * as ts from 'typescript'
 import {addToList, ListMap} from '../utils'
-import {factory, sourceFile, transformContext, ts} from './global'
+import {factory, sourceFile, transformContext} from './global'
 import {VisitTree} from './visit-tree'
 import {InterpolationContentType, Interpolator} from './interpolator'
 import {AccessNode, Helper} from '../lupos-ts-module'
@@ -71,7 +71,7 @@ export namespace ScopeTree {
 
 
 	/** To next sibling. */
-	export function toNext(node: TS.Node) {
+	export function toNext(node: ts.Node) {
 		let index = VisitTree.getIndex(node)
 
 		if (ts.isSourceFile(node)
@@ -95,7 +95,7 @@ export namespace ScopeTree {
 	}
 
 	/** To parent. */
-	export function toParent(currentNode: TS.Node) {
+	export function toParent(currentNode: ts.Node) {
 
 		// Must after visited all descendant nodes.
 		// Assignment expressions like `a.b = c`
@@ -134,7 +134,7 @@ export namespace ScopeTree {
 
 
 	/** Find closest scope contains or equals node. */
-	export function findClosestByNode(node: TS.Node): Scope {
+	export function findClosestByNode(node: ts.Node): Scope {
 		return findClosest(VisitTree.getIndex(node))
 	}
 
@@ -186,7 +186,7 @@ export namespace ScopeTree {
 	 * Get hash of raw node, which has a visit index.
 	 * Note hashing will transform `a?.b` -> `a.b`.
 	 */
-	export function hashNode(rawNode: TS.Node): HashItem {
+	export function hashNode(rawNode: ts.Node): HashItem {
 		let index = VisitTree.getIndex(rawNode)
 		return hashIndex(index)
 	}
@@ -207,12 +207,12 @@ export namespace ScopeTree {
 	}
 
 	/** Hash a node, normalize and add a unique suffix to all variable nodes. */
-	function doHashingOfNode(rawNode: TS.Node): HashItem {
+	function doHashingOfNode(rawNode: ts.Node): HashItem {
 		let usedScopes: Scope[] = []
 		let usedIndices: number[] = []
 		let node = rawNode
 
-		let hashVisited = ts.visitNode(node, (n: TS.Node) => {
+		let hashVisited = ts.visitNode(node, (n: ts.Node) => {
 			return hashNodeVisitor(n, usedScopes, usedIndices)
 		})!
 
@@ -225,7 +225,7 @@ export namespace ScopeTree {
 		}
 	}
 
-	function hashNodeVisitor(node: TS.Node, usedScopes: Scope[], usedIndices: number[]): TS.Node | undefined {
+	function hashNodeVisitor(node: ts.Node, usedScopes: Scope[], usedIndices: number[]): ts.Node | undefined {
 
 		// Not raw node.
 		if (!VisitTree.hasNode(node)) {}
@@ -246,7 +246,7 @@ export namespace ScopeTree {
 
 		// this -> this_123
 		else if (Helper.isThis(node)) {
-			let {name, scope} = hashVariableName(node as TS.ThisExpression)
+			let {name, scope} = hashVariableName(node as ts.ThisExpression)
 			addToList(usedScopes, scope)
 
 			return factory.createIdentifier(name)
@@ -257,7 +257,7 @@ export namespace ScopeTree {
 			return undefined
 		}
 
-		return ts.visitEachChild(node, (n: TS.Node) => hashNodeVisitor(n, usedScopes, usedIndices), transformContext)
+		return ts.visitEachChild(node, (n: ts.Node) => hashNodeVisitor(n, usedScopes, usedIndices), transformContext)
 	}
 
 	/** 
@@ -265,7 +265,7 @@ export namespace ScopeTree {
 	 * The suffix is normally a scope visit index,
 	 * then the hashing is unique across whole source file.
 	 */
-	function hashVariableName(rawNode: TS.Identifier | TS.ThisExpression): {name: string, scope: Scope} {
+	function hashVariableName(rawNode: ts.Identifier | ts.ThisExpression): {name: string, scope: Scope} {
 		let scope = findDeclaredScope(rawNode) || findClosestByNode(rawNode)
 		let name = Helper.getFullText(rawNode)
 		let suffix = scope.visitIndex
@@ -281,7 +281,7 @@ export namespace ScopeTree {
 	 * Where later after `rawNode`, it will be assigned.
 	 * Return the earliest assign visit index.
 	 */
-	export function whereWillBeAssigned(rawNode: AccessNode | TS.Identifier | TS.ThisExpression): number | undefined {
+	export function whereWillBeAssigned(rawNode: AccessNode | ts.Identifier | ts.ThisExpression): number | undefined {
 		let hashName = ScopeTree.hashNode(rawNode).name
 		let assignments = AssignmentMap.get(hashName)
 		let nodeIndex = VisitTree.getIndex(rawNode)
@@ -301,7 +301,7 @@ export namespace ScopeTree {
 
 
 	/** Where before or after `rawNode`, it has or will be assigned. */
-	export function haveOrWillBeAssigned(rawNode: AccessNode | TS.Identifier | TS.ThisExpression): boolean {
+	export function haveOrWillBeAssigned(rawNode: AccessNode | ts.Identifier | ts.ThisExpression): boolean {
 		let hashName = ScopeTree.hashNode(rawNode).name
 		return AssignmentMap.hasOf(hashName)
 	}
@@ -311,7 +311,7 @@ export namespace ScopeTree {
 	 * Try get raw node by variable name.
 	 * `fromRawNode` specifies where to query the variable from.
 	 */
-	export function getDeclarationByName(name: string, fromRawNode: TS.Node): TS.Node | undefined {
+	export function getDeclarationByName(name: string, fromRawNode: ts.Node): ts.Node | undefined {
 		let scope = findClosestByNode(fromRawNode)
 		if (!scope) {
 			return undefined
@@ -322,7 +322,7 @@ export namespace ScopeTree {
 	
 	
 	/** Check at which scope the specified named variable or this declared. */
-	export function findDeclaredScope(rawNode: TS.Identifier | TS.ThisExpression, fromScope = findClosestByNode(rawNode)): Scope | null {
+	export function findDeclaredScope(rawNode: ts.Identifier | ts.ThisExpression, fromScope = findClosestByNode(rawNode)): Scope | null {
 		if (Helper.isThis(rawNode)) {
 			return fromScope.findClosestThisScope()
 		}
@@ -339,10 +339,10 @@ export namespace ScopeTree {
 
 
 	/** Returns whether declared variable or access node in topmost scope. */
-	function isDeclaredInTopmostScope(rawNode: TS.Identifier | AccessNode | TS.ThisExpression): boolean {
+	function isDeclaredInTopmostScope(rawNode: ts.Identifier | AccessNode | ts.ThisExpression): boolean {
 		if (Helper.access.isAccess(rawNode)) {
 			let exp = rawNode.expression
-			return isDeclaredInTopmostScope(exp as TS.Identifier | AccessNode | TS.ThisExpression)
+			return isDeclaredInTopmostScope(exp as ts.Identifier | AccessNode | ts.ThisExpression)
 		}
 		else if (Helper.isThis(rawNode)) {
 			return false
@@ -357,7 +357,7 @@ export namespace ScopeTree {
 	}
 
 	/** Returns whether a variable node or an access node was declared as const. */
-	function isDeclaredAsConstLike(rawNode: TS.Identifier | AccessNode | TS.ThisExpression): boolean {
+	function isDeclaredAsConstLike(rawNode: ts.Identifier | AccessNode | ts.ThisExpression): boolean {
 		if (Helper.access.isAccess(rawNode)) {
 			let readonly = Helper.symbol.resolveDeclaration(rawNode, Helper.isPropertyLike) && Helper.types.isReadonly(rawNode)
 			let beMethod = Helper.symbol.resolveDeclaration(rawNode, Helper.isMethodLike) && !ts.isCallExpression(rawNode.parent)
@@ -367,7 +367,7 @@ export namespace ScopeTree {
 			}
 
 			let exp = rawNode.expression
-			return isDeclaredAsConstLike(exp as TS.Identifier | AccessNode | TS.ThisExpression)
+			return isDeclaredAsConstLike(exp as ts.Identifier | AccessNode | ts.ThisExpression)
 		}
 		else if (Helper.isThis(rawNode)) {
 			return true
@@ -382,13 +382,13 @@ export namespace ScopeTree {
 	}
 
 	/** Returns whether a node is declared within target node. */
-	function isDeclaredWithinNodeRange(rawNode: TS.Identifier, targetNode: TS.Node): boolean {
+	function isDeclaredWithinNodeRange(rawNode: ts.Identifier, targetNode: ts.Node): boolean {
 		let declaredIn = findDeclaredScope(rawNode)
 		if (!declaredIn) {
 			return false
 		}
 
-		let n: TS.Node = declaredIn.node
+		let n: ts.Node = declaredIn.node
 
 		do {
 			if (n === targetNode) {
@@ -403,11 +403,11 @@ export namespace ScopeTree {
 
 
 	/** Test whether expression represented value is mutable. */
-	export function testMutable(rawNode: TS.Expression): MutableMask | 0 {
+	export function testMutable(rawNode: ts.Expression): MutableMask | 0 {
 		return testMutableVisitor(rawNode, false)
 	}
 
-	function testMutableVisitor(rawNode: TS.Node, insideFunctionScope: boolean): MutableMask | 0{
+	function testMutableVisitor(rawNode: ts.Node, insideFunctionScope: boolean): MutableMask | 0{
 		let mutable: MutableMask | 0 = 0
 
 		// Inside of a function scope.
@@ -447,7 +447,7 @@ export namespace ScopeTree {
 			}
 		}
 
-		ts.visitEachChild(rawNode, (node: TS.Node) => {
+		ts.visitEachChild(rawNode, (node: ts.Node) => {
 			mutable |= testMutableVisitor(node, insideFunctionScope)
 			return node
 		}, transformContext)
@@ -457,7 +457,7 @@ export namespace ScopeTree {
 
 
 	/** Replace an identifier or this keyword. */
-	type NodeReplacer = (node: TS.Identifier | TS.ThisExpression, insideFunctionScope: boolean) => TS.Expression
+	type NodeReplacer = (node: ts.Identifier | ts.ThisExpression, insideFunctionScope: boolean) => ts.Expression
 
 	/** 
 	 * Transfer a raw or replaced node to top scope,
@@ -465,21 +465,21 @@ export namespace ScopeTree {
 	 * `replacer` can help to modify node when doing transfer,
 	 * it replace local variables and `this` to some parameters.
 	 */
-	export function transferToTopmostScope<T extends TS.Node>(
+	export function transferToTopmostScope<T extends ts.Node>(
 		node: T,
-		rawNode: TS.Node,
+		rawNode: ts.Node,
 		replacer: NodeReplacer
 	): T {
 		return transferToTopmostScopeVisitor(node, rawNode, true, replacer, false) as T
 	}
 
 	function transferToTopmostScopeVisitor(
-		node: TS.Node,
-		rawTopNode: TS.Node,
+		node: ts.Node,
+		rawTopNode: ts.Node,
 		canReplaceThis: boolean,
 		replacer: NodeReplacer,
 		insideFunctionScope: boolean
-	): TS.Node {
+	): ts.Node {
 
 		// Inside of a function scope.
 		insideFunctionScope ||= Helper.isFunctionLike(node)
@@ -502,13 +502,13 @@ export namespace ScopeTree {
 
 		// this
 		else if (canReplaceThis && Helper.isThis(node)) {
-			return replacer(node as TS.ThisExpression, insideFunctionScope)
+			return replacer(node as ts.ThisExpression, insideFunctionScope)
 		}
 
 		// If enters non-arrow function declaration, cause can't replace `this`, otherwise can't.
 		canReplaceThis &&= !Helper.isNonArrowFunctionLike(node)
 
-		return ts.visitEachChild(node, (node: TS.Node) => {
+		return ts.visitEachChild(node, (node: ts.Node) => {
 			return transferToTopmostScopeVisitor(node, rawTopNode, canReplaceThis, replacer, insideFunctionScope)
 		}, transformContext)
 	}

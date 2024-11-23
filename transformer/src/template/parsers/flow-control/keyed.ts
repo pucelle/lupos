@@ -1,4 +1,4 @@
-import type TS from 'typescript'
+import type * as ts from 'typescript'
 import {factory, Modifier} from '../../../core'
 import {FlowControlBase} from './base'
 import {TemplateParser} from '../template'
@@ -14,7 +14,7 @@ export class KeyedFlowControl extends FlowControlBase {
 	private slotVariableName: string = ''
 
 	/** new TemplateSlot(...) */
-	private templateSlotGetter!: () => TS.Expression
+	private templateSlotGetter!: () => ts.Expression
 
 	private contentTemplate: TemplateParser | null = null
 	private valueIndex: number | null = null

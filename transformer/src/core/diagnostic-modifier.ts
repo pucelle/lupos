@@ -1,7 +1,7 @@
-import type TS from 'typescript'
+import * as ts from 'typescript'
 import {definePreVisitCallback} from './visitor-callbacks'
-import {diagnosticModifier, sourceFile, ts} from './global'
-import {Helper} from '../lupos-ts-module'
+import {diagnosticModifier, sourceFile} from './global'
+import {Helper} from '../lupos-ts-module/helper'
 
 
 // Where to find diagnostic codes:
@@ -10,7 +10,7 @@ import {Helper} from '../lupos-ts-module'
 
 export namespace SourceFileDiagnosticModifier {
 
-	const DiagnosticByStartPosition: Map<number, TS.Diagnostic> = new Map()
+	const DiagnosticByStartPosition: Map<number, ts.Diagnostic> = new Map()
 	const AddedStartIndices: Set<number> = new Set()
 	const RemovedStartIndices: Set<number> = new Set()
 
@@ -35,7 +35,7 @@ export namespace SourceFileDiagnosticModifier {
 	}
 
 	/** Add a never read diagnostic. */
-	export function addNeverRead(node: TS.Node, message: string) {
+	export function addNeverRead(node: ts.Node, message: string) {
 		add(node.getStart(), node.getText().length, 6133, message)
 	}
 
@@ -56,7 +56,7 @@ export namespace SourceFileDiagnosticModifier {
 			return
 		}
 
-		let diag: TS.Diagnostic = {
+		let diag: ts.Diagnostic = {
 			category: ts.DiagnosticCategory.Error,
 			code,
 			messageText: message,
@@ -71,7 +71,7 @@ export namespace SourceFileDiagnosticModifier {
 
 
 	/** Add usage of a import specifier node, remove it's diagnostic. */
-	export function removeNeverRead(node: TS.Node) {
+	export function removeNeverRead(node: ts.Node) {
 
 		// If all imported members are not read,
 		// diagnostic located at import declaration.
@@ -98,12 +98,12 @@ export namespace SourceFileDiagnosticModifier {
 	}
 
 	/** For binding multiple parameters `:bind=${a, b}`. */
-	export function removeUnusedComma(node: TS.Expression) {
+	export function removeUnusedComma(node: ts.Expression) {
 		remove(node, [2695])
 	}
 
 	/** Remove diagnostic at specified node and code in limited codes. */
-	function remove(node: TS.Node, codes: number[]) {
+	function remove(node: ts.Node, codes: number[]) {
 		let start = node.getStart()
 
 		if (RemovedStartIndices.has(start)) {

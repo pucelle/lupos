@@ -1,8 +1,8 @@
-import type TS from 'typescript'
+import * as ts from 'typescript'
 import {HTMLNode} from '../../html-syntax'
 import {PartType, TreeParser} from '../tree'
 import {BindingSlotParser} from '../slots'
-import {SourceFileDiagnosticModifier, factory, Modifier, ScopeTree, ts, Packer} from '../../../core'
+import {SourceFileDiagnosticModifier, factory, Modifier, ScopeTree, Packer} from '../../../core'
 import {Helper} from '../../../lupos-ts-module'
 import {TemplateParser} from '../template'
 import {VariableNames} from '../variable-names'
@@ -11,7 +11,7 @@ import {setLatestBindingInfo} from './latest-binding'
 
 export interface BindingUpdateCallWith {
 	method: string
-	values: TS.Expression[]
+	values: ts.Expression[]
 }
 
 
@@ -49,7 +49,7 @@ export class BindingBase {
 	protected bindingVariableName: string = ''
 
 	/** Query parameter part like `a` of `?:binding=${a, b}`. */
-	protected queryParameter: TS.Expression | null = null
+	protected queryParameter: ts.Expression | null = null
 
 	/** $latest_0 for query parameter. */
 	protected latestQueryVariableName: string | null = null
@@ -58,7 +58,7 @@ export class BindingBase {
 	 * After splitting like `:binding=${a, b}` or `:binding=${(a, b)}`.
 	 * It doesn't include query value for optional binding like `?:binding=${a, b}`
 	 */
-	protected parameterList: TS.Expression[] | null = null
+	protected parameterList: ts.Expression[] | null = null
 	
 	/** $latest_0 */
 	protected latestVariableNames: (string | null)[] | null = null
@@ -86,8 +86,8 @@ export class BindingBase {
 	 * Can only use it when outputting update.
 	 */
 	outputValue(asCallback: boolean = false): {
-		joint: TS.Expression,
-		valueNodes: TS.Expression[],
+		joint: ts.Expression,
+		valueNodes: ts.Expression[],
 	} {
 
 		// Output values from parameter list.
@@ -107,7 +107,7 @@ export class BindingBase {
 
 
 	/** Output query value when having query parameter. */
-	outputQueryValue(): TS.Expression {
+	outputQueryValue(): ts.Expression {
 		if (!this.queryParameter) {
 			return factory.createNull()
 		}
@@ -222,7 +222,7 @@ export class BindingBase {
 	 * get nodes after splitting the parameters to a list.
 	 * `valueIndices` must exist to get this list.
 	 */
-	private splitToParameters(): TS.Expression[] {
+	private splitToParameters(): ts.Expression[] {
 		let rawValueNode = this.template.values.getRawValue(this.slot.valueIndices![0])
 
 		if (ts.isParenthesizedExpression(rawValueNode)) {
@@ -271,7 +271,7 @@ export class BindingBase {
 			? KnownInternalBindings[this.name].name
 			: this.name
 
-		let bindingParams: TS.Expression[] = [factory.createIdentifier(nodeName)]
+		let bindingParams: ts.Expression[] = [factory.createIdentifier(nodeName)]
 
 		// Need `context` parameter
 		if (bindingParamCount === null || bindingParamCount > 1) {
@@ -326,7 +326,7 @@ export class BindingBase {
 		callMethod = callWith.method
 		callValues = callWith.values
 
-		let update: TS.Statement | TS.Expression
+		let update: ts.Statement | ts.Expression
 
 		// if ($latest_0 !== $values[0]) {
 		//   $binding_0.callMethod(callValue)
@@ -379,7 +379,7 @@ export class BindingBase {
 		return callWith
 	}
 
-	private outputDelegator(queryValue: TS.Expression, update: TS.Statement | TS.Expression, isStaticUpdate: boolean) {
+	private outputDelegator(queryValue: ts.Expression, update: ts.Statement | ts.Expression, isStaticUpdate: boolean) {
 
 		// if ($values[0]) {
 		//   NormalUpdateLogic
@@ -398,7 +398,7 @@ export class BindingBase {
 		// If `isStaticUpdate`,
 		// Moves `NormalUpdateLogic` to `StaticUpdatePosition`.
 
-		let updateIf: TS.Statement | null = null
+		let updateIf: ts.Statement | null = null
 		
 		if (!isStaticUpdate) {
 			updateIf = factory.createIfStatement(
@@ -412,7 +412,7 @@ export class BindingBase {
 		}
 		
 
-		let compare: TS.Statement | null = null
+		let compare: ts.Statement | null = null
 
 		if (this.latestQueryVariableName) {
 			compare = factory.createIfStatement(

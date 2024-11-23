@@ -1,4 +1,4 @@
-import type TS from 'typescript'
+import type * as ts from 'typescript'
 import {SlotParserBase} from './base'
 import {AwaitFlowControl, FlowControlBase, ForFlowControl, IfFlowControl, KeyedFlowControl, SwitchFlowControl} from '../flow-control'
 
@@ -50,11 +50,11 @@ export class FlowControlSlotParser extends SlotParserBase {
 		this.control.postInit()
 	}
 
-	outputInit(): TS.Statement | TS.Expression | (TS.Statement| TS.Expression)[] {
+	outputInit(): ts.Statement | ts.Expression | (ts.Statement| ts.Expression)[] {
 		return this.control.outputInit()
 	}
 
-	outputUpdate(): TS.Statement | TS.Expression | (TS.Statement| TS.Expression)[] {
+	outputUpdate(): ts.Statement | ts.Expression | (ts.Statement| ts.Expression)[] {
 		return this.control.outputUpdate()
 	}
 }

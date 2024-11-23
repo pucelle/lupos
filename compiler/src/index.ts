@@ -1,4 +1,4 @@
-import ts from 'typescript';
+import * as ts from 'typescript';
 import {executeCommandLine} from './compiler';
 const transformer = require('../../transformer/out/index');
 

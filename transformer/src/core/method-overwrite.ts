@@ -1,6 +1,6 @@
-import type TS from 'typescript'
+import * as ts from 'typescript'
 import {Helper} from '../lupos-ts-module'
-import {factory, ts} from './global'
+import {factory} from './global'
 import {VisitTree} from './visit-tree'
 import {InterpolationContentType, Interpolator} from './interpolator'
 
@@ -8,21 +8,21 @@ import {InterpolationContentType, Interpolator} from './interpolator'
 export type MethodInsertPosition = 'before-super' | 'after-super' | 'end'
 
 export interface MethodInsertInserted {
-	statementsGetter: () => TS.Statement[]
+	statementsGetter: () => ts.Statement[]
 	position: MethodInsertPosition
 }
 
 export class MethodOverwrite {
 
-	readonly classNode: TS.ClassDeclaration
+	readonly classNode: ts.ClassDeclaration
 	readonly name: string
-	readonly rawNode: TS.ConstructorDeclaration | TS.MethodDeclaration | null
+	readonly rawNode: ts.ConstructorDeclaration | ts.MethodDeclaration | null
 
-	private newNode: TS.ConstructorDeclaration | TS.MethodDeclaration | null = null
+	private newNode: ts.ConstructorDeclaration | ts.MethodDeclaration | null = null
 	private superIndex: number = 0
 	private inserted: MethodInsertInserted[] = []
 
-	constructor(classNode: TS.ClassDeclaration, name: string) {
+	constructor(classNode: ts.ClassDeclaration, name: string) {
 		this.classNode = classNode
 		this.name = name
 
@@ -49,16 +49,16 @@ export class MethodOverwrite {
 	}
 
 	/** Create a constructor function. */
-	private createConstructor(): TS.ConstructorDeclaration {
+	private createConstructor(): ts.ConstructorDeclaration {
 		let parameters = Helper.cls.getConstructorParameters(this.classNode) ?? []
-		let statements: TS.Statement[] = []
+		let statements: ts.Statement[] = []
 		let superCls = Helper.cls.getSuper(this.classNode)
 
 		if (superCls) {
 			let callSuper = factory.createExpressionStatement(factory.createCallExpression(
 				factory.createSuper(),
 				undefined,
-				parameters.map(p => p.name as TS.Identifier)
+				parameters.map(p => p.name as ts.Identifier)
 			))
 
 			statements = [callSuper]
@@ -75,7 +75,7 @@ export class MethodOverwrite {
 	}
 
 	/** Create a method, which will call super method without parameters. */
-	private createMethod(): TS.MethodDeclaration {
+	private createMethod(): ts.MethodDeclaration {
 		return factory.createMethodDeclaration(
 			undefined,
 			undefined,
@@ -101,7 +101,7 @@ export class MethodOverwrite {
 	}
 
 	/** Add a list of statements to a method content end. */
-	insert(statementsGetter: () => TS.Statement[], position: MethodInsertPosition) {
+	insert(statementsGetter: () => ts.Statement[], position: MethodInsertPosition) {
 		this.inserted.push({statementsGetter, position})
 	}
 
@@ -124,7 +124,7 @@ export class MethodOverwrite {
 		}
 	}
 
-	private outputItemToRaw(statementsGetter: () => TS.Statement[], position: MethodInsertPosition) {
+	private outputItemToRaw(statementsGetter: () => ts.Statement[], position: MethodInsertPosition) {
 		let blockIndex = VisitTree.getIndex(this.rawNode!.body!)
 
 		if (position === 'end') {
@@ -157,7 +157,7 @@ export class MethodOverwrite {
 				return null
 			}
 
-			let hasStatic = member.modifiers?.find((n: TS.ModifierLike) => n.kind === ts.SyntaxKind.StaticKeyword)
+			let hasStatic = member.modifiers?.find((n: ts.ModifierLike) => n.kind === ts.SyntaxKind.StaticKeyword)
 			if (hasStatic) {
 				return null
 			}
@@ -174,7 +174,7 @@ export class MethodOverwrite {
 		}
 	}
 
-	private outputToNewNode(): TS.Node {
+	private outputToNewNode(): ts.Node {
 		for (let item of this.inserted) {
 			let statements = item.statementsGetter()
 			let position = item.position
@@ -185,7 +185,7 @@ export class MethodOverwrite {
 		return this.newNode!
 	}
 
-	private addStatementsToNew(statements: TS.Statement[], position: MethodInsertPosition) {
+	private addStatementsToNew(statements: ts.Statement[], position: MethodInsertPosition) {
 		if (statements.length === 0) {
 			return
 		}

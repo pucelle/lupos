@@ -1,4 +1,4 @@
-import type TS from 'typescript'
+import type * as ts from 'typescript'
 import {factory, Modifier} from '../../../core'
 import {FlowControlBase} from './base'
 import {VariableNames} from '../variable-names'
@@ -13,7 +13,7 @@ export class AwaitFlowControl extends FlowControlBase {
 	private slotVariableName: string = ''
 
 	/** new TemplateSlot(...) */
-	private templateSlotGetter!: () => TS.Expression
+	private templateSlotGetter!: () => ts.Expression
 
 	private templateNames: (string | null)[] = []
 	private promiseIndex: number | null = null

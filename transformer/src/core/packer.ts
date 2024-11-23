@@ -1,5 +1,5 @@
-import type TS from 'typescript'
-import {factory, transformContext, ts} from './global'
+import * as ts from 'typescript'
+import {factory, transformContext} from './global'
 import {AccessNode, Helper} from '../lupos-ts-module'
 
 
@@ -18,7 +18,7 @@ export namespace Packer {
 	 * Make a property name node by property name string.
 	 * If name is numeric, it must `>=0`.
 	 */
-	export function createPropertyName(name: string | number): TS.PropertyName {
+	export function createPropertyName(name: string | number): ts.PropertyName {
 		if (typeof name === 'string' && /^[\w$]+$/.test(name)) {
 			return factory.createIdentifier(name)
 		}
@@ -34,7 +34,7 @@ export namespace Packer {
 	}
 
 	/** Make a numeric literal or expression by number. */
-	export function createNumeric(number: number): TS.PrefixUnaryExpression | TS.NumericLiteral {
+	export function createNumeric(number: number): ts.PrefixUnaryExpression | ts.NumericLiteral {
 		if (number < 0) {
 			return factory.createPrefixUnaryExpression(
 				ts.SyntaxKind.MinusToken,
@@ -47,7 +47,7 @@ export namespace Packer {
 	}
 
 	/** Create an access node by expression and property name. */
-	export function createAccessNode(exp: TS.Expression, name: string | number): AccessNode {
+	export function createAccessNode(exp: ts.Expression, name: string | number): AccessNode {
 		if (typeof name === 'string' && /^[\w$]+$/.test(name)) {
 			return factory.createPropertyAccessExpression(
 				exp,
@@ -80,7 +80,7 @@ export namespace Packer {
 	 * it represents whether flow was interrupted be `return` with content,
 	 * `yield`, `await`, or arrow function with implicit returning.
 	 */
-	export function getFlowInterruptionType(node: TS.Node): FlowInterruptionTypeMask {
+	export function getFlowInterruptionType(node: ts.Node): FlowInterruptionTypeMask {
 		let type = 0
 
 		if (ts.isReturnStatement(node)
@@ -104,13 +104,13 @@ export namespace Packer {
 
 
 	/** Whether be a block or a source file. */
-	export function canBlock(node: TS.Node): node is TS.SourceFile | TS.Block {
+	export function canBlock(node: ts.Node): node is ts.SourceFile | ts.Block {
 		return ts.isSourceFile(node)
 			|| ts.isBlock(node)
 	}
 
 	/** Not a block, but can be extended to a block. */
-	export function canExtendToBlock(node: TS.Node): node is TS.Expression | TS.ExpressionStatement {
+	export function canExtendToBlock(node: ts.Node): node is ts.Expression | ts.ExpressionStatement {
 		let parent = node.parent
 
 		if (ts.isSourceFile(node)) {
@@ -150,13 +150,13 @@ export namespace Packer {
 	}
 
 	/** Whether can put statements. */
-	export function canPutStatements(node: TS.Node): node is TS.SourceFile | TS.Block | TS.CaseOrDefaultClause {
+	export function canPutStatements(node: ts.Node): node is ts.SourceFile | ts.Block | ts.CaseOrDefaultClause {
 		return canBlock(node)
 			|| ts.isCaseOrDefaultClause(node)
 	}
 
 	/** Whether can be extended to a block to put statements. */
-	export function canExtendToPutStatements(node: TS.Node): node is TS.Expression | TS.ExpressionStatement {
+	export function canExtendToPutStatements(node: ts.Node): node is ts.Expression | ts.ExpressionStatement {
 		return canExtendToBlock(node)
 	}
 
@@ -165,7 +165,7 @@ export namespace Packer {
 	 * or should be just one unique expression, can't be replaced to two.
 	 * so that it can be parenthesized.
 	 */
-	export function shouldBeUnique(node: TS.Node): node is TS.Expression {
+	export function shouldBeUnique(node: ts.Node): node is ts.Expression {
 		let parent = node.parent
 
 		// Content of flow interrupt
@@ -251,7 +251,7 @@ export namespace Packer {
 	 * Bundle expressions to a parenthesized expression.
 	 * `a, b -> (a, b)`
 	 */
-	export function parenthesizeExpressions(...exps: TS.Expression[]): TS.Expression {
+	export function parenthesizeExpressions(...exps: ts.Expression[]): ts.Expression {
 
 		// Only one expression, returns it.
 		if (exps.length === 1) {
@@ -266,7 +266,7 @@ export namespace Packer {
 	 * Bundle expressions to a single binary expression.
 	 * `a, b -> a && b`
 	 */
-	export function bundleBinaryExpressions(exps: TS.Expression[], operator: TS.BinaryOperator): TS.Expression {
+	export function bundleBinaryExpressions(exps: ts.Expression[], operator: ts.BinaryOperator): ts.Expression {
 
 		// Only one expression, returns it.
 		if (exps.length === 1) {
@@ -290,7 +290,7 @@ export namespace Packer {
 	 * D expressions to a single binary expression.
 	 * `a, b, c -> [a, b, c]`
 	 */
-	export function unBundleCommaBinaryExpressions(exp: TS.Expression): TS.Expression[] {
+	export function unBundleCommaBinaryExpressions(exp: ts.Expression): ts.Expression[] {
 		if (ts.isBinaryExpression(exp)
 			&& exp.operatorToken.kind === ts.SyntaxKind.CommaToken
 		) {
@@ -308,7 +308,7 @@ export namespace Packer {
 	 * For each level of nodes, extract final expressions from a parenthesized expression.
 	 * `(a, b, c)` -> `c`
 	 */
-	export function extractFinalParenthesized(node: TS.Node): TS.Node {
+	export function extractFinalParenthesized(node: ts.Node): ts.Node {
 		if (ts.isParenthesizedExpression(node)) {
 			let exp = node.expression
 			if (ts.isBinaryExpression(exp)
@@ -323,7 +323,7 @@ export namespace Packer {
 
 
 	/** Remove comments from a property or element access node. */
-	export function removeAccessComments<T extends TS.Node>(node: T): T {
+	export function removeAccessComments<T extends ts.Node>(node: T): T {
 		if (ts.isPropertyAccessExpression(node)) {
 
 			// `a?.b`
@@ -332,7 +332,7 @@ export namespace Packer {
 					removeAccessComments(node.expression),
 					node.questionDotToken,
 					removeAccessComments(node.name),
-				) as TS.Node as T
+				) as ts.Node as T
 			}
 
 			// `a.b`
@@ -340,7 +340,7 @@ export namespace Packer {
 				return factory.createPropertyAccessExpression(
 					removeAccessComments(node.expression),
 					removeAccessComments(node.name)
-				) as TS.Node as T
+				) as ts.Node as T
 			}
 		}
 		else if (ts.isElementAccessExpression(node)) {
@@ -351,7 +351,7 @@ export namespace Packer {
 					removeAccessComments(node.expression),
 					node.questionDotToken,
 					removeAccessComments(node.argumentExpression),
-				) as TS.Node as T
+				) as ts.Node as T
 			}
 
 			// `a[b]`
@@ -359,14 +359,14 @@ export namespace Packer {
 				return factory.createElementAccessExpression(
 					removeAccessComments(node.expression),
 					removeAccessComments(node.argumentExpression)
-				) as TS.Node as T
+				) as ts.Node as T
 			}
 		}
 		else if (ts.isIdentifier(node)) {
-			return factory.createIdentifier(Helper.getFullText(node)) as TS.Node as T
+			return factory.createIdentifier(Helper.getFullText(node)) as ts.Node as T
 		}
 		else if (Helper.isThis(node)) {
-			return factory.createThis() as TS.Node as T
+			return factory.createThis() as ts.Node as T
 		}
 
 		return node
@@ -374,7 +374,7 @@ export namespace Packer {
 
 
 	/** Wrap by a statement if not yet. */
-	export function toStatement(node: TS.Node): TS.Statement {
+	export function toStatement(node: ts.Node): ts.Statement {
 		if (ts.isStatement(node)) {
 			return node
 		}
@@ -390,7 +390,7 @@ export namespace Packer {
 	}
 
 	/** Wrap each node by a statement if not yet. */
-	export function toStatements(nodes: TS.Node[]): TS.Statement[] {
+	export function toStatements(nodes: ts.Node[]): ts.Statement[] {
 		return nodes.map(n => toStatement(n))
 	}
 
@@ -401,7 +401,7 @@ export namespace Packer {
 	 * like remove as expression, or unpack parenthesized, element access to property access.
 	 * `deeply` determines whether simplify all descendants.
 	 */
-	export function normalize(node: TS.Node, deeply: boolean): TS.Node {
+	export function normalize(node: ts.Node, deeply: boolean): ts.Node {
 		if (ts.isAsExpression(node)
 			|| ts.isParenthesizedExpression(node)
 			|| ts.isNonNullExpression(node)
@@ -418,7 +418,7 @@ export namespace Packer {
 			// `a?.b`
 			if (node.questionDotToken) {
 				return factory.createPropertyAccessChain(
-					normalize(node.expression, deeply) as TS.Expression,
+					normalize(node.expression, deeply) as ts.Expression,
 					node.questionDotToken,
 					factory.createIdentifier(node.argumentExpression.text)
 				)
@@ -427,7 +427,7 @@ export namespace Packer {
 			// `a.b`
 			else {
 				return factory.createPropertyAccessExpression(
-					normalize(node.expression, deeply) as TS.Expression,
+					normalize(node.expression, deeply) as ts.Expression,
 					factory.createIdentifier(node.argumentExpression.text)
 				)
 			}
@@ -439,7 +439,7 @@ export namespace Packer {
 		}
 
 		else if (deeply) {
-			return ts.visitEachChild(node, (node: TS.Node) => normalize(node, true), transformContext)
+			return ts.visitEachChild(node, (node: ts.Node) => normalize(node, true), transformContext)
 		}
 		else {
 			return node
@@ -448,10 +448,10 @@ export namespace Packer {
 
 
 	/** Create `if (...) {return ...}`. */
-	export function toIfElseStatement(condExps: TS.Expression[], exps: TS.Expression[]): TS.Statement {
+	export function toIfElseStatement(condExps: ts.Expression[], exps: ts.Expression[]): ts.Statement {
 
 		// Last branch.
-		let last: TS.Statement = factory.createBlock(
+		let last: ts.Statement = factory.createBlock(
 			[factory.createReturnStatement(
 				exps[exps.length - 1]
 			)],
@@ -481,10 +481,10 @@ export namespace Packer {
 	 * Create `cond1 ? exp1 : cond2 ? exp2 ...`.
 	 * Must ensure `condExps.length` and `trackingExps.length` equals `exps.length - 1`
 	 */
-	export function toConditionalExpression(condExps: TS.Expression[], exps: TS.Expression[], trackingExps: TS.Expression[][]): TS.Expression {
+	export function toConditionalExpression(condExps: ts.Expression[], exps: ts.Expression[], trackingExps: ts.Expression[][]): ts.Expression {
 
 		// Last expression.
-		let last: TS.Expression = exps[exps.length - 1]
+		let last: ts.Expression = exps[exps.length - 1]
 
 		for (let i = exps.length - 2; i >= 0; i--) {
 			let conditionNode = condExps[i]
