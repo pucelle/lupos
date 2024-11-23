@@ -16,7 +16,7 @@ export function setTransformContext(ctx: ts.TransformationContext, extras: Trans
 	typeChecker = extras.program.getProgram().getTypeChecker()
 	diagnosticModifier = extras.diagnosticModifier
 
-	Helper.setContext(typeChecker, ctx)
+	Helper.setContext(ts, typeChecker, ctx)
 }
 
 
