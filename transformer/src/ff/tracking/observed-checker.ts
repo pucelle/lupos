@@ -1,6 +1,7 @@
 import type TS from 'typescript'
 import {AccessNode} from '../../lupos-ts-module'
-import {ts, Helper, typeChecker} from '../../core'
+import {ts, typeChecker} from '../../core'
+import {Helper} from '../../lupos-ts-module'
 import {TrackingScopeTree} from './scope-tree'
 import {GenericType} from 'typescript'
 import {TrackingPatch} from './patch'

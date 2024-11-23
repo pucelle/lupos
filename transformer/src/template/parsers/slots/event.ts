@@ -1,6 +1,7 @@
 import type TS from 'typescript'
 import {SlotParserBase} from './base'
-import {factory, Helper, Modifier, TemplateSlotPlaceholder, ts} from '../../../core'
+import {factory, Modifier, TemplateSlotPlaceholder, ts} from '../../../core'
+import {Helper} from '../../../lupos-ts-module'
 import {VariableNames} from '../variable-names'
 
 

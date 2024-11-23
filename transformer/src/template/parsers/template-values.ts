@@ -1,5 +1,6 @@
 import type TS from 'typescript'
-import {factory, Helper, Interpolator, MutableMask, Packer, ScopeTree, ts} from '../../core'
+import {factory, Interpolator, MutableMask, Packer, ScopeTree, ts} from '../../core'
+import {Helper} from '../../lupos-ts-module'
 import {VariableNames} from './variable-names'
 import {TreeParser} from './tree'
 

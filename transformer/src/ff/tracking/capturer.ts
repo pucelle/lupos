@@ -1,5 +1,6 @@
 import type TS from 'typescript'
-import {InterpolationContentType, AccessNode, Helper, Interpolator, InterpolationPosition, VisitTree, ts, FlowInterruptionTypeMask, ScopeTree, Packer} from '../../core'
+import {InterpolationContentType, Interpolator, InterpolationPosition, VisitTree, ts, FlowInterruptionTypeMask, ScopeTree, Packer} from '../../core'
+import {AccessNode, Helper} from '../../lupos-ts-module'
 import {TrackingScope} from './scope'
 import {TrackingScopeTree, TrackingScopeTypeMask} from './scope-tree'
 import {AccessGrouper} from './access-grouper'

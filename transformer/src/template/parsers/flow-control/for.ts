@@ -1,5 +1,6 @@
 import type TS from 'typescript'
-import {factory, Helper, Modifier} from '../../../core'
+import {factory, Modifier} from '../../../core'
+import {Helper} from '../../../lupos-ts-module'
 import {FlowControlBase} from './base'
 import {SlotContentType} from '../../../enums'
 import {ForceTrackType, ObservedChecker, TrackingPatch} from '../../../ff'

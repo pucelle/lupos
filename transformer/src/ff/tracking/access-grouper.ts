@@ -1,5 +1,6 @@
 import type TS from 'typescript'
-import {AccessNode, factory, Helper, Modifier, Packer, ts} from '../../core'
+import {factory, Modifier, Packer, ts} from '../../core'
+import {AccessNode, Helper} from '../../lupos-ts-module'
 import {groupBy} from '../../utils'
 
 

@@ -1,4 +1,5 @@
-import {Helper, Scope, TemplateSlotPlaceholder} from '../../core'
+import {Scope, TemplateSlotPlaceholder} from '../../core'
+import {Helper} from '../../lupos-ts-module'
 import {PartPositionType} from '../../enums'
 import {HTMLNode, HTMLNodeType, HTMLRoot, HTMLNodeReferences, HTMLAttribute} from '../html-syntax'
 import {SlotParserBase, DynamicComponentSlotParser, FlowControlSlotParser, PropertySlotParser, BindingSlotParser, EventSlotParser, AttributeSlotParser, TextSlotParser, ContentSlotParser, ComponentSlotParser, SlotTagSlotParser} from './slots'

@@ -1,5 +1,6 @@
 import type TS from 'typescript'
-import {Helper, defineVisitor, ts, Modifier, factory} from '../core'
+import {defineVisitor, ts, Modifier, factory} from '../core'
+import {Helper} from '../lupos-ts-module'
 import {SlotContentType} from '../enums'
 
 

@@ -1,6 +1,7 @@
 import type TS from 'typescript'
 import {SlotParserBase} from './base'
-import {factory, Helper, Modifier, Packer, TemplateSlotPlaceholder, ts} from '../../../core'
+import {factory, Modifier, Packer, TemplateSlotPlaceholder, ts} from '../../../core'
+import {Helper} from '../../../lupos-ts-module'
 
 
 export class PropertySlotParser extends SlotParserBase {

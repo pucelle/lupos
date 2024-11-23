@@ -1,5 +1,6 @@
 import type TS from 'typescript'
-import {Helper, Packer, ts, VisitTree} from '../../core'
+import {Packer, ts, VisitTree} from '../../core'
+import {Helper} from '../../lupos-ts-module'
 import {TrackingScope} from './scope'
 import {ListMap} from '../../utils'
 import {CapturedOutputWay, TrackingRange, TrackingRanges} from './ranges'

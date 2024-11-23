@@ -1,5 +1,6 @@
 import type TS from 'typescript'
-import {Helper, defineVisitor, ts, Interpolator, InterpolationContentType, TemplateSlotPlaceholder, Modifier, onVisitedSourceFile} from '../core'
+import {defineVisitor, ts, Interpolator, InterpolationContentType, TemplateSlotPlaceholder, Modifier, onVisitedSourceFile} from '../core'
+import {Helper} from '../lupos-ts-module'
 import {TemplateParser} from './parsers'
 import {VariableNames} from './parsers/variable-names'
 import {HTMLRoot} from './html-syntax'

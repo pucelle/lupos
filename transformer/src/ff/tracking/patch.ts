@@ -1,8 +1,8 @@
 import type TS from 'typescript'
-import {Helper} from '../../core'
 import {ObservedChecker} from './observed-checker'
 import {AccessGrouper} from './access-grouper'
 import {TrackingRanges} from './ranges'
+import {Helper} from '../../lupos-ts-module'
 
 
 export enum ForceTrackType {

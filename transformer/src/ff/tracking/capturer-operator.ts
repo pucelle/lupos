@@ -1,5 +1,6 @@
 import type TS from 'typescript'
-import {Helper, VisitTree, ts, FlowInterruptionTypeMask, ScopeTree, HashItem} from '../../core'
+import {VisitTree, ts, FlowInterruptionTypeMask, ScopeTree, HashItem} from '../../core'
+import {Helper} from '../../lupos-ts-module'
 import {AccessReferences} from './access-references'
 import {removeFromList} from '../../utils'
 import {CapturedItem, TrackingCapturer} from './capturer'

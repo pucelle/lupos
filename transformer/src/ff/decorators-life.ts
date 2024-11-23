@@ -1,5 +1,6 @@
 import type TS from 'typescript'
-import {ts, defineVisitor, Helper, factory, Interpolator, VisitTree, MethodOverwrite, Modifier, MethodInsertPosition} from '../core'
+import {ts, defineVisitor, factory, Interpolator, VisitTree, MethodOverwrite, Modifier, MethodInsertPosition} from '../core'
+import {Helper} from '../lupos-ts-module'
 import {ProcessorClassNameMap, ProcessorPropNameMap} from './decorators-shared'
 import {Packer} from '../core/packer'
 

@@ -1,5 +1,6 @@
 import {SlotParserBase} from './base'
-import {factory, Helper, Packer, TemplateSlotPlaceholder, ts} from '../../../core'
+import {factory, Packer, TemplateSlotPlaceholder, ts} from '../../../core'
+import {Helper} from '../../../lupos-ts-module'
 import {cleanList} from '../../../utils'
 
 

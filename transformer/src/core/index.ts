@@ -1,5 +1,4 @@
 export * from './global'
-export * from '../lupos-ts-module'
 export * from './packer'
 export * from './interpolator'
 export * from './modifier'

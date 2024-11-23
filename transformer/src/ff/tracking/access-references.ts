@@ -1,4 +1,5 @@
-import {AccessNode, factory, Helper, InterpolationContentType, Interpolator, Modifier, transformContext, ts, VisitTree, ScopeTree} from '../../core'
+import {factory, InterpolationContentType, Interpolator, Modifier, transformContext, ts, VisitTree, ScopeTree} from '../../core'
+import {AccessNode, Helper} from '../../lupos-ts-module'
 import type TS from 'typescript'
 import {TrackingScopeTree} from './scope-tree'
 import {TrackingScope} from './scope'

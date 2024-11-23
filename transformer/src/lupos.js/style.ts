@@ -1,5 +1,6 @@
 import type TS from 'typescript'
-import {ts, defineVisitor, Helper, factory, Interpolator, InterpolationContentType} from '../core'
+import {ts, defineVisitor, factory, Interpolator, InterpolationContentType} from '../core'
+import {Helper} from '../lupos-ts-module'
 
 
 // Add `Com.ensureStyle()` after class declaration.

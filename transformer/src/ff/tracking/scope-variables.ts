@@ -1,6 +1,7 @@
 import type TS from 'typescript'
 import {ObservedChecker} from './observed-checker'
-import {Helper, ts} from '../../core'
+import {ts} from '../../core'
+import {Helper} from '../../lupos-ts-module'
 import {TrackingScope} from './scope'
 import {TrackingScopeTypeMask} from './scope-tree'
 

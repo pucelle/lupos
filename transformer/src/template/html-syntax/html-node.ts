@@ -1,5 +1,6 @@
 import type TS from 'typescript'
-import {Helper, TemplateSlotPlaceholder} from '../../core'
+import {TemplateSlotPlaceholder} from '../../core'
+import {Helper} from '../../lupos-ts-module'
 import {removeFromList} from '../../utils'
 import {HTMLAttribute, HTMLTokenParser} from './html-token-parser'
 

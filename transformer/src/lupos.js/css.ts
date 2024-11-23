@@ -1,5 +1,6 @@
 import type TS from 'typescript'
-import {Helper, defineVisitor, ts, factory, Interpolator, InterpolationContentType, TemplateSlotPlaceholder} from '../core'
+import {defineVisitor, ts, factory, Interpolator, InterpolationContentType, TemplateSlotPlaceholder} from '../core'
+import {Helper} from '../lupos-ts-module'
 
 
 defineVisitor(function(node: TS.Node, index: number) {

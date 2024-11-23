@@ -1,4 +1,5 @@
-import {factory, Helper, Packer, ts} from '../../../core'
+import {factory, Packer, ts} from '../../../core'
+import {Helper} from '../../../lupos-ts-module'
 import {BindingBase, BindingUpdateCallWith} from './base'
 
 

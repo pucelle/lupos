@@ -1,5 +1,6 @@
 import type TS from 'typescript'
-import {Helper, Modifier, ts} from '../../core'
+import {Modifier, ts} from '../../core'
+import {Helper} from '../../lupos-ts-module'
 import {TrackingScope} from './scope'
 import {TrackingScopeTree, TrackingScopeTypeMask} from './scope-tree'
 import {TrackingCapturerOperator} from './capturer-operator'

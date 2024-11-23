@@ -1,5 +1,8 @@
 import type TS from 'typescript'
-import {ts, Helper, factory, Interpolator, VisitTree, InterpolationContentType} from '.'
+import {Helper} from '../lupos-ts-module'
+import {factory, ts} from './global'
+import {VisitTree} from './visit-tree'
+import {InterpolationContentType, Interpolator} from './interpolator'
 
 
 export type MethodInsertPosition = 'before-super' | 'after-super' | 'end'

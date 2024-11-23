@@ -1,7 +1,8 @@
 import type TS from 'typescript'
 import {TrackingScope} from './scope'
 import {TrackingScopeTypeMask} from './scope-tree'
-import {AccessNode, FlowInterruptionTypeMask, Helper, Packer, ts, VisitTree} from '../../core'
+import {FlowInterruptionTypeMask, Packer, ts, VisitTree} from '../../core'
+import {AccessNode, Helper} from '../../lupos-ts-module'
 
 
 export class TrackingScopeState {

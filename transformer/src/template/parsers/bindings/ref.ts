@@ -1,5 +1,6 @@
 import type TS from 'typescript'
-import {factory, Helper, Packer, TemplateSlotPlaceholder, ts} from '../../../core'
+import {factory, Packer, TemplateSlotPlaceholder, ts} from '../../../core'
+import {Helper} from '../../../lupos-ts-module'
 import {BindingBase, BindingUpdateCallWith} from './base'
 import {TrackingPatch} from '../../../ff'
 import {getLatestBindingInfo, LatestBindingInfo} from './latest-binding'
