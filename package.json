@@ -17,10 +17,10 @@
 		"watch-compiler": "cd compiler && tsc -b -w",
 		"watch-transformer": "cd transformer && tsc -b -w",
 		"prepublish": "npm run build",
-		"test": "cd tests && node ../bin/tscl.js && echo Compare git changes to get test result"
+		"test": "cd tests && node ../bin/luc.js && echo Compare git changes to get test result"
 	},
 	"bin": {
-		"tscl": "./bin/tscl.js"
+		"luc": "./bin/luc.js"
 	},
 	"devDependencies": {
 		"typescript": "^5.6.2"
