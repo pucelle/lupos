@@ -1,12 +1,12 @@
 import * as ts from 'typescript'
 import {definePreVisitCallback, factory, Modifier, ScopeTree} from '../../core'
 import {TreeParser} from './tree'
-import {DoubleKeysMap} from '../../utils'
+import {PairKeysMap} from '../../utils'
 
 
 export namespace HTMLOutputHandler {
 
-	const Cache: DoubleKeysMap<string, boolean, string> = new DoubleKeysMap()
+	const Cache: PairKeysMap<string, boolean, string> = new PairKeysMap()
 
 
 	/** Initialize before loading each new source file. */

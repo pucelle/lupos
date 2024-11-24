@@ -169,7 +169,7 @@ export class ListMap<K, V> {
  * `K1 -> K2 -> V` Map Struct.
  * Index each value by a pair of keys.
  */
-export class DoubleKeysMap<K1, K2, V> {
+export class PairKeysMap<K1, K2, V> {
 
 	private map: Map<K1, Map<K2, V>> = new Map()
 
@@ -234,7 +234,7 @@ export class DoubleKeysMap<K1, K2, V> {
 	}
 
 	/** Has secondary map existed for first key. */
-	hasSecondOf(k1: K1): boolean {
+	hasFirstKey(k1: K1): boolean {
 		return this.map.has(k1)
 	}
 	

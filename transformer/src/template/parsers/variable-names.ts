@@ -1,4 +1,4 @@
-import {DoubleKeysMap} from '../../utils'
+import {PairKeysMap} from '../../utils'
 
 
 export namespace VariableNames {
@@ -16,7 +16,7 @@ export namespace VariableNames {
 	export const block = '$block'
 
 	const AreaIndexMap: Map<any, number> = new Map()
-	const AreaDoublyIndexMap: DoubleKeysMap<any, string, number> = new DoubleKeysMap()
+	const AreaDoublyIndexMap: PairKeysMap<any, string, number> = new PairKeysMap()
 
 
 	/** Initialize before loading a new source file. */
