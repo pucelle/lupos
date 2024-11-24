@@ -404,10 +404,10 @@ export namespace ScopeTree {
 
 	/** Test whether expression represented value is mutable. */
 	export function testMutable(rawNode: ts.Expression): MutableMask | 0 {
-		return testMutableVisitor(rawNode, false)
+		return testMutableRecursively(rawNode, false)
 	}
 
-	function testMutableVisitor(rawNode: ts.Node, insideFunctionScope: boolean): MutableMask | 0{
+	function testMutableRecursively(rawNode: ts.Node, insideFunctionScope: boolean): MutableMask | 0{
 		let mutable: MutableMask | 0 = 0
 
 		// Inside of a function scope.
@@ -447,10 +447,9 @@ export namespace ScopeTree {
 			}
 		}
 
-		ts.visitEachChild(rawNode, (node: ts.Node) => {
-			mutable |= testMutableVisitor(node, insideFunctionScope)
-			return node
-		}, transformContext)
+		ts.forEachChild(rawNode, (node: ts.Node) => {
+			mutable |= testMutableRecursively(node, insideFunctionScope)
+		})
 
 		return mutable
 	}

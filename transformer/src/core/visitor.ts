@@ -73,7 +73,6 @@ export function transformer(context: ts.TransformationContext, extras: Transform
 			VisitTree.toParent()
 			ScopeTree.toParent(node)
 
-			// Returned result has no matter.
 			return node
 		}
 
@@ -82,7 +81,6 @@ export function transformer(context: ts.TransformationContext, extras: Transform
 			ts.visitEachChild(node, visitor, context)
 			doMoreAfterVisitedChildren()
 
-			// Returned result has no matter.
 			return node
 		}
 

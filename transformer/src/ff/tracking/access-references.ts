@@ -1,4 +1,4 @@
-import {factory, InterpolationContentType, Interpolator, Modifier, transformContext, VisitTree, ScopeTree, helper} from '../../core'
+import {factory, InterpolationContentType, Interpolator, Modifier, VisitTree, ScopeTree, helper} from '../../core'
 import {AccessNode} from '../../lupos-ts-module'
 import * as ts from 'typescript'
 import {TrackingScopeTree} from './scope-tree'
@@ -75,8 +75,8 @@ export namespace AccessReferences {
 		let nameNode = helper.access.getPropertyNode(node)
 		let nameIndex = VisitTree.getIndex(nameNode)
 
-		visitAssessVisitor(node.expression, expIndex)
-		visitAssessVisitor(nameNode, nameIndex)
+		visitAssessRecursively(node.expression, expIndex)
+		visitAssessRecursively(nameNode, nameIndex)
 	}
 
 	/** 
@@ -84,9 +84,9 @@ export namespace AccessReferences {
 	 * and build a map of all the referenced variables/accessing, to current node.
 	 * Later, when one of these nodes assigned, we will reference this access node.
 	 */
-	function visitAssessVisitor(node: ts.Node, topIndex: number): ts.Node {
+	function visitAssessRecursively(node: ts.Node, topIndex: number): undefined {
 		if (VisitedNodes.has(node)) {
-			return node
+			return
 		}
 
 		VisitedNodes.add(node)
@@ -99,7 +99,7 @@ export namespace AccessReferences {
 			}
 		}
 
-		return ts.visitEachChild(node, (n: ts.Node) => visitAssessVisitor(n, topIndex), transformContext)
+		ts.forEachChild(node, (n: ts.Node) => visitAssessRecursively(n, topIndex))
 	}
 
 
