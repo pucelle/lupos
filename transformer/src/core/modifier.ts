@@ -24,6 +24,7 @@ export namespace Modifier {
 	const PersistedImportIndices: Set<number> = new Set()
 
 
+	/** Initialize before visiting a new source file. */
 	export function initialize() {
 		Imports.clear()
 		RemovedIndices.clear()
