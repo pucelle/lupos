@@ -1,7 +1,7 @@
 import type * as ts from 'typescript'
 import {VisitTree} from '../../core'
 import {TrackingScope} from './scope'
-import {ListMap} from '../../utils'
+import {ListMap} from '../../lupos-ts-module'
 import {TrackingScopeTypeMask} from './scope-tree'
 
 

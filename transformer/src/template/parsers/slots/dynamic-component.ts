@@ -1,8 +1,9 @@
 import * as ts from 'typescript'
 import {SlotParserBase} from './base'
 import {factory, Modifier} from '../../../core'
-import {HTMLNode, HTMLNodeType} from '../../html-syntax'
+import {HTMLNode, HTMLNodeType} from '../../../lupos-ts-module'
 import {SlotPositionType} from '../../../enums'
+import {HTMLNodeHelper} from '../../html-syntax'
 
 
 export class DynamicComponentSlotParser extends SlotParserBase {
@@ -42,7 +43,7 @@ export class DynamicComponentSlotParser extends SlotParserBase {
 		let useNode: HTMLNode
 
 		// Use next node to locate.
-		if (nextNode && nextNode.isPrecedingPositionStable(this.template.values.rawValueNodes)) {
+		if (nextNode && HTMLNodeHelper.isPrecedingPositionStable(nextNode, this.template.values.rawValueNodes)) {
 			useNode = nextNode
 		}
 

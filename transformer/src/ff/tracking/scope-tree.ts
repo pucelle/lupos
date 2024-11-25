@@ -1,8 +1,8 @@
 import * as ts from 'typescript'
 import {Packer, VisitTree, helper} from '../../core'
 import {TrackingScope} from './scope'
-import {ListMap} from '../../utils'
 import {CapturedOutputWay, TrackingRange, TrackingRanges} from './ranges'
+import {ListMap} from '../../lupos-ts-module'
 
 
 export enum TrackingScopeTypeMask {

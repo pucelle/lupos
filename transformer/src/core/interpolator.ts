@@ -1,5 +1,5 @@
 import * as ts from 'typescript'
-import {ListMap} from '../utils'
+import {ListMap} from '../lupos-ts-module'
 import {factory, transformContext, helper} from './global'
 import {VisitTree} from './visit-tree'
 import {definePreVisitCallback} from './visitor-callbacks'

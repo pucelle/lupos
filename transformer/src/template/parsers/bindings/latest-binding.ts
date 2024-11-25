@@ -1,5 +1,5 @@
 import type * as ts from 'typescript'
-import {HTMLNode} from '../../html-syntax'
+import {HTMLNode} from '../../../lupos-ts-module'
 
 
 export interface LatestBindingInfo {

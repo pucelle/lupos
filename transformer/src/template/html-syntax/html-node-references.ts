@@ -1,6 +1,5 @@
 import {VariableNames} from '../parsers/variable-names'
-import {HTMLNode} from './html-node'
-import {HTMLRoot} from './html-root'
+import {HTMLNode, HTMLRoot} from '../../lupos-ts-module'
 
 
 /** A node, and all the children which has any descendant been referenced. */

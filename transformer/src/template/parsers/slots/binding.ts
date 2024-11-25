@@ -1,6 +1,6 @@
 import {SlotParserBase} from './base'
 import {BindingBase, ClassBinding, RefBinding, StyleBinding} from '../bindings'
-import {HTMLAttribute} from '../../html-syntax'
+import {HTMLAttribute} from '../../../lupos-ts-module'
 import {SourceFileDiagnosticModifier} from '../../../core'
 
 

@@ -1,10 +1,11 @@
 import * as ts from 'typescript'
-import {HTMLAttribute, HTMLNode, HTMLNodeType} from '../../html-syntax'
+import {HTMLAttribute, HTMLNode, HTMLNodeType} from '../../../lupos-ts-module'
 import {PartType, TreeParser} from '../tree'
 import {SourceFileDiagnosticModifier, factory, Modifier, MutableMask, ScopeTree, TemplateSlotPlaceholder, Packer, helper} from '../../../core'
 import {VariableNames} from '../variable-names'
 import {TemplateParser} from '../template'
 import {SlotPositionType} from '../../../enums'
+import {HTMLNodeHelper} from '../../html-syntax'
 
 
 export abstract class SlotParserBase {
@@ -342,7 +343,7 @@ export abstract class SlotParserBase {
 
 		// Use next node to locate.
 		if (nextNode
-			&& nextNode.isPrecedingPositionStable(this.template.values.rawValueNodes)
+			&& HTMLNodeHelper.isPrecedingPositionStable(nextNode, this.template.values.rawValueNodes)
 			&& this.canRemoveNode(this.node)
 		) {
 			this.node.remove()
@@ -391,7 +392,7 @@ export abstract class SlotParserBase {
 		let lastChild = this.node.lastChild!
 
 		// If first child is not stable, insert a comment before it.
-		if (!firstChild.isPrecedingPositionStable(this.template.values.rawValueNodes)) {
+		if (!HTMLNodeHelper.isPrecedingPositionStable(firstChild, this.template.values.rawValueNodes)) {
 			let comment = new HTMLNode(HTMLNodeType.Comment, -1)
 			firstChild.before(comment)
 			firstChild = comment

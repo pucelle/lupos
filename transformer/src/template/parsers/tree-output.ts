@@ -1,12 +1,13 @@
 import * as ts from 'typescript'
 import {Part, TreeParser} from './tree'
-import {HTMLNode, HTMLNodeType, HTMLRoot} from '../html-syntax'
+import {HTMLNode, HTMLNodeType, HTMLRoot} from '../../lupos-ts-module'
 import {factory, Modifier, Packer, Scope, TemplateSlotPlaceholder, helper} from '../../core'
 import {SlotParserBase} from './slots'
 import {VariableNames} from './variable-names'
 import {SlotPositionType} from '../../enums'
 import {HTMLOutputHandler} from './html-output'
 import {TemplateParser} from './template'
+import {HTMLNodeHelper} from '../html-syntax'
 
 
 type OutputNodes = ts.Expression | ts.Statement | (ts.Expression | ts.Statement)[]
@@ -131,7 +132,7 @@ export class TreeOutputHandler {
 			pos: -1,
 			end: -1,
 			hasTrailingNewLine: false,
-			text: '\n' + this.root.toReadableString(this.template.values.rawValueNodes) + '\n',
+			text: '\n' + HTMLNodeHelper.toReadableString(this.root, this.template.values.rawValueNodes) + '\n',
 			kind: ts.SyntaxKind.MultiLineCommentTrivia,
 		}])
 
@@ -478,7 +479,8 @@ export class TreeOutputHandler {
 
 	/** Output parameters `(?$values)` of update function. */
 	private outputUpdateParameters(block: ts.Block): ts.ParameterDeclaration[] {
-		let hasValuesRef = !!helper.findInward(block, node => ts.isIdentifier(node) && node.text === VariableNames.values)
+		let test = (node => ts.isIdentifier(node) && node.text === VariableNames.values) as (node: ts.Node) => node is ts.Node
+		let hasValuesRef = !!helper.findInward(block, test)
 		let params: ts.ParameterDeclaration[] = []
 
 		if (hasValuesRef) {
@@ -497,7 +499,8 @@ export class TreeOutputHandler {
 
 	/** Output parameters `(?$context, ?$latestValues)` of template maker init function. */
 	private outputTemplateInitParameters(block: ts.Block): ts.ParameterDeclaration[] {
-		let hasContextRef = !!helper.findInward(block, node => ts.isIdentifier(node) && node.text === VariableNames.context)
+		let test = (node => ts.isIdentifier(node) && node.text === VariableNames.context) as (node: ts.Node) => node is ts.Node
+		let hasContextRef = !!helper.findInward(block, test)
 		let params: ts.ParameterDeclaration[] = []
 
 		if (hasContextRef) {

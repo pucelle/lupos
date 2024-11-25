@@ -1,4 +1,4 @@
-import {PairKeysMap} from '../../utils'
+import {PairKeysMap} from '../../lupos-ts-module'
 
 
 export namespace VariableNames {

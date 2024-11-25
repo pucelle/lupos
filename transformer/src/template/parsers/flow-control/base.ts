@@ -1,5 +1,5 @@
 import type * as ts from 'typescript'
-import {HTMLNode, HTMLNodeType} from '../../html-syntax'
+import {HTMLNode, HTMLNodeType} from '../../../lupos-ts-module'
 import {TreeParser} from '../tree'
 import {FlowControlSlotParser} from '../slots'
 import {factory, TemplateSlotPlaceholder} from '../../../core'

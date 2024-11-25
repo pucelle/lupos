@@ -1,6 +1,7 @@
 import {Scope, TemplateSlotPlaceholder, helper} from '../../core'
 import {PartPositionType} from '../../enums'
-import {HTMLNode, HTMLNodeType, HTMLRoot, HTMLNodeReferences, HTMLAttribute} from '../html-syntax'
+import {HTMLNodeHelper, HTMLNodeReferences} from '../html-syntax'
+import {HTMLNode, HTMLNodeType, HTMLRoot, HTMLAttribute } from '../../lupos-ts-module'
 import {SlotParserBase, DynamicComponentSlotParser, FlowControlSlotParser, PropertySlotParser, BindingSlotParser, EventSlotParser, AttributeSlotParser, TextSlotParser, ContentSlotParser, ComponentSlotParser, SlotTagSlotParser} from './slots'
 import {TemplateParser} from './template'
 import {TreeOutputHandler} from './tree-output'
@@ -189,7 +190,7 @@ export class TreeParser {
 		}
 
 		// Use a new comment node to locate if position is not stable.
-		else if (!firstNode.isPrecedingPositionStable(this.template.values.rawValueNodes)) {
+		else if (!HTMLNodeHelper.isPrecedingPositionStable(firstNode, this.template.values.rawValueNodes)) {
 			let comment = new HTMLNode(HTMLNodeType.Comment, -1)
 			firstNode.before(comment)
 			firstNode = comment

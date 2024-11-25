@@ -4,7 +4,7 @@ import {FlowControlBase} from './base'
 import {TemplateParser} from '../template'
 import {SlotContentType} from '../../../enums'
 import {CapturedOutputWay, TrackingPatch, TrackingRanges, TrackingScopeTree, TrackingScopeTypeMask} from '../../../ff'
-import {HTMLNode} from '../../html-syntax'
+import {HTMLNode} from '../../../lupos-ts-module'
 
 
 export class IfFlowControl extends FlowControlBase {

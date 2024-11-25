@@ -1,7 +1,7 @@
 import * as ts from 'typescript'
 import {definePreVisitCallback, factory, Modifier, ScopeTree} from '../../core'
 import {TreeParser} from './tree'
-import {PairKeysMap} from '../../utils'
+import {PairKeysMap} from '../../lupos-ts-module'
 
 
 export namespace HTMLOutputHandler {

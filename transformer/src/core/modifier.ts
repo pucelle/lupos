@@ -1,5 +1,5 @@
-import {ListMap} from '../utils'
 import * as ts from 'typescript'
+import {ListMap} from '../lupos-ts-module'
 import {factory, sourceFile, helper} from './global'
 import {InterpolationContentType, Interpolator} from './interpolator'
 import {VisitTree} from './visit-tree'

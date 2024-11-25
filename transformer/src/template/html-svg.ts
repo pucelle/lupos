@@ -2,7 +2,7 @@ import * as ts from 'typescript'
 import {defineVisitor, Interpolator, InterpolationContentType, TemplateSlotPlaceholder, Modifier, onVisitedSourceFile, helper} from '../core'
 import {TemplateParser} from './parsers'
 import {VariableNames} from './parsers/variable-names'
-import {HTMLRoot} from './html-syntax'
+import {HTMLRoot} from '../lupos-ts-module'
 
 
 defineVisitor(function(node: ts.Node, index: number) {

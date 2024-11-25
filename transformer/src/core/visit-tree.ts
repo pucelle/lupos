@@ -1,5 +1,5 @@
 import type * as ts from 'typescript'
-import {ListMap} from '../utils'
+import {ListMap} from '../lupos-ts-module'
 import {definePreVisitCallback} from './visitor-callbacks'
 
 
