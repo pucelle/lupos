@@ -1,4 +1,4 @@
-import {VariableNames} from '../parsers/variable-names'
+import {VariableNames} from '../parsers'
 import {HTMLNode, HTMLRoot} from '../../lupos-ts-module'
 
 

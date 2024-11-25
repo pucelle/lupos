@@ -185,13 +185,13 @@ export class TreeParser {
 
 		// Insert a comment at least, to make sure having a position.
 		if (!firstNode) {
-			firstNode = new HTMLNode(HTMLNodeType.Comment, -1)
+			firstNode = new HTMLNode(HTMLNodeType.Comment, -1, -1)
 			container.append(firstNode)
 		}
 
 		// Use a new comment node to locate if position is not stable.
 		else if (!HTMLNodeHelper.isPrecedingPositionStable(firstNode, this.template.values.rawValueNodes)) {
-			let comment = new HTMLNode(HTMLNodeType.Comment, -1)
+			let comment = new HTMLNode(HTMLNodeType.Comment, -1, -1)
 			firstNode.before(comment)
 			firstNode = comment
 		}
@@ -399,7 +399,7 @@ export class TreeParser {
 		else if (group.length === 1 && !group[0].beText) {
 			let {valueIndices} = group[0]
 
-			let comment = new HTMLNode(HTMLNodeType.Comment, -1)
+			let comment = new HTMLNode(HTMLNodeType.Comment, -1, -1)
 			comment.desc = TemplateSlotPlaceholder.joinStringsAndValueIndices(null, valueIndices)
 			node.replaceWith(comment)
 
@@ -415,7 +415,7 @@ export class TreeParser {
 
 				// Text, with dynamic content.
 				if (beText && valueIndices) {
-					let textNode = new HTMLNode(HTMLNodeType.Text, -1, undefined, undefined, ' ')
+					let textNode = new HTMLNode(HTMLNodeType.Text, -1, -1, undefined, undefined, ' ')
 					textNode.desc = TemplateSlotPlaceholder.joinStringsAndValueIndices(strings, valueIndices)
 					node.before(textNode)
 
@@ -424,14 +424,14 @@ export class TreeParser {
 
 				// Static text.
 				else if (beText) {
-					let textNode = new HTMLNode(HTMLNodeType.Text, -1, undefined, undefined, strings![0])
+					let textNode = new HTMLNode(HTMLNodeType.Text, -1, -1, undefined, undefined, strings![0])
 					textNode.desc = TemplateSlotPlaceholder.joinStringsAndValueIndices(strings, valueIndices)
 					node.before(textNode)
 				}
 
 				// Dynamic content.
 				else {
-					let comment = new HTMLNode(HTMLNodeType.Comment, -1)
+					let comment = new HTMLNode(HTMLNodeType.Comment, -1, -1)
 					comment.desc = TemplateSlotPlaceholder.joinStringsAndValueIndices(strings, valueIndices)
 					node.before(comment)
 	

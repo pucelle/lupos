@@ -1,7 +1,6 @@
 import * as ts from 'typescript'
 import {defineVisitor, Interpolator, InterpolationContentType, TemplateSlotPlaceholder, Modifier, onVisitedSourceFile, helper} from '../core'
-import {TemplateParser} from './parsers'
-import {VariableNames} from './parsers/variable-names'
+import {TemplateParser, VariableNames} from './parsers'
 import {HTMLRoot} from '../lupos-ts-module'
 
 
@@ -43,7 +42,7 @@ defineVisitor(function(node: ts.Node, index: number) {
 
 /** Parse a html template literal. */
 function parseHTMLTemplate(node: ts.TaggedTemplateExpression, index: number, templateType: 'html' | 'svg') {
-	let {string, mapper} = TemplateSlotPlaceholder.toTemplateString(node)
+	let {string, mapper} = TemplateSlotPlaceholder.toTemplateString(node.template)
 	let values = TemplateSlotPlaceholder.extractTemplateValues(node)
 	let root = HTMLRoot.fromString(string, mapper)
 	let parser = new TemplateParser(templateType, root, values, node)
