@@ -14,7 +14,7 @@ export class BindingSlotParser extends SlotParserBase {
 	private binding!: BindingBase
 
 	diagnoseMissingBinding() {
-		let start = this.attr.start
+		let start = this.attr.nameStart
 		let length = this.attr.name.replace(/\..+/, '').length
 
 		SourceFileDiagnosticModifier.addMissingImport(
