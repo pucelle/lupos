@@ -420,7 +420,7 @@ export abstract class SlotParserBase {
 	}
 
 	/** Try resolve component declarations. */
-	protected* resolveComponentDeclarations(): Iterable<ts.ClassDeclaration> {
+	protected* resolveComponentDeclarations(): Iterable<ts.ClassLikeDeclaration> {
 		let tagName = this.node.tagName!
 		let isNamedComponent = TemplateSlotPlaceholder.isNamedComponent(tagName)
 		let isDynamicComponent = TemplateSlotPlaceholder.isDynamicComponent(tagName)
@@ -463,18 +463,20 @@ export abstract class SlotParserBase {
 
 	/** Diagnose missing component import of current node. */
 	diagnoseMissingTagImport(message: string, ofNode: HTMLNode = this.node) {
-		let start = ofNode.start + 1
+		let start = ofNode.start
+		let gloStart = this.template.positionMapper.map(start) + 1
 		let length = ofNode.tagName!.length
 
-		SourceFileDiagnosticModifier.addMissingImport(start, length, message)
+		SourceFileDiagnosticModifier.addMissingImport(gloStart, length, message)
 	}
 
 	/** Diagnose normal of current node. */
 	diagnoseNormal(message: string, ofNode: HTMLNode = this.node) {
-		let start = ofNode.start + 1
+		let start = ofNode.start
+		let gloStart = this.template.positionMapper.map(start) + 1
 		let length = ofNode.tagName!.length
 
-		SourceFileDiagnosticModifier.addNormal(start, length, message)
+		SourceFileDiagnosticModifier.addNormal(gloStart, length, message)
 	}
 
 

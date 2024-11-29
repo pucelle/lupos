@@ -1,5 +1,5 @@
 import * as ts from 'typescript'
-import {HTMLNode, HTMLRoot} from '../../lupos-ts-module'
+import {HTMLNode, HTMLRoot, PositionMapper} from '../../lupos-ts-module'
 import {TreeParser} from './tree'
 import {TemplateValues} from './template-values'
 import {factory, Modifier, Scope, ScopeTree} from '../../core'
@@ -24,16 +24,20 @@ export class TemplateParser {
 	/** Raw template node even for sub template. */
 	readonly rawNode: ts.Node
 
+	/** Map node position to ts source file position. */
+	readonly positionMapper: PositionMapper
+
 	private readonly treeParsers: TreeParser[] = []
 	private readonly subTemplates: TemplateParser[] = []
 
 	/** Which scope should insert contents. */
 	private innerMostScope: Scope = ScopeTree.getTopmost()
 
-	constructor(type: TemplateType, root: HTMLRoot, values: ts.Expression[], rawNode: ts.Node) {
+	constructor(type: TemplateType, root: HTMLRoot, values: ts.Expression[], rawNode: ts.Node, positionMapper: PositionMapper) {
 		this.type = type
 		this.root = root
 		this.rawNode = rawNode
+		this.positionMapper = positionMapper
 
 		let tree = this.addTreeParser(root, null, null)
 		this.values = new TemplateValues(values, tree)
@@ -53,7 +57,7 @@ export class TemplateParser {
 	 * */
 	separateChildrenAsTemplate(node: HTMLNode): TemplateParser {
 		let root = HTMLRoot.fromSeparatingChildren(node)
-		let template = new TemplateParser(this.type, root, this.values.rawValueNodes, this.rawNode)
+		let template = new TemplateParser(this.type, root, this.values.rawValueNodes, this.rawNode, this.positionMapper)
 		this.subTemplates.push(template)
 
 		return template
