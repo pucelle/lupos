@@ -33,6 +33,7 @@ export class BindingBase {
 	readonly template: TemplateParser
 
 	name: string
+	prefix: string
 	modifiers: string[]
 
 	/** `?:binding=value`, detach binding if value is `null` or `undefined`. */
@@ -72,10 +73,10 @@ export class BindingBase {
 		this.template = slot.template
 
 		this.name = slot.name
+		this.prefix = slot.prefix!
 		this.modifiers = this.slot.modifiers
 
-		if (this.name.startsWith('?')) {
-			this.name = this.name.slice(1)
+		if (this.prefix.includes('?')) {
 			this.withQueryToken = true
 		}
 	}

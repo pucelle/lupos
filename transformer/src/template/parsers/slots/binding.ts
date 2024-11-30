@@ -8,6 +8,7 @@ export class BindingSlotParser extends SlotParserBase {
 
 	declare attr: HTMLAttribute
 	declare name: string
+	declare prefix: string
 	declare modifiers: string[]
 
 	/** To process output via binding type. */

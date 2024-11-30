@@ -33,15 +33,17 @@ export class TemplateParser {
 	/** Which scope should insert contents. */
 	private innerMostScope: Scope = ScopeTree.getTopmost()
 
-	constructor(type: TemplateType, root: HTMLRoot, values: ts.Expression[], rawNode: ts.Node, positionMapper: PositionMapper) {
+	constructor(type: TemplateType, root: HTMLRoot, valueNodes: ts.Expression[], rawNode: ts.Node, positionMapper: PositionMapper) {
 		this.type = type
 		this.root = root
 		this.rawNode = rawNode
 		this.positionMapper = positionMapper
 
 		let tree = this.addTreeParser(root, null, null)
-		this.values = new TemplateValues(values, tree)
-		tree.init()
+		this.values = new TemplateValues(valueNodes, tree)
+
+		/** Initialize after values ready. */
+		tree.parse()
 	}
 
 	/** Add a root and parent tree parser. */

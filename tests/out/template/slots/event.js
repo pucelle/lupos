@@ -140,7 +140,7 @@ const $html_2 = new HTMLMaker("<!----><div></div><!---->");
 */ const $template_7 = new TemplateMaker(function ($context) {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
-    SimulatedEvents.on($node_0, "hold", $context.handleEvent, $context);
+    SimulatedEvents.on($node_0, "hold:start", $context.handleEvent, $context);
     return {
         el: $node,
         position: new SlotPosition(1, $node_0)

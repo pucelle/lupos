@@ -18,8 +18,7 @@ export class PropertySlotParser extends SlotParserBase {
 	private targetType: 'component' | 'element' = 'element'
 
 	preInit() {
-		if (this.name.startsWith('.')) {
-			this.name = this.name.slice(1)
+		if (this.prefix === '..') {
 			this.forceComponentTargetType = TemplateSlotPlaceholder.isComponent(this.node.tagName!)
 		}
 

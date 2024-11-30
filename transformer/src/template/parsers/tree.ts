@@ -43,7 +43,6 @@ export class TreeParser {
 	readonly index: number
 	readonly references: HTMLNodeReferences
 
-	private slotParser: TemplateSlotParser
 	private wrappedBySVG: boolean = false
 	private wrappedByTemplate: boolean = false
 	private inSVG: boolean = false
@@ -57,7 +56,12 @@ export class TreeParser {
 	/** Node referenced component name. */
 	private refedComponentMap: Map<HTMLNode, string> = new Map()
 
-	constructor(template: TemplateParser, root: HTMLRoot, parent: TreeParser | null, fromNode: HTMLNode | null) {
+	constructor(
+		template: TemplateParser,
+		root: HTMLRoot,
+		parent: TreeParser | null,
+		fromNode: HTMLNode | null
+	) {
 		this.template = template
 		this.root = root
 		this.parent = parent
@@ -65,7 +69,6 @@ export class TreeParser {
 		this.index = VariableNames.getUniqueIndex('tree-index')
 		this.references = new HTMLNodeReferences(this.root)
 
-		this.slotParser = new TemplateSlotParser(this.root, template.values.rawValueNodes, this.addSlot.bind(this), helper)
 		this.initWrapping()
 		this.outputHandler = new TreeOutputHandler(this, this.index, this.wrappedBySVG, this.wrappedByTemplate)
 	}
@@ -92,8 +95,11 @@ export class TreeParser {
 		this.wrappedByTemplate = this.root.firstChild?.tagName === 'template'
 	}
 
-	init() {
-		this.slotParser.parse()
+	/** Parse after initialized all the things. */
+	parse() {
+		
+		let slotParser = new TemplateSlotParser(this.root, this.template.values.rawValueNodes, this.addSlot.bind(this), true, helper)
+		slotParser.parse()
 
 		// Must after nodes parsed.
 		// Nodes will be adjusted when parsing.
@@ -107,54 +113,53 @@ export class TreeParser {
 	 * It returns a callback to do more init after all children initialized.
 	 */
 	private addSlot(slot: TemplateSlot) {
-		let {type, name, strings, valueIndices, node, attr} = slot
 		let parser: SlotParserBase
 
-		switch (type) {
+		switch (slot.type) {
 			case TemplateSlotType.SlotTag:
-				parser = new SlotTagSlotParser(name, strings, valueIndices, node, attr, this)
+				parser = new SlotTagSlotParser(slot, this)
 				break
 
 			case TemplateSlotType.Component:
-				parser = new ComponentSlotParser(name, strings, valueIndices, node, attr, this)
+				parser = new ComponentSlotParser(slot, this)
 				break
 
 			case TemplateSlotType.DynamicComponent:
-				parser = new DynamicComponentSlotParser(name, strings, valueIndices, node, attr, this)
+				parser = new DynamicComponentSlotParser(slot, this)
 				break
 
 			case TemplateSlotType.FlowControl:
-				parser = new FlowControlSlotParser(name, strings, valueIndices, node, attr, this)
+				parser = new FlowControlSlotParser(slot, this)
 				break
 
 			case TemplateSlotType.Property:
-				parser = new PropertySlotParser(name, strings, valueIndices, node, attr, this)
+				parser = new PropertySlotParser(slot, this)
 				break
 
 			case TemplateSlotType.Binding:
-				parser = new BindingSlotParser(name, strings, valueIndices, node, attr, this)
+				parser = new BindingSlotParser(slot, this)
 				break
 
 			case TemplateSlotType.Event:
-				parser = new EventSlotParser(name, strings, valueIndices, node, attr, this)
+				parser = new EventSlotParser(slot, this)
 				break
 
 			case TemplateSlotType.Attribute:
-				parser = new AttributeSlotParser(name, strings, valueIndices, node, attr, this)
+				parser = new AttributeSlotParser(slot, this)
 				break
 
 			case TemplateSlotType.Text:
-				parser = new TextSlotParser(name, strings, valueIndices, node, attr, this)
+				parser = new TextSlotParser(slot, this)
 				break
 
 			case TemplateSlotType.Content:
-				parser = new ContentSlotParser(name, strings, valueIndices, node, attr, this)
+				parser = new ContentSlotParser(slot, this)
 				break
 		}
 
 		parser.preInit()
 		this.slots.push(parser)
-		this.references.ref(node)
+		this.references.ref(slot.node)
 
 		return () => {
 			parser.postInit()
@@ -196,7 +201,7 @@ export class TreeParser {
 	separateChildrenAsSubTree(node: HTMLNode): TreeParser {
 		let root = HTMLRoot.fromSeparatingChildren(node)
 		let tree = this.template.addTreeParser(root, this, node)
-		tree.init()
+		tree.parse()
 
 		return tree
 	}

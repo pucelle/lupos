@@ -1,5 +1,5 @@
 import * as ts from 'typescript'
-import {HTMLAttribute, HTMLNode, HTMLNodeType} from '../../../lupos-ts-module'
+import {HTMLAttribute, HTMLNode, HTMLNodeType, TemplateSlot} from '../../../lupos-ts-module'
 import {PartType, TreeParser} from '../tree'
 import {SourceFileDiagnosticModifier, factory, Modifier, MutableMask, ScopeTree, TemplateSlotPlaceholder, Packer, helper} from '../../../core'
 import {VariableNames} from '../variable-names'
@@ -10,8 +10,14 @@ import {HTMLNodeHelper} from '../../html-syntax'
 
 export abstract class SlotParserBase {
 
-	/** Attribute name, be `null` for dynamic binding `<tag ${...}>`. */
+	/** 
+	 * Attribute name after removed prefix and modifiers,
+	 * be `null` for dynamic binding `<tag ${...}>`.
+	 */
 	readonly name: string | null = null
+
+	/** Attribute name prefix, like `?`, `@`, `.`, `:`,  `?:`. */
+	readonly prefix: string | null = null
 
 	/** Modifiers. */
 	readonly modifiers: string[] | null = []
@@ -42,41 +48,19 @@ export abstract class SlotParserBase {
 	/** Has any custom value outputted. */
 	private customValueOutputted: boolean = false
 
-	constructor(
-		name: string | null,
-		strings: string[] | null,
-		valueIndices: number[] | null,
-		node: HTMLNode,
-		attr: HTMLAttribute | null,
-		treeParser: TreeParser
-	) {
-		this.name = name
+	constructor(slot: TemplateSlot, treeParser: TreeParser) {
+		let {namePrefix, nameUnPrefixedModified, modifiers, strings, valueIndices, node, attr} = slot
+
+		this.prefix = namePrefix
+		this.name = nameUnPrefixedModified
+		this.modifiers = modifiers
 		this.strings = strings
 		this.valueIndices = valueIndices
-
-		if (name !== null) {
-			let splitted = this.splitNameAndModifiers(name)
-			this.name = splitted.mainName
-			this.modifiers = splitted.modifiers
-		}
-
 		this.node = node
 		this.attr = attr
 		this.tree = treeParser
 		this.template = treeParser.template
 		this.onDynamicComponent = !!(this.node.tagName && TemplateSlotPlaceholder.isCompleteSlotIndex(this.node.tagName))
-	}
-
-	private splitNameAndModifiers(name: string) {
-
-		// Main name may be `[@]...` or `[.]...`
-		let mainName = name.match(/^[@.?]?[\w-]+/)?.[0] || ''
-		let modifiers = name.slice(mainName.length).split(/[.]/).filter(v => v)
-
-		return {
-			mainName,
-			modifiers,
-		}
 	}
 
 	/** Returns whether have value indices exist. */

@@ -8,6 +8,7 @@ export class AttributeSlotParser extends SlotParserBase {
 
 	/** Attribute name. */
 	declare name: string
+	declare prefix: string
 
 	/** 
 	 * `?:attr=value`, remove binding if value is false like,
@@ -25,8 +26,7 @@ export class AttributeSlotParser extends SlotParserBase {
 	private isSharedModification: boolean = false
 
 	preInit() {
-		if (this.name.startsWith('?')) {
-			this.name = this.name.slice(1)
+		if (this.prefix === '?') {
 			this.withQueryToken = true
 		}
 
@@ -101,11 +101,11 @@ export class AttributeSlotParser extends SlotParserBase {
 			factory.createIdentifier('style')
 		)
 		
-		return styles.map(([name, value]) => {
+		return styles.map(([prop, value]) => {
 			return factory.createBinaryExpression(
 				Packer.createAccessNode(
 					styleNode,
-					name
+					prop
 				),
 				factory.createToken(ts.SyntaxKind.EqualsToken),
 				factory.createStringLiteral(value || '')
