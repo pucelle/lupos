@@ -1,5 +1,5 @@
 import * as ts from 'typescript'
-import {HTMLAttribute, HTMLNode, HTMLNodeType, TemplateSlot} from '../../../lupos-ts-module'
+import {HTMLAttribute, HTMLNode, HTMLNodeType, TemplatePart} from '../../../lupos-ts-module'
 import {PartType, TreeParser} from '../tree'
 import {SourceFileDiagnosticModifier, factory, Modifier, MutableMask, ScopeTree, TemplateSlotPlaceholder, Packer, helper} from '../../../core'
 import {VariableNames} from '../variable-names'
@@ -48,11 +48,11 @@ export abstract class SlotParserBase {
 	/** Has any custom value outputted. */
 	private customValueOutputted: boolean = false
 
-	constructor(slot: TemplateSlot, treeParser: TreeParser) {
-		let {namePrefix, nameUnPrefixedModified, modifiers, strings, valueIndices, node, attr} = slot
+	constructor(slot: TemplatePart, treeParser: TreeParser) {
+		let {namePrefix, mainName, modifiers, strings, valueIndices, node, attr} = slot
 
 		this.prefix = namePrefix
-		this.name = nameUnPrefixedModified
+		this.name = mainName
 		this.modifiers = modifiers
 		this.strings = strings
 		this.valueIndices = valueIndices

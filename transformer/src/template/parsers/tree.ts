@@ -1,7 +1,7 @@
 import {Scope, TemplateSlotPlaceholder, helper} from '../../core'
 import {PartPositionType} from '../../enums'
 import {HTMLNodeHelper, HTMLNodeReferences} from '../html-syntax'
-import {HTMLNode, HTMLNodeType, HTMLRoot, TemplateSlotParser, TemplateSlot, TemplateSlotType} from '../../lupos-ts-module'
+import {HTMLNode, HTMLNodeType, HTMLRoot, TemplatePartParser, TemplatePart, TemplatePartType} from '../../lupos-ts-module'
 import {SlotParserBase, DynamicComponentSlotParser, FlowControlSlotParser, PropertySlotParser, BindingSlotParser, EventSlotParser, AttributeSlotParser, TextSlotParser, ContentSlotParser, ComponentSlotParser, SlotTagSlotParser} from './slots'
 import {TemplateParser} from './template'
 import {TreeOutputHandler} from './tree-output'
@@ -98,7 +98,7 @@ export class TreeParser {
 	/** Parse after initialized all the things. */
 	parse() {
 		
-		let slotParser = new TemplateSlotParser(this.root, this.template.values.rawValueNodes, this.addSlot.bind(this), true, helper)
+		let slotParser = new TemplatePartParser(this.root, this.template.values.rawValueNodes, this.addSlot.bind(this), helper)
 		slotParser.parse()
 
 		// Must after nodes parsed.
@@ -112,49 +112,53 @@ export class TreeParser {
 	 * Note `node` may not in tree when adding the slot.
 	 * It returns a callback to do more init after all children initialized.
 	 */
-	private addSlot(slot: TemplateSlot) {
-		let parser: SlotParserBase
+	private addSlot(slot: TemplatePart) {
+		let parser: SlotParserBase | null = null
 
 		switch (slot.type) {
-			case TemplateSlotType.SlotTag:
+			case TemplatePartType.SlotTag:
 				parser = new SlotTagSlotParser(slot, this)
 				break
 
-			case TemplateSlotType.Component:
+			case TemplatePartType.Component:
 				parser = new ComponentSlotParser(slot, this)
 				break
 
-			case TemplateSlotType.DynamicComponent:
+			case TemplatePartType.DynamicComponent:
 				parser = new DynamicComponentSlotParser(slot, this)
 				break
 
-			case TemplateSlotType.FlowControl:
+			case TemplatePartType.FlowControl:
 				parser = new FlowControlSlotParser(slot, this)
 				break
 
-			case TemplateSlotType.Property:
+			case TemplatePartType.Property:
 				parser = new PropertySlotParser(slot, this)
 				break
 
-			case TemplateSlotType.Binding:
+			case TemplatePartType.Binding:
 				parser = new BindingSlotParser(slot, this)
 				break
 
-			case TemplateSlotType.Event:
+			case TemplatePartType.Event:
 				parser = new EventSlotParser(slot, this)
 				break
 
-			case TemplateSlotType.Attribute:
+			case TemplatePartType.SlottedAttribute:
 				parser = new AttributeSlotParser(slot, this)
 				break
 
-			case TemplateSlotType.Text:
+			case TemplatePartType.SlottedText:
 				parser = new TextSlotParser(slot, this)
 				break
 
-			case TemplateSlotType.Content:
+			case TemplatePartType.Content:
 				parser = new ContentSlotParser(slot, this)
 				break
+		}
+
+		if (!parser) {
+			return undefined
 		}
 
 		parser.preInit()
