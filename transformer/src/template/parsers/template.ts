@@ -22,7 +22,7 @@ export class TemplateParser {
 	readonly values: TemplateValues
 
 	/** Raw template node even for sub template. */
-	readonly rawNode: ts.Node
+	readonly node: ts.Node
 
 	/** Map node position to ts source file position. */
 	readonly positionMapper: PositionMapper
@@ -36,7 +36,7 @@ export class TemplateParser {
 	constructor(type: TemplateType, root: HTMLRoot, valueNodes: ts.Expression[], rawNode: ts.Node, positionMapper: PositionMapper) {
 		this.type = type
 		this.root = root
-		this.rawNode = rawNode
+		this.node = rawNode
 		this.positionMapper = positionMapper
 
 		let tree = this.addTreeParser(root, null, null)
@@ -59,7 +59,7 @@ export class TemplateParser {
 	 * */
 	separateChildrenAsTemplate(node: HTMLNode): TemplateParser {
 		let root = HTMLRoot.fromSeparatingChildren(node)
-		let template = new TemplateParser(this.type, root, this.values.rawValueNodes, this.rawNode, this.positionMapper)
+		let template = new TemplateParser(this.type, root, this.values.valueNodes, this.node, this.positionMapper)
 		this.subTemplates.push(template)
 
 		return template

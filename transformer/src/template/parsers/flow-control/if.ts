@@ -91,7 +91,7 @@ export class IfFlowControl extends FlowControlBase {
 	protected initTrackingRanges(conditionIndices: (number | null)[], contentStrings: (string | null)[]) {
 		let contentIndicesList = contentStrings.map(s => s ? TemplateSlotPlaceholder.getSlotIndices(s) ?? [] : [])
 		let flatContentIndices = contentIndicesList.flat()
-		let rawValueNodes = this.template.values.rawValueNodes
+		let rawValueNodes = this.template.values.valueNodes
 		let endContentIndex = flatContentIndices.length > 0 ? flatContentIndices[flatContentIndices.length - 1] : null
 
 		for (let i = 0; i < conditionIndices.length; i++) {
@@ -107,7 +107,7 @@ export class IfFlowControl extends FlowControlBase {
 
 			if (contentIndices.length > 0) {
 				let contentRangeId = TrackingRanges.markRange(
-					this.template.rawNode,
+					this.template.node,
 					rawValueNodes[contentIndices[0]].parent,
 					rawValueNodes[contentIndices[contentIndices.length - 1]].parent,
 					TrackingScopeTypeMask.ConditionalContent,
@@ -129,7 +129,7 @@ export class IfFlowControl extends FlowControlBase {
 				}
 
 				let conditionalRangeId = TrackingRanges.markRange(
-					this.template.rawNode,
+					this.template.node,
 					rawValueNodes[conditionIndex].parent,
 					rawValueNodes[endContentIndex!].parent,
 					type,

@@ -7,7 +7,7 @@ import {TreeParser} from './tree'
 /** Help to manage all value nodes. */
 export class TemplateValues {
 
-	readonly rawValueNodes: ts.Expression[]
+	readonly valueNodes: ts.Expression[]
 	readonly tree: TreeParser
 
 	private valueHash: Map<string, number> = new Map()
@@ -17,15 +17,15 @@ export class TemplateValues {
 	private transferredLatestNames: Map<string, number> = new Map()
 
 	constructor(valueNodes: ts.Expression[], tree: TreeParser) {
-		this.rawValueNodes = valueNodes
+		this.valueNodes = valueNodes
 		this.tree = tree
 		this.checkIndicesMutable()
 	}
 	
 	/** Removes all static values and remap value indices. */
 	private checkIndicesMutable() {
-		for (let i = 0; i < this.rawValueNodes.length; i++) {
-			let node = this.rawValueNodes[i]
+		for (let i = 0; i < this.valueNodes.length; i++) {
+			let node = this.valueNodes[i]
 			this.indicesMutable.set(i, VariableScopeTree.testMutable(node))
 		}
 	}
@@ -47,7 +47,7 @@ export class TemplateValues {
 
 	/** Get raw value node at index. */
 	getRawValue(valueIndex: number): ts.Expression {
-		return this.rawValueNodes[valueIndex]
+		return this.valueNodes[valueIndex]
 	}
 
 	/** 
@@ -95,7 +95,7 @@ export class TemplateValues {
 		}
 		
 		let valueNodes = valueIndices.map(valueIndex => {
-			let rawValueNode = this.rawValueNodes[valueIndex]
+			let rawValueNode = this.valueNodes[valueIndex]
 			let mutable = this.isIndexMutable(valueIndex)
 			let canTurn = this.isIndexCanTurnStatic(valueIndex)
 			let asStatic = !mutable || asCallback && canTurn

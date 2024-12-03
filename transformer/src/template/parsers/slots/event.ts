@@ -1,8 +1,8 @@
 import * as ts from 'typescript'
 import {SlotParserBase} from './base'
-import {factory, Modifier, helper} from '../../../core'
+import {factory, Modifier, helper, VariableScopeTree} from '../../../core'
 import {VariableNames} from '../variable-names'
-import {TemplateSlotPlaceholder} from '../../../lupos-ts-module'
+import {TemplateHelpers, TemplateSlotPlaceholder} from '../../../lupos-ts-module'
 
 
 export class EventSlotParser extends SlotParserBase {
@@ -59,7 +59,14 @@ export class EventSlotParser extends SlotParserBase {
 			return 'component'
 		}
 
-		let classDeclarations = [...this.resolveComponentDeclarations()]
+		let classDeclarations = [...TemplateHelpers.resolveComponentDeclarations(
+			this.node.tagName!,
+			this.template.node,
+			this.template.values.valueNodes,
+			VariableScopeTree,
+			helper
+		)]
+
 		if (classDeclarations.length === 0) {
 			return 'element'
 		}

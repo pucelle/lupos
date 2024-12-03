@@ -132,7 +132,7 @@ export class TreeOutputHandler {
 			pos: -1,
 			end: -1,
 			hasTrailingNewLine: false,
-			text: '\n' + HTMLNodeHelper.toReadableString(this.root, this.template.values.rawValueNodes) + '\n',
+			text: '\n' + HTMLNodeHelper.toReadableString(this.root, this.template.values.valueNodes) + '\n',
 			kind: ts.SyntaxKind.MultiLineCommentTrivia,
 		}])
 

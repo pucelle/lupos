@@ -43,7 +43,7 @@ export class DynamicComponentSlotParser extends SlotParserBase {
 		let useNode: HTMLNode
 
 		// Use next node to locate.
-		if (nextNode && HTMLNodeHelper.isPrecedingPositionStable(nextNode, this.template.values.rawValueNodes)) {
+		if (nextNode && HTMLNodeHelper.isPrecedingPositionStable(nextNode, this.template.values.valueNodes)) {
 			useNode = nextNode
 		}
 

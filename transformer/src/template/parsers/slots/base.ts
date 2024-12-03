@@ -1,7 +1,7 @@
 import * as ts from 'typescript'
 import {HTMLAttribute, HTMLNode, HTMLNodeType, TemplatePart, TemplateSlotPlaceholder} from '../../../lupos-ts-module'
 import {PartType, TreeParser} from '../tree'
-import {SourceFileDiagnosticModifier, factory, Modifier, MutableMask, VariableScopeTree, Packer, helper, Hashing} from '../../../core'
+import {SourceFileDiagnosticModifier, factory, Modifier, MutableMask, VariableScopeTree, Packer, Hashing} from '../../../core'
 import {VariableNames} from '../variable-names'
 import {TemplateParser} from '../template'
 import {SlotPositionType} from '../../../enums'
@@ -327,7 +327,7 @@ export abstract class SlotParserBase {
 
 		// Use next node to locate.
 		if (nextNode
-			&& HTMLNodeHelper.isPrecedingPositionStable(nextNode, this.template.values.rawValueNodes)
+			&& HTMLNodeHelper.isPrecedingPositionStable(nextNode, this.template.values.valueNodes)
 			&& this.canRemoveNode(this.node)
 		) {
 			this.node.remove()
@@ -376,7 +376,7 @@ export abstract class SlotParserBase {
 		let lastChild = this.node.lastChild!
 
 		// If first child is not stable, insert a comment before it.
-		if (!HTMLNodeHelper.isPrecedingPositionStable(firstChild, this.template.values.rawValueNodes)) {
+		if (!HTMLNodeHelper.isPrecedingPositionStable(firstChild, this.template.values.valueNodes)) {
 			let comment = new HTMLNode(HTMLNodeType.Comment, -1, -1)
 			firstChild.before(comment)
 			firstChild = comment
@@ -402,48 +402,6 @@ export abstract class SlotParserBase {
 			}
 		}
 	}
-
-	/** Try resolve component declarations. */
-	protected* resolveComponentDeclarations(): Iterable<ts.ClassLikeDeclaration> {
-		let tagName = this.node.tagName!
-		let isNamedComponent = TemplateSlotPlaceholder.isNamedComponent(tagName)
-		let isDynamicComponent = TemplateSlotPlaceholder.isDynamicComponent(tagName)
-
-		if (!isNamedComponent && !isDynamicComponent) {
-			return
-		}
-
-		// Resolve class declarations directly.
-		if (isNamedComponent) {
-			let ref = VariableScopeTree.getDeclarationByName(tagName, this.template.rawNode)
-			if (!ref) {
-				return
-			}
-
-			let decls = helper.symbol.resolveDeclarations(ref, ts.isClassDeclaration)
-			if (decls) {
-				yield* decls
-			}
-		}
-
-		// Resolve instance type of constructor interface.
-		else {
-			let ref = this.template.values.getRawValue(TemplateSlotPlaceholder.getUniqueSlotIndex(tagName)!)
-			let decls = helper.symbol.resolveDeclarations(ref, ts.isClassDeclaration)
-			if (decls && decls.length > 0) {
-				yield* decls
-				return
-			}
-
-			// Note made type node can't be resolved.
-			let typeNode = helper.types.getOrMakeTypeNode(ref)
-			if (typeNode) {
-				yield* helper.symbol.resolveInstanceDeclarations(typeNode)
-				return
-			}
-		}
-	}
-
 
 	/** Diagnose missing component import of current node. */
 	diagnoseMissingTagImport(message: string, ofNode: HTMLNode = this.node) {

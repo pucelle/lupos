@@ -99,7 +99,7 @@ export class TreeParser {
 	parse() {
 		
 		let canModify = true
-		let slotParser = new TemplatePartParser(this.root, this.template.values.rawValueNodes, canModify, this.addSlot.bind(this), helper)
+		let slotParser = new TemplatePartParser(this.root, this.template.values.valueNodes, canModify, this.addSlot.bind(this), helper)
 		slotParser.parse()
 
 		// Must after nodes parsed.
@@ -189,7 +189,7 @@ export class TreeParser {
 		}
 
 		// Use a new comment node to locate if position is not stable.
-		else if (!HTMLNodeHelper.isPrecedingPositionStable(firstNode, this.template.values.rawValueNodes)) {
+		else if (!HTMLNodeHelper.isPrecedingPositionStable(firstNode, this.template.values.valueNodes)) {
 			let comment = new HTMLNode(HTMLNodeType.Comment, -1, -1)
 			firstNode.before(comment)
 			firstNode = comment

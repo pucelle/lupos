@@ -67,7 +67,7 @@ export namespace Hashing {
 		// a -> a_123
 		else if (helper.isVariableIdentifier(node)) {
 			let {name, scope} = hashVariableName(node)
-			let declNode = scope.getVariableDeclaration(node.text)
+			let declNode = scope.getVariableDeclaredOrReferenced(node.text)
 
 			addToList(usedScopes, scope)
 
