@@ -1,8 +1,8 @@
 import type * as ts from 'typescript'
-import {HTMLNode, HTMLNodeType} from '../../../lupos-ts-module'
+import {HTMLNode, HTMLNodeType, TemplateSlotPlaceholder} from '../../../lupos-ts-module'
 import {TreeParser} from '../tree'
 import {FlowControlSlotParser} from '../slots'
-import {factory, TemplateSlotPlaceholder} from '../../../core'
+import {factory} from '../../../core'
 import {TemplateParser} from '../template'
 
 

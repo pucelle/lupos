@@ -1,9 +1,9 @@
 import * as ts from 'typescript'
-import {defineVisitor, Modifier, factory, Interpolator, InterpolationContentType, VisitTree, helper} from '../core'
+import {defineVisitor, Modifier, factory, Interpolator, InterpolationContentType, helper} from '../core'
 import {ProcessorPropNameMap} from './decorators-shared'
 
 
-defineVisitor(function(node: ts.Node, index: number) {
+defineVisitor(function(node: ts.Node) {
 		
 	// Method or getter and decorated.
 	if (!ts.isMethodDeclaration(node) && !ts.isGetAccessorDeclaration(node)) {
@@ -28,7 +28,7 @@ defineVisitor(function(node: ts.Node, index: number) {
 	let replace: () => ts.Node[]
 
 	replace = compileComputedEffectWatchDecorator(decoName, node as ts.GetAccessorDeclaration, isOverwritten)
-	Interpolator.replace(index, InterpolationContentType.Normal, replace)
+	Interpolator.replace(node, InterpolationContentType.Normal, replace)
 })
 
 
@@ -64,7 +64,7 @@ function compileComputedEffectWatchDecorator(
 	let overwrittenMethodName = decoName === 'computed' ? '$compute_' + propName : propName
 
 	return () => {
-		let newBody = Interpolator.outputChildren(VisitTree.getIndex(decl.body!)) as ts.Block
+		let newBody = Interpolator.outputChildren(decl.body!) as ts.Block
 
 		let property = factory.createPropertyDeclaration(
 			undefined,

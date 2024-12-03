@@ -1,5 +1,5 @@
 import * as ts from 'typescript'
-import {factory, Interpolator, MutableMask, Packer, ScopeTree, helper} from '../../core'
+import {factory, Interpolator, MutableMask, Packer, VariableScopeTree, helper, Hashing} from '../../core'
 import {VariableNames} from './variable-names'
 import {TreeParser} from './tree'
 
@@ -26,7 +26,7 @@ export class TemplateValues {
 	private checkIndicesMutable() {
 		for (let i = 0; i < this.rawValueNodes.length; i++) {
 			let node = this.rawValueNodes[i]
-			this.indicesMutable.set(i, ScopeTree.testMutable(node))
+			this.indicesMutable.set(i, VariableScopeTree.testMutable(node))
 		}
 	}
 
@@ -60,7 +60,7 @@ export class TemplateValues {
 		}
 
 		return rawParamNodes.map(rawValueNode => {
-			return (ScopeTree.testMutable(rawValueNode) & MutableMask.Mutable) > 0
+			return (VariableScopeTree.testMutable(rawValueNode) & MutableMask.Mutable) > 0
 		})
 	}
 
@@ -125,7 +125,7 @@ export class TemplateValues {
 		if (asStatic) {
 			let interpolated = Interpolator.outputNodeSelf(rawValueNode) as ts.Expression
 
-			let transferred = ScopeTree.transferToTopmostScope(
+			let transferred = VariableScopeTree.transferToTopmostScope(
 				interpolated,
 				rawValueNode,
 				this.transferNodeToTopmostScope.bind(this, valueIndex)
@@ -170,7 +170,7 @@ export class TemplateValues {
 	 * If `transferringWithinFunction`, move value to topmost scope and add referenced value to value list.
 	 */
 	private outputNodeAsValue(rawNode: ts.Expression, transferringWithinFunction: boolean): ts.Expression {
-		let hash = ScopeTree.hashNode(rawNode).name
+		let hash = Hashing.hashNode(rawNode).name
 		let valueIndex: number
 
 		if (this.valueHash.has(hash)) {
@@ -247,7 +247,7 @@ export class TemplateValues {
 
 	/** Output a single value from a raw node. */
 	outputRawValue(rawNode: ts.Expression, valueIndex: number, asCallback: boolean = false): ts.Expression {
-		let mutableMask = ScopeTree.testMutable(rawNode)
+		let mutableMask = VariableScopeTree.testMutable(rawNode)
 		let mutable = (mutableMask & MutableMask.Mutable) > 0
 		let canTurn = (mutableMask & MutableMask.CantTransfer) === 0
 		let asStatic = !mutable || asCallback && canTurn

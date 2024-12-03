@@ -1,11 +1,11 @@
-import type * as ts from 'typescript'
+import * as ts from 'typescript'
 import {ListMap} from '../lupos-ts-module'
 import {definePreVisitCallback} from './visitor-callbacks'
+import {sourceFile} from './global'
 
 
 interface VisitItem {
-
-	/** Visit index unique among whole source file. */
+	node: ts.Node
 	index: number
 }
 
@@ -19,13 +19,14 @@ interface VisitItem {
 export namespace VisitTree {
 
 	let stack: VisitItem[] = []
+	let current: VisitItem | null = null
 	let indexSeed: number = -1
 
-	/** Parent visit index -> child visit indices. */
-	const ChildMap: ListMap<number, number> = new ListMap()
+	/** Parent -> child. */
+	const ChildMap: ListMap<ts.Node, ts.Node> = new ListMap()
 
-	/** Child visit index -> parent visit index. */
-	const ParentMap: Map<number, number> = new Map()
+	/** Child -> parent. */
+	const ParentMap: Map<ts.Node, ts.Node> = new Map()
 
 	/** Node visit index -> Node. */
 	const NodeMap: Map<number, ts.Node> = new Map()
@@ -33,34 +34,44 @@ export namespace VisitTree {
 	/** Node -> Node visit index. */
 	const IndexMap: Map<ts.Node, number> = new Map()
 
-	let current: VisitItem = {
-		index: -1,
+	
+
+	export function visitSourceFile(sourceFile: ts.SourceFile) {
+		initialize()
+		
+		// In the first visiting initialize visit and scope tree.
+		function visitor(node: ts.Node) {
+			VisitTree.toNext(node)
+
+			VisitTree.toChild()
+			ts.forEachChild(node, visitor)
+			VisitTree.toParent()
+		}
+
+		visitor(sourceFile)
 	}
 	
 	
 	/** Initialize before start a new source file. */
-	export function initialize() {
+	function initialize() {
 		stack = []
+		current = null
 		indexSeed = -1
 		ChildMap.clear()
 		ParentMap.clear()
 		NodeMap.clear()
 		IndexMap.clear()
-
-		current = {
-			index: -1,
-		}
 	}
 
 	/** To next sibling. */
 	export function toNext(node: ts.Node) {
 		let index = ++indexSeed
-		current.index = index
+		current = {node, index}
 
 		if (stack.length > 0) {
 			let parent = stack[stack.length - 1]
-			ChildMap.add(parent.index, index)
-			ParentMap.set(index, parent.index)
+			ChildMap.add(parent.node, node)
+			ParentMap.set(node, parent.node)
 		}
 
 		NodeMap.set(index, node)
@@ -69,11 +80,8 @@ export namespace VisitTree {
 
 	/** To first child. */
 	export function toChild() {
-		stack.push(current)
-
-		current = {
-			index: -1,
-		}
+		stack.push(current!)
+		current = null
 	}
 
 	/** To parent. */
@@ -82,85 +90,80 @@ export namespace VisitTree {
 	}
 
 
-	/** Get child visit index, by parent index and child sibling index. */
-	export function getChildIndex(parentIndex: number, siblingIndex: number): number | undefined {
-		return ChildMap.get(parentIndex)![siblingIndex]
+	/** Get child, by parent and child sibling index. */
+	export function getChild(rawParent: ts.Node, siblingIndex: number): ts.Node | undefined {
+		let childNodes = getChildNodes(rawParent)
+		return childNodes ? childNodes[siblingIndex] : undefined
 	}
 
-	/** Get first child visit index, by parent index. */
-	export function getFirstChildIndex(parentIndex: number): number | undefined {
-		let list = ChildMap.get(parentIndex)
-		return list ? list[0] : undefined
+	/** Get first child by parent. */
+	export function getFirstChild(rawParent: ts.Node): ts.Node | undefined {
+		let childNodes = getChildNodes(rawParent)
+		return childNodes ? childNodes[0] : undefined
 	}
 
-	/** Get last child visit index, by parent index. */
-	export function getLastChildIndex(parentIndex: number): number | undefined {
-		let list = ChildMap.get(parentIndex)
-		return list ? list[list.length - 1] : undefined
+	/** Get last child by parent. */
+	export function getLastChild(rawParent: ts.Node): ts.Node | undefined {
+		let childNodes = getChildNodes(rawParent)
+		return childNodes ? childNodes[childNodes.length - 1] : undefined
 	}
 
 	/** Get count of child items. */
-	export function getChildCount(parentIndex: number): number {
-		return ChildMap.get(parentIndex)?.length || 0
+	export function getChildCount(rawParent: ts.Node): number {
+		let childNodes = getChildNodes(rawParent)
+		return childNodes ? childNodes.length : 0
 	}
 
-	/** Get all child visit indices. */
-	export function getChildIndices(parentIndex: number): number[] | undefined {
-		return ChildMap.get(parentIndex)!
+	/** Get all child nodes. */
+	export function getChildNodes(rawParent: ts.Node): ts.Node[] | undefined {
+		return ChildMap.get(rawParent)
 	}
 
-	/** Get all child visit indices. */
-	export function getChildNodes(parentIndex: number): ts.Node[] | undefined {
-		let childIndices = ChildMap.get(parentIndex)
-		if (childIndices === undefined) {
+	/** 
+	 * Get parent visit index by child visit index.
+	 * Equals `node.parent`.
+	 */
+	export function getParent(rawNode: ts.Node): ts.Node | undefined {
+		return ParentMap.get(rawNode)
+	}
+
+	/** Get previous node by sibling node. */
+	export function getPrevious(rawSiblingNode: ts.Node): ts.Node | undefined {
+		let parent = getParent(rawSiblingNode)
+		if (parent === undefined) {
 			return undefined
 		}
 
-		return childIndices.map(index => NodeMap.get(index)!)
-	}
-
-	/** Get parent visit index by child visit index. */
-	export function getParentIndex(childIndex: number): number | undefined {
-		return ParentMap.get(childIndex)!
-	}
-
-	/** Get previous visit index by sibling visit index. */
-	export function getPreviousIndex(siblingIndex: number): number | undefined {
-		let parentIndex = ParentMap.get(siblingIndex)
-		if (parentIndex === undefined) {
-			return undefined
-		}
-
-		let siblingIndices = ChildMap.get(parentIndex)!
-		let index = siblingIndices.indexOf(siblingIndex)
+		let siblings = ChildMap.get(parent)!
+		let index = siblings.indexOf(rawSiblingNode)
 
 		if (index > 0) {
-			return siblingIndices[index - 1]
+			return siblings[index - 1]
 		}
 
 		return undefined
 	}
 
-	/** Get next visit index by sibling visit index. */
-	export function getNextIndex(siblingIndex: number): number | undefined {
-		let parentIndex = ParentMap.get(siblingIndex)
-		if (parentIndex === undefined) {
+	/** Get next node by sibling node. */
+	export function getNext(rawSiblingNode: ts.Node): ts.Node | undefined {
+		let parent = getParent(rawSiblingNode)
+		if (parent === undefined) {
 			return undefined
 		}
 
-		let siblingIndices = ChildMap.get(parentIndex)!
-		let index = siblingIndices.indexOf(siblingIndex)
+		let siblings = ChildMap.get(parent)!
+		let index = siblings.indexOf(rawSiblingNode)
 
-		if (index < siblingIndices.length - 1) {
-			return siblingIndices[index + 1]
+		if (index < siblings.length - 1) {
+			return siblings[index + 1]
 		}
 
 		return undefined
 	}
 
-	/** Test whether have raw node by visit index. */
-	export function hasNode(node: ts.Node): boolean {
-		return IndexMap.has(node)
+	/** Test whether have raw node. */
+	export function hasNode(anyNode: ts.Node): boolean {
+		return IndexMap.has(anyNode)
 	}
 
 	/** Get raw node by visit index. */
@@ -174,78 +177,90 @@ export namespace VisitTree {
 	}
 
 
-	/** Returns whether `index1` is ancestor of `index2`. */
-	export function isAncestorOf(index1: number, index2: number): boolean {
+	/** Returns whether `node1` is ancestor of `node2`. */
+	export function isAncestorOf(rawNode1: ts.Node, rawNode2: ts.Node): boolean {
+		let index1 = getIndex(rawNode1)
+		let index2 = getIndex(rawNode2)
+
 		if (index1 >= index2) {
 			return false
 		}
 
-		let index: number | undefined = getParentIndex(index2)
+		let parent = getParent(rawNode2)
 
 		// Look ancestors.
-		while (index !== undefined) {
-			if (index === index1) {
+		while (parent) {
+			if (parent === rawNode1) {
 				return true
 			}
 
-			index = getParentIndex(index)
+			parent = getParent(parent)
 		}
 
 		return false
 	}
 
-	/** Returns whether `index1` is ancestor of `index2`, or equals `index2`. */
-	export function isContains(index1: number, index2: number): boolean {
-		if (index1 === index2) {
+	/** Returns whether `node1` is ancestor of `node2`, or equals `node2`. */
+	export function isContains(rawNode1: ts.Node, rawNode2: ts.Node): boolean {
+		if (rawNode1 === rawNode2) {
 			return true
 		}
 
-		return isAncestorOf(index1, index2)
+		return isAncestorOf(rawNode1, rawNode2)
 	}
 
-	/** Returns whether `index1` is preceding of `index2` in parent-first order. */
-	export function isPrecedingOf(index1: number, index2: number): boolean {
+	/** Returns whether `node1` is preceding of `node2` in parent-first order. */
+	export function isPrecedingOf(rawNode1: ts.Node, rawNode2: ts.Node): boolean {
+		let index1 = getIndex(rawNode1)
+		let index2 = getIndex(rawNode2)
+
 		return index1 < index2
 	}
 
 	/** 
-	 * Returns whether `index1` is preceding of `index2`,
-	 * or equals `index2` in parent-first order.
+	 * Returns whether `node1` is preceding of `node2`,
+	 * or equals `node2` in parent-first order.
 	 */
-	export function isPrecedingOfOrEqual(index1: number, index2: number): boolean {
+	export function isPrecedingOfOrEqual(rawNode1: ts.Node, rawNode2: ts.Node): boolean {
+		let index1 = getIndex(rawNode1)
+		let index2 = getIndex(rawNode2)
+
 		return index1 <= index2
 	}
 
-	/** Returns whether `index1` is preceding of `index2` in child-first order. */
-	export function isPrecedingOfInChildFirstOrder(index1: number, index2: number): boolean {
-		if (index1 === index2) {
+	/** Returns whether `node1` is preceding of `node2` in child-first order. */
+	export function isPrecedingOfInChildFirstOrder(rawNode1: ts.Node, rawNode2: ts.Node): boolean {
+		if (rawNode1 === rawNode2) {
 			return false
 		}
-		else if (isAncestorOf(index1, index2)) {
+		else if (isAncestorOf(rawNode1, rawNode2)) {
 			return false
 		}
-		else if (isAncestorOf(index2, index1)) {
+		else if (isAncestorOf(rawNode2, rawNode1)) {
 			return true
 		}
 		else {
-			return isPrecedingOf(index1, index2)
+			return isPrecedingOf(rawNode1, rawNode2)
 		}
 	}
 
 	/** 
-	 * Returns whether `index1` is preceding of `index2`,
-	 * or equals `index2` in child-first order.
+	 * Returns whether `node1` is preceding of `node2`,
+	 * or equals `node2` in child-first order.
 	 */
-	export function isPrecedingOfOrEqualInChildFirstOrder(index1: number, index2: number): boolean {
-		if (index1 === index2) {
+	export function isPrecedingOfOrEqualInChildFirstOrder(rawNode1: ts.Node, rawNode2: ts.Node): boolean {
+		if (rawNode1 === rawNode2) {
 			return true
 		}
 
-		return isPrecedingOfInChildFirstOrder(index1, index2)
+		return isPrecedingOfInChildFirstOrder(rawNode1, rawNode2)
 	}
 
 	/** Returns whether `index1` is preceding of `index2` in parent-first order. */
-	export function isFollowingOf(index1: number, index2: number): boolean {
+	export function isFollowingOf(rawNode1: ts.Node, rawNode2: ts.Node): boolean {
+		let index1 = getIndex(rawNode1)
+		let index2 = getIndex(rawNode2)
+
 		return index1 > index2
 	}
 
@@ -253,45 +268,29 @@ export namespace VisitTree {
 	 * Returns whether `index1` is following of `index2`,
 	 * or equals `index2` in parent-first order.
 	 */
-	export function isFollowingOfOrEqual(index1: number, index2: number): boolean {
+	export function isFollowingOfOrEqual(rawNode1: ts.Node, rawNode2: ts.Node): boolean {
+		let index1 = getIndex(rawNode1)
+		let index2 = getIndex(rawNode2)
+
 		return index1 >= index2
 	}
 
 	/** Returns whether `index1` is following of `index2` in child-first order. */
-	export function isFollowingOfInChildFirstOrder(index1: number, index2: number): boolean {
-		return isPrecedingOfInChildFirstOrder(index2, index1)
+	export function isFollowingOfInChildFirstOrder(rawNode1: ts.Node, rawNode2: ts.Node): boolean {
+		return isPrecedingOfInChildFirstOrder(rawNode2, rawNode1)
 	}
 
 	/** 
 	 * Returns whether `index1` is following of `index2`,
 	 * or equals `index2` in child-first order.
 	 */
-	export function isFollowingOfOrEqualInChildFirstOrder(index1: number, index2: number): boolean {
-		if (index1 === index2) {
+	export function isFollowingOfOrEqualInChildFirstOrder(rawNode1: ts.Node, rawNode2: ts.Node): boolean {
+		if (rawNode1 === rawNode2) {
 			return true
 		}
 
-		return isFollowingOfInChildFirstOrder(index1, index2)
-	}
-
-	
-
-	/** Look outward for a visit index, and the node at where match test fn. */
-	export function findOutwardMatch(fromIndex: number, untilIndex: number | undefined, test: (node: ts.Node) => boolean) : number | undefined {
-		let index: number | undefined = fromIndex
-
-		// Look outward for a node which can pass test.
-		while (index !== undefined && index !== untilIndex) {
-			let node = getNode(index)
-			if (test(node)) {
-				return index
-			}
-
-			index = getParentIndex(index)
-		}
-
-		return undefined
+		return isFollowingOfInChildFirstOrder(rawNode1, rawNode2)
 	}
 }
 
-definePreVisitCallback(VisitTree.initialize)
+definePreVisitCallback(() => VisitTree.visitSourceFile(sourceFile))

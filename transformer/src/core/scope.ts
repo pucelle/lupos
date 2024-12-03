@@ -1,76 +1,21 @@
 import * as ts from 'typescript'
 import {VisitTree} from './visit-tree'
 import {helper} from './global'
-import {ScopeTree} from './scope-tree'
+import {VariableScopeTree} from './scope-tree'
 import {InterpolationContentType, Interpolator} from './interpolator'
+import {Scope} from '../lupos-ts-module'
 
 
 type ScopeNode = ts.FunctionLikeDeclaration | ts.ForStatement | ts.ForOfStatement | ts.ForInStatement | ts.Block | ts.SourceFile
 
 
 /** Mark all variables with a context. */
-export class Scope {
+export class VariableScope extends Scope {
 
-	readonly node: ScopeNode
-	readonly parent: Scope | null
-	readonly visitIndex: number
+	declare readonly parent: VariableScope | null
 
-	/** All variables declared here, `variable name -> node`. */
-	private variables: Map<string, ts.Node | null> = new Map()
-
-	constructor(
-		node: ScopeNode,
-		index: number,
-		parent: Scope | null
-	) {
-		this.node = node
-		this.parent = parent
-		this.visitIndex = index
-	}
-
-	/** Visit a descendant node. */
-	visitNode(node: ts.Node) {
-
-		// Variable declaration.
-		if (ts.isVariableDeclaration(node)) {
-			for (let {name} of helper.variable.walkDeclarationNames(node)) {
-				this.variables.set(name, node)
-			}
-		}
-
-		// Parameter.
-		else if (ts.isParameter(node)) {
-			this.variables.set(helper.getFullText(node.name), node)
-		}
-
-		// `import {a as b}`,  `import {a}`
-		else if (ts.isImportSpecifier(node)) {
-			this.variables.set(helper.getFullText(node.name), node)
-		}
-
-		// `import a`
-		else if (ts.isImportClause(node)) {
-			if (node.name) {
-				this.variables.set(helper.getFullText(node.name), node)
-			}
-		}
-
-		// `import * as a`
-		else if (ts.isNamespaceImport(node)) {
-			this.variables.set(helper.getFullText(node.name), node)
-		}
-
-		// Class or function declaration
-		else if (ts.isClassDeclaration(node) || ts.isFunctionDeclaration(node)) {
-			if (node.name) {
-				this.variables.set(helper.getFullText(node.name), node)
-			}
-		}
-	}
-
-	/** Returns whether be top scope. */
-	isTopmost(): boolean {
-		return ts.isSourceFile(this.node)
+	constructor(node: ScopeNode, parent: VariableScope | null) {
+		super(node, parent, helper)
 	}
 
 	/** Whether can add more statements inside. */
@@ -79,11 +24,6 @@ export class Scope {
 			&& !ts.isForStatement(this.node)
 			&& !ts.isForOfStatement(this.node)
 			&& !ts.isForInStatement(this.node)
-	}
-
-	/** Whether has declared a specified named local variable. */
-	hasLocalVariable(name: string): boolean {
-		return this.variables.has(name)
 	}
 
 	/** Whether declared local variable as const. */
@@ -110,32 +50,6 @@ export class Scope {
 		}
 	}
 
-	/** Whether can visit a a variable by it's name. */
-	canVisitVariable(name: string): boolean {
-		if (this.variables.has(name)) {
-			return true
-		}
-
-		if (this.parent) {
-			return this.parent.canVisitVariable(name)
-		}
-		
-		return false
-	}
-
-	/** Try get raw node by it's variable name. */
-	getDeclarationByName(name: string): ts.Node | undefined {
-		if (this.variables.has(name)) {
-			return this.variables.get(name) ?? undefined
-		}
-
-		if (this.parent) {
-			return this.parent.getDeclarationByName(name)
-		}
-
-		return undefined
-	}
-
 	/** 
 	 * Add a non-repetitive variable name in scope,
 	 * make it have no conflict with current scope, and ancestral scopes.
@@ -145,7 +59,7 @@ export class Scope {
 		let seed = 0
 		let name = prefix + seed++
 
-		while (scope.canVisitVariable(name)) {
+		while (scope.hasVariable(name)) {
 			name = prefix + seed++
 		}
 
@@ -156,15 +70,15 @@ export class Scope {
 
 	/** Add a variable to current scope. */
 	addVariable(name: string) {
-		ScopeTree.addVariableToScope(this, name)
+		VariableScopeTree.addVariableToScope(this, name)
 	}
 
 	/** 
-	 * Find an ancestral scope, and a child visit index,
+	 * Find an ancestral scope, and a child,
 	 * which can insert variable before it.
 	 */
-	findClosestToAddStatements(): Scope {
-		let scope: Scope = this
+	findClosestToAddStatements(): VariableScope {
+		let scope: VariableScope = this
 
 		while (!scope.canAddStatements()) {
 			scope = scope.parent!
@@ -179,34 +93,23 @@ export class Scope {
 	 * Several variable declarations will be stacked to a variable statement.
 	 */
 	addStatements(stats: ts.Statement[], order?: number) {
-		let toIndex = this.getIndexToAddStatements()
+		let toIndex = this.getTargetNodeToAddStatements()
 		Interpolator.before(toIndex, InterpolationContentType.Declaration, () => stats, order)
 	}
 
-	/** Get best visit index to add variable before it. */
-	getIndexToAddStatements(): number {
-		let toIndex = VisitTree.getFirstChildIndex(this.visitIndex)!
+	/** Get best node to add variable before it. */
+	getTargetNodeToAddStatements(): ts.Node {
+		let toNode = VisitTree.getFirstChild(this.node)!
 
 		// Insert before the first not import statements.
 		if (this.isTopmost()) {
 			let beforeNode = (this.node as ts.SourceFile).statements.find(n => !ts.isImportDeclaration(n))
 			if (beforeNode) {
-				toIndex = VisitTree.getIndex(beforeNode)
+				toNode = beforeNode
 			}
 		}
 
-		return toIndex
-	}
-
-	/** Find closest scope which `this` specified, normally function-like, or source file. */
-	findClosestThisScope(): Scope {
-		let scope: Scope = this
-
-		while (!helper.isNonArrowFunctionLike(scope.node) && !ts.isSourceFile(scope.node)) {
-			scope = scope.parent!
-		}
-
-		return scope
+		return toNode
 	}
 }
 

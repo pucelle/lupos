@@ -1,5 +1,5 @@
-import {factory, InterpolationContentType, Interpolator, Modifier, VisitTree, ScopeTree, helper} from '../../core'
-import {AccessNode} from '../../lupos-ts-module'
+import {factory, InterpolationContentType, Interpolator, Modifier, VisitTree, VariableScopeTree, helper} from '../../core'
+import {AccessNode, AssignmentNode} from '../../lupos-ts-module'
 import * as ts from 'typescript'
 import {TrackingScopeTree} from './scope-tree'
 import {TrackingScope} from './scope'
@@ -12,11 +12,11 @@ import {TrackingScope} from './scope'
 export namespace AccessReferences {
 
 	/** 
-	 * Remember visit indices that have been visited.
+	 * Remember nodes that have been visited.
 	 * 
 	 * E.g., for access node `a.b.c`,
-	 * Will visit `a.b.c`, and make reference item `a` -> index of `a.b`.
-	 * Later will visit `a.b` and make reference item `a` -> index of `a`.
+	 * Will visit `a.b.c`, and make reference item `a` -> `a.b`.
+	 * Later will visit `a.b` and make reference item `a` -> `a`.
 	 * If we assign to `a`, both `a.b` and `a` will be referenced.
 	 * 
 	 * By avoid visiting a node twice, will only reference `a`.
@@ -25,58 +25,55 @@ export namespace AccessReferences {
 
 	/** 
 	 * If access as `a.b`, and later assign `a`, then node `a` of `a.b` become mutable.
-	 * Node visit index -> Assignment visit index.
+	 * Node -> Assignment node.
 	 */
-	const WillBeAssignedIndices: Map<number, number> = new Map()
+	const WillBeAssigned: Map<ts.Node, AssignmentNode> = new Map()
 
-	/** Indices where access nodes have been referenced. */
-	const ReferencedIndices: Set<number> = new Set()
+	/** Nodes at where access nodes have been referenced. */
+	const ReferencedNodes: Set<ts.Node> = new Set()
 
-	/** Node visit indices that have tested reference. */
-	const ReferencedTested: Set<number> = new Set()
+	/** Nodes that have tested reference. */
+	const ReferencedTested: Set<ts.Node> = new Set()
 
 
 	/** Initialize after enter a new source file. */
 	export function init() {
 		VisitedNodes.clear()
-		WillBeAssignedIndices.clear()
-		ReferencedIndices.clear()
+		WillBeAssigned.clear()
+		ReferencedNodes.clear()
 		ReferencedTested.clear()
 	}
 
 
 	/** Whether any descendant access node has been referenced. */
-	export function hasExternalAccessReferenced(index: number, ignoreListStructKey: boolean): boolean {
-		if (ReferencedIndices.has(index)) {
+	export function hasExternalAccessReferenced(node: ts.Node, ignoreListStructKey: boolean): boolean {
+		if (ReferencedNodes.has(node)) {
 			return true
 		}
-
-		let node = VisitTree.getNode(index)
 
 		if (ignoreListStructKey
 			&& helper.access.isAccess(node)
 			&& helper.isListStruct(node.expression)
 		) {
-			return hasExternalAccessReferenced(VisitTree.getIndex(node.expression), false)
+			return hasExternalAccessReferenced(node.expression, false)
 		}
 
-		let childIndices = VisitTree.getChildIndices(index)
-		if (!childIndices) {
+		let childNodes = VisitTree.getChildNodes(node)
+		if (!childNodes) {
 			return false
 		}
 
-		return childIndices.some(i => hasExternalAccessReferenced(i, false))
+		return childNodes.some(n => hasExternalAccessReferenced(n, false))
 	}
 
 
 	/** Visit an assess node, and it may make several reference items. */
 	export function visitAssess(node: AccessNode) {
-		let expIndex = VisitTree.getIndex(node.expression)!
+		let expNode = node.expression
 		let nameNode = helper.access.getPropertyNode(node)
-		let nameIndex = VisitTree.getIndex(nameNode)
 
-		visitAssessRecursively(node.expression, expIndex)
-		visitAssessRecursively(nameNode, nameIndex)
+		visitAssessRecursively(expNode, expNode)
+		visitAssessRecursively(nameNode, nameNode)
 	}
 
 	/** 
@@ -84,7 +81,7 @@ export namespace AccessReferences {
 	 * and build a map of all the referenced variables/accessing, to current node.
 	 * Later, when one of these nodes assigned, we will reference this access node.
 	 */
-	function visitAssessRecursively(node: ts.Node, topIndex: number): undefined {
+	function visitAssessRecursively(node: ts.Node, topNode: ts.Node) {
 		if (VisitedNodes.has(node)) {
 			return
 		}
@@ -93,45 +90,43 @@ export namespace AccessReferences {
 
 		// `a?.b` has been replaced to `a.b`
 		if (helper.access.isAccess(node) || helper.isVariableIdentifier(node)) {
-			let assignIndex = ScopeTree.whereWillBeAssigned(node)
-			if (assignIndex !== undefined) {
-				WillBeAssignedIndices.set(topIndex, assignIndex)
+			let assignmentNode = VariableScopeTree.whereWillBeAssigned(node)
+			if (assignmentNode !== undefined) {
+				WillBeAssigned.set(topNode, assignmentNode)
 			}
 		}
 
-		ts.forEachChild(node, (n: ts.Node) => visitAssessRecursively(n, topIndex))
+		ts.forEachChild(node, (n: ts.Node) => visitAssessRecursively(n, topNode))
 	}
 
 
 	/** Visit an assess node, reference after determined should reference. */
-	export function mayReferenceAccess(index: number, toIndex: number, scope: TrackingScope) {
-		let node = VisitTree.getNode(index)
+	export function mayReferenceAccess(node: ts.Node, toNode: ts.Node, scope: TrackingScope) {
 		if (!helper.access.isAccess(node)) {
 			return
 		}
 
 		// Avoid after tested, move to outer and test again.
-		if (ReferencedTested.has(index)) {
+		if (ReferencedTested.has(node)) {
 			return
 		}
 
-		let expIndex = VisitTree.getIndex(node.expression)!
+		let expNode = node.expression
 		let nameNode = helper.access.getPropertyNode(node)
-		let nameIndex = VisitTree.getIndex(nameNode)
 
 		// Use a reference variable to replace expression.
-		if (shouldReference(expIndex, toIndex)) {
-			reference(expIndex, scope)
-			ReferencedIndices.add(expIndex)
+		if (shouldReference(expNode, toNode)) {
+			reference(expNode, scope)
+			ReferencedNodes.add(expNode)
 		}
 
 		// Use a reference variable to replace name.
-		if (shouldReference(nameIndex, toIndex)) {
-			reference(nameIndex, scope)
-			ReferencedIndices.add(nameIndex)
+		if (shouldReference(nameNode, toNode)) {
+			reference(nameNode, scope)
+			ReferencedNodes.add(nameNode)
 		}
 
-		ReferencedTested.add(index)
+		ReferencedTested.add(node)
 	}
 
 
@@ -140,19 +135,18 @@ export namespace AccessReferences {
 	 * and before output it's tracking codes,
 	 * test whether it should output as mutable.
 	 */
-	function shouldReference(index: number, toIndex: number): boolean {
-		let node = VisitTree.getNode(index)
+	function shouldReference(node: ts.Node, toNode: ts.Node): boolean {
 		if (shouldReferenceInternal(node)) {
 			return true
 		}
 
-		if (!WillBeAssignedIndices.has(index)) {
+		if (!WillBeAssigned.has(node)) {
 			return false
 		}
 
 		// Mutable when output after assignment
-		let assignmentIndex = WillBeAssignedIndices.get(index)!
-		return VisitTree.isPrecedingOfInChildFirstOrder(assignmentIndex, toIndex)
+		let assignmentNode = WillBeAssigned.get(node)!
+		return VisitTree.isPrecedingOfInChildFirstOrder(assignmentNode, toNode)
 	}
 	
 
@@ -206,42 +200,42 @@ export namespace AccessReferences {
 	 * 	   `a.b().c`-> `$ref_0 = a.b(); ... $ref_`
 	 *     `a[b++]` -> `$ref_0 = b++; ... a[$ref_0]`
 	 */
-	function reference(index: number, scope: TrackingScope) {
-		let varDeclListIndex = VisitTree.findOutwardMatch(index, scope.visitIndex, ts.isVariableDeclaration)
-		let varScope = ScopeTree.findClosest(index).findClosestToAddStatements()
+	function reference(node: ts.Node, scope: TrackingScope) {
+		let varDeclListNode = helper.findOutwardUntil(node, scope.node, ts.isVariableDeclaration)
+		let varScope = VariableScopeTree.findClosest(node).findClosestToAddStatements()
 		let refName = varScope.makeUniqueVariable('$ref_')
 
 		// Insert one variable declaration to existing declaration list: `var ... $ref_0 = ...`
-		if (varDeclListIndex !== undefined) {
+		if (varDeclListNode !== undefined) {
 			
 			// insert `var $ref_0 = a.b()` to found position.
-			Modifier.addVariableAssignmentToList(index, varDeclListIndex, refName)
+			Modifier.addVariableAssignmentToList(node, varDeclListNode, refName)
 
 			// replace `a.b()` -> `$ref_0`.
-			Interpolator.replace(index, InterpolationContentType.Reference, () => factory.createIdentifier(refName))
+			Interpolator.replace(node, InterpolationContentType.Reference, () => factory.createIdentifier(refName))
 		}
 
 		// Insert two: `var $ref_0`, and `$ref_0 = ...`
 		else {
 			
-			let refPosition = TrackingScopeTree.findClosestPositionToAddStatements(index, scope)
+			let refPosition = TrackingScopeTree.findClosestPositionToAddStatements(node, scope)
 			let declAssignTogether = varScope.node === refPosition.scope.node
 
 			if (declAssignTogether) {
 
 				// insert `let $ref_0 = a.b()` to found position.
-				Modifier.addVariableAssignment(index, refPosition.index, refName)
+				Modifier.addVariableAssignment(node, refPosition.node, refName)
 			}
 			else {
 				// let $ref_0 
 				varScope.addVariable(refName)
 				
 				// insert `$ref_0 = a.b()` to found position.
-				Modifier.addReferenceAssignment(index, refPosition.index, refName)
+				Modifier.addReferenceAssignment(node, refPosition.node, refName)
 			}
 
 			// replace `a.b()` -> `$ref_0`.
-			Interpolator.replace(index, InterpolationContentType.Reference, () => factory.createIdentifier(refName))
+			Interpolator.replace(node, InterpolationContentType.Reference, () => factory.createIdentifier(refName))
 		}
 	}
 }

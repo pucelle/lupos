@@ -75,11 +75,9 @@ export namespace TrackingRanges {
 		if (existed) {
 			let ranges = RangesByStartNode.get(startNode)!
 			ranges.sort((a, b) => {
-				let ai = VisitTree.getIndex(a.endNode)
-				let bi = VisitTree.getIndex(b.endNode)
 
 				// Order by wider -> narrower.
-				return VisitTree.isPrecedingOfInChildFirstOrder(ai, bi) ? 1 : -1
+				return VisitTree.isPrecedingOfInChildFirstOrder(a.endNode, b.endNode) ? 1 : -1
 			})
 		}
 

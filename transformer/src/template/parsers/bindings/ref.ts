@@ -1,8 +1,9 @@
 import * as ts from 'typescript'
-import {factory, Packer, TemplateSlotPlaceholder, helper} from '../../../core'
+import {factory, Packer, helper} from '../../../core'
 import {BindingBase, BindingUpdateCallWith} from './base'
 import {TrackingPatch} from '../../../ff'
 import {getLatestBindingInfo, LatestBindingInfo} from './latest-binding'
+import {TemplateSlotPlaceholder} from '../../../lupos-ts-module'
 
 
 export class RefBinding extends BindingBase {

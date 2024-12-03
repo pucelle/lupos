@@ -1,8 +1,8 @@
 import * as ts from 'typescript'
-import {HTMLNode} from '../../../lupos-ts-module'
+import {HTMLNode, KnownInternalBindings} from '../../../lupos-ts-module'
 import {PartType, TreeParser} from '../tree'
 import {BindingSlotParser} from '../slots'
-import {SourceFileDiagnosticModifier, factory, Modifier, ScopeTree, Packer, helper} from '../../../core'
+import {SourceFileDiagnosticModifier, factory, Modifier, VariableScopeTree, Packer, helper} from '../../../core'
 import {TemplateParser} from '../template'
 import {VariableNames} from '../variable-names'
 import {setLatestBindingInfo} from './latest-binding'
@@ -11,17 +11,6 @@ import {setLatestBindingInfo} from './latest-binding'
 export interface BindingUpdateCallWith {
 	method: string
 	values: ts.Expression[]
-}
-
-
-/** Known bindings existing in `lupos.js`. */
-export const KnownInternalBindings: Record<string, {name: string, parameterCount: number, implementsPart: boolean}> = {
-	class: {name: 'ClassBinding', parameterCount: 1, implementsPart: false},
-	html: {name: 'HTMLBinding', parameterCount: 1, implementsPart: false},
-	ref: {name: 'RefBinding', parameterCount: 3, implementsPart: true},
-	slot: {name: 'SlotBinding', parameterCount: 1, implementsPart: true},
-	style: {name: 'StyleBinding', parameterCount: 1, implementsPart: false},
-	transition: {name: 'TransitionBinding', parameterCount: 3, implementsPart: true},
 }
 
 
@@ -161,7 +150,7 @@ export class BindingBase {
 		else {
 
 			// :bindingName -> bindingName
-			let decl = ScopeTree.getDeclarationByName(this.name, this.template.rawNode)
+			let decl = VariableScopeTree.getDeclarationByName(this.name, this.template.rawNode)
 
 			// `Import ClassBinding`
 			// `class ClassBinding {...}`

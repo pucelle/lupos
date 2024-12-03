@@ -1,5 +1,5 @@
 import * as ts from 'typescript'
-import {Packer, VisitTree, helper} from '../../core'
+import {Packer, helper} from '../../core'
 import {TrackingScope} from './scope'
 import {CapturedOutputWay, TrackingRange, TrackingRanges} from './ranges'
 import {ListMap} from '../../lupos-ts-module'
@@ -86,10 +86,10 @@ export enum TrackingScopeTypeMask {
 	FlowInterruption = 2 ** 19,
 }
 
-/** Tracking scope and a visit index position. */
+/** Tracking scope and node position. */
 export interface TrackingScopeTargetPosition{
 	scope: TrackingScope
-	index: number
+	node: ts.Node
 }
 
 
@@ -296,8 +296,7 @@ export namespace TrackingScopeTree {
 
 	/** Create a scope from node and push to stack. */
 	export function createScope(type: TrackingScopeTypeMask, node: ts.Node, range: TrackingRange | null = null): TrackingScope {
-		let index = VisitTree.getIndex(node)
-		let scope = new TrackingScope(type, node, index, current, range)
+		let scope = new TrackingScope(type, node, current, range)
 
 		ScopeMap.add(node, scope)
 		stack.push(current)
@@ -385,19 +384,17 @@ export namespace TrackingScopeTree {
 	 * If current position can add statements, return current position.
 	 * Must before current position, and must not cross any conditional or iteration scope.
 	 */
-	export function findClosestPositionToAddStatements(index: number, from: TrackingScope): TrackingScopeTargetPosition {
+	export function findClosestPositionToAddStatements(node: ts.Node, from: TrackingScope): TrackingScopeTargetPosition {
 		let scope = from
-		let parameterIndex = VisitTree.findOutwardMatch(index, from.visitIndex, ts.isParameter)
+		let parameterIndex = helper.findOutwardUntil(node, from.node, ts.isParameter)
 
 		// Parameter initializer, no place to insert statements, returns position itself.
 		if (parameterIndex !== undefined) {
 			return {
 				scope,
-				index,
+				node,
 			}
 		}
-
-		let node = VisitTree.getNode(index)
 
 		while (true) {
 
@@ -440,7 +437,7 @@ export namespace TrackingScopeTree {
 
 		return {
 			scope,
-			index: VisitTree.getIndex(node),
+			node,
 		}
 	}
 }

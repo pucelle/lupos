@@ -3,7 +3,7 @@ import {defineVisitor, factory, Interpolator, InterpolationContentType, helper} 
 
 
 // Add `Com.ensureStyle()` after class declaration.
-defineVisitor(function(node: ts.Node, index: number) {
+defineVisitor(function(node: ts.Node) {
 	if (!ts.isClassDeclaration(node)) {
 		return
 	}
@@ -36,5 +36,5 @@ defineVisitor(function(node: ts.Node, index: number) {
 		[]
 	)
 
-	Interpolator.after(index, InterpolationContentType.Normal, () => callEnsureStyle)
+	Interpolator.after(node, InterpolationContentType.Normal, () => callEnsureStyle)
 })

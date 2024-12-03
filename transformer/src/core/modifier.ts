@@ -2,9 +2,8 @@ import * as ts from 'typescript'
 import {ListMap} from '../lupos-ts-module'
 import {factory, sourceFile, helper} from './global'
 import {InterpolationContentType, Interpolator} from './interpolator'
-import {VisitTree} from './visit-tree'
 import {definePostVisitCallback, definePreVisitCallback} from './visitor-callbacks'
-import {ScopeTree} from './scope-tree'
+import {VariableScopeTree} from './scope-tree'
 import {Packer} from './packer'
 
 
@@ -17,18 +16,18 @@ export namespace Modifier {
 	/** All imports. */
 	const Imports: ListMap<string, string> = new ListMap()
 
-	/** The visit indices the node at where will be moved. */
-	const RemovedIndices: Set<number> = new Set()
+	/** The nodes that will be moved. */
+	const RemovedNodes: Set<ts.Node> = new Set()
 
-	/** The visit indices the node at where have been persisted. */
-	const PersistedImportIndices: Set<number> = new Set()
+	/** The nodes that have been persisted. */
+	const PersistedImportNodes: Set<ts.Node> = new Set()
 
 
 	/** Initialize before visiting a new source file. */
 	export function initialize() {
 		Imports.clear()
-		RemovedIndices.clear()
-		PersistedImportIndices.clear()
+		RemovedNodes.clear()
+		PersistedImportNodes.clear()
 	}
 
 
@@ -36,49 +35,46 @@ export namespace Modifier {
 	export function removeImportOf(fromNode: ts.Node) {
 		let importNode = helper.symbol.resolveDeclaration(fromNode, ts.isImportSpecifier, false)
 		if (importNode) {
-			let index = VisitTree.getIndex(importNode)
-			removeOnce(index)
+			removeOnce(importNode)
 		}
 	}
 
 
 	/** Remove node, only remove for once. */
-	export function removeOnce(fromIndex: number) {
-		if (RemovedIndices.has(fromIndex)) {
+	export function removeOnce(fromNode: ts.Node) {
+		if (RemovedNodes.has(fromNode)) {
 			return
 		}
 
-		Interpolator.remove(fromIndex)
-		RemovedIndices.add(fromIndex)
+		Interpolator.remove(fromNode)
+		RemovedNodes.add(fromNode)
 	}
 
 
 	/** Move node to another position, for each from index, only move for once. */
-	export function moveOnce(fromIndex: number, toIndex: number) {
-		if (RemovedIndices.has(fromIndex)) {
+	export function moveOnce(fromNode: ts.Node, toNode: ts.Node) {
+		if (RemovedNodes.has(fromNode)) {
 			return
 		}
 
-		Interpolator.move(fromIndex, toIndex)
-		RemovedIndices.add(fromIndex)
+		Interpolator.move(fromNode, toNode)
+		RemovedNodes.add(fromNode)
 	}
 
 
 	/** Add or replace a member to a class declaration. */
 	export function addClassMember(classNode: ts.ClassDeclaration, member: ts.ClassElement, preferInsertToHead: boolean = false) {
-		let classIndex = VisitTree.getIndex(classNode)
 		let name = helper.class.getMemberName(member)
 		let existing = classNode.members.find(m => helper.class.getMemberName(m) === name)
 
 		if (existing) {
-			let toIndex = VisitTree.getIndex(existing)
-			Interpolator.replace(toIndex, InterpolationContentType.Normal, () => member)
+			Interpolator.replace(existing, InterpolationContentType.Normal, () => member)
 		}
 		else if (preferInsertToHead) {
-			Interpolator.prepend(classIndex, InterpolationContentType.Normal, () => member)
+			Interpolator.prepend(classNode, InterpolationContentType.Normal, () => member)
 		}
 		else {
-			Interpolator.append(classIndex, InterpolationContentType.Normal, () => member)
+			Interpolator.append(classNode, InterpolationContentType.Normal, () => member)
 		}
 	}
 	
@@ -97,15 +93,13 @@ export namespace Modifier {
 	 * Use this can persist it.
 	 */
 	export function persistImport(node: ts.ImportSpecifier) {
-		let index = VisitTree.getIndex(node)
-
-		if (PersistedImportIndices.has(index)) {
+		if (PersistedImportNodes.has(node)) {
 			return
 		}
 
-		PersistedImportIndices.add(index)
+		PersistedImportNodes.add(node)
 		
-		Interpolator.replace(index, InterpolationContentType.Import, () => {
+		Interpolator.replace(node, InterpolationContentType.Import, () => {
 			return factory.createImportSpecifier(node.isTypeOnly, node.propertyName, node.name)
 		})
 	}
@@ -115,9 +109,9 @@ export namespace Modifier {
 	 * Insert a variable assignment from a position to an existing variable list.
 	 * `a.b()` -> `let ..., $ref_ = a.b()`, and move it.
 	 */
-	export function addVariableAssignmentToList(fromIndex: number, toIndex: number, varName: string) {
-		Interpolator.before(toIndex, InterpolationContentType.Declaration, () => {
-			let node = Interpolator.outputChildren(fromIndex) as ts.Expression
+	export function addVariableAssignmentToList(fromNode: ts.Node, toNode: ts.Node, varName: string) {
+		Interpolator.before(toNode, InterpolationContentType.Declaration, () => {
+			let node = Interpolator.outputChildren(fromNode) as ts.Expression
 			node = Packer.normalize(node, false) as ts.Expression
 			
 			return factory.createVariableDeclaration(
@@ -133,9 +127,9 @@ export namespace Modifier {
 	 * Insert a variable assignment from a position to an existing variable list.
 	 * `a.b()` -> let $ref_ = a.b()`, and move it.
 	 */
-	export function addVariableAssignment(fromIndex: number, toIndex: number, varName: string) {
-		Interpolator.before(toIndex, InterpolationContentType.Declaration, () => {
-			let node = Interpolator.outputChildren(fromIndex) as ts.Expression
+	export function addVariableAssignment(fromNode: ts.Node, toNode: ts.Node, varName: string) {
+		Interpolator.before(toNode, InterpolationContentType.Declaration, () => {
+			let node = Interpolator.outputChildren(fromNode) as ts.Expression
 			node = Packer.normalize(node, false) as ts.Expression
 			
 			return factory.createVariableDeclarationList(
@@ -154,9 +148,9 @@ export namespace Modifier {
 	 * Insert a reference expression from a position to another position.
 	 * `a.b()` -> `$ref_ = a.b()`, and move it.
 	 */
-	export function addReferenceAssignment(fromIndex: number, toIndex: number, refName: string) {
-		Interpolator.before(toIndex, InterpolationContentType.Reference, () => {
-			let node = Interpolator.outputChildren(fromIndex) as ts.Expression
+	export function addReferenceAssignment(fromNode: ts.Node, toNode: ts.Node, refName: string) {
+		Interpolator.before(toNode, InterpolationContentType.Reference, () => {
+			let node = Interpolator.outputChildren(fromNode) as ts.Expression
 			node = Packer.normalize(node, false) as ts.Expression
 
 			return factory.createBinaryExpression(
@@ -171,7 +165,7 @@ export namespace Modifier {
 
 	/** Apply imports to do interpolation. */
 	export function applyInterpolation() {
-		let sourceFileIndex = ScopeTree.getTopmost().getIndexToAddStatements()
+		let beforeNode = VariableScopeTree.getTopmost().getTargetNodeToAddStatements()
 		let modifiedImportDecls: Set<ts.ImportDeclaration> = new Set()
 
 
@@ -214,8 +208,8 @@ export namespace Modifier {
 
 			// Add more imports.
 			if (existingImportDecl) {
-				let namedImportsIndex = VisitTree.getIndex(existingImportDecl.importClause!.namedBindings!)
-				Interpolator.append(namedImportsIndex, InterpolationContentType.Import, () => namedImports)
+				let existingNamedImports = existingImportDecl.importClause!.namedBindings!
+				Interpolator.append(existingNamedImports, InterpolationContentType.Import, () => namedImports)
 				modifiedImportDecls.add(existingImportDecl)
 			}
 
@@ -232,12 +226,11 @@ export namespace Modifier {
 					undefined
 				)
 
-				Interpolator.before(sourceFileIndex, InterpolationContentType.Import, () => newImportDecl!)
+				Interpolator.before(beforeNode, InterpolationContentType.Import, () => newImportDecl!)
 			}
 		}
 
-		for (let specifierIndex of PersistedImportIndices) {
-			let specifier = VisitTree.getNode(specifierIndex) as ts.ImportSpecifier
+		for (let specifier of PersistedImportNodes) {
 			let importDecl = specifier.parent.parent.parent
 
 			if (ts.isImportDeclaration(importDecl)) {
@@ -284,7 +277,7 @@ export namespace Modifier {
 		for (let specifier of namedBindings.elements) {
 			let type = helper.symbol.resolveDeclaration(specifier, helper.isTypeDeclaration)
 			if (type) {
-				removeOnce(VisitTree.getIndex(specifier))
+				removeOnce(specifier)
 			}
 		}
 	}

@@ -1,8 +1,6 @@
 import * as ts from 'typescript'
-import {VisitTree} from './visit-tree'
 import {Interpolator} from './interpolator'
 import {setSourceFile, setTransformContext} from './global'
-import {ScopeTree} from './scope-tree'
 import {callVisitedSourceFileCallbacks, runPostVisitCallbacks, runPreVisitCallbacks} from './visitor-callbacks'
 import {TransformerExtras} from '../../../compiler/out/patch'
 
@@ -12,7 +10,7 @@ import {TransformerExtras} from '../../../compiler/out/patch'
  * can either return a function, which will be called after visited all children,
  * or return void to do nothing more.
  */
-type VisitFunction = (node: ts.Node, index: number) => (() => void) | void
+type VisitFunction = (node: ts.Node) => (() => void) | void
 
 
 /** All defined visitors. */
@@ -35,10 +33,9 @@ export function defineVisitor(visitor: VisitFunction) {
  */
 function applyVisitors(node: ts.Node): () => void {
 	let doMoreAfterVisitedChildren: Function[] = []
-	let index = VisitTree.getIndex(node)
 
 	for (let visitor of Visitors) {
-		let more = visitor(node, index)
+		let more = visitor(node)
 		if (more) {
 			doMoreAfterVisitedChildren.push(more)
 		}
@@ -60,22 +57,6 @@ export function transformer(context: ts.TransformationContext, extras: Transform
 		setSourceFile(sourceFile)
 		runPreVisitCallbacks()
 
-		// In the first visiting initialize visit and scope tree.
-		function initVisitor(node: ts.Node): ts.Node {
-			VisitTree.toNext(node)
-			ScopeTree.toNext(node)
-
-			VisitTree.toChild()
-			ScopeTree.toChild()
-
-			ts.visitEachChild(node, initVisitor, context)
-			
-			VisitTree.toParent()
-			ScopeTree.toParent(node)
-
-			return node
-		}
-
 		function visitor(node: ts.Node): ts.Node {
 			let doMoreAfterVisitedChildren = applyVisitors(node)
 			ts.visitEachChild(node, visitor, context)
@@ -85,12 +66,11 @@ export function transformer(context: ts.TransformationContext, extras: Transform
 		}
 
 		try {
-			ts.visitNode(sourceFile, initVisitor)
 			ts.visitNode(sourceFile, visitor)
 			callVisitedSourceFileCallbacks()
 			runPostVisitCallbacks()
 
-			return Interpolator.outputSelf(0) as ts.SourceFile
+			return Interpolator.outputSelf(sourceFile) as ts.SourceFile
 		}
 		catch (err) {
 			console.warn(`Failed to transform source file "${sourceFile.fileName}"!`)

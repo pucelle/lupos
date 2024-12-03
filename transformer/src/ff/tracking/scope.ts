@@ -1,6 +1,6 @@
 import * as ts from 'typescript'
 import {ObservedChecker} from './observed-checker'
-import {FlowInterruptionTypeMask, ScopeTree, helper} from '../../core'
+import {FlowInterruptionTypeMask, VariableScopeTree, helper} from '../../core'
 import {AccessNode} from '../../lupos-ts-module'
 import {TrackingScopeState} from './scope-state'
 import {TrackingScopeTypeMask} from './scope-tree'
@@ -19,7 +19,6 @@ import {CapturedOutputWay, TrackingRange} from './ranges'
 export class TrackingScope {
 
 	readonly type: TrackingScopeTypeMask
-	readonly visitIndex: number
 	readonly node: ts.Node
 	readonly parent: TrackingScope | null
 	readonly range: TrackingRange | null
@@ -37,12 +36,10 @@ export class TrackingScope {
 	constructor(
 		type: TrackingScopeTypeMask,
 		rawNode: ts.Node,
-		index: number,
 		parent: TrackingScope | null,
 		range: TrackingRange | null
 	) {
 		this.type = type
-		this.visitIndex = index
 		this.node = rawNode
 		this.parent = parent
 		this.range = range
@@ -70,10 +67,10 @@ export class TrackingScope {
 	 */
 	getDeclarationScope() {
 		if (helper.isFunctionLike(this.node) && this.node.body) {
-			return ScopeTree.findClosestByNode(this.node.body)
+			return VariableScopeTree.findClosest(this.node.body)
 		}
 		else {
-			return ScopeTree.findClosestByNode(this.node)
+			return VariableScopeTree.findClosest(this.node)
 		}
 	}
 
@@ -99,7 +96,7 @@ export class TrackingScope {
 		this.state.mergeChildScope(child)
 
 		if (child.state.isFlowInterrupted()) {
-			this.capturer.breakCaptured(child.visitIndex, child.state.flowInterruptionType)
+			this.capturer.breakCaptured(child.node, child.state.flowInterruptionType)
 		}
 	}
 
@@ -158,13 +155,13 @@ export class TrackingScope {
 		// Empty `return`.
 		else if (ts.isReturnStatement(node) && !node.expression) {
 			this.state.unionFlowInterruptionType(FlowInterruptionTypeMask.Return)
-			this.capturer.breakCaptured(this.visitIndex, FlowInterruptionTypeMask.Return)
+			this.capturer.breakCaptured(this.node, FlowInterruptionTypeMask.Return)
 		}
 
 		// `break` or `continue`.
 		else if (ts.isBreakOrContinueStatement(node)) {
 			this.state.unionFlowInterruptionType(FlowInterruptionTypeMask.BreakLike)
-			this.capturer.breakCaptured(this.visitIndex, FlowInterruptionTypeMask.BreakLike)
+			this.capturer.breakCaptured(this.node, FlowInterruptionTypeMask.BreakLike)
 		}
 	}
 

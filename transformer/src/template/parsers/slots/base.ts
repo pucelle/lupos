@@ -1,7 +1,7 @@
 import * as ts from 'typescript'
-import {HTMLAttribute, HTMLNode, HTMLNodeType, TemplatePart} from '../../../lupos-ts-module'
+import {HTMLAttribute, HTMLNode, HTMLNodeType, TemplatePart, TemplateSlotPlaceholder} from '../../../lupos-ts-module'
 import {PartType, TreeParser} from '../tree'
-import {SourceFileDiagnosticModifier, factory, Modifier, MutableMask, ScopeTree, TemplateSlotPlaceholder, Packer, helper} from '../../../core'
+import {SourceFileDiagnosticModifier, factory, Modifier, MutableMask, VariableScopeTree, Packer, helper, Hashing} from '../../../core'
 import {VariableNames} from '../variable-names'
 import {TemplateParser} from '../template'
 import {SlotPositionType} from '../../../enums'
@@ -124,7 +124,7 @@ export abstract class SlotParserBase {
 				return null
 			}
 
-			let hash = ScopeTree.hashNode(this.template.values.getRawValue(valueIndex)).name
+			let hash = Hashing.hashNode(this.template.values.getRawValue(valueIndex)).name
 			if (hashes.includes(hash)) {
 				return null
 			}
@@ -142,11 +142,11 @@ export abstract class SlotParserBase {
 		let hashes: string[] = []
 
 		let names = exps.map((exp) => {
-			if ((ScopeTree.testMutable(exp) & MutableMask.Mutable) === 0) {
+			if ((VariableScopeTree.testMutable(exp) & MutableMask.Mutable) === 0) {
 				return null
 			}
 
-			let hash = ScopeTree.hashNode(exp).name
+			let hash = Hashing.hashNode(exp).name
 			if (hashes.includes(hash)) {
 				return null
 			}
@@ -415,7 +415,7 @@ export abstract class SlotParserBase {
 
 		// Resolve class declarations directly.
 		if (isNamedComponent) {
-			let ref = ScopeTree.getDeclarationByName(tagName, this.template.rawNode)
+			let ref = VariableScopeTree.getDeclarationByName(tagName, this.template.rawNode)
 			if (!ref) {
 				return
 			}

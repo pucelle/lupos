@@ -2,7 +2,7 @@ import * as ts from 'typescript'
 import {HTMLNode, HTMLRoot, PositionMapper} from '../../lupos-ts-module'
 import {TreeParser} from './tree'
 import {TemplateValues} from './template-values'
-import {factory, Modifier, Scope, ScopeTree} from '../../core'
+import {factory, Modifier, VariableScope, VariableScopeTree, VisitTree} from '../../core'
 
 
 export type TemplateType = 'html' | 'svg'
@@ -31,7 +31,7 @@ export class TemplateParser {
 	private readonly subTemplates: TemplateParser[] = []
 
 	/** Which scope should insert contents. */
-	private innerMostScope: Scope = ScopeTree.getTopmost()
+	private innerMostScope: VariableScope = VariableScopeTree.getTopmost()
 
 	constructor(type: TemplateType, root: HTMLRoot, valueNodes: ts.Expression[], rawNode: ts.Node, positionMapper: PositionMapper) {
 		this.type = type
@@ -71,14 +71,13 @@ export class TemplateParser {
 	 * then generated codes can't be appended to topmost scope.
 	 */
 	addRefedDeclaration(node: ts.Node) {
-		let scope = ScopeTree.findClosestByNode(node)
+		let scope = VariableScopeTree.findClosest(node)
 		if (!scope) {
 			return
 		}
 
 		// Pick scope with larger depth.
-		// One must contain another, so only need to compare visit index.
-		if (this.innerMostScope.visitIndex < scope.visitIndex) {
+		if (VisitTree.isPrecedingOf(this.innerMostScope.node, scope.node)) {
 			this.innerMostScope = scope
 		}
 	}

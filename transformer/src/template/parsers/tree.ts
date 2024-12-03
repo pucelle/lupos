@@ -1,7 +1,7 @@
-import {Scope, TemplateSlotPlaceholder, helper} from '../../core'
+import {VariableScope, helper} from '../../core'
 import {PartPositionType} from '../../enums'
 import {HTMLNodeHelper, HTMLNodeReferences} from '../html-syntax'
-import {HTMLNode, HTMLNodeType, HTMLRoot, TemplatePartParser, TemplatePart, TemplatePartType} from '../../lupos-ts-module'
+import {HTMLNode, HTMLNodeType, HTMLRoot, TemplatePartParser, TemplatePart, TemplatePartType, TemplateSlotPlaceholder} from '../../lupos-ts-module'
 import {SlotParserBase, DynamicComponentSlotParser, FlowControlSlotParser, PropertySlotParser, BindingSlotParser, EventSlotParser, AttributeSlotParser, TextSlotParser, ContentSlotParser, ComponentSlotParser, SlotTagSlotParser} from './slots'
 import {TemplateParser} from './template'
 import {TreeOutputHandler} from './tree-output'
@@ -98,7 +98,8 @@ export class TreeParser {
 	/** Parse after initialized all the things. */
 	parse() {
 		
-		let slotParser = new TemplatePartParser(this.root, this.template.values.rawValueNodes, this.addSlot.bind(this), helper)
+		let canModify = true
+		let slotParser = new TemplatePartParser(this.root, this.template.values.rawValueNodes, canModify, this.addSlot.bind(this), helper)
 		slotParser.parse()
 
 		// Must after nodes parsed.
@@ -320,7 +321,7 @@ export class TreeParser {
 	 * Prepare to output whole tree as expressions,
 	 * Return a callback, call which will finally interpolate to source file.
 	 */
-	prepareToOutput(scope: Scope): () => void {
+	prepareToOutput(scope: VariableScope): () => void {
 		this.references.determine()
 
 		let parts = this.parts

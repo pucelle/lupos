@@ -1,12 +1,12 @@
 import * as ts from 'typescript'
-import {InterpolationContentType, Interpolator, InterpolationPosition, VisitTree, FlowInterruptionTypeMask, ScopeTree, Packer, helper} from '../../core'
+import {InterpolationContentType, Interpolator, InterpolationPosition, VisitTree, FlowInterruptionTypeMask, Packer, helper, sourceFile, Hashing} from '../../core'
 import {AccessNode} from '../../lupos-ts-module'
 import {TrackingScope} from './scope'
 import {TrackingScopeTree, TrackingScopeTypeMask} from './scope-tree'
 import {AccessGrouper} from './access-grouper'
 import {AccessReferences} from './access-references'
 import {Optimizer} from './optimizer'
-import {removeFromList} from '../../utils'
+import {deepEqual, removeFromList} from '../../utils'
 import {TrackingScopeState} from './scope-state'
 import {TrackingCapturerOperator} from './capturer-operator'
 import {TrackingPatch} from './patch'
@@ -17,20 +17,20 @@ import {CapturedOutputWay} from './ranges'
 export interface CapturedGroup {
 	position: InterpolationPosition
 	items: CapturedItem[]
-	toIndex: number
+	toNode: ts.Node
 	flowInterruptedBy: FlowInterruptionTypeMask | 0
 }
 
 /** Each capture index and capture type. */
 export interface CapturedItem {
-	index: number
+	node: ts.Node
 	type: 'get' | 'set'
 
 	/** 
-	 * If `expIndex` and `paths` provided,
-	 * they overwrites `index`.
+	 * If `exp` and `keys` provided,
+	 * they overwrites `node`.
 	 */
-	expIndex?: number
+	exp?: ts.Node
 	keys?: (string | number)[]
 }
 
@@ -64,7 +64,7 @@ export class TrackingCapturer {
 		this.latestCaptured = {
 			position: InterpolationPosition.Before,
 			items: [],
-			toIndex: -1,
+			toNode: sourceFile,
 			flowInterruptedBy: 0,
 		}
 	}
@@ -134,7 +134,7 @@ export class TrackingCapturer {
 		}
 	}
 
-	/** Whether should capture indices in specified type. */
+	/** Whether should capture with specified type. */
 	shouldCapture(type: 'get' | 'set'): boolean {
 
 		// If not within a function-like, should never capture.
@@ -176,16 +176,13 @@ export class TrackingCapturer {
 			}
 		}
 
-		let index = VisitTree.getIndex(node)
-		let expIndex = exp ? VisitTree.getIndex(exp) : undefined
-
 		// Remove repetitive item, normally `a.b = c`,
 		// `a.b` has been captured as get type, and later set type.
 		// Removing repetitive make it works for `both` tracking type.
 		let repetitiveItem = this.latestCaptured.items.find(item => {
-			return item.index === index
-				&& item.expIndex === expIndex
-				&& item.keys === keys
+			return item.node === node
+				&& item.exp === exp
+				&& deepEqual(item.keys, keys)
 		})
 
 		if (repetitiveItem) {
@@ -193,16 +190,16 @@ export class TrackingCapturer {
 		}
 
 		let item: CapturedItem = {
-			index,
+			node,
 			type,
-			expIndex,
+			exp,
 			keys,
 		}
 
 		this.latestCaptured.items.push(item)
 	}
 
-	/** Whether has captured some indices. */
+	/** Whether has captured some nodes. */
 	hasCaptured(): boolean {
 		return this.captured.some(item => item.items.length > 0)
 	}
@@ -214,10 +211,10 @@ export class TrackingCapturer {
 		this.captured = [this.latestCaptured]
 	}
 
-	/** Insert captured indices to specified position. */
-	breakCaptured(atIndex: number, flowInterruptedBy: FlowInterruptionTypeMask | 0) {
-		// Even no indices captured, still break.
-		// Later may append indices to this item.
+	/** Insert captured nodes to specified position. */
+	breakCaptured(atNode: ts.Node, flowInterruptedBy: FlowInterruptionTypeMask | 0) {
+		// Even no nodes captured, still break.
+		// Later may append nodes to this item.
 
 		// Conditional can't be break, it captures only condition expression.
 		// This is required, or inner captured can't be moved to head.
@@ -227,7 +224,7 @@ export class TrackingCapturer {
 			return
 		}
 
-		this.latestCaptured.toIndex = atIndex
+		this.latestCaptured.toNode = atNode
 		this.latestCaptured.flowInterruptedBy = flowInterruptedBy
 		this.resetLatestCaptured()
 		this.captured.push(this.latestCaptured)
@@ -254,10 +251,9 @@ export class TrackingCapturer {
 	/** Prepare latest captured item. */
 	private endCapture() {
 		let item = this.latestCaptured
-		let index = this.scope.visitIndex
 		let node = this.scope.node
 
-		item.toIndex = index
+		item.toNode = node
 
 		// For function declaration, insert to function body.
 		if (this.scope.type & TrackingScopeTypeMask.FunctionLike) {
@@ -265,7 +261,7 @@ export class TrackingCapturer {
 
 			// Abstract function or function type declaration has no body.
 			if (body) {
-				item.toIndex = VisitTree.getIndex(body)
+				item.toNode = body
 
 				if (ts.isBlock(body)) {
 					item.position = InterpolationPosition.Append
@@ -306,7 +302,7 @@ export class TrackingCapturer {
 			for (let item of [...group.items]) {
 
 				// Has been referenced, ignore always.
-				if (AccessReferences.hasExternalAccessReferenced(item.index, true)) {
+				if (AccessReferences.hasExternalAccessReferenced(item.node, true)) {
 					continue
 				}
 
@@ -329,13 +325,13 @@ export class TrackingCapturer {
 		this.checkAccessReferences()
 
 		// Must after reference step, reference step will look for position,
-		// which requires indices stay at their scope.
+		// which requires captured stay at their scope.
 		Optimizer.optimize(this.scope)
 	}
 
 	/** 
 	 * Process current captured, step 2.
-	 * Previous step may move indices forward or backward.
+	 * Previous step may move captured forward or backward.
 	 */
 	private postProcessCaptured() {
 
@@ -347,11 +343,11 @@ export class TrackingCapturer {
 		this.outputCaptured()
 	}
 	
-	/** Check captured indices and reference if needs. */
+	/** Check captured and reference if needs. */
 	private checkAccessReferences() {
 		for (let item of this.captured) {
-			for (let {index} of item.items) {
-				AccessReferences.mayReferenceAccess(index, item.toIndex, this.scope)
+			for (let {node: index} of item.items) {
+				AccessReferences.mayReferenceAccess(index, item.toNode, this.scope)
 			}
 		}
 	}
@@ -369,27 +365,27 @@ export class TrackingCapturer {
 
 	/** Add each `captured` group. */
 	private outputCapturedGroup(group: CapturedGroup) {
-		let oldToIndex = group.toIndex
-		let newToIndex = this.findBetterInsertPosition(oldToIndex)!
+		let oldToNode = group.toNode
+		let newToNode = this.findBetterInsertPosition(oldToNode)!
 		let itemsInsertToOldPosition: CapturedItem[] = []
 		let itemsInsertToNewPosition: CapturedItem[] = []
 
 		let items = group.items.filter(item => {
-			return !TrackingPatch.isIgnored(VisitTree.getNode(item.expIndex ?? item.index))
+			return !TrackingPatch.isIgnored(item.exp ?? item.node)
 		})
 
-		if (newToIndex !== null) {
-			for (let index of items) {
-				let hashed = ScopeTree.hashIndex(index.index)
+		if (newToNode !== null) {
+			for (let item of items) {
+				let hashed = Hashing.hashNode(item.node)
 
-				// Only when all used indices in the preceding of new index.
-				let canMove = hashed.usedIndices.every(usedIndex => VisitTree.isPrecedingOf(usedIndex, newToIndex))
+				// Only when all used nodes in the preceding of new index.
+				let canMove = hashed.usedDeclarations.every(usedIndex => VisitTree.isPrecedingOf(usedIndex, newToNode))
 
 				if (canMove) {
-					itemsInsertToNewPosition.push(index)
+					itemsInsertToNewPosition.push(item)
 				}
 				else {
-					itemsInsertToOldPosition.push(index)
+					itemsInsertToOldPosition.push(item)
 				}
 			}
 		}
@@ -398,7 +394,7 @@ export class TrackingCapturer {
 		}
 
 		if (itemsInsertToNewPosition.length > 0) {
-			Interpolator.add(newToIndex, {
+			Interpolator.add(newToNode, {
 
 				// For new position, always insert to `Before`.
 				position: InterpolationPosition.Before,
@@ -409,7 +405,7 @@ export class TrackingCapturer {
 		}
 
 		if (itemsInsertToOldPosition.length > 0) {
-			Interpolator.add(oldToIndex, {
+			Interpolator.add(oldToNode, {
 				position: group.position,
 				contentType: InterpolationContentType.Tracking,
 				exps: () => this.makeCapturedExps(itemsInsertToOldPosition),
@@ -426,21 +422,21 @@ export class TrackingCapturer {
 	}
 
 	/** Try to find a better position to insert captured. */
-	private findBetterInsertPosition(index: number): number | null {
-		let position = TrackingScopeTree.findClosestPositionToAddStatements(index, this.scope)
+	private findBetterInsertPosition(toNode: ts.Node): ts.Node | null {
+		let position = TrackingScopeTree.findClosestPositionToAddStatements(toNode, this.scope)
 		if (!position) {
 			return null
 		}
 
 		// Same position.
-		if (position.index === index) {
+		if (position.node === toNode) {
 			return null
 		}
 
-		return position.index
+		return position.node
 	}
 
-	/** Transfer specified indices to specified position. */
+	/** Transfer specified captured items to specified position. */
 	private makeCapturedExps(items: CapturedItem[]): ts.Expression[] {
 		let getItems = items.filter(index => index.type === 'get')
 		let setItems = items.filter(index => index.type === 'set')
@@ -456,11 +452,11 @@ export class TrackingCapturer {
 
 	/** Make an access node by a captured item. */
 	private makeAccessNodes(item: CapturedItem): AccessNode[] {
-		if (item.expIndex !== undefined) {
+		if (item.exp !== undefined) {
 			let nodes: AccessNode[] = []
 
 			// Expression of an access node may be totally replaced after been referenced as `$ref_0`.
-			let node = Interpolator.outputSelf(item.expIndex) as ts.Expression
+			let node = Interpolator.outputSelf(item.exp) as ts.Expression
 			let keys = item.keys!
 
 			node = Packer.extractFinalParenthesized(node) as AccessNode
@@ -473,7 +469,7 @@ export class TrackingCapturer {
 			return nodes
 		}
 		else {
-			let node = Interpolator.outputChildren(item.index) as AccessNode
+			let node = Interpolator.outputChildren(item.node) as AccessNode
 			node = Packer.extractFinalParenthesized(node) as AccessNode
 			
 			return [node]

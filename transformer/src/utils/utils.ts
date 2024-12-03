@@ -54,3 +54,51 @@ export function groupBy<T, K, V>(list: Iterable<T>, pairFn: (value: T) => [K, V]
 
 	return map
 }
+
+
+/** Deeply compare two JSON objects. */
+export function deepEqual(a: unknown, b: unknown, maxDepth: number = 10): boolean {
+	if (a === b) {
+		return true
+	}
+
+	if (maxDepth === 0) {
+		return false
+	}
+
+	if (typeof a !== 'object' || typeof b !== 'object' || !a || !b) {
+		return false
+	}
+
+	// Array.
+	if (Array.isArray(a) && Array.isArray(b)) {
+		if (a.length !== b.length) {
+			return false
+		}
+		
+		return a.every(function(ai, index) {
+			return deepEqual(ai, b[index], maxDepth - 1)
+		})
+	}
+
+	// Plain object.
+	else {
+		let keysA = Object.keys(a)
+		let keysB = Object.keys(b)
+		
+		if (keysA.length !== keysB.length) {
+			return false
+		}
+
+		for (let key of keysA) {
+			let valueA = (a as any)[key]
+			let valueB = (b as any)[key]
+
+			if (!deepEqual(valueA, valueB, maxDepth - 1)) {
+				return false
+			}
+		}
+
+		return true
+	}
+}

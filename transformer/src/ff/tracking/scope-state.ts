@@ -1,7 +1,7 @@
 import * as ts from 'typescript'
 import {TrackingScope} from './scope'
 import {TrackingScopeTypeMask} from './scope-tree'
-import {FlowInterruptionTypeMask, Packer, VisitTree, helper} from '../../core'
+import {FlowInterruptionTypeMask, Packer, helper} from '../../core'
 import {AccessNode} from '../../lupos-ts-module'
 
 
@@ -84,9 +84,9 @@ export class TrackingScopeState {
 		}
 
 		// If current scope was included by a decorator, treat parent as global scope.
-		let decorator = VisitTree.findOutwardMatch(
-			this.scope.visitIndex,
-			parent.visitIndex,
+		let decorator = helper.findOutwardUntil(
+			this.scope.node,
+			parent.node,
 			ts.isDecorator
 		)
 

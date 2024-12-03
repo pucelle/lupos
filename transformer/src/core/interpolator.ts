@@ -65,12 +65,13 @@ export enum InterpolationContentType {
 
 /** 
  * It attaches to each context.
- * Remember where to interpolate expressions, and interpolate there some contents.
+ * Remember where to interpolate expressions,
+ * and interpolate there some contents.
  */
 export namespace Interpolator {
 
 	/** Interpolated expressions, and where to interpolate. */
-	const Interpolations: ListMap<number, InterpolationItem> = new ListMap()
+	const Interpolations: ListMap<ts.Node, InterpolationItem> = new ListMap()
 
 
 	/** Initialize after enter a new source file */
@@ -79,41 +80,38 @@ export namespace Interpolator {
 	}
 
 
-	/** Add an item. */
-	export function add(toIndex: number, item: InterpolationItem) {
+	/** Add an interpolation item. */
+	export function add(toNode: ts.Node, item: InterpolationItem) {
 		
 		// Not fully replace it.
 		if (item.position === InterpolationPosition.Prepend) {
-			let siblings = getPendingSiblings(toIndex)
+			let siblings = getPendingSiblings(toNode)
 			if (siblings && siblings.length > 0) {
-				toIndex = VisitTree.getIndex(siblings[0])
+				toNode = siblings[0]
 				item.position = InterpolationPosition.Before
 			}
 		}
 		else if (item.position === InterpolationPosition.Append) {
-			let siblings = getPendingSiblings(toIndex)
+			let siblings = getPendingSiblings(toNode)
 			if (siblings && siblings.length > 0) {
-				toIndex = VisitTree.getIndex(siblings[siblings.length - 1])
+				toNode = siblings[siblings.length - 1]
 				item.position = InterpolationPosition.After
 			}
 		}
 		else if (item.position === InterpolationPosition.Before || item.position === InterpolationPosition.After) {
-			let parentIndex = VisitTree.getParentIndex(toIndex)!
-			let parentNode = VisitTree.getNode(parentIndex)
+			let parentNode = toNode.parent!
 
 			// Insert before or after expression statement.
 			if (ts.isExpressionStatement(parentNode)) {
-				toIndex = parentIndex
+				toNode = parentNode
 			}
 		}
 
-		Interpolations.add(toIndex, item)
+		Interpolations.add(toNode, item)
 	}
 
 	/** Get sibling nodes array for prepending and appending. */
-	function getPendingSiblings(index: number): ts.NodeArray<ts.Node> | ts.Node[] | undefined {
-		let node = VisitTree.getNode(index)!
-
+	function getPendingSiblings(node: ts.Node): ts.NodeArray<ts.Node> | ts.Node[] | undefined {
 		if (ts.isNamedImports(node)) {
 			return node.elements
 		}
@@ -126,7 +124,7 @@ export namespace Interpolator {
 
 		// There are still some other types, like enum, interface.
 		else {
-			return VisitTree.getChildNodes(index)
+			return VisitTree.getChildNodes(node)
 		}
 	}
 
@@ -181,16 +179,16 @@ export namespace Interpolator {
 
 
 
-	/** Move node to another position. */
-	export function move(fromIndex: number, toIndex: number) {
-		add(toIndex, {
+	/** Move node to before another position. */
+	export function move(fromNode: ts.Node, toNode: ts.Node) {
+		add(toNode, {
 			position: InterpolationPosition.Before,
 			contentType: InterpolationContentType.Normal,
-			exps: () => outputChildren(fromIndex),
+			exps: () => outputChildren(fromNode),
 			order: undefined,
 		})
 
-		add(fromIndex, {
+		add(fromNode, {
 			position: InterpolationPosition.Replace,
 			contentType: InterpolationContentType.Normal,
 			replace: () => undefined,
@@ -200,8 +198,8 @@ export namespace Interpolator {
 
 
 	/** Remove node. */
-	export function remove(index: number) {
-		add(index, {
+	export function remove(fromNode: ts.Node) {
+		add(fromNode, {
 			position: InterpolationPosition.Replace,
 			contentType: InterpolationContentType.Normal,
 			replace: () => undefined,
@@ -210,9 +208,14 @@ export namespace Interpolator {
 	}
 
 
-	/** Insert expressions to before specified visit index. */
-	export function before(index: number, contentType: InterpolationContentType, exps: () => ts.Node | ts.Node[], order?: number) {
-		add(index, {
+	/** Insert expressions to before specified node. */
+	export function before(
+		toNode: ts.Node,
+		contentType: InterpolationContentType,
+		exps: () => ts.Node | ts.Node[],
+		order?: number
+	) {
+		add(toNode, {
 			position: InterpolationPosition.Before,
 			contentType,
 			exps,
@@ -220,9 +223,14 @@ export namespace Interpolator {
 		})
 	}
 
-	/** Insert expressions to after specified visit index. */
-	export function after(index: number, contentType: InterpolationContentType, exps: () => ts.Node | ts.Node[], order?: number) {
-		add(index, {
+	/** Insert expressions to after specified node. */
+	export function after(
+		toNode: ts.Node,
+		contentType: InterpolationContentType,
+		exps: () => ts.Node | ts.Node[],
+		order?: number
+	) {
+		add(toNode, {
 			position: InterpolationPosition.After,
 			contentType,
 			exps,
@@ -230,9 +238,14 @@ export namespace Interpolator {
 		})
 	}
 
-	/** Prepend expressions to the start inner position of target visit index. */
-	export function prepend(index: number, contentType: InterpolationContentType, exps: () => ts.Node | ts.Node[], order?: number) {
-		add(index, {
+	/** Prepend expressions to the start inner position of target node. */
+	export function prepend(
+		toNode: ts.Node,
+		contentType: InterpolationContentType,
+		exps: () => ts.Node | ts.Node[],
+		order?: number
+	) {
+		add(toNode, {
 			position: InterpolationPosition.Prepend,
 			contentType,
 			exps,
@@ -240,9 +253,14 @@ export namespace Interpolator {
 		})
 	}
 
-	/** Append expressions to the end inner position of target visit index. */
-	export function append(index: number, contentType: InterpolationContentType, exps: () => ts.Node | ts.Node[], order?: number) {
-		add(index, {
+	/** Append expressions to the end inner position of target node. */
+	export function append(
+		toNode: ts.Node,
+		contentType: InterpolationContentType,
+		exps: () => ts.Node | ts.Node[],
+		order?: number
+	) {
+		add(toNode, {
 			position: InterpolationPosition.Append,
 			contentType,
 			exps,
@@ -250,11 +268,13 @@ export namespace Interpolator {
 		})
 	}
 
-	/** Replace node at specified visit index to another node normally. */
+	/** Replace node at specified node to another node normally. */
 	export function replace(
-		index: number, contentType: InterpolationContentType, replace: () => ts.Node | ts.Node[] | undefined
+		toNode: ts.Node,
+		contentType: InterpolationContentType,
+		replace: () => ts.Node | ts.Node[] | undefined
 	) {
-		add(index, {
+		add(toNode, {
 			position: InterpolationPosition.Replace,
 			contentType,
 			replace,
@@ -264,35 +284,26 @@ export namespace Interpolator {
 
 
 	/** 
-	 * Output node at index.
+	 * Output node by specified raw node.
 	 * It overwrites all descendant nodes,
 	 * bot not replace self or inserts neighbor nodes.
 	 */
-	export function outputChildren(index: number): ts.Node {
-		let node = VisitTree.getNode(index)
-		let childIndices = VisitTree.getChildIndices(index)
-
-		if (!childIndices) {
-			return node
-		}
-
-		let i = -1
-
-		return ts.visitEachChild(node, () => {
-			return outputSelf(childIndices![++i])
+	export function outputChildren(atNode: ts.Node): ts.Node {
+		return ts.visitEachChild(atNode, (child: ts.Node) => {
+			return outputSelf(child)
 		}, transformContext)
 	}
 
 	/** 
-	 * Output node at index.
+	 * Output node by specified raw node.
 	 * It may overwrite all descendant nodes,
 	 * and may replace itself.
 	 * If `addNeighbors` is `true`, will output all neighbor nodes.
 	 */
-	export function outputSelf(index: number, addNeighbors: boolean = true): ts.Node | ts.Node[] | undefined {
-		let items = Interpolations.get(index)
+	export function outputSelf(atNode: ts.Node, addNeighbors: boolean = true): ts.Node | ts.Node[] | undefined {
+		let items = Interpolations.get(atNode)
 		if (!items) {
-			return outputChildren(index)
+			return outputChildren(atNode)
 		}
 
 		// Sort by order.
@@ -315,7 +326,7 @@ export namespace Interpolator {
 
 		let replace = items.filter(item => item.position === InterpolationPosition.Replace)
 		if (replace.length > 1) {
-			throw new Error(`Only one replace is allowed, happened at position "${helper.getFullText(VisitTree.getNode(index))}"!`)
+			throw new Error(`Only one replace is allowed, happen at "${helper.getFullText(atNode)}"!`)
 		}
 
 		let node: ts.Node | ts.Node[] | undefined
@@ -329,7 +340,7 @@ export namespace Interpolator {
 			}
 		}
 		else {
-			node = outputChildren(index)
+			node = outputChildren(atNode)
 
 			if (prependNodes.length > 0 || appendNodes.length > 0) {
 				node = updatePending(node, prependNodes, appendNodes)
@@ -344,7 +355,7 @@ export namespace Interpolator {
 				.map(item => item.exps!()).flat()
 
 			if (beforeNodes.length > 0 || afterNodes.length > 0) {
-				node = replaceToAddNeighborNodes(index, node, beforeNodes, afterNodes)
+				node = replaceToAddNeighborNodes(atNode, node, beforeNodes, afterNodes)
 			}
 		}
 
@@ -362,16 +373,15 @@ export namespace Interpolator {
 	 * and may replace itself.
 	 * will not output all neighbor nodes.
 	 */
-	export function outputNodeSelf(rawNode: ts.Node): ts.Node {
-		let index = VisitTree.getIndex(rawNode)
-		let node = Interpolator.outputSelf(index, false)
+	export function outputNodeSelf(atNode: ts.Node): ts.Node {
+		let node = Interpolator.outputSelf(atNode, false)
 
 		if (!node) {
-			throw new Error(`"${helper.getFullText(rawNode)}" has been removed!`)
+			throw new Error(`"${helper.getFullText(atNode)}" has been removed!`)
 		}
 
 		if (Array.isArray(node)) {
-			throw new Error(`"${helper.getFullText(rawNode)}" has been replaced to several!`)
+			throw new Error(`"${helper.getFullText(atNode)}" has been replaced to several!`)
 		}
 
 		return node
@@ -379,11 +389,12 @@ export namespace Interpolator {
 
 	/** Try to replace node to make it can contain neighbor nodes. */
 	function replaceToAddNeighborNodes(
-		index: number, node: ts.Node | ts.Node[] | undefined,
-		beforeNodes: ts.Node[], afterNodes: ts.Node[]
+		atNode: ts.Node,
+		node: ts.Node | ts.Node[] | undefined,
+		beforeNodes: ts.Node[],
+		afterNodes: ts.Node[]
 	): ts.Node | ts.Node[] {
-		let rawNode = VisitTree.getNode(index)
-		let rawParent = rawNode.parent
+		let rawParent = atNode.parent
 
 		// Insert statements.
 		if (Packer.canPutStatements(rawParent)) {
@@ -392,7 +403,7 @@ export namespace Interpolator {
 		}
 
 		// Extend to block and insert statements.
-		else if (Packer.canExtendToPutStatements(rawNode)) {
+		else if (Packer.canExtendToPutStatements(atNode)) {
 			if (ts.isArrowFunction(rawParent)) {
 				node = factory.createReturnStatement(node as ts.Expression)
 			}
@@ -411,7 +422,7 @@ export namespace Interpolator {
 		}
 
 		// Parenthesize it, and move returned node to the end part.
-		else if (Packer.shouldBeUnique(rawNode)) {
+		else if (Packer.shouldBeUnique(atNode)) {
 			let list = arrangeNeighborNodes(node, beforeNodes, afterNodes, true)
 			return Packer.parenthesizeExpressions(...list)
 		}

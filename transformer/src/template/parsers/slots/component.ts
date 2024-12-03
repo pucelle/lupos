@@ -1,6 +1,6 @@
 import * as ts from 'typescript'
 import {SlotParserBase} from './base'
-import {SourceFileDiagnosticModifier, factory, Modifier, ScopeTree} from '../../../core'
+import {SourceFileDiagnosticModifier, factory, Modifier, VariableScopeTree} from '../../../core'
 
 
 export class ComponentSlotParser extends SlotParserBase {
@@ -13,7 +13,7 @@ export class ComponentSlotParser extends SlotParserBase {
 
 		this.refAsComponent()
 
-		let decl = ScopeTree.getDeclarationByName(comName, this.template.rawNode)
+		let decl = VariableScopeTree.getDeclarationByName(comName, this.template.rawNode)
 		if (!decl) {
 			this.diagnoseMissingTagImport(`Please make sure to import or declare component "<${comName}>"!`)
 		}

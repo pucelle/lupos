@@ -1,8 +1,9 @@
 import * as ts from 'typescript'
-import {defineVisitor, factory, Interpolator, InterpolationContentType, TemplateSlotPlaceholder, helper} from '../core'
+import {defineVisitor, factory, Interpolator, InterpolationContentType, helper} from '../core'
+import {TemplateSlotPlaceholder} from '../lupos-ts-module'
 
 
-defineVisitor(function(node: ts.Node, index: number) {
+defineVisitor(function(node: ts.Node) {
 	if (!ts.isTaggedTemplateExpression(node)) {
 		return
 	}
@@ -11,19 +12,19 @@ defineVisitor(function(node: ts.Node, index: number) {
 		return
 	}
 
-	parseCSSTemplate(node, index)
+	parseCSSTemplate(node)
 })
 
 
 /** Parse a css template literal. */
-function parseCSSTemplate(node: ts.TaggedTemplateExpression, index: number) {
+function parseCSSTemplate(node: ts.TaggedTemplateExpression) {
 	let string = TemplateSlotPlaceholder.toTemplateString(node.template).string
 	let parsed = minifyCSSString(parseStyleString(string))
 	let parts = TemplateSlotPlaceholder.parseTemplateStrings(parsed)!
 	let indices = TemplateSlotPlaceholder.parseTemplateIndices(parsed)!
 	let template = node.template
 
-	Interpolator.replace(index, InterpolationContentType.Normal, () => {
+	Interpolator.replace(node, InterpolationContentType.Normal, () => {
 		let replaced: ts.TaggedTemplateExpression | null = null
 
 		if (ts.isNoSubstitutionTemplateLiteral(template)) {

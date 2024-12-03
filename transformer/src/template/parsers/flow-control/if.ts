@@ -1,10 +1,10 @@
 import type * as ts from 'typescript'
-import {factory, Interpolator, Modifier, Packer, TemplateSlotPlaceholder} from '../../../core'
+import {factory, Interpolator, Modifier, Packer} from '../../../core'
 import {FlowControlBase} from './base'
 import {TemplateParser} from '../template'
 import {SlotContentType} from '../../../enums'
 import {CapturedOutputWay, TrackingPatch, TrackingRanges, TrackingScopeTree, TrackingScopeTypeMask} from '../../../ff'
-import {HTMLNode} from '../../../lupos-ts-module'
+import {HTMLNode, TemplateSlotPlaceholder} from '../../../lupos-ts-module'
 
 
 export class IfFlowControl extends FlowControlBase {

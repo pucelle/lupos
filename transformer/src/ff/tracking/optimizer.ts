@@ -285,10 +285,10 @@ export namespace Optimizer {
 		}
 
 		let toPosition = TrackingScopeTree.findClosestPositionToAddStatements(
-			scope.visitIndex, scope
+			scope.node, scope
 		)
 
-		Modifier.moveOnce(scope.visitIndex, toPosition.index)
+		Modifier.moveOnce(scope.node, toPosition.node)
 		scope.capturer.operator.safelyMoveCapturedOutwardTo(toPosition.scope.capturer)
 	}
 
@@ -356,7 +356,7 @@ export namespace Optimizer {
 
 
 	/** 
-	 * Eliminate repetitive captured indices that repeat itself or with it's descendants.
+	 * Eliminate repetitive captured items that repeat itself or with it's descendants.
 	 * `track(a.b); if (...) {track(a.b)}` -> `track(a.b); if (...) {}`
 	 */
 	function eliminateRepetitiveCapturedRecursively(scope: TrackingScope) {
@@ -375,22 +375,22 @@ export namespace Optimizer {
 		}
 
 		let classNode = scope.node as ts.ClassLikeDeclaration
-		let nameMap: Map<string, {indices: number[], typeMask: TypeMask | 0}> = new Map()
+		let nameMap: Map<string, {nodes: ts.Node[], typeMask: TypeMask | 0}> = new Map()
 
 
 		// Group captured by property name.
-		for (let {name, index, type} of scope.capturer.operator.walkPrivateCaptured(classNode)) {
+		for (let {name, node, type} of scope.capturer.operator.walkPrivateCaptured(classNode)) {
 			let item = nameMap.get(name)
 			if (!item) {
 				item = {
-					indices: [],
+					nodes: [],
 					typeMask: 0,
 				}
 
 				nameMap.set(name, item)
 			}
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
-			item.indices.push(index)
+			item.nodes.push(node)
 			item.typeMask |= (type === 'get' ? TypeMask.Get : TypeMask.Set)
 		}
 
@@ -417,19 +417,19 @@ export namespace Optimizer {
 		}
 
 
-		// Generate indices that should be removed.
-		let removeIndices: Set<number> = new Set()
+		// Generate nodes that should be removed.
+		let removeNodes: Set<ts.Node> = new Set()
 
-		for (let {indices, typeMask} of nameMap.values()) {
+		for (let {nodes, typeMask} of nameMap.values()) {
 			if (typeMask === (TypeMask.Get | TypeMask.Set)) {
 				continue
 			}
 
-			for (let index of indices) {
-				removeIndices.add(index)
+			for (let node of nodes) {
+				removeNodes.add(node)
 			}
 		}
 
-		scope.capturer.operator.removeCapturedIndicesRecursively(removeIndices)
+		scope.capturer.operator.removeCapturedRecursively(removeNodes)
 	}
 }

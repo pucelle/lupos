@@ -1,11 +1,11 @@
 import * as ts from 'typescript'
-import {defineVisitor, factory, Interpolator, VisitTree, MethodOverwrite, Modifier, MethodInsertPosition, helper} from '../core'
+import {defineVisitor, factory, Interpolator, MethodOverwrite, Modifier, MethodInsertPosition, helper} from '../core'
 import {ProcessorClassNameMap, ProcessorPropNameMap} from './decorators-shared'
 import {Packer} from '../core/packer'
 
 
 // Add some decorator compiled part to `constructor` or `onConnected` and `onWillDisconnect`.
-defineVisitor(function(node: ts.Node, _index: number) {
+defineVisitor(function(node: ts.Node) {
 	if (!ts.isClassDeclaration(node)) {
 		return
 	}
@@ -55,7 +55,7 @@ defineVisitor(function(node: ts.Node, _index: number) {
 		}
 		else if (decoName === 'setContext' && ts.isPropertyDeclaration(member)) {
 			compileSetContextDecorator(member, create, connect, disconnect, hasDeletedContextVariables)
-			Interpolator.remove(VisitTree.getIndex(deco))
+			Interpolator.remove(deco)
 			hasDeletedContextVariables = true
 		}
 		else if (decoName === 'useContext' && ts.isPropertyDeclaration(member)) {
@@ -278,9 +278,7 @@ function compileWatchGetters(deco: ts.Decorator): () => ts.FunctionExpression[] 
 
 			// function(){...}
 			else if (ts.isFunctionExpression(arg)) {
-				let getterIndex = VisitTree.getIndex(arg)
-				let getter = Interpolator.outputChildren(getterIndex) as ts.FunctionExpression
-
+				let getter = Interpolator.outputChildren(arg) as ts.FunctionExpression
 				getters.push(getter)
 			}
 

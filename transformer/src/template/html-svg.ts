@@ -1,10 +1,10 @@
 import * as ts from 'typescript'
-import {defineVisitor, Interpolator, InterpolationContentType, TemplateSlotPlaceholder, Modifier, onVisitedSourceFile, helper} from '../core'
+import {defineVisitor, Interpolator, InterpolationContentType, Modifier, onVisitedSourceFile, helper} from '../core'
 import {TemplateParser, VariableNames} from './parsers'
-import {HTMLRoot} from '../lupos-ts-module'
+import {HTMLRoot, TemplateSlotPlaceholder} from '../lupos-ts-module'
 
 
-defineVisitor(function(node: ts.Node, index: number) {
+defineVisitor(function(node: ts.Node) {
 	if (ts.isSourceFile(node)) {
 		VariableNames.init()
 		return
@@ -30,7 +30,7 @@ defineVisitor(function(node: ts.Node, index: number) {
 	Modifier.removeImportOf(node.tag)
 
 	// Must visit in normal visit order, so it can modify tracking.
-	let toOutput = parseHTMLTemplate(node, index, nm.memberName as 'html' | 'svg')
+	let toOutput = parseHTMLTemplate(node, nm.memberName as 'html' | 'svg')
 
 	// Must after all observable interpolation outputted.
 	// So internal html`...` can be replaced.
@@ -41,7 +41,7 @@ defineVisitor(function(node: ts.Node, index: number) {
 
 
 /** Parse a html template literal. */
-function parseHTMLTemplate(node: ts.TaggedTemplateExpression, index: number, templateType: 'html' | 'svg') {
+function parseHTMLTemplate(node: ts.TaggedTemplateExpression, templateType: 'html' | 'svg') {
 	let {string, mapper} = TemplateSlotPlaceholder.toTemplateString(node.template)
 	let values = TemplateSlotPlaceholder.extractTemplateValues(node.template)
 	let root = HTMLRoot.fromString(string)
@@ -50,7 +50,7 @@ function parseHTMLTemplate(node: ts.TaggedTemplateExpression, index: number, tem
 	return () => {
 		parser.prepareToOutputCompiled()()
 		let outputted = parser.outputReplaced()
-		Interpolator.replace(index, InterpolationContentType.Normal, () => outputted)
+		Interpolator.replace(node, InterpolationContentType.Normal, () => outputted)
 	}
 }
 

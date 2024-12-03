@@ -1,6 +1,5 @@
 import * as ts from 'typescript'
 import {factory, helper} from './global'
-import {VisitTree} from './visit-tree'
 import {InterpolationContentType, Interpolator} from './interpolator'
 
 
@@ -11,6 +10,8 @@ export interface MethodInsertInserted {
 	position: MethodInsertPosition
 }
 
+
+/** It helps to overwrite a method. */
 export class MethodOverwrite {
 
 	readonly classNode: ts.ClassDeclaration
@@ -124,33 +125,29 @@ export class MethodOverwrite {
 	}
 
 	private outputItemToRaw(statementsGetter: () => ts.Statement[], position: MethodInsertPosition) {
-		let blockIndex = VisitTree.getIndex(this.rawNode!.body!)
+		let body = this.rawNode!.body!
 
 		if (position === 'end') {
-			Interpolator.append(blockIndex, InterpolationContentType.Normal, statementsGetter)
+			Interpolator.append(body, InterpolationContentType.Normal, statementsGetter)
 		}
 		else {
-			let superCall = this.rawNode!.body!.statements[this.superIndex]
+			let superCall = body.statements[this.superIndex]
 
 			if (superCall) {
-				let superCallIndex = VisitTree.getIndex(superCall)
-
 				if (position === 'before-super') {
-					Interpolator.before(superCallIndex, InterpolationContentType.Normal, statementsGetter)
+					Interpolator.before(superCall, InterpolationContentType.Normal, statementsGetter)
 				}
 				else if (position === 'after-super') {
-					Interpolator.after(superCallIndex, InterpolationContentType.Normal, statementsGetter)
+					Interpolator.after(superCall, InterpolationContentType.Normal, statementsGetter)
 				}
 			}
 			else {
-				Interpolator.prepend(blockIndex, InterpolationContentType.Normal, statementsGetter)
+				Interpolator.prepend(body, InterpolationContentType.Normal, statementsGetter)
 			}
 		}
 	}
 
 	private outputToNew() {
-		let classIndex = VisitTree.getIndex(this.classNode)
-
 		let firstNonStaticMethod = this.classNode.members.find(member => {
 			if (!ts.isMethodDeclaration(member)) {
 				return null
@@ -165,11 +162,10 @@ export class MethodOverwrite {
 		})
 
 		if (firstNonStaticMethod) {
-			let firstNonStaticMethodIndex = VisitTree.getIndex(firstNonStaticMethod)
-			Interpolator.before(firstNonStaticMethodIndex, InterpolationContentType.Normal, () => this.outputToNewNode())
+			Interpolator.before(firstNonStaticMethod, InterpolationContentType.Normal, () => this.outputToNewNode())
 		}
 		else {
-			Interpolator.append(classIndex, InterpolationContentType.Normal, () => this.outputToNewNode())
+			Interpolator.append(this.classNode, InterpolationContentType.Normal, () => this.outputToNewNode())
 		}
 	}
 

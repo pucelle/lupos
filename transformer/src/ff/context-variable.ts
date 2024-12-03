@@ -2,7 +2,7 @@ import * as ts from 'typescript'
 import {defineVisitor, factory, Interpolator, InterpolationContentType, Modifier, helper} from '../core'
 
 
-defineVisitor(function(node: ts.Node, index: number) {
+defineVisitor(function(node: ts.Node) {
 		
 	// Property and decorated.
 	if (!ts.isPropertyDeclaration(node)) {
@@ -21,7 +21,7 @@ defineVisitor(function(node: ts.Node, index: number) {
 
 	Modifier.removeImportOf(decorator)
 
-	Interpolator.replace(index, InterpolationContentType.Normal, () => {
+	Interpolator.replace(node, InterpolationContentType.Normal, () => {
 		if (decoName === 'setContext') {
 			return compileSetContextDecorator(node)
 		}

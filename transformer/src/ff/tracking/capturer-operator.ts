@@ -1,5 +1,5 @@
 import * as ts from 'typescript'
-import {VisitTree, FlowInterruptionTypeMask, ScopeTree, HashItem, helper} from '../../core'
+import {VisitTree, FlowInterruptionTypeMask, VariableScopeTree, HashItem, helper, Hashing} from '../../core'
 import {AccessReferences} from './access-references'
 import {removeFromList} from '../../utils'
 import {CapturedItem, TrackingCapturer} from './capturer'
@@ -16,8 +16,8 @@ export class TrackingCapturerOperator {
 
 	/** Hash a captured item. */
 	static hashCapturedItem(item: CapturedItem): HashItem {
-		if (item.expIndex !== undefined) {
-			let hash = ScopeTree.hashIndex(item.expIndex)
+		if (item.exp !== undefined) {
+			let hash = Hashing.hashNode(item.exp)
 			let name = hash.name + item.keys!.map(key => `[${key}]`).join('')
 	
 			return {
@@ -26,7 +26,7 @@ export class TrackingCapturerOperator {
 			}
 		}
 		else {
-			return ScopeTree.hashIndex(item.index)
+			return Hashing.hashNode(item.node)
 		}
 	}
 		
@@ -36,22 +36,22 @@ export class TrackingCapturerOperator {
 			return []
 		}
 
-		let map: Map<string, number>
+		let map: Map<string, ts.Node>
 
 		for (let i = 0; i < capturers.length; i++) {
 			let capturer = capturers[i]
-			let ownMap: Map<string, number> = new Map()
+			let ownMap: Map<string, ts.Node> = new Map()
 
 			// Only codes of the first item is always running.
 			for (let item of capturer.captured[0].items) {
 
 				// Has been referenced, ignore always.
-				if (AccessReferences.hasExternalAccessReferenced(item.index, true)) {
+				if (AccessReferences.hasExternalAccessReferenced(item.node, true)) {
 					continue
 				}
 
 				let hashName = TrackingCapturerOperator.hashCapturedItem(item).name + '_of_capture_type_' + item.type
-				ownMap.set(hashName, item.index)
+				ownMap.set(hashName, item.node)
 			}
 
 			if (i === 0) {
@@ -71,7 +71,7 @@ export class TrackingCapturerOperator {
 		}
 
 		let values = [...map!.values()]
-		return capturers[0].captured[0].items.filter(index => values.includes(index.index))
+		return capturers[0].captured[0].items.filter(index => values.includes(index.node))
 	}
 
 
@@ -84,37 +84,37 @@ export class TrackingCapturerOperator {
 	}
 
 	/** 
-	 * Move captured indices to an ancestral, target capturer.
+	 * Move captured items to an ancestral, target capturer.
 	 * If a node with captured index use local variables and can't be moved, leave it.
 	 */
 	safelyMoveCapturedOutwardTo(toCapturer: TrackingCapturer) {
-		let indices = this.capturer.captured[0].items
-		if (indices.length === 0) {
+		let item = this.capturer.captured[0].items
+		if (item.length === 0) {
 			return
 		}
 
-		let residualIndices = toCapturer.operator.safelyMoveSomeCapturedOutwardFrom(indices, this.capturer)
-		this.capturer.captured[0].items = residualIndices
+		let residualItems = toCapturer.operator.safelyMoveSomeCapturedOutwardFrom(item, this.capturer)
+		this.capturer.captured[0].items = residualItems
 	}
 
 	/** 
-	 * Try to move captured indices to self.
-	 * `fromCapturer` locates where indices move from.
-	 * Returns residual indices that failed to move.
+	 * Try to move captured items to self.
+	 * `fromCapturer` locates where items move from.
+	 * Returns residual items that failed to move.
 	 */
 	safelyMoveSomeCapturedOutwardFrom(items: CapturedItem[], fromCapturer: TrackingCapturer): CapturedItem[] {
 
-		// Locate which captured item should move indices to.
+		// Locate which captured item should move items to.
 		// Find the first item `toIndex` larger in child-first order.
 		let group = this.capturer.captured.find(item => {
-			return VisitTree.isFollowingOfOrEqualInChildFirstOrder(item.toIndex, fromCapturer.scope.visitIndex)
+			return VisitTree.isFollowingOfOrEqualInChildFirstOrder(item.toNode, fromCapturer.scope.node)
 		}) ?? this.capturer.latestCaptured
 
 		// Note these are not tracking scopes.
 		let fromScope = fromCapturer.scope.getDeclarationScope()
 		let toScope = this.scope.getDeclarationScope()
 
-		let scopesLeaved = ScopeTree.findWalkingOutwardLeaves(fromScope, toScope)
+		let scopesLeaved = VariableScopeTree.findWalkingOutwardLeaves(fromScope, toScope)
 		let residualItems: CapturedItem[] = []
 
 		for (let item of items) {
@@ -132,10 +132,10 @@ export class TrackingCapturerOperator {
 		return residualItems
 	}
 
-	/** Move captured indices to an sibling capturer. */
+	/** Move captured items to an sibling capturer. */
 	moveCapturedBackwardTo(toCapturer: TrackingCapturer) {
-		let indices = this.capturer.captured[0].items
-		if (indices.length === 0) {
+		let items = this.capturer.captured[0].items
+		if (items.length === 0) {
 			return
 		}
 
@@ -153,7 +153,7 @@ export class TrackingCapturerOperator {
 			for (let item of [...group.items]) {
 
 				// Has been referenced, ignore always.
-				if (AccessReferences.hasExternalAccessReferenced(item.index, true)) {
+				if (AccessReferences.hasExternalAccessReferenced(item.node, true)) {
 					continue
 				}
 
@@ -172,7 +172,7 @@ export class TrackingCapturerOperator {
 			for (; startChildIndex < this.scope.children.length; startChildIndex++) {
 				let child = this.scope.children[startChildIndex]
 
-				if (!VisitTree.isPrecedingOfOrEqual(child.visitIndex, group.toIndex)) {
+				if (!VisitTree.isPrecedingOfOrEqual(child.node, group.toNode)) {
 					break
 				}
 
@@ -200,11 +200,10 @@ export class TrackingCapturerOperator {
 
 	/** Find private class property declaration from captured. */
 	*walkPrivateCaptured(ofClass: ts.ClassLikeDeclaration):
-		Iterable<{name: string, index: number, type: 'get' | 'set'}>
+		Iterable<{name: string, node: ts.Node, type: 'get' | 'set'}>
 	{
 		for (let item of this.capturer.captured) {
-			for (let {index, type, keys} of item.items) {
-				let node = VisitTree.getNode(index)
+			for (let {node, type, keys} of item.items) {
 
 				let propDecls = helper.symbol.resolveDeclarations(node, helper.isPropertyOrGetSetAccessor)
 				if (!propDecls || propDecls.length === 0) {
@@ -241,7 +240,7 @@ export class TrackingCapturerOperator {
 
 				yield {
 					name,
-					index,
+					node,
 					type,
 				}
 			}
@@ -252,16 +251,16 @@ export class TrackingCapturerOperator {
 		}
 	}
 
-	/** Remove captured indices recursively. */
-	removeCapturedIndicesRecursively(toRemove: Set<number>) {
+	/** Remove captured recursively. */
+	removeCapturedRecursively(toRemove: Set<ts.Node>) {
 		for (let item of this.capturer.captured) {
-			item.items = item.items.filter(index => {
-				return !toRemove.has(index.index)
+			item.items = item.items.filter(item => {
+				return !toRemove.has(item.node)
 			})
 		}
 
 		for (let child of this.scope.children) {
-			child.capturer.operator.removeCapturedIndicesRecursively(toRemove)
+			child.capturer.operator.removeCapturedRecursively(toRemove)
 		}
 	}
 }

@@ -28,20 +28,20 @@ export namespace TrackingPatch {
 	}
 
 	/** 
-	 * Ignore outputting tracking node by it's visit index.
+	 * Ignore outputting tracking node.
 	 * Note it ignores outputting, not prevent observe checking.
 	 */
 	export function ignore(rawNode: ts.Node) {
 		Ignored.add(rawNode)
 	}
 
-	/** Check whether ignored outputting specified visit index. */
+	/** Check whether ignored outputting. */
 	export function isIgnored(rawNode: ts.Node): boolean {
 		return Ignored.has(rawNode)
 	}
 
 	/** 
-	 * Force re-check node at specified visit index.
+	 * Force re-check node.
 	 * 
 	 * If tracking type is `Elements`, for array type, will track elements,
 	 * and it would apply additional elements get tracking.
@@ -51,7 +51,7 @@ export namespace TrackingPatch {
 	}
 
 	/** 
-	 * Check whether force tracking specified visit index.
+	 * Check whether force tracking node.
 	 * 
 	 * `parental` specifies whether are visiting parent node of original
 	 * to determine whether elements should be observed.

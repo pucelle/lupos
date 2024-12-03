@@ -3,7 +3,7 @@ import {defineVisitor, Modifier, factory, helper} from '../core'
 import {SlotContentType} from '../enums'
 
 
-defineVisitor(function(node: ts.Node, _index: number) {
+defineVisitor(function(node: ts.Node) {
 	if (!ts.isClassDeclaration(node)) {
 		return
 	}
