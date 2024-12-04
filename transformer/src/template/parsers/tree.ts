@@ -146,6 +146,7 @@ export class TreeParser {
 				break
 
 			case TemplatePartType.SlottedAttribute:
+			case TemplatePartType.QueryAttribute:
 				parser = new AttributeSlotParser(slot, this)
 				break
 
