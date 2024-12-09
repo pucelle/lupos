@@ -172,13 +172,12 @@ export class BindingBase {
 
 				SourceFileDiagnosticModifier.removeNeverRead(decl)
 
-				let bindingModuleName = helper.symbol.resolveImport(decl)
 				let bindingClass = helper.symbol.resolveDeclaration(decl, ts.isClassDeclaration)!
 
 				this.template.addRefedDeclaration(decl)
 
 				if (bindingClass
-					&& helper.class.isImplemented(bindingClass, 'Part', '@pucelle/lupos.js', bindingModuleName?.moduleName)
+					&& helper.class.isImplemented(bindingClass, 'Part', '@pucelle/lupos.js')
 				) {
 					this.implementsPart = true
 				}

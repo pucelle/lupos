@@ -16,7 +16,7 @@ export function setTransformContext(ctx: ts.TransformationContext, extras: Trans
 	factory = ctx.factory
 	typeChecker = extras.program.getProgram().getTypeChecker()
 	diagnosticModifier = extras.diagnosticModifier
-	helper = helperOfContext(ts, typeChecker)
+	helper = helperOfContext(ts, () => typeChecker)
 	TemplateSlotPlaceholder.initialize(ts)
 }
 
