@@ -39,7 +39,7 @@ class VariableScopeTreeClass extends ScopeTree<VariableScope> {
 	private addedVariableNames: ListMap<VariableScope, string> = new ListMap()
 
 	constructor() {
-		super(helper, VariableScope)
+		super(sourceFile, helper, VariableScope)
 	}
 
 	protected initialize() {
@@ -131,7 +131,7 @@ class VariableScopeTreeClass extends ScopeTree<VariableScope> {
 	/** Where before or after `rawNode`, it has or will be assigned. */
 	haveOrWillBeAssigned(rawNode: AccessNode | ts.Identifier | ts.ThisExpression): boolean {
 		let hashName = Hashing.hashNode(rawNode).name
-		return this.assignmentMap.hasOf(hashName)
+		return this.assignmentMap.hasKey(hashName)
 	}
 
 	/** Test whether expression represented value is mutable. */
@@ -310,7 +310,6 @@ export let VariableScopeTree: VariableScopeTreeClass
 
 definePreVisitCallback(() => {
 	VariableScopeTree = new VariableScopeTreeClass()
-	VariableScopeTree.visitSourceFile(sourceFile)
 })
 
 definePostVisitCallback(() => VariableScopeTree.applyInterpolation())

@@ -418,7 +418,7 @@ export abstract class SlotParserBase {
 		let gloStart = this.template.positionMapper.map(start) + 1
 		let length = ofNode.tagName!.length
 
-		SourceFileDiagnosticModifier.addNormal(gloStart, length, message)
+		SourceFileDiagnosticModifier.addCustom(gloStart, length, message)
 	}
 
 

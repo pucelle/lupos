@@ -27,7 +27,7 @@ export class ComponentSlotParser extends SlotParserBase {
 				Modifier.persistImport(decl)
 			}
 
-			SourceFileDiagnosticModifier.removeNeverRead(decl)
+			SourceFileDiagnosticModifier.deleteNeverRead(decl)
 		}
 	}
 

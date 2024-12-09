@@ -170,7 +170,7 @@ export class BindingBase {
 					Modifier.persistImport(decl)
 				}
 
-				SourceFileDiagnosticModifier.removeNeverRead(decl)
+				SourceFileDiagnosticModifier.deleteNeverRead(decl)
 
 				let bindingClass = helper.symbol.resolveDeclaration(decl, ts.isClassDeclaration)!
 
@@ -222,7 +222,7 @@ export class BindingBase {
 		// May unused comma expression of a for `${a, b}`, here remove it.
 		if (rawValueNodes.length > 1) {
 			for (let i = 0; i < rawValueNodes.length - 1; i++) {
-				SourceFileDiagnosticModifier.removeUnusedComma(rawValueNodes[i])
+				SourceFileDiagnosticModifier.deleteUnusedComma(rawValueNodes[i])
 			}
 		}
 
