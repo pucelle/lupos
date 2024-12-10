@@ -3,15 +3,14 @@ import {diagnosticModifier, sourceFile, helper} from './global'
 import {DiagnosticModifier} from '../lupos-ts-module'
 
 
-// Where to find diagnostic codes:
+// Diagnostic codes:
 // https://github.com/microsoft/TypeScript/blob/v5.6.3/src/compiler/diagnosticMessages.json
 
 
-export class SourceFileDiagnosticModifierClass extends DiagnosticModifier {
+export class ExtendedDiagnosticModifier extends DiagnosticModifier {
 
 	constructor() {
-		let diags = diagnosticModifier.getOfFile(sourceFile) || []
-		super(diags, sourceFile, helper)
+		super(helper)
 	}
 
 	/** Output added and removed. */
@@ -27,10 +26,13 @@ export class SourceFileDiagnosticModifierClass extends DiagnosticModifier {
 }
 
 
-export let SourceFileDiagnosticModifier: SourceFileDiagnosticModifierClass
+export let SourceFileDiagnosticModifier: ExtendedDiagnosticModifier
 
 definePreVisitCallback(() => {
-	SourceFileDiagnosticModifier = new SourceFileDiagnosticModifierClass()
+	let diags = diagnosticModifier.getOfFile(sourceFile) || []
+
+	SourceFileDiagnosticModifier = new ExtendedDiagnosticModifier()
+	SourceFileDiagnosticModifier.setStart(diags, sourceFile)
 })
 
 definePostVisitCallback(() => {

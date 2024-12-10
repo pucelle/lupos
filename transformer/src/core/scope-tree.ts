@@ -30,7 +30,7 @@ export enum MutableMask {
 type NodeReplacer = (node: ts.Identifier | ts.ThisExpression, insideFunctionScope: boolean) => ts.Expression
 
 
-class VariableScopeTreeClass extends ScopeTree<VariableScope> {
+class ExtendedScopeTree extends ScopeTree<VariableScope> {
 
 	/** Cache assign to hash name -> assignment expression. */
 	private assignmentMap: ListMap<string, AssignmentNode> = new ListMap()
@@ -39,13 +39,7 @@ class VariableScopeTreeClass extends ScopeTree<VariableScope> {
 	private addedVariableNames: ListMap<VariableScope, string> = new ListMap()
 
 	constructor() {
-		super(sourceFile, helper, VariableScope)
-	}
-
-	protected initialize() {
-		super.initialize()
-		this.assignmentMap.clear()
-		this.addedVariableNames.clear()
+		super(helper, VariableScope)
 	}
 
 	/** To parent. */
@@ -64,7 +58,6 @@ class VariableScopeTreeClass extends ScopeTree<VariableScope> {
 				this.assignmentMap.add(hash.name, node)
 			}
 		}
-		
 	}
 
 	/** Get the leaved scope list when walking from a scope to an ancestral scope. */
@@ -306,10 +299,11 @@ class VariableScopeTreeClass extends ScopeTree<VariableScope> {
 }
 
 
-export let VariableScopeTree: VariableScopeTreeClass
+export let VariableScopeTree: ExtendedScopeTree
 
 definePreVisitCallback(() => {
-	VariableScopeTree = new VariableScopeTreeClass()
+	VariableScopeTree = new ExtendedScopeTree()
+	VariableScopeTree.visitSourceFile(sourceFile)
 })
 
 definePostVisitCallback(() => VariableScopeTree.applyInterpolation())

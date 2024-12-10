@@ -76,7 +76,7 @@ export class TreeParser {
 	private initWrapping() {
 		let inSVG = false
 
-		if (this.template.type === 'svg') {
+		if (this.template.tagName === 'svg') {
 			inSVG = true
 		}
 		else if (this.parent && this.parent.inSVG) {

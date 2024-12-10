@@ -1,11 +1,8 @@
 import * as ts from 'typescript'
-import {HTMLNode, HTMLRoot, PositionMapper} from '../../lupos-ts-module'
+import {HTMLNode, HTMLRoot, PositionMapper, TemplateBasis} from '../../lupos-ts-module'
 import {TreeParser} from './tree'
 import {TemplateValues} from './template-values'
-import {factory, Modifier, VariableScope, VariableScopeTree, VisitTree} from '../../core'
-
-
-export type TemplateType = 'html' | 'svg'
+import {factory, helper, Modifier, VariableScope, VariableScopeTree, VisitTree} from '../../core'
 
 
 /**
@@ -13,19 +10,10 @@ export type TemplateType = 'html' | 'svg'
  * it will add a parsed to a TemplateMaker instance and add it to source file,
  * and return a expression to replace original template node.
  */
-export class TemplateParser {
-
-	readonly type: TemplateType
-	readonly root: HTMLRoot
+export class TemplateParser extends TemplateBasis {
 
 	/** All value nodes even for sub template. */
 	readonly values: TemplateValues
-
-	/** Raw template node even for sub template. */
-	readonly node: ts.Node
-
-	/** Map node position to ts source file position. */
-	readonly positionMapper: PositionMapper
 
 	private readonly treeParsers: TreeParser[] = []
 	private readonly subTemplates: TemplateParser[] = []
@@ -33,11 +21,15 @@ export class TemplateParser {
 	/** Which scope should insert contents. */
 	private innerMostScope: VariableScope = VariableScopeTree.getTopmost()
 
-	constructor(type: TemplateType, root: HTMLRoot, valueNodes: ts.Expression[], rawNode: ts.Node, positionMapper: PositionMapper) {
-		this.type = type
-		this.root = root
-		this.node = rawNode
-		this.positionMapper = positionMapper
+	constructor(
+		tagName: 'html' | 'svg',
+		node: ts.TemplateLiteral,
+		content: string,
+		root: HTMLRoot,
+		valueNodes: ts.Expression[],
+		positionMapper: PositionMapper
+	) {
+		super(tagName, node, content, root, valueNodes, positionMapper, VariableScopeTree, helper)
 
 		let tree = this.addTreeParser(root, null, null)
 		this.values = new TemplateValues(valueNodes, tree)
@@ -59,7 +51,7 @@ export class TemplateParser {
 	 * */
 	separateChildrenAsTemplate(node: HTMLNode): TemplateParser {
 		let root = HTMLRoot.fromSeparatingChildren(node)
-		let template = new TemplateParser(this.type, root, this.values.valueNodes, this.node, this.positionMapper)
+		let template = new TemplateParser(this.tagName as 'html' | 'svg', this.node, '', root, this.values.valueNodes, this.positionMapper)
 		this.subTemplates.push(template)
 
 		return template

@@ -45,7 +45,7 @@ function parseHTMLTemplate(node: ts.TaggedTemplateExpression, templateType: 'htm
 	let {string, mapper} = TemplateSlotPlaceholder.toTemplateString(node.template)
 	let values = TemplateSlotPlaceholder.extractTemplateValues(node.template)
 	let root = HTMLRoot.fromString(string)
-	let parser = new TemplateParser(templateType, root, values, node, mapper)
+	let parser = new TemplateParser(templateType, node.template, string, root, values, mapper)
 
 	return () => {
 		parser.prepareToOutputCompiled()()

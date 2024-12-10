@@ -150,7 +150,7 @@ export class BindingBase {
 		else {
 
 			// :bindingName -> bindingName
-			let decl = VariableScopeTree.getDeclarationOrReferenceByName(this.name, this.template.node)
+			let decl = VariableScopeTree.getReferenceByName(this.name, this.template.node)
 
 			// `Import ClassBinding`
 			// `class ClassBinding {...}`

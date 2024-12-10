@@ -13,7 +13,7 @@ export class ComponentSlotParser extends SlotParserBase {
 
 		this.refAsComponent()
 
-		let decl = VariableScopeTree.getDeclarationOrReferenceByName(comName, this.template.node)
+		let decl = VariableScopeTree.getReferenceByName(comName, this.template.node)
 		if (!decl) {
 			this.diagnoseMissingTagImport(`Please make sure to import or declare component "<${comName}>"!`)
 		}
