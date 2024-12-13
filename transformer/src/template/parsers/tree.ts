@@ -47,7 +47,8 @@ export class TreeParser {
 	private wrappedByTemplate: boolean = false
 	private inSVG: boolean = false
 	private outputHandler: TreeOutputHandler
-	private slots: SlotParserBase[] = []
+	private templateParts: TemplatePart[] = []
+	private slotParsers: SlotParserBase[] = []
 	private preDeclaredVariableNames: string[] = []
 
 	/** All parts included. */
@@ -97,10 +98,9 @@ export class TreeParser {
 
 	/** Parse after initialized all the things. */
 	parse() {
-		
 		let canModify = true
-		let slotParser = new TemplatePartParser(this.root, this.template.values.valueNodes, canModify, this.addSlot.bind(this), helper)
-		slotParser.parse()
+		let partParser = new TemplatePartParser(this.root, this.template.values.valueNodes, canModify, this.onTemplatePart.bind(this), helper)
+		partParser.parse()
 
 		// Must after nodes parsed.
 		// Nodes will be adjusted when parsing.
@@ -113,49 +113,49 @@ export class TreeParser {
 	 * Note `node` may not in tree when adding the slot.
 	 * It returns a callback to do more init after all children initialized.
 	 */
-	private addSlot(slot: TemplatePart) {
+	private onTemplatePart(part: TemplatePart) {
 		let parser: SlotParserBase | null = null
 
-		switch (slot.type) {
+		switch (part.type) {
 			case TemplatePartType.SlotTag:
-				parser = new SlotTagSlotParser(slot, this)
+				parser = new SlotTagSlotParser(part, this)
 				break
 
 			case TemplatePartType.Component:
-				parser = new ComponentSlotParser(slot, this)
+				parser = new ComponentSlotParser(part, this)
 				break
 
 			case TemplatePartType.DynamicComponent:
-				parser = new DynamicComponentSlotParser(slot, this)
+				parser = new DynamicComponentSlotParser(part, this)
 				break
 
 			case TemplatePartType.FlowControl:
-				parser = new FlowControlSlotParser(slot, this)
+				parser = new FlowControlSlotParser(part, this)
 				break
 
 			case TemplatePartType.Property:
-				parser = new PropertySlotParser(slot, this)
+				parser = new PropertySlotParser(part, this)
 				break
 
 			case TemplatePartType.Binding:
-				parser = new BindingSlotParser(slot, this)
+				parser = new BindingSlotParser(part, this)
 				break
 
 			case TemplatePartType.Event:
-				parser = new EventSlotParser(slot, this)
+				parser = new EventSlotParser(part, this)
 				break
 
 			case TemplatePartType.SlottedAttribute:
 			case TemplatePartType.QueryAttribute:
-				parser = new AttributeSlotParser(slot, this)
+				parser = new AttributeSlotParser(part, this)
 				break
 
 			case TemplatePartType.SlottedText:
-				parser = new TextSlotParser(slot, this)
+				parser = new TextSlotParser(part, this)
 				break
 
 			case TemplatePartType.Content:
-				parser = new ContentSlotParser(slot, this)
+				parser = new ContentSlotParser(part, this)
 				break
 		}
 
@@ -164,8 +164,10 @@ export class TreeParser {
 		}
 
 		parser.preInit()
-		this.slots.push(parser)
-		this.references.ref(slot.node)
+
+		this.templateParts.push(part)
+		this.slotParsers.push(parser)
+		this.references.ref(part.node)
 
 		return () => {
 			parser.postInit()
@@ -335,7 +337,7 @@ export class TreeParser {
 		})
 
 		return this.outputHandler.prepareToOutput(
-			this.slots,
+			this.slotParsers,
 			this.preDeclaredVariableNames,
 			parts,
 			scope

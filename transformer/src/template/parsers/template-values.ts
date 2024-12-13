@@ -8,7 +8,6 @@ import {TreeParser} from './tree'
 export class TemplateValues {
 
 	readonly valueNodes: ts.Expression[]
-	readonly tree: TreeParser
 
 	private valueHash: Map<string, number> = new Map()
 	private outputNodes: ts.Expression[] = []
@@ -16,9 +15,8 @@ export class TemplateValues {
 	private indicesOutputted: Set<number> = new Set()
 	private transferredLatestNames: Map<string, number> = new Map()
 
-	constructor(valueNodes: ts.Expression[], tree: TreeParser) {
+	constructor(valueNodes: ts.Expression[]) {
 		this.valueNodes = valueNodes
-		this.tree = tree
 		this.checkIndicesMutable()
 	}
 	
@@ -73,6 +71,7 @@ export class TemplateValues {
 	outputValue(
 		strings: string[] | null = null,
 		valueIndices: number[] | null,
+		tree: TreeParser,
 		asCallback: boolean = false
 	): {
 		joint: ts.Expression,
@@ -100,7 +99,7 @@ export class TemplateValues {
 			let canTurn = this.isIndexCanTurnStatic(valueIndex)
 			let asStatic = !mutable || asCallback && canTurn
 
-			return this.outValueNodeOfIndex(rawValueNode, valueIndex, asStatic)
+			return this.outValueNodeOfIndex(rawValueNode, valueIndex, tree, asStatic)
 		})
 
 		let joint: ts.Expression
@@ -119,7 +118,7 @@ export class TemplateValues {
 	}
 
 	/** Output a raw node of full or partial specified index. */
-	private outValueNodeOfIndex(rawValueNode: ts.Expression, valueIndex: number, asStatic: boolean): ts.Expression {
+	private outValueNodeOfIndex(rawValueNode: ts.Expression, valueIndex: number, tree: TreeParser, asStatic: boolean): ts.Expression {
 
 		// Output static node.
 		if (asStatic) {
@@ -128,7 +127,7 @@ export class TemplateValues {
 			let transferred = VariableScopeTree.transferToTopmostScope(
 				interpolated,
 				rawValueNode,
-				this.transferNodeToTopmostScope.bind(this, valueIndex)
+				this.transferNodeToTopmostScope.bind(this, valueIndex, tree)
 			)
 
 			return transferred
@@ -137,7 +136,7 @@ export class TemplateValues {
 		// Output from value list.
 		else {
 			this.indicesOutputted.add(valueIndex)
-			return this.outputNodeAsValue(rawValueNode, false)
+			return this.outputNodeAsValue(rawValueNode, tree, false)
 		}
 	}
 
@@ -148,6 +147,7 @@ export class TemplateValues {
 	 */
 	private transferNodeToTopmostScope(
 		valueIndex: number,
+		tree: TreeParser,
 		node: ts.Identifier | ts.ThisExpression,
 		insideFunction: boolean, 
 	): ts.Expression {
@@ -155,7 +155,7 @@ export class TemplateValues {
 		// Move variable name as an item to output value list.
 		if (ts.isIdentifier(node)) {
 			this.indicesOutputted.add(valueIndex)
-			return this.outputNodeAsValue(node, insideFunction)
+			return this.outputNodeAsValue(node, tree, insideFunction)
 		}
 
 		// Replace `this` to `$context`.
@@ -169,7 +169,7 @@ export class TemplateValues {
 	 * and returns it's reference value item.
 	 * If `transferringWithinFunction`, move value to topmost scope and add referenced value to value list.
 	 */
-	private outputNodeAsValue(rawNode: ts.Expression, transferringWithinFunction: boolean): ts.Expression {
+	private outputNodeAsValue(rawNode: ts.Expression, tree: TreeParser, transferringWithinFunction: boolean): ts.Expression {
 		let hash = Hashing.hashNode(rawNode).name
 		let valueIndex: number
 
@@ -185,7 +185,7 @@ export class TemplateValues {
 		}
 
 		if (transferringWithinFunction) {
-			let latestName = this.tree.makeUniqueLatestName()
+			let latestName = tree.makeUniqueLatestName()
 			this.transferredLatestNames.set(latestName, valueIndex)
 			return factory.createIdentifier(latestName)
 		}
@@ -246,13 +246,13 @@ export class TemplateValues {
 	}
 
 	/** Output a single value from a raw node. */
-	outputRawValue(rawNode: ts.Expression, valueIndex: number, asCallback: boolean = false): ts.Expression {
+	outputRawValue(rawNode: ts.Expression, valueIndex: number, tree: TreeParser, asCallback: boolean = false): ts.Expression {
 		let mutableMask = VariableScopeTree.testMutable(rawNode)
 		let mutable = (mutableMask & MutableMask.Mutable) > 0
 		let canTurn = (mutableMask & MutableMask.CantTransfer) === 0
 		let asStatic = !mutable || asCallback && canTurn
 
-		return this.outValueNodeOfIndex(rawNode, valueIndex, asStatic)
+		return this.outValueNodeOfIndex(rawNode, valueIndex, tree, asStatic)
 	}
 
 	/** 
@@ -260,8 +260,8 @@ export class TemplateValues {
 	 * Use for passing several parameters to a binding,
 	 * like `:binding=${value1, value2}`, or `:binding=${(value1, value2)}`.
 	 */
-	outputRawValueList(rawNodes: ts.Expression[], valueIndex: number, asCallback: boolean = false): ts.Expression[] {
-		let valueNodes = rawNodes.map(rawNode => this.outputRawValue(rawNode, valueIndex, asCallback))
+	outputRawValueList(rawNodes: ts.Expression[], valueIndex: number, tree: TreeParser, asCallback: boolean = false): ts.Expression[] {
+		let valueNodes = rawNodes.map(rawNode => this.outputRawValue(rawNode, valueIndex, tree, asCallback))
 		return valueNodes
 	}
 

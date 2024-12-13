@@ -28,7 +28,7 @@ export class TestEvent extends Component {
 	}
 
 	testForceComponentEvent() {
-		return html`<Com1 @@forceComEvent=${this.handleEvent} />`
+		return html`<Com1 @@eventName=${this.handleEvent} />`
 	}
 
 	testElementEvent() {

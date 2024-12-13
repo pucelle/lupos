@@ -77,7 +77,7 @@ export class ForFlowControl extends FlowControlBase {
 
 	private outputFnUpdate() {
 		let fnValueIndices = this.fnValueIndex !== null ? [this.fnValueIndex] : null
-		let value = this.template.values.outputValue(null, fnValueIndices)
+		let value = this.template.values.outputValue(null, fnValueIndices, this.tree)
 
 		// if ($latest_0 !== $values[0]) {
 		//   $block_0.updateRenderFn($values[0])
@@ -123,7 +123,7 @@ export class ForFlowControl extends FlowControlBase {
 
 	private outputOfUpdate() {
 		let ofValueIndices = this.ofValueIndex !== null ? [this.ofValueIndex] : null
-		let value = this.template.values.outputValue(null, ofValueIndices)
+		let value = this.template.values.outputValue(null, ofValueIndices, this.tree)
 
 		// Not compare, update directly.
 		// $block_0.updateData(data)

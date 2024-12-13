@@ -75,13 +75,13 @@ const $html_1 = new HTMLMaker("<!----><div></div><!---->");
 });
 /*
 <root>
-    <Com1 ..forceComProp=${1} />
+    <Com1 ..comProp=${1} />
 </root>
 */ const $template_3 = new TemplateMaker(function () {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $com_0 = new Com1($node_0);
-    $com_0.forceComProp = 1;
+    $com_0.comProp = 1;
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),

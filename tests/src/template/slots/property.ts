@@ -19,7 +19,7 @@ export class TestProperty extends Component {
 	}
 
 	testForceComponentProperty() {
-		return html`<Com1 ..forceComProp=${1} />`
+		return html`<Com1 ..comProp=${1} />`
 	}
 
 	testElementProperty() {

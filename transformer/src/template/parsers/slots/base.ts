@@ -226,7 +226,7 @@ export abstract class SlotParserBase {
 		joint: ts.Expression,
 		valueNodes: ts.Expression[],
 	} {
-		return this.template.values.outputValue(this.strings, this.valueIndices, asCallback)
+		return this.template.values.outputValue(this.strings, this.valueIndices, this.tree, asCallback)
 	}
 
 	/** 

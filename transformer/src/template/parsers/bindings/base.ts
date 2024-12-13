@@ -81,7 +81,7 @@ export class BindingBase {
 
 		// Output values from parameter list.
 		if (this.parameterList) {
-			let valueNodes = this.template.values.outputRawValueList(this.parameterList, this.slot.valueIndices![0])
+			let valueNodes = this.template.values.outputRawValueList(this.parameterList, this.slot.valueIndices![0], this.tree)
 			let joint = valueNodes[0]
 
 			return {
@@ -101,7 +101,7 @@ export class BindingBase {
 			return factory.createNull()
 		}
 
-		let value = this.template.values.outputRawValue(this.queryParameter!, this.slot.valueIndices![0])
+		let value = this.template.values.outputRawValue(this.queryParameter!, this.slot.valueIndices![0], this.tree)
 		return value
 	}
 

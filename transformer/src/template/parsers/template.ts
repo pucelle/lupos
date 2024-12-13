@@ -1,8 +1,8 @@
 import * as ts from 'typescript'
-import {HTMLNode, HTMLRoot, PositionMapper, TemplateBasis} from '../../lupos-ts-module'
+import {Analyzer, HTMLNode, HTMLRoot, PositionMapper, TemplateBasis, TemplateDiagnostics, TemplatePart, TemplatePartParser} from '../../lupos-ts-module'
 import {TreeParser} from './tree'
 import {TemplateValues} from './template-values'
-import {factory, helper, Modifier, VariableScope, VariableScopeTree, VisitTree} from '../../core'
+import {factory, helper, Modifier, SourceFileDiagnosticModifier, VariableScope, VariableScopeTree, VisitTree} from '../../core'
 
 
 /**
@@ -30,11 +30,31 @@ export class TemplateParser extends TemplateBasis {
 		positionMapper: PositionMapper
 	) {
 		super(tagName, node, content, root, valueNodes, positionMapper, VariableScopeTree, helper)
+		this.values = new TemplateValues(valueNodes)
 
-		let tree = this.addTreeParser(root, null, null)
-		this.values = new TemplateValues(valueNodes, tree)
+		this.diagnose()
+	}
 
-		/** Initialize after values ready. */
+	/** 
+	 * Diagnose whole template.
+	 * It make an independent part parser and diagnose it.
+	 */
+	diagnose() {
+		let canModify = false
+		let parts: TemplatePart[] = []
+		let onPart = (part: TemplatePart) => {parts.push(part)}
+		
+		let partParser = new TemplatePartParser(this.root, this.values.valueNodes, canModify, onPart, helper)
+		partParser.parse()
+
+		// Modify diagnostics.
+		let diagnostics = new TemplateDiagnostics(new Analyzer(helper))
+		diagnostics.diagnose(parts, this, SourceFileDiagnosticModifier)
+	}
+
+	/** Pase for tree parses. */
+	parse() {
+		let tree = this.addTreeParser(this.root, null, null)
 		tree.parse()
 	}
 
@@ -47,13 +67,15 @@ export class TemplateParser extends TemplateBasis {
 
 	/** 
 	 * Separate children of a node to an independent sub template,
+	 * and parse it immediately.
 	 * it uses it's own value list.
-	 * */
+	 */
 	separateChildrenAsTemplate(node: HTMLNode): TemplateParser {
 		let root = HTMLRoot.fromSeparatingChildren(node)
 		let template = new TemplateParser(this.tagName as 'html' | 'svg', this.node, '', root, this.values.valueNodes, this.positionMapper)
 		this.subTemplates.push(template)
-
+		template.parse()
+		
 		return template
 	}
 	
