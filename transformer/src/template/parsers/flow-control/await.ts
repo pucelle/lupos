@@ -23,10 +23,6 @@ export class AwaitFlowControl extends FlowControlBase {
 		this.slotVariableName = this.slot.makeSlotName()
 
 		let promiseIndex = this.getAttrValueIndex(this.node)
-		if (promiseIndex === null) {
-			this.slot.diagnoseNormal('<lu:await ${...}> must accept a parameter as promise to await!')
-		}
-
 		let nextNodes = this.eatNext('lu:then', 'lu:catch')
 		let thenNode = nextNodes.find(n => n.tagName === 'lu:then')
 		let catchNode = nextNodes.find(n => n.tagName === 'lu:catch')

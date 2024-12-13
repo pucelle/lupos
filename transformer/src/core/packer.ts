@@ -287,24 +287,6 @@ export namespace Packer {
 	}
 
 	/** 
-	 * D expressions to a single binary expression.
-	 * `a, b, c -> [a, b, c]`
-	 */
-	export function unBundleCommaBinaryExpressions(exp: ts.Expression): ts.Expression[] {
-		if (ts.isBinaryExpression(exp)
-			&& exp.operatorToken.kind === ts.SyntaxKind.CommaToken
-		) {
-			return [
-				...unBundleCommaBinaryExpressions(exp.left),
-				...unBundleCommaBinaryExpressions(exp.right),
-			]
-		}
-		else {
-			return [exp]
-		}
-	}
-
-	/** 
 	 * For each level of nodes, extract final expressions from a parenthesized expression.
 	 * `(a, b, c)` -> `c`
 	 */

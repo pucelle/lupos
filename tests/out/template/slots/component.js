@@ -46,11 +46,10 @@ const $html_1 = new HTMLMaker("<div>Rest Content</div>");
         ]
     };
 });
-const $html_2 = new HTMLMaker("<div><!----><!---->Rest Content</div>");
+const $html_2 = new HTMLMaker("<div><!---->Rest Content</div>");
 /*
 <root>
     <ChildComponent>
-        ${html`<div />`}
         Rest Content
     </ChildComponent>
 </root>
@@ -58,11 +57,10 @@ const $html_2 = new HTMLMaker("<div><!----><!---->Rest Content</div>");
     let $node = $html_2.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node_0.firstChild;
-    let $node_2 = $node_0.childNodes[1];
-    let $node_3 = $node_0.lastChild;
+    let $node_2 = $node_0.lastChild;
     let $com_0 = new ChildComponent($node_0);
     let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_2), $context, 0);
-    $com_0.__applyRestSlotRangeNodes($node_1, $node_3);
+    $com_0.__applyRestSlotRangeNodes($node_1, $node_2);
     $slot_0.update(new CompiledTemplateResult($template_3, []));
     return {
         el: $node,

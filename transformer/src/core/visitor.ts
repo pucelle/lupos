@@ -49,7 +49,7 @@ function applyVisitors(node: ts.Node): () => void {
 }
 
 
-/** Transformer entry. */
+/** Transformer entry, it will be call for each transformer. */
 export function transformer(context: ts.TransformationContext, extras: TransformerExtras): ts.Transformer<ts.SourceFile> {
 	setTransformContext(context, extras)
 

@@ -24,10 +24,6 @@ export class KeyedFlowControl extends FlowControlBase {
 		this.slotVariableName = this.slot.makeSlotName()
 
 		let valueIndex = this.getAttrValueIndex(this.node)
-		if (valueIndex === null) {
-			this.slot.diagnoseNormal('<lu:keyed ${...}> must accept a parameter as key!')
-		}
-
 		this.valueIndex = valueIndex
 
 		if (this.node.children.length > 0) {

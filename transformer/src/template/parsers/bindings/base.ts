@@ -1,8 +1,8 @@
 import * as ts from 'typescript'
-import {HTMLNode, KnownInternalBindings} from '../../../lupos-ts-module'
+import {HTMLNode, LuposKnownInternalBindings} from '../../../lupos-ts-module'
 import {PartType, TreeParser} from '../tree'
 import {BindingSlotParser} from '../slots'
-import {SourceFileDiagnosticModifier, factory, Modifier, VariableScopeTree, Packer, helper} from '../../../core'
+import {factory, Modifier, VariableScopeTree, Packer, helper} from '../../../core'
 import {TemplateParser} from '../template'
 import {VariableNames} from '../variable-names'
 import {setLatestBindingInfo} from './latest-binding'
@@ -132,8 +132,8 @@ export class BindingBase {
 
 	/** Check binding class declaration. */
 	private initBindingClass() {
-		if (KnownInternalBindings[this.name]) {
-			let item = KnownInternalBindings[this.name]
+		if (LuposKnownInternalBindings[this.name]) {
+			let item = LuposKnownInternalBindings[this.name]
 			
 			// Add as a part.
 			if (item.implementsPart) {
@@ -154,23 +154,12 @@ export class BindingBase {
 
 			// `Import ClassBinding`
 			// `class ClassBinding {...}`
-			if (!decl
-				|| (
-					!ts.isImportSpecifier(decl)
-					&& !(ts.isClassDeclaration(decl))
-				)
-				|| !decl.name
-			) {
-				this.slot.diagnoseMissingBinding()
-			}
-			else {
+			if (decl) {
 
 				// Avoid been removed by typescript compiler.
 				if (ts.isImportSpecifier(decl)) {
 					Modifier.persistImport(decl)
 				}
-
-				SourceFileDiagnosticModifier.deleteNeverRead(decl)
 
 				let bindingClass = helper.symbol.resolveDeclaration(decl, ts.isClassDeclaration)!
 
@@ -208,7 +197,7 @@ export class BindingBase {
 	/** 
 	 * For binding parameter list like `:binding=${a, b}` or `:binding=${(a, b)}`,
 	 * get nodes after splitting the parameters to a list.
-	 * `valueIndices` must exist to get this list.
+	 * `valueIndices` must exist to call this.
 	 */
 	private splitToParameters(): ts.Expression[] {
 		let rawValueNode = this.template.values.getRawValue(this.slot.valueIndices![0])
@@ -217,15 +206,7 @@ export class BindingBase {
 			rawValueNode = rawValueNode.expression
 		}
 
-		let rawValueNodes = Packer.unBundleCommaBinaryExpressions(rawValueNode)
-
-		// May unused comma expression of a for `${a, b}`, here remove it.
-		if (rawValueNodes.length > 1) {
-			for (let i = 0; i < rawValueNodes.length - 1; i++) {
-				SourceFileDiagnosticModifier.deleteUnusedComma(rawValueNodes[i])
-			}
-		}
-
+		let rawValueNodes = helper.pack.unPackCommaBinaryExpressions(rawValueNode)
 		return rawValueNodes
 	}
 
@@ -255,8 +236,8 @@ export class BindingBase {
 		let nodeName = this.slot.getRefedNodeName()
 		let bindingParamCount = this.bindingClassParameterCount
 
-		let bindingClassName = KnownInternalBindings[this.name]
-			? KnownInternalBindings[this.name].name
+		let bindingClassName = LuposKnownInternalBindings[this.name]
+			? LuposKnownInternalBindings[this.name].name
 			: this.name
 
 		let bindingParams: ts.Expression[] = [factory.createIdentifier(nodeName)]

@@ -18,10 +18,9 @@ defineVisitor(function(node: ts.Node) {
 
 /** Parse a css template literal. */
 function parseCSSTemplate(node: ts.TaggedTemplateExpression) {
-	let string = TemplateSlotPlaceholder.toTemplateString(node.template).string
+	let string = TemplateSlotPlaceholder.toTemplateContent(node.template).string
 	let parsed = minifyCSSString(parseStyleString(string))
-	let parts = TemplateSlotPlaceholder.parseTemplateStrings(parsed)!
-	let indices = TemplateSlotPlaceholder.parseTemplateIndices(parsed)!
+	let {strings, valueIndices} = TemplateSlotPlaceholder.parseTemplateContent(parsed, true)
 	let template = node.template
 
 	Interpolator.replace(node, InterpolationContentType.Normal, () => {
@@ -32,17 +31,17 @@ function parseCSSTemplate(node: ts.TaggedTemplateExpression) {
 				node.tag,
 				undefined,
 				factory.createNoSubstitutionTemplateLiteral(
-					parts[0],
-					parts[0]
+					strings![0].text,
+					strings![0].text
 				)
 			)
 		}
 		else {
 			let oldSpans = template.templateSpans
 
-			let newSpans = indices.map((spanIndex, index) => {
-				let inEnd = index === indices.length - 1
-				let part = parts[index + 1]
+			let newSpans = valueIndices!.map(({index: spanIndex}, index) => {
+				let inEnd = index === valueIndices!.length - 1
+				let part = strings![index + 1].text
 				let oldSpan = oldSpans[spanIndex]
 
 				let middleOrTail = inEnd ?
@@ -66,8 +65,8 @@ function parseCSSTemplate(node: ts.TaggedTemplateExpression) {
 				undefined,
 				factory.createTemplateExpression(
 					factory.createTemplateHead(
-						parts[0],
-						parts[0]
+						strings![0].text,
+						strings![0].text
 					),
 					newSpans
 				)

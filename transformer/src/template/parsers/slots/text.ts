@@ -5,6 +5,8 @@ import ts = require('typescript')
 
 export class TextSlotParser extends SlotParserBase {
 
+	declare strings: string[] | null
+
 	/** $latest_0 */
 	private latestVariableNames: (string | null)[] | null = null
 

@@ -9,15 +9,10 @@ export class SwitchFlowControl extends IfFlowControl {
 
 	preInit() {
 		let switchValueIndex = this.getAttrValueIndex(this.node)
-		if (switchValueIndex === null) {
-			this.slot.diagnoseNormal('<lu:switch ${...}> must accept a parameter as condition!')
-		}
 		this.switchValueIndex = switchValueIndex
-
-		let tags = ['lu:case', 'lu:default']
-		let childNodes = this.node.children
 		
-		this.initByNodesAndTags(childNodes, tags)
+		let childNodes = this.node.children
+		this.initByNodesAndTags(childNodes)
 		this.node.empty()
 	}
 
@@ -27,7 +22,7 @@ export class SwitchFlowControl extends IfFlowControl {
 		}
 
 		let blockClassName = this.cacheable ? 'CacheableSwitchBlock' : 'SwitchBlock'
-		return this.outputInitByClassName(blockClassName)
+		return this.outputInitByBlockClassName(blockClassName)
 	}
 
 	outputUpdate() {

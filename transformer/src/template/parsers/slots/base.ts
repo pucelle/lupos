@@ -1,7 +1,7 @@
 import * as ts from 'typescript'
 import {HTMLAttribute, HTMLNode, HTMLNodeType, TemplatePart, TemplateSlotPlaceholder} from '../../../lupos-ts-module'
 import {PartType, TreeParser} from '../tree'
-import {SourceFileDiagnosticModifier, factory, Modifier, MutableMask, VariableScopeTree, Packer, Hashing} from '../../../core'
+import {factory, Modifier, MutableMask, VariableScopeTree, Packer, Hashing} from '../../../core'
 import {VariableNames} from '../variable-names'
 import {TemplateParser} from '../template'
 import {SlotPositionType} from '../../../enums'
@@ -54,8 +54,8 @@ export abstract class SlotParserBase {
 		this.prefix = namePrefix
 		this.name = mainName
 		this.modifiers = modifiers
-		this.strings = strings
-		this.valueIndices = valueIndices
+		this.strings = strings ? strings.map(s => s.text) : null
+		this.valueIndices = valueIndices ? valueIndices.map(s => s.index) : null
 		this.node = node
 		this.attr = attr
 		this.tree = treeParser
@@ -332,6 +332,7 @@ export abstract class SlotParserBase {
 		) {
 			this.node.remove()
 			useNode = nextNode
+			HTMLNodeHelper.usePrecedingPosition(nextNode)
 		}
 
 		// Use current node to locate.
@@ -401,24 +402,6 @@ export abstract class SlotParserBase {
 				]
 			}
 		}
-	}
-
-	/** Diagnose missing component import of current node. */
-	diagnoseMissingTagImport(message: string, ofNode: HTMLNode = this.node) {
-		let start = ofNode.start
-		let gloStart = this.template.positionMapper.map(start) + 1
-		let length = ofNode.tagName!.length
-
-		SourceFileDiagnosticModifier.addMissingImport(gloStart, length, message)
-	}
-
-	/** Diagnose normal of current node. */
-	diagnoseNormal(message: string, ofNode: HTMLNode = this.node) {
-		let start = ofNode.start
-		let gloStart = this.template.positionMapper.map(start) + 1
-		let length = ofNode.tagName!.length
-
-		SourceFileDiagnosticModifier.addCustom(gloStart, length, message)
 	}
 
 

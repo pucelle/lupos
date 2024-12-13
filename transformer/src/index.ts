@@ -4,4 +4,4 @@ import './lupos.js'
 import './template'
 
 
-export default transformer;
+export default transformer

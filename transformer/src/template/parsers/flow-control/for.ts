@@ -33,12 +33,8 @@ export class ForFlowControl extends FlowControlBase {
 		let fnValueIndex = this.getUniqueChildValueIndex(this.node)
 		let shouldObserveElements = false
 
-		if (ofValueIndex === null) {
-			this.slot.diagnoseNormal('<lu:for ${...}> must accept a parameter as loop data!')
-		}
-
 		// Force tracking members of array.
-		else {
+		if (ofValueIndex !== null) {
 			let ofValueNode = this.template.values.getRawValue(ofValueIndex)
 
 			shouldObserveElements = ObservedChecker.isObserved(ofValueNode, true)
@@ -47,10 +43,7 @@ export class ForFlowControl extends FlowControlBase {
 			}
 		}
 
-		if (fnValueIndex === null) {
-			this.slot.diagnoseNormal('<lu:for>${...}</> must accept a parameter as child item renderer!')
-		}
-		else {
+		if (fnValueIndex !== null) {
 			let fnValueNode = this.template.values.getRawValue(fnValueIndex)
 
 			if (helper.isFunctionLike(fnValueNode)) {

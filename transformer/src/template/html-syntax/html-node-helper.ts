@@ -5,11 +5,22 @@ import {helper} from '../../core'
 
 export namespace HTMLNodeHelper {
 
+	/** The nodes that have been used preceding position. */
+	const PositionPrecedingPositionUsed: WeakSet<HTMLNode> = new WeakSet()
+
+
 	/** 
 	 * Whether preceding position of current node is stable.
 	 * Means will not remove, or insert other nodes before it.
 	 */
 	export function isPrecedingPositionStable(node: HTMLNode, rawValueNodes: ts.Node[]): boolean {
+
+		// Has been used.
+		if (PositionPrecedingPositionUsed.has(node)) {
+			return false
+		}
+
+		// Comment never.
 		if (node.type === HTMLNodeType.Comment) {
 			return false
 		}
@@ -40,12 +51,13 @@ export namespace HTMLNodeHelper {
 
 		// Text, if start with string, return true.
 		if (node.type === HTMLNodeType.Text) {
-			let strings = TemplateSlotPlaceholder.parseTemplateStrings(node.text!)
-			let valueIndices = TemplateSlotPlaceholder.getSlotIndices(node.text!)
+			let {strings, valueIndices} = TemplateSlotPlaceholder.parseTemplateContent(node.text!)
 
+	
 			// First part is value, and the value is not object type.
-			if (valueIndices && (!strings || !strings[0])) {
-				let firstRawNode = rawValueNodes[valueIndices[0]]
+			// Next text node is not trimmed and splitted yet.
+			if (valueIndices && (!strings || !strings[0].text.trim())) {
+				let firstRawNode = rawValueNodes[valueIndices[0].index]
 				let type = helper.types.typeOf(firstRawNode)
 
 				if (!helper.types.isValueType(type)) {
@@ -55,6 +67,12 @@ export namespace HTMLNodeHelper {
 		}
 
 		return true
+	}
+
+
+	/** Use node preceding position. */
+	export function usePrecedingPosition(node: HTMLNode) {
+		PositionPrecedingPositionUsed.add(node)
 	}
 
 
@@ -70,7 +88,7 @@ export namespace HTMLNodeHelper {
 				: '\n'
 
 			return tab
-				+ TemplateSlotPlaceholder.replaceTemplateString(
+				+ TemplateSlotPlaceholder.replaceTemplateContent(
 					`<${tagName}${node.toStringOfAttrs(true)}${children.length === 0 ? ' /' : ''}>`,
 					(index: number) => '${' + helper.getFullText(rawValueNodes[index]) + '}'
 				)
@@ -83,13 +101,13 @@ export namespace HTMLNodeHelper {
 				)
 		}
 		else if (node.desc) {
-			return TemplateSlotPlaceholder.replaceTemplateString(
+			return TemplateSlotPlaceholder.replaceTemplateContent(
 				tab + node.desc,
 				(index: number) => '${' + helper.getFullText(rawValueNodes[index]) + '}'
 			)
 		}
-		else if (node.type === HTMLNodeType.Text && node.text) {
-			return node.text
+		else if (node.type === HTMLNodeType.Text) {
+			return node.text!
 		}
 		else {
 			return ''

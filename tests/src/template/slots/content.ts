@@ -22,7 +22,8 @@ export class TestContent extends Component {
 	}
 
 	testNeighborContents() {
-		return html`<div>
+		return html`
+		<div>
 			${html`<div></div>`}
 			${html`<div></div>`}
 		</div>`

@@ -29,10 +29,10 @@ export class IfFlowControl extends FlowControlBase {
 		let nextNodes = this.eatNext(...tags)
 		let allNodes = [this.node, ...nextNodes]
 
-		this.initByNodesAndTags(allNodes, tags)
+		this.initByNodesAndTags(allNodes)
 	}
 
-	protected initByNodesAndTags(allNodes: HTMLNode[], tags: string[]) {
+	protected initByNodesAndTags(allNodes: HTMLNode[]) {
 		this.blockVariableName = this.tree.makeUniqueBlockName()
 		this.slotVariableName = this.slot.makeSlotName()
 		this.cacheable = this.hasAttrValue(this.node, 'cache')
@@ -44,16 +44,6 @@ export class IfFlowControl extends FlowControlBase {
 		for (let child of allNodes) {
 			let conditionIndex = this.getAttrValueIndex(child)
 			
-			if (conditionIndex === null && child.tagName === tags[0]) {
-				this.slot.diagnoseNormal(`<${tags[0]} \${...}> must accept a parameter as condition!`, child)
-			}
-			else if (conditionIndex !== null && child.tagName === tags[1]) {
-				this.slot.diagnoseNormal(`<${tags[1]}> should not accept any parameter!`, child)
-			}
-			else if (conditionIndex === null && lastConditionIndex === null) {
-				this.slot.diagnoseNormal(`<${tags[1]}> is allowed only one to exist on the tail!`, child)
-			}
-
 			conditionIndices.push(conditionIndex)
 			lastConditionIndex = conditionIndex
 
@@ -146,10 +136,10 @@ export class IfFlowControl extends FlowControlBase {
 
 	outputInit() {
 		let blockClassName = this.cacheable ? 'CacheableIfBlock' : 'IfBlock'
-		return this.outputInitByClassName(blockClassName)
+		return this.outputInitByBlockClassName(blockClassName)
 	}
 
-	protected outputInitByClassName(blockClassName: string) {
+	protected outputInitByBlockClassName(blockClassName: string) {
 		Modifier.addImport(blockClassName, '@pucelle/lupos.js')
 
 		// let $block_0 = new IfBlock / CacheableIfBlock(

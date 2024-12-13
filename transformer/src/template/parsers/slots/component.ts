@@ -1,6 +1,6 @@
 import * as ts from 'typescript'
 import {SlotParserBase} from './base'
-import {SourceFileDiagnosticModifier, factory, Modifier, VariableScopeTree} from '../../../core'
+import {factory, Modifier, VariableScopeTree} from '../../../core'
 
 
 export class ComponentSlotParser extends SlotParserBase {
@@ -14,11 +14,7 @@ export class ComponentSlotParser extends SlotParserBase {
 		this.refAsComponent()
 
 		let decl = VariableScopeTree.getReferenceByName(comName, this.template.node)
-		if (!decl) {
-			this.diagnoseMissingTagImport(`Please make sure to import or declare component "<${comName}>"!`)
-		}
-		else {
-
+		if (decl) {
 			// Limit closest scope by referenced declaration.
 			this.template.addRefedDeclaration(decl)
 
@@ -26,8 +22,6 @@ export class ComponentSlotParser extends SlotParserBase {
 			if (ts.isImportSpecifier(decl)) {
 				Modifier.persistImport(decl)
 			}
-
-			SourceFileDiagnosticModifier.deleteNeverRead(decl)
 		}
 	}
 

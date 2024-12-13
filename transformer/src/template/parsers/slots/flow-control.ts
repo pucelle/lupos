@@ -35,9 +35,6 @@ export class FlowControlSlotParser extends SlotParserBase {
 			case 'lu:switch':
 				control = new SwitchFlowControl(this)
 				break
-
-			default:
-				this.diagnoseNormal(`Unknown control tag "<${this.node.tagName}>"!`)
 		}
 
 		if (control) {
