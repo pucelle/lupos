@@ -8,9 +8,9 @@
 
 ## Features
 
-- Compile `@computed`, `@effect`, `@watch` to no-decorator codes and track them.
-- Insert codes like `trackGet(object, ...properties)` to track dependent properties.
-- Insert codes like `trackSet(object, ...properties)` to notify tracked properties have changed.
+- Compile `@computed`, `@effect`, `@watch` to non-decorator codes and track them.
+- Insert codes like `trackGet(object, ...properties)` to track properties of `Observed` objects.
+- Insert codes like `trackSet(object, ...properties)` to notify tracked properties of `Observed` objects have changed.
 - Compile html`...` and svg`...` to a compiled object.
 - Compile sass like folded selector in css`...` to unfolded.
 - Add a `static SlotContentType = xxx` property for component declarations to improve updating rendering performance.
