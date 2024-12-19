@@ -200,6 +200,10 @@ function makeMakerParameters(
 					factory.createThis(),
 					factory.createIdentifier('$compute_' + methodName)
 				),
+				factory.createPropertyAccessExpression(
+					factory.createThis(),
+					factory.createIdentifier('$reset_' + methodName)
+				),
 				factory.createThis(),
 			]
 		}

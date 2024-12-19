@@ -27,7 +27,13 @@ defineVisitor(function(node: ts.Node) {
 	Modifier.removeImportOf(decorator)
 	let replace: () => ts.Node[]
 
-	replace = compileComputedEffectWatchDecorator(decoName, node as ts.GetAccessorDeclaration, isOverwritten)
+	if (decoName === 'computed') {
+		replace = compileComputedDecorator(decoName, node as ts.GetAccessorDeclaration, isOverwritten)
+	}
+	else {
+		replace = compileEffectWatchDecorator(decoName, node as ts.MethodDeclaration, isOverwritten)
+	}
+
 	Interpolator.replace(node, InterpolationContentType.Normal, replace)
 })
 
@@ -54,14 +60,18 @@ $prop_computer = undefined
 $compute_prop() {...}
 ```
 */
-function compileComputedEffectWatchDecorator(
+function compileComputedDecorator(
 	decoName: string,
-	decl: ts.GetAccessorDeclaration | ts.MethodDeclaration,
+	decl: ts.GetAccessorDeclaration,
 	isOverwritten: boolean
 ): () => ts.Node[] {
 	let propName = helper.getFullText(decl.name)
 	let processorPropName = '$' + propName + '_' + ProcessorPropNameMap[decoName]
-	let overwrittenMethodName = decoName === 'computed' ? '$compute_' + propName : propName
+	let overwrittenMethodName = '$compute_' + propName
+	let resetMethodName = '$reset_' + propName
+
+	Modifier.addImport('trackGet', '@pucelle/ff')
+	Modifier.addImport('trackSet', '@pucelle/ff')
 
 	return () => {
 		let newBody = Interpolator.outputChildren(decl.body!) as ts.Block
@@ -87,14 +97,24 @@ function compileComputedEffectWatchDecorator(
 			newBody
 		)
 
-		let getter = decoName === 'computed' ? [
-			factory.createGetAccessorDeclaration(
-				undefined,
-				factory.createIdentifier(propName),
-				[],
-				undefined,
-				factory.createBlock(
-					[factory.createReturnStatement(factory.createCallExpression(
+		// `trackGet(this, 'prop')`
+		// `return this.$prop_computer.get()`
+		let getter = factory.createGetAccessorDeclaration(
+			undefined,
+			factory.createIdentifier(propName),
+			[],
+			undefined,
+			factory.createBlock(
+				[
+					factory.createExpressionStatement(factory.createCallExpression(
+						factory.createIdentifier('trackGet'),
+						undefined,
+						[
+							factory.createThis(),
+							factory.createStringLiteral(propName)
+						]
+					)),
+					factory.createReturnStatement(factory.createCallExpression(
 						factory.createPropertyAccessExpression(
 							factory.createPropertyAccessExpression(
 								factory.createThis(),
@@ -104,11 +124,33 @@ function compileComputedEffectWatchDecorator(
 						),
 						undefined,
 						[]
-					))],
-					true
-				)
+					))
+				],
+				true
 			)
-		] : []
+		)
+
+		let onReset = factory.createMethodDeclaration(
+			undefined,
+			undefined,
+			factory.createIdentifier(resetMethodName),
+			undefined,
+			undefined,
+			[],
+			undefined,
+			factory.createBlock(
+				[factory.createExpressionStatement(factory.createCallExpression(
+					factory.createIdentifier('trackSet'),
+					undefined,
+					[
+						factory.createThis(),
+						factory.createStringLiteral(propName)
+					]
+				))],
+				true
+			)
+		)
+		  
 
 		if (isOverwritten) {
 			return [newMethod]
@@ -117,7 +159,73 @@ function compileComputedEffectWatchDecorator(
 			return [
 				property,
 				newMethod,
-				...getter,
+				getter,
+				onReset,
+			]
+		}
+	}
+}
+
+
+/*
+```ts
+Compile `@effect method(){...}` to:
+
+onCreated() {
+	this.$method_effector = new EffectMaker(this.$compute_method, this)
+}
+
+onConnected() {
+	this.$method_effector.connect()
+}
+
+onWillDisconnect() {
+	this.$method_effector.disconnect()
+}
+
+method() {...}
+```
+*/
+function compileEffectWatchDecorator(
+	decoName: string,
+	decl: ts.MethodDeclaration,
+	isOverwritten: boolean
+): () => ts.Node[] {
+	let propName = helper.getFullText(decl.name)
+	let processorPropName = '$' + propName + '_' + ProcessorPropNameMap[decoName]
+	let overwrittenMethodName = propName
+
+	return () => {
+		let newBody = Interpolator.outputChildren(decl.body!) as ts.Block
+
+		let property = factory.createPropertyDeclaration(
+			undefined,
+			factory.createIdentifier(processorPropName),
+			undefined,
+			undefined,
+			factory.createIdentifier('undefined')
+		)
+
+		let modifiers = decl.modifiers?.filter(m => !ts.isDecorator(m))
+
+		let newMethod = factory.createMethodDeclaration(
+			modifiers,
+			undefined,
+			factory.createIdentifier(overwrittenMethodName),
+			undefined,
+			undefined,
+			decl.parameters,
+			undefined,
+			newBody
+		)
+
+		if (isOverwritten) {
+			return [newMethod]
+		}
+		else {
+			return [
+				property,
+				newMethod,
 			]
 		}
 	}
