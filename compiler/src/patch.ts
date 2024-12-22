@@ -12,7 +12,7 @@ export interface TransformerExtras {
 }
 
 /** Interpolate program host and bundle with extended TransformerFactory to give a standard TransformerFactory. */
-export function interpolateHostCreateProgram(
+export function interpolateTransformer(
 	host: ts.SolutionBuilderHostBase<any>,
 	diagnosticModifier: DiagnosticModifier,
 	extended: ExtendedTransformerFactory
@@ -156,7 +156,12 @@ export class DiagnosticModifier {
 			return false
 		}
 
-		return this.deleted.has(diag.file.fileName, diag)
+		let deletedDiags = this.deleted.get(diag.file.fileName)
+		if (!deletedDiags) {
+			return false
+		}
+
+		return !!deletedDiags.find(d => d.start === diag.start && d.code === diag.code)
 	}
 
 	/** Add a custom diagnostic. */

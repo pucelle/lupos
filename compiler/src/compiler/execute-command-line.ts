@@ -5,7 +5,7 @@ import * as ts from 'typescript'
 import * as fs from 'node:fs';
 import {createDiagnosticReporter, createWatchStatusReporter} from './watch';
 import {hasProperty} from './core';
-import {DiagnosticModifier, ExtendedTransformerFactory, interpolateHostCreateProgram} from '../patch';
+import {DiagnosticModifier, ExtendedTransformerFactory, interpolateTransformer} from '../patch';
 
 
 export function executeCommandLine(
@@ -105,7 +105,7 @@ function performWatchCompilation(
 		createWatchReporter(system, compilerOptions, diagModifier, () => builder, () => standardTransformer),
 	);
 
-	let standardTransformer = interpolateHostCreateProgram(watchBuildHost, diagModifier, transformer)
+	let standardTransformer = interpolateTransformer(watchBuildHost, diagModifier, transformer)
 
 	let builder: ts.SolutionBuilder<ts.EmitAndSemanticDiagnosticsBuilderProgram> =
 		ts.createSolutionBuilderWithWatch(
@@ -200,7 +200,7 @@ function performCompilation(
         ts.createBuilderStatusReporter(system, shouldBePretty(system, compilerOptions))
     );
 
-	let standardTransformers = interpolateHostCreateProgram(buildHost, diagModifier, transformer)
+	let standardTransformers = interpolateTransformer(buildHost, diagModifier, transformer);
 
     const builder = ts.createSolutionBuilder(buildHost, projects, buildOptions);
 	doNextBuild(builder, diagModifier, standardTransformers);
