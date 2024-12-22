@@ -31,6 +31,7 @@ export let SourceFileDiagnosticModifier: ExtendedDiagnosticModifier
 definePreVisitCallback(() => {
 	let diags = diagnosticModifier.getOfFile(sourceFile) || []
 
+	diagnosticModifier.beforeVisitSourceFile(sourceFile)
 	SourceFileDiagnosticModifier = new ExtendedDiagnosticModifier()
 	SourceFileDiagnosticModifier.setStart(diags, sourceFile)
 })

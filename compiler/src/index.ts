@@ -3,4 +3,4 @@ import {executeCommandLine} from './compiler';
 const transformer = require('../../transformer/out/index');
 
 
-executeCommandLine(ts.sys, process.argv.slice(2), [transformer.default]);
+executeCommandLine(ts.sys, process.argv.slice(2), transformer.default);
