@@ -1,5 +1,5 @@
 import { Component } from '@pucelle/lupos.js';
-import { ComputedMaker, trackGet } from '@pucelle/ff';
+import { ComputedMaker, trackGet, trackSet } from '@pucelle/ff';
 export class TestIgnoringStringIndex extends Component {
     prop = '1';
     ignoreStringIndex() {
@@ -84,7 +84,7 @@ export class TestIgnoringOfPrivateComputedProperty extends Component {
     prop = 1;
     onCreated() {
         super.onCreated();
-        this.$computedProp_computer = new ComputedMaker(this.$compute_computedProp, this);
+        this.$computedProp_computer = new ComputedMaker(this.$compute_computedProp, this.$reset_computedProp, this);
     }
     onConnected() {
         super.onConnected();
@@ -103,7 +103,11 @@ export class TestIgnoringOfPrivateComputedProperty extends Component {
         return this.prop;
     }
     get computedProp() {
+        trackGet(this, "computedProp");
         return this.$computedProp_computer.get();
+    }
+    $reset_computedProp() {
+        trackSet(this, "computedProp");
     }
 }
 export class TestIgnoringNonPrimitiveObject extends Component {

@@ -1,4 +1,4 @@
-import { ComputedMaker, EffectMaker, trackGet, WatchMultipleMaker, trackSet } from '@pucelle/ff';
+import { ComputedMaker, trackGet, trackSet, EffectMaker, WatchMultipleMaker } from '@pucelle/ff';
 import { Component } from '@pucelle/lupos.js';
 export class TestComputed extends Component {
     prop = 1;
@@ -8,11 +8,15 @@ export class TestComputed extends Component {
         return this.prop + 1;
     }
     get prop2() {
+        trackGet(this, "prop2");
         return this.$prop2_computer.get();
+    }
+    $reset_prop2() {
+        trackSet(this, "prop2");
     }
     onCreated() {
         super.onCreated();
-        this.$prop2_computer = new ComputedMaker(this.$compute_prop2, this);
+        this.$prop2_computer = new ComputedMaker(this.$compute_prop2, this.$reset_prop2, this);
     }
     onConnected() {
         super.onConnected();

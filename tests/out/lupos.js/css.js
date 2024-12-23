@@ -1,17 +1,17 @@
 import { Component, addGlobalStyle, css } from '@pucelle/lupos.js';
 export class TestNormalStyle extends Component {
-    static style = css `.a{}.a .b{color:red;}`;
+    static style = css `.a{.b{color:red;}}`;
 }
 TestNormalStyle.ensureStyle();
 export class TestDynamicStyle extends Component {
     static style() {
-        return css `.a{}.a .b{color:red;}`;
+        return css `.a{.b{color:red;}}`;
     }
 }
 TestDynamicStyle.ensureStyle();
 export class TestDynamicStyleWithValues extends Component {
     static style() {
-        return css `.a{color:${"red"};}.a .b{color:${"green"};}`;
+        return css `.a{color:${"red"};.b{color:${"green"};}}`;
     }
 }
 TestDynamicStyleWithValues.ensureStyle();
@@ -19,7 +19,7 @@ export class TestClassNameInterpolated extends Component {
     static style() {
         let type = '';
         let color = '';
-        return css `.a.type-${type}{}.a.type-${type} .b{background:${color};}`;
+        return css `.a.type-${type}{.b{background:${color};}}`;
     }
 }
 TestClassNameInterpolated.ensureStyle();
@@ -31,4 +31,4 @@ export class TestCodesInterpolated extends Component {
     }
 }
 TestCodesInterpolated.ensureStyle();
-addGlobalStyle(css `.a{}.a .b{color:red;}`);
+addGlobalStyle(css `.a{.b{color:red;}}`);
