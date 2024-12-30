@@ -1,13 +1,10 @@
 {
-	"compilerOptions": {
-		"module": "CommonJS",
+    "compilerOptions": {
+        "module": "CommonJS",
 		"moduleResolution": "Node",
-		"target": "ES2022",
+       	"target": "ES2022",
 		"lib": ["ESNext", "DOM", "DOM.Iterable"],
-		"rootDir": "src",
-		"outDir": "out",
-		"declaration": true,
-		"composite": true,
+		"declaration": false,
 		"strict": true,
 		"noUnusedLocals": true,
 		"noUnusedParameters": true,
@@ -15,12 +12,16 @@
 		"noFallthroughCasesInSwitch": true,
 		"noImplicitAny": true,
 		"noImplicitThis": true
-	},
-	"exclude": [
+    },
+    "exclude": [
 		"node_modules",
+		"compiler",
+		"transformer",
 		"tests",
-		"out",
-		"demo",
-		"*.cjs",
+		"out"
+	],
+	"references": [
+		{ "path": "./compiler" },
+		{ "path": "./transformer" },
 	]
 }
