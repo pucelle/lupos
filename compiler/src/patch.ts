@@ -7,6 +7,10 @@ export type ExtendedTransformerFactory = (context: ts.TransformationContext, ext
 
 /** Extra parameter for compiler transformer. */
 export interface TransformerExtras {
+
+	/** If `true`, will add js extension to imports. */
+	compileToESM: boolean
+
 	program: ts.BuilderProgram
 	diagnosticModifier: DiagnosticModifier
 }
@@ -15,7 +19,8 @@ export interface TransformerExtras {
 export function interpolateTransformer(
 	host: ts.SolutionBuilderHostBase<any>,
 	diagnosticModifier: DiagnosticModifier,
-	extended: ExtendedTransformerFactory
+	extended: ExtendedTransformerFactory,
+	toESM: boolean
 ):
 	ts.TransformerFactory<ts.SourceFile>
 {
@@ -29,6 +34,7 @@ export function interpolateTransformer(
 
 	return (context: ts.TransformationContext) => {
 		let extras: TransformerExtras = {
+			compileToESM: toESM,
 			program: program!,
 			diagnosticModifier,
 		}
@@ -70,7 +76,7 @@ export class DiagnosticModifier {
 
 			if (diagCount !== countAfterModified) {
 				if (typeof diagnostic.messageText === 'string') {
-					diagnostic.messageText =diagnostic.messageText.replace(/\d+/, countAfterModified.toString())
+					diagnostic.messageText = diagnostic.messageText.replace(/\d+/, countAfterModified.toString())
 				}
 				else {
 					diagnostic.messageText.messageText = diagnostic.messageText.messageText.replace(/\d+/, countAfterModified.toString())

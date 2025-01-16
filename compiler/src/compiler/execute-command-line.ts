@@ -13,6 +13,11 @@ export function executeCommandLine(
 	commandLineArgs: readonly string[],
 	transformer: ExtendedTransformerFactory
 ) {
+	let toESM = commandLineArgs.includes('--esm') || commandLineArgs.includes('-e');
+	if (toESM) {
+		commandLineArgs = commandLineArgs.filter(arg => arg !== '--esm' && arg !== '-e');
+	}
+
 	let commandLine = ts.parseCommandLine(commandLineArgs);
 	let pretty = shouldBePretty(system, commandLine.options);
 	let diagModifier = new DiagnosticModifier();
@@ -43,7 +48,11 @@ export function executeCommandLine(
 	const projects = ['.'];
 	const compilerOptions = commandLine.options;
 	const watchOptions = commandLine.watchOptions;
-	const buildOptions: ts.BuildOptions = {incremental: false};
+
+	const buildOptions: ts.BuildOptions = {
+		// Will cause error if `"composite": true` set in tsconfig.json.
+		//incremental: false
+	};
 
 	if (isWatchSet(compilerOptions)) {
 		return performWatchCompilation(
@@ -54,7 +63,8 @@ export function executeCommandLine(
 			compilerOptions,
 			buildOptions,
 			watchOptions,
-			transformer
+			transformer,
+			toESM
 		);
 	}
 	else {
@@ -65,7 +75,8 @@ export function executeCommandLine(
 			projects,
 			compilerOptions,
 			buildOptions,
-			transformer
+			transformer,
+			toESM
 		);
 	}
 }
@@ -93,7 +104,8 @@ function performWatchCompilation(
 	compilerOptions: ts.CompilerOptions,
 	buildOptions: ts.BuildOptions,
 	watchOptions: ts.WatchOptions | undefined,
-	transformer: ExtendedTransformerFactory
+	transformer: ExtendedTransformerFactory,
+	toESM: boolean
 ) {
 
 	// Inspired by https://stackoverflow.com/questions/62026189/typescript-custom-transformers-with-ts-createwatchprogram/62132983
@@ -105,7 +117,7 @@ function performWatchCompilation(
 		createWatchReporter(system, compilerOptions, diagModifier, () => builder, () => standardTransformer),
 	);
 
-	let standardTransformer = interpolateTransformer(watchBuildHost, diagModifier, transformer)
+	let standardTransformer = interpolateTransformer(watchBuildHost, diagModifier, transformer, toESM)
 
 	let builder: ts.SolutionBuilder<ts.EmitAndSemanticDiagnosticsBuilderProgram> =
 		ts.createSolutionBuilderWithWatch(
@@ -191,7 +203,8 @@ function performCompilation(
 	projects: string[],
 	compilerOptions: ts.CompilerOptions,
 	buildOptions: ts.BuildOptions,
-	transformer: ExtendedTransformerFactory
+	transformer: ExtendedTransformerFactory,
+	toESM: boolean
 ) {
 	const buildHost = ts.createSolutionBuilderHost(
         system,
@@ -200,7 +213,7 @@ function performCompilation(
         ts.createBuilderStatusReporter(system, shouldBePretty(system, compilerOptions))
     );
 
-	let standardTransformers = interpolateTransformer(buildHost, diagModifier, transformer);
+	let standardTransformers = interpolateTransformer(buildHost, diagModifier, transformer, toESM);
 
     const builder = ts.createSolutionBuilder(buildHost, projects, buildOptions);
 	doNextBuild(builder, diagModifier, standardTransformers);
