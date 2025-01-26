@@ -5,6 +5,8 @@ export class TestFor extends Component {
 
 	prop: number = 1
 	items: {value: number}[] = [{value: 1}]
+	readonly readonlyItems: {value: number}[] = [{value: 1}]
+	readonly deepReadonlyItems: ReadonlyArray<{value: number}> = [{value: 1}]
 
 	renderItem(n: number) {
 		return html`${n + this.prop}`
@@ -37,6 +39,22 @@ export class TestFor extends Component {
 	testForTracking() {
 		return html`
 			<lu:for ${this.items}>${(item: {value: number}) => html`
+				${item.value}
+			`}</lu:for>
+		`
+	}
+
+	testReadonlyTracking() {
+		return html`
+			<lu:for ${this.readonlyItems}>${(item: {value: number}) => html`
+				${item.value}
+			`}</lu:for>
+		`
+	}
+
+	testDeepReadonlyTracking() {
+		return html`
+			<lu:for ${this.deepReadonlyItems}>${(item: {value: number}) => html`
 				${item.value}
 			`}</lu:for>
 		`

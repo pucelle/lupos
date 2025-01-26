@@ -33,6 +33,11 @@ export class TemplateValues {
 		return (this.indicesMutable.get(valueIndex)! & MutableMask.Mutable) > 0
 	}
 
+	/** Returns whether the element of the value at specified index are mutable. */
+	isIndexElementsPartMutable(valueIndex: number): boolean {
+		return VariableScopeTree.testElementsPartMutable(this.valueNodes[valueIndex])
+	}
+
 	/** Returns whether the value at specified index can turn from mutable to static. */
 	isIndexCanTurnStatic(valueIndex: number): boolean {
 		return (this.indicesMutable.get(valueIndex)! & MutableMask.CantTransfer) === 0

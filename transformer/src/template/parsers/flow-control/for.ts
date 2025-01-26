@@ -19,7 +19,7 @@ export class ForFlowControl extends FlowControlBase {
 	private ofValueIndex: number | null = null
 	private fnValueIndex: number | null = null
 
-	private ofValueIndexMutableAndCantTurn: boolean = false
+	private ofValueIndexElementsMutable: boolean = false
 	private fnValueIndexMutableAndCantTurn: boolean = false
 
 	private fnLatestVariableName: string | null = null
@@ -59,9 +59,14 @@ export class ForFlowControl extends FlowControlBase {
 		this.ofValueIndex = ofValueIndex
 		this.fnValueIndex = fnValueIndex
 
-		this.ofValueIndexMutableAndCantTurn = ofValueIndex !== null
-			&& this.template.values.isIndexMutable(ofValueIndex)
-			&& !this.template.values.isIndexCanTurnStatic(ofValueIndex)
+		this.ofValueIndexElementsMutable = ofValueIndex !== null
+			&& (
+				this.template.values.isIndexMutable(ofValueIndex)
+				&& !this.template.values.isIndexCanTurnStatic(ofValueIndex)
+
+				// E.g., `<lu:for ${aReadonlyProperty}>`, it must get updated every time.
+				|| this.template.values.isIndexElementsPartMutable(ofValueIndex)
+		)
 
 		this.fnValueIndexMutableAndCantTurn = fnValueIndex !== null
 			&& this.template.values.isIndexMutable(fnValueIndex)
@@ -169,14 +174,14 @@ export class ForFlowControl extends FlowControlBase {
 			slotInit,
 			forBlockInit,
 			...this.fnValueIndexMutableAndCantTurn ? [] : [this.outputFnUpdate()],
-			...this.ofValueIndexMutableAndCantTurn ? [] : [this.outputOfUpdate()],
+			...this.ofValueIndexElementsMutable ? [] : [this.outputOfUpdate()],
 		]
 	}
 
 	outputUpdate() {
 		return [
 			...this.fnValueIndexMutableAndCantTurn ? [this.outputFnUpdate()] : [],
-			...this.ofValueIndexMutableAndCantTurn ? [this.outputOfUpdate()] : [],
+			...this.ofValueIndexElementsMutable ? [this.outputOfUpdate()] : [],
 		]
 	}
 }

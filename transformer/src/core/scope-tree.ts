@@ -179,6 +179,27 @@ class ExtendedScopeTree extends ScopeTree<VariableScope> {
 		return mutable
 	}
 
+	/** 
+	 * Test whether elements of expression represented value are mutable.
+	 * Note it ignores testing whether `rawNode` itself is mutable.
+	 */
+	testElementsPartMutable(rawNode: ts.Expression): boolean {
+
+		// Elements are readonly.
+		if (helper.types.isElementsReadonly(rawNode)) {
+			return false
+		}
+
+		// `a.b` or `a`, can always append elements somewhere.
+		if (helper.isVariableIdentifier(rawNode)
+			|| helper.access.isAccess(rawNode)
+		) {
+			return true
+		}
+
+		return false
+	}
+
 	/** Returns whether declared variable or access node in topmost scope. */
 	private isDeclaredInTopmostScope(rawNode: ts.Identifier | AccessNode | ts.ThisExpression): boolean {
 		if (helper.access.isAccess(rawNode)) {
