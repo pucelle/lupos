@@ -531,10 +531,10 @@ export namespace ObservedChecker {
 		let propName = helper.access.getPropertyText(rawNode)
 
 		if (objName === 'Map') {
-			return propName === 'set' || propName === 'clear'
+			return propName === 'set' || propName === 'delete' || propName === 'clear'
 		}
 		else if (objName === 'Set') {
-			return propName === 'add' || propName === 'clear'
+			return propName === 'add' || propName === 'delete' || propName === 'clear'
 		}
 		else if (helper.types.isArrayType(expType)) {
 			let methodDecl = helper.symbol.resolveDeclaration(rawNode, helper.isMethodLike)
