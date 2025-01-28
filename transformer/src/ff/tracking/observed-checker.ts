@@ -238,7 +238,7 @@ export namespace ObservedChecker {
 
 		// `a.b`
 		let callFrom = exp.expression
-		if (!helper.isListStruct(callFrom)) {
+		if (!isListLike(callFrom)) {
 			return false
 		}
 
@@ -367,7 +367,7 @@ export namespace ObservedChecker {
 	function isAccessObserved(rawNode: AccessNode, parental: boolean = false): boolean {
 
 		// `[]`, `Map`, `Set`.
-		if (helper.isListStruct(rawNode.expression)) {
+		if (isListLike(rawNode.expression)) {
 			return isObserved(rawNode.expression, true)
 		}
 
@@ -495,8 +495,46 @@ export namespace ObservedChecker {
 	}
 
 
+	/** 
+	 * Test whether be `Map` or `Set`, or of `Array` type.
+	 * Otherwise if resolved type is `MethodsHalfObserved`,
+	 * or resolved class implements `MethodsHalfObserved`, returns `true`.
+	 */
+	export function isListLike(rawNode: ts.Node): boolean {
+		let type = helper.types.typeOf(rawNode)
+		if (helper.types.isArrayType(type)) {
+			return true
+		}
+		
+		let typeNode = helper.types.getOrMakeTypeNode(rawNode)
+		let objName = typeNode ? helper.types.getTypeNodeReferenceName(typeNode) : undefined
+
+		if (objName === 'Map' || objName === 'Set') {
+			return true
+		}
+
+		// `let a: MethodsHalfObserved<...>`
+		if (typeNode
+			&& ts.isTypeReferenceNode(typeNode)
+			&& helper.symbol.isImportedFrom(typeNode, 'MethodsHalfObserved', '@pucelle/ff')
+		) {
+			return true
+		}
+
+		// resolved class implements `MethodsHalfObserved`.
+		if (typeNode) {
+			let classDecl = helper.symbol.resolveDeclaration(typeNode, ts.isClassDeclaration)
+			if (classDecl && helper.class.isImplemented(classDecl, 'MethodsHalfObserved', '@pucelle/ff')) {
+				return true
+			}
+		}
+
+		return false
+	}
+	
+
 	/** Test whether calls reading process of `Map`, `Set`, `Array`. */
-	export function isListStructReadAccess(rawNode: AccessNode): boolean {
+	export function isListLikeReadAccess(rawNode: AccessNode): boolean {
 		let expType = helper.types.typeOf(rawNode.expression)
 		let expTypeNode = helper.types.getOrMakeTypeNode(rawNode.expression)
 		let objName = expTypeNode ? helper.types.getTypeNodeReferenceName(expTypeNode) : undefined
@@ -518,13 +556,52 @@ export namespace ObservedChecker {
 				|| propName === 'splice'
 			)
 		}
+		else if (expTypeNode) {
+			return isOfMethodsHalfObserved(expTypeNode, propName, 0)
+		}
+
+		return false
+	}
+
+
+	function isOfMethodsHalfObserved(expTypeNode: ts.TypeNode, propName: string, paramIndex: number) {
+		if (expTypeNode
+			&& ts.isTypeReferenceNode(expTypeNode)
+			&& helper.symbol.isImportedFrom(expTypeNode, 'MethodsHalfObserved', '@pucelle/ff')
+		) {
+			let getTypeParams = expTypeNode.typeArguments?.[paramIndex]
+			if (!getTypeParams) {
+				return false
+			}
+
+			let methodNames = helper.types.splitUnionTypeToStringList(helper.types.typeOfTypeNode(getTypeParams)!)
+			return methodNames.includes(propName)
+		}
 		else {
-			return false
+			let classDecl = helper.symbol.resolveDeclaration(expTypeNode, ts.isClassDeclaration)
+			if (!classDecl) {
+				return false
+			}
+
+			let implemented = helper.class.getImplements(classDecl)
+			let methodsHalfObservedImplement = implemented.find(im => helper.getText(im.expression) === 'MethodsHalfObserved')
+			if (!methodsHalfObservedImplement) {
+				return false
+			}
+
+			let methodNames = methodsHalfObservedImplement.typeArguments?.[paramIndex]
+			if (!methodNames) {
+				return false
+			}
+
+			let getMethods = helper.types.splitUnionTypeToStringList(helper.types.typeOfTypeNode(methodNames)!)
+			return getMethods.includes(propName)
 		}
 	}
 
+
 	/** Test whether calls `Map.set`, or `Set.set`. */
-	export function isListStructWriteAccess(rawNode: AccessNode) {
+	export function isListLikeWriteAccess(rawNode: AccessNode) {
 		let expType = helper.types.typeOf(rawNode.expression)
 		let expTypeNode = helper.types.getOrMakeTypeNode(rawNode.expression)
 		let objName = expTypeNode ? helper.types.getTypeNodeReferenceName(expTypeNode) : undefined
@@ -546,8 +623,10 @@ export namespace ObservedChecker {
 				|| propName === 'splice'
 			)
 		}
-		else {
-			return false
+		else if (expTypeNode) {
+			return isOfMethodsHalfObserved(expTypeNode, propName, 1)
 		}
+
+		return false
 	}
 }

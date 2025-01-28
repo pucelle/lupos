@@ -11,6 +11,7 @@ import {TrackingScopeState} from './scope-state'
 import {TrackingCapturerOperator} from './capturer-operator'
 import {TrackingPatch} from './patch'
 import {CapturedOutputWay} from './ranges'
+import {ObservedChecker} from './observed-checker'
 
 
 /** Captured item, will be inserted to a position. */
@@ -163,7 +164,7 @@ export class TrackingCapturer {
 
 			// `a[0]` -> `trackGet(a, '')`
 			if (helper.access.isAccess(node)
-				&& helper.isListStruct(node.expression)
+				&& ObservedChecker.isListLike(node.expression)
 			) {
 				exp = node.expression
 				keys = ['']

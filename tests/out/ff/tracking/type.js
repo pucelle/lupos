@@ -1,4 +1,4 @@
-import { trackGet, trackSet } from '@pucelle/ff';
+import { ListMap, trackGet, trackSet } from '@pucelle/ff';
 import { Component } from '@pucelle/lupos.js';
 export class TestObservedVariableType {
     variables() {
@@ -142,5 +142,27 @@ export class TestClassTypeParameter {
     setItems(item) {
         item.value = 1;
         trackSet(item, "value");
+    }
+}
+export class TestMethodsHalfObserved {
+    data = { get() { }, set() { } };
+    listData = new ListMap();
+    getItem() {
+        trackGet(this, "data");
+        trackGet(this.data, "");
+        return this.data.get();
+    }
+    addItem() {
+        this.data.set();
+        trackSet(this.data, "");
+    }
+    getListItem(key) {
+        trackGet(this, "listData");
+        trackGet(this.listData, "");
+        return this.listData.get(key);
+    }
+    addListItem(key, value) {
+        this.listData.add(key, value);
+        trackSet(this.listData, "");
     }
 }
