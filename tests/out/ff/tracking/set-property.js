@@ -1,5 +1,5 @@
 import { Component } from '@pucelle/lupos.js';
-import { trackSet } from "@pucelle/ff";
+import { trackSet, trackGet } from "@pucelle/ff";
 export class TestNormalProp extends Component {
     prop = 1;
     setProp() {
@@ -135,6 +135,13 @@ export class TestDelete extends Component {
     deleteProperty() {
         delete this.prop.sub;
         trackSet(this.prop, "sub");
+    }
+}
+export class TestObjectAPIs extends Component {
+    prop = { value: 1 };
+    assign() {
+        trackGet(this, "prop");
+        return Object.assign(this.prop, { value: 2 });
     }
 }
 export class TestNew extends Component {

@@ -6,7 +6,6 @@ import {TrackingScopeTree, TrackingScopeTypeMask} from './scope-tree'
 import {AccessGrouper} from './access-grouper'
 import {AccessReferences} from './access-references'
 import {Optimizer} from './optimizer'
-import {deepEqual, removeFromList} from '../../utils'
 import {TrackingScopeState} from './scope-state'
 import {TrackingCapturerOperator} from './capturer-operator'
 import {TrackingPatch} from './patch'
@@ -176,19 +175,6 @@ export class TrackingCapturer {
 			}
 		}
 
-		// Remove repetitive item, normally `a.b = c`,
-		// `a.b` has been captured as get type, and later set type.
-		// Removing repetitive make it works for `both` tracking type.
-		let repetitiveItem = this.latestCaptured.items.find(item => {
-			return item.node === node
-				&& item.exp === exp
-				&& deepEqual(item.keys, keys)
-		})
-
-		if (repetitiveItem) {
-			removeFromList(this.latestCaptured.items, repetitiveItem)
-		}
-
 		let item: CapturedItem = {
 			node,
 			type,
@@ -236,7 +222,7 @@ export class TrackingCapturer {
 
 		if (this.scope.type & TrackingScopeTypeMask.SourceFile) {
 
-			// Do referencing and optimization, ensure child-first then self.
+			// Do reference and optimization, ensure child-first then self.
 			for (let descent of TrackingScopeTree.walkInwardChildFirst(this.scope)) {
 				descent.capturer.preProcessCaptured()
 			}

@@ -222,12 +222,9 @@ const $html_1 = new HTMLMaker("<!----><!---->");
     let $node_1 = $node.content.lastChild;
     let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context, 1);
     let $block_0 = new ForBlock($slot_0);
-    $block_0.updateRenderFn((item) => {
-        trackGet(item, "value");
-        return new CompiledTemplateResult($template_11, [
-            item.value
-        ]);
-    });
+    $block_0.updateRenderFn((item) => new CompiledTemplateResult($template_11, [
+        item.value
+    ]));
     $block_0.updateData($context.deepReadonlyItems);
     return {
         el: $node,
@@ -290,7 +287,6 @@ export class TestFor extends Component {
         return new CompiledTemplateResult($template_8, []);
     }
     testDeepReadonlyTracking() {
-        trackGet(this.deepReadonlyItems, "");
         return new CompiledTemplateResult($template_10, []);
     }
 }

@@ -81,3 +81,22 @@ export class TestAssignmentSpread {
         return { ...this.prop };
     }
 }
+export class TestObjectAPIs extends Component {
+    prop = { value: 1 };
+    getKeys() {
+        trackGet(this, "prop");
+        return Object.keys(this.prop);
+    }
+    getValues() {
+        trackGet(this, "prop");
+        return Object.values(this.prop);
+    }
+    getEntries() {
+        trackGet(this, "prop");
+        return Object.entries(this.prop);
+    }
+    assign() {
+        trackGet(this, "prop");
+        return Object.assign({}, this.prop);
+    }
+}

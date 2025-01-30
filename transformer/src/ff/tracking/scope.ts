@@ -138,13 +138,13 @@ export class TrackingScope {
 		// Test and add property access nodes.
 		else if (helper.access.isAccess(node)) {
 
-			// `[].push`, `map.set`, `set.set`
+			// `[].push`, `map.set`, `set.set`.
 			if (helper.access.isElementsWriteAccess(node)) {
 				this.mayAddSetTracking(node)
 			}
 
-			// `a.b`
-			else {
+			// `a.b`, but not `a.b` of `a.b = c`.
+			else if (!helper.assign.isWithinAssignmentTo(node)) {
 				this.mayAddGetTracking(node, false)
 			}
 
@@ -190,7 +190,7 @@ export class TrackingScope {
 			this.capturer.capture(node, exp, keys, 'get')
 		}
 
-		// Force tracking.
+		// Force tracking elements.
 		let type = TrackingPatch.getForceTrackType(node)
 		if (type === ForceTrackType.Elements) {
 			this.capturer.capture(node, node as ts.Expression, [''], 'get')
