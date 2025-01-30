@@ -236,9 +236,9 @@ export namespace ObservedChecker {
 			return false
 		}
 
-		// `a.b`
+		// `a.b` of `a.b.map`.
 		let callFrom = exp.expression
-		if (!isListLike(callFrom)) {
+		if (!helper.access.isElementsAccess(callFrom)) {
 			return false
 		}
 
@@ -367,7 +367,7 @@ export namespace ObservedChecker {
 	function isAccessObserved(rawNode: AccessNode, parental: boolean = false): boolean {
 
 		// `[]`, `Map`, `Set`.
-		if (isListLike(rawNode.expression)) {
+		if (helper.access.isElementsAccess(rawNode.expression)) {
 			return isObserved(rawNode.expression, true)
 		}
 
@@ -495,123 +495,6 @@ export namespace ObservedChecker {
 		let clsDecl = helper.symbol.resolveDeclaration(rawNode, ts.isClassDeclaration)
 		if (clsDecl && helper.class.isImplemented(clsDecl, 'Observed', '@pucelle/ff')) {
 			return true 
-		}
-
-		return false
-	}
-
-
-	/** 
-	 * Test whether be `Map` or `Set`, or of `Array` type.
-	 * Otherwise if resolved type is `MethodsObservable`,
-	 * or resolved class implements `MethodsObservable`, returns `true`.
-	 */
-	export function isListLike(rawNode: ts.Node): boolean {
-
-		// Array type.
-		let type = helper.types.typeOf(rawNode)
-		if (helper.types.isArrayType(type)) {
-			return true
-		}
-		
-		// Map or Set.
-		let typeNode = helper.types.getTypeNode(rawNode, true, true)
-		let objName = typeNode ? helper.types.getTypeNodeReferenceName(typeNode) : undefined
-
-		if (objName === 'Map' || objName === 'Set') {
-			return true
-		}
-
-		// resolved class implements `MethodsObservable`.
-		if (typeNode) {
-			let classDecl = helper.symbol.resolveDeclaration(typeNode, ts.isClassDeclaration)
-			if (classDecl && helper.class.isImplemented(classDecl, 'MethodsObservable', '@pucelle/ff')) {
-				return true
-			}
-		}
-
-		return false
-	}
-	
-
-	/** Test whether calls reading process of `Map`, `Set`, `Array`. */
-	export function isListLikeReadAccess(rawNode: AccessNode): boolean {
-		let expType = helper.types.typeOf(rawNode.expression)
-		let expTypeNode = helper.types.getTypeNode(rawNode.expression, true, true)
-		let objName = expTypeNode ? helper.types.getTypeNodeReferenceName(expTypeNode) : undefined
-		let propName = helper.access.getPropertyText(rawNode)
-
-		if (objName === 'Map') {
-			return propName === 'has' || propName === 'get' || propName === 'size'
-		}
-		else if (objName === 'Set') {
-			return propName === 'has' || propName === 'size'
-		}
-		else if (helper.types.isArrayType(expType)) {
-			let methodDecl = helper.symbol.resolveDeclaration(rawNode, helper.isMethodLike)
-
-			return !methodDecl || !(
-				propName === 'push'
-				|| propName === 'unshift'
-				|| propName === 'sort'
-				|| propName === 'splice'
-			)
-		}
-		else if (expTypeNode) {
-			return isOfMethodsObservable(expTypeNode, propName, 0)
-		}
-
-		return false
-	}
-
-
-	function isOfMethodsObservable(expTypeNode: ts.TypeNode, propName: string, paramIndex: number) {
-		let classDecl = helper.symbol.resolveDeclaration(expTypeNode, ts.isClassDeclaration)
-		if (!classDecl) {
-			return false
-		}
-
-		let implemented = helper.class.getImplements(classDecl)
-		let methodsHalfObservedImplement = implemented.find(im => helper.getText(im.expression) === 'MethodsObservable')
-		if (!methodsHalfObservedImplement) {
-			return false
-		}
-
-		let methodNames = methodsHalfObservedImplement.typeArguments?.[paramIndex]
-		if (!methodNames) {
-			return false
-		}
-
-		let getMethods = helper.types.splitUnionTypeToStringList(helper.types.typeOfTypeNode(methodNames)!)
-		return getMethods.includes(propName)
-	}
-
-
-	/** Test whether calls `Map.set`, or `Set.set`. */
-	export function isListLikeWriteAccess(rawNode: AccessNode) {
-		let expType = helper.types.typeOf(rawNode.expression)
-		let expTypeNode = helper.types.getTypeNode(rawNode.expression, true, true)
-		let objName = expTypeNode ? helper.types.getTypeNodeReferenceName(expTypeNode) : undefined
-		let propName = helper.access.getPropertyText(rawNode)
-
-		if (objName === 'Map') {
-			return propName === 'set' || propName === 'delete' || propName === 'clear'
-		}
-		else if (objName === 'Set') {
-			return propName === 'add' || propName === 'delete' || propName === 'clear'
-		}
-		else if (helper.types.isArrayType(expType)) {
-			let methodDecl = helper.symbol.resolveDeclaration(rawNode, helper.isMethodLike)
-
-			return !!methodDecl && (
-				propName === 'push'
-				|| propName === 'unshift'
-				|| propName === 'sort'
-				|| propName === 'splice'
-			)
-		}
-		else if (expTypeNode) {
-			return isOfMethodsObservable(expTypeNode, propName, 1)
 		}
 
 		return false

@@ -3,7 +3,6 @@ import {AccessNode, AssignmentNode} from '../../lupos-ts-module'
 import * as ts from 'typescript'
 import {TrackingScopeTree} from './scope-tree'
 import {TrackingScope} from './scope'
-import {ObservedChecker} from './observed-checker'
 
 
 /** 
@@ -47,14 +46,15 @@ export namespace AccessReferences {
 
 
 	/** Whether any descendant access node has been referenced. */
-	export function hasExternalAccessReferenced(node: ts.Node, ignoreListStructKey: boolean): boolean {
+	export function hasExternalAccessReferenced(node: ts.Node, ignoreElementsKey: boolean): boolean {
 		if (ReferencedNodes.has(node)) {
 			return true
 		}
 
-		if (ignoreListStructKey
+		// Ignores checking key part, only check expression part.
+		if (ignoreElementsKey
 			&& helper.access.isAccess(node)
-			&& ObservedChecker.isListLike(node.expression)
+			&& helper.access.isElementsAccess(node.expression)
 		) {
 			return hasExternalAccessReferenced(node.expression, false)
 		}

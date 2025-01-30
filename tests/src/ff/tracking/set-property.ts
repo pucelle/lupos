@@ -161,6 +161,16 @@ export class TestDelete extends Component {
 }
 
 
+export class TestObjectAPIs extends Component {
+
+	prop: {value: number} = {value: 1}
+
+	assign() {
+		return Object.assign(this.prop, {value: 2})
+	}
+}
+
+
 export class TestNew extends Component {
 	prop: number = 1
 

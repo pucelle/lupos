@@ -139,7 +139,7 @@ export class TrackingScope {
 		else if (helper.access.isAccess(node)) {
 
 			// `[].push`, `map.set`, `set.set`
-			if (ObservedChecker.isListLikeWriteAccess(node)) {
+			if (helper.access.isElementsWriteAccess(node)) {
 				this.mayAddSetTracking(node)
 			}
 

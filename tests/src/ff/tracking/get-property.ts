@@ -100,3 +100,25 @@ export class TestAssignmentSpread {
 		return {...this.prop}
 	}
 }
+
+
+export class TestObjectAPIs extends Component {
+
+	prop: Observed<{value: number}> = {value: 1}
+
+	getKeys() {
+		return Object.keys(this.prop)
+	}
+
+	getValues() {
+		return Object.values(this.prop)
+	}
+
+	getEntries() {
+		return Object.entries(this.prop)
+	}
+
+	assign() {
+		return Object.assign({}, this.prop)
+	}
+}
