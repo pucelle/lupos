@@ -90,3 +90,13 @@ export class TestNonObservedClass {
 		return this.prop.value
 	}
 }
+
+
+export class TestAssignmentSpread {
+
+	prop: Observed<{value: number}> = {value: 1}
+
+	getProp() {
+		return {...this.prop}
+	}
+}

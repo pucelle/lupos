@@ -151,6 +151,16 @@ export class TesOperators extends Component {
 }
 
 
+export class TestDelete extends Component {
+
+	prop: Record<string, string> = {}
+
+	deleteProperty() {
+		delete this.prop.sub
+	}
+}
+
+
 export class TestNew extends Component {
 	prop: number = 1
 

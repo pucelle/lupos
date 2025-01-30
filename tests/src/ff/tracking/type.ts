@@ -1,4 +1,4 @@
-import {ListMap, MethodsHalfObserved, Observed} from '@pucelle/ff'
+import {ListMap, MethodsObservable, Observed} from '@pucelle/ff'
 import {Component} from '@pucelle/lupos.js'
 
 
@@ -156,18 +156,9 @@ export class TestClassTypeParameter<T extends Observed<{value: number}>> {
 }
 
 
-export class TestMethodsHalfObserved implements Observed {
+export class TestMethodsObservable implements Observed {
 
-	data: MethodsHalfObserved<'get', 'set'> = {get(){}, set(){}}
 	listData: ListMap<number, number> = new ListMap()
-
-	getItem() {
-		return this.data.get()
-	}
-
-	addItem() {
-		this.data.set()
-	}
 
 	getListItem(key: number) {
 		return this.listData.get(key)
@@ -175,5 +166,29 @@ export class TestMethodsHalfObserved implements Observed {
 
 	addListItem(key: number, value: number) {
 		this.listData.add(key, value)
+	}
+}
+
+
+export class TestPropertyMethodsObservable {
+
+	data: Observed<AnyMethodsObservable> = new AnyMethodsObservable()
+
+	getItem() {
+		return this.data.get()
+	}
+
+	addItem() {
+		this.data.set(1)
+	}
+}
+
+class AnyMethodsObservable implements MethodsObservable<'get', 'set'> {
+	value: number = 1
+	get() {
+		return this.value
+	}
+	set(value: number) {
+		this.value = value
 	}
 }

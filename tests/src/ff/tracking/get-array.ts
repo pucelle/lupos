@@ -1,3 +1,4 @@
+import {Observed} from '@pucelle/ff'
 import {Component} from '@pucelle/lupos.js'
 
 
@@ -81,5 +82,15 @@ export class TestArrayBroadcastingObservedToMapFn extends Component {
 
 	mapFn() {
 		return this.prop.map(function(v){return v.value}).join('')
+	}
+}
+
+
+export class TestArrayElementSpread {
+
+	prop: Observed<number[]> = [1]
+
+	getProp() {
+		return [...this.prop]
 	}
 }

@@ -120,9 +120,19 @@ export class TrackingScope {
 				let names = helper.variable.walkDeclarationNames(node)
 
 				for (let {node: nameNode, keys} of names) {
-					this.mayAddGetTracking(nameNode, node.initializer, keys)
+					this.mayAddGetTracking(nameNode, false, node.initializer, keys)
 				}
 			}
+		}
+
+		// `[...a]`, `{...o}`
+		else if (node.parent
+			&& (ts.isSpreadAssignment(node.parent)
+				|| ts.isSpreadElement(node.parent)
+			)
+			&& (ts.isIdentifier(node) || helper.access.isAccess(node))
+		) {
+			this.mayAddGetTracking(node, true, node, [''])
 		}
 
 		// Test and add property access nodes.
@@ -135,7 +145,7 @@ export class TrackingScope {
 
 			// `a.b`
 			else {
-				this.mayAddGetTracking(node)
+				this.mayAddGetTracking(node, false)
 			}
 
 			AccessReferences.visitAssess(node)
@@ -166,7 +176,7 @@ export class TrackingScope {
 	}
 
 	/** Add a property access expression. */
-	private mayAddGetTracking(node: AccessNode | ts.Identifier, exp?: ts.Expression, keys?: (string | number)[]) {
+	private mayAddGetTracking(node: AccessNode | ts.Identifier, visitElements: boolean, exp?: ts.Expression, keys?: (string | number)[]) {
 		if (this.state.shouldIgnoreGetTracking(node)) {
 			return
 		}
@@ -176,7 +186,7 @@ export class TrackingScope {
 		}
 
 		// Normal tracking.
-		if (ObservedChecker.isObserved(node)) {
+		if (ObservedChecker.isObserved(node, visitElements)) {
 			this.capturer.capture(node, exp, keys, 'get')
 		}
 

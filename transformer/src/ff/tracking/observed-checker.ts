@@ -243,7 +243,7 @@ export namespace ObservedChecker {
 		}
 
 		// Must use parent scope.
-		return isObserved(callFrom)
+		return isObserved(callFrom, true)
 	}
 
 
@@ -398,7 +398,7 @@ export namespace ObservedChecker {
 				}
 			}
 
-			// Readonly properties are not observe.
+			// As readonly property, not observed.
 			let readonly = helper.types.isReadonly(rawNode)
 			if (readonly) {
 				return false
@@ -411,6 +411,12 @@ export namespace ObservedChecker {
 			// Property declaration has specified as observed type or observed initializer.
 			if (isPropertyDeclaredAsObserved(rawNode)) {
 				return true
+			}
+
+			// Readonly elements are not observed.
+			let elementsReadonly = helper.types.isElementsReadonly(rawNode)
+			if (elementsReadonly) {
+				return false
 			}
 		}
 
@@ -497,34 +503,29 @@ export namespace ObservedChecker {
 
 	/** 
 	 * Test whether be `Map` or `Set`, or of `Array` type.
-	 * Otherwise if resolved type is `MethodsHalfObserved`,
-	 * or resolved class implements `MethodsHalfObserved`, returns `true`.
+	 * Otherwise if resolved type is `MethodsObservable`,
+	 * or resolved class implements `MethodsObservable`, returns `true`.
 	 */
 	export function isListLike(rawNode: ts.Node): boolean {
+
+		// Array type.
 		let type = helper.types.typeOf(rawNode)
 		if (helper.types.isArrayType(type)) {
 			return true
 		}
 		
-		let typeNode = helper.types.getOrMakeTypeNode(rawNode)
+		// Map or Set.
+		let typeNode = helper.types.getTypeNode(rawNode, true, true)
 		let objName = typeNode ? helper.types.getTypeNodeReferenceName(typeNode) : undefined
 
 		if (objName === 'Map' || objName === 'Set') {
 			return true
 		}
 
-		// `let a: MethodsHalfObserved<...>`
-		if (typeNode
-			&& ts.isTypeReferenceNode(typeNode)
-			&& helper.symbol.isImportedFrom(typeNode, 'MethodsHalfObserved', '@pucelle/ff')
-		) {
-			return true
-		}
-
-		// resolved class implements `MethodsHalfObserved`.
+		// resolved class implements `MethodsObservable`.
 		if (typeNode) {
 			let classDecl = helper.symbol.resolveDeclaration(typeNode, ts.isClassDeclaration)
-			if (classDecl && helper.class.isImplemented(classDecl, 'MethodsHalfObserved', '@pucelle/ff')) {
+			if (classDecl && helper.class.isImplemented(classDecl, 'MethodsObservable', '@pucelle/ff')) {
 				return true
 			}
 		}
@@ -536,7 +537,7 @@ export namespace ObservedChecker {
 	/** Test whether calls reading process of `Map`, `Set`, `Array`. */
 	export function isListLikeReadAccess(rawNode: AccessNode): boolean {
 		let expType = helper.types.typeOf(rawNode.expression)
-		let expTypeNode = helper.types.getOrMakeTypeNode(rawNode.expression)
+		let expTypeNode = helper.types.getTypeNode(rawNode.expression, true, true)
 		let objName = expTypeNode ? helper.types.getTypeNodeReferenceName(expTypeNode) : undefined
 		let propName = helper.access.getPropertyText(rawNode)
 
@@ -557,53 +558,39 @@ export namespace ObservedChecker {
 			)
 		}
 		else if (expTypeNode) {
-			return isOfMethodsHalfObserved(expTypeNode, propName, 0)
+			return isOfMethodsObservable(expTypeNode, propName, 0)
 		}
 
 		return false
 	}
 
 
-	function isOfMethodsHalfObserved(expTypeNode: ts.TypeNode, propName: string, paramIndex: number) {
-		if (expTypeNode
-			&& ts.isTypeReferenceNode(expTypeNode)
-			&& helper.symbol.isImportedFrom(expTypeNode, 'MethodsHalfObserved', '@pucelle/ff')
-		) {
-			let getTypeParams = expTypeNode.typeArguments?.[paramIndex]
-			if (!getTypeParams) {
-				return false
-			}
-
-			let methodNames = helper.types.splitUnionTypeToStringList(helper.types.typeOfTypeNode(getTypeParams)!)
-			return methodNames.includes(propName)
+	function isOfMethodsObservable(expTypeNode: ts.TypeNode, propName: string, paramIndex: number) {
+		let classDecl = helper.symbol.resolveDeclaration(expTypeNode, ts.isClassDeclaration)
+		if (!classDecl) {
+			return false
 		}
-		else {
-			let classDecl = helper.symbol.resolveDeclaration(expTypeNode, ts.isClassDeclaration)
-			if (!classDecl) {
-				return false
-			}
 
-			let implemented = helper.class.getImplements(classDecl)
-			let methodsHalfObservedImplement = implemented.find(im => helper.getText(im.expression) === 'MethodsHalfObserved')
-			if (!methodsHalfObservedImplement) {
-				return false
-			}
-
-			let methodNames = methodsHalfObservedImplement.typeArguments?.[paramIndex]
-			if (!methodNames) {
-				return false
-			}
-
-			let getMethods = helper.types.splitUnionTypeToStringList(helper.types.typeOfTypeNode(methodNames)!)
-			return getMethods.includes(propName)
+		let implemented = helper.class.getImplements(classDecl)
+		let methodsHalfObservedImplement = implemented.find(im => helper.getText(im.expression) === 'MethodsObservable')
+		if (!methodsHalfObservedImplement) {
+			return false
 		}
+
+		let methodNames = methodsHalfObservedImplement.typeArguments?.[paramIndex]
+		if (!methodNames) {
+			return false
+		}
+
+		let getMethods = helper.types.splitUnionTypeToStringList(helper.types.typeOfTypeNode(methodNames)!)
+		return getMethods.includes(propName)
 	}
 
 
 	/** Test whether calls `Map.set`, or `Set.set`. */
 	export function isListLikeWriteAccess(rawNode: AccessNode) {
 		let expType = helper.types.typeOf(rawNode.expression)
-		let expTypeNode = helper.types.getOrMakeTypeNode(rawNode.expression)
+		let expTypeNode = helper.types.getTypeNode(rawNode.expression, true, true)
 		let objName = expTypeNode ? helper.types.getTypeNodeReferenceName(expTypeNode) : undefined
 		let propName = helper.access.getPropertyText(rawNode)
 
@@ -624,7 +611,7 @@ export namespace ObservedChecker {
 			)
 		}
 		else if (expTypeNode) {
-			return isOfMethodsHalfObserved(expTypeNode, propName, 1)
+			return isOfMethodsObservable(expTypeNode, propName, 1)
 		}
 
 		return false

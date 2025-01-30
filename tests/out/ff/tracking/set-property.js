@@ -130,6 +130,13 @@ export class TesOperators extends Component {
         trackSet(this, "prop");
     }
 }
+export class TestDelete extends Component {
+    prop = {};
+    deleteProperty() {
+        delete this.prop.sub;
+        trackSet(this.prop, "sub");
+    }
+}
 export class TestNew extends Component {
     prop = 1;
     getInstance() {

@@ -144,18 +144,8 @@ export class TestClassTypeParameter {
         trackSet(item, "value");
     }
 }
-export class TestMethodsHalfObserved {
-    data = { get() { }, set() { } };
+export class TestMethodsObservable {
     listData = new ListMap();
-    getItem() {
-        trackGet(this, "data");
-        trackGet(this.data, "");
-        return this.data.get();
-    }
-    addItem() {
-        this.data.set();
-        trackSet(this.data, "");
-    }
     getListItem(key) {
         trackGet(this, "listData");
         trackGet(this.listData, "");
@@ -164,5 +154,25 @@ export class TestMethodsHalfObserved {
     addListItem(key, value) {
         this.listData.add(key, value);
         trackSet(this.listData, "");
+    }
+}
+export class TestPropertyMethodsObservable {
+    data = new AnyMethodsObservable();
+    getItem() {
+        trackGet(this.data, "");
+        return this.data.get();
+    }
+    addItem() {
+        this.data.set(1);
+        trackSet(this.data, "");
+    }
+}
+class AnyMethodsObservable {
+    value = 1;
+    get() {
+        return this.value;
+    }
+    set(value) {
+        this.value = value;
     }
 }

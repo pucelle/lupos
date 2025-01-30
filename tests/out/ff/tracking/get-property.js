@@ -74,3 +74,10 @@ export class TestNonObservedClass {
         return this.prop.value;
     }
 }
+export class TestAssignmentSpread {
+    prop = { value: 1 };
+    getProp() {
+        trackGet(this.prop, "");
+        return { ...this.prop };
+    }
+}

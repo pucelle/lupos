@@ -1,5 +1,5 @@
+import { trackGet, trackSet } from '@pucelle/ff';
 import { Component } from '@pucelle/lupos.js';
-import { trackGet, trackSet } from "@pucelle/ff";
 export class TestArrayIndex extends Component {
     prop = [{ value: 1 }];
     fixedIndex() {
@@ -83,5 +83,12 @@ export class TestArrayBroadcastingObservedToMapFn extends Component {
         trackGet(this, "prop");
         trackGet(this.prop, "");
         return this.prop.map(function (v) { trackGet(v, "value"); return v.value; }).join('');
+    }
+}
+export class TestArrayElementSpread {
+    prop = [1];
+    getProp() {
+        trackGet(this.prop, "");
+        return [...this.prop];
     }
 }

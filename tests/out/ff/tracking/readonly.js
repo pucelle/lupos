@@ -24,11 +24,7 @@ export class TestReadonlyArrayProp extends Component {
     prop = [{ value: 'Text1' }];
     render() {
         trackGet(this, "prop");
-        trackGet(this.prop, "");
-        return this.prop.map(item => {
-            trackGet(item, "value");
-            return item.value;
-        }).join(' ');
+        return this.prop.map(item => item.value).join(' ');
     }
 }
 export class TestDeepReadonlyProp extends Component {
@@ -36,8 +32,6 @@ export class TestDeepReadonlyProp extends Component {
     prop = { value: { value: 'Text' } };
     render() {
         trackGet(this, "prop");
-        trackGet(this.prop, "value");
-        trackGet(this.prop.value, "value");
         return this.prop.value.value;
     }
 }
@@ -46,7 +40,6 @@ export class TestDeepReadonlyArrayProp extends Component {
     prop = [{ value: 'Text1' }];
     render() {
         trackGet(this, "prop");
-        trackGet(this.prop, "");
         return this.prop.map(item => item.value).join(' ');
     }
 }
