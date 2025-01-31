@@ -3,6 +3,7 @@ import {Packer, helper} from '../../core'
 import {TrackingScope} from './scope'
 import {CapturedOutputWay, TrackingRange, TrackingRanges} from './ranges'
 import {ListMap} from '../../lupos-ts-module'
+import {TrackingPatch} from './patch'
 
 
 export enum TrackingScopeTypeMask {
@@ -139,7 +140,7 @@ export namespace TrackingScopeTree {
 		else if (helper.isFunctionLike(node)) {
 			type |= TrackingScopeTypeMask.FunctionLike
 
-			if (helper.isInstantlyRunFunction(node)) {
+			if (helper.isInstantlyRunFunction(node) || TrackingPatch.isForceInstantlyRun(node)) {
 				type |= TrackingScopeTypeMask.InstantlyRunFunction
 			}
 		}

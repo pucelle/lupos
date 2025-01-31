@@ -19,6 +19,7 @@ export namespace TrackingPatch {
 
 	const Ignored: Set<ts.Node> = new Set()
 	const ForceTracked: Map<ts.Node, ForceTrackType> = new Map()
+	const ForceInstantlyRun: Set<ts.Node> = new Set()
 
 
 	/** Initialize after each time source file updated. */
@@ -99,5 +100,18 @@ export namespace TrackingPatch {
 		}
 
 		return scope.capturer.outputCustomCaptured()
+	}
+
+	/** 
+	 * Knows that this function should instantly run,
+	 * so should optimize it to move some tracking codes outer.
+	 */
+	export function forceInstantlyRun(rawNode: ts.FunctionLikeDeclaration) {
+		ForceInstantlyRun.add(rawNode)
+	}
+
+	/** Check whether a node as a function should be forced to instantly run. */
+	export function isForceInstantlyRun(node: ts.Node): boolean {
+		return ForceInstantlyRun.has(node)
 	}
 }

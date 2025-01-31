@@ -34,6 +34,7 @@ export class ForFlowControl extends FlowControlBase {
 		let shouldObserveElements = false
 
 		// Force tracking members of array.
+		// When parsing template, all descendant nodes have not been visited by tracking module.
 		if (ofValueIndex !== null) {
 			let ofValueNode = this.template.values.getRawValue(ofValueIndex)
 
@@ -53,6 +54,8 @@ export class ForFlowControl extends FlowControlBase {
 						TrackingPatch.forceTrack(firstParameter, ForceTrackType.Self)
 					}
 				}
+
+				TrackingPatch.forceInstantlyRun(fnValueNode)
 			}
 		}
 

@@ -49,12 +49,9 @@ const $html_1 = new HTMLMaker("<!----><!---->");
     let $node_1 = $node.content.lastChild;
     let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context, 1);
     let $block_0 = new ForBlock($slot_0);
-    $block_0.updateRenderFn((n) => {
-        trackGet($context, "prop");
-        return new CompiledTemplateResult($template_3, [
-            n + $context.prop
-        ]);
-    });
+    $block_0.updateRenderFn((n) => new CompiledTemplateResult($template_3, [
+        n + $context.prop
+    ]));
     $block_0.updateData([1, 2, 3]);
     return {
         el: $node,
@@ -266,6 +263,7 @@ export class TestFor extends Component {
         return new CompiledTemplateResult($template_1, []);
     }
     testForLocalMapFn() {
+        trackGet(this, "prop");
         return new CompiledTemplateResult($template_2, []);
     }
     testForLocalVariableTransferring() {
