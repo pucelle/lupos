@@ -14,7 +14,7 @@ export namespace AccessReferences {
 	/** 
 	 * Remember nodes that have been visited.
 	 * 
-	 * E.g., for access node `a.b.c`,
+	 * E.g., for accessing node `a.b.c`,
 	 * Will visit `a.b.c`, and make reference item `a` -> `a.b`.
 	 * Later will visit `a.b` and make reference item `a` -> `a`.
 	 * If we assign to `a`, both `a.b` and `a` will be referenced.
@@ -54,7 +54,7 @@ export namespace AccessReferences {
 		// Ignores checking key part, only check expression part.
 		if (ignoreElementsKey
 			&& helper.access.isAccess(node)
-			&& helper.access.isElementsAccess(node.expression)
+			&& helper.access.isOfElements(node.expression)
 		) {
 			return hasExternalAccessReferenced(node.expression, false)
 		}

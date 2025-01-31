@@ -115,7 +115,7 @@ export class TrackingScope {
 		else if (ts.isVariableDeclaration(node)) {
 			this.variables.visitVariable(node)
 
-			// let {a} = b
+			// `let {a} = b`, track `b.a`.
 			if (node.initializer) {
 				let names = helper.variable.walkDeclarationNames(node)
 
@@ -123,16 +123,6 @@ export class TrackingScope {
 					this.mayAddGetTracking(nameNode, false, node.initializer, keys)
 				}
 			}
-		}
-
-		// `[...a]`, `{...o}`
-		else if (node.parent
-			&& (ts.isSpreadAssignment(node.parent)
-				|| ts.isSpreadElement(node.parent)
-			)
-			&& (ts.isIdentifier(node) || helper.access.isAccess(node))
-		) {
-			this.mayAddGetTracking(node, true, node, [''])
 		}
 
 		// Test and add property access nodes.
@@ -145,7 +135,7 @@ export class TrackingScope {
 
 			// `a.b`, but not `a.b` of `a.b = c`.
 			else if (!helper.assign.isWithinAssignmentTo(node)) {
-				this.mayAddGetTracking(node, false)
+				this.mayAddGetTracking(node)
 			}
 
 			AccessReferences.visitAssess(node)
@@ -163,9 +153,11 @@ export class TrackingScope {
 		}
 
 		// Empty `return`.
-		else if (ts.isReturnStatement(node) && !node.expression) {
-			this.state.unionFlowInterruptionType(FlowInterruptionTypeMask.Return)
-			this.capturer.breakCaptured(this.node, FlowInterruptionTypeMask.Return)
+		else if (ts.isReturnStatement(node)) {
+			if (!node.expression) {
+				this.state.unionFlowInterruptionType(FlowInterruptionTypeMask.Return)
+				this.capturer.breakCaptured(this.node, FlowInterruptionTypeMask.Return)
+			}
 		}
 
 		// `break` or `continue`.
@@ -173,10 +165,30 @@ export class TrackingScope {
 			this.state.unionFlowInterruptionType(FlowInterruptionTypeMask.BreakLike)
 			this.capturer.breakCaptured(this.node, FlowInterruptionTypeMask.BreakLike)
 		}
+
+		
+		// `[...a]`, `{...o}`, `Object.keys(a)`
+		if (helper.access.isAllElementsReadAccess(node)) {
+			if (ts.isIdentifier(node) || helper.access.isAccess(node)) {
+				this.mayAddGetTracking(node, true, node, [''])
+			}
+		}
+
+		// `Object.assign(a, ...)`
+		else if (helper.access.isAllElementsWriteAccess(node)) {
+			if (ts.isIdentifier(node) || helper.access.isAccess(node)) {
+				this.mayAddSetTracking(node, true, node, [''])
+			}
+		}
 	}
 
 	/** Add a property access expression. */
-	private mayAddGetTracking(node: AccessNode | ts.Identifier, visitElements: boolean, exp?: ts.Expression, keys?: (string | number)[]) {
+	private mayAddGetTracking(
+		node: AccessNode | ts.Identifier,
+		visitElements: boolean = false,
+		exp?: ts.Expression,
+		keys?: (string | number)[]
+	) {
 		if (this.state.shouldIgnoreGetTracking(node)) {
 			return
 		}
@@ -198,7 +210,11 @@ export class TrackingScope {
 	}
 
 	/** Add a property assignment expression. */
-	private mayAddSetTracking(node: AccessNode | ts.Identifier, exp?: ts.Expression, keys?: (string | number)[]) {
+	private mayAddSetTracking(node: AccessNode | ts.Identifier,
+		visitElements: boolean = false,
+		exp?: ts.Expression,
+		keys?: (string | number)[]
+	) {
 		if (this.state.shouldIgnoreSetTracking(node)) {
 			return
 		}
@@ -207,7 +223,7 @@ export class TrackingScope {
 			return
 		}
 
-		if (ObservedChecker.isObserved(node)) {
+		if (ObservedChecker.isObserved(node, visitElements)) {
 			this.capturer.capture(node, exp, keys, 'set')
 		}
 	}

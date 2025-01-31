@@ -1,5 +1,5 @@
 import { Component } from '@pucelle/lupos.js';
-import { trackSet, trackGet } from "@pucelle/ff";
+import { trackSet } from "@pucelle/ff";
 export class TestNormalProp extends Component {
     prop = 1;
     setProp() {
@@ -24,7 +24,8 @@ export class TestObjectProp extends Component {
     }
 }
 export class TestDeconstructAssignment extends Component {
-    prop = { value: 1 };
+    list = [];
+    prop = {};
     array() {
         [this.prop] = [{ value: 2 }];
         trackSet(this, "prop");
@@ -32,6 +33,14 @@ export class TestDeconstructAssignment extends Component {
     object() {
         ({ prop: this.prop } = { prop: { value: 2 } });
         trackSet(this, "prop");
+    }
+    spreadArray() {
+        [...this.list] = [2];
+        trackSet(this.list, "");
+    }
+    spreadObject() {
+        ({ ...this.prop } = { value: 1 });
+        trackSet(this.prop, "");
     }
 }
 export class TestRepetitiveProp extends Component {
@@ -140,7 +149,7 @@ export class TestDelete extends Component {
 export class TestObjectAPIs extends Component {
     prop = { value: 1 };
     assign() {
-        trackGet(this, "prop");
+        trackSet(this.prop, "");
         return Object.assign(this.prop, { value: 2 });
     }
 }

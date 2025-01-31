@@ -158,21 +158,13 @@ export class TrackingCapturer {
 	) {
 		this.addCaptureType(type)
 
-		if (!exp) {
-
-			// `a[0]` -> `trackGet(a, '')`
-			if (helper.access.isAccess(node)
-				&& helper.access.isElementsAccess(node.expression)
-			) {
-				exp = node.expression
-				keys = ['']
-			}
-
-			// `[...a]`
-			else if (helper.isArraySpreadElement(node)) {
-				exp = node
-				keys = ['']
-			}
+		// `a[0]` -> `trackGet(a, '')`
+		if (!exp
+			&& helper.access.isAccess(node)
+			&& helper.access.isOfElements(node.expression)
+		) {
+			exp = node.expression
+			keys = ['']
 		}
 
 		let item: CapturedItem = {

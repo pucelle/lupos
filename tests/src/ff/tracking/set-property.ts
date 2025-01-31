@@ -35,7 +35,8 @@ export class TestObjectProp extends Component {
 
 export class TestDeconstructAssignment extends Component {
 
-	prop = {value: 1}
+	list: number[] = []
+	prop: Record<string, number> = {}
 
 	array() {
 		[this.prop] = [{value:2}]
@@ -43,6 +44,14 @@ export class TestDeconstructAssignment extends Component {
 
 	object() {
 		({prop: this.prop} = {prop: {value:2}})
+	}
+
+	spreadArray() {
+		[...this.list] = [2]
+	}
+
+	spreadObject() {
+		({...this.prop} = {value: 1})
 	}
 }
 
@@ -159,7 +168,6 @@ export class TestDelete extends Component {
 		delete this.prop.sub
 	}
 }
-
 
 export class TestObjectAPIs extends Component {
 

@@ -238,7 +238,7 @@ export namespace ObservedChecker {
 
 		// `a.b` of `a.b.map`.
 		let callFrom = exp.expression
-		if (!helper.access.isElementsAccess(callFrom)) {
+		if (!helper.access.isOfElements(callFrom)) {
 			return false
 		}
 
@@ -367,7 +367,7 @@ export namespace ObservedChecker {
 	function isAccessObserved(rawNode: AccessNode, parental: boolean = false): boolean {
 
 		// `[]`, `Map`, `Set`.
-		if (helper.access.isElementsAccess(rawNode.expression)) {
+		if (helper.access.isOfElements(rawNode.expression)) {
 			return isObserved(rawNode.expression, true)
 		}
 
