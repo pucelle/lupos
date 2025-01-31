@@ -48,6 +48,8 @@ export class ForFlowControl extends FlowControlBase {
 			let fnValueNode = this.template.values.getRawValue(fnValueIndex)
 
 			if (helper.isFunctionLike(fnValueNode)) {
+
+				// Force broadcasting tracking from list to item parameter.
 				let firstParameter = fnValueNode.parameters[0]
 				if (firstParameter) {
 					if (shouldObserveElements) {
@@ -55,6 +57,7 @@ export class ForFlowControl extends FlowControlBase {
 					}
 				}
 
+				// For tracking optimization.
 				TrackingPatch.forceInstantlyRun(fnValueNode)
 			}
 		}
