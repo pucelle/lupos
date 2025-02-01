@@ -70,6 +70,21 @@ export class TestOptimizing extends Component {
         trackGet(this, "prop");
         return 0;
     }
+    preventMergeIfForContinued() {
+        for (let i = 0; i < 1; i++) {
+            if (1) {
+                if (i) {
+                    continue;
+                }
+                this.prop = { value: 2 };
+                trackSet(this, "prop");
+            }
+            else {
+                this.prop = { value: 2 };
+                trackSet(this, "prop");
+            }
+        }
+    }
     preventMergeIfOnlyBranch() {
         if (1) {
             this.prop;

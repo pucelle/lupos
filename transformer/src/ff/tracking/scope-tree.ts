@@ -24,7 +24,7 @@ export enum TrackingScopeTypeMask {
 	/** Function, but it should instantly run. */
 	InstantlyRunFunction = 2 ** 3,
 
-	/** `if`, or binary expressions like `a && b`, `a || b`, `a ?? b`. */
+	/** `if {...}`, or binary expressions like `a && b`, `a || b`, `a ?? b`. */
 	Conditional = 2 ** 4,
 
 	/** 

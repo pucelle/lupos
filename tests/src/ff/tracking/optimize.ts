@@ -84,6 +84,20 @@ export class TestOptimizing extends Component {
 		return 0
 	}
 
+	preventMergeIfForContinued() {
+		for (let i = 0; i < 1; i++) {
+			if (1) {
+				if (i) {
+					continue
+				}
+				this.prop = {value: 2}
+			}
+			else {
+				this.prop = {value: 2}
+			}
+		}
+	}
+
 	preventMergeIfOnlyBranch() {
 		if (1) {
 			this.prop

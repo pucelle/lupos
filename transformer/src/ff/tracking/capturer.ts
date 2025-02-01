@@ -185,8 +185,11 @@ export class TrackingCapturer {
 	/** Switch capture type to `set` from `get`. */
 	private switchFromGetToSetCaptureType() {
 		this.captureType = 'set'
-		this.latestCaptured.items = []
-		this.captured = [this.latestCaptured]
+
+		// Clean captured items, but keep empty captured for optimization.
+		for (let group of this.captured) {
+			group.items = []
+		}
 	}
 
 	/** Insert captured nodes to specified position. */
@@ -195,7 +198,7 @@ export class TrackingCapturer {
 		// Later may append nodes to this item.
 
 		// Conditional can't be break, it captures only condition expression.
-		// This is required, or inner captured can't be moved to head.
+		// This is required, or inner captured can't be moved to head, and cause interpolation issue.
 		if (this.scope.type & TrackingScopeTypeMask.Conditional
 			|| this.scope.type & TrackingScopeTypeMask.Switch
 		) {
