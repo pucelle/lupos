@@ -47,20 +47,22 @@ export function interpolateTransformer(
 export class DiagnosticModifier {
 
 	private reporter: ts.DiagnosticReporter | null = null
-	private total: ReadonlyArray<ts.Diagnostic> = []
+
+	/** Don't know why reporting for twice in watch mode, use this to avoid it. */
+	private reportedDiags: Set<ts.Diagnostic> = new Set()
 
 	/** They are not using source file as key, because source files may be updated without re-compiling. */
-	private bySourceFile: ListMap<string, ts.Diagnostic> = new ListMap()
 	private added: ListMap<string, ts.Diagnostic> = new ListMap()
-	private deleted: ListMap<string, ts.Diagnostic> = new ListMap()
+	private deleted: ListMap<string, {start: number, code: number}> = new ListMap()
 
 	/** Patch diagnostic reporter to do filtering. */
 	patchDiagnosticReporter(reporter: ts.DiagnosticReporter): ts.DiagnosticReporter {
 		this.reporter = reporter
 
 		return (diag: ts.Diagnostic) => {
-			if (!this.hasDeleted(diag)) {
+			if (!this.hasDeleted(diag) && !this.reportedDiags.has(diag)) {
 				reporter(diag)
+				this.reportedDiags.add(diag)
 			}
 		}
 	}
@@ -71,71 +73,22 @@ export class DiagnosticModifier {
 	 */
 	patchWatchStatusReporter(reporter: ts.WatchStatusReporter): ts.WatchStatusReporter {
 		return (diagnostic: ts.Diagnostic, newLine: string, options: ts.CompilerOptions, errorCount?: number) => {
-			let diagCount = this.total.length
-			let countAfterModified = diagCount + this.added.valueCount() - this.deleted.valueCount()
+			let countAfterModified = this.reportedDiags.size + this.added.valueCount()
 
-			if (diagCount !== countAfterModified) {
-				if (typeof diagnostic.messageText === 'string') {
-					diagnostic.messageText = diagnostic.messageText.replace(/\d+/, countAfterModified.toString())
-				}
-				else {
-					diagnostic.messageText.messageText = diagnostic.messageText.messageText.replace(/\d+/, countAfterModified.toString())
-				}
+			if (typeof diagnostic.messageText === 'string') {
+				diagnostic.messageText = diagnostic.messageText.replace(/\d+/, countAfterModified.toString())
+			}
+			else {
+				diagnostic.messageText.messageText = diagnostic.messageText.messageText.replace(/\d+/, countAfterModified.toString())
 			}
 
 			reporter(diagnostic, newLine, options, errorCount)
-		}
-	}
-
-	/** 
-	 * Before next build, clear all the expired source files.
-	 * 
-	 * This method is now working as expected,
-	 * because watch compiler program may only active
-	 * partial files when doing watching,
-	 * but diagnostics still contain those not included files.
-	 * 
-	 * So must also check source files exist on diagnostics.
-	 */
-	updateTotal(sourceFiles: ReadonlyArray<ts.SourceFile>, diags: ReadonlyArray<ts.Diagnostic>) {
-		let set = new Set(sourceFiles.map(f => f.fileName))
-
-		for (let diag of diags) {
-			if (diag.file) {
-				set.add(diag.file.fileName)
-			}
-		}
-
-		// This list includes changed file, and all the files that import it.
-		let expired = [...this.bySourceFile.keys()].filter(file => !set.has(file))
-
-		for (let fileName of expired) {
-			this.bySourceFile.deleteOf(fileName)
-			this.added.deleteOf(fileName)
-			this.deleted.deleteOf(fileName)
-		}
-
-		this.updateTotalDiagnostics(diags)
-	}
-
-	/** Update total diagnostics before each time building. */
-	private updateTotalDiagnostics(total: ReadonlyArray<ts.Diagnostic>) {
-		this.total = total
-		this.bySourceFile.clear()
-		
-		for (let diag of total) {
-			let file = diag.file
-			if (!file) {
-				continue
-			}
-
-			this.bySourceFile.add(file.fileName, diag)
+			this.reportedDiags.clear()
 		}
 	}
 
 	/** Before visit a source file, clean all the modification of it. */
 	beforeVisitSourceFile(file: ts.SourceFile) {
-		this.bySourceFile.deleteOf(file.fileName)
 		this.added.deleteOf(file.fileName)
 		this.deleted.deleteOf(file.fileName)
 	}
@@ -144,16 +97,7 @@ export class DiagnosticModifier {
 	reportAdded() {
 		for (let diag of this.added.values()) {
 			this.reporter!(diag)
-
-			if (diag.file) {
-				this.bySourceFile.add(diag.file.fileName, diag)
-			}
 		}
-	}
-
-	/** Get diagnostics of a source file. */
-	getOfFile(file: ts.SourceFile): ts.Diagnostic[] | undefined {
-		return this.bySourceFile.get(file.fileName)
 	}
 
 	/** Check whether diagnostic has been deleted. */
@@ -178,9 +122,7 @@ export class DiagnosticModifier {
 	}
 
 	/** Delete a diagnostic. */
-	delete(diag: ts.Diagnostic) {
-		if (diag.file) {
-			this.deleted.add(diag.file.fileName, diag)
-		}
+	delete(fileName: string, diag: {start: number, code: number}) {
+		this.deleted.add(fileName, diag)
 	}
 }

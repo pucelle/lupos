@@ -20,7 +20,7 @@ export class ExtendedDiagnosticModifier extends DiagnosticModifier {
 		}
 
 		for (let diag of this.deleted) {
-			diagnosticModifier.delete(diag)
+			diagnosticModifier.delete(sourceFile.fileName, diag)
 		}
 	}
 }
@@ -29,11 +29,9 @@ export class ExtendedDiagnosticModifier extends DiagnosticModifier {
 export let SourceFileDiagnosticModifier: ExtendedDiagnosticModifier
 
 definePreVisitCallback(() => {
-	let diags = diagnosticModifier.getOfFile(sourceFile) || []
-
 	diagnosticModifier.beforeVisitSourceFile(sourceFile)
 	SourceFileDiagnosticModifier = new ExtendedDiagnosticModifier()
-	SourceFileDiagnosticModifier.setStart(diags, sourceFile)
+	SourceFileDiagnosticModifier.setSourceFile(sourceFile)
 })
 
 definePostVisitCallback(() => {

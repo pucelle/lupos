@@ -92,6 +92,7 @@ function printVersion(system: ts.System) {
 }
 
 function isWatchSet(options: ts.CompilerOptions) {
+
 	// Firefox has Object.prototype.watch
 	return options.watch && hasProperty(options, "watch");
 }
@@ -113,7 +114,7 @@ function performWatchCompilation(
 		system,
 		undefined,
 		reportDiagnostic,
-		reportDiagnostic,
+		undefined,
 		createWatchReporter(system, compilerOptions, diagModifier, () => builder, () => standardTransformer),
 	);
 
@@ -151,11 +152,6 @@ function buildProject(
 		return;
 	}
 
-	let program = project.getProgram()!;
-	let diagnostics = program!.getSemanticDiagnostics();
-
-	diagModifier.updateTotal(program.getSourceFiles(), diagnostics);
-
 	project.emit(
 		undefined,
 		undefined,
@@ -176,10 +172,10 @@ function createWatchReporter(
 ): ts.WatchStatusReporter {
 	let pretty = shouldBePretty(system, options);
 	let rawReporter = createWatchStatusReporter(system, pretty);
-	let reporter = diagModifier.patchWatchStatusReporter(rawReporter);
+	let patchedReporter = diagModifier.patchWatchStatusReporter(rawReporter);
 
 	return (diagnostic: ts.Diagnostic, newLine: string, options: ts.CompilerOptions, errorCount?: number) => {
-		reporter(diagnostic, newLine, options, errorCount);
+		patchedReporter(diagnostic, newLine, options, errorCount);
 		doNextBuild(solutionBuilderGetter(), diagModifier, transformersGetter());
 	}
 }
