@@ -141,8 +141,21 @@ class ExtendedScopeTree extends ScopeTree<VariableScope> {
 		// Com from typescript library.
 		if (helper.symbol.isOfTypescriptLib(rawNode)) {}
 
+		// `this.method.bind(this)`
+		else if (ts.isCallExpression(rawNode)
+			&& ts.isPropertyAccessExpression(rawNode.expression)
+			&& helper.getText(rawNode.expression.name) === 'bind'
+			&& helper.symbol.resolveDeclaration(rawNode.expression.expression, helper.isFunctionLike)
+		) {
+			mutable |= this.testMutableRecursively(rawNode.expression.expression, insideFunctionScope)
+			
+			for (let arg of rawNode.arguments) {
+				mutable |= this.testMutableRecursively(arg, insideFunctionScope)
+			}
+		}
+
 		// `a.b` or `a`
-		if (helper.isVariableIdentifier(rawNode)
+		else if (helper.isVariableIdentifier(rawNode)
 			|| helper.access.isAccess(rawNode)
 		) {
 

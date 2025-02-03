@@ -43,6 +43,10 @@ export class TestTemplateValues extends Component {
 		return html`<div @click=${() => this.handleEvent(globalVariable)} />`
 	}
 
+	testMutableOfBoundMethod() {
+		return html`<div @click=${this.handleEvent.bind(this)}></div>`
+	}
+
 	testBundlingStringAndValues() {
 		return html`<div attr="name1 ${this.prop} name2 ${this.prop}"></div>`
 	}
@@ -50,4 +54,5 @@ export class TestTemplateValues extends Component {
 	testMergingSameValues() {
 		return html`<div attr="${this.prop}" attr2=${this.prop}></div>`
 	}
+
 }

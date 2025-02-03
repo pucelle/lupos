@@ -269,7 +269,24 @@ export class EventSlotParser extends SlotParserBase {
 		}
 
 		// $node_0.addEventListener('comEventName', eventHandler.bind($context))
-		else {	
+		else {
+			let boundEvent = this.outputValue().joint
+
+			// bind with current context.
+			if (!ts.isCallExpression(boundEvent)
+				|| !ts.isPropertyAccessExpression(boundEvent.expression)
+				|| helper.getText(boundEvent.expression.name) !== 'bind'
+			) {
+				boundEvent = factory.createCallExpression(
+					factory.createPropertyAccessExpression(
+						this.outputValue().joint,
+						  factory.createIdentifier('bind')
+					),
+					undefined,
+					[factory.createIdentifier(VariableNames.context)]
+				)
+			}
+
 			return factory.createCallExpression(
 				factory.createPropertyAccessExpression(
 					factory.createIdentifier(nodeName),
@@ -278,14 +295,7 @@ export class EventSlotParser extends SlotParserBase {
 				undefined,
 				[
 					factory.createStringLiteral(this.name),
-					factory.createCallExpression(
-						factory.createPropertyAccessExpression(
-							this.outputValue().joint,
-						  	factory.createIdentifier('bind')
-						),
-						undefined,
-						[factory.createIdentifier(VariableNames.context)]
-					)
+					boundEvent
 				]
 			)
 		}
