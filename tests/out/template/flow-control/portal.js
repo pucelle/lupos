@@ -16,6 +16,6 @@ const $html_0 = new HTMLMaker("<!----><template><div>Portal Content</div></templ
 });
 export class TestPortal extends Component {
     testPortal() {
-        return new CompiledTemplateResult($template_0, []);
+        return new CompiledTemplateResult($template_0, [], this);
     }
 }

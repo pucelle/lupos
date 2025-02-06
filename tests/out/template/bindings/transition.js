@@ -110,21 +110,21 @@ export class TestTransitionBinding extends Component {
         trackGet(this, "duration");
         return new CompiledTemplateResult($template_0, [
             fade({ duration: this.duration })
-        ]);
+        ], this);
     }
     testStaticTransition() {
-        return new CompiledTemplateResult($template_1, []);
+        return new CompiledTemplateResult($template_1, [], this);
     }
     withQueryToken() {
         trackGet(this, "duration");
         return new CompiledTemplateResult($template_2, [
             this.duration, fade({ duration: this.duration })
-        ]);
+        ], this);
     }
     withQueryTokenAndStaticContent() {
         trackGet(this, "duration");
         return new CompiledTemplateResult($template_3, [
             this.duration
-        ]);
+        ], this);
     }
 }

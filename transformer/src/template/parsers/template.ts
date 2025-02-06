@@ -144,7 +144,8 @@ export class TemplateParser extends TemplateBasis {
 			undefined,
 			[
 				factory.createIdentifier(makerName),
-				valuesNodes
+				valuesNodes,
+				factory.createThis()
 			]
 		)
 	}

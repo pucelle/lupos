@@ -78,6 +78,7 @@ export class AwaitFlowControl extends FlowControlBase {
 					[
 						makers,
 						factory.createIdentifier(this.slotVariableName),
+						factory.createIdentifier(VariableNames.context)
 					]
 				)
 			)

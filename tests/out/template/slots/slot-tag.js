@@ -6,11 +6,11 @@ const $html_0 = new HTMLMaker("<div><slot name=\"slotName\"></slot></div>");
         <slot name="slotName" />
     </div>
 </root>
-*/ const $template_0 = new TemplateMaker(function ($context) {
+*/ const $template_0 = new TemplateMaker(function () {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node_0.firstChild;
-    let $slot_0 = new TemplateSlot(new SlotPosition(0, $node_1), $context, 3);
+    let $slot_0 = new TemplateSlot(new SlotPosition(0, $node_1), 3);
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),
@@ -28,11 +28,11 @@ const $html_0 = new HTMLMaker("<div><slot name=\"slotName\"></slot></div>");
         <slot name="slotName" />
     </div>
 </root>
-*/ const $template_1 = new TemplateMaker(function ($context) {
+*/ const $template_1 = new TemplateMaker(function () {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node_0.firstChild;
-    let $slot_0 = new TemplateSlot(new SlotPosition(0, $node_1), $context);
+    let $slot_0 = new TemplateSlot(new SlotPosition(0, $node_1));
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),
@@ -77,14 +77,14 @@ export class TestComponent extends Component {
     testNamedSlot() {
         return new CompiledTemplateResult($template_0, [
             this.__getSlotElement("slotName")
-        ]);
+        ], this);
     }
     testNamedSlotWithContent() {
         return new CompiledTemplateResult($template_1, [
-            this.__getSlotElement("slotName") ?? new CompiledTemplateResult($template_2, [])
-        ]);
+            this.__getSlotElement("slotName") ?? new CompiledTemplateResult($template_2, [], this)
+        ], this);
     }
     testRestSlot() {
-        return new CompiledTemplateResult($template_3, []);
+        return new CompiledTemplateResult($template_3, [], this);
     }
 }

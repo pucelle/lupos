@@ -20,6 +20,6 @@ const $html_0 = new HTMLMaker("<!----><div></div>");
 });
 export class TestSlotBinding extends Component {
     testSlot() {
-        return new CompiledTemplateResult($template_0, []);
+        return new CompiledTemplateResult($template_0, [], this);
     }
 }

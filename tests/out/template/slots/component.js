@@ -59,9 +59,9 @@ const $html_2 = new HTMLMaker("<div><!---->Rest Content</div>");
     let $node_1 = $node_0.firstChild;
     let $node_2 = $node_0.lastChild;
     let $com_0 = new ChildComponent($node_0);
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_2), $context, 0);
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_2), 0);
     $com_0.__applyRestSlotRangeNodes($node_1, $node_2);
-    $slot_0.update(new CompiledTemplateResult($template_3, []));
+    $slot_0.update(new CompiledTemplateResult($template_3, [], $context));
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),
@@ -89,13 +89,13 @@ export class TestComponent extends Component {
         trackGet(this, "prop");
         return new CompiledTemplateResult($template_0, [
             this.prop
-        ]);
+        ], this);
     }
     testRestSlotContent() {
-        return new CompiledTemplateResult($template_1, []);
+        return new CompiledTemplateResult($template_1, [], this);
     }
     testRestSlotContentWithPrecedingTemplateSlot() {
-        return new CompiledTemplateResult($template_2, []);
+        return new CompiledTemplateResult($template_2, [], this);
     }
 }
 class ChildComponent extends Component {

@@ -202,26 +202,26 @@ export class TestRefBinding extends Component {
     refElByType;
     refBinding;
     testRefEl() {
-        return new CompiledTemplateResult($template_0, []);
+        return new CompiledTemplateResult($template_0, [], this);
     }
     testRefCom() {
-        return new CompiledTemplateResult($template_1, []);
+        return new CompiledTemplateResult($template_1, [], this);
     }
     testRefElModifier() {
-        return new CompiledTemplateResult($template_2, []);
+        return new CompiledTemplateResult($template_2, [], this);
     }
     testRefElByDeclarationType() {
-        return new CompiledTemplateResult($template_3, []);
+        return new CompiledTemplateResult($template_3, [], this);
     }
     testRefBinding() {
-        return new CompiledTemplateResult($template_4, []);
+        return new CompiledTemplateResult($template_4, [], this);
     }
     testRefElMethod() {
-        return new CompiledTemplateResult($template_5, []);
+        return new CompiledTemplateResult($template_5, [], this);
     }
     refElMethod(_el) { }
     testRefBindingMethod() {
-        return new CompiledTemplateResult($template_6, []);
+        return new CompiledTemplateResult($template_6, [], this);
     }
     refBindingMethod(_binding) { }
     shouldTransition = true;
@@ -229,13 +229,13 @@ export class TestRefBinding extends Component {
         trackGet(this, "shouldTransition");
         return new CompiledTemplateResult($template_7, [
             this.shouldTransition
-        ]);
+        ], this);
     }
     testRefAsLocal() {
         let value;
         return new CompiledTemplateResult($template_8, [
             function (refed) { value = refed; }
-        ]);
+        ], this);
     }
 }
 class ChildComponent extends Component {

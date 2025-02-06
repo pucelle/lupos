@@ -9,8 +9,8 @@ const $html_0 = new HTMLMaker("<!----><!---->");
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context);
-    let $block_0 = new AwaitBlock([$template_1, $template_2, null], $slot_0);
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1));
+    let $block_0 = new AwaitBlock([$template_1, $template_2, null], $slot_0, $context);
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),
@@ -52,8 +52,8 @@ const $html_2 = new HTMLMaker("Then Content");
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context);
-    let $block_0 = new AwaitBlock([$template_4, null, $template_5], $slot_0);
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1));
+    let $block_0 = new AwaitBlock([$template_4, null, $template_5], $slot_0, $context);
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),
@@ -94,8 +94,8 @@ const $html_5 = new HTMLMaker("Catch Content");
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context);
-    let $block_0 = new AwaitBlock([$template_7, $template_8, $template_9], $slot_0);
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1));
+    let $block_0 = new AwaitBlock([$template_7, $template_8, $template_9], $slot_0, $context);
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),
@@ -143,18 +143,18 @@ export class TestAwait extends Component {
         trackGet(this, "promise");
         return new CompiledTemplateResult($template_0, [
             this.promise
-        ]);
+        ], this);
     }
     testAwaitCatch() {
         trackGet(this, "promise");
         return new CompiledTemplateResult($template_3, [
             this.promise
-        ]);
+        ], this);
     }
     testAwaitThenCatch() {
         trackGet(this, "promise");
         return new CompiledTemplateResult($template_6, [
             this.promise
-        ]);
+        ], this);
     }
 }

@@ -5,11 +5,11 @@ const $html_0 = new HTMLMaker("<!----><!---->");
 <root>
     <lu:if ${this.prop} />
 </root>
-*/ const $template_0 = new TemplateMaker(function ($context) {
+*/ const $template_0 = new TemplateMaker(function () {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context);
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1));
     let $block_0 = new IfBlock($slot_0);
     return {
         el: $node,
@@ -37,11 +37,11 @@ const $html_1 = new HTMLMaker("If Content");
 <root>
     <lu:if ${this.prop} cache />
 </root>
-*/ const $template_2 = new TemplateMaker(function ($context) {
+*/ const $template_2 = new TemplateMaker(function () {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context);
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1));
     let $block_0 = new CacheableIfBlock($slot_0);
     return {
         el: $node,
@@ -68,11 +68,11 @@ const $html_1 = new HTMLMaker("If Content");
 <root>
     <lu:if ${this.prop} />
 </root>
-*/ const $template_4 = new TemplateMaker(function ($context) {
+*/ const $template_4 = new TemplateMaker(function () {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context);
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1));
     let $block_0 = new IfBlock($slot_0);
     return {
         el: $node,
@@ -107,11 +107,11 @@ const $html_5 = new HTMLMaker(" ");
 <root>
     <lu:if ${this.prop} />
 </root>
-*/ const $template_6 = new TemplateMaker(function ($context) {
+*/ const $template_6 = new TemplateMaker(function () {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context, 0);
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 0);
     let $block_0 = new IfBlock($slot_0);
     return {
         el: $node,
@@ -149,11 +149,11 @@ const $html_8 = new HTMLMaker("Else Content");
 <root>
     <lu:if ${this.prop} />
 </root>
-*/ const $template_9 = new TemplateMaker(function ($context) {
+*/ const $template_9 = new TemplateMaker(function () {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context, 0);
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 0);
     let $block_0 = new IfBlock($slot_0);
     return {
         el: $node,
@@ -213,11 +213,11 @@ const $html_13 = new HTMLMaker("Then Content");
 <root>
     <lu:if ${this.item && this.item.value} />
 </root>
-*/ const $template_14 = new TemplateMaker(function ($context) {
+*/ const $template_14 = new TemplateMaker(function () {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context);
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1));
     let $block_0 = new IfBlock($slot_0);
     return {
         el: $node,
@@ -234,11 +234,11 @@ const $html_13 = new HTMLMaker("Then Content");
 <root>
     ${this.item!.value.map(v => html`<div>${v}</div>`)}
 </root>
-*/ const $template_15 = new TemplateMaker(function ($context) {
+*/ const $template_15 = new TemplateMaker(function () {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context, 1);
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1);
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),
@@ -295,34 +295,34 @@ export class TestIf extends Component {
     testIf() {
         trackGet(this, "prop");
         return new CompiledTemplateResult($template_0, [
-            this.prop ? new CompiledTemplateResult($template_1, []) : null
-        ]);
+            this.prop ? new CompiledTemplateResult($template_1, [], this) : null
+        ], this);
     }
     testIfCacheable() {
         trackGet(this, "prop");
         return new CompiledTemplateResult($template_2, [
-            this.prop ? new CompiledTemplateResult($template_3, []) : null
-        ]);
+            this.prop ? new CompiledTemplateResult($template_3, [], this) : null
+        ], this);
     }
     testDynamicIfContent() {
         trackGet(this, "prop");
         return new CompiledTemplateResult($template_4, [
             this.prop ? (trackGet(this, "content"), new CompiledTemplateResult($template_5, [
                 this.content
-            ])) : null
-        ]);
+            ], this)) : null
+        ], this);
     }
     testIfElse() {
         trackGet(this, "prop");
         return new CompiledTemplateResult($template_6, [
-            this.prop ? new CompiledTemplateResult($template_7, []) : new CompiledTemplateResult($template_8, [])
-        ]);
+            this.prop ? new CompiledTemplateResult($template_7, [], this) : new CompiledTemplateResult($template_8, [], this)
+        ], this);
     }
     testIfElseIfElse() {
         trackGet(this, "prop");
         return new CompiledTemplateResult($template_9, [
-            this.prop ? new CompiledTemplateResult($template_10, []) : this.prop ? new CompiledTemplateResult($template_11, []) : this.prop ? new CompiledTemplateResult($template_12, []) : new CompiledTemplateResult($template_13, [])
-        ]);
+            this.prop ? new CompiledTemplateResult($template_10, [], this) : this.prop ? new CompiledTemplateResult($template_11, [], this) : this.prop ? new CompiledTemplateResult($template_12, [], this) : new CompiledTemplateResult($template_13, [], this)
+        ], this);
     }
     testIfContentTracking() {
         trackGet(this, "item");
@@ -330,10 +330,10 @@ export class TestIf extends Component {
             this.item && (trackGet(this.item, "value"), this.item.value) ? (trackGet(this.item.value, ""), new CompiledTemplateResult($template_15, [
                 this.item.value.map(v => new CompiledTemplateResult($template_17, [
                     v
-                ]))
-            ])) : (trackGet(this, "content"), this.content ? new CompiledTemplateResult($template_16, [
+                ], this))
+            ], this)) : (trackGet(this, "content"), this.content ? new CompiledTemplateResult($template_16, [
                 this.content
-            ]) : null)
-        ]);
+            ], this) : null)
+        ], this);
     }
 }

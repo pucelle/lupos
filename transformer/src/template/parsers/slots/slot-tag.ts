@@ -63,7 +63,6 @@ export class SlotTagSlotParser extends SlotParserBase {
 						factory.createIdentifier(nodeName)
 					]
 				),
-				factory.createIdentifier(VariableNames.context),
 				...slotContentTypeNodes
 			]
 		)
@@ -125,6 +124,8 @@ export class SlotTagSlotParser extends SlotParserBase {
 
 		// this.__getSlotElement(slotName) || new CompiledTemplateResult($maker_0, $values)
 		if (this.defaultContentParser) {
+
+			// Haven't prepared `defaultContentParser`, so must add import manually.
 			Modifier.addImport('CompiledTemplateResult', '@pucelle/lupos.js')
 
 			value = factory.createBinaryExpression(

@@ -2,7 +2,6 @@ import * as ts from 'typescript'
 import {HTMLAttribute, HTMLNode, HTMLNodeType, TemplatePart, TemplateSlotPlaceholder} from '../../../lupos-ts-module'
 import {PartType, TreeParser} from '../tree'
 import {factory, Modifier, MutableMask, VariableScopeTree, Packer, Hashing} from '../../../core'
-import {VariableNames} from '../variable-names'
 import {TemplateParser} from '../template'
 import {SlotPositionType} from '../../../enums'
 import {HTMLNodeHelper} from '../../html-syntax'
@@ -312,7 +311,6 @@ export abstract class SlotParserBase {
 							factory.createIdentifier(nodeName)
 						]
 					),
-					factory.createIdentifier(VariableNames.context),
 					...slotContentTypeNodes
 				]
 			)

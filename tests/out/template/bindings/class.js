@@ -223,60 +223,60 @@ export class TestClassBinding extends Component {
         trackGet(this, "className");
         return new CompiledTemplateResult($template_0, [
             this.className
-        ]);
+        ], this);
     }
     testString() {
         trackGet(this, "className");
         return new CompiledTemplateResult($template_1, [
             this.className
-        ]);
+        ], this);
     }
     testQuoted() {
         trackGet(this, "booleanValue");
         return new CompiledTemplateResult($template_2, [
             this.booleanValue
-        ]);
+        ], this);
     }
     testList() {
         trackGet(this, "className");
         return new CompiledTemplateResult($template_3, [
             [this.className]
-        ]);
+        ], this);
     }
     testObject() {
         trackGet(this, "booleanValue");
         return new CompiledTemplateResult($template_4, [
             { 'className': this.booleanValue }
-        ]);
+        ], this);
     }
     testModifier() {
         trackGet(this, "booleanValue");
         return new CompiledTemplateResult($template_5, [
             this.booleanValue
-        ]);
+        ], this);
     }
     testConflictWithClassAttr() {
         trackGet(this, "className", "booleanValue");
         return new CompiledTemplateResult($template_6, [
             this.className,
             this.booleanValue
-        ]);
+        ], this);
     }
 }
 export class TestStaticClassBinding extends Component {
     testInterpolatedString() {
-        return new CompiledTemplateResult($template_7, []);
+        return new CompiledTemplateResult($template_7, [], this);
     }
     testString() {
-        return new CompiledTemplateResult($template_8, []);
+        return new CompiledTemplateResult($template_8, [], this);
     }
     testList() {
-        return new CompiledTemplateResult($template_9, []);
+        return new CompiledTemplateResult($template_9, [], this);
     }
     testObject() {
-        return new CompiledTemplateResult($template_10, []);
+        return new CompiledTemplateResult($template_10, [], this);
     }
     testModifier() {
-        return new CompiledTemplateResult($template_11, []);
+        return new CompiledTemplateResult($template_11, [], this);
     }
 }

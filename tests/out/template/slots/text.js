@@ -83,23 +83,23 @@ export class TestText extends Component {
         return this.stringProp;
     }
     testStaticText() {
-        return new CompiledTemplateResult($template_0, []);
+        return new CompiledTemplateResult($template_0, [], this);
     }
     testStringProp() {
         trackGet(this, "stringProp");
         return new CompiledTemplateResult($template_1, [
             this.stringProp
-        ]);
+        ], this);
     }
     testStringMethod() {
         return new CompiledTemplateResult($template_2, [
             this.getStringProp()
-        ]);
+        ], this);
     }
     testNumericProp() {
         trackGet(this, "numericProp");
         return new CompiledTemplateResult($template_3, [
             this.numericProp
-        ]);
+        ], this);
     }
 }

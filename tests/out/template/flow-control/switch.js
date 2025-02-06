@@ -5,11 +5,11 @@ const $html_0 = new HTMLMaker("<!----><!---->");
 <root>
     <lu:switch ${this.value} />
 </root>
-*/ const $template_0 = new TemplateMaker(function ($context) {
+*/ const $template_0 = new TemplateMaker(function () {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context);
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1));
     let $block_0 = new SwitchBlock($slot_0);
     return {
         el: $node,
@@ -48,11 +48,11 @@ const $html_2 = new HTMLMaker("Case Content 2");
 <root>
     <lu:switch ${this.value} />
 </root>
-*/ const $template_3 = new TemplateMaker(function ($context) {
+*/ const $template_3 = new TemplateMaker(function () {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context, 0);
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 0);
     let $block_0 = new SwitchBlock($slot_0);
     return {
         el: $node,
@@ -101,13 +101,13 @@ export class TestSwitch extends Component {
     testCaseOnly() {
         trackGet(this, "value");
         return new CompiledTemplateResult($template_0, [
-            1 ? new CompiledTemplateResult($template_1, []) : 2 ? new CompiledTemplateResult($template_2, []) : null
-        ]);
+            1 ? new CompiledTemplateResult($template_1, [], this) : 2 ? new CompiledTemplateResult($template_2, [], this) : null
+        ], this);
     }
     testCaseDefault() {
         trackGet(this, "value");
         return new CompiledTemplateResult($template_3, [
-            1 ? new CompiledTemplateResult($template_4, []) : 2 ? new CompiledTemplateResult($template_5, []) : new CompiledTemplateResult($template_6, [])
-        ]);
+            1 ? new CompiledTemplateResult($template_4, [], this) : 2 ? new CompiledTemplateResult($template_5, [], this) : new CompiledTemplateResult($template_6, [], this)
+        ], this);
     }
 }

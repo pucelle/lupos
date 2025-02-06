@@ -5,11 +5,11 @@ const $html_0 = new HTMLMaker("<!----><!---->");
 <root>
     <lu:keyed ${this.key} />
 </root>
-*/ const $template_0 = new TemplateMaker(function ($context) {
+*/ const $template_0 = new TemplateMaker(function () {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context, 0);
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 0);
     let $block_0 = new KeyedBlock($slot_0);
     return {
         el: $node,
@@ -39,7 +39,7 @@ export class TestKeyed extends Component {
         trackGet(this, "key");
         return new CompiledTemplateResult($template_0, [
             this.key,
-            new CompiledTemplateResult($template_1, [])
-        ]);
+            new CompiledTemplateResult($template_1, [], this)
+        ], this);
     }
 }

@@ -117,33 +117,33 @@ export class TestAttribute extends Component {
         trackGet(this, "className");
         return new CompiledTemplateResult($template_0, [
             this.className
-        ]);
+        ], this);
     }
     testString() {
         trackGet(this, "className");
         return new CompiledTemplateResult($template_1, [
             this.className
-        ]);
+        ], this);
     }
     testNullableAttr() {
         trackGet(this, "nullableClassName");
         return new CompiledTemplateResult($template_2, [
             this.nullableClassName
-        ]);
+        ], this);
     }
     testComponentClass() {
-        return new CompiledTemplateResult($template_3, []);
+        return new CompiledTemplateResult($template_3, [], this);
     }
     testQueryAttr() {
         trackGet(this, "booleanValue");
         return new CompiledTemplateResult($template_4, [
             this.booleanValue
-        ]);
+        ], this);
     }
 }
 class Com extends Component {
     static SlotContentType = 0;
     render() {
-        return new CompiledTemplateResult($template_5, []);
+        return new CompiledTemplateResult($template_5, [], this);
     }
 }

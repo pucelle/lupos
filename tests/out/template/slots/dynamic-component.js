@@ -5,13 +5,13 @@ const $html_0 = new HTMLMaker("<!----><div></div><!---->");
 <root>
     <${ChildComponent} .comProp=${this.prop} />
 </root>
-*/ const $template_0 = new TemplateMaker(function ($context) {
+*/ const $template_0 = new TemplateMaker(function () {
     let $latest_0, $com_0;
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.childNodes[1];
     let $node_2 = $node.content.lastChild;
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_2), $context);
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_2));
     let $block_0 = new DynamicComponentBlock(function (com) {
         $node_1 = com.el;
         $com_0 = com;
@@ -50,7 +50,7 @@ export class TestDynamicComponent extends Component {
         trackGet(this, "prop");
         return new CompiledTemplateResult($template_0, [
             this.prop
-        ]);
+        ], this);
     }
 }
 class ChildComponent extends Component {

@@ -75,10 +75,10 @@ const $html_4 = new HTMLMaker("<div><!----></div>");
     let $node_0 = $context.el;
     let $node_1 = $node.content.firstChild;
     let $node_2 = $node_1.firstChild;
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_2), $context, 0);
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_2), 0);
     $node_0.setAttribute("attr", "value");
     $node_1.setAttribute("attr", 'value');
-    $slot_0.update(new CompiledTemplateResult($template_5, []));
+    $slot_0.update(new CompiledTemplateResult($template_5, [], $context));
     return {
         el: $node,
         position: new SlotPosition(1, $node_1),
@@ -123,21 +123,21 @@ const $html_6 = new HTMLMaker("<div></div><div></div>");
 });
 export class TestAttribute extends Component {
     testClass() {
-        return new CompiledTemplateResult($template_0, []);
+        return new CompiledTemplateResult($template_0, [], this);
     }
     testTransition() {
-        return new CompiledTemplateResult($template_1, []);
+        return new CompiledTemplateResult($template_1, [], this);
     }
     testStyle() {
-        return new CompiledTemplateResult($template_2, []);
+        return new CompiledTemplateResult($template_2, [], this);
     }
     testAttr() {
-        return new CompiledTemplateResult($template_3, []);
+        return new CompiledTemplateResult($template_3, [], this);
     }
     testContent() {
-        return new CompiledTemplateResult($template_4, []);
+        return new CompiledTemplateResult($template_4, [], this);
     }
     testContents() {
-        return new CompiledTemplateResult($template_6, []);
+        return new CompiledTemplateResult($template_6, [], this);
     }
 }

@@ -27,7 +27,7 @@ const $html_1 = new HTMLMaker("<!----><!---->");
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context, 1);
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1);
     let $block_0 = new ForBlock($slot_0);
     $block_0.updateRenderFn($context.renderItem);
     $block_0.updateData([1, 2, 3]);
@@ -47,11 +47,11 @@ const $html_1 = new HTMLMaker("<!----><!---->");
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context, 1);
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1);
     let $block_0 = new ForBlock($slot_0);
     $block_0.updateRenderFn((n) => new CompiledTemplateResult($template_3, [
         n + $context.prop
-    ]));
+    ], $context));
     $block_0.updateData([1, 2, 3]);
     return {
         el: $node,
@@ -87,11 +87,11 @@ const $html_1 = new HTMLMaker("<!----><!---->");
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context, 1);
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1);
     let $block_0 = new ForBlock($slot_0);
     $block_0.updateRenderFn((n) => new CompiledTemplateResult($template_5, [
         n + $latest_0
-    ]));
+    ], $context));
     $block_0.updateData([1, 2, 3]);
     return {
         el: $node,
@@ -129,13 +129,13 @@ const $html_1 = new HTMLMaker("<!----><!---->");
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context, 1);
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1);
     let $block_0 = new ForBlock($slot_0);
     $block_0.updateRenderFn((item) => {
         trackGet(item, "value");
         return new CompiledTemplateResult($template_7, [
             item.value
-        ]);
+        ], $context);
     });
     return {
         el: $node,
@@ -173,13 +173,13 @@ const $html_1 = new HTMLMaker("<!----><!---->");
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context, 1);
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1);
     let $block_0 = new ForBlock($slot_0);
     $block_0.updateRenderFn((item) => {
         trackGet(item, "value");
         return new CompiledTemplateResult($template_9, [
             item.value
-        ]);
+        ], $context);
     });
     return {
         el: $node,
@@ -217,11 +217,11 @@ const $html_1 = new HTMLMaker("<!----><!---->");
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), $context, 1);
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1);
     let $block_0 = new ForBlock($slot_0);
     $block_0.updateRenderFn((item) => new CompiledTemplateResult($template_11, [
         item.value
-    ]));
+    ], $context));
     $block_0.updateData($context.deepReadonlyItems);
     return {
         el: $node,
@@ -257,34 +257,34 @@ export class TestFor extends Component {
         trackGet(this, "prop");
         return new CompiledTemplateResult($template_0, [
             n + this.prop
-        ]);
+        ], this);
     }
     testForMapFn() {
-        return new CompiledTemplateResult($template_1, []);
+        return new CompiledTemplateResult($template_1, [], this);
     }
     testForLocalMapFn() {
         trackGet(this, "prop");
-        return new CompiledTemplateResult($template_2, []);
+        return new CompiledTemplateResult($template_2, [], this);
     }
     testForLocalVariableTransferring() {
         let prop = this.prop;
         trackGet(this, "prop");
         return new CompiledTemplateResult($template_4, [
             prop
-        ]);
+        ], this);
     }
     testForTracking() {
         trackGet(this, "items");
         trackGet(this.items, "");
         return new CompiledTemplateResult($template_6, [
             this.items
-        ]);
+        ], this);
     }
     testReadonlyTracking() {
         trackGet(this.readonlyItems, "");
-        return new CompiledTemplateResult($template_8, []);
+        return new CompiledTemplateResult($template_8, [], this);
     }
     testDeepReadonlyTracking() {
-        return new CompiledTemplateResult($template_10, []);
+        return new CompiledTemplateResult($template_10, [], this);
     }
 }

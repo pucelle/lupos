@@ -46,7 +46,7 @@ const $html_2 = new HTMLMaker("<!----><div></div><!---->");
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.childNodes[1];
     let $node_2 = $node.content.lastChild;
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_2), $context);
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_2));
     let $block_0 = new DynamicComponentBlock(function (com) {
         $node_1 = com.el;
         $com_0 = com;
@@ -73,7 +73,7 @@ const $html_2 = new HTMLMaker("<!----><div></div><!---->");
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.childNodes[1];
     let $node_2 = $node.content.lastChild;
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_2), $context);
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_2));
     let $block_0 = new DynamicComponentBlock(function (com) {
         $node_1 = com.el;
         $com_0 = com;
@@ -231,56 +231,56 @@ export class TestEvent extends Component {
     handleEventWithParameter(_value) { }
     handleAnotherEvent() { }
     testComponentEvent() {
-        return new CompiledTemplateResult($template_0, []);
+        return new CompiledTemplateResult($template_0, [], this);
     }
     testMoreComponentEvent() {
-        return new CompiledTemplateResult($template_1, []);
+        return new CompiledTemplateResult($template_1, [], this);
     }
     testUnionedDynamicComponentEvent() {
         trackGet(this, "UnionedCom");
         return new CompiledTemplateResult($template_2, [
             this.UnionedCom
-        ]);
+        ], this);
     }
     testConstructedDynamicComponentEvent() {
         trackGet(this, "ConstructedCom");
         return new CompiledTemplateResult($template_3, [
             this.ConstructedCom
-        ]);
+        ], this);
     }
     testForceComponentEvent() {
-        return new CompiledTemplateResult($template_4, []);
+        return new CompiledTemplateResult($template_4, [], this);
     }
     testElementEvent() {
-        return new CompiledTemplateResult($template_5, []);
+        return new CompiledTemplateResult($template_5, [], this);
     }
     testSimulatedTapEvent() {
-        return new CompiledTemplateResult($template_6, []);
+        return new CompiledTemplateResult($template_6, [], this);
     }
     testSimulatedHoldStartEvent() {
-        return new CompiledTemplateResult($template_7, []);
+        return new CompiledTemplateResult($template_7, [], this);
     }
     testEventModifier() {
-        return new CompiledTemplateResult($template_8, []);
+        return new CompiledTemplateResult($template_8, [], this);
     }
     testDynamicEventHandler() {
         trackGet(this, "booleanValue");
         return new CompiledTemplateResult($template_9, [
             this.booleanValue ? this.handleEvent : this.handleAnotherEvent
-        ]);
+        ], this);
     }
     testInlineEventHandler() {
-        return new CompiledTemplateResult($template_10, []);
+        return new CompiledTemplateResult($template_10, [], this);
     }
     testInlineCallMethod() {
-        return new CompiledTemplateResult($template_11, []);
+        return new CompiledTemplateResult($template_11, [], this);
     }
     testLocalAssignment() {
         let value;
         value;
         return new CompiledTemplateResult($template_12, [
             (e) => value = e
-        ]);
+        ], this);
     }
 }
 class Com1 extends Component {

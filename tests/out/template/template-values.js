@@ -168,44 +168,44 @@ export class TestTemplateValues extends Component {
     }
     handleEvent(_value) { }
     testStatic() {
-        return new CompiledTemplateResult($template_0, []);
+        return new CompiledTemplateResult($template_0, [], this);
     }
     testMutable() {
         trackGet(this, "prop");
         return new CompiledTemplateResult($template_1, [
             this.prop
-        ]);
+        ], this);
     }
     testMutableOfReadonlyProp() {
-        return new CompiledTemplateResult($template_2, []);
+        return new CompiledTemplateResult($template_2, [], this);
     }
     testMutableOfMethod() {
-        return new CompiledTemplateResult($template_3, []);
+        return new CompiledTemplateResult($template_3, [], this);
     }
     testMutableOfCallingMethod() {
         return new CompiledTemplateResult($template_4, [
             this.getValue()
-        ]);
+        ], this);
     }
     testMutableOfReferencingProperty() {
-        return new CompiledTemplateResult($template_5, []);
+        return new CompiledTemplateResult($template_5, [], this);
     }
     testMutableOfReferencingTopmostVariable() {
-        return new CompiledTemplateResult($template_6, []);
+        return new CompiledTemplateResult($template_6, [], this);
     }
     testMutableOfBoundMethod() {
-        return new CompiledTemplateResult($template_7, []);
+        return new CompiledTemplateResult($template_7, [], this);
     }
     testBundlingStringAndValues() {
         trackGet(this, "prop");
         return new CompiledTemplateResult($template_8, [
             this.prop
-        ]);
+        ], this);
     }
     testMergingSameValues() {
         trackGet(this, "prop");
         return new CompiledTemplateResult($template_9, [
             this.prop
-        ]);
+        ], this);
     }
 }

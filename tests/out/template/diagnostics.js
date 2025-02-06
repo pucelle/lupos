@@ -23,6 +23,6 @@ export class TestDiagnostics extends Component {
     // 	return html`<Com>`
     // }
     testMultipleBindingParameters() {
-        return new CompiledTemplateResult($template_0, []);
+        return new CompiledTemplateResult($template_0, [], this);
     }
 }

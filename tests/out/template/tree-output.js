@@ -36,10 +36,10 @@ const $html_2 = new HTMLMaker("<svg><slot name=\"slotName\"></slot></svg>", true
         <slot name="slotName" />
     </svg>
 </root>
-*/ const $template_2 = new TemplateMaker(function ($context) {
+*/ const $template_2 = new TemplateMaker(function () {
     let $node = $html_2.make();
     let $node_0 = $node.content.firstChild;
-    let $slot_0 = new TemplateSlot(new SlotPosition(0, $node_0), $context);
+    let $slot_0 = new TemplateSlot(new SlotPosition(0, $node_0));
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),
@@ -70,15 +70,15 @@ export class TestTemplateOutput extends Component {
     prop = 1;
     readonlyProp = 1;
     testTemplate() {
-        return new CompiledTemplateResult($template_0, []);
+        return new CompiledTemplateResult($template_0, [], this);
     }
     testSVG() {
-        return new CompiledTemplateResult($template_1, []);
+        return new CompiledTemplateResult($template_1, [], this);
     }
     testSVGContentSeparating() {
         return new CompiledTemplateResult($template_2, [
-            this.__getSlotElement("slotName") ?? new CompiledTemplateResult($template_3, [])
-        ]);
+            this.__getSlotElement("slotName") ?? new CompiledTemplateResult($template_3, [], this)
+        ], this);
     }
     testLocalReference() {
         /*
@@ -99,6 +99,6 @@ export class TestTemplateOutput extends Component {
         });
         class Child extends Component {
         }
-        return new CompiledTemplateResult($template_4, []);
+        return new CompiledTemplateResult($template_4, [], this);
     }
 }
