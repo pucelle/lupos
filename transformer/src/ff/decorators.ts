@@ -16,7 +16,7 @@ defineVisitor(function(node: ts.Node) {
 	}
 
 	let decoName = helper.deco.getName(decorator)
-	if (!decoName || !['computed', 'effect', 'watch'].includes(decoName)) {
+	if (!decoName || !['computed', 'effect', 'watch', 'watchMulti'].includes(decoName)) {
 		return
 	}
 

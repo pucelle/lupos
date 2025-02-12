@@ -48,7 +48,7 @@ defineVisitor(function(node: ts.Node) {
 			continue
 		}
 
-		if (['computed', 'effect', 'watch'].includes(decoName)
+		if (['computed', 'effect', 'watch', 'watchMulti'].includes(decoName)
 			&& (ts.isMethodDeclaration(member) || ts.isGetAccessorDeclaration(member))
 		) {
 			compileComputedEffectWatchDecorator(deco, decoName, member, create, connect, disconnect)
@@ -80,7 +80,7 @@ function hasLifeDecorators(node: ts.ClassDeclaration) {
 		}
 
 		let decoName = helper.deco.getFirstName(member)
-		if (decoName && ['computed', 'effect', 'watch', 'useContext', 'setContext'].includes(decoName)) {
+		if (decoName && ['computed', 'effect', 'watch', 'watchMulti', 'useContext', 'setContext'].includes(decoName)) {
 			return true
 		}
 
@@ -191,7 +191,8 @@ function makeMakerParameters(
 	decl: ts.MethodDeclaration | ts.GetAccessorDeclaration
 ): () => ts.Expression[] {
 	let methodName = helper.getFullText(decl.name)
-	let watchGetters = compileWatchGetters(deco)
+	let watchGetters = compileWatchGetters(deco, decoName)
+	let watchOptions = getWatchOptions(deco)
 
 	return () => {
 		if (decoName === 'computed') {
@@ -218,12 +219,24 @@ function makeMakerParameters(
 		}
 		else if (decoName === 'watch') {
 			return [
+				watchGetters()[0],
+				factory.createPropertyAccessExpression(
+					factory.createThis(),
+					factory.createIdentifier(methodName)
+				),
+				factory.createThis(),
+				...(watchOptions ? [watchOptions] : [])
+			]
+		}
+		else if (decoName === 'watchMulti') {
+			return [
 				factory.createArrayLiteralExpression(watchGetters(), true),
 				factory.createPropertyAccessExpression(
 					factory.createThis(),
 					factory.createIdentifier(methodName)
 				),
 				factory.createThis(),
+				...(watchOptions ? [watchOptions] : [])
 			]
 		}
 		else {
@@ -233,20 +246,35 @@ function makeMakerParameters(
 }
 
 
-/** Compile `@watch(...)` to new WatchMultipleMaker([...]). */
-function compileWatchGetters(deco: ts.Decorator): () => ts.FunctionExpression[] {
+/** Compile `@watch(...)` and `@watchMulti(...)` to new WatchMultipleMaker([...]). */
+function compileWatchGetters(deco: ts.Decorator, decoName: string): () => ts.Expression[] {
 	if (!ts.isCallExpression(deco.expression)) {
 		return () => []
 	}
 
-	let decoArgs = deco.expression.arguments
+	let decoArgs: ts.Expression[] = []
+	if (decoName === 'watch') {
+		if (deco.expression.arguments.length > 0) {
+			decoArgs.push(deco.expression.arguments[0])
+		}
+		else {
+			decoArgs.push(factory.createIdentifier('undefined'))
+		}
+	}
+	else {
+		if (deco.expression.arguments.length > 0
+			&& ts.isArrayLiteralExpression(deco.expression.arguments[0])
+		) {
+			decoArgs.push(...deco.expression.arguments[0].elements)
+		}
+	}
 
 	if (decoArgs.some(arg => ts.isStringLiteral(arg))) {
 		Modifier.addImport('trackGet', '@pucelle/ff')
 	}
 
 	return () => {
-		let getters: ts.FunctionExpression[] = []
+		let getters: ts.Expression[] = []
 
 		for (let arg of decoArgs) {
 			if (ts.isStringLiteral(arg)) {
@@ -276,8 +304,7 @@ function compileWatchGetters(deco: ts.Decorator): () => ts.FunctionExpression[] 
 						],
 						false
 					)
-				  )
-				)
+				))
 			}
 
 			// function(){...}
@@ -288,24 +315,26 @@ function compileWatchGetters(deco: ts.Decorator): () => ts.FunctionExpression[] 
 
 			// function(){return undefined}
 			else {
-				getters.push(factory.createFunctionExpression(
-					undefined,
-					undefined,
-					undefined,
-					undefined,
-					[],
-					undefined,
-					factory.createBlock(
-					  	[factory.createReturnStatement(factory.createIdentifier("undefined"))],
-					  	false
-					)
-				  )
-				)
+				getters.push(arg)
 			}
 		}
 
 		return getters
 	}
+}
+
+
+/** Get options parameter of `@watch(..., options)` and `@watchMulti(..., options)`. */
+function getWatchOptions(deco: ts.Decorator): ts.Expression | undefined {
+	if (!ts.isCallExpression(deco.expression)) {
+		return undefined
+	}
+
+	if (deco.expression.arguments.length > 1) {
+		return deco.expression.arguments[1]
+	}
+
+	return undefined
 }
 
 
@@ -425,7 +454,7 @@ function compileUseContextDecorator(
 						factory.createIdentifier('$' + propName + '_declared_by')
 				),
 				factory.createToken(ts.SyntaxKind.EqualsToken),
-				factory.createIdentifier("undefined")
+				factory.createIdentifier('undefined')
 			))
 		]
 		  
