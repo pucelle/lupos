@@ -45,7 +45,7 @@ export class TestWatchProperty extends Component {
 
 	prop: number = 1
 
-	@watch('prop', 'prop')
+	@watch('prop')
 	onPropChange(prop: number) {
 		console.log(prop)
 	}
@@ -53,7 +53,7 @@ export class TestWatchProperty extends Component {
 
 export class TestWatchPropertyDerived extends TestWatchProperty {
 
-	@watch('prop', 'prop')
+	@watch('prop')
 	onPropChange(prop: number) {
 		console.log(prop + 1)
 	}

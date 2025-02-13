@@ -180,7 +180,9 @@ export class TrackingCapturerOperator {
 			}
 			
 			// Break by yield or await.
-			if (group.flowInterruptedBy & FlowInterruptionTypeMask.YieldLike) {
+			if (group.flowInterruptedBy & (
+				FlowInterruptionTypeMask.Yield | FlowInterruptionTypeMask.Await | FlowInterruptionTypeMask.ConditionalAwait
+			)) {
 				ownHashes.clear()
 			}
 		}

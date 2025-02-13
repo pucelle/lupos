@@ -66,7 +66,7 @@ export class TestWatchProperty extends Component {
     prop = 1;
     onCreated() {
         super.onCreated();
-        this.$onPropChange_watcher = new WatchMaker(function () { trackGet(this, 'prop'); return this.prop; }, this.onPropChange, this, 'prop');
+        this.$onPropChange_watcher = new WatchMaker(function () { trackGet(this, 'prop'); return this.prop; }, this.onPropChange, this);
     }
     onConnected() {
         super.onConnected();

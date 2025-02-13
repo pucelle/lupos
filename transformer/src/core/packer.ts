@@ -7,7 +7,16 @@ import {AccessNode} from '../lupos-ts-module'
 export enum FlowInterruptionTypeMask {
 	Return = 1,
 	BreakLike = 2,
-	YieldLike = 4,
+	Yield = 4,
+
+	/** Which stops synchronous execution. */
+	Await = 8,
+
+	/** 
+	 * Which may stop synchronous execution.
+	 * Like `if (xxx) {await ...}`.
+	 */
+	ConditionalAwait = 16,
 }
 
 
@@ -91,12 +100,16 @@ export namespace Packer {
 			type |= FlowInterruptionTypeMask.Return
 		}
 		
-		if (ts.isBreakOrContinueStatement(node)) {
+		else if (ts.isBreakOrContinueStatement(node)) {
 			type |= FlowInterruptionTypeMask.BreakLike
 		}
 		
-		if (ts.isAwaitExpression(node) || ts.isYieldExpression(node)) {
-			type |= FlowInterruptionTypeMask.YieldLike
+		else if (ts.isYieldExpression(node)) {
+			type |= FlowInterruptionTypeMask.Yield
+		}
+
+		else if (ts.isAwaitExpression(node)) {
+			type |= FlowInterruptionTypeMask.Await
 		}
 
 		return type

@@ -1,6 +1,6 @@
 import * as ts from 'typescript'
 import {TrackingScope} from './scope'
-import {TrackingScopeTypeMask} from './scope-tree'
+import {TrackingScopeTree, TrackingScopeTypeMask} from './scope-tree'
 import {FlowInterruptionTypeMask, Packer, helper} from '../../core'
 import {AccessNode} from '../../lupos-ts-module'
 
@@ -119,6 +119,8 @@ export class TrackingScopeState {
 
 	/** Union with internal contents type. */
 	unionFlowInterruptionType(type: FlowInterruptionTypeMask | 0) {
+
+		// Union never cross function declaration.
 		if (this.scope.type & TrackingScopeTypeMask.FunctionLike) {
 			return 
 		}
@@ -138,8 +140,25 @@ export class TrackingScopeState {
 			}
 		}
 
-		if (type & FlowInterruptionTypeMask.YieldLike) {
-			this.flowInterruptionType |= FlowInterruptionTypeMask.YieldLike
+		if (type & FlowInterruptionTypeMask.Yield) {
+			this.flowInterruptionType |= FlowInterruptionTypeMask.Yield
+		}
+
+		if (type & FlowInterruptionTypeMask.Await) {
+			
+			// `if (...) await ...`
+			if ((type & FlowInterruptionTypeMask.Await)
+				&& TrackingScopeTree.mayRunOrNot(this.scope.type)
+			) {
+				this.flowInterruptionType |= FlowInterruptionTypeMask.ConditionalAwait
+			}
+			else {
+				this.flowInterruptionType |= FlowInterruptionTypeMask.Await
+			}
+		}
+
+		if (type & FlowInterruptionTypeMask.ConditionalAwait) {
+			this.flowInterruptionType |= FlowInterruptionTypeMask.ConditionalAwait
 		}
 	}
 

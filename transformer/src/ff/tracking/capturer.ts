@@ -49,6 +49,9 @@ export class TrackingCapturer {
 	latestCaptured!: CapturedGroup
 	captureType: 'get' | 'set' | 'both' | 'none' | 'not-determined' = 'not-determined'
 
+	/** Whether accepted await interruption. */
+	private preventGettingAfterAwait: boolean = false
+
 	constructor(scope: TrackingScope, state: TrackingScopeState, outputWay: CapturedOutputWay) {
 		this.scope = scope
 		this.operator = new TrackingCapturerOperator(this)
@@ -141,6 +144,10 @@ export class TrackingCapturer {
 			return false
 		}
 
+		if (this.preventGettingAfterAwait && type === 'get') {
+			return false
+		}
+
 		if (this.captureType === 'set' && type === 'get') {
 			return false
 		}
@@ -209,6 +216,8 @@ export class TrackingCapturer {
 		this.latestCaptured.flowInterruptedBy = flowInterruptedBy
 		this.resetLatestCaptured()
 		this.captured.push(this.latestCaptured)
+
+		this.preventGettingAfterAwait = this.preventGettingAfterAwait || (flowInterruptedBy & FlowInterruptionTypeMask.Await) > 0
 	}
 
 	/** Before each scope will exit. */
@@ -292,7 +301,9 @@ export class TrackingCapturer {
 			}
 
 			// Break by yield or await.
-			if (group.flowInterruptedBy & FlowInterruptionTypeMask.YieldLike) {
+			if (group.flowInterruptedBy & (
+				FlowInterruptionTypeMask.Yield | FlowInterruptionTypeMask.Await | FlowInterruptionTypeMask.ConditionalAwait
+			)) {
 				return
 			}
 		}

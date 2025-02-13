@@ -35,7 +35,6 @@ export class TestOptimizing extends Component {
         trackGet(this, "prop");
         await Promise.resolve();
         this.prop;
-        trackGet(this, "prop");
         return 0;
     }
     eliminateRepetitiveProp() {

@@ -169,7 +169,6 @@ export class TestAwaitStatement extends Component {
         trackGet(this, "prop1");
         await Promise.resolve();
         this.prop2;
-        trackGet(this, "prop2");
         return 0;
     }
     async testConditionalAwaitTrackSplicing() {

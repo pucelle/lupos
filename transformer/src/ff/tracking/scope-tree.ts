@@ -339,6 +339,18 @@ export namespace TrackingScopeTree {
 		}
 	}
 
+
+
+	/** Returns whether scope with type may run or not run. */
+	export function mayRunOrNot(type: TrackingScopeTypeMask): boolean {
+		return (type & (
+			TrackingScopeTypeMask.ConditionalContent
+			| TrackingScopeTypeMask.IterationIncreasement
+			| TrackingScopeTypeMask.IterationContent
+			| TrackingScopeTypeMask.CaseDefaultContent
+		)) > 0
+	}
+
 	/** Find closest scope contains or equals node. */
 	export function findClosest(node: ts.Node): TrackingScope {
 		let scopes = ScopeMap.get(node)
@@ -420,13 +432,14 @@ export namespace TrackingScopeTree {
 			// To outer scope.
 			if (node === scope.node) {
 				
-				// Can't across these types of scope, will end at the inner start of them.
-				if (scope.type & TrackingScopeTypeMask.ConditionalContent
-					|| scope.type & TrackingScopeTypeMask.IterationCondition
-					|| scope.type & TrackingScopeTypeMask.IterationIncreasement
-					|| scope.type & TrackingScopeTypeMask.IterationExpression
-					|| scope.type & TrackingScopeTypeMask.IterationContent
-				) {
+				// Can't cross these types of scopes, will end at the inner start of them.
+				if (scope.type & (
+					TrackingScopeTypeMask.ConditionalContent
+					| TrackingScopeTypeMask.IterationCondition
+					| TrackingScopeTypeMask.IterationIncreasement
+					| TrackingScopeTypeMask.IterationExpression
+					| TrackingScopeTypeMask.IterationContent
+				)) {
 					break
 				}
 
