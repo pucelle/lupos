@@ -199,6 +199,14 @@ export class TestAwaitStatement extends Component {
 		return 0
 	}
 
+	async testConditionalAwaitTrackSplicing() {
+		if (this.prop1) {
+			await Promise.resolve()
+		}
+		this.prop2
+		return 0
+	}
+
 	async testAwaitVariableTracking() {
 		let prop = await this.asyncGetProp(this.prop1)
 		return prop

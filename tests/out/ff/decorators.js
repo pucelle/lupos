@@ -1,4 +1,4 @@
-import { ComputedMaker, trackGet, trackSet, EffectMaker, WatchMultipleMaker } from '@pucelle/ff';
+import { ComputedMaker, trackGet, trackSet, EffectMaker, WatchMaker } from '@pucelle/ff';
 import { Component } from '@pucelle/lupos.js';
 export class TestComputed extends Component {
     prop = 1;
@@ -66,10 +66,7 @@ export class TestWatchProperty extends Component {
     prop = 1;
     onCreated() {
         super.onCreated();
-        this.$onPropChange_watcher = new WatchMultipleMaker([
-            function () { trackGet(this, 'prop'); return this.prop; },
-            function () { trackGet(this, 'prop'); return this.prop; }
-        ], this.onPropChange, this);
+        this.$onPropChange_watcher = new WatchMaker(function () { trackGet(this, 'prop'); return this.prop; }, this.onPropChange, this, 'prop');
     }
     onConnected() {
         super.onConnected();
@@ -93,9 +90,7 @@ export class TestWatchCallback extends Component {
     prop = 1;
     onCreated() {
         super.onCreated();
-        this.$onPropChange_watcher = new WatchMultipleMaker([
-            function () { trackGet(this, "prop"); return this.prop; }
-        ], this.onPropChange, this);
+        this.$onPropChange_watcher = new WatchMaker(function () { trackGet(this, "prop"); return this.prop; }, this.onPropChange, this);
     }
     onConnected() {
         super.onConnected();
