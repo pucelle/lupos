@@ -50,7 +50,7 @@ export class TrackingCapturer {
 	captureType: 'get' | 'set' | 'both' | 'none' | 'not-determined' = 'not-determined'
 
 	/** Whether accepted await interruption. */
-	private preventGettingAfterAwait: boolean = false
+	preventGettingAfterAwait: boolean = false
 
 	constructor(scope: TrackingScope, state: TrackingScopeState, outputWay: CapturedOutputWay) {
 		this.scope = scope
@@ -60,6 +60,11 @@ export class TrackingCapturer {
 		this.resetLatestCaptured()
 		this.captured = [this.latestCaptured]
 		this.initCaptureType(state)
+
+		// Broadcast `preventGettingAfterAwait` to child capturers, but not to function.
+		if (scope.parent && !helper.isFunctionLike(scope.node)) {
+			this.preventGettingAfterAwait = scope.parent.capturer.preventGettingAfterAwait
+		}
 	}
 
 	private resetLatestCaptured() {
