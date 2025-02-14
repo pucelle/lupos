@@ -62,8 +62,8 @@ export class TrackingCapturer {
 		this.initCaptureType(state)
 
 		// Broadcast `preventGettingAfterAwait` to child capturers, but not to function.
-		if (scope.parent && !helper.isFunctionLike(scope.node)) {
-			this.preventGettingAfterAwait = scope.parent.capturer.preventGettingAfterAwait
+		if (scope.parent && scope.parent.capturer.preventGettingAfterAwait && !helper.isFunctionLike(scope.node)) {
+			this.preventGettingAfterAwait = true
 		}
 	}
 
