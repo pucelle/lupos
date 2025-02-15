@@ -181,12 +181,17 @@ export abstract class SlotParserBase {
 		this.tree.refAsComponent(this.node)
 	}
 
+	/** Test whether has referenced component name. */
+	protected hasRefedComponentName(): boolean {
+		return this.tree.hasRefedComponentName(this.node)
+	}
+
 	/**
 	 * Get referenced component name.
-	 * Must have referenced in `init` using `refAsComponent()`.
+	 * Exist if have referenced in `init` using `refAsComponent()`.
 	 * Can only use it in `outputInit` or `outputUpdate`.
 	 */
-	protected getRefedComponentName(): string {
+	protected getRefedComponentName(): string | undefined {
 		return this.tree.getRefedComponentName(this.node)
 	}
 

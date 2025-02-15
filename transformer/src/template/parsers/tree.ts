@@ -315,9 +315,14 @@ export class TreeParser {
 		return comName
 	}
 
+	/** Test whether has component name of a refed component by it's node. */
+	hasRefedComponentName(node: HTMLNode): boolean {
+		return this.refedComponentMap.has(node)
+	}
+
 	/** Get component name of a refed component by it's node. */
-	getRefedComponentName(node: HTMLNode): string {
-		return this.refedComponentMap.get(node)!
+	getRefedComponentName(node: HTMLNode): string | undefined {
+		return this.refedComponentMap.get(node)
 	}
 
 	/** 

@@ -98,7 +98,7 @@ export class EventSlotParser extends SlotParserBase {
 	}
 
 	private outputComponentInit() {
-		let comVariableName = this.tree.getRefedComponentName(this.node)
+		let comVariableName = this.tree.getRefedComponentName(this.node)!
 
 		// $com_0.on('comEventName', (...args) => {$latest_0.call($context, ...args)})
 		if (this.latestVariableNames) {

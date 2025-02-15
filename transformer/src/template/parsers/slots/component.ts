@@ -36,7 +36,7 @@ export class ComponentSlotParser extends SlotParserBase {
 	outputInit() {
 		let nodeName = this.getRefedNodeName()
 		let comName = this.node.tagName!
-		let comVariableName = this.getRefedComponentName()
+		let comVariableName = this.getRefedComponentName()!
 
 		// let $com_0 = new Com($node_0), after component has been referenced.
 		let comInit = this.createVariableAssignment(
@@ -58,7 +58,7 @@ export class ComponentSlotParser extends SlotParserBase {
 
 		// $com_0.__applyRestSlotNodes(startNode, endNode)
 		if (hasRestSlotContentExisted) {
-			let comVariableName = this.getRefedComponentName()
+			let comVariableName = this.getRefedComponentName()!
 			let contentRangeNodes = this.slotRangeNodesGetter!()
 
 			return factory.createCallExpression(

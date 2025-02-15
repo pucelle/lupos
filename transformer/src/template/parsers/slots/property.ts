@@ -66,6 +66,7 @@ export class PropertySlotParser extends SlotParserBase {
 
 	outputUpdate() {
 		let target: ts.Identifier
+		let comVariableName = this.getRefedComponentName()!
 
 		// trackSet
 		if (this.targetType === 'component' && this.latestVariableNames) {
@@ -74,7 +75,7 @@ export class PropertySlotParser extends SlotParserBase {
 
 		// $com_0
 		if (this.targetType === 'component') {
-			target = factory.createIdentifier(this.getRefedComponentName())
+			target = factory.createIdentifier(comVariableName)
 		}
 
 		// $node_0
@@ -91,7 +92,7 @@ export class PropertySlotParser extends SlotParserBase {
 				factory.createIdentifier("trackSet"),
 				undefined,
 				[
-					factory.createIdentifier(this.getRefedComponentName()),
+					factory.createIdentifier(this.getRefedComponentName()!),
 					factory.createStringLiteral(this.name),
 				]
 			)]
@@ -139,7 +140,7 @@ export class PropertySlotParser extends SlotParserBase {
 	outputSetTracking(): {name: string, property: string}[] {
 		if (this.targetType === 'component') {
 			return [{
-				name: this.getRefedComponentName(),
+				name: this.getRefedComponentName()!,
 				property: this.name,
 			}]
 		}

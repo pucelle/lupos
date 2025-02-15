@@ -168,7 +168,7 @@ export class IfFlowControl extends FlowControlBase {
 	}
 
 	outputUpdate(): ts.Statement | ts.Expression | (ts.Statement| ts.Expression)[] {
-		let toValue = this.outputConditionalExpression()
+		let toValue = this.outputConditionalExp()
 
 		// $block_0.update($values[0])
 		return factory.createCallExpression(
@@ -182,16 +182,8 @@ export class IfFlowControl extends FlowControlBase {
 	}
 
 	/** Make an index output function by an if condition value index sequence. */
-	protected outputConditionalExpression(): ts.Expression {
-		let conditions = this.conditionIndices.map(index => {
-			if (index === null) {
-				return factory.createNull()
-			}
-			else {
-				let rawNode = this.template.values.getRawValue(index)
-				return Interpolator.outputNodeSelf(rawNode) as ts.Expression
-			}
-		})
+	protected outputConditionalExp(): ts.Expression {
+		let conditions = this.outputConditionsExps()
 
 		let contents = this.contentTemplates.map((template, index) => {
 			let rangeId = this.contentRangeIds[index]

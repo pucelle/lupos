@@ -21,7 +21,6 @@ export class DynamicComponentSlotParser extends SlotParserBase {
 	private slotRangeNodesGetter: (() => ts.Expression[]) | null = null
 
 	preInit() {
-		this.refAsComponent()
 		this.blockVariableName = this.tree.makeUniqueBlockName()
 		this.slotVariableName = this.makeSlotName()
 		this.templateSlotGetter = this.prepareTemplateSlot(null)
@@ -76,7 +75,9 @@ export class DynamicComponentSlotParser extends SlotParserBase {
 		let hasContentExisted = this.node.children.length > 0
 
 		// let $com_0
-		this.tree.addPreDeclaredVariableName(comName)
+		if (comName) {
+			this.tree.addPreDeclaredVariableName(comName)
+		}
 
 		// let $block_0 = new DynamicComponentBlock(
 		//   function(com){
@@ -109,11 +110,11 @@ export class DynamicComponentSlotParser extends SlotParserBase {
 						factory.createToken(ts.SyntaxKind.EqualsToken),
 						factory.createPropertyAccessExpression(factory.createIdentifier('com'), 'el')
 					))] : []),
-					factory.createExpressionStatement(factory.createBinaryExpression(
+					...(comName ? [factory.createExpressionStatement(factory.createBinaryExpression(
 						factory.createIdentifier(comName),
 						factory.createToken(ts.SyntaxKind.EqualsToken),
 						factory.createIdentifier('com')
-					)),
+					))] : []),
 					...nodeAttrInits,
 				],
 				true
