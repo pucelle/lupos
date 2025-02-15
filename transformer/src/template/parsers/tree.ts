@@ -57,6 +57,8 @@ export class TreeParser {
 	/** Node referenced component name. */
 	private refedComponentMap: Map<HTMLNode, string> = new Map()
 
+	private determined: boolean = false
+
 	constructor(
 		template: TemplateParser,
 		root: HTMLRoot,
@@ -300,6 +302,10 @@ export class TreeParser {
 	 * Must call it in `init` method.
 	 */
 	refAsComponent(node: HTMLNode): string {
+		if (this.determined) {
+			throw new Error(`References have been determined!`)
+		}
+
 		if (this.refedComponentMap.has(node)) {
 			return this.refedComponentMap.get(node)!
 		}
@@ -315,13 +321,12 @@ export class TreeParser {
 		return comName
 	}
 
-	/** Test whether has component name of a refed component by it's node. */
-	hasRefedComponentName(node: HTMLNode): boolean {
-		return this.refedComponentMap.has(node)
-	}
-
 	/** Get component name of a refed component by it's node. */
 	getRefedComponentName(node: HTMLNode): string | undefined {
+		if (!this.determined) {
+			throw new Error(`References have not been determined!`)
+		}
+
 		return this.refedComponentMap.get(node)
 	}
 
@@ -330,6 +335,7 @@ export class TreeParser {
 	 * Return a callback, call which will finally interpolate to source file.
 	 */
 	prepareToOutput(scope: VariableScope): () => void {
+		this.determined = true
 		this.references.determine()
 
 		let parts = this.parts

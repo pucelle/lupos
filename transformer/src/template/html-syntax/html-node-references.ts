@@ -68,7 +68,7 @@ export class HTMLNodeReferences {
 	 * Get already referenced name.
 	 * Like `$node_0`.
 	 */
-	getRefedName(node: HTMLNode) {
+	getRefedName(node: HTMLNode): string {
 		if (!this.determined) {
 			throw new Error(`References have not been determined!`)
 		}
