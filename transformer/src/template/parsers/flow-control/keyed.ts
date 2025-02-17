@@ -16,12 +16,16 @@ export class KeyedFlowControl extends FlowControlBase {
 	/** new TemplateSlot(...) */
 	private templateSlotGetter!: () => ts.Expression
 
+	protected normalCacheable: boolean = false
+	protected weakCacheable: boolean = false
 	private contentTemplate: TemplateParser | null = null
 	private valueIndex: number | null = null
 
 	preInit() {
 		this.blockVariableName = this.tree.makeUniqueBlockName()
 		this.slotVariableName = this.slot.makeSlotName()
+		this.normalCacheable = this.hasAttrValue(this.node, 'cache')
+		this.weakCacheable = this.hasAttrValue(this.node, 'weakCache')
 
 		let valueIndex = this.getAttrValueIndex(this.node)
 		this.valueIndex = valueIndex
@@ -36,7 +40,13 @@ export class KeyedFlowControl extends FlowControlBase {
 	}
 
 	outputInit() {
-		Modifier.addImport('KeyedBlock', '@pucelle/lupos.js')
+		let blockClassName = this.normalCacheable
+			? 'CacheableKeyedBlock'
+			: this.weakCacheable
+			? 'WeakCacheableKeyedBlock'
+			: 'KeyedBlock'
+
+		Modifier.addImport(blockClassName, '@pucelle/lupos.js')
 
 		// let $block_0 = new KeyedBlock(
 		//   new TemplateSlot(new SlotPosition(SlotPositionType.Before, nextChild)),
@@ -53,7 +63,7 @@ export class KeyedFlowControl extends FlowControlBase {
 			this.slot.createVariableAssignment(
 				this.blockVariableName,
 				factory.createNewExpression(
-					factory.createIdentifier('KeyedBlock'),
+					factory.createIdentifier(blockClassName),
 					undefined,
 					[
 						factory.createIdentifier(this.slotVariableName),
