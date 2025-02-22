@@ -1,4 +1,4 @@
-import {ListMap, MethodsObservable, Observed} from '@pucelle/ff'
+import {ListMap, MethodsObserved, Observed} from '@pucelle/ff'
 import {Component} from '@pucelle/lupos.js'
 
 
@@ -183,7 +183,7 @@ export class TestPropertyMethodsObservable {
 	}
 }
 
-class AnyMethodsObservable implements MethodsObservable<'get', 'set'> {
+class AnyMethodsObservable implements MethodsObserved<'get', 'set'> {
 	value: number = 1
 	get() {
 		return this.value
