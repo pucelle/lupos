@@ -14,7 +14,9 @@ export class TestFor extends Component {
 
 	testForMapFn() {
 		return html`
-			<lu:for ${[1,2,3]}>${this.renderItem}</lu:for>
+			<lu:for ${[1,2,3]}>
+				${this.renderItem}
+			</lu:for>
 		`
 	}
 

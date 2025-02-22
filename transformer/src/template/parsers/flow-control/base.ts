@@ -62,10 +62,10 @@ export abstract class FlowControlBase {
 
 		let childNode = node.children.find(n => {
 			return n.type === HTMLNodeType.Text
-				&& TemplateSlotPlaceholder.isCompleteSlotIndex(n.text!)
+				&& TemplateSlotPlaceholder.isCompleteSlotIndex(n.text!.trim())
 		})
 
-		let index = childNode ? TemplateSlotPlaceholder.getUniqueSlotIndex(childNode.text!) : null
+		let index = childNode ? TemplateSlotPlaceholder.getUniqueSlotIndex(childNode.text!.trim()) : null
 
 		return index
 	}
