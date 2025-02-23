@@ -33,8 +33,6 @@ export class ForFlowControl extends FlowControlBase {
 		let fnValueIndex = this.getUniqueChildValueIndex(this.node)
 		let shouldObserveElements = false
 
-		console.log(fnValueIndex)
-
 		// Force tracking members of array.
 		// When parsing template, all descendant nodes have not been visited by tracking module.
 		if (ofValueIndex !== null) {

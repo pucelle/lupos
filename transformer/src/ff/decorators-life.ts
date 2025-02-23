@@ -1,5 +1,5 @@
 import * as ts from 'typescript'
-import {defineVisitor, factory, Interpolator, MethodOverwrite, Modifier, MethodInsertPosition, helper} from '../core'
+import {defineVisitor, factory, Interpolator, MethodOverwrite, Modifier, helper} from '../core'
 import {ProcessorClassNameMap, ProcessorPropNameMap} from './decorators-shared'
 import {Packer} from '../core/packer'
 
@@ -151,10 +151,8 @@ function compileComputedEffectWatchDecorator(
 			makerParameters()
 		)
 	))
-	  
-	let insertAfterSuper = decoName === 'computed'
-	let insertPosition: MethodInsertPosition = insertAfterSuper ? 'after-super' : 'end'
-	create.insert(() => [createStatementGetter()], insertPosition)
+	
+	create.insert(() => [createStatementGetter()], 'end')
 
 
 	// this.$prop_computer.connect()
@@ -167,7 +165,7 @@ function compileComputedEffectWatchDecorator(
 		[]
 	));
 
-	(connect || create).insert(() => [connectStatement], insertPosition)
+	(connect || create).insert(() => [connectStatement], 'end')
 	
 
 	if (disconnect) {
