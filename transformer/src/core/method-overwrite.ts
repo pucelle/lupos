@@ -20,6 +20,7 @@ export class MethodOverwrite {
 
 	private newNode: ts.ConstructorDeclaration | ts.MethodDeclaration | null = null
 	private superIndex: number = 0
+	private endIndex: number = 0
 	private inserted: MethodInsertInserted[] = []
 
 	constructor(classNode: ts.ClassDeclaration, name: string) {
@@ -37,6 +38,8 @@ export class MethodOverwrite {
 			this.superIndex = this.rawNode!.body!.statements.findIndex(s => {
 				helper.getFullText(s).startsWith('super')
 			})
+
+			this.endIndex = this.findEndIndexBeforeAwait()
 		}
 		else {
 			if (name === 'constructor') {
@@ -46,6 +49,21 @@ export class MethodOverwrite {
 				this.newNode = this.createMethod()
 			}
 		}
+	}
+
+	/** Find await index or end index. */
+	private findEndIndexBeforeAwait(): number {
+		let statements = this.rawNode!.body!.statements
+
+		for (let i = 0; i < statements.length; i++) {
+			let statement = statements[i]
+
+			if (helper.findInstantlyRunInward(statement, (node) => ts.isAwaitExpression(node))) {
+				return i
+			}
+		}
+
+		return statements.length
 	}
 
 	/** Create a constructor function. */
@@ -128,11 +146,16 @@ export class MethodOverwrite {
 		let body = this.rawNode!.body!
 
 		if (position === 'end') {
-			Interpolator.append(body, InterpolationContentType.Normal, statementsGetter)
+			let beforeStat = this.endIndex >= body.statements.length ? null : body.statements[this.endIndex]
+			if (beforeStat) {
+				Interpolator.before(beforeStat, InterpolationContentType.Normal, statementsGetter)
+			}
+			else {
+				Interpolator.append(body, InterpolationContentType.Normal, statementsGetter)
+			}
 		}
 		else {
-			let superCall = body.statements[this.superIndex]
-
+			let superCall = this.superIndex > -1 ? body.statements[this.superIndex] : null
 			if (superCall) {
 				if (position === 'before-super') {
 					Interpolator.before(superCall, InterpolationContentType.Normal, statementsGetter)
