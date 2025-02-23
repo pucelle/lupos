@@ -33,6 +33,10 @@ export class TestClassBinding extends Component {
 	testConflictWithClassAttr() {
 		return html`<div class=${this.className} :class.className=${this.booleanValue} />`
 	}
+
+	testConflictWithFixedClassAttr() {
+		return html`<div class="className" :class.className=${this.booleanValue} />`
+	}
 }
 
 

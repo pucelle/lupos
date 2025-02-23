@@ -33,6 +33,7 @@ export class AttributeSlotParser extends SlotParserBase {
 
 		this.isSharedModification = this.node.tagName === 'template'
 			|| TemplateSlotPlaceholder.isComponent(this.node.tagName!)
+			|| (this.name === 'class' || this.name === 'style') && !!this.node.attrs?.find(attr => attr.name.startsWith(':' + this.name))
 
 		if (this.isAnyValueMutable()) {
 			this.latestVariableNames = this.makeGroupOfLatestNames()
@@ -43,8 +44,8 @@ export class AttributeSlotParser extends SlotParserBase {
 		let slotNode = this.getFirstRawValueNode()
 		let slotNodeType = slotNode ? helper.types.typeOf(slotNode) : null
 
-		// class="..."
-		if (this.isSharedModification && this.hasString()) {
+		// `class="..."`, `class="${}"` has been upgraded to binding normally.
+		if (this.isSharedModification && this.hasString() && !this.hasValueIndex()) {
 			if (this.name === 'class') {
 				return this.outputSharedClassOutput()
 			}

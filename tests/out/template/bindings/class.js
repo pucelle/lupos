@@ -148,9 +148,30 @@ const $html_0 = new HTMLMaker("<div></div>");
 });
 /*
 <root>
-    <div :class="${'className'} className2" />
+    <div class="className" :class.className=${this.booleanValue} />
 </root>
 */ const $template_7 = new TemplateMaker(function () {
+    let $latest_0;
+    let $node = $html_0.make();
+    let $node_0 = $node.content.firstChild;
+    let $binding_0 = new ClassBinding($node_0);
+    $node_0.classList.add("className");
+    return {
+        el: $node,
+        position: new SlotPosition(1, $node_0),
+        update($values) {
+            if ($latest_0 !== $values[0]) {
+                $binding_0.updateObject({ className: $values[0] });
+                $latest_0 = $values[0];
+            }
+        }
+    };
+});
+/*
+<root>
+    <div :class="${'className'} className2" />
+</root>
+*/ const $template_8 = new TemplateMaker(function () {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $binding_0 = new ClassBinding($node_0);
@@ -164,7 +185,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 <root>
     <div :class=${'className'} />
 </root>
-*/ const $template_8 = new TemplateMaker(function () {
+*/ const $template_9 = new TemplateMaker(function () {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $binding_0 = new ClassBinding($node_0);
@@ -178,7 +199,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 <root>
     <div :class=${['className']} />
 </root>
-*/ const $template_9 = new TemplateMaker(function () {
+*/ const $template_10 = new TemplateMaker(function () {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $binding_0 = new ClassBinding($node_0);
@@ -192,7 +213,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 <root>
     <div :class=${{'className': true}} />
 </root>
-*/ const $template_10 = new TemplateMaker(function () {
+*/ const $template_11 = new TemplateMaker(function () {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $binding_0 = new ClassBinding($node_0);
@@ -206,7 +227,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 <root>
     <div :class.className=${true} />
 </root>
-*/ const $template_11 = new TemplateMaker(function () {
+*/ const $template_12 = new TemplateMaker(function () {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $binding_0 = new ClassBinding($node_0);
@@ -262,21 +283,27 @@ export class TestClassBinding extends Component {
             this.booleanValue
         ], this);
     }
+    testConflictWithFixedClassAttr() {
+        trackGet(this, "booleanValue");
+        return new CompiledTemplateResult($template_7, [
+            this.booleanValue
+        ], this);
+    }
 }
 export class TestStaticClassBinding extends Component {
     testInterpolatedString() {
-        return new CompiledTemplateResult($template_7, [], this);
-    }
-    testString() {
         return new CompiledTemplateResult($template_8, [], this);
     }
-    testList() {
+    testString() {
         return new CompiledTemplateResult($template_9, [], this);
     }
-    testObject() {
+    testList() {
         return new CompiledTemplateResult($template_10, [], this);
     }
-    testModifier() {
+    testObject() {
         return new CompiledTemplateResult($template_11, [], this);
+    }
+    testModifier() {
+        return new CompiledTemplateResult($template_12, [], this);
     }
 }
