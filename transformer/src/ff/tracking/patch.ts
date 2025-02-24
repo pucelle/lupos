@@ -1,14 +1,11 @@
 import * as ts from 'typescript'
-import {ObservedChecker} from './observed-checker'
+import {TrackingChecker} from './checker'
 import {AccessGrouper} from './access-grouper'
 import {TrackingRanges} from './ranges'
 import {helper} from '../../core'
-
-
-export enum ForceTrackType {
-	Self,
-	Elements,
-}
+import {TrackingType} from './types'
+import {CapturedItem} from './capturer'
+import {ListMap} from '../../lupos-ts-module'
 
 
 /** 
@@ -18,15 +15,19 @@ export enum ForceTrackType {
 export namespace TrackingPatch {
 
 	const Ignored: Set<ts.Node> = new Set()
-	const ForceTracked: Map<ts.Node, ForceTrackType> = new Map()
+	const ForceTrackedTypeMask: Map<ts.Node, number> = new Map()
 	const ForceInstantlyRun: Set<ts.Node> = new Set()
+	const CustomCaptured: ListMap<ts.Expression, CapturedItem> = new ListMap()
 
 
 	/** Initialize after each time source file updated. */
 	export function init() {
 		Ignored.clear()
-		ForceTracked.clear()
+		ForceTrackedTypeMask.clear()
+		ForceInstantlyRun.clear()
+		CustomCaptured.clear()
 	}
+
 
 	/** 
 	 * Ignore outputting tracking node.
@@ -41,42 +42,49 @@ export namespace TrackingPatch {
 		return Ignored.has(rawNode)
 	}
 
+
 	/** 
 	 * Force re-check node.
-	 * 
-	 * If tracking type is `Elements`, for array type, will track elements,
-	 * and it would apply additional elements get tracking.
+	 * `node` can either be an expression or declaration
 	 */
-	export function forceTrack(rawNode: ts.Node, type: ForceTrackType) {
-		ForceTracked.set(rawNode, type)
+	export function forceTrackType(rawNode: ts.Expression | ts.Declaration, type: TrackingType) {
+		let currentType = ForceTrackedTypeMask.get(rawNode) ?? 0
+		ForceTrackedTypeMask.set(rawNode, currentType | type)
 	}
 
 	/** 
-	 * Check whether force tracking node.
+	 * Check whether force tracking node with tracking type.
 	 * 
-	 * `parental` specifies whether are visiting parent node of original
+	 * `visitElements` specifies whether are visiting parent node of original
 	 * to determine whether elements should be observed.
 	 */
-	export function isForceTracked(rawNode: ts.Node, parental: boolean = false): boolean {
-		let type = ForceTracked.get(rawNode)
-		if (type === undefined) {
-			return false
-		}
-
-		if (type === ForceTrackType.Elements && parental) {
-			return true
-		}
-		else if (type === ForceTrackType.Self && !parental) {
-			return true
-		}
-
-		return false
+	export function isForceTrackedAs(rawNode: ts.Node, type: TrackingType): boolean {
+		return ((ForceTrackedTypeMask.get(rawNode) ?? 0) & type) > 0
 	}
 
-	/** Get force tracking type of specified node. */
-	export function getForceTrackType(rawNode: ts.Node): ForceTrackType | undefined {
-		return ForceTracked.get(rawNode)
+
+	/** Add custom tracking items. */
+	export function addCustomTracking(
+		rawNode: ts.Expression,
+		type: 'get' | 'set',
+		exp?: ts.Expression,
+		keys?: (string | number)[]
+	) {
+		let item: CapturedItem = {
+			node: rawNode,
+			type,
+			exp,
+			keys
+		}
+
+		CustomCaptured.add(rawNode, item)
 	}
+
+	/** Get custom tracking items. */
+	export function getCustomTrackingItems(rawNode: ts.Expression): CapturedItem[] | undefined {
+		return CustomCaptured.get(rawNode)
+	}
+
 
 	/** Output isolated tracking expressions. */
 	export function outputIsolatedTracking(rawNode: ts.Expression, type: 'get' | 'set'): ts.Expression[] {
@@ -84,7 +92,7 @@ export namespace TrackingPatch {
 			return []
 		}
 
-		if (!ObservedChecker.isObserved(rawNode)) {
+		if (!TrackingChecker.isAccessMutable(rawNode)) {
 			return []
 		}
 

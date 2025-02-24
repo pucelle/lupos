@@ -9,7 +9,7 @@ import {TrackingScope} from './scope'
  * It helps to remember all references,
  * and replace an access node to reference if needed.
  */
-export namespace AccessReferences {
+export namespace TrackingReferences {
 
 	/** 
 	 * Remember nodes that have been visited.
@@ -46,17 +46,18 @@ export namespace AccessReferences {
 
 
 	/** Whether any descendant access node has been referenced. */
-	export function hasExternalAccessReferenced(node: ts.Node, ignoreElementsKey: boolean): boolean {
+	export function hasInternalAccessReferenced(node: ts.Node, ignoreElementsKey: boolean = true): boolean {
 		if (ReferencedNodes.has(node)) {
 			return true
 		}
 
 		// Ignores checking key part, only check expression part.
+		// This make `a[key]` only make the reference `a`, ignores `key`.
 		if (ignoreElementsKey
 			&& helper.access.isAccess(node)
-			&& helper.access.isOfElements(node.expression)
+			&& helper.access.isExpOfElementsAccess(node.expression)
 		) {
-			return hasExternalAccessReferenced(node.expression, false)
+			return hasInternalAccessReferenced(node.expression, false)
 		}
 
 		let childNodes = VisitTree.getChildNodes(node)
@@ -64,7 +65,7 @@ export namespace AccessReferences {
 			return false
 		}
 
-		return childNodes.some(n => hasExternalAccessReferenced(n, false))
+		return childNodes.some(n => hasInternalAccessReferenced(n, false))
 	}
 
 

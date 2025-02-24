@@ -1,14 +1,13 @@
 import * as ts from 'typescript'
-import {ObservedChecker} from './observed-checker'
+import {TrackingChecker} from './checker'
 import {FlowInterruptionTypeMask, VariableScopeTree, helper} from '../../core'
 import {AccessNode} from '../../lupos-ts-module'
 import {TrackingScopeState} from './scope-state'
 import {TrackingScopeTypeMask} from './scope-tree'
-import {TrackingScopeVariables} from './scope-variables'
 import {TrackingCapturer} from './capturer'
-import {AccessReferences} from './access-references'
-import {ForceTrackType, TrackingPatch} from './patch'
+import {TrackingReferences} from './references'
 import {CapturedOutputWay, TrackingRange} from './ranges'
+import {TrackingPatch} from './patch'
 
 
 /** 
@@ -24,7 +23,6 @@ export class TrackingScope {
 	readonly range: TrackingRange | null
 	readonly children: TrackingScope[] = []
 	readonly state: TrackingScopeState
-	readonly variables: TrackingScopeVariables
 	readonly capturer: TrackingCapturer
 
 	/** 
@@ -45,7 +43,6 @@ export class TrackingScope {
 		this.range = range
 
 		this.state = new TrackingScopeState(this)
-		this.variables = new TrackingScopeVariables(this)
 		this.capturer = new TrackingCapturer(this, this.state, range?.outputWay ?? CapturedOutputWay.FollowNode)
 
 		let beNonInstantlyRunFunction = (type & TrackingScopeTypeMask.FunctionLike)
@@ -104,46 +101,46 @@ export class TrackingScope {
 	 * Visit scope node and each descendant node inside current scope.
 	 * When visiting a node, child nodes of this node have visited.
 	 */
-	visitNode(node: ts.Node) {
-
-		// Add parameters.
-		if (ts.isParameter(node)) {
-			this.variables.visitParameter(node)
-		}
+	visitNode(rawNode: ts.Node) {
 
 		// Check each variable declarations.
-		else if (ts.isVariableDeclaration(node)) {
-			this.variables.visitVariable(node)
+		if (ts.isVariableDeclaration(rawNode)) {
 
 			// `let {a} = b`, track `b.a`.
-			if (node.initializer) {
-				let names = helper.variable.walkDeclarationNames(node)
+			if (rawNode.initializer) {
+				let names = helper.variable.walkDeclarationNames(rawNode)
 
 				for (let {node: nameNode, keys} of names) {
-					this.mayAddGetTracking(nameNode, false, node.initializer, keys)
+					this.mayAddGetTracking(nameNode, rawNode.initializer, keys)
 				}
 			}
 		}
 
 		// Test and add property access nodes.
-		else if (helper.access.isAccess(node)) {
+		else if (helper.access.isAccess(rawNode)) {
+
+			// `a[0]`, `map.get`, `set.get`.
+			// If match call expression like `map.get(...)` should by better.
+			if (helper.access.isOfElementsReadAccess(rawNode)) {
+				this.mayAddGetTracking(rawNode, rawNode.expression, [''])
+			}
 
 			// `[].push`, `map.set`, `set.set`.
-			if (helper.access.isOfElementsWriteAccess(node)) {
-				this.mayAddSetTracking(node)
+			else if (helper.access.isOfElementsWriteAccess(rawNode)) {
+				this.mayAddSetTracking(rawNode, rawNode.expression, [''])
 			}
 
 			// `a.b`, but not `a.b` of `a.b = c`.
-			else if (!helper.assign.isWithinAssignmentTo(node)) {
-				this.mayAddGetTracking(node)
+			else if (!helper.assign.isWithinAssignmentTo(rawNode)) {
+				this.mayAddGetTracking(rawNode)
 			}
 
-			AccessReferences.visitAssess(node)
+			TrackingReferences.visitAssess(rawNode)
 		}
 
 		// Test and add property assignment nodes.
-		else if (helper.assign.isAssignment(node)) {
-			let assignTo = helper.assign.getToExpressions(node)
+		else if (helper.assign.isAssignment(rawNode)) {
+			let assignTo = helper.assign.getToExpressions(rawNode)
 			
 			for (let to of assignTo) {
 				if (helper.access.isAccess(to)) {
@@ -153,43 +150,55 @@ export class TrackingScope {
 		}
 
 		// Empty `return`.
-		else if (ts.isReturnStatement(node)) {
-			if (!node.expression) {
+		else if (ts.isReturnStatement(rawNode)) {
+			if (!rawNode.expression) {
 				this.state.unionFlowInterruptionType(FlowInterruptionTypeMask.Return)
 				this.capturer.breakCaptured(this.node, FlowInterruptionTypeMask.Return)
 			}
 		}
 
 		// `break` or `continue`.
-		else if (ts.isBreakOrContinueStatement(node)) {
+		else if (ts.isBreakOrContinueStatement(rawNode)) {
 			this.state.unionFlowInterruptionType(FlowInterruptionTypeMask.BreakLike)
 			this.capturer.breakCaptured(this.node, FlowInterruptionTypeMask.BreakLike)
 		}
 
 		
 		// `[...a]`, `{...o}`, `Object.keys(a)`
-		if (helper.access.isAllElementsReadAccess(node)) {
-			if (ts.isIdentifier(node) || helper.access.isAccess(node)) {
-				this.mayAddGetTracking(node, true, node, [''])
+		if (helper.access.isAllElementsReadAccess(rawNode)) {
+			if (ts.isIdentifier(rawNode) || helper.access.isAccess(rawNode)) {
+				this.mayAddGetTracking(rawNode, rawNode, [''])
 			}
 		}
 
 		// `Object.assign(a, ...)`
-		else if (helper.access.isAllElementsWriteAccess(node)) {
-			if (ts.isIdentifier(node) || helper.access.isAccess(node)) {
-				this.mayAddSetTracking(node, true, node, [''])
+		else if (helper.access.isAllElementsWriteAccess(rawNode)) {
+			if (ts.isIdentifier(rawNode) || helper.access.isAccess(rawNode)) {
+				this.mayAddSetTracking(rawNode, rawNode, [''])
+			}
+		}
+		
+		// Custom tracking.
+		if (ts.isExpression(rawNode)) {
+			let customTrackingItems = TrackingPatch.getCustomTrackingItems(rawNode)
+			if (customTrackingItems) {
+				for (let item of customTrackingItems) {
+					this.mayAddGetTracking(item.node, item.exp, item.keys)
+				}
 			}
 		}
 	}
 
-	/** Add a property access expression. */
+	/** 
+	 * Add a property access expression.
+	 * When `trackType` is `Mutable`, `exp` and `keys` must not specified
+	 */
 	private mayAddGetTracking(
-		node: AccessNode | ts.Identifier,
-		visitElements: boolean = false,
+		rawNode: ts.Expression,
 		exp?: ts.Expression,
 		keys?: (string | number)[]
 	) {
-		if (this.state.shouldIgnoreGetTracking(node)) {
+		if (this.state.shouldIgnoreGetTracking()) {
 			return
 		}
 
@@ -197,25 +206,23 @@ export class TrackingScope {
 			return
 		}
 
-		// Normal tracking.
-		if (ObservedChecker.isObserved(node, visitElements)) {
-			this.capturer.capture(node, exp, keys, 'get')
-		}
+		let willTrack = exp
+			? TrackingChecker.isExpObserved(exp)
+			: TrackingChecker.isAccessMutable(rawNode as AccessNode)
 
-		// Force tracking elements.
-		let type = TrackingPatch.getForceTrackType(node)
-		if (type === ForceTrackType.Elements) {
-			this.capturer.capture(node, node as ts.Expression, [''], 'get')
+		// Tracking self.
+		if (willTrack) {
+			this.capturer.capture(rawNode, 'get', exp, keys)
 		}
 	}
 
 	/** Add a property assignment expression. */
-	private mayAddSetTracking(node: AccessNode | ts.Identifier,
-		visitElements: boolean = false,
+	private mayAddSetTracking(
+		rawNode: ts.Expression,
 		exp?: ts.Expression,
 		keys?: (string | number)[]
 	) {
-		if (this.state.shouldIgnoreSetTracking(node)) {
+		if (this.state.shouldIgnoreSetTracking()) {
 			return
 		}
 
@@ -223,8 +230,12 @@ export class TrackingScope {
 			return
 		}
 
-		if (ObservedChecker.isObserved(node, visitElements)) {
-			this.capturer.capture(node, exp, keys, 'set')
+		let willTrack = exp
+			? TrackingChecker.isExpObserved(exp)
+			: TrackingChecker.isAccessMutable(rawNode as AccessNode)
+
+		if (willTrack) {
+			this.capturer.capture(rawNode, 'set', exp, keys)
 		}
 	}
 }

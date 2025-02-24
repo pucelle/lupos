@@ -1,3 +1,4 @@
+import {Observed} from '@pucelle/ff'
 import {Component, html} from '@pucelle/lupos.js'
 
 
@@ -7,6 +8,10 @@ export class TestFor extends Component {
 	items: {value: number}[] = [{value: 1}]
 	readonly readonlyItems: {value: number}[] = [{value: 1}]
 	readonly deepReadonlyItems: ReadonlyArray<{value: number}> = [{value: 1}]
+
+	getItems(): Observed<{value: number}[]> {
+		return this.items
+	}
 
 	renderItem(n: number) {
 		return html`${n + this.prop}`
@@ -46,6 +51,24 @@ export class TestFor extends Component {
 		`
 	}
 
+	testForMethodGetTracking() {
+		return html`
+			<lu:for ${this.getItems()}>${(item: {value: number}) => html`
+				${item.value}
+			`}</lu:for>
+		`
+	}
+
+	testForVariableTracking() {
+		let items = this.items
+
+		return html`
+			<lu:for ${items}>${(item: {value: number}) => html`
+				${item.value}
+			`}</lu:for>
+		`
+	}
+
 	testReadonlyTracking() {
 		return html`
 			<lu:for ${this.readonlyItems}>${(item: {value: number}) => html`
@@ -54,9 +77,29 @@ export class TestFor extends Component {
 		`
 	}
 
+	testReadonlyVariableTracking() {
+		let items = this.readonlyItems
+
+		return html`
+			<lu:for ${items}>${(item: {value: number}) => html`
+				${item.value}
+			`}</lu:for>
+		`
+	}
+
 	testDeepReadonlyTracking() {
 		return html`
 			<lu:for ${this.deepReadonlyItems}>${(item: {value: number}) => html`
+				${item.value}
+			`}</lu:for>
+		`
+	}
+
+	testDeepReadonlyVariableTracking() {
+		let items = this.deepReadonlyItems
+
+		return html`
+			<lu:for ${items}>${(item: {value: number}) => html`
 				${item.value}
 			`}</lu:for>
 		`

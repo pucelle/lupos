@@ -144,7 +144,7 @@ export class TestClassTypeParameter {
         trackSet(item, "value");
     }
 }
-export class TestMethodsObservable {
+export class TestMethodsObserved {
     listData = new ListMap();
     getListItem(key) {
         trackGet(this, "listData");
@@ -155,9 +155,20 @@ export class TestMethodsObservable {
         this.listData.add(key, value);
         trackSet(this.listData, "");
     }
+    getListItemAsVariable(key) {
+        let listData = this.listData;
+        trackGet(this, "listData");
+        trackGet(listData, "");
+        return listData.get(key);
+    }
+    addListItemAsVariable(key, value) {
+        let listData = this.listData;
+        listData.add(key, value);
+        trackSet(listData, "");
+    }
 }
-export class TestPropertyMethodsObservable {
-    data = new AnyMethodsObservable();
+export class TestPropertyMethodsObserved {
+    data = new AnyMethodsObserved();
     getItem() {
         trackGet(this.data, "");
         return this.data.get();
@@ -166,8 +177,18 @@ export class TestPropertyMethodsObservable {
         this.data.set(1);
         trackSet(this.data, "");
     }
+    getItemAsVariable() {
+        let data = this.data;
+        trackGet(data, "");
+        return data.get();
+    }
+    addItemAsVariable() {
+        let data = this.data;
+        data.set(1);
+        trackSet(data, "");
+    }
 }
-class AnyMethodsObservable {
+class AnyMethodsObserved {
     value = 1;
     get() {
         return this.value;

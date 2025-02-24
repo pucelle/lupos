@@ -156,7 +156,7 @@ export class TestClassTypeParameter<T extends Observed<{value: number}>> {
 }
 
 
-export class TestMethodsObservable implements Observed {
+export class TestMethodsObserved implements Observed {
 
 	listData: ListMap<number, number> = new ListMap()
 
@@ -167,12 +167,22 @@ export class TestMethodsObservable implements Observed {
 	addListItem(key: number, value: number) {
 		this.listData.add(key, value)
 	}
+
+	getListItemAsVariable(key: number) {
+		let listData = this.listData
+		return listData.get(key)
+	}
+
+	addListItemAsVariable(key: number, value: number) {
+		let listData = this.listData
+		listData.add(key, value)
+	}
 }
 
 
-export class TestPropertyMethodsObservable {
+export class TestPropertyMethodsObserved {
 
-	data: Observed<AnyMethodsObservable> = new AnyMethodsObservable()
+	data: Observed<AnyMethodsObserved> = new AnyMethodsObserved()
 
 	getItem() {
 		return this.data.get()
@@ -181,9 +191,19 @@ export class TestPropertyMethodsObservable {
 	addItem() {
 		this.data.set(1)
 	}
+
+	getItemAsVariable() {
+		let data = this.data
+		return data.get()
+	}
+
+	addItemAsVariable() {
+		let data = this.data
+		data.set(1)
+	}
 }
 
-class AnyMethodsObservable implements MethodsObserved<'get', 'set'> {
+class AnyMethodsObserved implements MethodsObserved<'get', 'set'> {
 	value: number = 1
 	get() {
 		return this.value

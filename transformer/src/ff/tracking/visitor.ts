@@ -1,7 +1,7 @@
 import * as ts from 'typescript'
 import {defineVisitor} from '../../core'
 import {TrackingScopeTree, TrackingScopeTypeMask} from './scope-tree'
-import {AccessReferences} from './access-references'
+import {TrackingReferences} from './references'
 import {TrackingPatch} from './patch'
 import {TrackingRanges} from './ranges'
 
@@ -13,7 +13,7 @@ defineVisitor(function(node: ts.Node) {
 	if (ts.isSourceFile(node)) {
 		TrackingScopeTree.init()
 		TrackingRanges.init()
-		AccessReferences.init()
+		TrackingReferences.init()
 		TrackingPatch.init()
 	}
 

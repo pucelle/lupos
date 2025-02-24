@@ -4,7 +4,7 @@ import {AccessNode} from '../../lupos-ts-module'
 import {TrackingScope} from './scope'
 import {TrackingScopeTree, TrackingScopeTypeMask} from './scope-tree'
 import {AccessGrouper} from './access-grouper'
-import {AccessReferences} from './access-references'
+import {TrackingReferences} from './references'
 import {Optimizer} from './optimizer'
 import {TrackingScopeState} from './scope-state'
 import {TrackingCapturerOperator} from './capturer-operator'
@@ -22,14 +22,14 @@ export interface CapturedGroup {
 
 /** Each capture index and capture type. */
 export interface CapturedItem {
-	node: ts.Node
+	node: ts.Expression
 	type: 'get' | 'set'
 
 	/** 
 	 * If `exp` and `keys` provided,
 	 * they overwrites `node`.
 	 */
-	exp?: ts.Node
+	exp?: ts.Expression
 	keys?: (string | number)[]
 }
 
@@ -163,24 +163,15 @@ export class TrackingCapturer {
 
 	/** Capture a node. */
 	capture(
-		node: AccessNode | ts.Identifier,
+		rawNode: ts.Expression,
+		type: 'get' | 'set',
 		exp: ts.Expression | undefined,
 		keys: (string | number)[] | undefined,
-		type: 'get' | 'set'
 	) {
 		this.addCaptureType(type)
 
-		// `a[0]` -> `trackGet(a, '')`
-		if (!exp
-			&& helper.access.isAccess(node)
-			&& helper.access.isOfElements(node.expression)
-		) {
-			exp = node.expression
-			keys = ['']
-		}
-
 		let item: CapturedItem = {
-			node,
+			node: rawNode,
 			type,
 			exp,
 			keys,
@@ -290,14 +281,16 @@ export class TrackingCapturer {
 
 	/** 
 	 * Iterate hash names of captured.
-	 * If meet `await` or `yield`, stop iteration.
+	 * If meets `await` or `yield`, stop iteration.
+	 * If meets referenced, skip it.
 	 */
 	*iterateImmediateCapturedHashNames(): Iterable<string> {
 		for (let group of this.captured) {
 			for (let item of [...group.items]) {
 
-				// Has been referenced, ignore always.
-				if (AccessReferences.hasExternalAccessReferenced(item.node, true)) {
+				// Has been referenced, will be replaced, ignore always.
+				// TODO
+				if (TrackingReferences.hasInternalAccessReferenced(item.node)) {
 					continue
 				}
 
@@ -307,7 +300,9 @@ export class TrackingCapturer {
 
 			// Break by yield or await.
 			if (group.flowInterruptedBy & (
-				FlowInterruptionTypeMask.Yield | FlowInterruptionTypeMask.Await | FlowInterruptionTypeMask.ConditionalAwait
+				FlowInterruptionTypeMask.Yield
+					| FlowInterruptionTypeMask.Await
+					| FlowInterruptionTypeMask.ConditionalAwait
 			)) {
 				return
 			}
@@ -343,8 +338,8 @@ export class TrackingCapturer {
 	/** Check captured and reference if needs. */
 	private checkAccessReferences() {
 		for (let item of this.captured) {
-			for (let {node: index} of item.items) {
-				AccessReferences.mayReferenceAccess(index, item.toNode, this.scope)
+			for (let {node, exp} of item.items) {
+				TrackingReferences.mayReferenceAccess(exp ?? node, item.toNode, this.scope)
 			}
 		}
 	}

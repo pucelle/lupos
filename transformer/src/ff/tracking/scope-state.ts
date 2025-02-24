@@ -2,7 +2,6 @@ import * as ts from 'typescript'
 import {TrackingScope} from './scope'
 import {TrackingScopeTree, TrackingScopeTypeMask} from './scope-tree'
 import {FlowInterruptionTypeMask, Packer, helper} from '../../core'
-import {AccessNode} from '../../lupos-ts-module'
 
 
 export class TrackingScopeState {
@@ -171,26 +170,18 @@ export class TrackingScopeState {
 	}
 
 	/** Whether should ignore set tracking. */
-	shouldIgnoreSetTracking(node: AccessNode | ts.Identifier): boolean {
+	shouldIgnoreSetTracking(): boolean {
 		if (this.withinLifeFunction) {
-			if (helper.access.isAccess(node)
-				&& helper.isThis(node.expression)
-			) {
-				return true
-			}
+			return true
 		}
 
 		return false
 	}
 
 	/** Whether should ignore get tracking. */
-	shouldIgnoreGetTracking(node: AccessNode | ts.Identifier): boolean {
+	shouldIgnoreGetTracking(): boolean {
 		if (this.withinLifeFunction) {
-			if (helper.access.isAccess(node)
-				&& helper.isThis(node.expression)
-			) {
-				return true
-			}
+			return true
 		}
 
 		if (this.stopGetTracking && !this.effectDecorated) {

@@ -66,7 +66,7 @@ const $html_3 = new HTMLMaker("<div><slot></slot></div>");
     let $node = $html_3.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node_0.firstChild;
-    $node_1.append(...$context.__getRestSlotNodes());
+    $node_1.append(...$context.$getRestSlotNodes());
     return {
         el: $node,
         position: new SlotPosition(1, $node_0)
@@ -76,12 +76,12 @@ export class TestComponent extends Component {
     prop = 1;
     testNamedSlot() {
         return new CompiledTemplateResult($template_0, [
-            this.__getSlotElement("slotName")
+            this.$getSlotElement("slotName")
         ], this);
     }
     testNamedSlotWithContent() {
         return new CompiledTemplateResult($template_1, [
-            this.__getSlotElement("slotName") ?? new CompiledTemplateResult($template_2, [], this)
+            this.$getSlotElement("slotName") ?? new CompiledTemplateResult($template_2, [], this)
         ], this);
     }
     testRestSlot() {

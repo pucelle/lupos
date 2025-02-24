@@ -2,7 +2,7 @@ import type * as ts from 'typescript'
 import {factory, Modifier, helper} from '../../../core'
 import {FlowControlBase} from './base'
 import {SlotContentType} from '../../../enums'
-import {ForceTrackType, ObservedChecker, TrackingPatch} from '../../../ff'
+import {TrackingType, TrackingChecker, TrackingPatch} from '../../../ff'
 
 
 export class ForFlowControl extends FlowControlBase {
@@ -31,16 +31,17 @@ export class ForFlowControl extends FlowControlBase {
 
 		let ofValueIndex = this.getAttrValueIndex(this.node)
 		let fnValueIndex = this.getUniqueChildValueIndex(this.node)
-		let shouldObserveElements = false
+		let shouldObserve = false
 
 		// Force tracking members of array.
 		// When parsing template, all descendant nodes have not been visited by tracking module.
 		if (ofValueIndex !== null) {
 			let ofValueNode = this.template.values.getRawValue(ofValueIndex)
 
-			shouldObserveElements = ObservedChecker.isObserved(ofValueNode, true)
-			if (shouldObserveElements) {
-				TrackingPatch.forceTrack(ofValueNode, ForceTrackType.Elements)
+			shouldObserve = TrackingChecker.isExpObserved(ofValueNode)
+			if (shouldObserve) {
+				TrackingPatch.forceTrackType(ofValueNode, TrackingType.Observed)
+				TrackingPatch.addCustomTracking(ofValueNode, 'get', ofValueNode, [''])
 			}
 		}
 
@@ -49,11 +50,11 @@ export class ForFlowControl extends FlowControlBase {
 
 			if (helper.isFunctionLike(fnValueNode)) {
 
-				// Force broadcasting tracking from list to item parameter.
+				// Force broadcasting observed from list to item.
 				let firstParameter = fnValueNode.parameters[0]
 				if (firstParameter) {
-					if (shouldObserveElements) {
-						TrackingPatch.forceTrack(firstParameter, ForceTrackType.Self)
+					if (shouldObserve) {
+						TrackingPatch.forceTrackType(firstParameter, TrackingType.Observed)
 					}
 				}
 

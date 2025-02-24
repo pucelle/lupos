@@ -1,6 +1,6 @@
 import * as ts from 'typescript'
 import {VisitTree, FlowInterruptionTypeMask, VariableScopeTree, HashItem, helper, Hashing} from '../../core'
-import {AccessReferences} from './access-references'
+import {TrackingReferences} from './references'
 import {removeFromList} from '../../utils'
 import {CapturedItem, TrackingCapturer} from './capturer'
 import {TrackingScope} from './scope'
@@ -45,8 +45,8 @@ export class TrackingCapturerOperator {
 			// Only codes of the first item is always running.
 			for (let item of capturer.captured[0].items) {
 
-				// Has been referenced, ignore always.
-				if (AccessReferences.hasExternalAccessReferenced(item.node, true)) {
+				// Has been referenced, will be replaced, ignore intersection.
+				if (TrackingReferences.hasInternalAccessReferenced(item.node)) {
 					continue
 				}
 
@@ -152,8 +152,8 @@ export class TrackingCapturerOperator {
 		for (let group of this.capturer.captured) {
 			for (let item of [...group.items]) {
 
-				// Has been referenced, ignore always.
-				if (AccessReferences.hasExternalAccessReferenced(item.node, true)) {
+				// Has been referenced, will be replaced, not eliminate it.
+				if (TrackingReferences.hasInternalAccessReferenced(item.node)) {
 					continue
 				}
 
