@@ -56,7 +56,7 @@ export class ComponentSlotParser extends SlotParserBase {
 	outputMoreInit() {
 		let hasRestSlotContentExisted = this.node.children.length > 0
 
-		// $com_0.__applyRestSlotNodes(startNode, endNode)
+		// $com_0.$applyRestSlotNodes(startNode, endNode)
 		if (hasRestSlotContentExisted) {
 			let comVariableName = this.getRefedComponentName()!
 			let contentRangeNodes = this.slotRangeNodesGetter!()
@@ -64,7 +64,7 @@ export class ComponentSlotParser extends SlotParserBase {
 			return factory.createCallExpression(
 				factory.createPropertyAccessExpression(
 					factory.createIdentifier(comVariableName),
-					factory.createIdentifier('__applyRestSlotRangeNodes')
+					factory.createIdentifier('$applyRestSlotRangeNodes')
 				),
 				undefined,
 				contentRangeNodes

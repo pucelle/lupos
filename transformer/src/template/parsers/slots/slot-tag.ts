@@ -82,7 +82,7 @@ export class SlotTagSlotParser extends SlotParserBase {
 	private outputNonNamedInit() {
 		let nodeName = this.getRefedNodeName()
 
-		// `$node_0.append(...$context.__getRestSlotNodes())`
+		// `$node_0.append(...$context.$getRestSlotNodes())`
 		return factory.createCallExpression(
 			factory.createPropertyAccessExpression(
 				factory.createIdentifier(nodeName),
@@ -92,7 +92,7 @@ export class SlotTagSlotParser extends SlotParserBase {
 			[factory.createSpreadElement(factory.createCallExpression(
 				factory.createPropertyAccessExpression(
 				factory.createIdentifier(VariableNames.context),
-				factory.createIdentifier('__getRestSlotNodes')
+				factory.createIdentifier('$getRestSlotNodes')
 				),
 				undefined,
 				[]
@@ -112,17 +112,17 @@ export class SlotTagSlotParser extends SlotParserBase {
 	private outputNamedUpdate() {
 		Modifier.addImport('TemplateSlot', '@pucelle/lupos.js')
 
-		// `this.__getSlotElement(slotName)`
+		// `this.$getSlotElement(slotName)`
 		let value: ts.Expression = factory.createCallExpression(
 			factory.createPropertyAccessExpression(
 				factory.createThis(),
-				factory.createIdentifier('__getSlotElement')
+				factory.createIdentifier('$getSlotElement')
 			),
 			undefined,
 			[factory.createStringLiteral(this.name!)]
 		)
 
-		// this.__getSlotElement(slotName) || new CompiledTemplateResult($maker_0, $values)
+		// this.$getSlotElement(slotName) || new CompiledTemplateResult($maker_0, $values)
 		if (this.defaultContentParser) {
 
 			// Haven't prepared `defaultContentParser`, so must add import manually.
