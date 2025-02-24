@@ -314,7 +314,7 @@ export class TrackingCapturer {
 
 		// Run in child-first order is important, checking references step may
 		// add more variables, and adjust captured.
-		this.checkAccessReferences()
+		this.checkReferences()
 
 		// Must after reference step, reference step will look for position,
 		// which requires captured stay at their scope.
@@ -336,10 +336,15 @@ export class TrackingCapturer {
 	}
 	
 	/** Check captured and reference if needs. */
-	private checkAccessReferences() {
+	private checkReferences() {
 		for (let item of this.captured) {
 			for (let {node, exp} of item.items) {
-				TrackingReferences.mayReferenceAccess(exp ?? node, item.toNode, this.scope)
+				if (exp) {
+					TrackingReferences.checkExpReference(exp, item.toNode, this.scope)
+				}
+				else {
+					TrackingReferences.checkAccessReference(exp ?? node, item.toNode, this.scope)
+				}
 			}
 		}
 	}

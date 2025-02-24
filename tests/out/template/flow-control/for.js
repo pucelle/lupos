@@ -458,9 +458,11 @@ export class TestFor extends Component {
         ], this);
     }
     testForMethodGetTracking() {
-        trackGet(this.getItems(), "");
+        let $ref_0;
+        $ref_0 = this.getItems();
+        trackGet($ref_0, "");
         return new CompiledTemplateResult($template_8, [
-            this.getItems()
+            $ref_0
         ], this);
     }
     testForVariableTracking() {

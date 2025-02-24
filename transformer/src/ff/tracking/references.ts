@@ -102,19 +102,19 @@ export namespace TrackingReferences {
 	}
 
 
-	/** Visit an assess node, reference after determined should reference. */
-	export function mayReferenceAccess(node: ts.Node, toNode: ts.Node, scope: TrackingScope) {
-		if (!helper.access.isAccess(node)) {
+	/** Visit an assess node, reference it's exp and name part after testing whether should reference. */
+	export function checkAccessReference(accessNode: ts.Expression, toNode: ts.Node, scope: TrackingScope) {
+		if (!helper.access.isAccess(accessNode)) {
 			return
 		}
 
-		// Avoid after tested, move to outer and test again.
-		if (ReferencedTested.has(node)) {
+		// Avoid after tested, move to outer and do test again.
+		if (ReferencedTested.has(accessNode)) {
 			return
 		}
 
-		let expNode = node.expression
-		let nameNode = helper.access.getPropertyNode(node)
+		let expNode = accessNode.expression
+		let nameNode = helper.access.getPropertyNode(accessNode)
 
 		// Use a reference variable to replace expression.
 		if (shouldReference(expNode, toNode)) {
@@ -128,7 +128,25 @@ export namespace TrackingReferences {
 			ReferencedNodes.add(nameNode)
 		}
 
-		ReferencedTested.add(node)
+		ReferencedTested.add(accessNode)
+	}
+
+
+	/** Visit an expression node, reference it after testing whether should reference. */
+	export function checkExpReference(expNode: ts.Expression, toNode: ts.Node, scope: TrackingScope) {
+		
+		// Avoid after tested, move to outer and do test again.
+		if (ReferencedTested.has(expNode)) {
+			return
+		}
+
+		// Use a reference variable to replace expression.
+		if (shouldReference(expNode, toNode)) {
+			reference(expNode, scope)
+			ReferencedNodes.add(expNode)
+		}
+
+		ReferencedTested.add(expNode)
 	}
 
 
