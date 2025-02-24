@@ -151,7 +151,7 @@ function compileComputedEffectWatchDecorator(
 			makerParameters()
 		)
 	))
-	
+
 	create.insert(() => [createStatementGetter()], 'end')
 
 

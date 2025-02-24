@@ -376,16 +376,16 @@ export namespace ObservedChecker {
 			return false
 		}
 
+		// Will not observe property starts with '$' like `a.$b`.
+		if (helper.access.getPropertyText(rawNode).startsWith('$')) {
+			return false
+		}
+
 		// Only check when directly visiting the node.
 		if (!parental) {
 
 			// Will not observe private property like `a.#b`.
 			if (ts.isPropertyAccessExpression(rawNode) && ts.isPrivateIdentifier(rawNode.name)) {
-				return false
-			}
-
-			// Will not observe property starts with '$' like `a.$b`.
-			if (helper.access.getPropertyText(rawNode).startsWith('$')) {
 				return false
 			}
 
