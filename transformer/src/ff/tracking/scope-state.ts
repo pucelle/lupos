@@ -8,7 +8,10 @@ export class TrackingScopeState {
 
 	readonly scope: TrackingScope
 
-	/** Whether be included in a constructor function */
+	/** 
+	 * Whether be included in a constructor function,
+	 * or other methods to control life cycle.
+	 */
 	readonly withinLifeFunction: boolean
 
 	/** 
@@ -18,6 +21,12 @@ export class TrackingScopeState {
 	 * A generator returns an `Iterable`, so it is not nothing returned.
 	 */
 	readonly stopGetTracking: boolean
+
+	/** 
+	 * If a function like scope has any tracking code,
+	 * stop any tracking.
+	 */
+	readonly stopAnyTracking: boolean
 
 	/** 
 	 * Whether method has effect decorated.
@@ -33,6 +42,7 @@ export class TrackingScopeState {
 		this.scope = scope
 		this.withinLifeFunction = this.checkWithinLifeFunction()
 		this.stopGetTracking = this.checkStopGetTracking()
+		this.stopAnyTracking = this.checkStopAnyTracking()
 		this.effectDecorated = this.checkEffectDecorated()
 
 		if (scope.type & TrackingScopeTypeMask.FlowInterruption) {
@@ -104,6 +114,34 @@ export class TrackingScopeState {
 		}
 	}
 
+	private checkStopAnyTracking() {
+		let node = this.scope.node
+		let parent = this.scope.parent
+
+		if (!parent) {
+			return false
+		}
+
+		// Self is not function, inherit from parent scope.
+		if ((this.scope.type & TrackingScopeTypeMask.FunctionLike) === 0) {
+			return parent.state.stopAnyTracking ?? false
+		}
+
+		for (let descendant of helper.walkInward(node)) {
+			if (!ts.isCallExpression(descendant)) {
+				continue
+			}
+
+			// Should have no need to test whether import from `@pucelle/ff`.
+			let fnName = helper.getFullText(descendant.expression)
+			if (fnName === 'trackGet' || fnName === 'trackSet') {
+				return true
+			}
+		}
+
+		return false
+	}
+
 	private checkEffectDecorated(): boolean {
 		let node = this.scope.node
 
@@ -169,23 +207,35 @@ export class TrackingScopeState {
 		this.unionFlowInterruptionType(child.state.flowInterruptionType)
 	}
 
-	/** Whether should ignore set tracking. */
-	shouldIgnoreSetTracking(): boolean {
-		if (this.withinLifeFunction) {
+	/** Whether should ignore get tracking. */
+	shouldIgnoreGetTracking(): boolean {
+		if (this.stopAnyTracking) {
 			return true
 		}
 
-		return false
-	}
-
-	/** Whether should ignore get tracking. */
-	shouldIgnoreGetTracking(): boolean {
 		if (this.withinLifeFunction) {
 			return true
 		}
 
 		if (this.stopGetTracking && !this.effectDecorated) {
 			return true
+		}
+
+		return false
+	}
+
+	/** Whether should ignore set tracking. */
+	shouldIgnoreSetTracking(node: ts.Expression): boolean {
+		if (this.stopAnyTracking) {
+			return true
+		}
+
+		if (this.withinLifeFunction) {
+			if (helper.access.isAccess(node)
+				&& helper.isThis(node.expression)
+			) {
+				return true
+			}
 		}
 
 		return false

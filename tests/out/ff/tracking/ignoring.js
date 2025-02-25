@@ -1,5 +1,5 @@
 import { Component } from '@pucelle/lupos.js';
-import { ComputedMaker, trackGet, trackSet } from '@pucelle/ff';
+import { trackGet, trackSet, ComputedMaker } from '@pucelle/ff';
 export class TestIgnoringStringIndex extends Component {
     prop = '1';
     ignoreStringIndex() {
@@ -118,5 +118,16 @@ export class TestIgnoringNonPrimitiveObject extends Component {
     }
     write() {
         this.el.style.display = '';
+    }
+}
+export class TestIgnoringCustomTracked extends Component {
+    prop = 1;
+    read() {
+        trackGet(this, '');
+        return this.prop;
+    }
+    write() {
+        trackSet(this, '');
+        this.prop = 1;
     }
 }

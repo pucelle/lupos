@@ -1,5 +1,5 @@
 import {Component} from '@pucelle/lupos.js'
-import {computed} from '@pucelle/ff'
+import {computed, trackGet, trackSet} from '@pucelle/ff'
 
 
 export class TestIgnoringStringIndex extends Component {
@@ -142,5 +142,21 @@ export class TestIgnoringNonPrimitiveObject extends Component {
 
 	write() {
 		this.el.style.display = ''
+	}
+}
+
+
+export class TestIgnoringCustomTracked extends Component {
+
+	prop: number = 1
+
+	read() {
+		trackGet(this, '')
+		return this.prop
+	}
+
+	write() {
+		trackSet(this, '')
+		this.prop = 1
 	}
 }

@@ -225,7 +225,7 @@ export class TrackingScope {
 		exp?: ts.Expression,
 		keys?: (string | number)[]
 	) {
-		if (this.state.shouldIgnoreSetTracking()) {
+		if (this.state.shouldIgnoreSetTracking(rawNode)) {
 			return
 		}
 
