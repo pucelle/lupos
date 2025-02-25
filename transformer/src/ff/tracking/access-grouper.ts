@@ -1,5 +1,5 @@
 import * as ts from 'typescript'
-import {factory, Modifier, Packer, helper} from '../../core'
+import {factory, Modifier, Packer, helper, transformContext} from '../../core'
 import {groupBy} from '../../utils'
 import {AccessNode} from '../../lupos-ts-module'
 
@@ -17,12 +17,37 @@ export namespace AccessGrouper {
 
 	/** Group expressions to lately insert a position. */
 	export function makeExpressions(nodes: AccessNode[], type: 'get' | 'set'): ts.Expression[] {
-		nodes = nodes.map(node => Packer.normalize(node, true) as AccessNode)
+		nodes = nodes.map(node => Packer.normalize(simplify(node), true) as AccessNode)
 
 		let grouped = groupExpressions(nodes)
 		let made = grouped.map(item => createGroupedExpression(item, type))
 
 		return made
+	}
+
+
+	/** 
+	 * Simplify to remove useless of access codes.
+	 * `(a, b, c)` -> `c`
+	 * `($ref = b)` -> `$ref`
+	 */
+	export function simplify(node: ts.Node): ts.Node {
+		if (ts.isParenthesizedExpression(node)) {
+			let exp = node.expression
+			if (ts.isBinaryExpression(exp)
+				&& exp.operatorToken.kind === ts.SyntaxKind.CommaToken
+			) {
+				return simplify(exp.right)
+			}
+		}
+
+		if (ts.isBinaryExpression(node)
+			&& node.operatorToken.kind === ts.SyntaxKind.EqualsToken
+		) {
+			return simplify(node.left)
+		}
+
+		return ts.visitEachChild(node, simplify as any, transformContext)
 	}
 
 	

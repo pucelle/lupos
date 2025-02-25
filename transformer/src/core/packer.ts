@@ -299,30 +299,6 @@ export namespace Packer {
 		return exp
 	}
 
-	/** 
-	 * For each level of nodes, extract final expressions from a parenthesized expression.
-	 * `(a, b, c)` -> `c`
-	 * `(a = b)` -> `b`
-	 */
-	export function simplify(node: ts.Expression): ts.Expression {
-		if (ts.isParenthesizedExpression(node)) {
-			let exp = node.expression
-			if (ts.isBinaryExpression(exp)
-				&& exp.operatorToken.kind === ts.SyntaxKind.CommaToken
-			) {
-				return simplify(exp.right)
-			}
-		}
-
-		if (ts.isBinaryExpression(node)
-			&& node.operatorToken.kind === ts.SyntaxKind.EqualsToken
-		) {
-			return simplify(node.left)
-		}
-
-		return ts.visitEachChild(node, simplify as any, transformContext)
-	}
-
 
 	/** Remove comments from a property or element access node. */
 	export function removeAccessComments<T extends ts.Node>(node: T): T {
@@ -398,8 +374,7 @@ export namespace Packer {
 
 
 	/** 
-	 * Try to clean a node to remove all not-necessary nodes,
-	 * and convert multiple ways of describing a node to a unique way.
+	 * Convert code to output by combining multiple ways of describing a node to a unique way.
 	 * like remove as expression, or unpack parenthesized, element access to property access.
 	 * `deeply` determines whether simplify all descendants.
 	 */

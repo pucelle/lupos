@@ -452,8 +452,6 @@ export class TrackingCapturer {
 			let node = Interpolator.outputReplaceableChildren(item.exp) as ts.Expression
 			let keys = item.keys!
 
-			node = Packer.simplify(node)
-
 			for (let key of keys) {
 				node = Packer.createAccessNode(node, key)
 				nodes.push(node as AccessNode)
@@ -462,9 +460,7 @@ export class TrackingCapturer {
 			return nodes
 		}
 		else {
-			let node = Interpolator.outputReplaceableChildren(item.node) as AccessNode
-			node = Packer.simplify(node) as AccessNode
-
+			let node = Interpolator.outputChildren(item.node) as AccessNode
 			return [node]
 		}
 	}

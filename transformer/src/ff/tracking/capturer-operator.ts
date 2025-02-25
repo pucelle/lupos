@@ -154,12 +154,11 @@ export class TrackingCapturerOperator {
 			for (let item of [...group.items]) {
 
 				// Has been referenced, will be replaced, not eliminate it.
-				if (TrackingReferences.hasInternalReferenced(item.node)) {
+				if (TrackingReferences.hasInternalReferenced(item.exp ?? item.node)) {
 					continue
 				}
 
 				let hashName = TrackingCapturerOperator.hashCapturedItem(item).name
-
 				if (ownHashes.has(hashName)) {
 					removeFromList(group.items, item)
 				}
