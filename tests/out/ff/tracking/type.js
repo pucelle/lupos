@@ -93,6 +93,10 @@ export class TestArrayMapObservedParameter {
 }
 export class TestMethodReturnedType extends Component {
     prop = { value: 'Text' };
+    getNormalItem() {
+        trackGet(this, "prop");
+        return this.prop;
+    }
     getValueUseMethod() {
         var item = this.getNormalItem();
         trackGet(item, "value");
@@ -103,10 +107,6 @@ export class TestMethodReturnedType extends Component {
         $ref_0 = this.getNormalItem();
         trackGet($ref_0, "value");
         return $ref_0.value;
-    }
-    getNormalItem() {
-        trackGet(this, "prop");
-        return this.prop;
     }
     getValueUseObservedMethod() {
         var item = this.getObservedItem();

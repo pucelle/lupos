@@ -60,11 +60,12 @@ export namespace Optimizer {
 			|| scope.type & TrackingScopeTypeMask.IterationIncreasement
 			|| scope.type & TrackingScopeTypeMask.IterationExpression
 		) {
-			moveIterationConditionIncreasementExpressionOutward(scope)
-			moveIterationConditionIncreasementExpressionToIteration(scope)
+			moveIterationConditionIncreasementCapturedOutward(scope)
+			moveIterationConditionIncreasementCapturedToIterationContent(scope)
 		}
 
 		// This optimizing has low risk, loop codes may not run when have no looping.
+		// Must after `moveIterationConditionIncreasementCapturedToIterationContent` step.
 		// `for (...) {a.b}` -> `track(a.b); for ...
 		if (scope.type & TrackingScopeTypeMask.IterationContent) {
 			moveIterationContentCapturedOutward(scope)
@@ -232,7 +233,7 @@ export namespace Optimizer {
 			targetScope = scope
 		}
 
-		targetScope.capturer.operator.safelyMoveSomeCapturedOutwardFrom(shared, contentChildren[0].capturer)
+		contentChildren[0].capturer.operator.safelyMoveCapturedItemsOutwardTo(shared, targetScope.capturer)
 	}
 
 
@@ -271,7 +272,7 @@ export namespace Optimizer {
 		}
 
 		let targetScope = scope.parent!
-		targetScope.capturer.operator.safelyMoveSomeCapturedOutwardFrom(shared, caseContentChildren[0].capturer)
+		caseContentChildren[0].capturer.operator.safelyMoveCapturedItemsOutwardTo(shared, targetScope.capturer)
 	}
 
 
@@ -288,13 +289,13 @@ export namespace Optimizer {
 			scope.node, scope
 		)
 
-		Modifier.moveOnce(scope.node, toPosition.node)
+		Modifier.moveOnce(scope.node, toPosition.toNode)
 		scope.capturer.operator.safelyMoveCapturedOutwardTo(toPosition.scope.capturer)
 	}
 
 
 	/** Move iteration condition or increasement or expression captured outward. */
-	function moveIterationConditionIncreasementExpressionOutward(scope: TrackingScope) {
+	function moveIterationConditionIncreasementCapturedOutward(scope: TrackingScope) {
 		if (!scope.capturer.hasCaptured()) {
 			return
 		}
@@ -310,15 +311,15 @@ export namespace Optimizer {
 	 * Move iteration condition or increasement or expression captured inward to iteration content.
 	 * `for (let a = xx; a.b; )` -> `for (...) {track(a.b); ...}`
 	 */
-	function moveIterationConditionIncreasementExpressionToIteration(scope: TrackingScope) {
+	function moveIterationConditionIncreasementCapturedToIterationContent(scope: TrackingScope) {
 		if (!scope.capturer.hasCaptured()) {
 			return
 		}
 
-		// iteration content.
+		// Iteration Content.
 		let targetScope = scope.parent!.children.find(c => c.type & TrackingScopeTypeMask.IterationContent)
 		if (targetScope) {
-			scope.capturer.operator.moveCapturedBackwardTo(targetScope.capturer)
+			scope.capturer.operator.moveCapturedInwardTo(targetScope.capturer)
 		}
 	}
 

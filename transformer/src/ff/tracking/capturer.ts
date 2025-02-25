@@ -282,15 +282,13 @@ export class TrackingCapturer {
 	/** 
 	 * Iterate hash names of captured.
 	 * If meets `await` or `yield`, stop iteration.
-	 * If meets referenced, skip it.
 	 */
 	*iterateImmediateCapturedHashNames(): Iterable<string> {
 		for (let group of this.captured) {
 			for (let item of [...group.items]) {
 
 				// Has been referenced, will be replaced, ignore always.
-				// TODO
-				if (TrackingReferences.hasInternalAccessReferenced(item.node)) {
+				if (TrackingReferences.hasInternalReferenced(item.node)) {
 					continue
 				}
 
@@ -340,10 +338,10 @@ export class TrackingCapturer {
 		for (let item of this.captured) {
 			for (let {node, exp} of item.items) {
 				if (exp) {
-					TrackingReferences.checkExpReference(exp, item.toNode, this.scope)
+					TrackingReferences.mayReferenceExp(exp, item.toNode, this.scope)
 				}
 				else {
-					TrackingReferences.checkAccessReference(exp ?? node, item.toNode, this.scope)
+					TrackingReferences.mayReferenceAccess(node, item.toNode, this.scope)
 				}
 			}
 		}
@@ -426,11 +424,11 @@ export class TrackingCapturer {
 		}
 
 		// Same position.
-		if (position.node === toNode) {
+		if (position.toNode === toNode) {
 			return null
 		}
 
-		return position.node
+		return position.toNode
 	}
 
 	/** Transfer specified captured items to specified position. */
@@ -449,14 +447,12 @@ export class TrackingCapturer {
 
 	/** Make an access node by a captured item. */
 	private makeAccessNodes(item: CapturedItem): AccessNode[] {
-		if (item.exp !== undefined) {
+		if (item.exp) {
 			let nodes: AccessNode[] = []
-
-			// Expression of an access node may be totally replaced after been referenced as `$ref_0`.
-			let node = Interpolator.outputSelf(item.exp) as ts.Expression
+			let node = Interpolator.outputReplaceableChildren(item.exp) as ts.Expression
 			let keys = item.keys!
 
-			node = Packer.extractFinalParenthesized(node) as AccessNode
+			node = Packer.simplify(node)
 
 			for (let key of keys) {
 				node = Packer.createAccessNode(node, key)
@@ -466,9 +462,9 @@ export class TrackingCapturer {
 			return nodes
 		}
 		else {
-			let node = Interpolator.outputChildren(item.node) as AccessNode
-			node = Packer.extractFinalParenthesized(node) as AccessNode
-			
+			let node = Interpolator.outputReplaceableChildren(item.node) as AccessNode
+			node = Packer.simplify(node) as AccessNode
+
 			return [node]
 		}
 	}

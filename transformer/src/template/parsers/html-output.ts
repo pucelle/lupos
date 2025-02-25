@@ -1,5 +1,5 @@
 import * as ts from 'typescript'
-import {definePreVisitCallback, factory, Modifier, VariableScopeTree} from '../../core'
+import {definePreVisitCallback, factory, Modifier, DeclarationScopeTree} from '../../core'
 import {TreeParser} from './tree'
 import {PairKeysMap} from '../../lupos-ts-module'
 
@@ -63,7 +63,7 @@ export namespace HTMLOutputHandler {
 		Cache.set(htmlString, wrapped, htmlName)
 
 		let output = () => {
-			VariableScopeTree.getTopmost().addStatements([htmlNode], tree.index)
+			DeclarationScopeTree.getTopmost().addStatements([htmlNode], tree.index)
 		}
 
 		return {

@@ -90,7 +90,7 @@ export enum TrackingScopeTypeMask {
 /** Tracking scope and node position. */
 export interface TrackingScopeTargetPosition{
 	scope: TrackingScope
-	node: ts.Node
+	toNode: ts.Node
 }
 
 
@@ -397,40 +397,32 @@ export namespace TrackingScopeTree {
 	 * If current position can add statements, return current position.
 	 * Must before current position, and must not cross any conditional or iteration scope.
 	 */
-	export function findClosestPositionToAddStatements(node: ts.Node, from: TrackingScope): TrackingScopeTargetPosition {
+	export function findClosestPositionToAddStatements(fromNode: ts.Node, from: TrackingScope): TrackingScopeTargetPosition {
 		let scope = from
-		let parameterIndex = helper.findOutwardUntil(node, from.node, ts.isParameter)
-
-		// Parameter initializer, no place to insert statements, returns position itself.
-		if (parameterIndex !== undefined) {
-			return {
-				scope,
-				node,
-			}
-		}
+		let toNode = fromNode
 
 		while (true) {
 
 			// Can put statements ,
 			// or can extend from `if()...` to `if(){...}`, insert before node.
-			if (Packer.canPutStatements(node)
-				|| Packer.canExtendToPutStatements(node)
+			if (Packer.canPutStatements(toNode)
+				|| Packer.canExtendToPutStatements(toNode)
 			) {
 				break
 			}
 
-			// `{...}`, insert before node.
-			if (Packer.canPutStatements(node.parent)) {
+			// `{...}`, insert before toNode.
+			if (Packer.canPutStatements(toNode.parent)) {
 
-				// scope of node.parent.
-				if (node === scope.node) {
+				// scope of toNode.parent.
+				if (toNode === scope.node) {
 					scope = scope.parent!
 				}
 				break
 			}
 
 			// To outer scope.
-			if (node === scope.node) {
+			if (toNode === scope.node) {
 				
 				// Can't cross these types of scopes, will end at the inner start of them.
 				if (scope.type & (
@@ -446,12 +438,12 @@ export namespace TrackingScopeTree {
 				scope = scope.parent!
 			}
 
-			node = node.parent
+			toNode = toNode.parent
 		}
 
 		return {
 			scope,
-			node,
+			toNode,
 		}
 	}
 }

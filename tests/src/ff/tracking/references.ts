@@ -72,6 +72,13 @@ export class TestRef extends Component {
 		return a[i++].value
 	}
 
+	doubleIndexRef() {
+		let a: Observed<{value:number}[][]> = [[this.prop]]
+		let i = 0
+		let j = 0
+		return a[i++][j++].value
+	}
+
 	forVariableInitializerRef() {
 		for (let i = this.getProp().value; i < 1; i++) {
 			break
@@ -105,8 +112,24 @@ export class TestRef extends Component {
 		return 0
 	}
 
+	forDoubleConditionRef() {
+		for (let i = 0; i < this.getNextProp(i).value; i++) {
+			break
+		}
+
+		return 0
+	}
+
 	forIncreasementRef() {
 		for (let i = 0; i < 1; i += this.getProp().value) {
+			break
+		}
+
+		return 0
+	}
+
+	forDoubleIncreasementRef() {
+		for (let i = 0; i < 1; i += this.getNextProp(i).value) {
 			break
 		}
 

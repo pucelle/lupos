@@ -302,18 +302,25 @@ export namespace Packer {
 	/** 
 	 * For each level of nodes, extract final expressions from a parenthesized expression.
 	 * `(a, b, c)` -> `c`
+	 * `(a = b)` -> `b`
 	 */
-	export function extractFinalParenthesized(node: ts.Node): ts.Node {
+	export function simplify(node: ts.Expression): ts.Expression {
 		if (ts.isParenthesizedExpression(node)) {
 			let exp = node.expression
 			if (ts.isBinaryExpression(exp)
 				&& exp.operatorToken.kind === ts.SyntaxKind.CommaToken
 			) {
-				return extractFinalParenthesized(exp.right)
+				return simplify(exp.right)
 			}
 		}
 
-		return ts.visitEachChild(node, extractFinalParenthesized as any, transformContext)
+		if (ts.isBinaryExpression(node)
+			&& node.operatorToken.kind === ts.SyntaxKind.EqualsToken
+		) {
+			return simplify(node.left)
+		}
+
+		return ts.visitEachChild(node, simplify as any, transformContext)
 	}
 
 

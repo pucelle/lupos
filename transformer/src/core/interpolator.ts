@@ -24,7 +24,7 @@ export interface InterpolationItem {
 	 * Must exist for `Replace` position.
 	 * Only one `replace` can exist.
 	 */
-	replace?: () => ts.Node | ts.Node[] | undefined
+	replace?: () => ts.Node | ts.Node[]
 
 	/** Sort interpolated expressions. */
 	order?: number
@@ -52,6 +52,9 @@ export enum InterpolationPosition {
 
 	/** Replace to some other nodes. */
 	Replace,
+
+	/** Replace to some other nodes. */
+	Remove,
 }
 
 export enum InterpolationContentType {
@@ -189,9 +192,8 @@ export namespace Interpolator {
 		})
 
 		add(fromNode, {
-			position: InterpolationPosition.Replace,
+			position: InterpolationPosition.Remove,
 			contentType: InterpolationContentType.Normal,
-			replace: () => undefined,
 			order: undefined,
 		})
 	}
@@ -200,9 +202,8 @@ export namespace Interpolator {
 	/** Remove node. */
 	export function remove(fromNode: ts.Node) {
 		add(fromNode, {
-			position: InterpolationPosition.Replace,
+			position: InterpolationPosition.Remove,
 			contentType: InterpolationContentType.Normal,
-			replace: () => undefined,
 			order: undefined,
 		})
 	}
@@ -272,7 +273,7 @@ export namespace Interpolator {
 	export function replace(
 		toNode: ts.Node,
 		contentType: InterpolationContentType,
-		replace: () => ts.Node | ts.Node[] | undefined
+		replace: () => ts.Node | ts.Node[]
 	) {
 		add(toNode, {
 			position: InterpolationPosition.Replace,
@@ -296,27 +297,39 @@ export namespace Interpolator {
 
 	/** 
 	 * Output node by specified raw node.
+	 * It overwrites all descendant nodes,
+	 * and may replace self, but will not be removed or inserts neighbor nodes.
+	 */
+	export function outputReplaceableChildren(atNode: ts.Node): ts.Node {
+		let items = getOrderedItems(atNode)
+		if (!items) {
+			return outputChildren(atNode)
+		}
+
+		let replace = items.filter(item => item.position === InterpolationPosition.Replace)
+		if (replace.length > 1) {
+			throw new Error(`Only one replace is allowed, happen at "${helper.getFullText(atNode)}"!`)
+		}
+
+		if (replace.length > 0) {
+			let replaced = replace[0].replace!()
+			return Array.isArray(replaced) ? replaced[0] : replaced
+		}
+
+		return outputChildren(atNode)
+	}
+
+	/** 
+	 * Output node by specified raw node.
 	 * It may overwrite all descendant nodes,
 	 * and may replace itself.
 	 * If `addNeighbors` is `true`, will output all neighbor nodes.
 	 */
 	export function outputSelf(atNode: ts.Node, addNeighbors: boolean = true): ts.Node | ts.Node[] | undefined {
-		let items = Interpolations.get(atNode)
+		let items = getOrderedItems(atNode)
 		if (!items) {
 			return outputChildren(atNode)
 		}
-
-		// Sort by order.
-		items.sort((a, b) => {
-			if (a.order === undefined || b.order === undefined) {
-				return 0
-			}
-
-			return a.order - b.order
-		})
-
-		// Sort by content type.
-		items.sort((a, b) => a.contentType - b.contentType)
 
 		let prependNodes = items.filter(item => item.position === InterpolationPosition.Prepend)
 			.map(item => item.exps!()).flat()
@@ -329,9 +342,14 @@ export namespace Interpolator {
 			throw new Error(`Only one replace is allowed, happen at "${helper.getFullText(atNode)}"!`)
 		}
 
+		let remove = items.find(item => item.position === InterpolationPosition.Remove)
+
 		let node: ts.Node | ts.Node[] | undefined
 
-		if (replace.length > 0) {
+		if (remove) {
+			node = undefined
+		}
+		else if (replace.length > 0) {
 			node = replace[0].replace!()
 
 			if (prependNodes.length > 0 || appendNodes.length > 0) {
@@ -364,6 +382,29 @@ export namespace Interpolator {
 		// console.log('TO', Array.isArray(node) ? node.map(n => helper.getText(n)) : node ? helper.getText((node)) : 'NONE')
 
 		return node && Array.isArray(node) && node.length === 1 ? node[0] : node
+	}
+
+
+	/** Get ordered interpolation items.*/
+	function getOrderedItems(atNode: ts.Node) {
+		let items = Interpolations.get(atNode)
+		if (!items) {
+			return undefined
+		}
+
+		// Sort by order.
+		items.sort((a, b) => {
+			if (a.order === undefined || b.order === undefined) {
+				return 0
+			}
+
+			return a.order - b.order
+		})
+
+		// Sort by content type.
+		items.sort((a, b) => a.contentType - b.contentType)
+
+		return items
 	}
 
 

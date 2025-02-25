@@ -1,7 +1,7 @@
 import * as ts from 'typescript'
 import {VisitTree} from './visit-tree'
 import {helper} from './global'
-import {VariableScopeTree} from './scope-tree'
+import {DeclarationScopeTree} from './scope-tree'
 import {InterpolationContentType, Interpolator} from './interpolator'
 import {Scope} from '../lupos-ts-module'
 
@@ -9,12 +9,12 @@ import {Scope} from '../lupos-ts-module'
 type ScopeNode = ts.FunctionLikeDeclaration | ts.ForStatement | ts.ForOfStatement | ts.ForInStatement | ts.Block | ts.SourceFile
 
 
-/** Mark all variables with a context. */
-export class VariableScope extends Scope {
+/** A declaration scope is where can declare variables. */
+export class DeclarationScope extends Scope {
 
-	declare readonly parent: VariableScope | null
+	declare readonly parent: DeclarationScope | null
 
-	constructor(node: ScopeNode, parent: VariableScope | null) {
+	constructor(node: ScopeNode, parent: DeclarationScope | null) {
 		super(node, parent, helper)
 	}
 
@@ -70,15 +70,15 @@ export class VariableScope extends Scope {
 
 	/** Add a variable to current scope. */
 	addVariable(name: string) {
-		VariableScopeTree.addVariableToScope(this, name)
+		DeclarationScopeTree.addVariableToScope(this, name)
 	}
 
 	/** 
 	 * Find an ancestral scope, and a child,
 	 * which can insert variable before it.
 	 */
-	findClosestToAddStatements(): VariableScope {
-		let scope: VariableScope = this
+	findClosestToAddStatements(): DeclarationScope {
+		let scope: DeclarationScope = this
 
 		while (!scope.canAddStatements()) {
 			scope = scope.parent!

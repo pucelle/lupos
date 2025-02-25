@@ -5,26 +5,26 @@ export class TestMutable extends Component {
     dynamicVariableAsIndex() {
         let $ref_0;
         let index = 0;
-        $ref_0 = index;
-        this.prop[$ref_0].value;
+        $ref_0 = this.prop[index];
+        $ref_0.value;
         index++;
         this.prop[index].value;
         trackGet(this, "prop");
         trackGet(this.prop, "");
-        trackGet(this.prop[$ref_0], "value");
+        trackGet($ref_0, "value");
         trackGet(this.prop[index], "value");
         return 0;
     }
     dynamicIndexChangeOtherWhere() {
         let $ref_0;
         let index = { value: 0 };
-        $ref_0 = index.value;
-        this.prop[$ref_0].value;
+        $ref_0 = this.prop[index.value];
+        $ref_0.value;
         index.value++;
         this.prop[index.value].value;
         trackGet(this, "prop");
         trackGet(this.prop, "");
-        trackGet(this.prop[$ref_0], "value");
+        trackGet($ref_0, "value");
         trackGet(this.prop[index.value], "value");
         return 0;
     }

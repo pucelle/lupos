@@ -78,7 +78,7 @@ export class TestRef extends Component {
         trackGet($ref_1, "value");
         return $ref_1.value;
     }
-    parameterRef(value = ($ref_0 = this.getProp(), $ref_0).value) {
+    parameterRef(value = ($ref_0 = this.getProp()).value) {
         trackGet($ref_0, "value");
         return value;
     }
@@ -86,11 +86,24 @@ export class TestRef extends Component {
         let $ref_1;
         let a = [this.prop];
         let i = 0;
-        $ref_1 = i++;
+        $ref_1 = a[i++];
         trackGet(this, "prop");
         trackGet(a, "");
-        trackGet(a[$ref_1], "value");
-        return a[$ref_1].value;
+        trackGet($ref_1, "value");
+        return $ref_1.value;
+    }
+    doubleIndexRef() {
+        let $ref_1, $ref_2;
+        let a = [[this.prop]];
+        let i = 0;
+        let j = 0;
+        $ref_1 = a[i++];
+        $ref_2 = $ref_1[j++];
+        trackGet(this, "prop");
+        trackGet(a, "");
+        trackGet($ref_1, "");
+        trackGet($ref_2, "value");
+        return $ref_2.value;
     }
     forVariableInitializerRef() {
         let $ref_1 = this.getProp(), i = $ref_1.value;
@@ -128,12 +141,28 @@ export class TestRef extends Component {
         trackGet($ref_1, "value");
         return 0;
     }
+    forDoubleConditionRef() {
+        let $ref_1;
+        for (let i = 0; ($ref_1 = this.getNextProp(i), i < $ref_1.value); i++) {
+            trackGet($ref_1, "value");
+            break;
+        }
+        return 0;
+    }
     forIncreasementRef() {
         let $ref_1;
         for (let i = 0; i < 1; ($ref_1 = this.getProp(), i += $ref_1.value)) {
             break;
         }
         trackGet($ref_1, "value");
+        return 0;
+    }
+    forDoubleIncreasementRef() {
+        let $ref_1;
+        for (let i = 0; i < 1; ($ref_1 = this.getNextProp(i), i += $ref_1.value)) {
+            trackGet($ref_1, "value");
+            break;
+        }
         return 0;
     }
     caseDefaultRef() {

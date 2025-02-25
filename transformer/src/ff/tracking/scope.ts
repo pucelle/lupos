@@ -1,6 +1,6 @@
 import * as ts from 'typescript'
 import {TrackingChecker} from './checker'
-import {FlowInterruptionTypeMask, VariableScopeTree, helper} from '../../core'
+import {FlowInterruptionTypeMask, DeclarationScope, DeclarationScopeTree, helper} from '../../core'
 import {AccessNode} from '../../lupos-ts-module'
 import {TrackingScopeState} from './scope-state'
 import {TrackingScopeTypeMask} from './scope-tree'
@@ -60,14 +60,13 @@ export class TrackingScope {
 	/** 
 	 * Get declaration scope for putting declarations.
 	 * For function scope, it returns the scope of function body.
-	 * Note it's not tracking scope.
 	 */
-	getDeclarationScope() {
+	getDeclarationScope(): DeclarationScope {
 		if (helper.isFunctionLike(this.node) && this.node.body) {
-			return VariableScopeTree.findClosest(this.node.body)
+			return DeclarationScopeTree.findClosest(this.node.body)
 		}
 		else {
-			return VariableScopeTree.findClosest(this.node)
+			return DeclarationScopeTree.findClosest(this.node)
 		}
 	}
 
@@ -111,7 +110,11 @@ export class TrackingScope {
 				let names = helper.variable.walkDeclarationNames(rawNode)
 
 				for (let {node: nameNode, keys} of names) {
-					this.mayAddGetTracking(nameNode, rawNode.initializer, keys)
+
+					// Skips let `a = b`.
+					if (keys.length > 0) {
+						this.mayAddGetTracking(nameNode, rawNode.initializer, keys)
+					}
 				}
 			}
 		}

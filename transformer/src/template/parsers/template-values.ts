@@ -1,5 +1,5 @@
 import * as ts from 'typescript'
-import {factory, Interpolator, MutableMask, Packer, VariableScopeTree, helper, Hashing} from '../../core'
+import {factory, Interpolator, MutableMask, Packer, DeclarationScopeTree, helper, Hashing} from '../../core'
 import {VariableNames} from './variable-names'
 import {TreeParser} from './tree'
 
@@ -24,7 +24,7 @@ export class TemplateValues {
 	private checkIndicesMutable() {
 		for (let i = 0; i < this.valueNodes.length; i++) {
 			let node = this.valueNodes[i]
-			this.indicesMutable.set(i, VariableScopeTree.testMutable(node))
+			this.indicesMutable.set(i, DeclarationScopeTree.testMutable(node))
 		}
 	}
 
@@ -35,7 +35,7 @@ export class TemplateValues {
 
 	/** Returns whether the element of the value at specified index are mutable. */
 	isIndexElementsPartMutable(valueIndex: number): boolean {
-		return VariableScopeTree.testElementsPartMutable(this.valueNodes[valueIndex])
+		return DeclarationScopeTree.testElementsPartMutable(this.valueNodes[valueIndex])
 	}
 
 	/** Returns whether the value at specified index can turn from mutable to static. */
@@ -63,7 +63,7 @@ export class TemplateValues {
 		}
 
 		return rawParamNodes.map(rawValueNode => {
-			return (VariableScopeTree.testMutable(rawValueNode) & MutableMask.Mutable) > 0
+			return (DeclarationScopeTree.testMutable(rawValueNode) & MutableMask.Mutable) > 0
 		})
 	}
 
@@ -129,7 +129,7 @@ export class TemplateValues {
 		if (asStatic) {
 			let interpolated = Interpolator.outputNodeSelf(rawValueNode) as ts.Expression
 
-			let transferred = VariableScopeTree.transferToTopmostScope(
+			let transferred = DeclarationScopeTree.transferToTopmostScope(
 				interpolated,
 				rawValueNode,
 				this.transferNodeToTopmostScope.bind(this, valueIndex, tree)
@@ -252,7 +252,7 @@ export class TemplateValues {
 
 	/** Output a single value from a raw node. */
 	outputRawValue(rawNode: ts.Expression, valueIndex: number, tree: TreeParser, asCallback: boolean = false): ts.Expression {
-		let mutableMask = VariableScopeTree.testMutable(rawNode)
+		let mutableMask = DeclarationScopeTree.testMutable(rawNode)
 		let mutable = (mutableMask & MutableMask.Mutable) > 0
 		let canTurn = (mutableMask & MutableMask.CantTransfer) === 0
 		let asStatic = !mutable || asCallback && canTurn

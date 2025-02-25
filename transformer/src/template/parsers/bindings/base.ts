@@ -2,7 +2,7 @@ import * as ts from 'typescript'
 import {HTMLNode, LuposKnownInternalBindings} from '../../../lupos-ts-module'
 import {PartType, TreeParser} from '../tree'
 import {BindingSlotParser} from '../slots'
-import {factory, Modifier, VariableScopeTree, Packer, helper} from '../../../core'
+import {factory, Modifier, DeclarationScopeTree, Packer, helper} from '../../../core'
 import {TemplateParser} from '../template'
 import {VariableNames} from '../variable-names'
 import {setLatestBindingInfo} from './latest-binding'
@@ -150,7 +150,7 @@ export class BindingBase {
 		else {
 
 			// :bindingName -> bindingName
-			let decl = VariableScopeTree.getReferenceByName(this.name, this.template.node)
+			let decl = DeclarationScopeTree.getReferenceByName(this.name, this.template.node)
 
 			// `Import ClassBinding`
 			// `class ClassBinding {...}`

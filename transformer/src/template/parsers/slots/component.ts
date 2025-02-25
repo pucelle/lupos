@@ -1,6 +1,6 @@
 import * as ts from 'typescript'
 import {SlotParserBase} from './base'
-import {factory, Modifier, VariableScopeTree} from '../../../core'
+import {factory, Modifier, DeclarationScopeTree} from '../../../core'
 
 
 export class ComponentSlotParser extends SlotParserBase {
@@ -13,7 +13,7 @@ export class ComponentSlotParser extends SlotParserBase {
 
 		this.refAsComponent()
 
-		let decl = VariableScopeTree.getReferenceByName(comName, this.template.node)
+		let decl = DeclarationScopeTree.getReferenceByName(comName, this.template.node)
 		if (decl) {
 			// Limit closest scope by referenced declaration.
 			this.template.addRefedDeclaration(decl)

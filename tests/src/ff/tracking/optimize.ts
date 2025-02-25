@@ -204,14 +204,6 @@ export class TestOptimizing extends Component {
 		return 0
 	}
 
-	preventMoveIterationConditionOutward() {
-		let props: Observed<{value: number}[]> = [this.prop, this.prop]
-
-		for (let i = 0; i < props[i].value; i++) {}
-
-		return 0
-	}
-
 	moveIterationIncreasementOutward() {
 		for (let i = 0; i < 1; i += this.prop.value) {}
 
@@ -235,8 +227,16 @@ export class TestOptimizing extends Component {
 		return 0
 	}
 
+	preventMovingIterationConditionWhenIncludesLocalVariables() {
+		let props: Observed<{value: number}[]> = [this.prop]
+
+		for (let i = 0; i < props[i].value; i++) {}
+
+		return 0
+	}
+
 	preventMovingIterationContentWhenIncludesLocalVariables() {
-		let props: Observed<{value: number}[]> = [this.prop, this.prop]
+		let props: Observed<{value: number}[]> = [this.prop]
 
 		for (let i = 0; i < 1; i++){
 			props[i].value

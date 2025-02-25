@@ -1,10 +1,10 @@
 import * as ts from 'typescript'
 import {VisitTree} from './visit-tree'
-import {VariableScope} from './scope'
+import {DeclarationScope} from './scope'
 import {Packer} from './packer'
 import {factory, helper, transformContext} from './global'
 import {addToList} from '../utils'
-import {VariableScopeTree} from './scope-tree'
+import {DeclarationScopeTree} from './scope-tree'
 
 
 export interface HashItem {
@@ -13,7 +13,7 @@ export interface HashItem {
 	name: string
 
 	/** The variable declaration scopes that current node used. */
-	usedScopes: VariableScope[]
+	usedScopes: DeclarationScope[]
 
 	/** The variable declaration nodes that current node used. */
 	usedDeclarations: ts.Node[]
@@ -42,7 +42,7 @@ export namespace Hashing {
 
 	/** Hash a node, normalize and add a unique suffix to all variable nodes. */
 	function doHashing(rawNode: ts.Node): HashItem {
-		let usedScopes: VariableScope[] = []
+		let usedScopes: DeclarationScope[] = []
 		let usedDeclarations: ts.Node[] = []
 		let node = rawNode
 
@@ -59,7 +59,7 @@ export namespace Hashing {
 		}
 	}
 
-	function hashNodeVisitor(node: ts.Node, usedScopes: VariableScope[], usedDeclarations: ts.Node[]): ts.Node | undefined {
+	function hashNodeVisitor(node: ts.Node, usedScopes: DeclarationScope[], usedDeclarations: ts.Node[]): ts.Node | undefined {
 
 		// Not raw node.
 		if (!VisitTree.hasNode(node)) {}
@@ -99,8 +99,8 @@ export namespace Hashing {
 	 * The suffix is normally a scope visit index,
 	 * then the hashing is unique across whole source file.
 	 */
-	function hashVariableName(rawNode: ts.Identifier | ts.ThisExpression): {name: string, scope: VariableScope} {
-		let scope = VariableScopeTree.findDeclared(rawNode) || VariableScopeTree.findClosest(rawNode)
+	function hashVariableName(rawNode: ts.Identifier | ts.ThisExpression): {name: string, scope: DeclarationScope} {
+		let scope = DeclarationScopeTree.findDeclared(rawNode) || DeclarationScopeTree.findClosest(rawNode)
 		let name = helper.getFullText(rawNode)
 		let suffix = VisitTree.getIndex(scope.node)
 

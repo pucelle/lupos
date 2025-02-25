@@ -1,4 +1,4 @@
-import {factory, InterpolationContentType, Interpolator, Modifier, VisitTree, VariableScopeTree, helper} from '../../core'
+import {factory, InterpolationContentType, Interpolator, Modifier, VisitTree, DeclarationScopeTree, helper} from '../../core'
 import {AccessNode, AssignmentNode} from '../../lupos-ts-module'
 import * as ts from 'typescript'
 import {TrackingScopeTree} from './scope-tree'
@@ -24,29 +24,25 @@ export namespace TrackingReferences {
 	const VisitedNodes: Set<ts.Node> = new Set()
 
 	/** 
-	 * If access as `a.b`, and later assign `a`, then node `a` of `a.b` become mutable.
+	 * If access as `a.b`, and later assign `a`, then node `a` of `a.b` become assignable.
 	 * Node -> Assignment node.
 	 */
-	const WillBeAssigned: Map<ts.Node, AssignmentNode> = new Map()
+	const WillBeAssignedNodes: Map<ts.Node, AssignmentNode> = new Map()
 
-	/** Nodes at where access nodes have been referenced. */
+	/** Nodes have been referenced. */
 	const ReferencedNodes: Set<ts.Node> = new Set()
-
-	/** Nodes that have tested reference. */
-	const ReferencedTested: Set<ts.Node> = new Set()
 
 
 	/** Initialize after enter a new source file. */
 	export function init() {
 		VisitedNodes.clear()
-		WillBeAssigned.clear()
+		WillBeAssignedNodes.clear()
 		ReferencedNodes.clear()
-		ReferencedTested.clear()
 	}
 
 
-	/** Whether any descendant access node has been referenced. */
-	export function hasInternalAccessReferenced(node: ts.Node, ignoreElementsKey: boolean = true): boolean {
+	/** Whether any descendant node has been referenced. */
+	export function hasInternalReferenced(node: ts.Node, ignoreElementsKey: boolean = true): boolean {
 		if (ReferencedNodes.has(node)) {
 			return true
 		}
@@ -57,7 +53,7 @@ export namespace TrackingReferences {
 			&& helper.access.isAccess(node)
 			&& helper.access.isExpOfElementsAccess(node.expression)
 		) {
-			return hasInternalAccessReferenced(node.expression, false)
+			return hasInternalReferenced(node.expression, false)
 		}
 
 		let childNodes = VisitTree.getChildNodes(node)
@@ -65,7 +61,7 @@ export namespace TrackingReferences {
 			return false
 		}
 
-		return childNodes.some(n => hasInternalAccessReferenced(n, false))
+		return childNodes.some(n => hasInternalReferenced(n, false))
 	}
 
 
@@ -92,9 +88,9 @@ export namespace TrackingReferences {
 
 		// `a?.b` has been replaced to `a.b`
 		if (helper.access.isAccess(node) || helper.isVariableIdentifier(node)) {
-			let assignmentNode = VariableScopeTree.whereWillBeAssigned(node)
+			let assignmentNode = DeclarationScopeTree.whereWillBeAssigned(node)
 			if (assignmentNode !== undefined) {
-				WillBeAssigned.set(topNode, assignmentNode)
+				WillBeAssignedNodes.set(topNode, assignmentNode)
 			}
 		}
 
@@ -102,14 +98,9 @@ export namespace TrackingReferences {
 	}
 
 
-	/** Visit an assess node, reference it's exp and name part after testing whether should reference. */
-	export function checkAccessReference(accessNode: ts.Expression, toNode: ts.Node, scope: TrackingScope) {
+	/** Reference exp and name part of an access node if needed. */
+	export function mayReferenceAccess(accessNode: ts.Expression, toNode: ts.Node, scope: TrackingScope) {
 		if (!helper.access.isAccess(accessNode)) {
-			return
-		}
-
-		// Avoid after tested, move to outer and do test again.
-		if (ReferencedTested.has(accessNode)) {
 			return
 		}
 
@@ -127,55 +118,60 @@ export namespace TrackingReferences {
 			reference(nameNode, scope)
 			ReferencedNodes.add(nameNode)
 		}
-
-		ReferencedTested.add(accessNode)
 	}
 
 
-	/** Visit an expression node, reference it after testing whether should reference. */
-	export function checkExpReference(expNode: ts.Expression, toNode: ts.Node, scope: TrackingScope) {
-		
-		// Avoid after tested, move to outer and do test again.
-		if (ReferencedTested.has(expNode)) {
-			return
-		}
+	/** Reference an expression if needed. */
+	export function mayReferenceExp(expNode: ts.Expression, toNode: ts.Node, scope: TrackingScope) {
 
 		// Use a reference variable to replace expression.
 		if (shouldReference(expNode, toNode)) {
 			reference(expNode, scope)
 			ReferencedNodes.add(expNode)
 		}
-
-		ReferencedTested.add(expNode)
 	}
 
 
 	/** 
-	 * After an node visiting has been marked as mutable,
-	 * and before output it's tracking codes,
-	 * test whether it should output as mutable.
+	 * After an node or any descendant nodes has been marked as will be assigned,
+	 * and the output statement in the following of assignment statement,
 	 */
 	function shouldReference(node: ts.Node, toNode: ts.Node): boolean {
-		if (shouldReferenceInternal(node)) {
-			return true
-		}
-
-		if (!WillBeAssigned.has(node)) {
+		if (ReferencedNodes.has(node)) {
 			return false
 		}
 
-		// Mutable when output after assignment
-		let assignmentNode = WillBeAssigned.get(node)!
-		return VisitTree.isPrecedingOfInChildFirstOrder(assignmentNode, toNode)
+		for (let descendant of helper.walkInward(node)) {
+			if (ReferencedNodes.has(descendant)) {
+				continue
+			}
+
+			if (shouldReferenceOfSelf(descendant)) {
+				return true
+			}
+
+			let assignableNode = WillBeAssignedNodes.get(descendant)
+			if (!assignableNode) {
+				continue
+			}
+
+			// To reference only when output after assignment.
+			let outputAfterAssignment = VisitTree.isPrecedingOfInChildFirstOrder(assignableNode, toNode)
+			if (outputAfterAssignment) {
+				return true
+			}
+		}
+
+		return false
 	}
-	
+
 
 	/** 
 	 * Whether be a complex expression like binary, and should be referenced.
 	 * `a().b` -> `var $ref_; ...; $ref_ = a(); $ref_.b`
 	 * or `a[i++]` -> `var _ref; ... ; $ref_ = i++; a[_ref]`
 	 */
-	function shouldReferenceInternal(node: ts.Node): boolean {
+	function shouldReferenceOfSelf(node: ts.Node): boolean {
 
 		// `a && b`, `a || b`, `a ?? b`, `a + b`, `a, b`.
 		if (ts.isBinaryExpression(node)) {
@@ -185,16 +181,6 @@ export namespace TrackingReferences {
 		// `a++`, `++a`.
 		if (ts.isPostfixUnaryExpression(node) || ts.isPrefixUnaryExpression(node)) {
 			return true
-		}
-
-		// `(...)`
-		else if (ts.isParenthesizedExpression(node)) {
-			return shouldReferenceInternal(node.expression)
-		}
-
-		// `(a as Observed<{b: number}>).b`
-		else if (ts.isAsExpression(node)) {
-			return shouldReferenceInternal(node.expression)
 		}
 
 		// `a ? b : c`
@@ -222,7 +208,7 @@ export namespace TrackingReferences {
 	 */
 	function reference(node: ts.Node, scope: TrackingScope) {
 		let varDeclListNode = helper.findOutwardUntil(node, scope.node, ts.isVariableDeclaration)
-		let varScope = VariableScopeTree.findClosest(node).findClosestToAddStatements()
+		let varScope = DeclarationScopeTree.findClosest(node).findClosestToAddStatements()
 		let refName = varScope.makeUniqueVariable('$ref_')
 
 		// Insert one variable declaration to existing declaration list: `var ... $ref_0 = ...`
@@ -237,25 +223,35 @@ export namespace TrackingReferences {
 
 		// Insert two: `var $ref_0`, and `$ref_0 = ...`
 		else {
-			
 			let refPosition = TrackingScopeTree.findClosestPositionToAddStatements(node, scope)
 			let declAssignTogether = varScope.node === refPosition.scope.node
 
-			if (declAssignTogether) {
+			if (!DeclarationScopeTree.canSafelyMoveBeforeNode(node, refPosition.toNode)) {
 
-				// insert `let $ref_0 = a.b()` to found position.
-				Modifier.addVariableAssignment(node, refPosition.node, refName)
+				// let $ref_0 
+				varScope.addVariable(refName)
+				
+				// Replace `$ref_0 = a.b()` to original position.
+				Modifier.replaceReferenceAssignment(node, refName)
+			}
+			else if (declAssignTogether) {
+
+				// Insert `let $ref_0 = a.b()` to found position.
+				Modifier.addVariableAssignment(node, refPosition.toNode, refName)
+
+				// replace `a.b()` -> `$ref_0`.
+				Interpolator.replace(node, InterpolationContentType.Reference, () => factory.createIdentifier(refName))
 			}
 			else {
 				// let $ref_0 
 				varScope.addVariable(refName)
 				
-				// insert `$ref_0 = a.b()` to found position.
-				Modifier.addReferenceAssignment(node, refPosition.node, refName)
-			}
+				// Insert `$ref_0 = a.b()` to found position.
+				Modifier.addReferenceAssignment(node, refPosition.toNode, refName)
 
-			// replace `a.b()` -> `$ref_0`.
-			Interpolator.replace(node, InterpolationContentType.Reference, () => factory.createIdentifier(refName))
+				// replace `a.b()` -> `$ref_0`.
+				Interpolator.replace(node, InterpolationContentType.Reference, () => factory.createIdentifier(refName))
+			}
 		}
 	}
 }

@@ -2,7 +2,7 @@ import * as ts from 'typescript'
 import {Analyzer, HTMLNode, HTMLRoot, PositionMapper, TemplateBasis, TemplateDiagnostics, TemplatePart, TemplatePartParser} from '../../lupos-ts-module'
 import {TreeParser} from './tree'
 import {TemplateValues} from './template-values'
-import {factory, helper, Modifier, SourceFileDiagnosticModifier, VariableScope, VariableScopeTree, VisitTree} from '../../core'
+import {factory, helper, Modifier, SourceFileDiagnosticModifier, DeclarationScope, DeclarationScopeTree, VisitTree} from '../../core'
 
 
 /**
@@ -19,7 +19,7 @@ export class TemplateParser extends TemplateBasis {
 	private readonly subTemplates: TemplateParser[] = []
 
 	/** Which scope should insert contents. */
-	private innerMostScope: VariableScope = VariableScopeTree.getTopmost()
+	private innerMostScope: DeclarationScope = DeclarationScopeTree.getTopmost()
 
 	constructor(
 		tagName: 'html' | 'svg',
@@ -29,7 +29,7 @@ export class TemplateParser extends TemplateBasis {
 		valueNodes: ts.Expression[],
 		positionMapper: PositionMapper
 	) {
-		super(tagName, node, content, root, valueNodes, positionMapper, VariableScopeTree, helper)
+		super(tagName, node, content, root, valueNodes, positionMapper, DeclarationScopeTree, helper)
 		this.values = new TemplateValues(valueNodes)
 
 		this.diagnose()
@@ -85,7 +85,7 @@ export class TemplateParser extends TemplateBasis {
 	 * then generated codes can't be appended to topmost scope.
 	 */
 	addRefedDeclaration(node: ts.Node) {
-		let scope = VariableScopeTree.findClosest(node)
+		let scope = DeclarationScopeTree.findClosest(node)
 		if (!scope) {
 			return
 		}

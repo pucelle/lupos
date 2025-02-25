@@ -108,6 +108,10 @@ export class TestMethodReturnedType extends Component {
 
 	prop: {value: string} = {value: 'Text'}
 
+	getNormalItem(): {value: string} {
+		return this.prop
+	}
+
 	getValueUseMethod() {
 		var item = this.getNormalItem() as Observed<{value: string}>
 		return item.value
@@ -115,10 +119,6 @@ export class TestMethodReturnedType extends Component {
 
 	getValueUseMethodSingleExp() {
 		return (this.getNormalItem() as Observed<{value: string}>).value
-	}
-
-	getNormalItem(): {value: string} {
-		return this.prop
 	}
 
 	getValueUseObservedMethod() {

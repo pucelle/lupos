@@ -4,7 +4,7 @@ import {VisitTree} from './visit-tree'
 import {InterpolationContentType, Interpolator} from './interpolator'
 import {AccessNode, AssignmentNode, ListMap, ScopeTree} from '../lupos-ts-module'
 import {definePostVisitCallback, definePreVisitCallback} from './visitor-callbacks'
-import {VariableScope} from './scope'
+import {DeclarationScope} from './scope'
 import {Hashing} from './hashing'
 
 
@@ -30,16 +30,17 @@ export enum MutableMask {
 type NodeReplacer = (node: ts.Identifier | ts.ThisExpression, insideFunctionScope: boolean) => ts.Expression
 
 
-class ExtendedScopeTree extends ScopeTree<VariableScope> {
+/** Manages all the declaration scopes as a tree struct. */
+class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 
 	/** Cache assign to hash name -> assignment expression. */
 	private assignmentMap: ListMap<string, AssignmentNode> = new ListMap()
 
 	/** All added variable names, via scope. */
-	private addedVariableNames: ListMap<VariableScope, string> = new ListMap()
+	private addedVariableNames: ListMap<DeclarationScope, string> = new ListMap()
 
 	constructor() {
-		super(helper, VariableScope)
+		super(helper, DeclarationScope)
 	}
 
 	/** To parent. */
@@ -61,9 +62,9 @@ class ExtendedScopeTree extends ScopeTree<VariableScope> {
 	}
 
 	/** Get the leaved scope list when walking from a scope to an ancestral scope. */
-	findWalkingOutwardLeaves(fromScope: VariableScope, toScope: VariableScope) : VariableScope[] {
-		let scope: VariableScope | undefined = fromScope
-		let leaves: VariableScope[] = []
+	findWalkingOutwardLeaves(fromScope: DeclarationScope, toScope: DeclarationScope) : DeclarationScope[] {
+		let scope: DeclarationScope | undefined = fromScope
+		let leaves: DeclarationScope[] = []
 
 		// Look outward for a node which can pass test.
 		while (scope && scope !== toScope) {
@@ -73,9 +74,27 @@ class ExtendedScopeTree extends ScopeTree<VariableScope> {
 
 		return leaves
 	}
+
+	/** 
+	 * Test whether can safely move a node before another node.
+	 * E.g., `if {var a; a = 1}`, can't move `a = 1` to outer declaration scope.
+	 */
+	canSafelyMoveBeforeNode(fromNode: ts.Node, toNode: ts.Node): boolean {
+		let hashed = Hashing.hashNode(fromNode)
+		let fromScope = this.findClosest(fromNode)
+		let toScope = toNode.parent ? this.findClosest(toNode.parent) : this.getTopmost()
+		let scopesLeaves = this.findWalkingOutwardLeaves(fromScope, toScope)
+
+		// Leaved scopes which contain any referenced variable.
+		if (hashed.usedScopes.some(i => scopesLeaves.includes(i))) {
+			return false
+		}
+
+		return true
+	}
 	
 	/** Add a scope and a variable name to insert into the scope later. */
-	addVariableToScope(scope: VariableScope, name: string) {
+	addVariableToScope(scope: DeclarationScope, name: string) {
 		this.addedVariableNames.add(scope, name)
 	}
 
@@ -333,11 +352,11 @@ class ExtendedScopeTree extends ScopeTree<VariableScope> {
 }
 
 
-export let VariableScopeTree: ExtendedScopeTree
+export let DeclarationScopeTree: ExtendedScopeTree
 
 definePreVisitCallback(() => {
-	VariableScopeTree = new ExtendedScopeTree()
-	VariableScopeTree.visitSourceFile(sourceFile)
+	DeclarationScopeTree = new ExtendedScopeTree()
+	DeclarationScopeTree.visitSourceFile(sourceFile)
 })
 
-definePostVisitCallback(() => VariableScopeTree.applyInterpolation())
+definePostVisitCallback(() => DeclarationScopeTree.applyInterpolation())

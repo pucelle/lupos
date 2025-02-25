@@ -1,7 +1,7 @@
 import * as ts from 'typescript'
 import {Part, TreeParser} from './tree'
 import {HTMLNode, HTMLNodeType, HTMLRoot, TemplateSlotPlaceholder} from '../../lupos-ts-module'
-import {factory, Modifier, Packer, VariableScope, helper} from '../../core'
+import {factory, Modifier, Packer, DeclarationScope, helper} from '../../core'
 import {SlotParserBase} from './slots'
 import {VariableNames} from './variable-names'
 import {SlotPositionType} from '../../enums'
@@ -42,7 +42,7 @@ export class TreeOutputHandler {
 		slots: SlotParserBase[],
 		varNames: string[],
 		parts: Part[],
-		scope: VariableScope
+		scope: DeclarationScope
 	): () => void {
 		Modifier.addImport('TemplateMaker', '@pucelle/lupos.js')
 

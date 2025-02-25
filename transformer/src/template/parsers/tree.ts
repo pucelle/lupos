@@ -1,4 +1,4 @@
-import {VariableScope, helper} from '../../core'
+import {DeclarationScope, helper} from '../../core'
 import {PartPositionType} from '../../enums'
 import {HTMLNodeHelper, HTMLNodeReferences} from '../html-syntax'
 import {HTMLNode, HTMLNodeType, HTMLRoot, TemplatePartParser, TemplatePart, TemplatePartType, TemplateSlotPlaceholder} from '../../lupos-ts-module'
@@ -334,7 +334,7 @@ export class TreeParser {
 	 * Prepare to output whole tree as expressions,
 	 * Return a callback, call which will finally interpolate to source file.
 	 */
-	prepareToOutput(scope: VariableScope): () => void {
+	prepareToOutput(scope: DeclarationScope): () => void {
 		this.determined = true
 		this.references.determine()
 

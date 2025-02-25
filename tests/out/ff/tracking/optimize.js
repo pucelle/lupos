@@ -178,15 +178,6 @@ export class TestOptimizing extends Component {
         trackGet(this.prop, "value");
         return 0;
     }
-    preventMoveIterationConditionOutward() {
-        let props = [this.prop, this.prop];
-        for (let i = 0; i < props[i].value; i++) {
-            trackGet(props[i], "value");
-        }
-        trackGet(this, "prop");
-        trackGet(props, "");
-        return 0;
-    }
     moveIterationIncreasementOutward() {
         for (let i = 0; i < 1; i += this.prop.value) { }
         trackGet(this, "prop");
@@ -210,8 +201,18 @@ export class TestOptimizing extends Component {
         trackGet(this.prop, "value");
         return 0;
     }
+    preventMovingIterationConditionWhenIncludesLocalVariables() {
+        let $ref_0;
+        let props = [this.prop];
+        for (let i = 0; i < ($ref_0 = props[i]).value; i++) {
+            trackGet($ref_0, "value");
+        }
+        trackGet(this, "prop");
+        trackGet(props, "");
+        return 0;
+    }
     preventMovingIterationContentWhenIncludesLocalVariables() {
-        let props = [this.prop, this.prop];
+        let props = [this.prop];
         for (let i = 0; i < 1; i++) {
             props[i].value;
             trackGet(props[i], "value");

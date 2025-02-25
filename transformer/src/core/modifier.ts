@@ -3,7 +3,7 @@ import {ListMap} from '../lupos-ts-module'
 import {factory, sourceFile, helper} from './global'
 import {InterpolationContentType, Interpolator} from './interpolator'
 import {definePostVisitCallback, definePreVisitCallback} from './visitor-callbacks'
-import {VariableScopeTree} from './scope-tree'
+import {DeclarationScopeTree} from './scope-tree'
 import {Packer} from './packer'
 
 
@@ -161,11 +161,27 @@ export namespace Modifier {
 		})
 	}
 
+	/** 
+	 * Insert a reference expression from a position to another position.
+	 * `a.b()` -> `$ref_ = a.b()`, and insert to before itself.
+	 */
+	export function replaceReferenceAssignment(fromNode: ts.Node, refName: string) {
+		Interpolator.replace(fromNode, InterpolationContentType.Reference, () => {
+			let node = Interpolator.outputChildren(fromNode) as ts.Expression
+			node = Packer.normalize(node, false) as ts.Expression
+
+			return factory.createBinaryExpression(
+				factory.createIdentifier(refName),
+				factory.createToken(ts.SyntaxKind.EqualsToken),
+				node
+			)
+		})
+	}
 
 
 	/** Apply imports to do interpolation. */
 	export function applyInterpolation() {
-		let beforeNode = VariableScopeTree.getTopmost().getTargetNodeToAddStatements()
+		let beforeNode = DeclarationScopeTree.getTopmost().getTargetNodeToAddStatements()
 		let modifiedImportDecls: Set<ts.ImportDeclaration> = new Set()
 
 

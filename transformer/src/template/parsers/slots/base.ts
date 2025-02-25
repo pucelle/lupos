@@ -1,7 +1,7 @@
 import * as ts from 'typescript'
 import {HTMLAttribute, HTMLNode, HTMLNodeType, TemplatePart, TemplateSlotPlaceholder} from '../../../lupos-ts-module'
 import {PartType, TreeParser} from '../tree'
-import {factory, Modifier, MutableMask, VariableScopeTree, Packer, Hashing} from '../../../core'
+import {factory, Modifier, MutableMask, DeclarationScopeTree, Packer, Hashing} from '../../../core'
 import {TemplateParser} from '../template'
 import {SlotPositionType} from '../../../enums'
 import {HTMLNodeHelper} from '../../html-syntax'
@@ -141,7 +141,7 @@ export abstract class SlotParserBase {
 		let hashes: string[] = []
 
 		let names = exps.map((exp) => {
-			if ((VariableScopeTree.testMutable(exp) & MutableMask.Mutable) === 0) {
+			if ((DeclarationScopeTree.testMutable(exp) & MutableMask.Mutable) === 0) {
 				return null
 			}
 

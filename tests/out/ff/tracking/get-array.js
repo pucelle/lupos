@@ -19,9 +19,10 @@ export class TestArrayIndex extends Component {
         trackGet(this, "prop");
         trackGet(this.prop, "");
         if (this.prop.length > 0) {
-            let $ref_0 = this.prop.length - 1;
-            trackGet(this.prop[$ref_0], "value");
-            return this.prop[$ref_0].value;
+            let $ref_0 = this.prop[this.prop.length - 1];
+            trackGet(this.prop, "");
+            trackGet($ref_0, "value");
+            return $ref_0.value;
         }
         return undefined;
     }

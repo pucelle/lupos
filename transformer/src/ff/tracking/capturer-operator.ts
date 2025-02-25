@@ -1,5 +1,5 @@
 import * as ts from 'typescript'
-import {VisitTree, FlowInterruptionTypeMask, VariableScopeTree, HashItem, helper, Hashing} from '../../core'
+import {VisitTree, FlowInterruptionTypeMask, DeclarationScopeTree, HashItem, helper, Hashing} from '../../core'
 import {TrackingReferences} from './references'
 import {removeFromList} from '../../utils'
 import {CapturedItem, TrackingCapturer} from './capturer'
@@ -46,7 +46,7 @@ export class TrackingCapturerOperator {
 			for (let item of capturer.captured[0].items) {
 
 				// Has been referenced, will be replaced, ignore intersection.
-				if (TrackingReferences.hasInternalAccessReferenced(item.node)) {
+				if (TrackingReferences.hasInternalReferenced(item.node)) {
 					continue
 				}
 
@@ -93,7 +93,7 @@ export class TrackingCapturerOperator {
 			return
 		}
 
-		let residualItems = toCapturer.operator.safelyMoveSomeCapturedOutwardFrom(item, this.capturer)
+		let residualItems = this.safelyMoveCapturedItemsOutwardTo(item, toCapturer)
 		this.capturer.captured[0].items = residualItems
 	}
 
@@ -102,19 +102,20 @@ export class TrackingCapturerOperator {
 	 * `fromCapturer` locates where items move from.
 	 * Returns residual items that failed to move.
 	 */
-	safelyMoveSomeCapturedOutwardFrom(items: CapturedItem[], fromCapturer: TrackingCapturer): CapturedItem[] {
+	safelyMoveCapturedItemsOutwardTo(items: CapturedItem[], toCapturer: TrackingCapturer): CapturedItem[] {
 
-		// Locate which captured item should move items to.
-		// Find the first item `toIndex` larger in child-first order.
-		let group = this.capturer.captured.find(item => {
-			return VisitTree.isFollowingOfOrEqualInChildFirstOrder(item.toNode, fromCapturer.scope.node)
-		}) ?? this.capturer.latestCaptured
+		// Locate which captured group should move items to.
+		// Find the first item which's in the following of current node in child-first order.
+		// If can't find, use the last one.
+		let group = toCapturer.captured.find(item => {
+			return VisitTree.isFollowingOfOrEqualInChildFirstOrder(item.toNode, this.scope.node)
+		}) ?? toCapturer.latestCaptured
 
-		// Note these are not tracking scopes.
-		let fromScope = fromCapturer.scope.getDeclarationScope()
-		let toScope = this.scope.getDeclarationScope()
+		// Note these are declaration scopes, not tracking scopes.
+		let fromScope = this.scope.getDeclarationScope()
+		let toScope = toCapturer.scope.getDeclarationScope()
 
-		let scopesLeaved = VariableScopeTree.findWalkingOutwardLeaves(fromScope, toScope)
+		let scopesLeaved = DeclarationScopeTree.findWalkingOutwardLeaves(fromScope, toScope)
 		let residualItems: CapturedItem[] = []
 
 		for (let item of items) {
@@ -133,7 +134,7 @@ export class TrackingCapturerOperator {
 	}
 
 	/** Move captured items to an sibling capturer. */
-	moveCapturedBackwardTo(toCapturer: TrackingCapturer) {
+	moveCapturedInwardTo(toCapturer: TrackingCapturer) {
 		let items = this.capturer.captured[0].items
 		if (items.length === 0) {
 			return
@@ -153,7 +154,7 @@ export class TrackingCapturerOperator {
 			for (let item of [...group.items]) {
 
 				// Has been referenced, will be replaced, not eliminate it.
-				if (TrackingReferences.hasInternalAccessReferenced(item.node)) {
+				if (TrackingReferences.hasInternalReferenced(item.node)) {
 					continue
 				}
 
