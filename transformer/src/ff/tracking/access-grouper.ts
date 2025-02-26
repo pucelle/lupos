@@ -105,6 +105,12 @@ export namespace AccessGrouper {
 		let group = groupNameExpressionKeys(nodes)
 		let nameExps = [...group.values()].map(nodes => getAccessNodeNameProperty(nodes[0]))
 
+		// Empty string as key exists, remove others.
+		let emptyName = nameExps.find(exp => ts.isStringLiteral(exp) && exp.text === '')
+		if (emptyName) {
+			nameExps = [emptyName]
+		}
+
 		return [
 			Packer.removeAccessComments(node.expression),
 			...nameExps,

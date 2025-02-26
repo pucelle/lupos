@@ -121,9 +121,9 @@ class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 
 	/** 
 	 * Where later after `rawNode`, it will be assigned.
-	 * Return the earliest assignment node.
+	 * Return the earliest assignment place.
 	 */
-	whereWillBeAssigned(rawNode: AccessNode | ts.Identifier | ts.ThisExpression): AssignmentNode | undefined {
+	whereWillBeAssigned(rawNode: AccessNode | ts.Identifier): AssignmentNode | undefined {
 		let hashName = Hashing.hashNode(rawNode).name
 		let assignments = this.assignmentMap.get(hashName)
 

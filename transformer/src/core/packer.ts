@@ -57,16 +57,10 @@ export namespace Packer {
 
 	/** Create an access node by expression and property name. */
 	export function createAccessNode(exp: ts.Expression, name: string | number): AccessNode {
-		if (typeof name === 'string' && /^[\w$]+$/.test(name)) {
+		if (typeof name === 'string' && (/^[\w$]+$/.test(name) || /^#[\w$]+$/.test(name))) {
 			return factory.createPropertyAccessExpression(
 				exp,
-				factory.createIdentifier(name)
-			)
-		}
-		else if (typeof name === 'string' && /^#[\w$]+$/.test(name)) {
-			return factory.createPropertyAccessExpression(
-				exp,
-				factory.createPrivateIdentifier(name)
+				name
 			)
 		}
 		else if (typeof name === 'string') {

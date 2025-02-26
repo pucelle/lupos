@@ -2,7 +2,7 @@ import * as ts from 'typescript'
 import {Modifier, helper} from '../../core'
 import {TrackingScope} from './scope'
 import {TrackingScopeTree, TrackingScopeTypeMask} from './scope-tree'
-import {TrackingCapturerOperator} from './capturer-operator'
+import {CapturedHashMap} from './captured-hashing'
 
 
 /**
@@ -162,15 +162,8 @@ export namespace Optimizer {
 			return
 		}
 
-		let hashSet: Set<string> = new Set()
-
-		for (let scope of mustRunParts) {
-			for (let name of scope.capturer.iterateImmediateCapturedHashNames()) {
-				hashSet.add(name)
-			}
-		}
-
-		content.capturer.operator.eliminateRepetitiveRecursively(hashSet)
+		let conditionHashMap = CapturedHashMap.fromCapturersUnion(mustRunParts.map(part => part.capturer))
+		content.capturer.operator.eliminateRepetitiveRecursively(conditionHashMap)
 	}
 
 	/** Walk for partial scopes that must run. */
@@ -219,12 +212,12 @@ export namespace Optimizer {
 		}
 
 		let capturers = contentChildren.map(c => c.capturer)
-		let shared = TrackingCapturerOperator.intersectCapturedItems(capturers)
-
-		if (shared.length === 0) {
+		if (capturers.length === 0) {
 			return
 		}
 
+		let sharedMap = CapturedHashMap.fromCapturersIntersection(capturers)
+		
 		// parent of conditional or switch.
 		let targetScope = scope.parent!
 
@@ -233,7 +226,7 @@ export namespace Optimizer {
 			targetScope = scope
 		}
 
-		contentChildren[0].capturer.operator.safelyMoveCapturedItemsOutwardTo(shared, targetScope.capturer)
+		contentChildren[0].capturer.operator.safelyMoveCapturedItemsOutwardTo(sharedMap.items(), targetScope.capturer)
 	}
 
 
@@ -265,14 +258,14 @@ export namespace Optimizer {
 		})
 
 		let capturers = caseContentChildren.map(c => c.capturer)
-		let shared = TrackingCapturerOperator.intersectCapturedItems(capturers)
-
-		if (shared.length === 0) {
+		if (capturers.length === 0) {
 			return
 		}
 
+		let sharedMap = CapturedHashMap.fromCapturersIntersection(capturers)
+
 		let targetScope = scope.parent!
-		caseContentChildren[0].capturer.operator.safelyMoveCapturedItemsOutwardTo(shared, targetScope.capturer)
+		caseContentChildren[0].capturer.operator.safelyMoveCapturedItemsOutwardTo(sharedMap.items(), targetScope.capturer)
 	}
 
 
@@ -361,7 +354,7 @@ export namespace Optimizer {
 	 * `track(a.b); if (...) {track(a.b)}` -> `track(a.b); if (...) {}`
 	 */
 	function eliminateRepetitiveCapturedRecursively(scope: TrackingScope) {
-		scope.capturer.operator.eliminateRepetitiveRecursively(new Set())
+		scope.capturer.operator.eliminateRepetitiveRecursively(new CapturedHashMap())
 	}
 
 
@@ -376,19 +369,19 @@ export namespace Optimizer {
 		}
 
 		let classNode = scope.node as ts.ClassLikeDeclaration
-		let nameMap: Map<string, {nodes: ts.Node[], typeMask: TypeMask | 0}> = new Map()
+		let keyMap: Map<string, {nodes: ts.Node[], typeMask: TypeMask | 0}> = new Map()
 
 
 		// Group captured by property name.
-		for (let {name, node, type} of scope.capturer.operator.walkPrivateCaptured(classNode)) {
-			let item = nameMap.get(name)
+		for (let {key, node, type} of scope.capturer.operator.walkPrivateCaptured(classNode)) {
+			let item = keyMap.get(key)
 			if (!item) {
 				item = {
 					nodes: [],
 					typeMask: 0,
 				}
 
-				nameMap.set(name, item)
+				keyMap.set(key, item)
 			}
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
 			item.nodes.push(node)
@@ -403,7 +396,7 @@ export namespace Optimizer {
 			}
 
 			let name = helper.getText(member.name)
-			let nameMapItem = nameMap.get(name)
+			let nameMapItem = keyMap.get(name)
 			if (!nameMapItem) {
 				continue
 			}
@@ -421,7 +414,7 @@ export namespace Optimizer {
 		// Generate nodes that should be removed.
 		let removeNodes: Set<ts.Node> = new Set()
 
-		for (let {nodes, typeMask} of nameMap.values()) {
+		for (let {nodes, typeMask} of keyMap.values()) {
 			if (typeMask === (TypeMask.Get | TypeMask.Set)) {
 				continue
 			}

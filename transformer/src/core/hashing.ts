@@ -28,6 +28,7 @@ export namespace Hashing {
 	/** 
 	 * Get hash of raw node.
 	 * Note hashing will transform `a?.b` -> `a.b`.
+	 * String will be encode to use double quotes: `'a'` -> `"a"`.
 	 */
 	export function hashNode(rawNode: ts.Node): HashItem {
 		if (HashMap.has(rawNode)) {

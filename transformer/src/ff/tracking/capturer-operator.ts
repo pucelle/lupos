@@ -1,11 +1,10 @@
 import * as ts from 'typescript'
-import {VisitTree, FlowInterruptionTypeMask, DeclarationScopeTree, HashItem, helper, Hashing} from '../../core'
-import {TrackingReferences} from './references'
+import {VisitTree, DeclarationScopeTree, helper} from '../../core'
 import {removeFromList} from '../../utils'
 import {CapturedItem, TrackingCapturer} from './capturer'
 import {TrackingScope} from './scope'
 import {TrackingScopeTypeMask} from './scope-tree'
-
+import {CapturedHash, CapturedHashing, CapturedHashMap} from './captured-hashing'
 
 
 /** 
@@ -13,67 +12,6 @@ import {TrackingScopeTypeMask} from './scope-tree'
  * help to move and modify captured.
  */
 export class TrackingCapturerOperator {
-
-	/** Hash a captured item. */
-	static hashCapturedItem(item: CapturedItem): HashItem {
-		if (item.exp !== undefined) {
-			let hash = Hashing.hashNode(item.exp)
-			let name = hash.name + item.keys!.map(key => `[${key}]`).join('')
-	
-			return {
-				...hash,
-				name,
-			}
-		}
-		else {
-			return Hashing.hashNode(item.node)
-		}
-	}
-		
-	/** Get intersected items across capturers. */
-	static intersectCapturedItems(capturers: TrackingCapturer[]): CapturedItem[] {
-		if (capturers.length === 0) {
-			return []
-		}
-
-		let map: Map<string, ts.Node>
-
-		for (let i = 0; i < capturers.length; i++) {
-			let capturer = capturers[i]
-			let ownMap: Map<string, ts.Node> = new Map()
-
-			// Only codes of the first item is always running.
-			for (let item of capturer.captured[0].items) {
-
-				// Has been referenced, will be replaced, ignore intersection.
-				if (TrackingReferences.hasInternalReferenced(item.node)) {
-					continue
-				}
-
-				let hashName = TrackingCapturerOperator.hashCapturedItem(item).name + '_of_capture_type_' + item.type
-				ownMap.set(hashName, item.node)
-			}
-
-			if (i === 0) {
-				map = ownMap
-			}
-			else {
-				for (let key of [...map!.keys()]) {
-					if (!ownMap.has(key)) {
-						map!.delete(key)
-					}
-				}
-			}
-
-			if (map!.size === 0) {
-				break
-			}
-		}
-
-		let values = [...map!.values()]
-		return capturers[0].captured[0].items.filter(index => values.includes(index.node))
-	}
-
 
 	readonly capturer: TrackingCapturer
 	readonly scope: TrackingScope
@@ -102,7 +40,7 @@ export class TrackingCapturerOperator {
 	 * `fromCapturer` locates where items move from.
 	 * Returns residual items that failed to move.
 	 */
-	safelyMoveCapturedItemsOutwardTo(items: CapturedItem[], toCapturer: TrackingCapturer): CapturedItem[] {
+	safelyMoveCapturedItemsOutwardTo(items: Iterable<CapturedItem>, toCapturer: TrackingCapturer): CapturedItem[] {
 
 		// Locate which captured group should move items to.
 		// Find the first item which's in the following of current node in child-first order.
@@ -115,14 +53,14 @@ export class TrackingCapturerOperator {
 		let fromScope = this.scope.getDeclarationScope()
 		let toScope = toCapturer.scope.getDeclarationScope()
 
-		let scopesLeaved = DeclarationScopeTree.findWalkingOutwardLeaves(fromScope, toScope)
+		let scopesLeaves = DeclarationScopeTree.findWalkingOutwardLeaves(fromScope, toScope)
 		let residualItems: CapturedItem[] = []
 
 		for (let item of items) {
-			let hashed = TrackingCapturerOperator.hashCapturedItem(item)
+			let hashed = CapturedHashing.hash(item)
 
 			// Leave scopes which contain any referenced variable.
-			if (hashed.usedScopes.some(i => scopesLeaved.includes(i))) {
+			if (hashed.usedScopes.some(i => scopesLeaves.includes(i))) {
 				residualItems.push(item)
 			}
 			else {
@@ -146,66 +84,75 @@ export class TrackingCapturerOperator {
 	}
 
 	/** Eliminate repetitive captured with an outer hash. */
-	eliminateRepetitiveRecursively(hashSet: Set<string>) {
-		let ownHashes = new Set(hashSet)
+	eliminateRepetitiveRecursively(hashMap: CapturedHashMap) {
+		let ownHashMap = hashMap.clone()
 		let startChildIndex = 0
 
 		for (let group of this.capturer.captured) {
-			for (let item of [...group.items]) {
+			let hashes: CapturedHash[] = []
 
-				// Has been referenced, will be replaced, not eliminate it.
-				if (TrackingReferences.hasInternalReferenced(item.exp ?? item.node)) {
+			for (let item of group.items) {
+
+				// Has been referenced, will be replaced.
+				if (item.referencedAtInternal) {
 					continue
 				}
 
-				let hashName = TrackingCapturerOperator.hashCapturedItem(item).name
-				if (ownHashes.has(hashName)) {
-					removeFromList(group.items, item)
+				let hashed = CapturedHashing.hash(item)
+
+				if (!ownHashMap.covers(hashed)) {
+					ownHashMap.add(hashed)
 				}
-				else {
-					ownHashes.add(hashName)
+
+				hashes.push(hashed)
+			}
+
+			// Remove items than have been covered.
+			for (let hash of hashes) {
+				if (!ownHashMap.has(hash)) {
+					removeFromList(group.items, hash.item)
 				}
 			}
 
-			// Every time after update hash set,
+			// Every time after updated hash map,
 			// recursively eliminating not processed child contexts in the preceding.
 			for (; startChildIndex < this.scope.children.length; startChildIndex++) {
 				let child = this.scope.children[startChildIndex]
 
+				// Child must in the preceding or equal of current group `toNode`.
 				if (!VisitTree.isPrecedingOfOrEqual(child.node, group.toNode)) {
 					break
 				}
 
-				child.capturer.operator.eliminateRepetitiveRecursively(ownHashes)
+				child.capturer.operator.eliminateRepetitiveRecursively(ownHashMap)
 			}
 			
-			// Break by yield or await.
-			if (group.flowInterruptedBy & (
-				FlowInterruptionTypeMask.Yield | FlowInterruptionTypeMask.Await | FlowInterruptionTypeMask.ConditionalAwait
-			)) {
-				ownHashes.clear()
+			// Break by yield or await, clear hash map.
+			if (group.breakByAsync) {
+				ownHashMap.clear()
 			}
 		}
 
-		// Last captured item may have wrong `toIndex`, here ensure to visit all child contexts.
+		// Last captured item may have wrong `toNode` because it haven't been break.
+		// Here ensure to visit all rest child contexts.
 		for (; startChildIndex < this.scope.children.length; startChildIndex++) {
 			let child = this.scope.children[startChildIndex]
 
-			// not function, or instantly run function.
+			// Not function, or instantly run function.
 			if ((child.type & TrackingScopeTypeMask.FunctionLike) === 0
 				|| (child.type & TrackingScopeTypeMask.InstantlyRunFunction)
 			) {
-				child.capturer.operator.eliminateRepetitiveRecursively(ownHashes)
+				child.capturer.operator.eliminateRepetitiveRecursively(ownHashMap)
 			}
 		}
 	}
 
 	/** Find private class property declaration from captured. */
 	*walkPrivateCaptured(ofClass: ts.ClassLikeDeclaration):
-		Iterable<{name: string, node: ts.Node, type: 'get' | 'set'}>
+		Iterable<{node: ts.Node, key: string, type: 'get' | 'set'}>
 	{
 		for (let item of this.capturer.captured) {
-			for (let {node, type, keys} of item.items) {
+			for (let {node, type, key} of item.items) {
 
 				let propDecls = helper.symbol.resolveDeclarations(node, helper.isPropertyOrGetSetAccessor)
 				if (!propDecls || propDecls.length === 0) {
@@ -225,23 +172,17 @@ export class TrackingCapturerOperator {
 				if (!allBePrivate) {
 					continue
 				}
-				
-				let name: string | null = null
-				if (helper.access.isAccess(node)) {
-					name = helper.access.getPropertyText(node)
+		
+				if (key === undefined && helper.access.isAccess(node)) {
+					key = helper.access.getPropertyText(node)
 				}
 
-				// `let {value} = this`
-				else if (keys && keys.length > 0 && typeof keys[0] === 'string') {
-					name = keys[0]
-				}
-
-				if (!name) {
+				if (!key || typeof key === 'number') {
 					continue
 				}
 
 				yield {
-					name,
+					key,
 					node,
 					type,
 				}

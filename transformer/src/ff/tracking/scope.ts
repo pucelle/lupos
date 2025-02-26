@@ -5,7 +5,6 @@ import {AccessNode} from '../../lupos-ts-module'
 import {TrackingScopeState} from './scope-state'
 import {TrackingScopeTypeMask} from './scope-tree'
 import {TrackingCapturer} from './capturer'
-import {TrackingReferences} from './references'
 import {CapturedOutputWay, TrackingRange} from './ranges'
 import {TrackingPatch} from './patch'
 
@@ -137,8 +136,6 @@ export class TrackingScope {
 			else if (!helper.assign.isWithinAssignmentTo(rawNode)) {
 				this.mayAddGetTracking(rawNode)
 			}
-
-			TrackingReferences.visitAssess(rawNode)
 		}
 
 		// Test and add property assignment nodes.
@@ -186,7 +183,7 @@ export class TrackingScope {
 			let customTrackingItems = TrackingPatch.getCustomTrackingItems(rawNode)
 			if (customTrackingItems) {
 				for (let item of customTrackingItems) {
-					this.mayAddGetTracking(item.node, item.exp, item.keys)
+					this.mayAddGetTracking(item.node, item.exp, item.key !== undefined ? [item.key] : undefined)
 				}
 			}
 		}

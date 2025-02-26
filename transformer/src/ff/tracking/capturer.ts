@@ -16,21 +16,37 @@ import {CapturedOutputWay} from './ranges'
 export interface CapturedGroup {
 	position: InterpolationPosition
 	items: CapturedItem[]
+
+	/** Whether output captured expressions to. */
 	toNode: ts.Node
-	flowInterruptedBy: FlowInterruptionTypeMask | 0
+
+	/** Test whether have been break by async codes. */
+	breakByAsync: boolean
 }
 
 /** Each capture index and capture type. */
 export interface CapturedItem {
+
+	/** Always raw node. */
 	node: ts.Expression
+
 	type: 'get' | 'set'
 
 	/** 
 	 * If `exp` and `keys` provided,
 	 * they overwrites `node`.
+	 * Note `exp` may not be raw node.
 	 */
 	exp?: ts.Expression
-	keys?: (string | number)[]
+
+	/** Work with `exp` to specify which key to track. */
+	key?: string | number
+
+	/** 
+	 * Whether have reference internal.
+	 * If `true`, will prevent it from optimization.
+	 */
+	referencedAtInternal: boolean
 }
 
 
@@ -72,7 +88,7 @@ export class TrackingCapturer {
 			position: InterpolationPosition.Before,
 			items: [],
 			toNode: sourceFile,
-			flowInterruptedBy: 0,
+			breakByAsync: false,
 		}
 	}
 
@@ -170,14 +186,31 @@ export class TrackingCapturer {
 	) {
 		this.addCaptureType(type)
 
-		let item: CapturedItem = {
-			node: rawNode,
-			type,
-			exp,
-			keys,
+		if (exp && keys) {
+			for (let key of keys) {
+				let item: CapturedItem = {
+					node: rawNode,
+					type,
+					exp,
+					key,
+					referencedAtInternal: false,
+				}
+	
+				this.latestCaptured.items.push(item)
+				exp = Packer.createAccessNode(exp, key)
+			}
 		}
+		else {
+			let item: CapturedItem = {
+				node: rawNode,
+				type,
+				exp,
+				key: undefined,
+				referencedAtInternal: false,
+			}
 
-		this.latestCaptured.items.push(item)
+			this.latestCaptured.items.push(item)
+		}
 	}
 
 	/** Whether has captured some nodes. */
@@ -209,7 +242,12 @@ export class TrackingCapturer {
 		}
 
 		this.latestCaptured.toNode = atNode
-		this.latestCaptured.flowInterruptedBy = flowInterruptedBy
+		this.latestCaptured.breakByAsync = (flowInterruptedBy & (
+				FlowInterruptionTypeMask.Yield
+					| FlowInterruptionTypeMask.Await
+					| FlowInterruptionTypeMask.ConditionalAwait
+			)) > 0
+
 		this.resetLatestCaptured()
 		this.captured.push(this.latestCaptured)
 
@@ -280,30 +318,43 @@ export class TrackingCapturer {
 	}
 
 	/** 
-	 * Iterate hash names of captured.
+	 * Iterate captured items than runs immediately.
 	 * If meets `await` or `yield`, stop iteration.
+	 * Ignores those which will be referenced.
 	 */
-	*iterateImmediateCapturedHashNames(): Iterable<string> {
+	*iterateNotReferencedImmediateCapturedItems(): Iterable<CapturedItem> {
 		for (let group of this.captured) {
 			for (let item of [...group.items]) {
 
-				// Has been referenced, will be replaced, ignore always.
-				if (TrackingReferences.hasInternalReferenced(item.node)) {
+				// Has been referenced, will be replaced.
+				if (item.referencedAtInternal) {
 					continue
 				}
 
-				let hashName = TrackingCapturerOperator.hashCapturedItem(item).name
-				yield hashName
+				yield item
 			}
 
-			// Break by yield or await.
-			if (group.flowInterruptedBy & (
-				FlowInterruptionTypeMask.Yield
-					| FlowInterruptionTypeMask.Await
-					| FlowInterruptionTypeMask.ConditionalAwait
-			)) {
+			// Break here after meets like 'await'.
+			if (group.breakByAsync) {
 				return
 			}
+		}
+	}
+
+	/** 
+	 * Iterate captured items than runs immediately and always run.
+	 * If meets any conditions, or `await` or `yield`, stop iteration.
+	 * Ignores those which will be referenced.
+	 */
+	*iterateNotReferencedImmediateRunAndAlwaysRunCapturedItems(): Iterable<CapturedItem> {
+		for (let item of [...this.captured[0].items]) {
+
+			// Has been referenced, will be replaced.
+			if (item.referencedAtInternal) {
+				continue
+			}
+
+			yield item
 		}
 	}
 
@@ -335,14 +386,16 @@ export class TrackingCapturer {
 	
 	/** Check captured and reference if needs. */
 	private checkReferences() {
-		for (let item of this.captured) {
-			for (let {node, exp} of item.items) {
-				if (exp) {
-					TrackingReferences.mayReferenceExp(exp, item.toNode, this.scope)
+		for (let group of this.captured) {
+			for (let item of group.items) {
+				if (item.exp) {
+					TrackingReferences.mayReferenceExp(item.exp, group.toNode, this.scope)
 				}
 				else {
-					TrackingReferences.mayReferenceAccess(node, item.toNode, this.scope)
+					TrackingReferences.mayReferenceAccess(item.node, group.toNode, this.scope)
 				}
+
+				item.referencedAtInternal = TrackingReferences.hasInternalReferenced(item.exp ?? item.node)
 			}
 		}
 	}
@@ -450,12 +503,10 @@ export class TrackingCapturer {
 		if (item.exp) {
 			let nodes: AccessNode[] = []
 			let node = Interpolator.outputReplaceableChildren(item.exp) as ts.Expression
-			let keys = item.keys!
+			let key = item.key!
 
-			for (let key of keys) {
-				node = Packer.createAccessNode(node, key)
-				nodes.push(node as AccessNode)
-			}
+			node = Packer.createAccessNode(node, key)
+			nodes.push(node as AccessNode)
 
 			return nodes
 		}

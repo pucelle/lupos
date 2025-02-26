@@ -1,5 +1,4 @@
 import {factory, InterpolationContentType, Interpolator, Modifier, VisitTree, DeclarationScopeTree, helper} from '../../core'
-import {AccessNode, AssignmentNode} from '../../lupos-ts-module'
 import * as ts from 'typescript'
 import {TrackingScopeTree} from './scope-tree'
 import {TrackingScope} from './scope'
@@ -11,49 +10,20 @@ import {TrackingScope} from './scope'
  */
 export namespace TrackingReferences {
 
-	/** 
-	 * Remember nodes that have been visited.
-	 * 
-	 * E.g., for accessing node `a.b.c`,
-	 * Will visit `a.b.c`, and make reference item `a` -> `a.b`.
-	 * Later will visit `a.b` and make reference item `a` -> `a`.
-	 * If we assign to `a`, both `a.b` and `a` will be referenced.
-	 * 
-	 * By avoid visiting a node twice, will only reference `a`.
-	 */
-	const VisitedNodes: Set<ts.Node> = new Set()
-
-	/** 
-	 * If access as `a.b`, and later assign `a`, then node `a` of `a.b` become assignable.
-	 * Node -> Assignment node.
-	 */
-	const WillBeAssignedNodes: Map<ts.Node, AssignmentNode> = new Map()
-
 	/** Nodes have been referenced. */
 	const ReferencedNodes: Set<ts.Node> = new Set()
 
 
 	/** Initialize after enter a new source file. */
 	export function init() {
-		VisitedNodes.clear()
-		WillBeAssignedNodes.clear()
 		ReferencedNodes.clear()
 	}
 
 
 	/** Whether any descendant node has been referenced. */
-	export function hasInternalReferenced(node: ts.Node, ignoreElementsKey: boolean = true): boolean {
+	export function hasInternalReferenced(node: ts.Node): boolean {
 		if (ReferencedNodes.has(node)) {
 			return true
-		}
-
-		// Ignores checking key part, only check expression part.
-		// This make `a[key]` only make the reference `a`, ignores `key`.
-		if (ignoreElementsKey
-			&& helper.access.isAccess(node)
-			&& helper.access.isExpOfElementsAccess(node.expression)
-		) {
-			return hasInternalReferenced(node.expression, false)
 		}
 
 		let childNodes = VisitTree.getChildNodes(node)
@@ -61,42 +31,8 @@ export namespace TrackingReferences {
 			return false
 		}
 
-		return childNodes.some(n => hasInternalReferenced(n, false))
+		return childNodes.some(n => hasInternalReferenced(n))
 	}
-
-
-	/** Visit an assess node, and it may make several reference items. */
-	export function visitAssess(node: AccessNode) {
-		let expNode = node.expression
-		let nameNode = helper.access.getPropertyNode(node)
-
-		visitAssessRecursively(expNode, expNode)
-		visitAssessRecursively(nameNode, nameNode)
-	}
-
-	/** 
-	 * Visit all descendant nodes of an access node,
-	 * and build a map of all the referenced variables/accessing, to current node.
-	 * Later, when one of these nodes assigned, we will reference this access node.
-	 */
-	function visitAssessRecursively(node: ts.Node, topNode: ts.Node) {
-		if (VisitedNodes.has(node)) {
-			return
-		}
-
-		VisitedNodes.add(node)
-
-		// `a?.b` has been replaced to `a.b`
-		if (helper.access.isAccess(node) || helper.isVariableIdentifier(node)) {
-			let assignmentNode = DeclarationScopeTree.whereWillBeAssigned(node)
-			if (assignmentNode !== undefined) {
-				WillBeAssignedNodes.set(topNode, assignmentNode)
-			}
-		}
-
-		ts.forEachChild(node, (n: ts.Node) => visitAssessRecursively(n, topNode))
-	}
-
 
 	/** Reference exp and name part of an access node if needed. */
 	export function mayReferenceAccess(accessNode: ts.Expression, toNode: ts.Node, scope: TrackingScope) {
@@ -121,7 +57,10 @@ export namespace TrackingReferences {
 	}
 
 
-	/** Reference an expression if needed. */
+	/** 
+	 * Reference an expression if needed.
+	 * Note `expNode` may not be raw node.
+	 */
 	export function mayReferenceExp(expNode: ts.Expression, toNode: ts.Node, scope: TrackingScope) {
 
 		// Use a reference variable to replace expression.
@@ -146,19 +85,26 @@ export namespace TrackingReferences {
 				continue
 			}
 
+			// Not stop, child may be raw node.
+			if (!helper.isRaw(descendant)) {
+				continue
+			}
+
 			if (shouldReferenceOfSelf(descendant)) {
 				return true
 			}
 
-			let assignableNode = WillBeAssignedNodes.get(descendant)
-			if (!assignableNode) {
-				continue
-			}
+			if (helper.access.isAccess(descendant) || helper.isVariableIdentifier(descendant)) {
+				let assignableNode =  DeclarationScopeTree.whereWillBeAssigned(descendant)
+				if (!assignableNode) {
+					continue
+				}
 
-			// To reference only when output after assignment.
-			let outputAfterAssignment = VisitTree.isPrecedingOfInChildFirstOrder(assignableNode, toNode)
-			if (outputAfterAssignment) {
-				return true
+				// To reference only when output after earliest assignment.
+				let outputAfterAssignment = VisitTree.isPrecedingOfInChildFirstOrder(assignableNode, toNode)
+				if (outputAfterAssignment) {
+					return true
+				}
 			}
 		}
 

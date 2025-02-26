@@ -68,13 +68,14 @@ export namespace TrackingPatch {
 		rawNode: ts.Expression,
 		type: 'get' | 'set',
 		exp?: ts.Expression,
-		keys?: (string | number)[]
+		key?: (string | number)
 	) {
 		let item: CapturedItem = {
 			node: rawNode,
 			type,
 			exp,
-			keys
+			key,
+			referencedAtInternal: false,
 		}
 
 		CustomCaptured.add(rawNode, item)

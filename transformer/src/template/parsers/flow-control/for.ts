@@ -41,7 +41,7 @@ export class ForFlowControl extends FlowControlBase {
 			shouldObserve = TrackingChecker.isExpObserved(ofValueNode)
 			if (shouldObserve) {
 				TrackingPatch.forceTrackType(ofValueNode, TrackingType.Observed)
-				TrackingPatch.addCustomTracking(ofValueNode, 'get', ofValueNode, [''])
+				TrackingPatch.addCustomTracking(ofValueNode, 'get', ofValueNode, '')
 			}
 		}
 
