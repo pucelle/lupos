@@ -288,6 +288,41 @@ const $html_17 = new HTMLMaker("<div> </div>");
         }
     };
 });
+/*
+<root>
+    <lu:if ${this.item && this.item.value} />
+</root>
+*/ const $template_18 = new TemplateMaker(function () {
+    let $node = $html_0.make();
+    let $node_0 = $node.content.firstChild;
+    let $node_1 = $node.content.lastChild;
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1));
+    let $block_0 = new IfBlock($slot_0);
+    return {
+        el: $node,
+        position: new SlotPosition(1, $node_0),
+        update($values) {
+            $block_0.update($values[0]);
+        },
+        parts: [
+            [$slot_0, 1]
+        ]
+    };
+});
+const $html_19 = new HTMLMaker("<div>Content 1</div><div>Content 2</div>");
+/*
+<root>
+    <div>Content 1</div>
+    <div>Content 2</div>
+</root>
+*/ const $template_19 = new TemplateMaker(function () {
+    let $node = $html_19.make();
+    let $node_0 = $node.content.firstChild;
+    return {
+        el: $node,
+        position: new SlotPosition(1, $node_0)
+    };
+});
 export class TestIf extends Component {
     prop = 1;
     content = '';
@@ -334,6 +369,12 @@ export class TestIf extends Component {
             ], this)) : (trackGet(this, "content"), this.content ? new CompiledTemplateResult($template_16, [
                 this.content
             ], this) : null)
+        ], this);
+    }
+    testIfWithMultipleChildren() {
+        trackGet(this, "item");
+        return new CompiledTemplateResult($template_18, [
+            this.item && (trackGet(this.item, "value"), this.item.value) ? new CompiledTemplateResult($template_19, [], this) : null
         ], this);
     }
 }

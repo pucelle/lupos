@@ -69,4 +69,13 @@ export class TestIf extends Component {
 			</lu:elseif>
 		`
 	}
+
+	testIfWithMultipleChildren() {
+		return html`
+			<lu:if ${this.item && this.item.value}>
+				<div>Content 1</div>
+				<div>Content 2</div>
+			</lu:if>
+		`
+	}
 }
