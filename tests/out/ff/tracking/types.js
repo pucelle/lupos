@@ -26,6 +26,21 @@ export class TestObservedVariableType {
         trackGet(item, "value");
         return item.value;
     }
+    variableGetter() {
+        var a = { get b() { return 1; } };
+        trackGet(a, "b");
+        return a.b;
+    }
+    variableInstanceGetter() {
+        var a = new ObservedHasGetter();
+        trackGet(a, "b");
+        return a.b;
+    }
+}
+class ObservedHasGetter {
+    get b() {
+        return 1;
+    }
 }
 export class TestObservedParameter {
     prop = { value: 1 };

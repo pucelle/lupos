@@ -27,6 +27,22 @@ export class TestObservedVariableType {
 
 		return item.value
 	}
+
+	variableGetter() {
+		var a: Observed<{get b(): number}> = {get b(){return 1}}
+		return a.b
+	}
+
+	variableInstanceGetter() {
+		var a: Observed<ObservedHasGetter> = new ObservedHasGetter()
+		return a.b
+	}
+}
+
+class ObservedHasGetter {
+	get b(): number {
+		return 1
+	}
 }
 
 

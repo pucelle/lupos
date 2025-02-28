@@ -46,10 +46,14 @@ export namespace TrackingChecker {
 			return false
 		}
 
-		// Ignore get and set accessor, except `@computed` decorated.
+		// Ignore get and set accessor, and class implements observed,
+		// getter or setter should implements tracking itself, so stop.
+		// But `@computed` decorated will always continue.
 		if (decl && ts.isAccessor(decl)) {
-			let decoName = helper.deco.getFirstName(decl)
-			if (decoName !== 'computed') {
+			let decoNameBeComputed = helper.deco.getFirstName(decl) === 'computed'
+			let isClassDeclObserved = isDeclarationObserved(helper.symbol.resolveDeclaration(decl.parent))
+
+			if (isClassDeclObserved && !decoNameBeComputed) {
 				return false
 			}
 		}
