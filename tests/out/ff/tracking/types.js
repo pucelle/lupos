@@ -235,3 +235,29 @@ class AnyMethodsObserved {
         this.value = value;
     }
 }
+export class TestUnObserved extends Component {
+    prop = { value: 1 };
+    readAsUnObserved() {
+        return this.prop;
+    }
+    readThisUnObservedParameter() {
+        return this.prop;
+    }
+    writeAsUnObserved() {
+        this.prop.value = 1;
+    }
+    writeThisUnObservedParameter() {
+        this.prop.value = 1;
+    }
+}
+export class TestUnObservedImplements extends Component {
+    prop = { value: 1 };
+    read() {
+        trackGet(this, "prop");
+        return this.prop;
+    }
+    write() {
+        this.prop.value = 1;
+        trackSet(this.prop, "value");
+    }
+}

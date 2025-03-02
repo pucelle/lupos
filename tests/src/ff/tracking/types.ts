@@ -1,4 +1,4 @@
-import {effect, ListMap, MethodsObserved, Observed} from '@pucelle/ff'
+import {effect, ListMap, MethodsObserved, Observed, UnObserved} from '@pucelle/ff'
 import {Component} from '@pucelle/lupos.js'
 
 
@@ -245,5 +245,40 @@ class AnyMethodsObserved implements MethodsObserved<'get', 'set'> {
 	}
 	set(value: number) {
 		this.value = value
+	}
+}
+
+
+export class TestUnObserved extends Component {
+
+	prop: {value: number} = {value: 1}
+
+	readAsUnObserved() {
+		return (this as UnObserved<TestUnObserved>).prop
+	}
+
+	readThisUnObservedParameter(this: UnObserved<TestUnObserved>) {
+		return this.prop
+	}
+
+	writeAsUnObserved() {
+		(this as UnObserved<TestUnObserved>).prop.value = 1
+	}
+
+	writeThisUnObservedParameter(this: UnObserved<TestUnObserved>) {
+		this.prop.value = 1
+	}
+}
+
+export class TestUnObservedImplements extends Component implements UnObserved {
+
+	prop: {value: number} = {value: 1}
+
+	read() {
+		return this.prop
+	}
+
+	write() {
+		this.prop.value = 1
 	}
 }
