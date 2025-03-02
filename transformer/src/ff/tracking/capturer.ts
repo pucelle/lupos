@@ -218,6 +218,17 @@ export class TrackingCapturer {
 		return this.captured.some(item => item.items.length > 0)
 	}
 
+	/** Walk for captured item for self and all descendants. */
+	*walkCapturedRecursively():	Iterable<CapturedItem>	{
+		for (let group of this.captured) {
+			yield* group.items
+		}
+
+		for (let child of this.scope.children) {
+			yield* child.capturer.walkCapturedRecursively()
+		}
+	}
+
 	/** Switch capture type to `set` from `get`. */
 	private switchFromGetToSetCaptureType() {
 		this.captureType = 'set'

@@ -180,7 +180,7 @@ export class TrackingScope {
 		
 		// Custom tracking.
 		if (ts.isExpression(rawNode)) {
-			let customTrackingItems = TrackingPatch.getCustomTrackingItems(rawNode)
+			let customTrackingItems = TrackingPatch.getCustomTrackingItemsByNode(rawNode)
 			if (customTrackingItems) {
 				for (let item of customTrackingItems) {
 					this.mayAddGetTracking(item.node, item.exp, item.key !== undefined ? [item.key] : undefined)

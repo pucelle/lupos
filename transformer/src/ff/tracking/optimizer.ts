@@ -3,6 +3,7 @@ import {Modifier, helper} from '../../core'
 import {TrackingScope} from './scope'
 import {TrackingScopeTree, TrackingScopeTypeMask} from './scope-tree'
 import {CapturedHashMap} from './captured-hashing'
+import {TrackingPatch} from './patch'
 
 
 /**
@@ -371,9 +372,17 @@ export namespace Optimizer {
 		let classNode = scope.node as ts.ClassLikeDeclaration
 		let keyMap: Map<string, {nodes: ts.Node[], typeMask: TypeMask | 0}> = new Map()
 
+		// All captured items, include those within current scope, and force tracked.
+		let allCapturedItems = [...scope.capturer.walkCapturedRecursively(), ...TrackingPatch.walkCustomTrackingItems()]
 
 		// Group captured by property name.
-		for (let {key, node, type} of scope.capturer.operator.walkPrivateCaptured(classNode)) {
+		for (let capturedItem of allCapturedItems) {
+			let privateItem = scope.capturer.operator.getPrivatePropertyCaptured(capturedItem, classNode)
+			if (!privateItem) {
+				continue
+			}
+
+			let {key, node, type} = privateItem
 			let item = keyMap.get(key)
 			if (!item) {
 				item = {
@@ -383,11 +392,10 @@ export namespace Optimizer {
 
 				keyMap.set(key, item)
 			}
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+                                                                                                                                                                                                                                                                                                                                                                                                                                                     
 			item.nodes.push(node)
 			item.typeMask |= (type === 'get' ? TypeMask.Get : TypeMask.Set)
 		}
-
 
 		// Visit all private computed, treat it as set type.
 		for (let member of classNode.members) {

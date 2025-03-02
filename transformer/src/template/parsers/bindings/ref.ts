@@ -86,6 +86,9 @@ export class RefBinding extends BindingBase {
 			
 			if (this.useAccess) {
 				TrackingPatch.ignore(rawValueNode)
+
+				// Not truly output because of been ignored, to avoid eliminating private get only tracking.
+				TrackingPatch.addCustomTracking(rawValueNode, 'set')
 			}
 		}
 	}

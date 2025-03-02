@@ -147,50 +147,43 @@ export class TrackingCapturerOperator {
 		}
 	}
 
-	/** Find private class property declaration from captured. */
-	*walkPrivateCaptured(ofClass: ts.ClassLikeDeclaration):
-		Iterable<{node: ts.Node, key: string, type: 'get' | 'set'}>
+	/** Get private captured of captured item. */
+	getPrivatePropertyCaptured(item: CapturedItem, ofClass: ts.ClassLikeDeclaration):
+		{node: ts.Node, key: string, type: 'get' | 'set'} | undefined
 	{
-		for (let item of this.capturer.captured) {
-			for (let {node, type, key} of item.items) {
+		let {node, type, key} = item
 
-				let propDecls = helper.symbol.resolveDeclarations(node, helper.isPropertyOrGetSetAccessor)
-				if (!propDecls || propDecls.length === 0) {
-					continue
-				}
-
-				let propOfClass = propDecls.every(p => p.parent === ofClass)
-				if (!propOfClass) {
-					continue
-				}
-
-				let allBePrivate = propDecls.every(p => {
-					return p.modifiers
-						&& p.modifiers.find((n: ts.ModifierLike) => n.kind === ts.SyntaxKind.PrivateKeyword)
-				})
-
-				if (!allBePrivate) {
-					continue
-				}
-		
-				if (key === undefined && helper.access.isAccess(node)) {
-					key = helper.access.getPropertyText(node)
-				}
-
-				if (!key || typeof key === 'number') {
-					continue
-				}
-
-				yield {
-					key,
-					node,
-					type,
-				}
-			}
+		let propDecls = helper.symbol.resolveDeclarations(node, helper.isPropertyOrGetSetAccessor)
+		if (!propDecls || propDecls.length === 0) {
+			return undefined
 		}
 
-		for (let child of this.scope.children) {
-			yield* child.capturer.operator.walkPrivateCaptured(ofClass)
+		let propOfClass = propDecls.every(p => p.parent === ofClass)
+		if (!propOfClass) {
+			return undefined
+		}
+
+		let allBePrivate = propDecls.every(p => {
+			return p.modifiers
+				&& p.modifiers.find((n: ts.ModifierLike) => n.kind === ts.SyntaxKind.PrivateKeyword)
+		})
+
+		if (!allBePrivate) {
+			return undefined
+		}
+
+		if (key === undefined && helper.access.isAccess(node)) {
+			key = helper.access.getPropertyText(node)
+		}
+
+		if (!key || typeof key === 'number') {
+			return undefined
+		}
+
+		return {
+			key,
+			node,
+			type,
 		}
 	}
 

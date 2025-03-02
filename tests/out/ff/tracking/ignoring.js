@@ -1,5 +1,23 @@
-import { Component } from '@pucelle/lupos.js';
-import { trackGet, trackSet, ComputedMaker } from '@pucelle/ff';
+import { Component, RefBinding, CompiledTemplateResult, TemplateMaker, SlotPosition, HTMLMaker } from '@pucelle/lupos.js';
+import { trackGet, trackSet, ComputedMaker, WatchMaker } from '@pucelle/ff';
+const $html_0 = new HTMLMaker("<div></div>");
+/*
+<root>
+    <div :ref=${this.ref} />
+</root>
+*/ const $template_0 = new TemplateMaker(function ($context) {
+    let $node = $html_0.make();
+    let $node_0 = $node.content.firstChild;
+    let $binding_0 = new RefBinding($node_0, $context, ["el"]);
+    $binding_0.update(function (refed) { this.ref = refed; trackSet(this, "ref"); });
+    return {
+        el: $node,
+        position: new SlotPosition(1, $node_0),
+        parts: [
+            [$binding_0, 1]
+        ]
+    };
+});
 export class TestIgnoringStringIndex extends Component {
     prop = '1';
     ignoreStringIndex() {
@@ -129,5 +147,29 @@ export class TestIgnoringCustomTracked extends Component {
     write() {
         trackSet(this, '');
         this.prop = 1;
+    }
+}
+export class TestPreventIgnoringWatcherGetter extends Component {
+    static SlotContentType = 0;
+    ref;
+    onCreated() {
+        super.onCreated();
+        this.$read_watcher = new WatchMaker(function () { trackGet(this, "ref"); return this.ref; }, this.read, this);
+    }
+    onConnected() {
+        super.onConnected();
+        this.$read_watcher.connect();
+    }
+    onWillDisconnect() {
+        super.onWillDisconnect();
+        this.$read_watcher.disconnect();
+    }
+    render() {
+        trackGet(this, "ref");
+        return new CompiledTemplateResult($template_0, [], this);
+    }
+    $read_watcher = undefined;
+    read(prop) {
+        prop;
     }
 }

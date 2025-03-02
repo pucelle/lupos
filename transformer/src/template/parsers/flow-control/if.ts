@@ -82,7 +82,10 @@ export class IfFlowControl extends FlowControlBase {
 		let contentIndicesList = contentStrings.map(s => s ? TemplateSlotPlaceholder.getSlotIndices(s) ?? [] : [])
 		let flatContentIndices = contentIndicesList.flat()
 		let rawValueNodes = this.template.values.valueNodes
-		let endContentIndex = flatContentIndices.length > 0 ? flatContentIndices[flatContentIndices.length - 1] : null
+		
+		let endContentIndex = flatContentIndices.length > 0
+			? flatContentIndices[flatContentIndices.length - 1]
+			: null
 
 		for (let i = 0; i < conditionIndices.length; i++) {
 			let conditionIndex = conditionIndices[i]
@@ -198,7 +201,9 @@ export class IfFlowControl extends FlowControlBase {
 			}
 		})
 
-		let conditionalTrackings = this.conditionalRangeIds.map(rangeId => rangeId ? TrackingPatch.outputCustomRangeTracking(rangeId) : [])
+		let conditionalTrackings = this.conditionalRangeIds.map(rangeId => {
+			return rangeId ? TrackingPatch.outputCustomRangeTracking(rangeId) : []
+		})
 
 		// Make a new expression: `(track1, cond1 ? content1 : (track2, cond2 ? content2 : ...))`
 		let value = Packer.toConditionalExpression(conditions, contents, conditionalTrackings)

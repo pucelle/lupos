@@ -81,9 +81,14 @@ export namespace TrackingPatch {
 		CustomCaptured.add(rawNode, item)
 	}
 
-	/** Get custom tracking items. */
-	export function getCustomTrackingItems(rawNode: ts.Expression): CapturedItem[] | undefined {
+	/** Get custom tracking items by node. */
+	export function getCustomTrackingItemsByNode(rawNode: ts.Expression): CapturedItem[] | undefined {
 		return CustomCaptured.get(rawNode)
+	}
+
+	/** Walk for all custom tracking items. */
+	export function walkCustomTrackingItems(): Iterable<CapturedItem> {
+		return CustomCaptured.values()
 	}
 
 

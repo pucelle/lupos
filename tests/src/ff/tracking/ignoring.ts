@@ -1,5 +1,5 @@
-import {Component} from '@pucelle/lupos.js'
-import {computed, trackGet, trackSet} from '@pucelle/ff'
+import {Component, html} from '@pucelle/lupos.js'
+import {computed, trackGet, trackSet, watch} from '@pucelle/ff'
 
 
 export class TestIgnoringStringIndex extends Component {
@@ -160,3 +160,19 @@ export class TestIgnoringCustomTracked extends Component {
 		this.prop = 1
 	}
 }
+
+
+export class TestPreventIgnoringWatcherGetter extends Component {
+
+	private ref: any
+
+	render() {
+		return html`<div :ref=${this.ref}></div>`
+	}
+
+	@watch(function(this: TestPreventIgnoringWatcherGetter){return this.ref})
+	read(prop: number) {
+		prop
+	}
+}
+
