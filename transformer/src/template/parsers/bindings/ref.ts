@@ -1,7 +1,7 @@
 import * as ts from 'typescript'
 import {factory, Packer, helper} from '../../../core'
 import {BindingBase, BindingUpdateCallWith} from './base'
-import {TrackingPatch} from '../../../ff'
+import {TrackingChecker, TrackingPatch} from '../../../ff'
 import {getLatestBindingInfo, LatestBindingInfo} from './latest-binding'
 import {TemplateSlotPlaceholder} from '../../../lupos-ts-module'
 
@@ -9,13 +9,13 @@ import {TemplateSlotPlaceholder} from '../../../lupos-ts-module'
 export class RefBinding extends BindingBase {
 
 	/** :ref=${xxx}. */
-	private useAccess: boolean = false
+	private usePropAccess: boolean = false
 
 	/** :ref=${this.xxx}. */
-	private useContextAccess: boolean = false
+	private useContextPropAccess: boolean = false
 
 	/** :ref=${localVariable}. */
-	private useLocalAccess: boolean = false
+	private useLocalPropAccess: boolean = false
 
 	/** Previous binding information. */
 	private previousBindingInfo: LatestBindingInfo | null = null
@@ -23,7 +23,7 @@ export class RefBinding extends BindingBase {
 	outputValue(asCallback: boolean = false) {
 
 		// Ignore original ref value output and avoid output original access node.
-		if (this.useAccess) {
+		if (this.usePropAccess) {
 			return {
 				joint: factory.createNull(),
 				valueNodes: [],
@@ -84,7 +84,10 @@ export class RefBinding extends BindingBase {
 		if (rawValueNode) {
 			this.initAccessUsing(rawValueNode)
 			
-			if (this.useAccess) {
+			if (this.usePropAccess
+				&& helper.access.isAccess(rawValueNode)
+				&& TrackingChecker.isAccessMutable(rawValueNode)
+			) {
 				TrackingPatch.ignore(rawValueNode)
 
 				// Not truly output because of been ignored, to avoid eliminating private get only tracking.
@@ -104,16 +107,16 @@ export class RefBinding extends BindingBase {
 				&& !!helper.symbol.resolveDeclaration(rawValueNode, ts.isVariableDeclaration)
 
 		if (bePropertyOrVariable) {
-			this.useAccess = true
+			this.usePropAccess = true
 
 			if (helper.access.isAccess(rawValueNode)) {
 				let topmost = helper.access.getTopmost(rawValueNode)
 
 				// `this.xxx.xxx`
-				this.useContextAccess = helper.isThis(topmost)
+				this.useContextPropAccess = helper.isThis(topmost)
 			}
 	
-			this.useLocalAccess = !this.useContextAccess
+			this.useLocalPropAccess = !this.useContextPropAccess
 		}
 	}
 
@@ -121,7 +124,7 @@ export class RefBinding extends BindingBase {
 		super.initParameters()
 
 		// Be overwritten by built expressions.
-		if (this.useAccess) {
+		if (this.usePropAccess) {
 			this.parameterList = null
 		}
 
@@ -136,7 +139,7 @@ export class RefBinding extends BindingBase {
 	}
 
 	protected initLatestVariableNames() {
-		if (!this.useAccess) {
+		if (!this.usePropAccess) {
 			super.initLatestVariableNames()
 		}
 	}
@@ -147,7 +150,7 @@ export class RefBinding extends BindingBase {
 
 		// this.refName ->
 		// function(){ this.refName = previousBinding }
-		if (this.previousBindingInfo && this.useAccess) {
+		if (this.previousBindingInfo && this.usePropAccess) {
 			callValue = factory.createFunctionExpression(
 				undefined,
 				undefined,
@@ -225,7 +228,7 @@ export class RefBinding extends BindingBase {
 
 		// this.refName ->
 		// function(refed){ this.refName = refed }
-		else if (this.useAccess) {
+		else if (this.usePropAccess) {
 			callValue = factory.createFunctionExpression(
 				undefined,
 				undefined,
@@ -255,7 +258,7 @@ export class RefBinding extends BindingBase {
 		}
 
 		// Output ref binding function as a dynamic value.
-		if (this.useLocalAccess) {
+		if (this.useLocalPropAccess) {
 			callValue = this.slot.outputCustomValue(callValue)
 		}
 

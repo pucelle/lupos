@@ -373,7 +373,10 @@ export namespace Optimizer {
 		let keyMap: Map<string, {nodes: ts.Node[], typeMask: TypeMask | 0}> = new Map()
 
 		// All captured items, include those within current scope, and force tracked.
-		let allCapturedItems = [...scope.capturer.walkCapturedRecursively(), ...TrackingPatch.walkCustomTrackingItems()]
+		let allCapturedItems = [...scope.capturer.walkCapturedRecursively()].filter(item => !TrackingPatch.hasIgnored(item.node))
+
+		// Custom items should be do filtering by `hasIgnored`, see `ref`.
+		allCapturedItems.push(...TrackingPatch.walkCustomTrackingItems())
 
 		// Group captured by property name.
 		for (let capturedItem of allCapturedItems) {

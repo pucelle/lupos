@@ -430,7 +430,7 @@ export class TrackingCapturer {
 		let itemsInsertToNewPosition: CapturedItem[] = []
 
 		let items = group.items.filter(item => {
-			return !TrackingPatch.isIgnored(item.exp ?? item.node)
+			return !TrackingPatch.hasIgnored(item.exp ?? item.node)
 		})
 
 		if (newToNode !== null) {

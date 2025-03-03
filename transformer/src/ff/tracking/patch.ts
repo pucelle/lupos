@@ -37,8 +37,8 @@ export namespace TrackingPatch {
 		Ignored.add(rawNode)
 	}
 
-	/** Check whether ignored outputting. */
-	export function isIgnored(rawNode: ts.Node): boolean {
+	/** Check whether have ignored outputting. */
+	export function hasIgnored(rawNode: ts.Node): boolean {
 		return Ignored.has(rawNode)
 	}
 
