@@ -185,7 +185,7 @@ const $html_2 = new HTMLMaker("<!----><div></div><!---->");
 */ const $template_10 = new TemplateMaker(function ($context) {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
-    $node_0.addEventListener("click", (() => { $context.booleanValue = true; trackSet($context, "booleanValue"); }).bind($context));
+    $node_0.addEventListener("click", () => { $context.booleanValue = true; trackSet($context, "booleanValue"); });
     return {
         el: $node,
         position: new SlotPosition(1, $node_0)
@@ -198,7 +198,7 @@ const $html_2 = new HTMLMaker("<!----><div></div><!---->");
 */ const $template_11 = new TemplateMaker(function ($context) {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
-    $node_0.addEventListener("click", (() => $context.handleEventWithParameter($context.booleanValue)).bind($context));
+    $node_0.addEventListener("click", () => $context.handleEventWithParameter($context.booleanValue));
     return {
         el: $node,
         position: new SlotPosition(1, $node_0)
@@ -221,6 +221,19 @@ const $html_2 = new HTMLMaker("<!----><div></div><!---->");
         update($values) {
             $latest_0 = $values[0];
         }
+    };
+});
+/*
+<root>
+    <div @click=${this.handleEvent.bind(this)} />
+</root>
+*/ const $template_13 = new TemplateMaker(function ($context) {
+    let $node = $html_0.make();
+    let $node_0 = $node.content.firstChild;
+    $node_0.addEventListener("click", $context.handleEvent.bind($context));
+    return {
+        el: $node,
+        position: new SlotPosition(1, $node_0)
     };
 });
 export class TestEvent extends Component {
@@ -281,6 +294,9 @@ export class TestEvent extends Component {
         return new CompiledTemplateResult($template_12, [
             (e) => value = e
         ], this);
+    }
+    testIgnoringBound() {
+        return new CompiledTemplateResult($template_13, [], this);
     }
 }
 class Com1 extends Component {

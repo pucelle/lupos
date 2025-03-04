@@ -270,17 +270,15 @@ export class EventSlotParser extends SlotParserBase {
 
 		// $node_0.addEventListener('comEventName', eventHandler.bind($context))
 		else {
-			let boundEvent = this.outputValue().joint
+			let eventHandler = this.outputValue().joint
+			let shouldBindContext = this.shouldBindEventHandler(eventHandler)
 
 			// bind with current context.
-			if (!ts.isCallExpression(boundEvent)
-				|| !ts.isPropertyAccessExpression(boundEvent.expression)
-				|| helper.getText(boundEvent.expression.name) !== 'bind'
-			) {
-				boundEvent = factory.createCallExpression(
+			if (shouldBindContext) {
+				eventHandler = factory.createCallExpression(
 					factory.createPropertyAccessExpression(
 						this.outputValue().joint,
-						  factory.createIdentifier('bind')
+						factory.createIdentifier('bind')
 					),
 					undefined,
 					[factory.createIdentifier(VariableNames.context)]
@@ -295,10 +293,31 @@ export class EventSlotParser extends SlotParserBase {
 				undefined,
 				[
 					factory.createStringLiteral(this.name),
-					boundEvent
+					eventHandler
 				]
 			)
 		}
+	}
+
+	private shouldBindEventHandler(event: ts.Expression): boolean {
+
+		// Already a function declaration, `this` will be replaced to `$context`.
+		if (helper.isFunctionLike(event)) {
+			return false
+		}
+
+		// `a.bind(xxx)`
+		let hasBound = ts.isCallExpression(event)
+			&& ts.isPropertyAccessExpression(event.expression)
+			&& helper.getText(event.expression.name) === 'bind'
+
+		
+		if (hasBound) {
+			return false
+		}
+
+		// Otherwise must bind.
+		return true
 	}
 
 	outputUpdate() {

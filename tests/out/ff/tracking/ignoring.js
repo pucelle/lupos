@@ -165,7 +165,6 @@ export class TestPreventIgnoringWatcherGetter extends Component {
         this.$read_watcher.disconnect();
     }
     render() {
-        trackGet(this, "ref");
         return new CompiledTemplateResult($template_0, [], this);
     }
     $read_watcher = undefined;

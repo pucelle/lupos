@@ -64,6 +64,10 @@ export class TestEvent extends Component {
 		value
 		return html`<div @click=${(e: any) => value = e} />`
 	}
+
+	testIgnoringBound() {
+		return html`<div @click=${this.handleEvent.bind(this)} />`
+	}
 }
 
 
