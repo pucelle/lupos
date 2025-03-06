@@ -103,7 +103,7 @@ export class TrackingScopeState {
 			return false
 		}
 
-		let isVoidReturning = helper.types.isVoidReturning(node as ts.FunctionLikeDeclaration)
+		let isVoidReturning = helper.isVoidReturning(node as ts.FunctionLikeDeclaration)
 
 		// An instantly run function should inherit whether stop get tracking.
 		if (this.scope.type & TrackingScopeTypeMask.InstantlyRunFunction) {
