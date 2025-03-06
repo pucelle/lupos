@@ -31,8 +31,6 @@ export class TemplateParser extends TemplateBasis {
 	) {
 		super(tagName, node, content, root, valueNodes, positionMapper, DeclarationScopeTree, helper)
 		this.values = new TemplateValues(valueNodes)
-
-		this.diagnose()
 	}
 
 	/** 
