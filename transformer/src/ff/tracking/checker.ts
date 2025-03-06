@@ -298,7 +298,7 @@ export namespace TrackingChecker {
 
 		// Return type of declaration.
 		if (ts.isGetAccessorDeclaration(decl)) {
-			let returnType = helper.types.getReturnType(decl)
+			let returnType = helper.types.getReturnTypeOfSignature(decl)
 			if (returnType && isTypeObserved(returnType)) {
 				return true
 			}
@@ -498,7 +498,7 @@ export namespace TrackingChecker {
 		}
 
 		// Test call method returned type.
-		let returnType = helper.types.getReturnType(decl)
+		let returnType = helper.types.getReturnTypeOfSignature(decl)
 		if (returnType && isTypeObserved(returnType)) {
 			return true
 		}

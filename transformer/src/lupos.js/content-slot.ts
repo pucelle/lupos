@@ -25,7 +25,7 @@ defineVisitor(function(node: ts.Node) {
 		return
 	}
 
-	let renderType = helper.types.getReturnType(renderMethod)
+	let renderType = helper.types.getReturnTypeOfSignature(renderMethod)
 	if (!renderType) {
 		return
 	}
