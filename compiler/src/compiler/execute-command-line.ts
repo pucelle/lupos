@@ -5,7 +5,7 @@ import * as ts from 'typescript'
 import * as fs from 'node:fs';
 import {createDiagnosticReporter, createWatchStatusReporter} from './watch';
 import {hasProperty} from './core';
-import {DiagnosticModifier, ExtendedTransformerFactory, interpolateTransformer} from '../patch';
+import {DiagnosticModifier, ExtendedTransformerFactory, patchHost} from '../patch';
 
 
 export function executeCommandLine(
@@ -110,16 +110,16 @@ function performWatchCompilation(
 ) {
 
 	// Inspired by https://stackoverflow.com/questions/62026189/typescript-custom-transformers-with-ts-createwatchprogram/62132983
-	const watchBuildHost = ts.createSolutionBuilderWithWatchHost(
+	let watchBuildHost = ts.createSolutionBuilderWithWatchHost(
 		system,
 		undefined,
 		reportDiagnostic,
 		undefined,
-		createWatchReporter(system, compilerOptions, diagModifier, () => builder, () => standardTransformer),
+		createWatchReporter(system, compilerOptions, diagModifier),
 	);
 
-	let standardTransformer = interpolateTransformer(watchBuildHost, diagModifier, transformer, toESM)
-
+	patchHost(watchBuildHost, transformer, toESM, diagModifier);
+	
 	let builder: ts.SolutionBuilder<ts.EmitAndSemanticDiagnosticsBuilderProgram> =
 		ts.createSolutionBuilderWithWatch(
 			watchBuildHost,
@@ -128,47 +128,13 @@ function performWatchCompilation(
 			watchOptions
 		);
 
-	doNextBuild(builder, diagModifier, standardTransformer);
 	return builder.build();
-}
-
-function doNextBuild(
-	solutionBuilder: ts.SolutionBuilder<ts.EmitAndSemanticDiagnosticsBuilderProgram>,
-	diagModifier: DiagnosticModifier,
-	transformer: ts.TransformerFactory<ts.SourceFile>
-) {
-	let project = solutionBuilder.getNextInvalidatedProject();
-	if (project) {
-		buildProject(project, diagModifier, transformer);
-	}
-}
-
-function buildProject(
-	project: ts.InvalidatedProject<ts.EmitAndSemanticDiagnosticsBuilderProgram>,
-	diagModifier: DiagnosticModifier,
-	transformer: ts.TransformerFactory<ts.SourceFile>
-) {
-	if (project.kind !== ts.InvalidatedProjectKind.Build) {
-		return;
-	}
-
-	project.emit(
-		undefined,
-		undefined,
-		undefined,
-		undefined,
-		{before: [transformer]},
-	);
-
-	diagModifier.reportAdded();
 }
 
 function createWatchReporter(
 	system: ts.System,
 	options: ts.CompilerOptions | ts.BuildOptions,
-	diagModifier: DiagnosticModifier,
-	solutionBuilderGetter: () => ts.SolutionBuilder<ts.EmitAndSemanticDiagnosticsBuilderProgram>,
-	transformersGetter: () => ts.TransformerFactory<ts.SourceFile>
+	diagModifier: DiagnosticModifier
 ): ts.WatchStatusReporter {
 	let pretty = shouldBePretty(system, options);
 	let rawReporter = createWatchStatusReporter(system, pretty);
@@ -176,7 +142,6 @@ function createWatchReporter(
 
 	return (diagnostic: ts.Diagnostic, newLine: string, options: ts.CompilerOptions, errorCount?: number) => {
 		patchedReporter(diagnostic, newLine, options, errorCount);
-		doNextBuild(solutionBuilderGetter(), diagModifier, transformersGetter());
 	}
 }
 
@@ -202,20 +167,15 @@ function performCompilation(
 	transformer: ExtendedTransformerFactory,
 	toESM: boolean
 ) {
-	const buildHost = ts.createSolutionBuilderHost(
+	let buildHost = ts.createSolutionBuilderHost(
         system,
         undefined,
         reportDiagnostic,
         ts.createBuilderStatusReporter(system, shouldBePretty(system, compilerOptions))
     );
 
-	let standardTransformers = interpolateTransformer(buildHost, diagModifier, transformer, toESM);
+	patchHost(buildHost, transformer, toESM, diagModifier);
 
-    const builder = ts.createSolutionBuilder(buildHost, projects, buildOptions);
-	doNextBuild(builder, diagModifier, standardTransformers);
-
-	// Can't build here, or it will cause build without transformers when meet any diagnostics.
-	// return builder.build();
-
-	return system.exit(ts.ExitStatus.Success);
+    let builder = ts.createSolutionBuilder(buildHost, projects, buildOptions);
+	return builder.build();
 }

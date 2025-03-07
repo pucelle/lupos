@@ -15,31 +15,62 @@ export interface TransformerExtras {
 	diagnosticModifier: DiagnosticModifier
 }
 
-/** Interpolate program host and bundle with extended TransformerFactory to give a standard TransformerFactory. */
-export function interpolateTransformer(
-	host: ts.SolutionBuilderHostBase<any>,
-	diagnosticModifier: DiagnosticModifier,
+
+/** Patch program host and bundle with extended transformer. */
+export function patchHost(
+	host: ts.SolutionBuilderHostBase<ts.EmitAndSemanticDiagnosticsBuilderProgram>
+		| ts.SolutionBuilderWithWatchHost<ts.EmitAndSemanticDiagnosticsBuilderProgram>,
 	extended: ExtendedTransformerFactory,
-	toESM: boolean
-):
-	ts.TransformerFactory<ts.SourceFile>
-{
-	const originalHostCreateProgram = host.createProgram;
-	let program: ts.BuilderProgram | null = null;
-	
+	toESM: boolean,
+	diagModifier: DiagnosticModifier
+) {
+	let originalHostCreateProgram = host.createProgram
+
 	// Note program may update here.
 	host.createProgram = (rootNames: readonly string[] | undefined, options, host, oldProgram) => {
-		return program = originalHostCreateProgram(rootNames, options, host, oldProgram);
-	}
+		let program = originalHostCreateProgram(rootNames, options, host, oldProgram)
+		patchProgram(program, extended, toESM, diagModifier)
 
-	return (context: ts.TransformationContext) => {
+		return program
+	}
+}
+
+
+/** Patch program and bundle with extended transformer. */
+export function patchProgram(
+	program: ts.EmitAndSemanticDiagnosticsBuilderProgram,
+	extended: ExtendedTransformerFactory,
+	toESM: boolean,
+	diagModifier: DiagnosticModifier
+) {
+	let standardTransformer: ts.TransformerFactory<ts.SourceFile> = (context: ts.TransformationContext) => {
 		let extras: TransformerExtras = {
 			compileToESM: toESM,
-			program: program!,
-			diagnosticModifier,
+			program: program!,	// Use newly updated program.
+			diagnosticModifier: diagModifier,
 		}
 
 		return extended(context, extras)
+	}
+
+	let originalEmit = program.emit
+
+	program.emit = (targetSourceFile, writeFile, cancellationToken, emitOnlyDtsFiles, existingTransformers): ts.EmitResult => {
+		let transformers = existingTransformers ?? { before: [] }
+
+		if (!transformers.before) {
+			transformers.before = []
+		}
+
+		// Add our transformer.
+		transformers.before.push(standardTransformer)
+
+		let emitResult = originalEmit(targetSourceFile, writeFile, cancellationToken, emitOnlyDtsFiles, transformers)
+
+		// Report added diagnostics.
+		diagModifier.reportAdded();
+
+		return emitResult
 	}
 }
 
