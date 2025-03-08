@@ -51,6 +51,10 @@ export class TestArrayElementsSet extends Component {
 
 	list: number[] = []
 
+	setAtIndex() {
+		this.list[0] = 1
+	}
+
 	toggleElementSet(item: number) {
 		if (this.list.includes(item)) {
 			this.list.splice(this.list.indexOf(item), 1)

@@ -45,6 +45,16 @@ export class TestObjectProp extends Component {
 }
 
 
+export class TestNullableProp extends Component {
+
+	prop: {value: number} | null = {value: 1}
+
+	getProp() {
+		return this.prop?.value
+	}
+}
+
+
 export class TestRepetitiveProp extends Component {
 
 	prop = {value: 1}

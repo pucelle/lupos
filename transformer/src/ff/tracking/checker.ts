@@ -330,7 +330,7 @@ export namespace TrackingChecker {
 		}
 
 		// `a.map((b) => ...`, if `a` is observed, `b` is too.
-		if (isParameterObservedByCallingBroadcasted(rawNode)) {
+		if (isParameterObservedByCallBroadcasting(rawNode)) {
 			return true
 		}
 
@@ -338,7 +338,7 @@ export namespace TrackingChecker {
 	}
 
 	/** Broadcast observed from parent calling expression to all parameters. */
-	function isParameterObservedByCallingBroadcasted(rawNode: ts.ParameterDeclaration): boolean {
+	function isParameterObservedByCallBroadcasting(rawNode: ts.ParameterDeclaration): boolean {
 
 		// `a.b.map((item) => {return item.value})`
 		// `a.b.map(item => item.value)`
@@ -364,13 +364,12 @@ export namespace TrackingChecker {
 		}
 
 		// `a.b` of `a.b.map`.
-		let callFrom = exp.expression
-		if (!helper.access.isExpOfElementsAccess(callFrom)) {
+		if (!helper.access.isOfElementsAccess(exp)) {
 			return false
 		}
 
 		// Must use parent scope.
-		return isExpObserved(callFrom)
+		return isExpObserved(exp.expression)
 	}
 
 

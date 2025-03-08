@@ -219,6 +219,11 @@ export class TestPropertyMethodsObserved {
         trackGet(this.data, "");
         return this.data.get();
     }
+    nullableDataGet() {
+        let data = new AnyMethodsObserved();
+        trackGet(data, "");
+        return data?.get();
+    }
     $setOverlapSetKeys_effector = undefined;
     setOverlapSetKeys() {
         let a = this.data.get();

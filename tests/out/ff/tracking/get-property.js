@@ -35,6 +35,14 @@ export class TestObjectProp extends Component {
         return value;
     }
 }
+export class TestNullableProp extends Component {
+    prop = { value: 1 };
+    getProp() {
+        trackGet(this, "prop");
+        this.prop && trackGet(this.prop, "value");
+        return this.prop?.value;
+    }
+}
 export class TestRepetitiveProp extends Component {
     prop = { value: 1 };
     getProp() {

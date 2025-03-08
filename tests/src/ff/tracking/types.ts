@@ -231,6 +231,11 @@ export class TestPropertyMethodsObserved {
 		return this.data.get()
 	}
 
+	nullableDataGet() {
+		let data: Observed<AnyMethodsObserved> | null = new AnyMethodsObserved()
+		return data?.get()
+	}
+
 	@effect
 	setOverlapSetKeys() {
 		let a = this.data.get()
