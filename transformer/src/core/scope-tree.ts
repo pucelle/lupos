@@ -120,10 +120,10 @@ class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 	}
 
 	/** 
-	 * Where later after `rawNode`, it will be assigned.
+	 * Where later after `rawNode`, and before `beforeNode`, it will be assigned.
 	 * Return the earliest assignment place.
 	 */
-	whereWillBeAssigned(rawNode: AccessNode | ts.Identifier): AssignmentNode | undefined {
+	whereWillBeAssignedBefore(rawNode: AccessNode | ts.Identifier, beforeNode: ts.Node): AssignmentNode | undefined {
 		let hashName = Hashing.hashNode(rawNode).name
 		let assignments = this.assignmentMap.get(hashName)
 
@@ -132,9 +132,19 @@ class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 		}
 
 		for (let assign of assignments) {
-			if (VisitTree.isPrecedingOfInChildFirstOrder(rawNode, assign)) {
-				return assign
+	
+			// Must assign after raw node.
+			if (!VisitTree.isPrecedingOfInRunOrder(rawNode, assign)) {
+				continue
 			}
+
+			// Assign before `beforeNode`.
+			// For `for(;;i++) {}`, the `i++` runs after `{}`.
+			if (!VisitTree.isPrecedingOfInRunOrder(assign, beforeNode)) {
+				continue
+			}
+		
+			return assign
 		}
 
 		return undefined

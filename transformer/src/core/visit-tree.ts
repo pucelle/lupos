@@ -1,7 +1,7 @@
 import * as ts from 'typescript'
 import {ListMap} from '../lupos-ts-module'
 import {definePreVisitCallback} from './visitor-callbacks'
-import {sourceFile} from './global'
+import {helper, sourceFile} from './global'
 
 
 interface VisitItem {
@@ -256,40 +256,54 @@ export namespace VisitTree {
 		return isPrecedingOfInChildFirstOrder(rawNode1, rawNode2)
 	}
 
-	/** Returns whether `index1` is preceding of `index2` in parent-first order. */
-	export function isFollowingOf(rawNode1: ts.Node, rawNode2: ts.Node): boolean {
-		let index1 = getIndex(rawNode1)
-		let index2 = getIndex(rawNode2)
+	/** 
+	 * Returns whether `node1` is preceding of `node2` in run order.
+	 * Normally it equals `isPrecedingOfInChildFirstOrder`, except:
+	 * `for (;;i++){}`, `i++` will be moved to after `{}`.
+	 */
+	export function isPrecedingOfInRunOrder(rawNode1: ts.Node, rawNode2: ts.Node): boolean {
+		if (rawNode1 === rawNode2) {
+			return false
+		}
+		else if (isAncestorOf(rawNode1, rawNode2)) {
+			return false
+		}
+		else if (isAncestorOf(rawNode2, rawNode1)) {
+			return true
+		}
 
-		return index1 > index2
+		// `for (;;i++){}`, increment `i++` will be moved to after statement `{}`.
+		let closestFor = helper.findOutward(rawNode1, ts.isForStatement)
+		if (closestFor
+			&& closestFor.incrementor
+			&& isAncestorOf(closestFor, rawNode1)
+			&& isAncestorOf(closestFor, rawNode2)
+		) {
+			if (isContains(closestFor.incrementor, rawNode1)
+				&& isContains(closestFor.statement, rawNode2)
+			) {
+				return false
+			}
+			else if (isContains(closestFor.incrementor, rawNode2)
+				&& isContains(closestFor.statement, rawNode1)
+			) {
+				return true
+			}
+		}
+
+		return isPrecedingOf(rawNode1, rawNode2)
 	}
 
 	/** 
-	 * Returns whether `index1` is following of `index2`,
-	 * or equals `index2` in parent-first order.
+	 * Returns whether `node1` is preceding of `node2`,
+	 * or equals `node2` in child-first order.
 	 */
-	export function isFollowingOfOrEqual(rawNode1: ts.Node, rawNode2: ts.Node): boolean {
-		let index1 = getIndex(rawNode1)
-		let index2 = getIndex(rawNode2)
-
-		return index1 >= index2
-	}
-
-	/** Returns whether `index1` is following of `index2` in child-first order. */
-	export function isFollowingOfInChildFirstOrder(rawNode1: ts.Node, rawNode2: ts.Node): boolean {
-		return isPrecedingOfInChildFirstOrder(rawNode2, rawNode1)
-	}
-
-	/** 
-	 * Returns whether `index1` is following of `index2`,
-	 * or equals `index2` in child-first order.
-	 */
-	export function isFollowingOfOrEqualInChildFirstOrder(rawNode1: ts.Node, rawNode2: ts.Node): boolean {
+	export function isPrecedingOfInRunOrderOrder(rawNode1: ts.Node, rawNode2: ts.Node): boolean {
 		if (rawNode1 === rawNode2) {
 			return true
 		}
 
-		return isFollowingOfInChildFirstOrder(rawNode1, rawNode2)
+		return isPrecedingOfInRunOrder(rawNode1, rawNode2)
 	}
 }
 

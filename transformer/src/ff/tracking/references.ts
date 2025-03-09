@@ -95,7 +95,9 @@ export namespace TrackingReferences {
 			}
 
 			if (helper.access.isAccess(descendant) || helper.isVariableIdentifier(descendant)) {
-				let assignableNode = DeclarationScopeTree.whereWillBeAssigned(descendant)
+
+				// To reference only when output after earliest assign place.
+				let assignableNode = DeclarationScopeTree.whereWillBeAssignedBefore(descendant, toNode)
 				if (!assignableNode) {
 					continue
 				}
@@ -105,12 +107,7 @@ export namespace TrackingReferences {
 					continue
 				}
 
-				// To reference only when output after earliest assignment.
-				let outputAfterAssignment = VisitTree.isPrecedingOfInChildFirstOrder(assignableNode, toNode)
-				if (outputAfterAssignment) {
-					console.log(helper.getFullText(assignableNode), 2)
-					return true
-				}
+				return true
 			}
 		}
 

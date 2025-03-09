@@ -21,17 +21,29 @@ export class TrackingCapturerOperator {
 		this.scope = capturer.scope
 	}
 
+	/** Normally move captured items to an sibling capturer. */
+	moveCapturedTo(toCapturer: TrackingCapturer) {
+		let items = this.capturer.captured[0].items
+		if (items.length === 0) {
+			return
+		}
+
+		let group = this.capturer.latestCaptured
+		toCapturer.captured[0].items.push(...group.items)
+		group.items = []
+	}
+
 	/** 
 	 * Move captured items to an ancestral, target capturer.
 	 * If a node with captured index use local variables and can't be moved, leave it.
 	 */
 	safelyMoveCapturedOutwardTo(toCapturer: TrackingCapturer) {
-		let item = this.capturer.captured[0].items
-		if (item.length === 0) {
+		let items = this.capturer.captured[0].items
+		if (items.length === 0) {
 			return
 		}
 
-		let residualItems = this.safelyMoveCapturedItemsOutwardTo(item, toCapturer)
+		let residualItems = this.safelyMoveCapturedItemsOutwardTo(items, toCapturer)
 		this.capturer.captured[0].items = residualItems
 	}
 
@@ -46,7 +58,7 @@ export class TrackingCapturerOperator {
 		// Find the first item which's in the following of current node in child-first order.
 		// If can't find, use the last one.
 		let group = toCapturer.captured.find(item => {
-			return VisitTree.isFollowingOfOrEqualInChildFirstOrder(item.toNode, this.scope.node)
+			return VisitTree.isPrecedingOfOrEqualInChildFirstOrder(this.scope.node, item.toNode)
 		}) ?? toCapturer.latestCaptured
 
 		// Note these are declaration scopes, not tracking scopes.
@@ -71,16 +83,46 @@ export class TrackingCapturerOperator {
 		return residualItems
 	}
 
-	/** Move captured items to an sibling capturer. */
-	moveCapturedInwardTo(toCapturer: TrackingCapturer) {
+	/** 
+	 * Move iteration captured which uses dynamic index declared in for statement outward.
+	 * `for (let i; ...) {a[i]}` -> `for (...) {}; track(a, '');`
+	 */
+	moveDynamicIndexedCapturedOutward(toCapturer: TrackingCapturer) {
 		let items = this.capturer.captured[0].items
 		if (items.length === 0) {
 			return
 		}
 
-		let group = this.capturer.latestCaptured
-		toCapturer.captured[0].items.push(...group.items)
-		group.items = []
+		let dynamicIndexed: CapturedItem[] = []
+
+		for (let item of items) {
+
+			// It uses static key.
+			if (item.exp) {
+				continue
+			}
+
+			if (!ts.isElementAccessExpression(item.node)) {
+				continue
+			}
+
+			let index = item.node.argumentExpression
+			let isDynamicIndex = !ts.isStringLiteral(index) && !ts.isNumericLiteral(index)
+			if (!isDynamicIndex) {
+				continue
+			}
+
+			dynamicIndexed.push({
+				node: item.node,
+				type: item.type,
+				exp: item.node.expression,
+				key: '',
+				referencedAtInternal: false
+			})
+		}
+
+		// No need to delete dynamic indexed, will be removed by following repetitive elimination.
+		this.safelyMoveCapturedItemsOutwardTo(dynamicIndexed, toCapturer)
 	}
 
 	/** Eliminate repetitive captured with an outer hash. */

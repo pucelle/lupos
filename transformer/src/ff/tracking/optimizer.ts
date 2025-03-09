@@ -65,11 +65,13 @@ export namespace Optimizer {
 			moveIterationConditionIncreasementCapturedToIterationContent(scope)
 		}
 
-		// This optimizing has low risk, loop codes may not run when have no looping.
+		// This optimizing has low risk, loop codes may not run when do 0 loop.
 		// Must after `moveIterationConditionIncreasementCapturedToIterationContent` step.
 		// `for (...) {a.b}` -> `track(a.b); for ...
+		// `for (let i; ...) {a[i]}` -> `for (...) {}; track(a, '');`
 		if (scope.type & TrackingScopeTypeMask.IterationContent) {
 			moveIterationContentCapturedOutward(scope)
+			moveIterationContentDynamicIndexCapturedOutward(scope)
 		}
 
 		// This optimizing has low risk, array methods may not run when have no items.
@@ -313,14 +315,14 @@ export namespace Optimizer {
 		// Iteration Content.
 		let targetScope = scope.parent!.children.find(c => c.type & TrackingScopeTypeMask.IterationContent)
 		if (targetScope) {
-			scope.capturer.operator.moveCapturedInwardTo(targetScope.capturer)
+			scope.capturer.operator.moveCapturedTo(targetScope.capturer)
 		}
 	}
 
 
 	/** 
 	 * Move iteration captured outward.
-	 * `for (...) {a.b}` -> `track(a.b); for ...`
+	 * `for (...) {a.b}` -> `for (...) {}; track(a.b);`
 	 */
 	function moveIterationContentCapturedOutward(scope: TrackingScope) {
 		if (!scope.capturer.hasCaptured()) {
@@ -331,6 +333,22 @@ export namespace Optimizer {
 		let targetScope = scope.parent!.parent!
 
 		scope.capturer.operator.safelyMoveCapturedOutwardTo(targetScope.capturer)
+	}
+
+
+	/** 
+	 * Move iteration captured which uses dynamic index declared in for statement outward.
+	 * `for (let i; ...) {a[i]}` -> `for (...) {}; track(a, '');`
+	 */
+	function moveIterationContentDynamicIndexCapturedOutward(scope: TrackingScope) {
+		if (!scope.capturer.hasCaptured()) {
+			return
+		}
+
+		// parent of iteration.
+		let targetScope = scope.parent!.parent!
+
+		scope.capturer.operator.moveDynamicIndexedCapturedOutward(targetScope.capturer)
 	}
 
 
