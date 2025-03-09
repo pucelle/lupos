@@ -36,6 +36,10 @@ export class TestArrayBroadcastingObservedToEachFn extends Component {
 }
 export class TestArrayElementsSet extends Component {
     list = [];
+    setAtIndex() {
+        this.list[0] = 1;
+        trackSet(this.list, 0);
+    }
     toggleElementSet(item) {
         if (this.list.includes(item)) {
             this.list.splice(this.list.indexOf(item), 1);

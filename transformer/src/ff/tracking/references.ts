@@ -90,19 +90,25 @@ export namespace TrackingReferences {
 				continue
 			}
 
-			if (shouldReferenceOfSelf(descendant)) {
+			if (shouldReferenceForSelf(descendant)) {
 				return true
 			}
 
 			if (helper.access.isAccess(descendant) || helper.isVariableIdentifier(descendant)) {
-				let assignableNode =  DeclarationScopeTree.whereWillBeAssigned(descendant)
+				let assignableNode = DeclarationScopeTree.whereWillBeAssigned(descendant)
 				if (!assignableNode) {
+					continue
+				}
+
+				// Although it will be assigned, but has been referenced.
+				if (ReferencedNodes.has(assignableNode)) {
 					continue
 				}
 
 				// To reference only when output after earliest assignment.
 				let outputAfterAssignment = VisitTree.isPrecedingOfInChildFirstOrder(assignableNode, toNode)
 				if (outputAfterAssignment) {
+					console.log(helper.getFullText(assignableNode), 2)
 					return true
 				}
 			}
@@ -117,7 +123,7 @@ export namespace TrackingReferences {
 	 * `a().b` -> `var $ref_; ...; $ref_ = a(); $ref_.b`
 	 * or `a[i++]` -> `var _ref; ... ; $ref_ = i++; a[_ref]`
 	 */
-	function shouldReferenceOfSelf(node: ts.Node): boolean {
+	function shouldReferenceForSelf(node: ts.Node): boolean {
 
 		// `a && b`, `a || b`, `a ?? b`, `a + b`, `a, b`.
 		if (ts.isBinaryExpression(node)) {

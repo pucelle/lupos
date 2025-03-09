@@ -4,14 +4,14 @@ export class TestArrayIndex extends Component {
     prop = [{ value: 1 }];
     fixedIndex() {
         trackGet(this, "prop");
-        trackGet(this.prop, "");
+        trackGet(this.prop, 0);
         trackGet(this.prop[0], "value");
         return this.prop[0].value;
     }
     dynamicIndex() {
         let i = 0;
         trackGet(this, "prop");
-        trackGet(this.prop, "");
+        trackGet(this.prop, i);
         trackGet(this.prop[i], "value");
         return this.prop[i].value;
     }
@@ -19,9 +19,10 @@ export class TestArrayIndex extends Component {
         trackGet(this, "prop");
         trackGet(this.prop, "");
         if (this.prop.length > 0) {
-            let $ref_0 = this.prop[this.prop.length - 1];
-            trackGet($ref_0, "value");
-            return $ref_0.value;
+            let $ref_0 = this.prop.length - 1;
+            trackGet(this.prop, $ref_0);
+            trackGet(this.prop[$ref_0], "value");
+            return this.prop[$ref_0].value;
         }
         return undefined;
     }
@@ -59,7 +60,7 @@ export class TestAliasArrayTypeOfProp extends Component {
     prop = [{ value: 1 }];
     arrayAliasType() {
         trackGet(this, "prop");
-        trackGet(this.prop, "");
+        trackGet(this.prop, 0);
         trackGet(this.prop[0], "value");
         return this.prop[0].value;
     }

@@ -86,24 +86,24 @@ export class TestRef extends Component {
         let $ref_1;
         let a = [this.prop];
         let i = 0;
-        $ref_1 = a[i++];
+        $ref_1 = i++;
         trackGet(this, "prop");
-        trackGet(a, "");
-        trackGet($ref_1, "value");
-        return $ref_1.value;
+        trackGet(a, $ref_1);
+        trackGet(a[$ref_1], "value");
+        return a[$ref_1].value;
     }
     doubleIndexRef() {
         let $ref_1, $ref_2;
         let a = [[this.prop]];
         let i = 0;
         let j = 0;
-        $ref_1 = a[i++];
-        $ref_2 = $ref_1[j++];
+        $ref_1 = i++;
+        $ref_2 = j++;
         trackGet(this, "prop");
-        trackGet(a, "");
-        trackGet($ref_1, "");
-        trackGet($ref_2, "value");
-        return $ref_2.value;
+        trackGet(a, $ref_1);
+        trackGet(a[$ref_1], $ref_2);
+        trackGet(a[$ref_1][$ref_2], "value");
+        return a[$ref_1][$ref_2].value;
     }
     forVariableInitializerRef() {
         let $ref_1 = this.getProp(), i = $ref_1.value;
