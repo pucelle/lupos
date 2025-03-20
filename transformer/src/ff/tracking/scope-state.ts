@@ -134,7 +134,10 @@ export class TrackingScopeState {
 
 			// Should have no need to test whether import from `@pucelle/ff`.
 			let fnName = helper.getFullText(descendant.expression)
-			if (fnName === 'trackGet' || fnName === 'trackSet') {
+			if (fnName === 'trackGet'
+				|| fnName === 'trackGetDeeply'
+				|| fnName === 'trackSet'
+			) {
 				return true
 			}
 		}
