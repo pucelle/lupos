@@ -56,24 +56,45 @@ export namespace Packer {
 	}
 
 	/** Create an access node by expression and property name. */
-	export function createAccessNode(exp: ts.Expression, name: string | number): AccessNode {
+	export function createAccessNode(exp: ts.Expression, name: string | number, queryDot: boolean = false): AccessNode {
 		if (typeof name === 'string' && (/^[\w$]+$/.test(name) || /^#[\w$]+$/.test(name))) {
-			return factory.createPropertyAccessExpression(
-				exp,
-				name
-			)
-		}
-		else if (typeof name === 'string') {
-			return factory.createElementAccessExpression(
-				exp,
-				factory.createStringLiteral(name)
-			)
+			if (queryDot) {
+				return factory.createPropertyAccessChain(
+					exp,
+					factory.createToken(ts.SyntaxKind.QuestionDotToken),
+					name
+				)
+			}
+			else {
+				return factory.createPropertyAccessExpression(
+					exp,
+					name
+				)
+			}
 		}
 		else {
-			return factory.createElementAccessExpression(
-				exp,
-				createNumeric(name)
-			)
+			let prop: ts.StringLiteral | ts.NumericLiteral
+
+			if (typeof name === 'string') {
+				prop = factory.createStringLiteral(name)
+			}
+			else {
+				prop = createNumeric(name) as ts.NumericLiteral
+			}
+
+			if (queryDot) {
+				return factory.createElementAccessChain(
+					exp,
+					factory.createToken(ts.SyntaxKind.QuestionDotToken),
+					prop
+				)
+			}
+			else {
+				return factory.createElementAccessExpression(
+					exp,
+					prop
+				)
+			}
 		}
 	}
 

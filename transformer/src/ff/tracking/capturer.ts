@@ -515,8 +515,9 @@ export class TrackingCapturer {
 			let nodes: AccessNode[] = []
 			let node = Interpolator.outputReplaceableChildren(item.exp) as ts.Expression
 			let key = item.key!
+			let queryDot = helper.access.isAccess(item.node) && !!item.node.questionDotToken
 
-			node = Packer.createAccessNode(node, key)
+			node = Packer.createAccessNode(node, key, queryDot)
 			nodes.push(node as AccessNode)
 
 			return nodes
