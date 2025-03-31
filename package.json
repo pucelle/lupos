@@ -17,7 +17,7 @@
 		"test": "cd tests && node ../bin/luc.js && echo Compare git changes to get test result && del tsconfig.tsbuildinfo"
 	},
 	"bin": {
-		"luc": "./bin/luc"
+		"luc": "./bin/luc.js"
 	},
 	"devDependencies": {
 		"@types/node": "^22.10.7",
