@@ -35,14 +35,31 @@ const $html_0 = new HTMLMaker("<div></div>");
         ]
     };
 });
-const $html_2 = new HTMLMaker("<!----><div></div><!---->");
+/*
+<root>
+    <Com2 @eventName=${this.handleEvent} />
+</root>
+*/ const $template_2 = new TemplateMaker(function ($context) {
+    let $node = $html_0.make();
+    let $node_0 = $node.content.firstChild;
+    let $com_0 = new Com2($node_0);
+    $com_0.on("eventName", $context.handleEvent, $context);
+    return {
+        el: $node,
+        position: new SlotPosition(1, $node_0),
+        parts: [
+            [$com_0, 1]
+        ]
+    };
+});
+const $html_3 = new HTMLMaker("<!----><div></div><!---->");
 /*
 <root>
     <${this.UnionedCom} @connected=${this.handleEvent} />
 </root>
-*/ const $template_2 = new TemplateMaker(function ($context) {
+*/ const $template_3 = new TemplateMaker(function ($context) {
     let $com_0;
-    let $node = $html_2.make();
+    let $node = $html_3.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.childNodes[1];
     let $node_2 = $node.content.lastChild;
@@ -67,9 +84,9 @@ const $html_2 = new HTMLMaker("<!----><div></div><!---->");
 <root>
     <${this.ConstructedCom} @connected=${this.handleEvent} />
 </root>
-*/ const $template_3 = new TemplateMaker(function ($context) {
+*/ const $template_4 = new TemplateMaker(function ($context) {
     let $com_0;
-    let $node = $html_2.make();
+    let $node = $html_3.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.childNodes[1];
     let $node_2 = $node.content.lastChild;
@@ -94,7 +111,7 @@ const $html_2 = new HTMLMaker("<!----><div></div><!---->");
 <root>
     <Com1 @@eventName=${this.handleEvent} />
 </root>
-*/ const $template_4 = new TemplateMaker(function ($context) {
+*/ const $template_5 = new TemplateMaker(function ($context) {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $com_0 = new Com1($node_0);
@@ -111,7 +128,7 @@ const $html_2 = new HTMLMaker("<!----><div></div><!---->");
 <root>
     <div @click=${this.handleEvent} />
 </root>
-*/ const $template_5 = new TemplateMaker(function ($context) {
+*/ const $template_6 = new TemplateMaker(function ($context) {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     $node_0.addEventListener("click", $context.handleEvent.bind($context));
@@ -124,7 +141,7 @@ const $html_2 = new HTMLMaker("<!----><div></div><!---->");
 <root>
     <div @tap=${this.handleEvent} />
 </root>
-*/ const $template_6 = new TemplateMaker(function ($context) {
+*/ const $template_7 = new TemplateMaker(function ($context) {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     SimulatedEvents.on($node_0, "tap", $context.handleEvent, $context);
@@ -137,7 +154,7 @@ const $html_2 = new HTMLMaker("<!----><div></div><!---->");
 <root>
     <div @hold:start=${this.handleEvent} />
 </root>
-*/ const $template_7 = new TemplateMaker(function ($context) {
+*/ const $template_8 = new TemplateMaker(function ($context) {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     SimulatedEvents.on($node_0, "hold:start", $context.handleEvent, $context);
@@ -150,7 +167,7 @@ const $html_2 = new HTMLMaker("<!----><div></div><!---->");
 <root>
     <div @click.prevent=${this.handleEvent} />
 </root>
-*/ const $template_8 = new TemplateMaker(function ($context) {
+*/ const $template_9 = new TemplateMaker(function ($context) {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     DOMModifiableEvents.on($node_0, "click", ["prevent"], $context.handleEvent, $context);
@@ -163,7 +180,7 @@ const $html_2 = new HTMLMaker("<!----><div></div><!---->");
 <root>
     <div @click=${this.booleanValue ? this.handleEvent : this.handleAnotherEvent} />
 </root>
-*/ const $template_9 = new TemplateMaker(function ($context) {
+*/ const $template_10 = new TemplateMaker(function ($context) {
     let $latest_0;
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
@@ -182,7 +199,7 @@ const $html_2 = new HTMLMaker("<!----><div></div><!---->");
 <root>
     <div @click=${() => {this.booleanValue = true}} />
 </root>
-*/ const $template_10 = new TemplateMaker(function ($context) {
+*/ const $template_11 = new TemplateMaker(function ($context) {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     $node_0.addEventListener("click", () => { $context.booleanValue = true; trackSet($context, "booleanValue"); });
@@ -195,7 +212,7 @@ const $html_2 = new HTMLMaker("<!----><div></div><!---->");
 <root>
     <div @click=${() => this.handleEventWithParameter(this.booleanValue)} />
 </root>
-*/ const $template_11 = new TemplateMaker(function ($context) {
+*/ const $template_12 = new TemplateMaker(function ($context) {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     $node_0.addEventListener("click", () => $context.handleEventWithParameter($context.booleanValue));
@@ -208,7 +225,7 @@ const $html_2 = new HTMLMaker("<!----><div></div><!---->");
 <root>
     <div @click=${(e: any) => value = e} />
 </root>
-*/ const $template_12 = new TemplateMaker(function ($context) {
+*/ const $template_13 = new TemplateMaker(function ($context) {
     let $latest_0;
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
@@ -227,7 +244,7 @@ const $html_2 = new HTMLMaker("<!----><div></div><!---->");
 <root>
     <div @click=${this.handleEvent.bind(this)} />
 </root>
-*/ const $template_13 = new TemplateMaker(function ($context) {
+*/ const $template_14 = new TemplateMaker(function ($context) {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     $node_0.addEventListener("click", $context.handleEvent.bind($context));
@@ -249,57 +266,60 @@ export class TestEvent extends Component {
     testMoreComponentEvent() {
         return new CompiledTemplateResult($template_1, [], this);
     }
+    testExtendedComponentEvent() {
+        return new CompiledTemplateResult($template_2, [], this);
+    }
     testUnionedDynamicComponentEvent() {
         trackGet(this, "UnionedCom");
-        return new CompiledTemplateResult($template_2, [
+        return new CompiledTemplateResult($template_3, [
             this.UnionedCom
         ], this);
     }
     testConstructedDynamicComponentEvent() {
         trackGet(this, "ConstructedCom");
-        return new CompiledTemplateResult($template_3, [
+        return new CompiledTemplateResult($template_4, [
             this.ConstructedCom
         ], this);
     }
     testForceComponentEvent() {
-        return new CompiledTemplateResult($template_4, [], this);
-    }
-    testElementEvent() {
         return new CompiledTemplateResult($template_5, [], this);
     }
-    testSimulatedTapEvent() {
+    testElementEvent() {
         return new CompiledTemplateResult($template_6, [], this);
     }
-    testSimulatedHoldStartEvent() {
+    testSimulatedTapEvent() {
         return new CompiledTemplateResult($template_7, [], this);
     }
-    testEventModifier() {
+    testSimulatedHoldStartEvent() {
         return new CompiledTemplateResult($template_8, [], this);
+    }
+    testEventModifier() {
+        return new CompiledTemplateResult($template_9, [], this);
     }
     testDynamicEventHandler() {
         trackGet(this, "booleanValue");
-        return new CompiledTemplateResult($template_9, [
+        return new CompiledTemplateResult($template_10, [
             this.booleanValue ? this.handleEvent : this.handleAnotherEvent
         ], this);
     }
     testInlineEventHandler() {
-        return new CompiledTemplateResult($template_10, [], this);
+        return new CompiledTemplateResult($template_11, [], this);
     }
     testInlineCallMethod() {
-        return new CompiledTemplateResult($template_11, [], this);
+        return new CompiledTemplateResult($template_12, [], this);
     }
     testLocalAssignment() {
         let value;
         value;
-        return new CompiledTemplateResult($template_12, [
+        return new CompiledTemplateResult($template_13, [
             (e) => value = e
         ], this);
     }
     testIgnoringBound() {
-        return new CompiledTemplateResult($template_13, [], this);
+        return new CompiledTemplateResult($template_14, [], this);
     }
 }
 class Com1 extends Component {
 }
-class Com2 extends Component {
+class Com2 extends Com1 {
 }

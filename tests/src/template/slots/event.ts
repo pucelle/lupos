@@ -19,6 +19,10 @@ export class TestEvent extends Component {
 		return html`<Com1 @eventName=${this.handleEvent} />`
 	}
 
+	testExtendedComponentEvent() {
+		return html`<Com2 @eventName=${this.handleEvent} />`
+	}
+
 	testUnionedDynamicComponentEvent() {
 		return html`<${this.UnionedCom} @connected=${this.handleEvent} />`
 	}
@@ -76,7 +80,7 @@ interface ComEvents {
 }
 
 class Com1 extends Component<ComEvents> {}
-class Com2 extends Component {}
+class Com2 extends Com1 {}
 
 interface ComConstructor {
 	new(): Com1 | Com2
