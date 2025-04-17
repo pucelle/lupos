@@ -183,6 +183,12 @@ export namespace TrackingChecker {
 			return isTypeNodeObserved(typeNode.elementType)
 		}
 
+		// A extends B ? C : D
+		if (ts.isConditionalTypeNode(typeNode)) {
+			return isTypeNodeObserved(typeNode.trueType)
+				|| isTypeNodeObserved(typeNode.falseType)
+		}
+
 		// Observed<>
 		if (helper.symbol.isImportedFrom(typeNode, 'Observed', '@pucelle/ff')) {
 			return true
