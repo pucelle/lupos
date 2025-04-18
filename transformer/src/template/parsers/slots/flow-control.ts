@@ -7,8 +7,11 @@ export class FlowControlSlotParser extends SlotParserBase {
 
 	private control!: FlowControlBase
 
-	/** Flow control should always be updated dynamically. */
-	isAnyValueOutputted(): boolean {
+	/** 
+	 * Flow control should always be updated dynamically,
+	 * Or it's meaningless to use a flow.
+	 */
+	shouldUpdateDynamically(): boolean {
 		return true
 	}
 
@@ -38,8 +41,9 @@ export class FlowControlSlotParser extends SlotParserBase {
 		}
 
 		if (control) {
-			control.preInit()
 			this.control = control
+			this.asLazyCallback = control.asLazyCallback
+			control.preInit()
 		}
 	}
 

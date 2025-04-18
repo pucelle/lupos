@@ -298,7 +298,7 @@ export namespace VisitTree {
 	 * Returns whether `node1` is preceding of `node2`,
 	 * or equals `node2` in child-first order.
 	 */
-	export function isPrecedingOfInRunOrderOrder(rawNode1: ts.Node, rawNode2: ts.Node): boolean {
+	export function isPrecedingOfOrEqualInRunOrder(rawNode1: ts.Node, rawNode2: ts.Node): boolean {
 		if (rawNode1 === rawNode2) {
 			return true
 		}

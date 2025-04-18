@@ -11,7 +11,7 @@ export class TextSlotParser extends SlotParserBase {
 	private latestVariableNames: (string | null)[] | null = null
 
 	preInit() {
-		if (this.isAnyValueMutable()) {
+		if (this.isAnyValueCantTransfer()) {
 			this.latestVariableNames = this.makeGroupOfLatestNames()
 		}
 	}

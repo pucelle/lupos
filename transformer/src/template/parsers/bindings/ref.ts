@@ -7,6 +7,8 @@ import {TemplateSlotPlaceholder} from '../../../lupos-ts-module'
 
 
 export class RefBinding extends BindingBase {
+	
+	readonly asLazyCallback: boolean = true
 
 	/** :ref=${xxx}. */
 	private usePropAccess: boolean = false
@@ -20,7 +22,8 @@ export class RefBinding extends BindingBase {
 	/** Previous binding information. */
 	private previousBindingInfo: LatestBindingInfo | null = null
 
-	outputValue(asCallback: boolean = false) {
+	/** Treat as lazy callback. */
+	outputValue() {
 
 		// Ignore original ref value output and avoid output original access node.
 		if (this.usePropAccess) {
@@ -31,7 +34,7 @@ export class RefBinding extends BindingBase {
 		}
 
 		else {
-			return super.outputValue(asCallback)
+			return super.outputValue()
 		}
 	}
 

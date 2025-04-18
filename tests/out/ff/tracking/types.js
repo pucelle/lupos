@@ -221,7 +221,7 @@ export class TestPropertyMethodsObserved {
     }
     nullableDataGet() {
         let data = new AnyMethodsObserved();
-        trackGet(data, "");
+        data && trackGet(data, "");
         return data?.get();
     }
     $setOverlapSetKeys_effector = undefined;

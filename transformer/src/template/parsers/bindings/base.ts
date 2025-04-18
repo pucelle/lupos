@@ -21,6 +21,9 @@ export class BindingBase {
 	readonly tree: TreeParser
 	readonly template: TemplateParser
 
+	/** Whether output update content as a lazy callback. */
+	readonly asLazyCallback: boolean = false
+
 	name: string
 	prefix: string
 	modifiers: string[]
@@ -74,14 +77,14 @@ export class BindingBase {
 	 * Get value node, either `$values[0]`, or `"..."`.
 	 * Can only use it when outputting update.
 	 */
-	outputValue(asCallback: boolean = false): {
+	outputValue(): {
 		joint: ts.Expression,
 		valueNodes: ts.Expression[],
 	} {
 
 		// Output values from parameter list.
 		if (this.parameterList) {
-			let valueNodes = this.template.values.outputRawValueList(this.parameterList, this.slot.valueIndices![0], this.tree)
+			let valueNodes = this.template.values.outputValueListOfIndex(this.parameterList, this.slot.valueIndices![0], this.tree, this.asLazyCallback)
 			let joint = valueNodes[0]
 
 			return {
@@ -90,7 +93,7 @@ export class BindingBase {
 			}
 		}
 		else {
-			return this.slot.outputValue(asCallback)
+			return this.slot.outputValue()
 		}
 	}
 
@@ -101,7 +104,7 @@ export class BindingBase {
 			return factory.createNull()
 		}
 
-		let value = this.template.values.outputRawValue(this.queryParameter!, this.slot.valueIndices![0], this.tree)
+		let value = this.template.values.outputValueOfIndex(this.queryParameter!, this.slot.valueIndices![0], this.tree, this.asLazyCallback)
 		return value
 	}
 

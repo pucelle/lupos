@@ -13,6 +13,9 @@ export abstract class FlowControlBase {
 	readonly tree: TreeParser
 	readonly template: TemplateParser
 
+	/** Whether output update content as a lazy callback. */
+	readonly asLazyCallback: boolean = false
+
 	constructor(slot: FlowControlSlotParser) {
 		this.slot = slot
 		this.node = slot.node

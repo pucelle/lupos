@@ -23,7 +23,7 @@ export class PropertySlotParser extends SlotParserBase {
 			this.forceComponentTargetType = TemplateSlotPlaceholder.isComponent(this.node.tagName!)
 		}
 
-		if (this.isAnyValueMutable()) {
+		if (this.isAnyValueCantTransfer()) {
 			this.latestVariableNames = this.makeGroupOfLatestNames()
 		}
 

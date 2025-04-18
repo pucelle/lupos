@@ -7,6 +7,9 @@ import {TrackingType, TrackingChecker, TrackingPatch} from '../../../ff'
 
 export class ForFlowControl extends FlowControlBase {
 
+	readonly fnAsLazyCallback: boolean = true
+	readonly ofAsLazyCallback: boolean = false
+
 	/** $block_0 */
 	private blockVariableName: string = ''
 
@@ -20,7 +23,7 @@ export class ForFlowControl extends FlowControlBase {
 	private fnValueIndex: number | null = null
 
 	private ofValueIndexElementsMutable: boolean = false
-	private fnValueIndexMutableAndCantTurn: boolean = false
+	private fnValueIndexMutable: boolean = false
 
 	private fnLatestVariableName: string | null = null
 
@@ -68,18 +71,16 @@ export class ForFlowControl extends FlowControlBase {
 
 		this.ofValueIndexElementsMutable = ofValueIndex !== null
 			&& (
-				this.template.values.isIndexMutable(ofValueIndex)
-				&& !this.template.values.isIndexCanTurnStatic(ofValueIndex)
+				!this.template.values.isIndexCanTransfer(ofValueIndex, this.ofAsLazyCallback)
 
 				// E.g., `<lu:for ${aReadonlyProperty}>`, it must get updated every time.
-				|| this.template.values.isIndexElementsPartMutable(ofValueIndex)
+				|| this.template.values.isElementsPartMutable(ofValueIndex)
 		)
 
-		this.fnValueIndexMutableAndCantTurn = fnValueIndex !== null
-			&& this.template.values.isIndexMutable(fnValueIndex)
-			&& !this.template.values.isIndexCanTurnStatic(fnValueIndex)
+		this.fnValueIndexMutable = fnValueIndex !== null
+			&& !this.template.values.isIndexCanTransfer(fnValueIndex, this.fnAsLazyCallback)
 
-		if (this.fnValueIndexMutableAndCantTurn) {
+		if (this.fnValueIndexMutable) {
 			this.fnLatestVariableName = this.tree.makeUniqueLatestName()
 		}
 
@@ -89,7 +90,7 @@ export class ForFlowControl extends FlowControlBase {
 
 	private outputFnUpdate() {
 		let fnValueIndices = this.fnValueIndex !== null ? [this.fnValueIndex] : null
-		let value = this.template.values.outputValue(null, fnValueIndices, this.tree)
+		let value = this.template.values.outputValue(null, fnValueIndices, this.tree, this.fnAsLazyCallback)
 
 		// if ($latest_0 !== $values[0]) {
 		//   $block_0.updateRenderFn($values[0])
@@ -135,7 +136,7 @@ export class ForFlowControl extends FlowControlBase {
 
 	private outputOfUpdate() {
 		let ofValueIndices = this.ofValueIndex !== null ? [this.ofValueIndex] : null
-		let value = this.template.values.outputValue(null, ofValueIndices, this.tree)
+		let value = this.template.values.outputValue(null, ofValueIndices, this.tree, this.ofAsLazyCallback)
 
 		// Not compare, update directly.
 		// $block_0.updateData(data)
@@ -180,14 +181,14 @@ export class ForFlowControl extends FlowControlBase {
 		return [
 			slotInit,
 			forBlockInit,
-			...this.fnValueIndexMutableAndCantTurn ? [] : [this.outputFnUpdate()],
+			...this.fnValueIndexMutable ? [] : [this.outputFnUpdate()],
 			...this.ofValueIndexElementsMutable ? [] : [this.outputOfUpdate()],
 		]
 	}
 
 	outputUpdate() {
 		return [
-			...this.fnValueIndexMutableAndCantTurn ? [this.outputFnUpdate()] : [],
+			...this.fnValueIndexMutable ? [this.outputFnUpdate()] : [],
 			...this.ofValueIndexElementsMutable ? [this.outputOfUpdate()] : [],
 		]
 	}

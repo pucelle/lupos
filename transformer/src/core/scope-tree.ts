@@ -11,19 +11,11 @@ import {Hashing} from './hashing'
 /** Whether a expression be mutable, and whether it can turn. */
 export enum MutableMask {
 
-	/** If referenced variable value is mutable, and need to update for multiple times. */
+	/** If referenced variable value is assignable, and need to update for multiple times. */
 	Mutable = 1,
 
-	/** 
-	 * Can (not can't) turn static means can re-declared a local variable,
-	 * normally a local function in top scope, and transfer all of it's
-	 * referenced local variables using parameter values.
-	 * 
-	 * If references any local variable not within a function, this mask byte is 1.
-	 * 
-	 * This mask byte is available only when Mutable byte is 1.
-	 */
-	CantTransfer = 2,
+	/** Whether have any local variable referenced. */
+	HasLocalReference = 2,
 }
 
 /** Replace an identifier or this keyword. */
@@ -156,16 +148,45 @@ class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 		return this.assignmentMap.hasKey(hashName)
 	}
 
-	/** Test whether expression represented value is mutable. */
-	testMutable(rawNode: ts.Expression): MutableMask | 0 {
-		return this.testMutableRecursively(rawNode, false)
+	/** Get mutable musk from an expression represented value. */
+	checkMutableMask(rawNode: ts.Expression): MutableMask | 0 {
+		return this.testMutableRecursively(rawNode, null)
 	}
 
-	private testMutableRecursively(rawNode: ts.Node, insideFunctionScope: boolean): MutableMask | 0{
+	/** Test whether expression represented value is mutable. */
+	testMutable(mask: MutableMask | 0): boolean {
+		return (mask & MutableMask.Mutable) > 0
+	}
+
+	/** 
+	 * Test whether can re-declare as static content to avoid updating each time.
+	 * `asLazyCallback` means will be treated as a callback and will not be called immediately.
+	 */
+	testCanTransfer(mask: MutableMask | 0, asLazyCallback: boolean): boolean {
+		let mutable = (mask & MutableMask.Mutable) > 0
+
+		// Mutable, can't transfer.
+		if (mutable) {
+			return false
+		}
+
+		// Has no local reference, can transfer.
+		let hasLocalReference = (mask & MutableMask.HasLocalReference) > 0
+		if (!hasLocalReference) {
+			return true
+		}
+
+		// Can transfer as a callback, and local reference will be passed by `$latest_x`.
+		return asLazyCallback
+	}
+
+	private testMutableRecursively(rawNode: ts.Node, topmostFunction: ts.Node | null): MutableMask | 0{
 		let mutable: MutableMask | 0 = 0
 
-		// Inside of a function scope.
-		insideFunctionScope ||= helper.isFunctionLike(rawNode)
+		// Inside of a function.
+		if (!topmostFunction && helper.isFunctionLike(rawNode)) {
+			topmostFunction = rawNode
+		}
 
 		// Com from typescript library.
 		if (helper.symbol.isOfTypescriptLib(rawNode)) {}
@@ -176,10 +197,10 @@ class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 			&& helper.getText(rawNode.expression.name) === 'bind'
 			&& helper.symbol.resolveDeclaration(rawNode.expression.expression, helper.isFunctionLike)
 		) {
-			mutable |= this.testMutableRecursively(rawNode.expression.expression, insideFunctionScope)
+			mutable |= this.testMutableRecursively(rawNode.expression.expression, topmostFunction)
 			
 			for (let arg of rawNode.arguments) {
-				mutable |= this.testMutableRecursively(arg, insideFunctionScope)
+				mutable |= this.testMutableRecursively(arg, topmostFunction)
 			}
 		}
 
@@ -187,35 +208,29 @@ class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 		else if (helper.isVariableIdentifier(rawNode)
 			|| helper.access.isAccess(rawNode)
 		) {
-
 			let declaredInTopmostScope = this.isDeclaredInTopmostScope(rawNode)
-			let declaredAsConst = this.isDeclaredAsConstLike(rawNode)
+			let asConst = this.isDeclaredAsConstLike(rawNode)
+			let asVariable = helper.isVariableIdentifier(rawNode)
+			let asLocalVariable = asVariable && !declaredInTopmostScope
+			let willBeAssigned = this.haveOrWillBeAssigned(rawNode)
+			let notMutable = asConst || asVariable && !willBeAssigned
 
-			// Local variable, and it has or will be assigned.
-			if (helper.isVariableIdentifier(rawNode) && this.haveOrWillBeAssigned(rawNode)) {
-				mutable |= MutableMask.Mutable
-				mutable |= MutableMask.CantTransfer
-			}
-
-			// Declared as const, or reference at a function, not mutable.
-			// If inside a function but also inside an assignment, not ignore it.
-			else if (declaredAsConst || insideFunctionScope) {}
-
-			// If reference variable in function scope, become mutable, and can transfer.
-			// If declared in topmost scope, also mutable, and can transfer.
-			else if (declaredInTopmostScope) {
+			// Mutable, here ignores situations that inside of a function.
+			if (!notMutable && !topmostFunction) {
 				mutable |= MutableMask.Mutable
 			}
 
-			// Become mutable and can't transfer.
-			else {
-				mutable |= MutableMask.Mutable
-				mutable |= MutableMask.CantTransfer
+			// Have referenced local variable, which must be declared outside of function range.
+			if (asLocalVariable
+				&& (!topmostFunction
+					|| !this.isDeclaredWithinNodeRange(rawNode as ts.Identifier, topmostFunction))
+			) {
+				mutable |= MutableMask.HasLocalReference
 			}
 		}
 
 		ts.forEachChild(rawNode, (node: ts.Node) => {
-			mutable |= this.testMutableRecursively(node, insideFunctionScope)
+			mutable |= this.testMutableRecursively(node, topmostFunction)
 		})
 
 		return mutable

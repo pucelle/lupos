@@ -88,7 +88,7 @@ export class AwaitFlowControl extends FlowControlBase {
 	outputUpdate() {
 		// This promise may be static, will still update each time.
 		let valueIndices = this.promiseIndex !== null ? [this.promiseIndex] : null
-		let promiseNode = this.template.values.outputValue(null, valueIndices, this.tree).joint
+		let promiseNode = this.template.values.outputValue(null, valueIndices, this.tree, this.asLazyCallback).joint
 
 		// $block_0.update(promise, $values)
 		return factory.createCallExpression(

@@ -19,7 +19,7 @@ export class ContentSlotParser extends SlotParserBase {
 		let slotContentType = this.identifySlotContentType()
 		this.slotVariableName = this.makeSlotName()
 
-		if (this.isAnyValueMutable()) {
+		if (this.isAnyValueCantTransfer()) {
 
 			// Assume for `TemplateResult` or `TemplateResult[]`, it regenerates every time.
 			// And for node, slot itself will compare value.

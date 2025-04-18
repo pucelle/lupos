@@ -115,9 +115,47 @@ const $html_0 = new HTMLMaker("<div></div>");
 });
 /*
 <root>
-    <ChildComponent :class="className" :ref.binding=${this.refBindingMethod} />
+    <div :ref=${(el: HTMLElement) => this.refElMethod(el)} />
 </root>
 */ const $template_6 = new TemplateMaker(function ($context) {
+    let $node = $html_0.make();
+    let $node_0 = $node.content.firstChild;
+    let $binding_0 = new RefBinding($node_0, $context, ["el"]);
+    $binding_0.update((el) => $context.refElMethod(el));
+    return {
+        el: $node,
+        position: new SlotPosition(1, $node_0),
+        parts: [
+            [$binding_0, 1]
+        ]
+    };
+});
+/*
+<root>
+    <div :ref=${(el: HTMLElement) => this.refElMethodWithAdditionalData(el, data)} />
+</root>
+*/ const $template_7 = new TemplateMaker(function ($context) {
+    let $latest_0;
+    let $node = $html_0.make();
+    let $node_0 = $node.content.firstChild;
+    let $binding_0 = new RefBinding($node_0, $context, ["el"]);
+    $binding_0.update((el) => $context.refElMethodWithAdditionalData(el, $latest_0));
+    return {
+        el: $node,
+        position: new SlotPosition(1, $node_0),
+        update($values) {
+            $latest_0 = $values[0];
+        },
+        parts: [
+            [$binding_0, 1]
+        ]
+    };
+});
+/*
+<root>
+    <ChildComponent :class="className" :ref.binding=${this.refBindingMethod} />
+</root>
+*/ const $template_8 = new TemplateMaker(function ($context) {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $com_0 = new ChildComponent($node_0);
@@ -138,7 +176,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 <root>
     <ChildComponent ?:transition=${this.shouldTransition, fade()} :ref.binding=${this.refBinding} />
 </root>
-*/ const $template_7 = new TemplateMaker(function ($context) {
+*/ const $template_9 = new TemplateMaker(function ($context) {
     let $latest_0, $latest_1;
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
@@ -181,7 +219,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 <root>
     <div :ref=${value} />
 </root>
-*/ const $template_8 = new TemplateMaker(function ($context) {
+*/ const $template_10 = new TemplateMaker(function ($context) {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $binding_0 = new RefBinding($node_0, $context, ["el"]);
@@ -219,21 +257,31 @@ export class TestRefBinding extends Component {
     testRefElMethod() {
         return new CompiledTemplateResult($template_5, [], this);
     }
-    refElMethod(_el) { }
-    testRefBindingMethod() {
+    testRefElFunction() {
         return new CompiledTemplateResult($template_6, [], this);
+    }
+    refElMethod(_el) { }
+    testRefElFunctionWithAdditionalData() {
+        let data;
+        return new CompiledTemplateResult($template_7, [
+            data
+        ], this);
+    }
+    refElMethodWithAdditionalData(_el, _data) { }
+    testRefBindingMethod() {
+        return new CompiledTemplateResult($template_8, [], this);
     }
     refBindingMethod(_binding) { }
     shouldTransition = true;
     testRefOptionalBinding() {
         trackGet(this, "shouldTransition");
-        return new CompiledTemplateResult($template_7, [
+        return new CompiledTemplateResult($template_9, [
             this.shouldTransition
         ], this);
     }
     testRefAsLocal() {
         let value;
-        return new CompiledTemplateResult($template_8, [
+        return new CompiledTemplateResult($template_10, [
             function (refed) { value = refed; }
         ], this);
     }

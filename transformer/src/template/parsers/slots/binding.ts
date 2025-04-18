@@ -33,8 +33,9 @@ export class BindingSlotParser extends SlotParserBase {
 				binding = new BindingBase(this)
 		}
 
-		binding.preInit()
+		this.asLazyCallback = binding.asLazyCallback
 		this.binding = binding
+		binding.preInit()
 	}
 
 	postInit() {

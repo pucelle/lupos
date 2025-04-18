@@ -10,6 +10,9 @@ export class EventSlotParser extends SlotParserBase {
 	/** Event Name. */
 	declare name: string
 
+	/** Whether output update content as a lazy callback. */
+	asLazyCallback: boolean = true
+
 	/** For `@@comEvent`. */
 	private forceComponentTargetType: boolean = false
 
@@ -30,7 +33,7 @@ export class EventSlotParser extends SlotParserBase {
 		this.beSimulatedEvents = this.isSimulatedEvents()
 
 		// Will try to turn event handler to be static.
-		if (this.isAnyValueMutable() && !this.isAllValueCanTurnStatic()) {
+		if (!this.isAllValuesCanTransfer()) {
 			this.latestVariableNames = this.makeGroupOfLatestNames()
 		}
 
@@ -254,7 +257,7 @@ export class EventSlotParser extends SlotParserBase {
 		let nodeName = this.getRefedNodeName()
 
 		// $node_0.addEventListener('comEventName', (...args) => {$latest_0.call($context, ...args)})
-		if (this.isAnyValueMutable()) {
+		if (this.isAnyValueCantTransfer()) {
 			return factory.createCallExpression(
 				factory.createPropertyAccessExpression(
 					factory.createIdentifier(nodeName),

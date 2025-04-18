@@ -34,7 +34,18 @@ export class TestRefBinding extends Component {
 		return html`<div :ref=${this.refElMethod} />`
 	}
 
+	testRefElFunction() {
+		return html`<div :ref=${(el: HTMLElement) => this.refElMethod(el)} />`
+	}
+
 	refElMethod(_el: HTMLElement) {}
+
+	testRefElFunctionWithAdditionalData() {
+		let data: any
+		return html`<div :ref=${(el: HTMLElement) => this.refElMethodWithAdditionalData(el, data)} />`
+	}
+
+	refElMethodWithAdditionalData(_el: HTMLElement, _data: any) {}
 
 
 	testRefBindingMethod() {

@@ -156,7 +156,7 @@ export class TreeOutputHandler {
 			let moreInitNodes = slot.outputMoreInit()
 			let updateNodes = slot.outputUpdate()
 
-			if (slot.isAnyValueOutputted()) {
+			if (slot.shouldUpdateDynamically()) {
 				update.push(updateNodes)
 			}
 			else {
@@ -202,7 +202,7 @@ export class TreeOutputHandler {
 
 				let attrUpdateNodes = attrSlot.outputUpdate()
 
-				if (attrSlot.isAnyValueOutputted()) {
+				if (attrSlot.shouldUpdateDynamically()) {
 					update.push(attrUpdateNodes)
 				}
 				else {

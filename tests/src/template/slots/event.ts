@@ -63,6 +63,11 @@ export class TestEvent extends Component {
 		return html`<div @click=${() => this.handleEventWithParameter(this.booleanValue)} />`
 	}
 
+	testLocalReference() {
+		let value: any = 1
+		return html`<div @click=${() => value} />`
+	}
+
 	testLocalAssignment() {
 		let value: any
 		value

@@ -1,7 +1,7 @@
 import * as ts from 'typescript'
 import {HTMLAttribute, HTMLNode, HTMLNodeType, TemplatePart, TemplateSlotPlaceholder} from '../../../lupos-ts-module'
 import {PartType, TreeParser} from '../tree'
-import {factory, Modifier, MutableMask, DeclarationScopeTree, Packer, Hashing} from '../../../core'
+import {factory, Modifier, DeclarationScopeTree, Packer, Hashing} from '../../../core'
 import {TemplateParser} from '../template'
 import {SlotPositionType} from '../../../enums'
 import {HTMLNodeHelper} from '../../html-syntax'
@@ -41,6 +41,9 @@ export abstract class SlotParserBase {
 	/** Template parser current slot belonged to. */
 	readonly template: TemplateParser
 
+	/** Whether output update content as a lazy callback. */
+	asLazyCallback: boolean = false
+
 	/** Whether slot attach to an dynamic component. */
 	private readonly onDynamicComponent: boolean
 
@@ -72,22 +75,21 @@ export abstract class SlotParserBase {
 		return this.strings !== null
 	}
 
-	/** Returns whether current raw value node is mutable. */
-	isAnyValueMutable(): boolean {
-		return this.valueIndices !== null
-			&& this.valueIndices.some(index => this.template.values.isIndexMutable(index))
+	/** Returns whether all current values can't transfer to outer scope. */
+	isAnyValueCantTransfer(): boolean {
+		return !this.isAllValuesCanTransfer()
 	}
 
-	/** Returns whether current value node can turn from mutable to static. */
-	isAllValueCanTurnStatic(): boolean {
+	/** Returns whether any of current values can transfer to outer scope. */
+	isAllValuesCanTransfer(): boolean {
 		return this.valueIndices !== null
-			&& this.valueIndices.every(index => this.template.values.isIndexCanTurnStatic(index))
+			&& this.valueIndices.every(index => this.template.values.isIndexCanTransfer(index, this.asLazyCallback))
 	}
 
-	/** Returns whether current value has been outputted as mutable. */
-	isAnyValueOutputted(): boolean {
+	/** Returns whether current value has been outputted as non-transferred. */
+	shouldUpdateDynamically(): boolean {
 		return this.valueIndices !== null
-			&& this.valueIndices.some(index => this.template.values.isIndexOutputted(index))
+			&& this.valueIndices.some(index => this.template.values.isIndexNonTransferredOutputted(index))
 			|| this.customValueOutputted
 	}
 
@@ -111,7 +113,7 @@ export abstract class SlotParserBase {
 	}	
 
 	/** Get a group of latest names. */
-	makeGroupOfLatestNames(): (string | null)[] | null {
+	makeGroupOfLatestNames(asLazyCallback: boolean = this.asLazyCallback): (string | null)[] | null {
 		if (!this.valueIndices) {
 			return null
 		}
@@ -119,7 +121,7 @@ export abstract class SlotParserBase {
 		let hashes: string[] = []
 
 		let names = this.valueIndices.map(valueIndex => {
-			if (!this.template.values.isIndexMutable(valueIndex)) {
+			if (this.template.values.isIndexCanTransfer(valueIndex, asLazyCallback)) {
 				return null
 			}
 
@@ -141,7 +143,8 @@ export abstract class SlotParserBase {
 		let hashes: string[] = []
 
 		let names = exps.map((exp) => {
-			if ((DeclarationScopeTree.testMutable(exp) & MutableMask.Mutable) === 0) {
+			let mask = DeclarationScopeTree.checkMutableMask(exp)
+			if (DeclarationScopeTree.testCanTransfer(mask, this.asLazyCallback)) {
 				return null
 			}
 
@@ -221,15 +224,15 @@ export abstract class SlotParserBase {
 	 * Get value node, either `$values[0]`, or `"..."`.
 	 * Can only use it when outputting update.
 	 */
-	outputValue(asCallback: boolean = false): {
+	outputValue(): {
 		joint: ts.Expression,
 		valueNodes: ts.Expression[],
 	} {
-		return this.template.values.outputValue(this.strings, this.valueIndices, this.tree, asCallback)
+		return this.template.values.outputValue(this.strings, this.valueIndices, this.tree, this.asLazyCallback)
 	}
 
 	/** 
-	 * Add a custom value to value list,
+	 * Add a node, normally not a raw node as custom value to value list,
 	 * and return reference of this value.
 	 */
 	outputCustomValue(node: ts.Expression) {

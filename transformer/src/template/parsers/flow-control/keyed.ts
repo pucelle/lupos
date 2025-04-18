@@ -75,7 +75,7 @@ export class KeyedFlowControl extends FlowControlBase {
 
 	outputUpdate() {
 		let keyedValueIndices = this.valueIndex !== null ? [this.valueIndex] : null
-		let keyedValue = this.template.values.outputValue(null, keyedValueIndices, this.tree).joint
+		let keyedValue = this.template.values.outputValue(null, keyedValueIndices, this.tree, this.asLazyCallback).joint
 		let resultValue = this.contentTemplate ? this.contentTemplate.outputReplaced() : null
 
 		// Add it as a value item to original template, and returned it's reference.
