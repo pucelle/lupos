@@ -234,6 +234,30 @@ const $html_0 = new HTMLMaker("<div></div>");
         ]
     };
 });
+/*
+<root>
+    <div :ref=${(el: HTMLElement) => this.refEl[index] = el} />
+</root>
+*/ const $template_11 = new TemplateMaker(function ($context) {
+    let $latest_0;
+    let $node = $html_0.make();
+    let $node_0 = $node.content.firstChild;
+    let $binding_0 = new RefBinding($node_0, $context, ["el"]);
+    $binding_0.update((el) => {
+        trackSet($context.refEl, $latest_0);
+        return $context.refEl[$latest_0] = el;
+    });
+    return {
+        el: $node,
+        position: new SlotPosition(1, $node_0),
+        update($values) {
+            $latest_0 = $values[0];
+        },
+        parts: [
+            [$binding_0, 1]
+        ]
+    };
+});
 export class TestRefBinding extends Component {
     refEl;
     refCom;
@@ -284,6 +308,11 @@ export class TestRefBinding extends Component {
         return new CompiledTemplateResult($template_10, [
             function (refed) { value = refed; }
         ], this);
+    }
+    testForRefWithIndex() {
+        return [1, 2].map((_v, index) => new CompiledTemplateResult($template_11, [
+            index
+        ], this));
     }
 }
 class ChildComponent extends Component {

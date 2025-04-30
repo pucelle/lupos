@@ -19,7 +19,11 @@ export enum MutableMask {
 }
 
 /** Replace an identifier or this keyword. */
-type NodeReplacer = (node: ts.Identifier | ts.ThisExpression, insideFunctionScope: boolean) => ts.Expression
+type NodeReplacer = (
+	node: ts.Identifier | ts.ThisExpression,
+	closestRawNode: ts.Node,
+	insideFunctionScope: boolean
+) => ts.Expression
 
 
 /** Manages all the declaration scopes as a tree struct. */
@@ -223,7 +227,7 @@ class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 			// Have referenced local variable, which must be declared outside of function range.
 			if (asLocalVariable
 				&& (!topmostFunction
-					|| !this.isDeclaredWithinNodeRange(rawNode as ts.Identifier, topmostFunction))
+					|| !this.isDeclaredWithinNodeRange(rawNode as ts.Identifier, rawNode, topmostFunction))
 			) {
 				mutable |= MutableMask.HasLocalReference
 			}
@@ -258,16 +262,19 @@ class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 	}
 
 	/** Returns whether declared variable or access node in topmost scope. */
-	private isDeclaredInTopmostScope(rawNode: ts.Identifier | AccessNode | ts.ThisExpression): boolean {
-		if (helper.access.isAccess(rawNode)) {
-			let exp = rawNode.expression
-			return this.isDeclaredInTopmostScope(exp as ts.Identifier | AccessNode | ts.ThisExpression)
-		}
-		else if (helper.isThis(rawNode)) {
+	private isDeclaredInTopmostScope(node: ts.Identifier | AccessNode | ts.ThisExpression): boolean {
+		if (!VisitTree.hasNode(node)) {
 			return false
 		}
-		else if (ts.isIdentifier(rawNode)) {
-			let declaredIn = this.findDeclared(rawNode)
+		else if (helper.access.isAccess(node)) {
+			let exp = node.expression
+			return this.isDeclaredInTopmostScope(exp as ts.Identifier | AccessNode | ts.ThisExpression)
+		}
+		else if (helper.isThis(node)) {
+			return false
+		}
+		else if (ts.isIdentifier(node)) {
+			let declaredIn = this.findDeclared(node)
 			return declaredIn ? declaredIn.isTopmost() : false
 		}
 		else {
@@ -301,23 +308,13 @@ class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 	}
 
 	/** Returns whether a node is declared within target node. */
-	private isDeclaredWithinNodeRange(rawNode: ts.Identifier, targetNode: ts.Node): boolean {
-		let declaredIn = this.findDeclared(rawNode)
+	private isDeclaredWithinNodeRange(node: ts.Identifier, fromRawNode: ts.Node, targetNode: ts.Node): boolean {
+		let declaredIn = this.findDeclared(node, this.findClosest(fromRawNode))
 		if (!declaredIn) {
 			return false
 		}
 
-		let n: ts.Node = declaredIn.node
-
-		do {
-			if (n === targetNode) {
-				return true
-			}
-
-			n = n.parent
-		} while (n)
-
-		return false
+		return VisitTree.isContains(targetNode, declaredIn.node)
 	}
 
 
@@ -332,21 +329,30 @@ class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 		rawNode: ts.Node,
 		replacer: NodeReplacer
 	): T {
-		return this.transferToTopmostScopeVisitor(node, rawNode, true, replacer, false) as T
+		return this.transferToTopmostScopeVisitor(
+			node,
+			VisitTree.hasNode(node) ? node : rawNode,
+			rawNode,
+			replacer,
+			true,
+			false
+		) as T
 	}
 
 	private transferToTopmostScopeVisitor(
 		node: ts.Node,
-		rawTopNode: ts.Node,
-		canReplaceThis: boolean,
+		closestRawNode: ts.Node,
+		topRawNode: ts.Node,
 		replacer: NodeReplacer,
+		canReplaceThis: boolean,
 		insideFunctionScope: boolean
 	): ts.Node {
 
 		// Inside of a function scope.
 		insideFunctionScope ||= helper.isFunctionLike(node)
 		
-		// Raw variable
+		// Raw variable.
+		// Can't rightly checking whether be variable identifier for non-raw.
 		if (VisitTree.hasNode(node) && helper.isVariableIdentifier(node)) {
 
 			// If declared in top scope, can still visit after transferred,
@@ -355,23 +361,42 @@ class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 			// If declared in local scope within transferring content,
 			// will be transferred with template together.
 
-			let isDeclaredWithinTransferring = this.isDeclaredWithinNodeRange(node, rawTopNode)
+			let isDeclaredWithinTransferring = this.isDeclaredWithinNodeRange(node, node, topRawNode)
 			let shouldNotReplace = this.isDeclaredInTopmostScope(node) || isDeclaredWithinTransferring
 			if (!shouldNotReplace) {
-				return replacer(node, insideFunctionScope)
+				return replacer(node, closestRawNode, insideFunctionScope)
 			}
 		}
 
-		// this
-		else if (canReplaceThis && helper.isThis(node)) {
-			return replacer(node as ts.ThisExpression, insideFunctionScope)
+		// Non-raw identifier.
+		else if (!VisitTree.hasNode(node) && ts.isIdentifier(node)) {
+			let declaredIn = this.findDeclared(node, this.findClosest(closestRawNode))
+			if (declaredIn) {
+				let isDeclaredWithinTransferring = VisitTree.isContains(topRawNode, declaredIn.node)
+				let shouldNotReplace = isDeclaredWithinTransferring
+				if (!shouldNotReplace) {
+					return replacer(node, closestRawNode, insideFunctionScope)
+				}
+			}
 		}
 
-		// If enters non-arrow function declaration, cause can't replace `this`, otherwise can't.
+		// `this`.
+		else if (canReplaceThis && helper.isThis(node)) {
+			return replacer(node as ts.ThisExpression, closestRawNode, insideFunctionScope)
+		}
+
+		// If enters non-arrow function declaration, cause can't replace `this`, otherwise can.
 		canReplaceThis &&= !helper.isNonArrowFunctionLike(node)
 
-		return ts.visitEachChild(node, (node: ts.Node) => {
-			return this.transferToTopmostScopeVisitor(node, rawTopNode, canReplaceThis, replacer, insideFunctionScope)
+		return ts.visitEachChild(node, (n: ts.Node) => {
+			return this.transferToTopmostScopeVisitor(
+				n,
+				VisitTree.hasNode(n) ? n : closestRawNode,
+				topRawNode,
+				replacer,
+				canReplaceThis,
+				insideFunctionScope
+			)
 		}, transformContext)
 	}
 }

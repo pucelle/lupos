@@ -412,7 +412,7 @@ export namespace Interpolator {
 	 * Output raw node.
 	 * It may overwrite all descendant nodes,
 	 * and may replace itself.
-	 * will not output all neighbor nodes.
+	 * but will not output neighbor nodes.
 	 */
 	export function outputNodeSelf(atNode: ts.Node): ts.Node {
 		let node = Interpolator.outputSelf(atNode, false)

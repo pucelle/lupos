@@ -69,6 +69,10 @@ export class TestRefBinding extends Component {
 
 		return html`<div :ref=${value} />`
 	}
+
+	testForRefWithIndex() {
+		return [1,2].map((_v, index) => html`<div :ref=${(el: HTMLElement) => this.refEl[index] = el}></div>`)
+	}
 }
 
 class ChildComponent extends Component {}

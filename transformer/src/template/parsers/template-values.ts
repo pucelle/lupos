@@ -9,11 +9,11 @@ export class TemplateValues {
 
 	readonly valueNodes: ts.Expression[]
 
-	private valueHash: Map<string, number> = new Map()
+	private valueIndexHash: Map<string, number> = new Map()
 	private outputNodes: ts.Expression[] = []
 	private indicesMutableMask: Map<number, MutableMask | 0> = new Map()
 	private indicesNonTransferredOutputted: Set<number> = new Set()
-	private transferredLatestNames: Map<string, number> = new Map()
+	private transferredValueIndexToLatestName: Map<number, string> = new Map()
 
 	constructor(valueNodes: ts.Expression[]) {
 		this.valueNodes = valueNodes
@@ -123,7 +123,7 @@ export class TemplateValues {
 		// Output from value list.
 		else {
 			this.indicesNonTransferredOutputted.add(valueIndex)
-			return this.outputNodeAsValue(rawValueNode, tree, false)
+			return this.outputNodeAsValue(rawValueNode, rawValueNode, tree, false)
 		}
 	}
 
@@ -135,12 +135,13 @@ export class TemplateValues {
 	private transferNodeToTopmostScope(
 		tree: TreeParser,
 		node: ts.Identifier | ts.ThisExpression,
+		closestRawNode: ts.Node,
 		insideFunction: boolean
 	): ts.Expression {
 
 		// Move variable name as an item to output value list.
 		if (ts.isIdentifier(node)) {
-			return this.outputNodeAsValue(node, tree, insideFunction)
+			return this.outputNodeAsValue(node, closestRawNode, tree, insideFunction)
 		}
 
 		// Replace `this` to `$context`.
@@ -154,24 +155,37 @@ export class TemplateValues {
 	 * and returns it's reference value item.
 	 * If `transferWithinFunction`, move value to topmost scope and add referenced value to value list.
 	 */
-	private outputNodeAsValue(rawNode: ts.Expression, tree: TreeParser, transferWithinFunction: boolean): ts.Expression {
-		let hash = Hashing.hashNode(rawNode).name
+	private outputNodeAsValue(
+		node: ts.Expression,
+		rawValueNode: ts.Node,
+		tree: TreeParser,
+		transferWithinFunction: boolean
+	): ts.Expression {
+		let hash = Hashing.hashMayNewNode(node, rawValueNode).name
 		let valueIndex: number
 
-		if (this.valueHash.has(hash)) {
-			valueIndex = this.valueHash.get(hash)!
+		if (this.valueIndexHash.has(hash)) {
+			valueIndex = this.valueIndexHash.get(hash)!
 		}
 		else {
-			let interpolated = Interpolator.outputNodeSelf(rawNode) as ts.Expression
+			let interpolated = Interpolator.outputNodeSelf(node) as ts.Expression
 
 			valueIndex = this.outputNodes.length
 			this.outputNodes.push(interpolated)
-			this.valueHash.set(hash, valueIndex)
+			this.valueIndexHash.set(hash, valueIndex)
 		}
 
 		if (transferWithinFunction) {
-			let latestName = tree.makeUniqueLatestName()
-			this.transferredLatestNames.set(latestName, valueIndex)
+			let latestName: string
+
+			if (this.transferredValueIndexToLatestName.has(valueIndex)) {
+				latestName = this.transferredValueIndexToLatestName.get(valueIndex)!
+			}
+			else {
+				latestName = tree.makeUniqueLatestName()
+				this.transferredValueIndexToLatestName.set(valueIndex, latestName)
+			}
+
 			return factory.createIdentifier(latestName)
 		}
 		else {
@@ -218,6 +232,7 @@ export class TemplateValues {
 	/** 
 	 * Add a custom value to value list,
 	 * and return reference of this value.
+	 * Normal `node` is not raw type of node.
 	 */
 	outputCustomValue(node: ts.Expression): ts.Expression {
 		let valueIndex = this.outputNodes.length
@@ -249,8 +264,8 @@ export class TemplateValues {
 	}
 
 	/** Output latest names and associated value indices. */
-	outputTransferredLatestNames(): Iterable<[string, number]> {
-		return this.transferredLatestNames.entries()
+	outputTransferredLatestNames(): Iterable<[number, string]> {
+		return this.transferredValueIndexToLatestName.entries()
 	}
 
 	/** Output all values to an array. */

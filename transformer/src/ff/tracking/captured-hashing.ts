@@ -192,7 +192,7 @@ export namespace CapturedHashing {
 	 */
 	export function hash(item: CapturedItem): CapturedHash {
 		if (item.exp !== undefined) {
-			let expHash = Hashing.hashNode(item.exp)
+			let expHash = Hashing.hashMayNewNode(item.exp, item.node)
 			let keyHashName = typeof item.key === 'string' ? '""' : String(item.key)
 
 			return {
@@ -205,8 +205,8 @@ export namespace CapturedHashing {
 		else {
 			let exp = (item.node as AccessNode).expression
 			let key = helper.access.getPropertyNode(item.node as AccessNode)
-			let expHash = Hashing.hashNode(exp)
-			let keyHash = Hashing.hashNode(key)
+			let expHash = Hashing.hashMayNewNode(exp, item.node)
+			let keyHash = Hashing.hashMayNewNode(key, item.node)
 
 			return {
 				item,

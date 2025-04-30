@@ -222,7 +222,7 @@ export class TreeOutputHandler {
 	private outputTransferredLatestValues(update: OutputNodeList) {
 
 		// Output `$latest_value_i = $values[i]`
-		for (let [latestName, valueIndex] of this.template.values.outputTransferredLatestNames()) {
+		for (let [valueIndex, latestName] of this.template.values.outputTransferredLatestNames()) {
 			update.unshift(factory.createBinaryExpression(
 				factory.createIdentifier(latestName),
 				factory.createToken(ts.SyntaxKind.EqualsToken),
