@@ -99,9 +99,15 @@ export namespace Modifier {
 
 		PersistedImportNodes.add(node)
 		
-		Interpolator.replace(node, InterpolationContentType.Import, () => {
-			return factory.createImportSpecifier(node.isTypeOnly, node.propertyName, node.name)
+		// Here has a bug if we simply replace:
+		// If a module output a class and an interface with same name.
+		// only replace it can't prevent it from been removed in compiling step.
+
+		Interpolator.after(node, InterpolationContentType.Import, () => {
+			return factory.createImportSpecifier(false, node.propertyName, node.name)
 		})
+
+		Interpolator.remove(node)
 	}
 
 	

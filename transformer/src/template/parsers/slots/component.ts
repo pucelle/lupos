@@ -15,6 +15,7 @@ export class ComponentSlotParser extends SlotParserBase {
 
 		let decl = DeclarationScopeTree.getReferenceByName(comName, this.template.node)
 		if (decl) {
+
 			// Limit closest scope by referenced declaration.
 			this.template.addRefedDeclaration(decl)
 
