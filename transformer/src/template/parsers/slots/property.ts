@@ -40,13 +40,12 @@ export class PropertySlotParser extends SlotParserBase {
 		}
 
 		let classDeclarations = [...this.template.resolveComponentDeclarations(this.node.tagName!)]
-		
 		if (classDeclarations.length === 0) {
 			return 'element'
 		}
 
 		for (let classDecl of classDeclarations) {
-			let interfaceAndClassDecls = helper.symbol.resolveChainedClassesAndInterfaces(classDecl)
+			let interfaceAndClassDecls = helper.symbol.resolveChainedObjectLike(classDecl)
 
 			for (let decl of interfaceAndClassDecls) {
 				for (let member of decl.members) {
@@ -61,7 +60,7 @@ export class PropertySlotParser extends SlotParserBase {
 			}
 		}
 
-		return	'element'
+		return 'element'
 	}
 
 	outputUpdate() {

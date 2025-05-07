@@ -64,8 +64,8 @@ export namespace Modifier {
 
 	/** Add or replace a member to a class declaration. */
 	export function addClassMember(classNode: ts.ClassDeclaration, member: ts.ClassElement, preferInsertToHead: boolean = false) {
-		let name = helper.class.getMemberName(member)
-		let existing = classNode.members.find(m => helper.class.getMemberName(m) === name)
+		let name = helper.objectLike.getMemberName(member)
+		let existing = classNode.members.find(m => helper.objectLike.getMemberName(m) === name)
 
 		if (existing) {
 			Interpolator.replace(existing, InterpolationContentType.Normal, () => member)

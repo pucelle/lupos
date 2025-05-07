@@ -71,7 +71,7 @@ export class TrackingScopeState {
 			return false
 		}
 
-		if (!helper.class.isDerivedOf(classNode, 'Component', '@pucelle/lupos.js')) {
+		if (!helper.objectLike.isDerivedOf(classNode, 'Component', '@pucelle/lupos.js')) {
 			return false
 		}
 

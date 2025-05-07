@@ -14,12 +14,12 @@ defineVisitor(function(node: ts.Node) {
 	}
 
 	// Be a component.
-	if (!helper.class.isDerivedOf(node, 'Component', '@pucelle/lupos.js')) {
+	if (!helper.objectLike.isDerivedOf(node, 'Component', '@pucelle/lupos.js')) {
 		return
 	}
 
 	// Must has own style declared.
-	let style = helper.class.getMember(node, 'style')
+	let style = helper.objectLike.getMember(node, 'style', false)
 	if (!style
 		|| !ts.isPropertyDeclaration(style) && !ts.isMethodDeclaration(style)
 		|| !style.modifiers?.some(m => m.kind === ts.SyntaxKind.StaticKeyword)

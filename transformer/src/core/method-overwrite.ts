@@ -28,10 +28,10 @@ export class MethodOverwrite {
 		this.name = name
 
 		if (name === 'constructor') {
-			this.rawNode = helper.class.getConstructor(classNode) ?? null
+			this.rawNode = helper.class.getConstructor(classNode, true) ?? null
 		}
 		else {
-			this.rawNode = helper.class.getMethod(classNode, name) ?? null
+			this.rawNode = helper.class.getMethod(classNode, name, true) ?? null
 		}
 
 		if (this.rawNode) {
@@ -68,11 +68,11 @@ export class MethodOverwrite {
 
 	/** Create a constructor function. */
 	private createConstructor(): ts.ConstructorDeclaration {
-		let parameters = helper.class.getConstructorParameters(this.classNode) ?? []
+		let parameters = helper.class.getConstructorParameters(this.classNode, true) ?? []
 		let statements: ts.Statement[] = []
-		let superCls = helper.class.getSuper(this.classNode)
+		let superClass = helper.class.getSuper(this.classNode)
 
-		if (superCls) {
+		if (superClass) {
 			let callSuper = factory.createExpressionStatement(factory.createCallExpression(
 				factory.createSuper(),
 				undefined,

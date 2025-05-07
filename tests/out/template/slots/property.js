@@ -92,9 +92,26 @@ const $html_1 = new HTMLMaker("<!----><div></div><!---->");
 });
 /*
 <root>
-    <div .elProp=${1} />
+    <Com3 .comProp=${1} />
 </root>
 */ const $template_4 = new TemplateMaker(function () {
+    let $node = $html_0.make();
+    let $node_0 = $node.content.firstChild;
+    let $com_0 = new Com3($node_0);
+    $com_0.comProp = 1;
+    return {
+        el: $node,
+        position: new SlotPosition(1, $node_0),
+        parts: [
+            [$com_0, 1]
+        ]
+    };
+});
+/*
+<root>
+    <div .elProp=${1} />
+</root>
+*/ const $template_5 = new TemplateMaker(function () {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     $node_0.elProp = 1;
@@ -124,8 +141,11 @@ export class TestProperty extends Component {
     testForceComponentProperty() {
         return new CompiledTemplateResult($template_3, [], this);
     }
-    testElementProperty() {
+    testInterfaceMixinComponentProperty() {
         return new CompiledTemplateResult($template_4, [], this);
+    }
+    testElementProperty() {
+        return new CompiledTemplateResult($template_5, [], this);
     }
 }
 class Com1 extends Component {
@@ -133,4 +153,6 @@ class Com1 extends Component {
 }
 class Com2 extends Component {
     comProp = 1;
+}
+class Com3 extends Component {
 }

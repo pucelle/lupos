@@ -169,12 +169,12 @@ export class BindingBase {
 				this.template.addRefedDeclaration(decl)
 
 				if (bindingClass
-					&& helper.class.isImplemented(bindingClass, 'Part', '@pucelle/lupos.js')
+					&& helper.class.isImplementedOf(bindingClass, 'Part', '@pucelle/lupos.js')
 				) {
 					this.implementsPart = true
 				}
 
-				let bindingClassParams = bindingClass ? helper.class.getConstructorParameters(bindingClass) : null
+				let bindingClassParams = bindingClass ? helper.class.getConstructorParameters(bindingClass, true) : null
 				this.bindingClassParameterCount = bindingClassParams ? bindingClassParams.length : null
 			}
 		}

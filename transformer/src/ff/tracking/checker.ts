@@ -281,7 +281,7 @@ export namespace TrackingChecker {
 
 		// Observed class.
 		if (ts.isClassDeclaration(decl)
-			&& helper.class.isImplemented(decl, 'Observed', '@pucelle/ff')
+			&& helper.class.isImplementedOf(decl, 'Observed', '@pucelle/ff')
 		) {
 			return true 
 		}

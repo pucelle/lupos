@@ -21,7 +21,7 @@ defineVisitor(function(node: ts.Node) {
 	let hasDeletedContextVariables = false
 
 	// Be a component.
-	if (helper.class.isDerivedOf(node, 'Component', '@pucelle/lupos.js')) {
+	if (helper.objectLike.isDerivedOf(node, 'Component', '@pucelle/lupos.js')) {
 		create = new MethodOverwrite(node, 'onCreated')
 		connect = new MethodOverwrite(node, 'onConnected')
 		disconnect = new MethodOverwrite(node, 'onWillDisconnect')
@@ -127,7 +127,7 @@ function compileComputedEffectWatchDecorator(
 ) {
 	let methodName = helper.getFullText(decl.name)
 	let superCls = helper.class.getSuper(decl.parent as ts.ClassDeclaration)
-	let isOverwritten = !!superCls && !!helper.class.getMember(superCls, methodName, true)
+	let isOverwritten = !!superCls && !!helper.objectLike.getMember(superCls, methodName, true)
 
 	if (isOverwritten) {
 		return
@@ -358,13 +358,13 @@ function compileSetContextDecorator(
 	disconnect: MethodOverwrite | null,
 	hasDeletedContextVariables: boolean
 ) {
+	Modifier.addImport('Component', '@pucelle/lupos.js')
+
 	let propName = helper.getFullText(propDecl.name)
-	let extended = helper.class.getExtends(propDecl.parent as ts.ClassDeclaration)!
-	let classExp = extended.expression
-		
+
 	let connectStatement = factory.createExpressionStatement(factory.createCallExpression(
 		factory.createPropertyAccessExpression(
-			classExp,
+			factory.createIdentifier('Component'),
 			factory.createIdentifier('setContextVariable')
 		),
 		undefined,
@@ -379,7 +379,7 @@ function compileSetContextDecorator(
 	if (disconnect && !hasDeletedContextVariables) {
 		let disconnectStatement = factory.createExpressionStatement(factory.createCallExpression(
 			factory.createPropertyAccessExpression(
-				classExp,
+				factory.createIdentifier('Component'),
 				factory.createIdentifier('deleteContextVariables')
 			),
 			undefined,
@@ -417,10 +417,10 @@ function compileUseContextDecorator(
 	disconnect: MethodOverwrite | null,
 	hasDeletedContextVariables: boolean
 ) {
+	Modifier.addImport('Component', '@pucelle/lupos.js')
+
 	let propName = helper.getFullText(propDecl.name)
-	let extended = helper.class.getExtends(propDecl.parent as ts.ClassDeclaration)!
-	let classExp = extended.expression
-	
+
 	let connectStatement = factory.createExpressionStatement(factory.createBinaryExpression(
 		factory.createPropertyAccessExpression(
 			factory.createThis(),
@@ -429,7 +429,7 @@ function compileUseContextDecorator(
 		factory.createToken(ts.SyntaxKind.EqualsToken),
 		factory.createCallExpression(
 			factory.createPropertyAccessExpression(
-				classExp,
+				factory.createIdentifier('Component'),
 				factory.createIdentifier('getContextVariableDeclared')
 			),
 			undefined,
@@ -460,7 +460,7 @@ function compileUseContextDecorator(
 			disconnectStatements.push(
 				factory.createExpressionStatement(factory.createCallExpression(
 					factory.createPropertyAccessExpression(
-						classExp,
+						factory.createIdentifier('Component'),
 						factory.createIdentifier('deleteContextVariables')
 					),
 					undefined,

@@ -68,7 +68,8 @@ export class EventSlotParser extends SlotParserBase {
 		}
 
 		for (let classDecl of classDeclarations) {
-			let interfaceDecls = helper.symbol.resolveExtendedInterfaceLikeTypeParameters(classDecl, 'EventFirer', 0)
+			let interfaceDecls = helper.symbol.resolveSpecifiedTypeParameter(classDecl, 'EventFirer', 0)
+			
 			for (let decl of interfaceDecls) {
 				for (let member of decl.members) {
 					if (!member.name) {

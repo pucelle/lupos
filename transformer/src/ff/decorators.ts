@@ -22,7 +22,7 @@ defineVisitor(function(node: ts.Node) {
 
 	let memberName = helper.getFullText(node.name)
 	let superCls = helper.class.getSuper(node.parent as ts.ClassDeclaration)
-	let isOverwritten = !!superCls && !!helper.class.getMember(superCls, memberName, true)
+	let isOverwritten = !!superCls && !!helper.objectLike.getMember(superCls, memberName, true)
 
 	Modifier.removeImportOf(decorator)
 	let replace: () => ts.Node[]

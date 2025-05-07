@@ -9,18 +9,18 @@ defineVisitor(function(node: ts.Node) {
 	}
 
 	// Be a component.
-	if (!helper.class.isDerivedOf(node, 'Component', '@pucelle/lupos.js')) {
+	if (!helper.objectLike.isDerivedOf(node, 'Component', '@pucelle/lupos.js')) {
 		return
 	}
 
 	// Must not specify `ContentSlotType: ...` itself.
-	let contentSlotProperty = helper.class.getProperty(node, 'ContentSlotType')
+	let contentSlotProperty = helper.class.getProperty(node, 'ContentSlotType', false)
 	if (contentSlotProperty && contentSlotProperty.modifiers?.some(m => m.kind === ts.SyntaxKind.StaticKeyword)) {
 		return
 	}
 
 	// Must specify `render(): ...`
-	let renderMethod = helper.class.getMethod(node, 'render')
+	let renderMethod = helper.class.getMethod(node, 'render', false)
 	if (!renderMethod) {
 		return
 	}

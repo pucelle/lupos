@@ -22,6 +22,10 @@ export class TestProperty extends Component {
 		return html`<Com1 ..comProp=${1} />`
 	}
 
+	testInterfaceMixinComponentProperty() {
+		return html`<Com3 .comProp=${1} />`
+	}
+
 	testElementProperty() {
 		return html`<div .elProp=${1} />`
 	}
@@ -35,6 +39,9 @@ class Com1 extends Component {
 class Com2 extends Component {
 	comProp: number = 1
 }
+
+class Com3 extends Component {}
+interface Com3 extends Com1{}
 
 interface ComConstructor {
 	new(): Com1 | Com2
