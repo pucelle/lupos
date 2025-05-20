@@ -22,6 +22,25 @@ export class TestMap extends Component {
         trackSet(this.map, "");
     }
 }
+export class TestObservingOfMapMember extends Component {
+    map = new Map();
+    getValue() {
+        trackGet(this, "map");
+        trackGet(this.map, "");
+        return this.map.get(0).value;
+    }
+    getValueQuery() {
+        trackGet(this, "map");
+        trackGet(this.map, "");
+        return this.map.get(0)?.value;
+    }
+    getValueByVariable() {
+        let item = this.map.get(0);
+        trackGet(this, "map");
+        trackGet(this.map, "");
+        return item.value;
+    }
+}
 export class TestSet extends Component {
     set = new Set();
     has() {

@@ -23,6 +23,25 @@ export class TestMap extends Component {
 }
 
 
+export class TestObservingOfMapMember extends Component {
+
+	map: Map<number, {value: number}> = new Map()
+
+	getValue() {
+		return this.map.get(0)!.value
+	}
+
+	getValueQuery() {
+		return this.map.get(0)?.value
+	}
+
+	getValueByVariable() {
+		let item = this.map.get(0)!
+		return item.value
+	}
+}
+
+
 export class TestSet extends Component {
 
 	set: Set<number> = new Set()
