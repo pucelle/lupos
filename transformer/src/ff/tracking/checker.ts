@@ -510,8 +510,9 @@ export namespace TrackingChecker {
 		}
 
 		// `this.map.get` of `this.map.get(x)`.
+		// Must ignores array elements accessing, or any newly mapped or filtered becomes observed.
 		if (helper.access.isAccess(callExp)
-			&& helper.access.isOfElementsAccess(callExp)
+			&& helper.access.isOfMapSetAccess(callExp)
 		) {
 			return true
 		}
