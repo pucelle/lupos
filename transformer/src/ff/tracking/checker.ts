@@ -514,7 +514,7 @@ export namespace TrackingChecker {
 		if (helper.access.isAccess(callExp)
 			&& helper.access.isOfMapSetAccess(callExp)
 		) {
-			return true
+			return isExpObserved(callExp.expression)
 		}
 
 		return false
