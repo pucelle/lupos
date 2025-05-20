@@ -491,7 +491,8 @@ export namespace TrackingChecker {
 	
 	/** Returns whether a call expression returned result should be observed. */
 	function isCallObserved(rawNode: ts.CallExpression): boolean {
-		let decl = helper.symbol.resolveDeclaration(rawNode.expression, helper.isFunctionLike)
+		let callExp = rawNode.expression
+		let decl = helper.symbol.resolveDeclaration(callExp, helper.isFunctionLike)
 		if (!decl) {
 			return false
 		}
@@ -505,6 +506,13 @@ export namespace TrackingChecker {
 		// Test call method returned type.
 		let returnType = helper.types.getReturnTypeOfSignature(decl)
 		if (returnType && isTypeObserved(returnType)) {
+			return true
+		}
+
+		// `this.map.get` of `this.map.get(x)`.
+		if (helper.access.isAccess(callExp)
+			&& helper.access.isOfElementsAccess(callExp)
+		) {
 			return true
 		}
 

@@ -25,19 +25,26 @@ export class TestMap extends Component {
 export class TestObservingOfMapMember extends Component {
     map = new Map();
     getValue() {
+        let $ref_0;
+        $ref_0 = this.map.get(0);
         trackGet(this, "map");
         trackGet(this.map, "");
-        return this.map.get(0).value;
+        trackGet($ref_0, "value");
+        return $ref_0.value;
     }
     getValueQuery() {
+        let $ref_0;
+        $ref_0 = this.map.get(0);
         trackGet(this, "map");
         trackGet(this.map, "");
-        return this.map.get(0)?.value;
+        $ref_0 && trackGet($ref_0, "value");
+        return $ref_0?.value;
     }
     getValueByVariable() {
         let item = this.map.get(0);
         trackGet(this, "map");
         trackGet(this.map, "");
+        trackGet(item, "value");
         return item.value;
     }
 }
