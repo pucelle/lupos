@@ -107,7 +107,9 @@ export class TrackingCapturer {
 		}
 
 		// Not instantly run function-like scope not inherit capture type.
-		else if (this.scope.type & TrackingScopeTypeMask.FunctionLike) {
+		else if (this.scope.type & TrackingScopeTypeMask.FunctionLike
+			&& !(this.scope.type & TrackingScopeTypeMask.InstantlyRunFunction)
+		) {
 			this.captureType = 'not-determined'
 		}
 
