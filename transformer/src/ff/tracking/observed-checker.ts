@@ -3,17 +3,22 @@ import {AccessNode} from '../../lupos-ts-module'
 import {typeChecker, helper} from '../../core'
 import {GenericType} from 'typescript'
 import {TrackingPatch} from './patch'
-import {TrackingType} from './types'
+import {ObservedStateMask} from './types'
 
 
 /** Help to check observed state. */
-export namespace TrackingChecker {
+export namespace ObservedChecker {
 
-	/** test whether value of current node is mutable, like `a.b`. */
-	export function isAccessMutable(rawNode: AccessNode) {
+	/** Test whether value of current access node is mutable, like `a.b`. */
+	export function isSelfObserved(rawNode: ts.Node): rawNode is AccessNode {
+
+		// Must be access node.
+		if (!helper.access.isAccess(rawNode)) {
+			return false
+		}
 
 		// Force track.
-		if (TrackingPatch.isForceTrackedAs(rawNode, TrackingType.Mutable)) {
+		if (TrackingPatch.isForceTrackedAs(rawNode, ObservedStateMask.Self)) {
 			return true
 		}
 
@@ -70,7 +75,7 @@ export namespace TrackingChecker {
 
 
 		// Normally if parent expression is observed, child is mutable.
-		return isExpObserved(rawNode.expression)
+		return isElementsObserved(rawNode.expression)
 	}
 
 
@@ -88,10 +93,10 @@ export namespace TrackingChecker {
 	 * - a conditional expression
 	 * - an as expression
 	 */
-	export function isExpObserved(rawNode: ts.Expression): boolean {
+	export function isElementsObserved(rawNode: ts.Expression): boolean {
 
 		// Force track.
-		if (TrackingPatch.isForceTrackedAs(rawNode, TrackingType.Observed)) {
+		if (TrackingPatch.isForceTrackedAs(rawNode, ObservedStateMask.Elements)) {
 			return true
 		}
 
@@ -118,18 +123,18 @@ export namespace TrackingChecker {
 					|| rawNode.operatorToken.kind === ts.SyntaxKind.BarBarToken
 					|| rawNode.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken
 				)
-				&& isExpObserved(rawNode.left)
-				&& isExpObserved(rawNode.right)
+				&& isElementsObserved(rawNode.left)
+				&& isElementsObserved(rawNode.right)
 		}
 
 		// `(...)`
 		else if (ts.isParenthesizedExpression(rawNode)) {
-			return isExpObserved(rawNode.expression)
+			return isElementsObserved(rawNode.expression)
 		}
 
 		// `...!`
 		else if (ts.isNonNullExpression(rawNode)) {
-			return isExpObserved(rawNode.expression)
+			return isElementsObserved(rawNode.expression)
 		}
 
 		// `(a as Observed<{b: number}>).b`
@@ -140,8 +145,8 @@ export namespace TrackingChecker {
 
 		// `a ? b : c`, can observe only if both b & c should be observed.
 		else if (ts.isConditionalExpression(rawNode)) {
-			return isExpObserved(rawNode.whenTrue)
-				&& isExpObserved(rawNode.whenFalse)
+			return isElementsObserved(rawNode.whenTrue)
+				&& isElementsObserved(rawNode.whenFalse)
 		}
 
 		// `a.b()`
@@ -248,7 +253,7 @@ export namespace TrackingChecker {
 		}
 				
 		// Force track.
-		if (TrackingPatch.isForceTrackedAs(decl, TrackingType.Observed)) {
+		if (TrackingPatch.isForceTrackedAs(decl, ObservedStateMask.Elements)) {
 			return true
 		}
 
@@ -314,7 +319,7 @@ export namespace TrackingChecker {
 		if (!typeNode
 			&& ts.isPropertyDeclaration(decl)
 			&& decl.initializer
-			&& isExpObserved(decl.initializer)
+			&& isElementsObserved(decl.initializer)
 		) {
 			return true
 		}
@@ -331,7 +336,7 @@ export namespace TrackingChecker {
 		}
 
 		// `var a = b`, if `b` is observed, `a` is too.
-		if (rawNode.initializer && isExpObserved(rawNode.initializer)) {
+		if (rawNode.initializer && isElementsObserved(rawNode.initializer)) {
 			return true
 		}
 
@@ -375,7 +380,7 @@ export namespace TrackingChecker {
 		}
 
 		// Must use parent scope.
-		return isExpObserved(exp.expression)
+		return isElementsObserved(exp.expression)
 	}
 
 
@@ -396,7 +401,7 @@ export namespace TrackingChecker {
 		}
 
 		// `var a = b.c`.
-		if (rawNode.initializer && isExpObserved(rawNode.initializer)) {
+		if (rawNode.initializer && isElementsObserved(rawNode.initializer)) {
 			return true
 		}
 
@@ -405,7 +410,7 @@ export namespace TrackingChecker {
 			&& ts.isVariableDeclarationList(rawNode.parent)
 			&& ts.isForOfStatement(rawNode.parent.parent)
 		) {
-			if (isExpObserved(rawNode.parent.parent.expression)) {
+			if (isElementsObserved(rawNode.parent.parent.expression)) {
 				return true
 			}
 		}
@@ -467,7 +472,7 @@ export namespace TrackingChecker {
 		}
 
 
-		return isExpObserved(exp)
+		return isElementsObserved(exp)
 	}
 
 
@@ -510,12 +515,19 @@ export namespace TrackingChecker {
 		}
 
 		// `this.map.get` of `this.map.get(x)`.
-		// Must ignores array elements accessing, or any newly mapped or filtered becomes observed.
+		// Result is observed.
 		if (helper.access.isAccess(callExp)
-			&& helper.access.isOfMapSetAccess(callExp)
+			&& helper.access.isOfSingleElementReadAccess(callExp)
 		) {
-			return isExpObserved(callExp.expression)
+			return isElementsObserved(callExp.expression)
 		}
+
+		// Here we plan to support more features like `Array.filter(...)`,
+		// It's returned result is not observed, but it's elements is observed.
+		// This breaks the normal observed state broadcasting mechanism,
+		// so we have to separate observed state to several like:
+		// `Itself-Observed` / `Itself-Not-Observed-But-Elements-Are`.
+		// This brings two much complexity.
 
 		return false
 	}

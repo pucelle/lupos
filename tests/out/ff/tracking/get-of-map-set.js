@@ -24,6 +24,7 @@ export class TestMap extends Component {
 }
 export class TestObservingOfMapMember extends Component {
     map = new Map();
+    list = [];
     getValue() {
         let $ref_0;
         $ref_0 = this.map.get(0);
@@ -46,6 +47,50 @@ export class TestObservingOfMapMember extends Component {
         trackGet(this.map, "");
         trackGet(item, "value");
         return item.value;
+    }
+    findAtList() {
+        let item = this.list.find(v => {
+            trackGet(v, "value");
+            return v.value === 0;
+        });
+        trackGet(this, "list");
+        trackGet(this.list, "");
+        trackGet(item, "value");
+        return item.value;
+    }
+    /** Not supported yet. */
+    filterList() {
+        let items = this.list.filter(v => {
+            trackGet(v, "value");
+            return v.value === 0;
+        });
+        trackGet(this, "list");
+        trackGet(this.list, "");
+        return items.map(v => v.value);
+    }
+    /** Not supported yet. */
+    sortList() {
+        let items = this.list;
+        items.sort();
+        trackSet(items, "");
+        return items.map(v => v.value);
+    }
+    /** Not supported yet. */
+    sortFilteredList() {
+        let items = this.list.filter(v => {
+            trackGet(v, "value");
+            return v.value === 0;
+        });
+        items.sort();
+        trackGet(this, "list");
+        trackGet(this.list, "");
+        return items.map(v => v.value);
+    }
+    /** Not supported yet. */
+    sortFilteredListWithoutAnyReference() {
+        this.list.filter(v => v.value === 0)
+            .sort()
+            .map(v => v.value);
     }
 }
 export class TestSet extends Component {

@@ -1,7 +1,6 @@
 import * as ts from 'typescript'
-import {TrackingChecker} from './checker'
+import {ObservedChecker} from './observed-checker'
 import {FlowInterruptionTypeMask, DeclarationScope, DeclarationScopeTree, helper} from '../../core'
-import {AccessNode} from '../../lupos-ts-module'
 import {TrackingScopeState} from './scope-state'
 import {TrackingScopeTypeMask} from './scope-tree'
 import {TrackingCapturer} from './capturer'
@@ -207,8 +206,8 @@ export class TrackingScope {
 		}
 
 		let willTrack = exp
-			? TrackingChecker.isExpObserved(exp)
-			: TrackingChecker.isAccessMutable(rawNode as AccessNode)
+			? ObservedChecker.isElementsObserved(exp)
+			: ObservedChecker.isSelfObserved(rawNode)
 
 		// Tracking self.
 		if (willTrack) {
@@ -231,8 +230,8 @@ export class TrackingScope {
 		}
 
 		let willTrack = exp
-			? TrackingChecker.isExpObserved(exp)
-			: TrackingChecker.isAccessMutable(rawNode as AccessNode)
+			? ObservedChecker.isElementsObserved(exp)
+			: ObservedChecker.isSelfObserved(rawNode)
 
 		if (willTrack) {
 			this.capturer.capture(rawNode, 'set', exp, keys)

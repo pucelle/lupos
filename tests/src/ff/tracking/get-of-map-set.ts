@@ -26,6 +26,7 @@ export class TestMap extends Component {
 export class TestObservingOfMapMember extends Component {
 
 	map: Map<number, {value: number}> = new Map()
+	list: {value: number}[] = []
 
 	getValue() {
 		return this.map.get(0)!.value
@@ -39,6 +40,38 @@ export class TestObservingOfMapMember extends Component {
 		let item = this.map.get(0)!
 		return item.value
 	}
+
+	findAtList() {
+		let item = this.list.find(v => v.value === 0)!
+		return item.value
+	}
+
+	// /** Not supported yet. */
+	// filterList() {
+	// 	let items = this.list.filter(v => v.value === 0)!
+	// 	return items.map(v => v.value)
+	// }
+
+	// /** Not supported yet. */
+	// sortList() {
+	// 	let items = this.list
+	// 	items.sort()
+	// 	return items.map(v => v.value)
+	// }
+
+	// /** Not supported yet. */
+	// sortFilteredList() {
+	// 	let items = this.list.filter(v => v.value === 0)!
+	// 	items.sort()
+	// 	return items.map(v => v.value)
+	// }
+
+	// /** Not supported yet. */
+	// sortFilteredListWithoutAnyReference() {
+	// 	this.list.filter(v => v.value === 0)!
+	// 		.sort()
+	// 		.map(v => v.value)
+	// }
 }
 
 

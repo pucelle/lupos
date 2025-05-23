@@ -2,7 +2,7 @@ import type * as ts from 'typescript'
 import {factory, Modifier, helper} from '../../../core'
 import {FlowControlBase} from './base'
 import {SlotContentType} from '../../../enums'
-import {TrackingType, TrackingChecker, TrackingPatch} from '../../../ff'
+import {ObservedStateMask, ObservedChecker, TrackingPatch} from '../../../ff'
 
 
 export class ForFlowControl extends FlowControlBase {
@@ -41,9 +41,9 @@ export class ForFlowControl extends FlowControlBase {
 		if (ofValueIndex !== null) {
 			let ofValueNode = this.template.values.getRawValue(ofValueIndex)
 
-			shouldObserve = TrackingChecker.isExpObserved(ofValueNode)
+			shouldObserve = ObservedChecker.isElementsObserved(ofValueNode)
 			if (shouldObserve) {
-				TrackingPatch.forceTrackType(ofValueNode, TrackingType.Observed)
+				TrackingPatch.forceTrackType(ofValueNode, ObservedStateMask.Elements)
 				TrackingPatch.addCustomTracking(ofValueNode, 'get', ofValueNode, '')
 			}
 		}
@@ -57,7 +57,7 @@ export class ForFlowControl extends FlowControlBase {
 				let firstParameter = fnValueNode.parameters[0]
 				if (firstParameter) {
 					if (shouldObserve) {
-						TrackingPatch.forceTrackType(firstParameter, TrackingType.Observed)
+						TrackingPatch.forceTrackType(firstParameter, ObservedStateMask.Elements)
 					}
 				}
 

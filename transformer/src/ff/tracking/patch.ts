@@ -1,9 +1,8 @@
 import * as ts from 'typescript'
-import {TrackingChecker} from './checker'
+import {ObservedChecker} from './observed-checker'
 import {AccessGrouper} from './access-grouper'
 import {TrackingRanges} from './ranges'
-import {helper} from '../../core'
-import {TrackingType} from './types'
+import {ObservedStateMask} from './types'
 import {CapturedItem} from './capturer'
 import {ListMap} from '../../lupos-ts-module'
 
@@ -47,7 +46,7 @@ export namespace TrackingPatch {
 	 * Force re-check node.
 	 * `node` can either be an expression or declaration
 	 */
-	export function forceTrackType(rawNode: ts.Expression | ts.Declaration, type: TrackingType) {
+	export function forceTrackType(rawNode: ts.Expression | ts.Declaration, type: ObservedStateMask) {
 		let currentType = ForceTrackedTypeMask.get(rawNode) ?? 0
 		ForceTrackedTypeMask.set(rawNode, currentType | type)
 	}
@@ -58,7 +57,7 @@ export namespace TrackingPatch {
 	 * `visitElements` specifies whether are visiting parent node of original
 	 * to determine whether elements should be observed.
 	 */
-	export function isForceTrackedAs(rawNode: ts.Node, type: TrackingType): boolean {
+	export function isForceTrackedAs(rawNode: ts.Node, type: ObservedStateMask): boolean {
 		return ((ForceTrackedTypeMask.get(rawNode) ?? 0) & type) > 0
 	}
 
@@ -94,11 +93,7 @@ export namespace TrackingPatch {
 
 	/** Output isolated tracking expressions. */
 	export function outputIsolatedTracking(rawNode: ts.Expression, type: 'get' | 'set'): ts.Expression[] {
-		if (!helper.access.isAccess(rawNode)) {
-			return []
-		}
-
-		if (!TrackingChecker.isAccessMutable(rawNode)) {
+		if (!ObservedChecker.isSelfObserved(rawNode)) {
 			return []
 		}
 
