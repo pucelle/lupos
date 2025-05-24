@@ -57,7 +57,10 @@ class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 		}
 	}
 
-	/** Get the leaved scope list when walking from a scope to an ancestral scope. */
+	/** 
+	 * Get the leaved scope list when walking from a scope to an ancestral scope.
+	 * Note it normally includes `fromScope`, but not `toScope`.
+	 */
 	findWalkingOutwardLeaves(fromScope: DeclarationScope, toScope: DeclarationScope) : DeclarationScope[] {
 		let scope: DeclarationScope | undefined = fromScope
 		let leaves: DeclarationScope[] = []

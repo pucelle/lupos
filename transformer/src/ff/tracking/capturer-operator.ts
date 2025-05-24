@@ -1,9 +1,9 @@
 import * as ts from 'typescript'
-import {VisitTree, DeclarationScopeTree, helper} from '../../core'
+import {VisitTree, DeclarationScopeTree, helper, FlowInterruptionTypeMask} from '../../core'
 import {removeFromList} from '../../utils'
 import {CapturedItem, TrackingCapturer} from './capturer'
 import {TrackingScope} from './scope'
-import {TrackingScopeTypeMask} from './scope-tree'
+import {TrackingScopeTree, TrackingScopeTypeMask} from './scope-tree'
 import {CapturedHash, CapturedHashing, CapturedHashMap} from './captured-hashing'
 
 
@@ -54,19 +54,42 @@ export class TrackingCapturerOperator {
 	 */
 	safelyMoveCapturedItemsOutwardTo(items: Iterable<CapturedItem>, toCapturer: TrackingCapturer): CapturedItem[] {
 
-		// Locate which captured group should move items to.
-		// Find the first item which's in the following of current node in child-first order.
-		// If can't find, use the last one.
-		let group = toCapturer.captured.find(item => {
-			return VisitTree.isPrecedingOfOrEqualInChildFirstOrder(this.scope.node, item.toNode)
-		}) ?? toCapturer.latestCaptured
-
 		// Note these are declaration scopes, not tracking scopes.
 		let fromScope = this.scope.getDeclarationScope()
 		let toScope = toCapturer.scope.getDeclarationScope()
 
 		let scopesLeaves = DeclarationScopeTree.findWalkingOutwardLeaves(fromScope, toScope)
 		let residualItems: CapturedItem[] = []
+
+		// `for (let ... of await ...)`, moves tracking codes after, not before.
+		let haveAwaitExpressionInLeaves = false
+
+		for (let scopeLeaves of scopesLeaves) {
+			let trackingScope = TrackingScopeTree.get(scopeLeaves.node)
+			if (!trackingScope) {
+				continue
+			}
+
+			if ((trackingScope.type & TrackingScopeTypeMask.Iteration) === 0) {
+				continue
+			}
+
+			let nonContentChildren = trackingScope.children.filter(s => (s.type & TrackingScopeTypeMask.IterationContent) === 0)
+			haveAwaitExpressionInLeaves = nonContentChildren.some(s => s.state.flowInterruptionType & FlowInterruptionTypeMask.Await)
+
+			if (haveAwaitExpressionInLeaves) {
+				break
+			}
+		}
+
+		// Locate which captured group should move items to.
+		// Find the first item which's toNode in the following, or be ancestor of current node.
+		// If can't find, use the last one.
+		let group = toCapturer.captured.find(item => {
+			return haveAwaitExpressionInLeaves
+				? VisitTree.isPrecedingOfOrEqual(this.scope.node, item.toNode)
+				: VisitTree.isPrecedingOfOrEqualInChildFirstOrder(this.scope.node, item.toNode)
+		}) ?? toCapturer.latestCaptured
 
 		for (let item of items) {
 			let hashed = CapturedHashing.hash(item)

@@ -351,6 +351,12 @@ export namespace TrackingScopeTree {
 		)) > 0
 	}
 
+	/** Get scope by node. */
+	export function get(node: ts.Node): TrackingScope | undefined {
+		let scopes = ScopeMap.get(node)
+		return scopes?.[scopes.length - 1]
+	}
+
 	/** Find closest scope contains or equals node. */
 	export function findClosest(node: ts.Node): TrackingScope {
 		let scopes = ScopeMap.get(node)

@@ -65,7 +65,10 @@ export class TrackingCapturer {
 	latestCaptured!: CapturedGroup
 	captureType: 'get' | 'set' | 'both' | 'none' | 'not-determined' = 'not-determined'
 
-	/** Whether accepted await interruption. */
+	/** 
+	 * Whether accepted await interruption.
+	 * Only immediate getting is meaningful, other getting should not be tracked.
+	 */
 	preventGettingAfterAwait: boolean = false
 
 	constructor(scope: TrackingScope, state: TrackingScopeState, outputWay: CapturedOutputWay) {
@@ -255,6 +258,7 @@ export class TrackingCapturer {
 		}
 
 		this.latestCaptured.toNode = atNode
+		
 		this.latestCaptured.breakByAsync = (flowInterruptedBy & (
 				FlowInterruptionTypeMask.Yield
 					| FlowInterruptionTypeMask.Await

@@ -180,6 +180,16 @@ export class TestAwaitStatement extends Component {
         trackGet(this, "prop2");
         return 0;
     }
+    async testForOfAwait() {
+        for (let item of await this.asyncGetProps(this.prop1)) {
+            this.prop2 = item;
+        }
+        trackSet(this, "prop2");
+        return 0;
+    }
+    async asyncGetProps(prop) {
+        return [prop];
+    }
     async testAwaitVariableTracking() {
         trackGet(this, "prop1");
         let prop = await this.asyncGetProp(this.prop1);
