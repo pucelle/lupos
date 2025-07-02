@@ -159,6 +159,16 @@ export class TestClassTypeParameter {
         trackSet(item, "value");
     }
 }
+export class TestObservedInterface {
+    getItems(item) {
+        trackGet(item, "value");
+        return item.value;
+    }
+    setItems(item) {
+        item.value = 1;
+        trackSet(item, "value");
+    }
+}
 export class TestMethodsObserved {
     listData = new ListMap();
     getListItem(key) {

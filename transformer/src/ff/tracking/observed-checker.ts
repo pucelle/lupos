@@ -217,12 +217,12 @@ export namespace ObservedChecker {
 	 */
 	function isTypeObserved(type: ts.Type): boolean {
 
-		// A | B, A & B
+		// `A | B`, `A & B`, become observed if any is observed.
 		if (type.isUnionOrIntersection()) {
 			return type.types.some(t => isTypeObserved(t))
 		}
 
-		// A[]
+		// `A[]`, check for `A`.
 		if (typeChecker.isArrayType(type)) {
 			let parameter = (type as GenericType).typeParameters?.[0]
 			if (parameter) {
@@ -282,6 +282,13 @@ export namespace ObservedChecker {
 		// Test type parameter.
 		if (ts.isTypeParameterDeclaration(decl)) {
 			return isTypeNodeObserved(decl.constraint)
+		}
+
+		// Observed interface.
+		if (ts.isInterfaceDeclaration(decl)
+			&& helper.objectLike.isDerivedOf(decl, 'Observed', '@pucelle/ff')
+		) {
+			return true 
 		}
 
 		// Observed class.

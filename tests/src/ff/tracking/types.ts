@@ -172,6 +172,22 @@ export class TestClassTypeParameter<T extends Observed<{value: number}>> {
 }
 
 
+interface ObservedInterface extends Observed{
+	value: number
+}
+
+export class TestObservedInterface {
+
+	getItems(item: ObservedInterface) {
+		return item.value
+	}
+
+	setItems(item: ObservedInterface) {
+		item.value = 1
+	}
+}
+
+
 export class TestMethodsObserved implements Observed {
 
 	listData: ListMap<number, number> = new ListMap()
