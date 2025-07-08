@@ -137,7 +137,7 @@ function compileComputedEffectWatchDecorator(
 	let processorPropName = '$' + methodName + '_' + ProcessorPropNameMap[decoName]
 	let makerParameters = makeMakerParameters(deco, decoName, decl)
 
-	Modifier.addImport(processorClassName, '@pucelle/ff')
+	Modifier.addImport(processorClassName, '@pucelle/lupos')
 
 	let createStatementGetter = () => factory.createExpressionStatement(factory.createBinaryExpression(
 		factory.createPropertyAccessExpression(
@@ -268,7 +268,7 @@ function compileWatchGetters(deco: ts.Decorator, decoName: string): () => ts.Exp
 	}
 
 	if (decoArgs.some(arg => ts.isStringLiteral(arg))) {
-		Modifier.addImport('trackGet', '@pucelle/ff')
+		Modifier.addImport('trackGet', '@pucelle/lupos')
 	}
 
 	return () => {

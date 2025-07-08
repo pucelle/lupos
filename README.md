@@ -1,9 +1,9 @@
-# lupos.compiler
+# lupos
 
 
 ## About
 
-**lupos.compiler** is a Typescript Transformer helps to compile [lupos.js](https://github.com/pucelle/lupos.js) based projects.
+**lupos** is a Typescript Transformer helps to compile [lupos.js](https://github.com/pucelle/lupos.js) based projects.
 
 
 ## Features

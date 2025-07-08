@@ -11,7 +11,7 @@ export namespace AccessGrouper {
 	 * Not add when making expressions automatically because it's outputting already.
 	 */
 	export function addImport(type: 'get' | 'set') {
-		Modifier.addImport(type === 'get' ? 'trackGet' : 'trackSet', '@pucelle/ff')
+		Modifier.addImport(type === 'get' ? 'trackGet' : 'trackSet', '@pucelle/lupos')
 	}
 	
 

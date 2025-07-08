@@ -1,4 +1,4 @@
-import {MiniHeap} from '../structs/mini-heap'
+import {MiniHeap} from '../structs'
 import {AnimationFrame, bindCallback, promiseWithResolves} from '../utils'
 
 

@@ -195,7 +195,7 @@ export namespace ObservedChecker {
 		}
 
 		// Observed<>
-		if (helper.symbol.isImportedFrom(typeNode, 'Observed', '@pucelle/ff')) {
+		if (helper.symbol.isImportedFrom(typeNode, 'Observed', '@pucelle/lupos')) {
 			return true
 		}
 
@@ -286,14 +286,14 @@ export namespace ObservedChecker {
 
 		// Observed interface.
 		if (ts.isInterfaceDeclaration(decl)
-			&& helper.objectLike.isDerivedOf(decl, 'Observed', '@pucelle/ff')
+			&& helper.objectLike.isDerivedOf(decl, 'Observed', '@pucelle/lupos')
 		) {
 			return true 
 		}
 
 		// Observed class.
 		if (ts.isClassDeclaration(decl)
-			&& helper.class.isImplementedOf(decl, 'Observed', '@pucelle/ff')
+			&& helper.class.isImplementedOf(decl, 'Observed', '@pucelle/lupos')
 		) {
 			return true 
 		}

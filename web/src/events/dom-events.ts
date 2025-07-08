@@ -1,4 +1,4 @@
-import {WeakPairKeysListMap} from '../structs/map-weak'
+import {InternalWeakPairKeysListMap} from '../structs/map-weak'
 
 
 type EventHandler = (e: Event) => void
@@ -20,7 +20,7 @@ export type InferEventHandlerByType<T extends EventType> = (e: (GlobalEventHandl
 
 
 /** Cache event listeners. */
-const EventListenerMap: WeakPairKeysListMap<EventTarget, string, EventListener> = new WeakPairKeysListMap()
+const EventListenerMap: InternalWeakPairKeysListMap<EventTarget, string, EventListener> = new InternalWeakPairKeysListMap()
 
 
 /** 
@@ -107,52 +107,4 @@ export function off<T extends EventType>(el: EventTarget, type: T, handler: Infe
 			EventListenerMap.delete(el, type, listener)
 		}
 	}
-}
-
-
-/** From a mouse or touch event, get the mouse event or the first touch in the touch list. */
-export function toSingle(e: MouseEvent | TouchEvent): MouseEvent | Touch | null {
-	if (e.type.startsWith('touch')) {
-		return (e as TouchEvent).touches[0] || (e as TouchEvent).changedTouches[0] || null
-	}
-	else {
-		return e as MouseEvent
-	}
-}
-
-
-/** 
- * Get the event happened position in client origin.
- * The `client` represents your browser's viewport area.
- * Compare with `page`, `client` origin is not affected by page scrolling. 
- */
-export function getClientPosition(e: MouseEvent | TouchEvent): DOMPoint {
-	let eventItem = toSingle(e)
-
-	return eventItem
-		? new DOMPoint(eventItem.clientX, eventItem.clientY)
-		: new DOMPoint(0, 0)
-}
-
-
-/** 
- * Get the event happened position in page origin.
- * Compare with `client` origin, `page` origin is affected by page scrolling. 
- */
-export function getPagePosition(e: MouseEvent | TouchEvent): DOMPoint {
-	let eventItem = toSingle(e)
-
-	return eventItem
-		? new DOMPoint(eventItem.pageX, eventItem.pageY)
-		: new DOMPoint(0, 0)
-}
-
-
-/** Get the event happened position in screen origin. */
-export function getScreenPosition(e: MouseEvent | TouchEvent): DOMPoint {
-	let eventItem = toSingle(e)
-
-	return eventItem
-		? new DOMPoint(eventItem.screenX, eventItem.screenY)
-		: new DOMPoint(0, 0)
 }

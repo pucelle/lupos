@@ -22,15 +22,10 @@ export class EventSlotParser extends SlotParserBase {
 	/** Indicates whether attach to target component or element. */
 	private targetType: 'component' | 'element' = 'element'
 
-	/** Whether be simulated events. */
-	private beSimulatedEvents: boolean = false
-
 	preInit() {
 		if (this.prefix === '@@') {
 			this.forceComponentTargetType = TemplateSlotPlaceholder.isComponent(this.node.tagName!)
 		}
-
-		this.beSimulatedEvents = this.isSimulatedEvents()
 
 		// Will try to turn event handler to be static.
 		if (!this.isAllValuesCanTransfer()) {
@@ -42,19 +37,6 @@ export class EventSlotParser extends SlotParserBase {
 		if (this.targetType === 'component') {
 			this.refAsComponent()
 		}
-	}
-
-	private isSimulatedEvents(): boolean {
-		let groupName = this.name.replace(/:.+/, '')
-
-		return [
-			'tap',
-			'double-tap',
-			'hold',
-			'pinch-transform',
-			'pinch-zoom',
-			'slide',
-		].includes(groupName)
 	}
 
 	private checkTargetType(): 'component' | 'element' {
@@ -89,9 +71,6 @@ export class EventSlotParser extends SlotParserBase {
 	outputMoreInit() {
 		if (this.targetType === 'component') {
 			return this.outputComponentInit()
-		}
-		else if (this.beSimulatedEvents) {
-			return this.outputSimulatedInit()
 		}
 		else if (this.modifiers!.length > 0) {
 			return this.outputModifiableInit()
@@ -169,47 +148,8 @@ export class EventSlotParser extends SlotParserBase {
 		)
 	}
 
-	private outputSimulatedInit() {
-		Modifier.addImport('SimulatedEvents', '@pucelle/ff')
-
-		let nodeName = this.getRefedNodeName()
-
-		// SimulatedEvents.on($node_0, 'eventName', (...args) => {$latest_0.call($context, ...args)})
-		if (this.latestVariableNames) {
-			return factory.createCallExpression(
-				factory.createPropertyAccessExpression(
-					factory.createIdentifier('SimulatedEvents'),
-					factory.createIdentifier('on')
-				),
-				undefined,
-				[
-					factory.createIdentifier(nodeName),
-					factory.createStringLiteral(this.name),
-					this.outputLatestHandler()
-				]
-			)
-		}
-
-		// SimulatedEvents.on($node_0, 'eventName', eventHandler, $context)
-		else {
-			return factory.createCallExpression(
-				factory.createPropertyAccessExpression(
-					factory.createIdentifier('SimulatedEvents'),
-					factory.createIdentifier('on')
-				),
-				undefined,
-				[
-					factory.createIdentifier(nodeName),
-					factory.createStringLiteral(this.name),
-					this.outputValue().joint,
-					factory.createIdentifier(VariableNames.context)
-				]
-			)
-		}
-	}
-
 	private outputModifiableInit() {
-		Modifier.addImport('DOMModifiableEvents', '@pucelle/ff')
+		Modifier.addImport('DOMModifiableEvents', '@pucelle/lupos')
 
 		let nodeName = this.getRefedNodeName()
 

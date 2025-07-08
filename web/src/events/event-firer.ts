@@ -1,4 +1,4 @@
-import {ListMap} from '../structs/map'
+import {InternalListMap} from '../structs/map'
 
 
 /** Cache event handler and scope. */
@@ -30,7 +30,7 @@ type InferParameters<T> = T extends (...args: any) => any ? T extends (...args: 
  */
 export class EventFirer<E = any> {
 
-	private eventListenerMap: ListMap<string, EventListenerItem> = new ListMap()
+	private eventListenerMap: InternalListMap<string, EventListenerItem> = new InternalListMap()
 
 	/** 
 	 * Bind event listener.

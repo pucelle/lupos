@@ -1,4 +1,4 @@
-import {ListMap, SetMap} from './map'
+import {InternalListMap, InternalSetMap} from './map'
 
 
 /** 
@@ -6,7 +6,7 @@ import {ListMap, SetMap} from './map'
  * Index single value by a pair of object keys.
  * Both `K1` and `K2` must be object type.
  */
-export class WeakerPairKeysMap<K1 extends object, K2 extends object, V> {
+export class InternalWeakerPairKeysMap<K1 extends object, K2 extends object, V> {
 
 	private map: WeakMap<K1, WeakMap<K2, V>> = new WeakMap();
 
@@ -38,9 +38,9 @@ export class WeakerPairKeysMap<K1 extends object, K2 extends object, V> {
  * Index value list by a pair of keys.
  * `K1` must be object type.
  */
-export class WeakPairKeysListMap<K1 extends object, K2, V> {
+export class InternalWeakPairKeysListMap<K1 extends object, K2, V> {
 	
-	protected map: WeakMap<K1, ListMap<K2, V>> = new WeakMap();
+	protected map: WeakMap<K1, InternalListMap<K2, V>> = new WeakMap();
 
 	/** Get associated value list by key pair. */
 	get(k1: K1, k2: K2): V[] | undefined {
@@ -56,7 +56,7 @@ export class WeakPairKeysListMap<K1 extends object, K2, V> {
 	add(k1: K1, k2: K2, v: V) {
 		let sub = this.map.get(k1)
 		if (!sub) {
-			sub = new ListMap()
+			sub = new InternalListMap()
 			this.map.set(k1, sub)
 		}
 
@@ -85,7 +85,7 @@ export class WeakPairKeysListMap<K1 extends object, K2, V> {
  */
 export class WeakPairKeysSetMap<K1 extends object, K2, V> {
 
-	protected map: WeakMap<K1, SetMap<K2, V>> = new WeakMap();
+	protected map: WeakMap<K1, InternalSetMap<K2, V>> = new WeakMap();
 
 	/** Iterate all associated values by first key. */
 	*secondValuesOf(k1: K1): Iterable<V> {
@@ -106,12 +106,12 @@ export class WeakPairKeysSetMap<K1 extends object, K2, V> {
 	}
 
 	/** Get the map consist of second keys and values from the first key. */
-	getSecond(k1: K1): SetMap<K2, V> | undefined {
+	getSecond(k1: K1): InternalSetMap<K2, V> | undefined {
 		return this.map.get(k1)
 	}
 
 	/** Replace with first key and associated map of second keys and values. */
-	setSecond(k1: K1, m: SetMap<K2, V>) {
+	setSecond(k1: K1, m: InternalSetMap<K2, V>) {
 		this.map.set(k1, m)
 	}
 
@@ -139,7 +139,7 @@ export class WeakPairKeysSetMap<K1 extends object, K2, V> {
 	addByGroupOfSecondKeys(k1: K1, k2s: Set<K2>, v: V) {
 		let sub = this.map.get(k1)
 		if (!sub) {
-			sub = new SetMap()
+			sub = new InternalSetMap()
 			this.map.set(k1, sub)
 		}
 

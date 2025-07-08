@@ -1,4 +1,4 @@
-import {SetMap} from '../../structs/map'
+import {InternalSetMap} from '../../structs/map'
 import {WeakPairKeysSetMap} from '../../structs/map-weak'
 
 
@@ -16,7 +16,7 @@ export class DependencyMap {
 	private callbackMap: WeakPairKeysSetMap<object, PropertyKey, Function> = new WeakPairKeysSetMap()
 
 	/** When doing getting property, add dependencies. */
-	apply(callback: Function, deps: SetMap<object, PropertyKey>) {
+	apply(callback: Function, deps: InternalSetMap<object, PropertyKey>) {
 		if (deps.keyCount() > 0) {
 			this.updateCallbackMap(callback, deps)
 
@@ -30,7 +30,7 @@ export class DependencyMap {
 	}
 	
 	/** Update Refresh Callback Map by a Dependency Map item. */
-	private updateCallbackMap(c: Function, deps: SetMap<object, PropertyKey>) {
+	private updateCallbackMap(c: Function, deps: InternalSetMap<object, PropertyKey>) {
 		let oldDep = this.dependencyMap.getSecond(c)
 
 		// Clean not existed.
@@ -67,7 +67,7 @@ export class DependencyMap {
 	}
 
 	/** Get all dependencies by associated refresh callback. */
-	getDependencies(callback: Function): SetMap<object, PropertyKey> | undefined {
+	getDependencies(callback: Function): InternalSetMap<object, PropertyKey> | undefined {
 		return this.dependencyMap.getSecond(callback)
 	}
 

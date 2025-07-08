@@ -2,7 +2,7 @@
  * `K => V[]` Map Struct.
  * Good for purely adding.
  */
-export class ListMap<K, V> {
+export class InternalListMap<K, V> {
 
 	protected map: Map<K, V[]> = new Map()
 
@@ -63,7 +63,7 @@ export class ListMap<K, V> {
  * `K => Set<V>` Map Struct.
  * Good for dynamically adding & deleting.
  */
-export class SetMap<K, V> {
+export class InternalSetMap<K, V> {
 
 	protected map: Map<K, Set<V>> = new Map();
 

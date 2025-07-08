@@ -1,4 +1,4 @@
-import {SetMap} from '../structs/map'
+import {InternalSetMap} from '../structs/map'
 import {bindCallback} from '../utils'
 import {DependencyMap} from './helpers/dependency-map'
 
@@ -185,7 +185,7 @@ export class DependencyTracker {
 	readonly callback: Function
 
 	/** Each object and accessed property. */
-	readonly dependencies: SetMap<object, PropertyKey> = new SetMap()
+	readonly dependencies: InternalSetMap<object, PropertyKey> = new InternalSetMap()
 
 	/** Whether in tracking. */
 	tracking: boolean = false
