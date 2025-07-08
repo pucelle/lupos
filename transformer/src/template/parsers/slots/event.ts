@@ -174,7 +174,7 @@ export class EventSlotParser extends SlotParserBase {
 
 		let nodeName = this.getRefedNodeName()
 
-		// DOMEvents.on($node_0, 'eventName', (...args) => {$latest_0.call($context, ...args)})
+		// SimulatedEvents.on($node_0, 'eventName', (...args) => {$latest_0.call($context, ...args)})
 		if (this.latestVariableNames) {
 			return factory.createCallExpression(
 				factory.createPropertyAccessExpression(
@@ -190,7 +190,7 @@ export class EventSlotParser extends SlotParserBase {
 			)
 		}
 
-		// DOMEvents.on($node_0, 'eventName', eventHandler, $context)
+		// SimulatedEvents.on($node_0, 'eventName', eventHandler, $context)
 		else {
 			return factory.createCallExpression(
 				factory.createPropertyAccessExpression(

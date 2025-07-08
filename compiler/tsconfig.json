@@ -20,7 +20,6 @@
 		"node_modules",
 		"tests",
 		"out",
-		"demo",
 		"*.cjs",
 	]
 }
