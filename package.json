@@ -13,7 +13,7 @@
 	"types": "./web/out/index.d.ts",
 	"sideEffects": false,
 	"exports": {
-		"./web": "./web/out/index.js",
+		".": "./web/out/index.js",
 		"./compiler": "./compiler/out/index.js",
 		"./transformer": "./transformer/out/index.js"
 	},
