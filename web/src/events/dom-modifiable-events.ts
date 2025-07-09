@@ -194,6 +194,6 @@ function wrapHandler(el: EventTarget, type: string, modifiers: string[] | null, 
  * Unbind all event listeners that match specified parameters.
  * Note it equals to `DOMEvents.off`.
  */
-export function off<T extends DOMEvents.EventType>(el: EventTarget, type: T, handler: DOMEvents.InferEventHandlerByType<T>, scope: any = null) {
+export function off<T extends DOMEvents.EventType>(el: EventTarget, type: T, handler: DOMEvents.InferEventHandler<T>, scope: any = null) {
 	DOMEvents.off(el, type, handler, scope)
 }

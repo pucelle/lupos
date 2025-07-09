@@ -12,11 +12,21 @@ interface EventListener {
 }
 
 
-/** All event types. */
+/** 
+ * All event types.
+ * Includes customized transition enter and leave events.
+ */
 export type EventType = keyof GlobalEventHandlersEventMap | keyof WindowEventHandlersEventMap
+	| 'transition-enter-started' | 'transition-enter-ended'
+	| 'transition-leave-started' | 'transition-leave-ended'
 
 /** Infer event handler by event type. */
-export type InferEventHandlerByType<T extends EventType> = (e: (GlobalEventHandlersEventMap & WindowEventHandlersEventMap)[T]) => void
+export type InferEventHandler<T extends EventType> = (e: InferEventParameter<T>) => void
+
+/** Infer event parameter by event type. */
+export type InferEventParameter<T extends EventType> = T extends keyof GlobalEventHandlersEventMap | keyof WindowEventHandlersEventMap
+	? (GlobalEventHandlersEventMap & WindowEventHandlersEventMap)[T]
+	: any
 
 
 /** Cache event listeners. */
@@ -30,7 +40,7 @@ const EventListenerMap: InternalWeakPairKeysListMap<EventTarget, string, EventLi
 export function on<T extends EventType>(
 	el: EventTarget,
 	type: T,
-	handler: InferEventHandlerByType<T>,
+	handler: InferEventHandler<T>,
 	scope: any = null,
 	options: AddEventListenerOptions = {}
 ) {
@@ -47,7 +57,7 @@ export function on<T extends EventType>(
 export function once<T extends EventType>(
 	el: EventTarget,
 	type: T,
-	handler: InferEventHandlerByType<T>,
+	handler: InferEventHandler<T>,
 	scope: any = null,
 	options: AddEventListenerOptions = {}
 ) {
@@ -60,9 +70,9 @@ export function once<T extends EventType>(
 export function bindEvent(
 	el: EventTarget,
 	type: EventType,
-	handler: InferEventHandlerByType<any>,
+	handler: InferEventHandler<any>,
 	scope: any,
-	boundHandler: InferEventHandlerByType<any>,
+	boundHandler: InferEventHandler<any>,
 	options: AddEventListenerOptions
 ) {
 	if (options.once) {
@@ -93,7 +103,7 @@ function bindOnce(el: EventTarget, type: EventType, handler: EventHandler, scope
  * Unbind all event listeners that match specified parameters.
  * If `handler` binds a `scope`, here it must provide the same value to remove the listener.
  */
-export function off<T extends EventType>(el: EventTarget, type: T, handler: InferEventHandlerByType<T>, scope: any = null) {
+export function off<T extends EventType>(el: EventTarget, type: T, handler: InferEventHandler<T>, scope: any = null) {
 	let listeners = EventListenerMap.get(el, type)
 	if (!listeners) {
 		return
