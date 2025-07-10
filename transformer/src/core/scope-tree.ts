@@ -264,7 +264,10 @@ class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 		return false
 	}
 
-	/** Returns whether declared variable or access node in topmost scope. */
+	/** 
+	 * Returns whether declared variable or access node in topmost scope.
+	 * For global variables like `Math` will also returns `true`.
+	 */
 	private isDeclaredInTopmostScope(node: ts.Identifier | AccessNode | ts.ThisExpression): boolean {
 		if (!VisitTree.hasNode(node)) {
 			return false
@@ -278,7 +281,7 @@ class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 		}
 		else if (ts.isIdentifier(node)) {
 			let declaredIn = this.findDeclared(node)
-			return declaredIn ? declaredIn.isTopmost() : false
+			return declaredIn ? declaredIn.isTopmost() : true
 		}
 		else {
 			return false
@@ -362,7 +365,8 @@ class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 			// no need to replace it.
 
 			// If declared in local scope within transferring content,
-			// will be transferred with template together.
+			// like variables in a local declared function,
+			// will be transferred with the transferring content together.
 
 			let isDeclaredWithinTransferring = this.isDeclaredWithinNodeRange(node, node, topRawNode)
 			let shouldNotReplace = this.isDeclaredInTopmostScope(node) || isDeclaredWithinTransferring

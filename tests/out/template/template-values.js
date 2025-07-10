@@ -119,9 +119,22 @@ const $html_0 = new HTMLMaker("<div></div>");
 });
 /*
 <root>
+    <div @click=${() => this.handleEvent(Math.PI)} />
+</root>
+*/ const $template_8 = new TemplateMaker(function ($context) {
+    let $node = $html_0.make();
+    let $node_0 = $node.content.firstChild;
+    $node_0.addEventListener("click", () => $context.handleEvent(Math.PI));
+    return {
+        el: $node,
+        position: new SlotPosition(1, $node_0)
+    };
+});
+/*
+<root>
     <div attr="name1 ${this.prop} name2 ${this.prop}" />
 </root>
-*/ const $template_8 = new TemplateMaker(function () {
+*/ const $template_9 = new TemplateMaker(function () {
     let $latest_0;
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
@@ -140,7 +153,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 <root>
     <div attr="${this.prop}" attr2=${this.prop} />
 </root>
-*/ const $template_9 = new TemplateMaker(function () {
+*/ const $template_10 = new TemplateMaker(function () {
     let $latest_0, $latest_1;
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
@@ -196,15 +209,18 @@ export class TestTemplateValues extends Component {
     testMutableOfBoundMethod() {
         return new CompiledTemplateResult($template_7, [], this);
     }
+    testMutableOfGlobalVariables() {
+        return new CompiledTemplateResult($template_8, [], this);
+    }
     testBundlingStringAndValues() {
         trackGet(this, "prop");
-        return new CompiledTemplateResult($template_8, [
+        return new CompiledTemplateResult($template_9, [
             this.prop
         ], this);
     }
     testMergingSameValues() {
         trackGet(this, "prop");
-        return new CompiledTemplateResult($template_9, [
+        return new CompiledTemplateResult($template_10, [
             this.prop
         ], this);
     }

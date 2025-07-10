@@ -47,6 +47,10 @@ export class TestTemplateValues extends Component {
 		return html`<div @click=${this.handleEvent.bind(this)}></div>`
 	}
 
+	testMutableOfGlobalVariables() {
+		return html`<div @click=${() => this.handleEvent(Math.PI)}></div>`
+	}
+
 	testBundlingStringAndValues() {
 		return html`<div attr="name1 ${this.prop} name2 ${this.prop}"></div>`
 	}
