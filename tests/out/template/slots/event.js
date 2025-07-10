@@ -1,5 +1,5 @@
 import { Component, TemplateSlot, SlotPosition, CompiledTemplateResult, TemplateMaker, HTMLMaker, DynamicComponentBlock } from '@pucelle/lupos.js';
-import { trackGet, trackSet, SimulatedEvents, DOMModifiableEvents } from "@pucelle/ff";
+import { trackGet, trackSet, DOMModifiableEvents } from "@pucelle/lupos";
 const $html_0 = new HTMLMaker("<div></div>");
 /*
 <root>
@@ -139,35 +139,9 @@ const $html_3 = new HTMLMaker("<!----><div></div><!---->");
 });
 /*
 <root>
-    <div @tap=${this.handleEvent} />
-</root>
-*/ const $template_7 = new TemplateMaker(function ($context) {
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
-    SimulatedEvents.on($node_0, "tap", $context.handleEvent, $context);
-    return {
-        el: $node,
-        position: new SlotPosition(1, $node_0)
-    };
-});
-/*
-<root>
-    <div @hold:start=${this.handleEvent} />
-</root>
-*/ const $template_8 = new TemplateMaker(function ($context) {
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
-    SimulatedEvents.on($node_0, "hold:start", $context.handleEvent, $context);
-    return {
-        el: $node,
-        position: new SlotPosition(1, $node_0)
-    };
-});
-/*
-<root>
     <div @click.prevent=${this.handleEvent} />
 </root>
-*/ const $template_9 = new TemplateMaker(function ($context) {
+*/ const $template_7 = new TemplateMaker(function ($context) {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     DOMModifiableEvents.on($node_0, "click", ["prevent"], $context.handleEvent, $context);
@@ -180,7 +154,7 @@ const $html_3 = new HTMLMaker("<!----><div></div><!---->");
 <root>
     <div @click=${this.booleanValue ? this.handleEvent : this.handleAnotherEvent} />
 </root>
-*/ const $template_10 = new TemplateMaker(function ($context) {
+*/ const $template_8 = new TemplateMaker(function ($context) {
     let $latest_0;
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
@@ -199,7 +173,7 @@ const $html_3 = new HTMLMaker("<!----><div></div><!---->");
 <root>
     <div @click=${() => {this.booleanValue = true}} />
 </root>
-*/ const $template_11 = new TemplateMaker(function ($context) {
+*/ const $template_9 = new TemplateMaker(function ($context) {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     $node_0.addEventListener("click", () => { $context.booleanValue = true; trackSet($context, "booleanValue"); });
@@ -212,7 +186,7 @@ const $html_3 = new HTMLMaker("<!----><div></div><!---->");
 <root>
     <div @click=${() => this.handleEventWithParameter(this.booleanValue)} />
 </root>
-*/ const $template_12 = new TemplateMaker(function ($context) {
+*/ const $template_10 = new TemplateMaker(function ($context) {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     $node_0.addEventListener("click", () => $context.handleEventWithParameter($context.booleanValue));
@@ -225,7 +199,7 @@ const $html_3 = new HTMLMaker("<!----><div></div><!---->");
 <root>
     <div @click=${() => value} />
 </root>
-*/ const $template_13 = new TemplateMaker(function () {
+*/ const $template_11 = new TemplateMaker(function () {
     let $latest_0;
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
@@ -242,7 +216,7 @@ const $html_3 = new HTMLMaker("<!----><div></div><!---->");
 <root>
     <div @click=${(e: any) => value = e} />
 </root>
-*/ const $template_14 = new TemplateMaker(function () {
+*/ const $template_12 = new TemplateMaker(function () {
     let $latest_0;
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
@@ -259,7 +233,7 @@ const $html_3 = new HTMLMaker("<!----><div></div><!---->");
 <root>
     <div @click=${this.handleEvent.bind(this)} />
 </root>
-*/ const $template_15 = new TemplateMaker(function ($context) {
+*/ const $template_13 = new TemplateMaker(function ($context) {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     $node_0.addEventListener("click", $context.handleEvent.bind($context));
@@ -302,42 +276,36 @@ export class TestEvent extends Component {
     testElementEvent() {
         return new CompiledTemplateResult($template_6, [], this);
     }
-    testSimulatedTapEvent() {
-        return new CompiledTemplateResult($template_7, [], this);
-    }
-    testSimulatedHoldStartEvent() {
-        return new CompiledTemplateResult($template_8, [], this);
-    }
     testEventModifier() {
-        return new CompiledTemplateResult($template_9, [], this);
+        return new CompiledTemplateResult($template_7, [], this);
     }
     testDynamicEventHandler() {
         trackGet(this, "booleanValue");
-        return new CompiledTemplateResult($template_10, [
+        return new CompiledTemplateResult($template_8, [
             this.booleanValue ? this.handleEvent : this.handleAnotherEvent
         ], this);
     }
     testInlineEventHandler() {
-        return new CompiledTemplateResult($template_11, [], this);
+        return new CompiledTemplateResult($template_9, [], this);
     }
     testInlineCallMethod() {
-        return new CompiledTemplateResult($template_12, [], this);
+        return new CompiledTemplateResult($template_10, [], this);
     }
     testLocalReference() {
         let value = 1;
-        return new CompiledTemplateResult($template_13, [
+        return new CompiledTemplateResult($template_11, [
             value
         ], this);
     }
     testLocalAssignment() {
         let value;
         value;
-        return new CompiledTemplateResult($template_14, [
+        return new CompiledTemplateResult($template_12, [
             value
         ], this);
     }
     testIgnoringBound() {
-        return new CompiledTemplateResult($template_15, [], this);
+        return new CompiledTemplateResult($template_13, [], this);
     }
 }
 class Com1 extends Component {

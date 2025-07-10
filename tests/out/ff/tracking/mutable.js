@@ -1,5 +1,5 @@
-import { trackGet, trackSet } from '@pucelle/ff';
 import { Component } from '@pucelle/lupos.js';
+import { trackGet, trackSet } from "@pucelle/lupos";
 export class TestMutable extends Component {
     prop = [{ value: 1 }, { value: 2 }];
     dynamicVariableAsIndex() {

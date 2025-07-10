@@ -1,5 +1,5 @@
 import { Component } from '@pucelle/lupos.js';
-import { trackGet, trackSet } from "@pucelle/ff";
+import { trackGet, trackSet } from "@pucelle/lupos";
 export class TestMap extends Component {
     map = new Map();
     has() {
@@ -57,40 +57,6 @@ export class TestObservingOfMapMember extends Component {
         trackGet(this.list, "");
         trackGet(item, "value");
         return item.value;
-    }
-    /** Not supported yet. */
-    filterList() {
-        let items = this.list.filter(v => {
-            trackGet(v, "value");
-            return v.value === 0;
-        });
-        trackGet(this, "list");
-        trackGet(this.list, "");
-        return items.map(v => v.value);
-    }
-    /** Not supported yet. */
-    sortList() {
-        let items = this.list;
-        items.sort();
-        trackSet(items, "");
-        return items.map(v => v.value);
-    }
-    /** Not supported yet. */
-    sortFilteredList() {
-        let items = this.list.filter(v => {
-            trackGet(v, "value");
-            return v.value === 0;
-        });
-        items.sort();
-        trackGet(this, "list");
-        trackGet(this.list, "");
-        return items.map(v => v.value);
-    }
-    /** Not supported yet. */
-    sortFilteredListWithoutAnyReference() {
-        this.list.filter(v => v.value === 0)
-            .sort()
-            .map(v => v.value);
     }
 }
 export class TestSet extends Component {

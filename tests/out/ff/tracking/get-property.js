@@ -1,5 +1,5 @@
-import { trackGet } from '@pucelle/ff';
 import { Component } from '@pucelle/lupos.js';
+import { trackGet } from "@pucelle/lupos";
 export class TestNormalProp extends Component {
     prop = 1;
     getProp() {

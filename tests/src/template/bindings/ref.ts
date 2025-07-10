@@ -1,5 +1,4 @@
-import {fade} from '@pucelle/ff'
-import {ClassBinding, Component, html} from '@pucelle/lupos.js'
+import {fade, ClassBinding, Component, html} from '@pucelle/lupos.js'
 
 
 export class TestRefBinding extends Component {

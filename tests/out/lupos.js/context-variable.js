@@ -1,4 +1,4 @@
-import {} from '@pucelle/ff';
+import {} from '../../../web/out';
 import { Component } from '@pucelle/lupos.js';
 export class Parent extends Component {
     prop = 1;

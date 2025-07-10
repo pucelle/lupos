@@ -1,4 +1,4 @@
-import {Observed} from '@pucelle/ff'
+import {Observed} from '../../../../web/out'
 import {Component, html} from '@pucelle/lupos.js'
 
 

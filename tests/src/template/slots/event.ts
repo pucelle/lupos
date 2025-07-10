@@ -39,14 +39,6 @@ export class TestEvent extends Component {
 		return html`<div @click=${this.handleEvent} />`
 	}
 
-	testSimulatedTapEvent() {
-		return html`<div @tap=${this.handleEvent} />`
-	}
-
-	testSimulatedHoldStartEvent() {
-		return html`<div @hold:start=${this.handleEvent} />`
-	}
-
 	testEventModifier() {
 		return html`<div @click.prevent=${this.handleEvent} />`
 	}

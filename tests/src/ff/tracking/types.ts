@@ -1,4 +1,4 @@
-import {effect, ListMap, MethodsObserved, Observed, UnObserved} from '@pucelle/ff'
+import {effect, MethodsObserved, Observed, UnObserved} from '../../../../web/out'
 import {Component} from '@pucelle/lupos.js'
 
 
@@ -190,14 +190,14 @@ export class TestObservedInterface {
 
 export class TestMethodsObserved implements Observed {
 
-	listData: ListMap<number, number> = new ListMap()
+	listData: ListMap = new ListMap()
 
 	getListItem(key: number) {
 		return this.listData.get(key)
 	}
 
 	addListItem(key: number, value: number) {
-		this.listData.add(key, value)
+		this.listData.set(key, value)
 	}
 
 	getListItemAsVariable(key: number) {
@@ -207,7 +207,17 @@ export class TestMethodsObserved implements Observed {
 
 	addListItemAsVariable(key: number, value: number) {
 		let listData = this.listData
-		listData.add(key, value)
+		listData.set(key, value)
+	}
+}
+
+class ListMap implements MethodsObserved<'get', 'set'> {
+	get(key: number) {
+		return key
+	}
+
+	set(key: number, value: number) {
+		return key + value
 	}
 }
 

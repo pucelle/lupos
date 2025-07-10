@@ -1,5 +1,6 @@
-import { ComputedMaker, trackGet, trackSet, EffectMaker, WatchMaker } from '@pucelle/ff';
+import { Observed } from '../../../web/out';
 import { Component } from '@pucelle/lupos.js';
+import { ComputedMaker, trackGet, trackSet, EffectMaker, WatchMaker } from "@pucelle/lupos";
 export class TestComputed extends Component {
     prop = 1;
     $prop2_computer = undefined;

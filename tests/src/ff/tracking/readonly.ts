@@ -1,4 +1,4 @@
-import {DeepReadonly} from '@pucelle/ff'
+import {DeepReadonly} from '../../../../web/out'
 import {Component} from '@pucelle/lupos.js'
 
 

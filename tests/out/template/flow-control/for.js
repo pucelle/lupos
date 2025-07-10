@@ -1,5 +1,5 @@
-import { trackGet } from '@pucelle/ff';
 import { Component, TemplateSlot, SlotPosition, CompiledTemplateResult, TemplateMaker, HTMLMaker, ForBlock } from '@pucelle/lupos.js';
+import { trackGet } from "@pucelle/lupos";
 const $html_0 = new HTMLMaker(" ");
 /*
 <root>${n + this.prop}</root>

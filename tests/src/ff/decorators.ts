@@ -1,4 +1,4 @@
-import {Observed, computed, effect, watch} from '@pucelle/ff'
+import {Observed, computed, effect, watch} from '../../../web/out'
 import {Component} from '@pucelle/lupos.js'
 
 

@@ -1,5 +1,6 @@
-import { ListMap, EffectMaker, trackGet, trackSet } from '@pucelle/ff';
+import { MethodsObserved, Observed, UnObserved } from '../../../../web/out';
 import { Component } from '@pucelle/lupos.js';
+import { EffectMaker, trackGet, trackSet } from "@pucelle/lupos";
 export class TestObservedVariableType {
     variables() {
         var a = { value: 1 };
@@ -177,7 +178,7 @@ export class TestMethodsObserved {
         return this.listData.get(key);
     }
     addListItem(key, value) {
-        this.listData.add(key, value);
+        this.listData.set(key, value);
         trackSet(this.listData, "");
     }
     getListItemAsVariable(key) {
@@ -188,8 +189,16 @@ export class TestMethodsObserved {
     }
     addListItemAsVariable(key, value) {
         let listData = this.listData;
-        listData.add(key, value);
+        listData.set(key, value);
         trackSet(listData, "");
+    }
+}
+class ListMap {
+    get(key) {
+        return key;
+    }
+    set(key, value) {
+        return key + value;
     }
 }
 export class TestPropertyMethodsObserved {

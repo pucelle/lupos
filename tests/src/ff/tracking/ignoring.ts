@@ -1,5 +1,5 @@
 import {Component, html} from '@pucelle/lupos.js'
-import {computed, trackGet, trackSet, watch} from '@pucelle/ff'
+import {computed, trackGet, trackSet, watch} from '../../../../web/out'
 
 
 export class TestIgnoringStringIndex extends Component {

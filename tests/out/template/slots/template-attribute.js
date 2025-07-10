@@ -1,5 +1,4 @@
-import { fade } from '@pucelle/ff';
-import { Component, TransitionBinding, TemplateSlot, SlotPosition, CompiledTemplateResult, TemplateMaker, HTMLMaker } from '@pucelle/lupos.js';
+import { fade, Component, TransitionBinding, TemplateSlot, SlotPosition, CompiledTemplateResult, TemplateMaker, HTMLMaker } from '@pucelle/lupos.js';
 const $html_0 = new HTMLMaker("<!---->");
 /*
 <root>

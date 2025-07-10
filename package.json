@@ -28,8 +28,9 @@
 		"luc": "./bin/luc"
 	},
 	"devDependencies": {
-		"@types/node": "^22.10.7",
+		"@pucelle/lupos.js": "^0.1.0",
 		"@types/jest": "^27.4.0",
+		"@types/node": "^22.10.7",
 		"jest": "^29.7.0",
 		"jest-environment-jsdom": "^29.7.0",
 		"ts-jest": "^29.2.5",

@@ -1,5 +1,5 @@
-import { trackGet } from '@pucelle/ff';
 import { Component } from '@pucelle/lupos.js';
+import { trackGet } from "@pucelle/lupos";
 export class TestReadonlyModifier extends Component {
     static SlotContentType = 2;
     prop1 = { value: 'Text' };

@@ -1,5 +1,5 @@
 import { Component, TemplateSlot, SlotPosition, CompiledTemplateResult, TemplateMaker, DynamicComponentBlock, HTMLMaker } from '@pucelle/lupos.js';
-import { trackGet, trackSet } from "@pucelle/ff";
+import { trackGet, trackSet } from "@pucelle/lupos";
 const $html_0 = new HTMLMaker("<!----><div></div><!---->");
 /*
 <root>

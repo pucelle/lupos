@@ -1,5 +1,5 @@
 import { Component } from '@pucelle/lupos.js';
-import { trackSet } from "@pucelle/ff";
+import { trackSet } from "@pucelle/lupos";
 export class TestMap extends Component {
     map = new Map();
     set() {
