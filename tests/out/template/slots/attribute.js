@@ -94,13 +94,30 @@ const $html_0 = new HTMLMaker("<div></div>");
         }
     };
 });
-const $html_5 = new HTMLMaker("<!---->");
+/*
+<root>
+    <Com autofocus />
+</root>
+*/ const $template_5 = new TemplateMaker(function () {
+    let $node = $html_0.make();
+    let $node_0 = $node.content.firstChild;
+    let $com_0 = new Com($node_0);
+    $node_0.setAttribute("autofocus", "");
+    return {
+        el: $node,
+        position: new SlotPosition(1, $node_0),
+        parts: [
+            [$com_0, 1]
+        ]
+    };
+});
+const $html_6 = new HTMLMaker("<!---->");
 /*
 <root>
     <template class="classNameSelf" />
 </root>
-*/ const $template_5 = new TemplateMaker(function ($context) {
-    let $node = $html_5.make();
+*/ const $template_6 = new TemplateMaker(function ($context) {
+    let $node = $html_6.make();
     let $node_0 = $context.el;
     let $node_1 = $node.content.firstChild;
     $node_0.classList.add("classNameSelf");
@@ -140,10 +157,13 @@ export class TestAttribute extends Component {
             this.booleanValue
         ], this);
     }
+    testEmptyAttrValue() {
+        return new CompiledTemplateResult($template_5, [], this);
+    }
 }
 class Com extends Component {
     static SlotContentType = 0;
     render() {
-        return new CompiledTemplateResult($template_5, [], this);
+        return new CompiledTemplateResult($template_6, [], this);
     }
 }

@@ -3,6 +3,7 @@ import {factory, Modifier} from '../../../core'
 import {FlowControlBase} from './base'
 import {TemplateParser} from '../template'
 import {SlotContentType} from '../../../enums'
+import {TemplatePartType} from '../../../lupos-ts-module'
 
 
 export class KeyedFlowControl extends FlowControlBase {
@@ -75,7 +76,7 @@ export class KeyedFlowControl extends FlowControlBase {
 
 	outputUpdate() {
 		let keyedValueIndices = this.valueIndex !== null ? [this.valueIndex] : null
-		let keyedValue = this.template.values.outputValue(null, keyedValueIndices, this.tree, this.asLazyCallback).joint
+		let keyedValue = this.template.values.outputValue(null, keyedValueIndices, this.tree, this.asLazyCallback, TemplatePartType.FlowControl).joint
 		let resultValue = this.contentTemplate ? this.contentTemplate.outputReplaced() : null
 
 		// Add it as a value item to original template, and returned it's reference.

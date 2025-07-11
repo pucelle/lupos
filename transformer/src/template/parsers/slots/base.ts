@@ -1,5 +1,5 @@
 import * as ts from 'typescript'
-import {HTMLAttribute, HTMLNode, HTMLNodeType, TemplatePart, TemplateSlotPlaceholder} from '../../../lupos-ts-module'
+import {HTMLAttribute, HTMLNode, HTMLNodeType, TemplatePart, TemplatePartType, TemplateSlotPlaceholder} from '../../../lupos-ts-module'
 import {PartType, TreeParser} from '../tree'
 import {factory, Modifier, DeclarationScopeTree, Packer, Hashing} from '../../../core'
 import {TemplateParser} from '../template'
@@ -8,6 +8,9 @@ import {HTMLNodeHelper} from '../../html-syntax'
 
 
 export abstract class SlotParserBase {
+
+	/** Slot part type. */
+	readonly type: TemplatePartType
 
 	/** 
 	 * Attribute name after removed prefix and modifiers,
@@ -51,8 +54,9 @@ export abstract class SlotParserBase {
 	private customValueOutputted: boolean = false
 
 	constructor(slot: TemplatePart, treeParser: TreeParser) {
-		let {namePrefix, mainName, modifiers, strings, valueIndices, node, attr} = slot
+		let {type, namePrefix, mainName, modifiers, strings, valueIndices, node, attr} = slot
 
+		this.type = type
 		this.prefix = namePrefix
 		this.name = mainName
 		this.modifiers = modifiers
@@ -228,7 +232,13 @@ export abstract class SlotParserBase {
 		joint: ts.Expression,
 		valueNodes: ts.Expression[],
 	} {
-		return this.template.values.outputValue(this.strings, this.valueIndices, this.tree, this.asLazyCallback)
+		return this.template.values.outputValue(
+			this.strings,
+			this.valueIndices,
+			this.tree,
+			this.asLazyCallback,
+			this.type
+		)
 	}
 
 	/** 

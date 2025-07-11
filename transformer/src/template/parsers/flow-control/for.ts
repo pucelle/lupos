@@ -3,6 +3,7 @@ import {factory, Modifier, helper} from '../../../core'
 import {FlowControlBase} from './base'
 import {SlotContentType} from '../../../enums'
 import {ObservedStateMask, ObservedChecker, TrackingPatch} from '../../../lupos'
+import {TemplatePartType} from '../../../lupos-ts-module'
 
 
 export class ForFlowControl extends FlowControlBase {
@@ -90,7 +91,7 @@ export class ForFlowControl extends FlowControlBase {
 
 	private outputFnUpdate() {
 		let fnValueIndices = this.fnValueIndex !== null ? [this.fnValueIndex] : null
-		let value = this.template.values.outputValue(null, fnValueIndices, this.tree, this.fnAsLazyCallback)
+		let value = this.template.values.outputValue(null, fnValueIndices, this.tree, this.fnAsLazyCallback, TemplatePartType.FlowControl)
 
 		// if ($latest_0 !== $values[0]) {
 		//   $block_0.updateRenderFn($values[0])
@@ -136,7 +137,7 @@ export class ForFlowControl extends FlowControlBase {
 
 	private outputOfUpdate() {
 		let ofValueIndices = this.ofValueIndex !== null ? [this.ofValueIndex] : null
-		let value = this.template.values.outputValue(null, ofValueIndices, this.tree, this.ofAsLazyCallback)
+		let value = this.template.values.outputValue(null, ofValueIndices, this.tree, this.ofAsLazyCallback, TemplatePartType.FlowControl)
 
 		// Not compare, update directly.
 		// $block_0.updateData(data)

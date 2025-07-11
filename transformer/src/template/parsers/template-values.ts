@@ -2,6 +2,7 @@ import * as ts from 'typescript'
 import {factory, Interpolator, MutableMask, Packer, DeclarationScopeTree, helper, Hashing} from '../../core'
 import {VariableNames} from './variable-names'
 import {TreeParser} from './tree'
+import {TemplatePartType} from '../../lupos-ts-module'
 
 
 /** Help to manage all value nodes. */
@@ -61,17 +62,39 @@ export class TemplateValues {
 		strings: string[] | null = null,
 		valueIndices: number[] | null,
 		tree: TreeParser,
-		asLazyCallback: boolean
+		asLazyCallback: boolean,
+		partType: TemplatePartType
 	): {
 		joint: ts.Expression,
 		valueNodes: ts.Expression[],
 	} {
 
-		// Like `.booleanProp`.
 		if (!strings && !valueIndices) {
-			return {
-				joint: factory.createTrue(),
-				valueNodes: [],
+
+			// Like `.booleanProp`.
+			if (partType === TemplatePartType.Property) {
+				return {
+					joint: factory.createTrue(),
+					valueNodes: [],
+				}
+			}
+
+			// Like `autofocus` on a component.
+			else if (partType === TemplatePartType.SlottedAttribute
+				|| partType === TemplatePartType.UnSlottedAttribute
+			) {
+				return {
+					joint: factory.createStringLiteral(''),
+					valueNodes: [],
+				}
+			}
+
+			// Otherwise when no value specified.
+			else {
+				return {
+					joint: factory.createIdentifier('undefined'),
+					valueNodes: [],
+				}
 			}
 		}
 

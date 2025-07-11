@@ -26,6 +26,10 @@ export class TestAttribute extends Component {
 	testQueryAttr() {
 		return html`<div ?hidden=${this.booleanValue} />`
 	}
+
+	testEmptyAttrValue() {
+		return html`<Com autofocus />`
+	}
 }
 
 class Com extends Component {

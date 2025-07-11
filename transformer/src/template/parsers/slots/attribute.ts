@@ -298,34 +298,63 @@ export class AttributeSlotParser extends SlotParserBase {
 
 		// $values[0] === null ? $node_0.removeAttribute(attrName) : $node_0.setAttribute(attrName, $values[0])
 		else {
-			return factory.createConditionalExpression(
-				factory.createBinaryExpression(
-					value.joint,
-					factory.createToken(ts.SyntaxKind.EqualsEqualsEqualsToken),
-					factory.createNull()
-				),
-				factory.createToken(ts.SyntaxKind.QuestionToken),
-				factory.createCallExpression(
-					factory.createPropertyAccessExpression(
-						factory.createIdentifier(nodeName),
-						factory.createIdentifier('removeAttribute')
+
+			// Like `autofocus`
+			if (helper.isLiteralLike(value.joint)) {
+				if (value.joint.kind !== ts.SyntaxKind.NullKeyword) {
+					return factory.createCallExpression(
+						factory.createPropertyAccessExpression(
+							factory.createIdentifier(nodeName),
+							factory.createIdentifier('setAttribute')
+						),
+						undefined,
+						[
+							factory.createStringLiteral(this.name),
+							value.joint
+						]
+					)
+				}
+				else {
+					return factory.createCallExpression(
+						factory.createPropertyAccessExpression(
+							factory.createIdentifier(nodeName),
+							factory.createIdentifier('removeAttribute')
+						),
+						undefined,
+						[factory.createStringLiteral(this.name)]
+					)
+				}
+			}
+			else {
+				return factory.createConditionalExpression(
+					factory.createBinaryExpression(
+						value.joint,
+						factory.createToken(ts.SyntaxKind.EqualsEqualsEqualsToken),
+						factory.createNull()
 					),
-					undefined,
-					[factory.createStringLiteral(this.name)]
-				),
-				factory.createToken(ts.SyntaxKind.ColonToken),
-				factory.createCallExpression(
-					factory.createPropertyAccessExpression(
-						factory.createIdentifier(nodeName),
-						factory.createIdentifier('setAttribute')
+					factory.createToken(ts.SyntaxKind.QuestionToken),
+					factory.createCallExpression(
+						factory.createPropertyAccessExpression(
+							factory.createIdentifier(nodeName),
+							factory.createIdentifier('removeAttribute')
+						),
+						undefined,
+						[factory.createStringLiteral(this.name)]
 					),
-					undefined,
-					[
-						factory.createStringLiteral(this.name),
-						value.joint
-					]
+					factory.createToken(ts.SyntaxKind.ColonToken),
+					factory.createCallExpression(
+						factory.createPropertyAccessExpression(
+							factory.createIdentifier(nodeName),
+							factory.createIdentifier('setAttribute')
+						),
+						undefined,
+						[
+							factory.createStringLiteral(this.name),
+							value.joint
+						]
+					)
 				)
-			)
+			}
 		}
 	}
 }
