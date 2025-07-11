@@ -390,8 +390,16 @@ export abstract class SlotParserBase {
 		// If first child is not stable, insert a comment before it.
 		if (!HTMLNodeHelper.isPrecedingPositionStable(firstChild, this.template.values.valueNodes)) {
 			let comment = new HTMLNode(HTMLNodeType.Comment, -1, -1)
+
 			firstChild.before(comment)
 			firstChild = comment
+		}
+
+		// If last child will be removed, pick previous.
+		while (lastChild !== firstChild
+			&& !HTMLNodeHelper.isFollowingPositionStable(lastChild)
+		) {
+			lastChild = lastChild.previousSibling!
 		}
 
 		this.tree.references.ref(firstChild)

@@ -11,7 +11,7 @@ export namespace HTMLNodeHelper {
 
 	/** 
 	 * Whether preceding position of current node is stable.
-	 * Means will not remove, or insert other nodes before it.
+	 * Means will not be removed, or insert other nodes before it.
 	 */
 	export function isPrecedingPositionStable(node: HTMLNode, rawValueNodes: ts.Node[]): boolean {
 
@@ -31,11 +31,12 @@ export namespace HTMLNodeHelper {
 		}
 
 		// All nodes may be removed from portal.
-		if (node.parent?.type === HTMLNodeType.Tag && node.parent.tagName === 'lu:portal') {
-			return false
-		}
+		// Since all child nodes will be moved, no need to handle.
+		// if (node.parent?.type === HTMLNodeType.Tag && node.parent.tagName === 'lu:portal') {
+		// 	return false
+		// }
 
-		// Will move nodes before.
+		// Will replace whole dynamic component.
 		if (node.type === HTMLNodeType.Tag
 			&& TemplateSlotPlaceholder.isDynamicComponent(node.tagName!)
 		) {
@@ -49,11 +50,10 @@ export namespace HTMLNodeHelper {
 			return false
 		}
 
-		// Text, if start with string, return true.
+		// Text, if start with string, position persist, otherwise will insert contents.
 		if (node.type === HTMLNodeType.Text) {
 			let {strings, valueIndices} = TemplateSlotPlaceholder.parseTemplateContent(node.text!)
 
-	
 			// First part is value, and the value is not object type.
 			// Next text node is not trimmed and splitted yet.
 			if (valueIndices && (!strings || !strings[0].text.trim())) {
@@ -64,6 +64,23 @@ export namespace HTMLNodeHelper {
 					return false
 				}
 			}
+		}
+
+		return true
+	}
+
+
+	/** 
+	 * Whether following position of current node is stable.
+	 * Means will not be removed.
+	 */
+	export function isFollowingPositionStable(node: HTMLNode): boolean {
+
+		// Named slot target will be moved.
+		if (node.type === HTMLNodeType.Tag
+			&& node.attrs!.find(attr => attr.name === ':slot')
+		) {
+			return false
 		}
 
 		return true
