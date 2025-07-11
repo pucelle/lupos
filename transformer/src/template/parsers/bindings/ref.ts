@@ -89,7 +89,7 @@ export class RefBinding extends BindingBase {
 			
 			if (this.usePropAccess
 				&& helper.access.isAccess(rawValueNode)
-				&& ObservedChecker.isSelfObserved(rawValueNode)
+				&& ObservedChecker.getSelfObserved(rawValueNode)
 			) {
 				TrackingPatch.ignore(rawValueNode)
 

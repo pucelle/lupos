@@ -6,11 +6,17 @@ import {TrackingPatch} from './patch'
 import {ObservedStateMask} from './types'
 
 
-/** Help to check observed state. */
+/** 
+ * Help to check observed state.
+ * Returned values:
+ * 	   true: Be Observed
+ *     false: Be unObserved
+ *     null: continue checking
+ */
 export namespace ObservedChecker {
 
 	/** Test whether value of current access node is mutable, like `a.b`. */
-	export function isSelfObserved(rawNode: ts.Node): rawNode is AccessNode {
+	export function getSelfObserved(rawNode: ts.Node): boolean | null {
 
 		// Must be access node.
 		if (!helper.access.isAccess(rawNode)) {
@@ -56,7 +62,7 @@ export namespace ObservedChecker {
 		// But `@computed` decorated will always continue.
 		if (decl && ts.isAccessor(decl)) {
 			let decoNameBeComputed = helper.deco.getFirstName(decl) === 'computed'
-			let isClassDeclObserved = isDeclarationObserved(helper.symbol.resolveDeclaration(decl.parent))
+			let isClassDeclObserved = getDeclarationObserved(helper.symbol.resolveDeclaration(decl.parent))
 
 			if (isClassDeclObserved && !decoNameBeComputed) {
 				return false
@@ -75,7 +81,7 @@ export namespace ObservedChecker {
 
 
 		// Normally if parent expression is observed, child is mutable.
-		return isElementsObserved(rawNode.expression)
+		return getElementsObserved(rawNode.expression)
 	}
 
 
@@ -93,7 +99,7 @@ export namespace ObservedChecker {
 	 * - a conditional expression
 	 * - an as expression
 	 */
-	export function isElementsObserved(rawNode: ts.Expression): boolean {
+	export function getElementsObserved(rawNode: ts.Expression): boolean | null {
 
 		// Force track.
 		if (TrackingPatch.isForceTrackedAs(rawNode, ObservedStateMask.Elements)) {
@@ -104,54 +110,57 @@ export namespace ObservedChecker {
 		// `(a ? b : c).d`
 		// `(a ?? b).b`
 		if (helper.access.isAccess(rawNode)) {
-			return isAccessObserved(rawNode)
+			return getAccessObserved(rawNode)
 		}
 
 		// `this`
 		else if (helper.isThis(rawNode)) {
-			return isThisObserved(rawNode)
+			return getThisObserved(rawNode)
 		}
 		
 		// `a`
 		else if (ts.isIdentifier(rawNode)) {
-			return isIdentifierObserved(rawNode)
+			return getIdentifierObserved(rawNode)
 		}
 
 		// `a && b`, `a || b`, `a ?? b`, can observe only if both a & b can observe.
 		else if (ts.isBinaryExpression(rawNode)) {
-			return (rawNode.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken
-					|| rawNode.operatorToken.kind === ts.SyntaxKind.BarBarToken
-					|| rawNode.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken
-				)
-				&& isElementsObserved(rawNode.left)
-				&& isElementsObserved(rawNode.right)
+			if (rawNode.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken
+				|| rawNode.operatorToken.kind === ts.SyntaxKind.BarBarToken
+				|| rawNode.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken
+			) {
+				return getElementsObserved(rawNode.left)
+					?? getElementsObserved(rawNode.right)
+			}
 		}
 
 		// `(...)`
 		else if (ts.isParenthesizedExpression(rawNode)) {
-			return isElementsObserved(rawNode.expression)
+			return getElementsObserved(rawNode.expression)
 		}
 
 		// `...!`
 		else if (ts.isNonNullExpression(rawNode)) {
-			return isElementsObserved(rawNode.expression)
+			return getElementsObserved(rawNode.expression)
 		}
 
 		// `(a as Observed<{b: number}>).b`
 		else if (ts.isAsExpression(rawNode)) {
 			let typeNode = rawNode.type
-			return typeNode && isTypeNodeObserved(typeNode)
+			if (typeNode) {
+				return getTypeNodeObserved(typeNode)
+			}
 		}
 
 		// `a ? b : c`, can observe only if both b & c should be observed.
 		else if (ts.isConditionalExpression(rawNode)) {
-			return isElementsObserved(rawNode.whenTrue)
-				&& isElementsObserved(rawNode.whenFalse)
+			return getElementsObserved(rawNode.whenTrue)
+				?? getElementsObserved(rawNode.whenFalse)
 		}
 
 		// `a.b()`
 		else if (ts.isCallExpression(rawNode)) {
-			return isCallObserved(rawNode)
+			return getCallObserved(rawNode)
 		}
 
 		// `new a()`
@@ -161,53 +170,68 @@ export namespace ObservedChecker {
 			)
 		) {
 			let decl = helper.symbol.resolveDeclaration(rawNode.expression)
-			return isDeclarationObserved(decl)
+			return getDeclarationObserved(decl)
 		}
 
-		else {
-			return false
-		}
+		return null
 	}
 
 
 	/** Whether a type node represented node should be observed. */
-	function isTypeNodeObserved(typeNode: ts.TypeNode | undefined): boolean {
+	function getTypeNodeObserved(typeNode: ts.TypeNode | undefined): boolean | null {
+		let result: boolean | null
+
 		if (!typeNode) {
-			return false
+			return null
 		}
 
-		// A | B
+		// `A | B`
 		if (ts.isUnionTypeNode(typeNode)
 			|| ts.isIntersectionTypeNode(typeNode)
 		) {
-			return typeNode.types.some(n => isTypeNodeObserved(n))
+			for (let type of typeNode.types) {
+				result = getTypeNodeObserved(type)
+				if (result !== null) {
+					return result
+				}
+			}
+
+			return null
 		}
 
-		// A[]
-		if (ts.isArrayTypeNode(typeNode)) {
-			return isTypeNodeObserved(typeNode.elementType)
+		// `A[]`
+		else if (ts.isArrayTypeNode(typeNode)) {
+			return getTypeNodeObserved(typeNode.elementType)
 		}
 
-		// A extends B ? C : D
-		if (ts.isConditionalTypeNode(typeNode)) {
-			return isTypeNodeObserved(typeNode.trueType)
-				|| isTypeNodeObserved(typeNode.falseType)
+		// `A extends B ? C : D`
+		else if (ts.isConditionalTypeNode(typeNode)) {
+			return getTypeNodeObserved(typeNode.trueType)
+				?? getTypeNodeObserved(typeNode.falseType)
 		}
 
-		// Observed<>
-		if (helper.symbol.isImportedFrom(typeNode, 'Observed', '@pucelle/lupos')) {
+		// `Observed<>`
+		else if (helper.symbol.isImportedFrom(typeNode, 'Observed', '@pucelle/lupos')) {
 			return true
 		}
 
-		let resolveFrom: ts.Node = typeNode
-
-		// Resolve type reference name.
-		if (ts.isTypeReferenceNode(typeNode)) {
-			resolveFrom = typeNode.typeName
+		// `UnObserved<>`
+		else if (helper.symbol.isImportedFrom(typeNode, 'UnObserved', '@pucelle/lupos')) {
+			return false
 		}
 
-		let decl = helper.symbol.resolveDeclaration(resolveFrom)
-		return isDeclarationObserved(decl)
+		// Resolve from type node.
+		else {
+			let resolveFrom: ts.Node = typeNode
+
+			// Resolve type reference name.
+			if (ts.isTypeReferenceNode(typeNode)) {
+				resolveFrom = typeNode.typeName
+			}
+
+			let decl = helper.symbol.resolveDeclaration(resolveFrom)
+			return getDeclarationObserved(decl)
+		}
 	}
 
 	/** 
@@ -215,41 +239,51 @@ export namespace ObservedChecker {
 	 * A newly made `TypeNode` can't resolve symbol and declaration,
 	 * so need the type observed checker.
 	 */
-	function isTypeObserved(type: ts.Type): boolean {
+	function getTypeObserved(type: ts.Type): boolean | null {
+		let result: boolean | null
 
 		// `A | B`, `A & B`, become observed if any is observed.
 		if (type.isUnionOrIntersection()) {
-			return type.types.some(t => isTypeObserved(t))
+			for (let t of type.types) {
+				result = getTypeObserved(t)
+				if (result !== null) {
+					return result
+				}
+			}
+
+			return null
 		}
 
 		// `A[]`, check for `A`.
-		if (typeChecker.isArrayType(type)) {
+		else if (typeChecker.isArrayType(type)) {
 			let parameter = (type as GenericType).typeParameters?.[0]
 			if (parameter) {
-				return isTypeObserved(parameter)
+				return getTypeObserved(parameter)
 			}
-			else {
-				return false
+	
+			return null
+		}
+
+		// Resolve type.
+		else {
+			let symbol = type.getSymbol()
+			if (!symbol) {
+				return null
 			}
-		}
 
-		let symbol = type.getSymbol()
-		if (!symbol) {
-			return false
-		}
+			let decl = helper.symbol.resolveDeclarationBySymbol(symbol)
+			if (!decl) {
+				return null
+			}
 
-		let decl = helper.symbol.resolveDeclarationBySymbol(symbol)
-		if (!decl) {
-			return false
+			return getDeclarationObserved(decl)
 		}
-
-		return isDeclarationObserved(decl)
 	}
 
 	/** Whether resolved declaration should be observed. */
-	function isDeclarationObserved(decl: ts.Declaration | undefined): boolean {
+	function getDeclarationObserved(decl: ts.Declaration | undefined): boolean | null {
 		if (!decl) {
-			return false
+			return null
 		}
 				
 		// Force track.
@@ -261,44 +295,52 @@ export namespace ObservedChecker {
 		// `class A{p: Observed}` -> `this.p` and `this['p']` is observed.
 		// `interface A{p: Observed}` -> `this.p` and `this['p']` is observed.
 		if (helper.isPropertyOrGetAccessor(decl)) {
-			return isPropertyDeclarationObserved(decl)
+			return getPropertyDeclarationObserved(decl)
 		}
 
 		// Test whether parameter declaration is observed.
-		if (ts.isParameter(decl)) {
-			return isParameterDeclarationObserved(decl)
+		else if (ts.isParameter(decl)) {
+			return getParameterDeclarationObserved(decl)
 		}
 
 		// Test whether variable declaration is observed.
-		if (ts.isVariableDeclaration(decl)) {
-			return isVariableDeclarationObserved(decl)
+		else if (ts.isVariableDeclaration(decl)) {
+			return getVariableDeclarationObserved(decl)
 		}
 
 		// Test whether variable declaration is observed.
-		if (ts.isBindingElement(decl)) {
-			return isBindingElementObserved(decl)
+		else if (ts.isBindingElement(decl)) {
+			return getBindingElementObserved(decl)
 		}
 
 		// Test type parameter.
-		if (ts.isTypeParameterDeclaration(decl)) {
-			return isTypeNodeObserved(decl.constraint)
+		else if (ts.isTypeParameterDeclaration(decl)) {
+			return getTypeNodeObserved(decl.constraint)
 		}
 
 		// Observed interface.
-		if (ts.isInterfaceDeclaration(decl)
-			&& helper.objectLike.isDerivedOf(decl, 'Observed', '@pucelle/lupos')
-		) {
-			return true 
+		else if (ts.isInterfaceDeclaration(decl)) {
+			let firstDerived = helper.objectLike.getFirstDerivedOf(decl, ['Observed', 'UnObserved'], '@pucelle/lupos')
+			if (firstDerived === 'Observed') {
+				return true
+			}
+			else if (firstDerived === 'UnObserved') {
+				return false
+			}
 		}
 
 		// Observed class.
-		if (ts.isClassDeclaration(decl)
-			&& helper.class.isImplementedOf(decl, 'Observed', '@pucelle/lupos')
-		) {
-			return true 
+		else if (ts.isClassDeclaration(decl)) {
+			let firstImplemented = helper.class.getFirstImplementedOf(decl, ['Observed', 'UnObserved'], '@pucelle/lupos')
+			if (firstImplemented === 'Observed') {
+				return true
+			}
+			else if (firstImplemented === 'UnObserved') {
+				return false
+			}
 		}
 
-		return false
+		return null
 	}
 
 
@@ -306,19 +348,24 @@ export namespace ObservedChecker {
 	 * Check whether a property or get accessor declaration should be observed.
 	 * It ignores modifiers, only check declaration type.
 	 */
-	function isPropertyDeclarationObserved(decl: ts.PropertySignature | ts.PropertyDeclaration | ts.GetAccessorDeclaration): boolean {
+	function getPropertyDeclarationObserved(decl: ts.PropertySignature | ts.PropertyDeclaration | ts.GetAccessorDeclaration): boolean | null {
+		let result: boolean | null
 
 		// `class A{p: Observed<...>}`
 		let typeNode = decl.type
-		if (isTypeNodeObserved(typeNode)) {
-			return true
+		result = getTypeNodeObserved(typeNode)
+		if (result !== null) {
+			return result
 		}
 
 		// Return type of declaration.
 		if (ts.isGetAccessorDeclaration(decl)) {
 			let returnType = helper.types.getReturnTypeOfSignature(decl)
-			if (returnType && isTypeObserved(returnType)) {
-				return true
+			if (returnType) {
+				result = getTypeObserved(returnType)
+				if (result !== null) {
+					return result
+				}
 			}
 		}
 
@@ -326,37 +373,43 @@ export namespace ObservedChecker {
 		if (!typeNode
 			&& ts.isPropertyDeclaration(decl)
 			&& decl.initializer
-			&& isElementsObserved(decl.initializer)
 		) {
-			return true
+			result = getElementsObserved(decl.initializer)
+			if (result !== null) {
+				return result
+			}
 		}
 
-		return false
+		return null
 	}
 
 
 	/** Whether parameter declaration should be observed. */
-	function isParameterDeclarationObserved(rawNode: ts.ParameterDeclaration): boolean {
+	function getParameterDeclarationObserved(rawNode: ts.ParameterDeclaration): boolean | null {
+		let result: boolean | null
+
 		let typeNode = rawNode.type
-		if (typeNode && isTypeNodeObserved(typeNode)) {
-			return true
+		if (typeNode) {
+			result = getTypeNodeObserved(typeNode)
+			if (result !== null) {
+				return result
+			}
 		}
 
 		// `var a = b`, if `b` is observed, `a` is too.
-		if (rawNode.initializer && isElementsObserved(rawNode.initializer)) {
-			return true
+		if (rawNode.initializer) {
+			result = getElementsObserved(rawNode.initializer)
+			if (result !== null) {
+				return result
+			}
 		}
 
 		// `a.map((b) => ...`, if `a` is observed, `b` is too.
-		if (isParameterObservedByCallBroadcasting(rawNode)) {
-			return true
-		}
-
-		return false
+		return getParameterObservedByCallBroadcasting(rawNode)
 	}
 
 	/** Broadcast observed from parent calling expression to all parameters. */
-	function isParameterObservedByCallBroadcasting(rawNode: ts.ParameterDeclaration): boolean {
+	function getParameterObservedByCallBroadcasting(rawNode: ts.ParameterDeclaration): boolean | null {
 
 		// `a.b.map((item) => {return item.value})`
 		// `a.b.map(item => item.value)`
@@ -366,50 +419,61 @@ export namespace ObservedChecker {
 		if (!(ts.isFunctionExpression(fn)
 			|| ts.isArrowFunction(fn)
 		)) {
-			return false
+			return null
 		}
 
 		// Now enters parent scope.
 		let calling = fn.parent
 		if (!ts.isCallExpression(calling)) {
-			return false
+			return null
 		}
 
 		// `a.b.map`
 		let exp = calling.expression
 		if (!helper.access.isAccess(exp)) {
-			return false
+			return null
 		}
 
 		// `a.b` of `a.b.map`.
 		if (!helper.access.isOfElementsAccess(exp)) {
-			return false
+			return null
 		}
 
 		// Must use parent scope.
-		return isElementsObserved(exp.expression)
+		return getElementsObserved(exp.expression)
 	}
 
 
 	/** Whether a variable declaration should be observed. */
-	function isVariableDeclarationObserved(rawNode: ts.VariableDeclaration): boolean {
+	function getVariableDeclarationObserved(rawNode: ts.VariableDeclaration): boolean | null {
 		// `var a = {b:1} as Observed<{b: number}>`, observed.
 		// `var a: Observed<{b: number}> = {b:1}`, observed.
 		// Note here: `Observed` must appear directly, reference or alias is not working.
+
+		let result: boolean | null
 		
 		let typeNode = rawNode.type
-		if (typeNode && isTypeNodeObserved(typeNode)) {
-			return true
+		if (typeNode) {
+			result = getTypeNodeObserved(typeNode)
+			if (result !== null) {
+				return result
+			}
 		}
 
 		let type = helper.types.typeOf(rawNode)
-		if (type && isTypeObserved(type)) {
-			return true
+		if (type) {
+			result = getTypeObserved(type)
+			if (result !== null) {
+				return result
+			}
 		}
 
 		// `var a = b.c`.
-		if (rawNode.initializer && isElementsObserved(rawNode.initializer)) {
-			return true
+		if (rawNode.initializer) {
+			result = getElementsObserved(rawNode.initializer)
+			if (result !== null) {
+				return result
+			}
 		}
 
 		// `for (item of items)`, broadcast observed from items to item.
@@ -417,18 +481,16 @@ export namespace ObservedChecker {
 			&& ts.isVariableDeclarationList(rawNode.parent)
 			&& ts.isForOfStatement(rawNode.parent.parent)
 		) {
-			if (isElementsObserved(rawNode.parent.parent.expression)) {
-				return true
-			}
+			return getElementsObserved(rawNode.parent.parent.expression)
 		}
 
-		return false
+		return null
 	}
 
 	/** Test whether a binding element, like a of `{a} = ...`, `[a] = ...` should be observed. */
-	function isBindingElementObserved(rawNode: ts.BindingElement): boolean {
+	function getBindingElementObserved(rawNode: ts.BindingElement): boolean | null {
 		let decl = helper.findOutward(rawNode, ts.isVariableDeclaration)
-		return isDeclarationObserved(decl)
+		return getDeclarationObserved(decl)
 	}
 
 
@@ -436,7 +498,8 @@ export namespace ObservedChecker {
 	 * Returns whether a property accessing should be observed, for internal use only.
 	 * `visitElements` specifies whether are visiting parent node of original to determine observed.
 	 */
-	function isAccessObserved(rawNode: AccessNode): boolean {
+	function getAccessObserved(rawNode: AccessNode): boolean | null {
+		let result: boolean | null
 
 		// Declared in Typescript lib, like `Date.getTime`
 		if (helper.symbol.isOfTypescriptLib(rawNode)) {
@@ -458,16 +521,16 @@ export namespace ObservedChecker {
 		// Test declaration.
 		let decl = helper.symbol.resolveDeclaration(rawNode)
 
-		// Property declaration has specified as observed type or initializer is observed.
-		if (isDeclarationObserved(decl)) {
-			return true
-		}
-
 		// Always not observe method, it works like a value type.
 		if (decl && helper.isMethodLike(decl)) {
 			return false
 		}
 
+		// Property declaration has specified as observed type or initializer is observed.
+		result = getDeclarationObserved(decl)
+		if (result !== null) {
+			return result
+		}
 
 		// Take type, e.g., for `node = a.b.c`, exp is `a.b`.
 		let exp = rawNode.expression
@@ -479,46 +542,54 @@ export namespace ObservedChecker {
 		}
 
 
-		return isElementsObserved(exp)
+		return getElementsObserved(exp)
 	}
 
 
 	/** Test whether this is observed. */
-	function isThisObserved(rawNode: ts.ThisExpression) {
+	function getThisObserved(rawNode: ts.ThisExpression): boolean | null {
 
 		// May resolve to this parameter, class declaration name.
 		let decl = helper.symbol.resolveDeclaration(rawNode)
-		return isDeclarationObserved(decl)
+		return getDeclarationObserved(decl)
 	}
 
 
 	/** Check whether an identifier should be observed. */
-	function isIdentifierObserved(rawNode: ts.Identifier): boolean {
+	function getIdentifierObserved(rawNode: ts.Identifier): boolean | null {
 
 		// May resolve to variable declaration, parameter declaration.
 		let decl = helper.symbol.resolveDeclaration(rawNode)
-		return isDeclarationObserved(decl)
+		return getDeclarationObserved(decl)
 	}
 
 	
 	/** Returns whether a call expression returned result should be observed. */
-	function isCallObserved(rawNode: ts.CallExpression): boolean {
+	function getCallObserved(rawNode: ts.CallExpression): boolean | null {
+		let result: boolean | null
+
 		let callExp = rawNode.expression
 		let decl = helper.symbol.resolveDeclaration(callExp, helper.isFunctionLike)
 		if (!decl) {
-			return false
+			return null
 		}
 
 		// Test call method returned type node.
 		let returnTypeNode = decl.type
-		if (returnTypeNode && isTypeNodeObserved(returnTypeNode)) {
-			return true
+		if (returnTypeNode) {
+			result = getTypeNodeObserved(returnTypeNode)
+			if (result !== null) {
+				return result
+			}
 		}
 
 		// Test call method returned type.
 		let returnType = helper.types.getReturnTypeOfSignature(decl)
-		if (returnType && isTypeObserved(returnType)) {
-			return true
+		if (returnType) {
+			result = getTypeObserved(returnType)
+			if (result !== null) {
+				return result
+			}
 		}
 
 		// `this.map.get` of `this.map.get(x)`.
@@ -526,7 +597,10 @@ export namespace ObservedChecker {
 		if (helper.access.isAccess(callExp)
 			&& helper.access.isOfSingleElementReadAccess(callExp)
 		) {
-			return isElementsObserved(callExp.expression)
+			let result = getElementsObserved(callExp.expression)
+			if (result !== null) {
+				return result
+			}
 		}
 
 		// Here we plan to support more features like `Array.filter(...)`,
@@ -536,6 +610,6 @@ export namespace ObservedChecker {
 		// `Itself-Observed` / `Itself-Not-Observed-But-Elements-Are`.
 		// This brings two much complexity.
 
-		return false
+		return null
 	}
 }

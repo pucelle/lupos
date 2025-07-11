@@ -4,7 +4,7 @@ import {AccessGrouper} from './access-grouper'
 import {TrackingRanges} from './ranges'
 import {ObservedStateMask} from './types'
 import {CapturedItem} from './capturer'
-import {ListMap} from '../../lupos-ts-module'
+import {AccessNode, ListMap} from '../../lupos-ts-module'
 
 
 /** 
@@ -93,12 +93,12 @@ export namespace TrackingPatch {
 
 	/** Output isolated tracking expressions. */
 	export function outputIsolatedTracking(rawNode: ts.Expression, type: 'get' | 'set'): ts.Expression[] {
-		if (!ObservedChecker.isSelfObserved(rawNode)) {
+		if (!ObservedChecker.getSelfObserved(rawNode)) {
 			return []
 		}
 
 		AccessGrouper.addImport(type)
-		return AccessGrouper.makeExpressions([rawNode], type)
+		return AccessGrouper.makeExpressions([rawNode as AccessNode], type)
 	}
 
 	/** Output custom range tracking expressions by. */

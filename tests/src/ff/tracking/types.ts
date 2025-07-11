@@ -283,12 +283,13 @@ class AnyMethodsObserved implements MethodsObserved<'get', 'set'> {
 export class TestUnObserved extends Component {
 
 	prop: {value: number} = {value: 1}
+	readonly unObservedProp: UnObserved<{value: number}> = {value: 1}
 
 	readAsUnObserved() {
 		return (this as UnObserved<TestUnObserved>).prop
 	}
 
-	readThisUnObservedParameter(this: UnObserved<TestUnObserved>) {
+	readThisAsUnObservedParameter(this: UnObserved<TestUnObserved>) {
 		return this.prop
 	}
 
@@ -298,6 +299,18 @@ export class TestUnObserved extends Component {
 
 	writeThisUnObservedParameter(this: UnObserved<TestUnObserved>) {
 		this.prop.value = 1
+	}
+	
+	readUnObservedPropValue() {
+		return this.unObservedProp.value
+	}
+
+	writeUnObservedPropValue() {
+		this.unObservedProp.value = 1
+	}
+
+	assignUnObservedPropValue() {
+		Object.assign(this.unObservedProp, {value: 1})
 	}
 }
 

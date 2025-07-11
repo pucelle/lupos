@@ -261,10 +261,11 @@ class AnyMethodsObserved {
 }
 export class TestUnObserved extends Component {
     prop = { value: 1 };
+    unObservedProp = { value: 1 };
     readAsUnObserved() {
         return this.prop;
     }
-    readThisUnObservedParameter() {
+    readThisAsUnObservedParameter() {
         return this.prop;
     }
     writeAsUnObserved() {
@@ -273,15 +274,22 @@ export class TestUnObserved extends Component {
     writeThisUnObservedParameter() {
         this.prop.value = 1;
     }
+    readUnObservedPropValue() {
+        return this.unObservedProp.value;
+    }
+    writeUnObservedPropValue() {
+        this.unObservedProp.value = 1;
+    }
+    assignUnObservedPropValue() {
+        Object.assign(this.unObservedProp, { value: 1 });
+    }
 }
 export class TestUnObservedImplements extends Component {
     prop = { value: 1 };
     read() {
-        trackGet(this, "prop");
         return this.prop;
     }
     write() {
         this.prop.value = 1;
-        trackSet(this.prop, "value");
     }
 }

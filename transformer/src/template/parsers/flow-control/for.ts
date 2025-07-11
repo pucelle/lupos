@@ -34,14 +34,14 @@ export class ForFlowControl extends FlowControlBase {
 
 		let ofValueIndex = this.getAttrValueIndex(this.node)
 		let fnValueIndex = this.getUniqueChildValueIndex(this.node)
-		let shouldObserve = false
+		let shouldObserve: boolean | null = false
 
 		// Force tracking members of array.
 		// When parsing template, all descendant nodes have not been visited by tracking module.
 		if (ofValueIndex !== null) {
 			let ofValueNode = this.template.values.getRawValue(ofValueIndex)
 
-			shouldObserve = ObservedChecker.isElementsObserved(ofValueNode)
+			shouldObserve = ObservedChecker.getElementsObserved(ofValueNode)
 			if (shouldObserve) {
 				TrackingPatch.forceTrackType(ofValueNode, ObservedStateMask.Elements)
 				TrackingPatch.addCustomTracking(ofValueNode, 'get', ofValueNode, '')

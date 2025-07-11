@@ -206,8 +206,8 @@ export class TrackingScope {
 		}
 
 		let willTrack = exp
-			? ObservedChecker.isElementsObserved(exp)
-			: ObservedChecker.isSelfObserved(rawNode)
+			? ObservedChecker.getElementsObserved(exp)
+			: ObservedChecker.getSelfObserved(rawNode)
 
 		// Tracking self.
 		if (willTrack) {
@@ -230,8 +230,8 @@ export class TrackingScope {
 		}
 
 		let willTrack = exp
-			? ObservedChecker.isElementsObserved(exp)
-			: ObservedChecker.isSelfObserved(rawNode)
+			? ObservedChecker.getElementsObserved(exp)
+			: ObservedChecker.getSelfObserved(rawNode)
 
 		if (willTrack) {
 			this.capturer.capture(rawNode, 'set', exp, keys)
