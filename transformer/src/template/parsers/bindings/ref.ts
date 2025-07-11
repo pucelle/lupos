@@ -1,7 +1,7 @@
 import * as ts from 'typescript'
 import {factory, Packer, helper} from '../../../core'
 import {BindingBase, BindingUpdateCallWith} from './base'
-import {ObservedChecker, TrackingPatch} from '../../../ff'
+import {ObservedChecker, TrackingPatch} from '../../../lupos'
 import {getLatestBindingInfo, LatestBindingInfo} from './latest-binding'
 import {TemplateSlotPlaceholder} from '../../../lupos-ts-module'
 

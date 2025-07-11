@@ -2,7 +2,7 @@ import type * as ts from 'typescript'
 import {factory, Modifier, helper} from '../../../core'
 import {FlowControlBase} from './base'
 import {SlotContentType} from '../../../enums'
-import {ObservedStateMask, ObservedChecker, TrackingPatch} from '../../../ff'
+import {ObservedStateMask, ObservedChecker, TrackingPatch} from '../../../lupos'
 
 
 export class ForFlowControl extends FlowControlBase {

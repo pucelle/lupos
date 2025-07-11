@@ -3,7 +3,7 @@ import {factory, Interpolator, Modifier, Packer} from '../../../core'
 import {FlowControlBase} from './base'
 import {TemplateParser} from '../template'
 import {SlotContentType} from '../../../enums'
-import {CapturedOutputWay, TrackingPatch, TrackingRanges, TrackingScopeTree, TrackingScopeTypeMask} from '../../../ff'
+import {CapturedOutputWay, TrackingPatch, TrackingRanges, TrackingScopeTree, TrackingScopeTypeMask} from '../../../lupos'
 import {HTMLNode, TemplateSlotPlaceholder} from '../../../lupos-ts-module'
 
 
