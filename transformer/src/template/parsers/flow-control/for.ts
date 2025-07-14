@@ -31,7 +31,7 @@ export class ForFlowControl extends FlowControlBase {
 	preInit() {
 		this.blockVariableName = this.tree.makeUniqueBlockName()
 		this.slotVariableName = this.slot.makeSlotName()
-		this.templateSlotGetter = this.slot.prepareTemplateSlot(SlotContentType.TemplateResultList)
+		this.templateSlotGetter = this.slot.prepareAsTemplateSlot(SlotContentType.TemplateResultList)
 
 		let ofValueIndex = this.getAttrValueIndex(this.node)
 		let fnValueIndex = this.getUniqueChildValueIndex(this.node)

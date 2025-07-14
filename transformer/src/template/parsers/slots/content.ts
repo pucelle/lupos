@@ -31,7 +31,7 @@ export class ContentSlotParser extends SlotParserBase {
 			}
 		}
 
-		this.templateSlotGetter = this.prepareTemplateSlot(slotContentType)
+		this.templateSlotGetter = this.prepareAsTemplateSlot(slotContentType)
 	}
 
 	private identifySlotContentType(): number | null {

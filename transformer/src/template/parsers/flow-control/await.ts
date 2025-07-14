@@ -49,7 +49,7 @@ export class AwaitFlowControl extends FlowControlBase {
 
 		this.promiseIndex = promiseIndex
 		this.templateNames = templateNames
-		this.templateSlotGetter = this.slot.prepareTemplateSlot(null)
+		this.templateSlotGetter = this.slot.prepareAsTemplateSlot(null)
 	}
 
 	outputInit() {

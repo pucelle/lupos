@@ -3,7 +3,7 @@ import {SlotParserBase} from './base'
 import {factory, Modifier} from '../../../core'
 import {HTMLNode, HTMLNodeType} from '../../../lupos-ts-module'
 import {SlotPositionType} from '../../../enums'
-import {HTMLNodeHelper} from '../../html-syntax'
+import {HTMLNodeHelper, PrecedingPositionStability} from '../../html-syntax'
 
 
 export class DynamicComponentSlotParser extends SlotParserBase {
@@ -23,7 +23,7 @@ export class DynamicComponentSlotParser extends SlotParserBase {
 	preInit() {
 		this.blockVariableName = this.tree.makeUniqueBlockName()
 		this.slotVariableName = this.makeSlotName()
-		this.templateSlotGetter = this.prepareTemplateSlot(null)
+		this.templateSlotGetter = this.prepareAsTemplateSlot(null)
 	}
 
 	postInit() {
@@ -36,18 +36,22 @@ export class DynamicComponentSlotParser extends SlotParserBase {
 	}
 
 	/** Get node name and position parameters for outputting template slot. */
-	protected prepareTemplateSlotParameters() {
+	protected prepareTemplateSlotParametersGetter() {
 		let position = SlotPositionType.Before
 		let nextNode = this.node.nextSibling
 		let useNode: HTMLNode
 
 		// Use next node to locate.
-		if (nextNode && HTMLNodeHelper.isPrecedingPositionStable(nextNode, this.template.values.valueNodes)) {
+		// Use next node as template slot position, but will not remove current node.
+		if (nextNode
+			&& HTMLNodeHelper.getPrecedingPositionStability(nextNode, this.template.values.valueNodes)
+				=== PrecedingPositionStability.Stable
+		) {
 			useNode = nextNode
-			HTMLNodeHelper.usePrecedingPosition(nextNode)
+			HTMLNodeHelper.willInsertContentsBefore(nextNode)
 		}
 
-		// Use current node to locate.
+		// Use a comment node as template slot position, but will not remove current node.
 		else {
 			let comment = new HTMLNode(HTMLNodeType.Comment, -1, -1)
 			this.node.after(comment)

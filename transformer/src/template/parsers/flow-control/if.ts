@@ -75,7 +75,7 @@ export class IfFlowControl extends FlowControlBase {
 
 		let allBeResult = this.contentTemplates.every(t => t)
 		let slotContentType = allBeResult ? SlotContentType.TemplateResult : null
-		this.templateSlotGetter = this.slot.prepareTemplateSlot(slotContentType)
+		this.templateSlotGetter = this.slot.prepareAsTemplateSlot(slotContentType)
 	}
 
 	protected initTrackingRanges(conditionIndices: (number | null)[], contentStrings: (string | null)[]) {

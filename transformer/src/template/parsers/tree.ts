@@ -179,7 +179,7 @@ export class TreeParser {
 	/** Prepare node for `new SlotPosition(...)` to indicate the start inner position of template. */
 	private prepareSlotPositionNode() {
 		let container = this.root
-		let firstNode = container.firstChild!
+		let firstNode: HTMLNode | null = container.firstChild!
 
 		// Being wrapped.
 		if (this.wrappedBySVG || this.wrappedByTemplate) {
@@ -187,17 +187,16 @@ export class TreeParser {
 			firstNode = firstNode.firstChild!
 		}
 
-		// Insert a comment at least, to make sure having a position.
-		if (!firstNode) {
-			firstNode = new HTMLNode(HTMLNodeType.Comment, -1, -1)
-			container.append(firstNode)
+		// Skip all sibling nodes that will be removed.
+		// Reset to null if still not stable.
+		if (firstNode) {
+			firstNode = HTMLNodeHelper.findNextStableNode(firstNode, this.template.values.valueNodes)
 		}
 
-		// Use a new comment node to locate if position is not stable.
-		else if (!HTMLNodeHelper.isPrecedingPositionStable(firstNode, this.template.values.valueNodes)) {
-			let comment = new HTMLNode(HTMLNodeType.Comment, -1, -1)
-			firstNode.before(comment)
-			firstNode = comment
+		// Insert a comment at start as start inner position.
+		if (!firstNode) {
+			firstNode = new HTMLNode(HTMLNodeType.Comment, -1, -1)
+			container.prepend(firstNode)
 		}
 
 		// Make it to be referenced.

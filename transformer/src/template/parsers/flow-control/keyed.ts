@@ -37,7 +37,7 @@ export class KeyedFlowControl extends FlowControlBase {
 		}
 
 		let slotContentType = this.contentTemplate ? SlotContentType.TemplateResult : null
-		this.templateSlotGetter = this.slot.prepareTemplateSlot(slotContentType)
+		this.templateSlotGetter = this.slot.prepareAsTemplateSlot(slotContentType)
 	}
 
 	outputInit() {

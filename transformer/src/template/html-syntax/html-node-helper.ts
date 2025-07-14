@@ -3,51 +3,64 @@ import {HTMLNode, HTMLNodeType, TemplateSlotPlaceholder} from '../../lupos-ts-mo
 import {helper} from '../../core'
 
 
+export enum PrecedingPositionStability {
+	Stable,
+	WillInsertBefore,
+	WillBeReplaced,
+	WillBeRemoved,
+}
+
+export enum FollowingPositionStability {
+	Stable,
+	WillBeRemoved,
+}
+
+
 export namespace HTMLNodeHelper {
 
-	/** The nodes that have been used preceding position. */
-	const PositionPrecedingPositionUsed: WeakSet<HTMLNode> = new WeakSet()
+	/** The nodes that their preceding positions will be inserted more nodes. */
+	const PrecedingPositionWillInsert: WeakSet<HTMLNode> = new WeakSet()
 
 
 	/** 
 	 * Whether preceding position of current node is stable.
 	 * Means will not be removed, or insert other nodes before it.
 	 */
-	export function isPrecedingPositionStable(node: HTMLNode, rawValueNodes: ts.Node[]): boolean {
+	export function getPrecedingPositionStability(node: HTMLNode, rawValueNodes: ts.Node[]): PrecedingPositionStability {
 
-		// Has been used.
-		if (PositionPrecedingPositionUsed.has(node)) {
-			return false
+		// Marked as willing to insert contents before.
+		if (PrecedingPositionWillInsert.has(node)) {
+			return PrecedingPositionStability.WillInsertBefore
 		}
 
-		// Comment never.
+		// Comments are treated as newly appended, and will insert contents before.
 		if (node.type === HTMLNodeType.Comment) {
-			return false
+			return PrecedingPositionStability.WillInsertBefore
 		}
 
-		// Will insert more nodes before.
-		if (node.type === HTMLNodeType.Tag && node.tagName!.startsWith('lu:')) {
-			return false
-		}
-
-		// All nodes may be removed from portal.
+		// All nodes will be removed from portal.
 		// Since all child nodes will be moved, no need to handle.
 		// if (node.parent?.type === HTMLNodeType.Tag && node.parent.tagName === 'lu:portal') {
 		// 	return false
 		// }
 
+		// Will work as comment and insert contents before.
+		if (node.type === HTMLNodeType.Tag && node.tagName!.startsWith('lu:')) {
+			return PrecedingPositionStability.WillInsertBefore
+		}
+
 		// Will replace whole dynamic component.
 		if (node.type === HTMLNodeType.Tag
 			&& TemplateSlotPlaceholder.isDynamicComponent(node.tagName!)
 		) {
-			return false
+			return PrecedingPositionStability.WillBeReplaced
 		}
 
-		// Named slot target will be moved.
+		// Named slot target will be removed, can safely skip it.
 		if (node.type === HTMLNodeType.Tag
 			&& node.attrs!.find(attr => attr.name === ':slot')
 		) {
-			return false
+			return PrecedingPositionStability.WillBeRemoved
 		}
 
 		// Text, if start with string, position persist, otherwise will insert contents.
@@ -61,35 +74,98 @@ export namespace HTMLNodeHelper {
 				let type = helper.types.typeOf(firstRawNode)
 
 				if (!helper.types.isValueType(type)) {
-					return false
+					return PrecedingPositionStability.WillInsertBefore
 				}
 			}
 		}
 
-		return true
+		return PrecedingPositionStability.Stable
 	}
 
 
-	/** 
-	 * Whether following position of current node is stable.
-	 * Means will not be removed.
-	 */
-	export function isFollowingPositionStable(node: HTMLNode): boolean {
+	/** Get following position stability of current node. */
+	export function getFollowingPositionStability(node: HTMLNode): FollowingPositionStability {
+
+		// Normally no need to consider those which's preceding positions are no stable,
+		// which will cause a comment node to insert before
 
 		// Named slot target will be moved.
 		if (node.type === HTMLNodeType.Tag
 			&& node.attrs!.find(attr => attr.name === ':slot')
 		) {
+			return FollowingPositionStability.WillBeRemoved
+		}
+
+		return FollowingPositionStability.Stable
+	}
+
+
+	/** Get next sibling which is stable, skips all nodes that will be removed. */
+	export function findNextStableNode(startNode: HTMLNode, rawValueNodes: ts.Node[]): HTMLNode | null {
+		let node: HTMLNode | null = startNode
+
+		// Skip all sibling nodes that will be removed.
+		// Reset to null if still not stable.
+		if (node) {
+			let stability = HTMLNodeHelper.getPrecedingPositionStability(node, rawValueNodes)
+
+			while (node && stability === PrecedingPositionStability.WillBeRemoved) {
+				node = node.nextSibling
+				if (node) {
+					stability = HTMLNodeHelper.getPrecedingPositionStability(node, rawValueNodes)
+				}
+			}
+				
+			if (node && stability !== PrecedingPositionStability.Stable) {
+				node = null
+			}
+		}
+
+		return node
+	}
+
+
+	/** Get previous sibling which is stable, skips all nodes that will be removed. */
+	export function findPreviousStableNode(endNode: HTMLNode): HTMLNode | null {
+		let node: HTMLNode | null = endNode
+
+		// Skip all sibling nodes that will be removed.
+		if (node) {
+			let stability = HTMLNodeHelper.getFollowingPositionStability(node)
+
+			while (node && stability === FollowingPositionStability.WillBeRemoved) {
+				node = node.previousSibling
+
+				if (node) {
+					stability = HTMLNodeHelper.getFollowingPositionStability(node)
+				}
+			}
+				
+			if (node && stability !== FollowingPositionStability.Stable) {
+				node = null
+			}
+		}
+
+		return node
+	}
+
+
+	/** Will insert nodes to it's preceding position. */
+	export function willInsertContentsBefore(node: HTMLNode) {
+		PrecedingPositionWillInsert.add(node)
+	}
+
+
+	/** Whether can safely remove current node, and will not cause two sibling text nodes joining. */
+	export function canSafelyRemoveNode(node: HTMLNode): boolean {
+		let previousBeText = node.previousSibling?.type === HTMLNodeType.Text
+		let nextBeText = node.nextSibling?.type === HTMLNodeType.Text
+		
+		if (previousBeText && nextBeText) {
 			return false
 		}
 
 		return true
-	}
-
-
-	/** Use node preceding position. */
-	export function usePrecedingPosition(node: HTMLNode) {
-		PositionPrecedingPositionUsed.add(node)
 	}
 
 

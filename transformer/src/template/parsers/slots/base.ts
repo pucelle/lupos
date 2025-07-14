@@ -4,7 +4,7 @@ import {PartType, TreeParser} from '../tree'
 import {factory, Modifier, DeclarationScopeTree, Packer, Hashing} from '../../../core'
 import {TemplateParser} from '../template'
 import {SlotPositionType} from '../../../enums'
-import {HTMLNodeHelper} from '../../html-syntax'
+import {HTMLNodeHelper, PrecedingPositionStability} from '../../html-syntax'
 
 
 export abstract class SlotParserBase {
@@ -294,12 +294,15 @@ export abstract class SlotParserBase {
 		return Packer.toStatements(exps)
 	}
 
-	/** Return a callback to get `new TemplateSlot(...)`. */
-	prepareTemplateSlot(slotContentType: number | null): () => ts.Expression {
+	/** 
+	 * Prepare current node to make a template slot.
+	 * Return a callback to get `new TemplateSlot(...)`.
+	 */
+	prepareAsTemplateSlot(slotContentType: number | null): () => ts.Expression {
 		Modifier.addImport('TemplateSlot', '@pucelle/lupos.js')
 		Modifier.addImport('SlotPosition', '@pucelle/lupos.js')
 
-		let parameterGetter = this.prepareTemplateSlotParameters()
+		let parameterGetter = this.prepareTemplateSlotParametersGetter()
 
 		return () => {
 			let {nodeName, position} = parameterGetter()
@@ -331,22 +334,25 @@ export abstract class SlotParserBase {
 	}
 
 	/** Return a callback to get node name and position parameters for outputting template slot. */
-	protected prepareTemplateSlotParameters() {
+	protected prepareTemplateSlotParametersGetter() {
 		let position = SlotPositionType.Before
 		let nextNode = this.node.nextSibling
 		let useNode: HTMLNode
 
-		// Use next node to locate.
+		// Use next node to locate if it's stable,
+		// and remove current node to reduce HTML output.
 		if (nextNode
-			&& HTMLNodeHelper.isPrecedingPositionStable(nextNode, this.template.values.valueNodes)
-			&& this.canRemoveNode(this.node)
+			&& HTMLNodeHelper.getPrecedingPositionStability(nextNode, this.template.values.valueNodes)
+				=== PrecedingPositionStability.Stable
+			&& HTMLNodeHelper.canSafelyRemoveNode(this.node)
 		) {
 			this.node.remove()
 			useNode = nextNode
-			HTMLNodeHelper.usePrecedingPosition(nextNode)
+			HTMLNodeHelper.willInsertContentsBefore(nextNode)
 		}
 
 		// Use current node to locate.
+		// `<lu:xxx>` excluded `<lu:portal>` will be replaced and outputted as comments.
 		else {
 			useNode = this.node
 		}
@@ -363,18 +369,6 @@ export abstract class SlotParserBase {
 		}
 	}
 
-	/** Whether can remove current node, and will not cause two sibling text nodes joined. */
-	private canRemoveNode(node: HTMLNode): boolean {
-		let previousBeText = node.previousSibling?.type === HTMLNodeType.Text
-		let nextBeText = node.nextSibling?.type === HTMLNodeType.Text
-		
-		if (previousBeText && nextBeText) {
-			return false
-		}
-
-		return true
-	}
-
 	/** 
 	 * Prepare nodes for `SlotRange`, and return a getter,
 	 * call which will get slot range node.
@@ -387,20 +381,20 @@ export abstract class SlotParserBase {
 		let firstChild = this.node.firstChild!
 		let lastChild = this.node.lastChild!
 
-		// If first child is not stable, insert a comment before it.
-		if (!HTMLNodeHelper.isPrecedingPositionStable(firstChild, this.template.values.valueNodes)) {
+		// Find next stable.
+		let firstStableNode = HTMLNodeHelper.findNextStableNode(firstChild, this.template.values.valueNodes)
+		if (firstStableNode) {
+			firstChild = firstStableNode
+		}
+		else {
 			let comment = new HTMLNode(HTMLNodeType.Comment, -1, -1)
 
 			firstChild.before(comment)
 			firstChild = comment
 		}
 
-		// If last child will be removed, pick previous.
-		while (lastChild !== firstChild
-			&& !HTMLNodeHelper.isFollowingPositionStable(lastChild)
-		) {
-			lastChild = lastChild.previousSibling!
-		}
+		// Find previous stable, it always exists.
+		lastChild = HTMLNodeHelper.findPreviousStableNode(lastChild)!
 
 		this.tree.references.ref(firstChild)
 		this.tree.references.ref(lastChild)
