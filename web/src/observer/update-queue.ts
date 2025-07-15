@@ -159,3 +159,24 @@ async function update() {
 	// Back to start stage.
 	phase = QueueUpdatePhase.NotStarted
 }
+
+
+
+let firstPaintPromiseResolve = promiseWithResolves()
+
+untilUpdateComplete().then(() => {
+	setTimeout(() => {
+		firstPaintPromiseResolve.resolve()
+	}, 0)
+})
+
+/** 
+ * Returns a promise, which will be resolved after the first time
+ * updated completed, and browser paint completed.
+ * 
+ * If a component will read dom properties and cause force re-layout
+ * before first paint, you may use this to wait for paint complete.
+ */
+export function untilFirstPaintCompleted() {
+	return firstPaintPromiseResolve.promise
+}
