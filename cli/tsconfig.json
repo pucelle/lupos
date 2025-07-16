@@ -14,12 +14,8 @@
 		"noImplicitThis": true
     },
     "exclude": [
-		"node_modules",
 		"compiler",
 		"transformer",
-		"tests",
-		"tests-web",
-		"web"
 	],
 	"references": [
 		{ "path": "./compiler" },

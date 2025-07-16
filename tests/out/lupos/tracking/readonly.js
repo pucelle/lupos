@@ -27,19 +27,3 @@ export class TestReadonlyArrayProp extends Component {
         return this.prop.map(item => item.value).join(' ');
     }
 }
-export class TestDeepReadonlyProp extends Component {
-    static SlotContentType = 2;
-    prop = { value: { value: 'Text' } };
-    render() {
-        trackGet(this, "prop");
-        return this.prop.value.value;
-    }
-}
-export class TestDeepReadonlyArrayProp extends Component {
-    static SlotContentType = 2;
-    prop = [{ value: 'Text1' }];
-    render() {
-        trackGet(this, "prop");
-        return this.prop.map(item => item.value).join(' ');
-    }
-}

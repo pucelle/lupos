@@ -6,11 +6,8 @@
  * or use as expression `a as Observed<...>`,
  * or make a class declaration implements `Observed`,
  * or make a type parameter extends `Observed<...>`.
- * 
- * Code must be compiled by `@pucelle/lupos.compiler` to work.
  */
 export type Observed<T extends object = object> = T
-
 
 /** 
  * `UnObserved` means we will stop observe this object.
@@ -25,38 +22,35 @@ export type UnObserved<T extends object = object> = T
 
 
 /** 
- * It a class implements `MethodsObserved<GetNames, SetNames>`, it indicates which
- * methods cause elements of current class getting and setting actions.
+ * It a class implements `MethodsToObserve<GetNames, SetNames>`, it indicates which
+ * methods cause elements getting and setting actions of current class.
  * This make a class works like a `Map` or `Set` to do elements get and set tracking.
- * 
- * To make it work, you should also ensure the class instance is `Observed`.
  * 
  * Note this type doesn't affect compiling of implemented class,
  * but affect the compiling of the places where use the class instance.
+ * So, normally it runs fast, and also can be tracked as a property of an observed.
  */
-export type MethodsObserved<GetMethods, SetMethods>
+export type MethodsToObserve<GetMethods, SetMethods>
 	= {[K in (GetMethods extends string ? GetMethods : never) | (SetMethods extends string ? SetMethods : never)]: Function}
 
 
 
 /** 
- * It a parameter is of type `ParameterGetObserved<>`, it indicates that
+ * It a parameter is of type `ParameterGetToObserve<>`, it indicates that
  * the implementation will get elements of this parameter.
  * 
- * To make it work, you should also ensure the argument you pass is `Observed`.
- * 
  * Note this type doesn't affect compiling of the function declaration,
  * but affect the compiling of the places where use this function.
+ * So, normally it runs fast, and also can be tracked as a property of an observed.
  */
-export type ParameterGetObserved<T extends object = object> = T
+export type ParameterGetToObserve<T extends object = object> = T
 
 /** 
-* It a parameter is of type `ParameterSetObserved<>`, it indicates that
+* It a parameter is of type `ParameterSetToObserve<>`, it indicates that
  * the implementation will set elements of this parameter.
- * 
- * To make it work, you should also ensure the argument you pass is `Observed`.
- * 
+ *
  * Note this type doesn't affect compiling of the function declaration,
  * but affect the compiling of the places where use this function.
+ * So, normally it runs fast, and also can be tracked as a property of an observed.
  */
-export type ParameterSetObserved<T extends object = object> = T
+export type ParameterSetToObserve<T extends object = object> = T

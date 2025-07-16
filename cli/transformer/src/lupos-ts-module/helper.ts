@@ -1069,8 +1069,11 @@ export function helperOfContext(ts: typeof TS, typeCheckerGetter: () => TS.TypeC
 		 *   - `[...a]`, or `{...a}`
 		 *   - `Object.keys(a)`, `Object.values(a)`, `Object.entries(a)`
 		 *   - `Object.assign(..., a)`
+		 *   - `call(arg)` ~ `decl(ParameterGetToObserve<param>)`
 		 */
 		isAllElementsReadAccess(node: TS.Node): boolean {
+
+			// `[...a]`, or `{...a}`
 			if (node.parent
 				&& (ts.isSpreadElement(node.parent)
 					|| ts.isSpreadAssignment(node.parent)
@@ -1097,6 +1100,26 @@ export function helperOfContext(ts: typeof TS, typeCheckerGetter: () => TS.TypeC
 
 				if (methodName === 'assign') {
 					if (node.parent.arguments.indexOf(node as TS.Expression) > 0) {
+						return true
+					}
+				}
+			}
+
+			// `call(arg)` ~ `decl(param: ParameterGetToObserve<...>)`
+			if (node.parent
+				&& ts.isCallExpression(node.parent)
+			) {
+				let callExp = node.parent
+				let argIndex = callExp.arguments.findIndex(arg => arg === node)
+
+				if (argIndex !== -1) {
+					let callDecl = symbol.resolveDeclaration(node.parent.expression, n => isFunctionLike(n) || isMethodLike(n))
+					let parameter = callDecl?.parameters[argIndex]
+
+					if (parameter
+						&& parameter.type
+						&& symbol.isImportedFrom(parameter.type, 'ParameterGetToObserve', '@pucelle/lupos')
+					) {
 						return true
 					}
 				}
@@ -1135,13 +1158,33 @@ export function helperOfContext(ts: typeof TS, typeCheckerGetter: () => TS.TypeC
 				}
 			}
 
+			// `call(arg)` ~ `decl(param: ParameterSetToObserve<...>)`
+			if (node.parent
+				&& ts.isCallExpression(node.parent)
+			) {
+				let callExp = node.parent
+				let argIndex = callExp.arguments.findIndex(arg => arg === node)
+
+				if (argIndex !== -1) {
+					let callDecl = symbol.resolveDeclaration(node.parent.expression, n => isFunctionLike(n) || isMethodLike(n))
+					let parameter = callDecl?.parameters[argIndex]
+
+					if (parameter
+						&& parameter.type
+						&& symbol.isImportedFrom(parameter.type, 'ParameterSetToObserve', '@pucelle/lupos')
+					) {
+						return true
+					}
+				}
+			}
+
 			return false
 		},
 		
 		/** 
 		 * Test whether be `Map` or `Set`, or of `Array`.
-		 * Otherwise if resolved type is `MethodsObserved`,
-		 * or resolved class implements `MethodsObserved`, returns `true`.
+		 * Otherwise if resolved type is `MethodsToObserve`,
+		 * or resolved class implements `MethodsToObserve`, returns `true`.
 		 */
 		isOfElementsAccess(rawNode: AccessNode): boolean {
 			let decl = symbol.resolveDeclaration(rawNode, (n: TS.Node) => isMethodLike(n) || isPropertyLike(n))
@@ -1172,7 +1215,7 @@ export function helperOfContext(ts: typeof TS, typeCheckerGetter: () => TS.TypeC
 			// Not validate which method.
 			else if (ts.isClassDeclaration(classDecl)) {
 				for (let superDecl of cls.walkSelfAndChainedSuper(classDecl)) {
-					if (cls.isImplementedOf(superDecl, 'MethodsObserved', '@pucelle/lupos')) {
+					if (cls.isImplementedOf(superDecl, 'MethodsToObserve', '@pucelle/lupos')) {
 						return true
 					}
 				}
@@ -1183,7 +1226,7 @@ export function helperOfContext(ts: typeof TS, typeCheckerGetter: () => TS.TypeC
 
 		/** 
 		 * Test whether calls read methods or properties like `Map.get`, `Set.has`, `Array.length`.
-		 * Otherwise whether calls read type methods of `MethodsObserved`.
+		 * Otherwise whether calls read type methods of `MethodsToObserve`.
 		 */
 		isOfElementsReadAccess(rawNode: AccessNode): boolean {
 			let decl = symbol.resolveDeclaration(rawNode, (n: TS.Node) => isMethodLike(n) || isPropertyLike(n))
@@ -1255,7 +1298,7 @@ export function helperOfContext(ts: typeof TS, typeCheckerGetter: () => TS.TypeC
 
 		/** 
 		 * Test whether calls write methods like `Map.set` `Set.set`, or `Array.push`.
-		 * Otherwise whether calls write type methods of `MethodsObserved`.
+		 * Otherwise whether calls write type methods of `MethodsToObserve`.
 		 */
 		isOfElementsWriteAccess(rawNode: AccessNode) {
 			let decl = symbol.resolveDeclaration(rawNode, isMethodLike)
@@ -1297,7 +1340,7 @@ export function helperOfContext(ts: typeof TS, typeCheckerGetter: () => TS.TypeC
 		_isOfMethodsObservable(classDecl: TS.ClassDeclaration, propName: string, paramIndex: number) {
 			for (let superDecl of cls.walkSelfAndChainedSuper(classDecl)) {
 				let implemented = cls.getImplements(superDecl)
-				let methodsHalfObservedImplement = implemented.find(im => getText(im.expression) === 'MethodsObserved')
+				let methodsHalfObservedImplement = implemented.find(im => getText(im.expression) === 'MethodsToObserve')
 				if (!methodsHalfObservedImplement) {
 					continue
 				}

@@ -1,4 +1,4 @@
-import { MethodsObserved, Observed, UnObserved } from '../../../../web/out';
+import { MethodsToObserve, Observed, UnObserved, ParameterGetToObserve, ParameterSetToObserve } from '../../../../web/out';
 import { Component } from '@pucelle/lupos.js';
 import { EffectMaker, trackGet, trackSet } from "@pucelle/lupos";
 export class TestObservedVariableType {
@@ -201,7 +201,7 @@ class ListMap {
         return key + value;
     }
 }
-export class TestPropertyMethodsObserved {
+export class TestPropertyOfMethodsObserved {
     data = new AnyMethodsObserved();
     constructor() {
         this.$setOverlapSetKeys_effector = new EffectMaker(this.setOverlapSetKeys, this);
@@ -257,6 +257,60 @@ class AnyMethodsObserved {
     }
     set(value) {
         this.value = value;
+    }
+}
+export class TestParameterGetSetObserved extends Component {
+    toGet = { value: 0 };
+    toSet = { value: 0 };
+    testGetFunction() {
+        parameterGetObservedFunction(this.toGet);
+        trackGet(this, "toGet");
+        trackGet(this.toGet, "");
+        return 1;
+    }
+    testGetStaticMethod() {
+        ParameterGetSetObservedTestClass.parameterGetObservedStaticMethod(this.toGet);
+        trackGet(this, "toGet");
+        trackGet(this.toGet, "");
+        return 1;
+    }
+    testGetMethod() {
+        new ParameterGetSetObservedTestClass().parameterGetObservedMethod(this.toGet);
+        trackGet(this, "toGet");
+        trackGet(this.toGet, "");
+        return 1;
+    }
+    testSetFunction() {
+        parameterSetObservedFunction(this.toSet);
+        trackSet(this.toSet, "");
+    }
+    testStaticMethod() {
+        ParameterGetSetObservedTestClass.parameterSetObservedStaticMethod(this.toSet);
+        trackSet(this.toSet, "");
+    }
+    testSetMethod() {
+        new ParameterGetSetObservedTestClass().parameterSetObservedMethod(this.toSet);
+        trackSet(this.toSet, "");
+    }
+}
+function parameterGetObservedFunction(get) {
+    return get.value;
+}
+function parameterSetObservedFunction(set) {
+    set.value = 1;
+}
+class ParameterGetSetObservedTestClass {
+    static parameterGetObservedStaticMethod(get) {
+        return get.value;
+    }
+    static parameterSetObservedStaticMethod(set) {
+        set.value = 1;
+    }
+    parameterGetObservedMethod(get) {
+        return get.value;
+    }
+    parameterSetObservedMethod(set) {
+        set.value = 1;
     }
 }
 export class TestUnObserved extends Component {

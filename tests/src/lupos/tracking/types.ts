@@ -1,4 +1,4 @@
-import {effect, MethodsObserved, Observed, UnObserved} from '../../../../web/out'
+import {effect, MethodsToObserve, Observed, UnObserved, ParameterGetToObserve, ParameterSetToObserve} from '../../../../web/out'
 import {Component} from '@pucelle/lupos.js'
 
 
@@ -211,18 +211,17 @@ export class TestMethodsObserved implements Observed {
 	}
 }
 
-class ListMap implements MethodsObserved<'get', 'set'> {
+class ListMap implements MethodsToObserve<'get', 'set'> {
 	get(key: number) {
 		return key
 	}
-
 	set(key: number, value: number) {
 		return key + value
 	}
 }
 
 
-export class TestPropertyMethodsObserved {
+export class TestPropertyOfMethodsObserved {
 
 	data: Observed<AnyMethodsObserved> = new AnyMethodsObserved()
 
@@ -269,13 +268,68 @@ export class TestPropertyMethodsObserved {
 	}
 }
 
-class AnyMethodsObserved implements MethodsObserved<'get', 'set'> {
+class AnyMethodsObserved implements MethodsToObserve<'get', 'set'> {
 	value: number = 1
 	get() {
 		return this.value
 	}
 	set(value: number) {
 		this.value = value
+	}
+}
+
+
+export class TestParameterGetSetObserved extends Component {
+	toGet: {value: number} = {value: 0}
+	toSet: {value: number} = {value: 0}
+
+	testGetFunction() {
+		parameterGetObservedFunction(this.toGet)
+		return 1
+	}
+
+	testGetStaticMethod() {
+		ParameterGetSetObservedTestClass.parameterGetObservedStaticMethod(this.toGet)
+		return 1
+	}
+
+	testGetMethod() {
+		new ParameterGetSetObservedTestClass().parameterGetObservedMethod(this.toGet)
+		return 1
+	}
+
+	testSetFunction() {
+		parameterSetObservedFunction(this.toSet)
+	}
+
+	testStaticMethod() {
+		ParameterGetSetObservedTestClass.parameterSetObservedStaticMethod(this.toSet)
+	}
+
+	testSetMethod() {
+		new ParameterGetSetObservedTestClass().parameterSetObservedMethod(this.toSet)
+	}
+}
+
+function parameterGetObservedFunction(get: ParameterGetToObserve<{value: number}>) {
+	return get.value
+}
+function parameterSetObservedFunction(set: ParameterSetToObserve<{value: number}>) {
+	set.value = 1
+}
+
+class ParameterGetSetObservedTestClass {
+	static parameterGetObservedStaticMethod(get: ParameterGetToObserve<{value: number}>) {
+		return get.value
+	}
+	static parameterSetObservedStaticMethod(set: ParameterSetToObserve<{value: number}>) {
+		set.value = 1
+	}
+	parameterGetObservedMethod(get: ParameterGetToObserve<{value: number}>) {
+		return get.value
+	}
+	parameterSetObservedMethod(set: ParameterSetToObserve<{value: number}>) {
+		set.value = 1
 	}
 }
 
