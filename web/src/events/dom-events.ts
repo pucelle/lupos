@@ -30,7 +30,7 @@ export type InferEventParameter<T extends EventType> = T extends keyof GlobalEve
 
 
 /** Cache event listeners. */
-const EventListenerMap: InternalWeakPairKeysListMap<EventTarget, string, EventListener> = new InternalWeakPairKeysListMap()
+const EventListenerMap: InternalWeakPairKeysListMap<EventTarget, string, EventListener> = /*#__PURE__*/new InternalWeakPairKeysListMap()
 
 
 /** 

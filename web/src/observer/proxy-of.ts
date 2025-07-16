@@ -5,7 +5,7 @@ type ProxyOf<T> = T extends object ? T & {ProxySymbol: T} : T
 
 
 /** To find the proxy of an object. */
-const ProxyMap: WeakMap<object | ProxyOf<any>, ProxyOf<any>> = new WeakMap()
+const ProxyMap: WeakMap<object | ProxyOf<any>, ProxyOf<any>> = /*#__PURE__*/new WeakMap()
 
 
 /** 

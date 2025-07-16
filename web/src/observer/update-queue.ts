@@ -3,7 +3,7 @@ import {AnimationFrame, bindCallback, promiseWithResolves} from '../utils'
 
 
 /** Indicates queue update phase. */
-enum QueueUpdatePhase {
+const enum QueueUpdatePhase {
 
 	/** Nothing to update. */
 	NotStarted,
@@ -65,13 +65,13 @@ class UpdateHeap {
 
 
 /** Caches all callbacks in order. */
-const heap: UpdateHeap = new UpdateHeap()
+const heap: UpdateHeap = /*#__PURE__*/new UpdateHeap()
 
 /** Callbacks wait to be called after all the things update. */
 let updateCompleteCallbacks: (() => void)[] = []
 
 /** What's updating right now. */
-let phase: QueueUpdatePhase = QueueUpdatePhase.NotStarted
+let phase: QueueUpdatePhase = /*#__PURE__*/QueueUpdatePhase.NotStarted
 
 
 /** 
@@ -162,9 +162,9 @@ async function update() {
 
 
 
-let firstPaintPromiseResolve = promiseWithResolves()
+let firstPaintPromiseResolve = /*#__PURE__*/promiseWithResolves()
 
-untilUpdateComplete().then(() => {
+/*#__PURE__*/untilUpdateComplete().then(() => {
 	setTimeout(() => {
 		firstPaintPromiseResolve.resolve()
 	}, 0)

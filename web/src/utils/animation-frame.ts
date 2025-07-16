@@ -2,8 +2,8 @@ type AnimationFrameCallback = (timestamp: number) => void
 
 
 let idSeed = 1
-let currentCallbackMap: Map<number, AnimationFrameCallback> = new Map()
-let nextCallbackMap: Map<number, AnimationFrameCallback> = new Map()
+let currentCallbackMap: Map<number, AnimationFrameCallback> = /*#__PURE__*/new Map()
+let nextCallbackMap: Map<number, AnimationFrameCallback> = /*#__PURE__*/new Map()
 let nextFrameId: number | null = null
 let inCurrentFrame: boolean = false
 let currentTimestamp: number = 0

@@ -9,10 +9,10 @@ import {DependencyMap} from './helpers/dependency-map'
 
 
 /** Caches `Dependency <=> Callback`. */
-const DepMap: DependencyMap = new DependencyMap()
+const DepMap: DependencyMap = /*#__PURE__*/new DependencyMap()
 
 /** Mark the latest version of objects which are tracking elements. */
-const ElementsDepVersionMap: WeakMap<object, number> = new WeakMap()
+const ElementsDepVersionMap: WeakMap<object, number> = /*#__PURE__*/new WeakMap()
 
 /** Tracker stack list. */
 const trackerStack: DependencyTracker[] = []

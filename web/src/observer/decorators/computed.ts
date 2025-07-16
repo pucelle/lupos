@@ -3,7 +3,7 @@ import {enqueueUpdate} from '../update-queue'
 import {getIncrementalOrder} from './order'
 
 
-enum ComputedValueState {
+const enum ComputedValueState {
 	Initial,
 	Stale,
 	Fresh,

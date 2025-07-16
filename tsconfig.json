@@ -18,10 +18,10 @@
 		"compiler",
 		"transformer",
 		"tests",
-		"tests-web"
+		"tests-web",
+		"web"
 	],
 	"references": [
-		{ "path": "./web" },
 		{ "path": "./compiler" },
 		{ "path": "./transformer" },
 	]

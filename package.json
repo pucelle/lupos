@@ -20,6 +20,8 @@
 	"scripts": {
 		"build": "tsc -b",
 		"watch": "tsc -b -w",
+		"build-web": "cd web && node ../bin/luc -e",
+		"watch-web": "cd web && node ../bin/luc -e -w",
 		"prepublish": "npm run build",
 		"test": "cd tests && node ../bin/luc && echo Compare git changes to get test result && del tsconfig.tsbuildinfo",
 		"test-web": "jest"
