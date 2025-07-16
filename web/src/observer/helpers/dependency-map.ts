@@ -1,5 +1,5 @@
 import {InternalSetMap} from '../../structs/map'
-import {WeakPairKeysSetMap} from '../../structs/map-weak'
+import {InternalWeakPairKeysSetMap} from '../../structs/map-weak'
 
 
 /** 
@@ -10,10 +10,10 @@ import {WeakPairKeysSetMap} from '../../structs/map-weak'
 export class DependencyMap {
 
 	/** Caches `Refresh Callback -> Dependency -> Dependency Key`. */
-	private dependencyMap: WeakPairKeysSetMap<Function, object, PropertyKey> = new WeakPairKeysSetMap()
+	private dependencyMap: InternalWeakPairKeysSetMap<Function, object, PropertyKey> = new InternalWeakPairKeysSetMap()
 
 	/** Caches `Dependency -> Dependency Key -> Refresh Callback`. */
-	private callbackMap: WeakPairKeysSetMap<object, PropertyKey, Function> = new WeakPairKeysSetMap()
+	private callbackMap: InternalWeakPairKeysSetMap<object, PropertyKey, Function> = new InternalWeakPairKeysSetMap()
 
 	/** When doing getting property, add dependencies. */
 	apply(callback: Function, deps: InternalSetMap<object, PropertyKey>) {

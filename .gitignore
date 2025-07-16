@@ -1,6 +1,6 @@
 node_modules
-/compiler/out
-/transformer/out
+/cli/compiler/out
+/cli/transformer/out
 /web/out
 .VSCodeCounter
 *.tsbuildinfo

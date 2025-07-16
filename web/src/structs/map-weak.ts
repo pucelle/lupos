@@ -83,7 +83,7 @@ export class InternalWeakPairKeysListMap<K1 extends object, K2, V> {
  * Index a set of values by a pair of keys.
  * `K1` must be object type.
  */
-export class WeakPairKeysSetMap<K1 extends object, K2, V> {
+export class InternalWeakPairKeysSetMap<K1 extends object, K2, V> {
 
 	protected map: WeakMap<K1, InternalSetMap<K2, V>> = new WeakMap();
 

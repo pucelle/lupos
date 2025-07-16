@@ -9,6 +9,7 @@
 		"type": "git",
 		"url": "https://github.com/pucelle/lupos.git"
 	},
+	"type": "module",
 	"main": "./web/out/index.js",
 	"types": "./web/out/index.d.ts",
 	"sideEffects": false,
@@ -18,16 +19,16 @@
 		"./transformer": "./transformer/out/index.js"
 	},
 	"scripts": {
-		"build": "tsc -b",
-		"watch": "tsc -b -w",
-		"build-web": "cd web && node ../bin/luc -e",
-		"watch-web": "cd web && node ../bin/luc -e -w",
+		"build-cli": "cd cli && tsc -b",
+		"watch-cli": "cd cli && tsc -b -w",
+		"build-web": "cd web && node ../cli/bin/luc -e",
+		"watch-web": "cd web && node ../cli/bin/luc -e -w",
 		"prepublish": "npm run build",
-		"test": "cd tests && node ../bin/luc && echo Compare git changes to get test result && del tsconfig.tsbuildinfo",
+		"test": "cd tests && node ../cli/bin/luc && echo Compare git changes to get test result && del tsconfig.tsbuildinfo",
 		"test-web": "jest"
 	},
 	"bin": {
-		"luc": "./bin/luc"
+		"luc": "./cli/bin/luc"
 	},
 	"devDependencies": {
 		"@pucelle/lupos.js": "^0.1.0",

@@ -1,4 +1,3 @@
-import {DeepReadonly} from '../../../../web/out'
 import {Component} from '@pucelle/lupos.js'
 
 
@@ -37,22 +36,3 @@ export class TestReadonlyArrayProp extends Component {
 	}
 }
 
-
-export class TestDeepReadonlyProp extends Component {
-
-	prop: DeepReadonly<{value: {value: string}}> = {value: {value: 'Text'}}
-
-	render() {
-		return this.prop.value.value
-	}
-}
-
-
-export class TestDeepReadonlyArrayProp extends Component {
-
-	prop: DeepReadonly<{value: string}[]> = [{value: 'Text1'}]
-
-	render() {
-		return this.prop.map(item => item.value).join(' ')
-	}
-}
