@@ -105,9 +105,7 @@ export class TrackingScope {
 
 			// `let {a} = b`, track `b.a`.
 			if (rawNode.initializer) {
-				let names = helper.variable.walkDeclarationNames(rawNode)
-
-				for (let {node: nameNode, keys} of names) {
+				for (let {node: nameNode, keys} of helper.variable.walkDeclarationItems(rawNode)) {
 
 					// Skips let `a = b`.
 					if (keys.length > 0) {

@@ -28,6 +28,13 @@ export class TestObservedVariableType {
 		return item.value
 	}
 
+	variableArrayDeconstructedAssignmentOfElementsObserved() {
+		var a: Observed<{value: number}> = {value: 1}
+		var b: Observed<{value: number}> = {value: 1}
+		var [c, d] = [a, b]
+		return c.value + d.value
+	}
+
 	variableGetter() {
 		var a: Observed<{get b(): number}> = {get b(){return 1}}
 		return a.b
@@ -37,6 +44,7 @@ export class TestObservedVariableType {
 		var a: Observed<ObservedHasGetter> = new ObservedHasGetter()
 		return a.b
 	}
+
 }
 
 class ObservedHasGetter {

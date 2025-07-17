@@ -1,4 +1,4 @@
-import { MethodsToObserve, Observed, UnObserved, ParameterGetToObserve, ParameterSetToObserve } from '../../../../web/out';
+import { MethodsToObserve, Observed, UnObserved, ParameterToObserve, SetOfParameterToObserve } from '../../../../web/out';
 import { Component } from '@pucelle/lupos.js';
 import { EffectMaker, trackGet, trackSet } from "@pucelle/lupos";
 export class TestObservedVariableType {
@@ -26,6 +26,12 @@ export class TestObservedVariableType {
         trackGet(a, 0);
         trackGet(item, "value");
         return item.value;
+    }
+    variableArrayDeconstructedAssignmentOfElementsObserved() {
+        var a = { value: 1 };
+        var b = { value: 1 };
+        var [c, d] = [a, b];
+        return c.value + d.value;
     }
     variableGetter() {
         var a = { get b() { return 1; } };
@@ -265,44 +271,36 @@ export class TestParameterGetSetToObserve extends Component {
     testGetOfFunction() {
         parameterGetToObserveFunction(this.toGet);
         trackGet(this, "toGet");
-        trackGet(this.toGet, "");
         return 1;
     }
     testGetOfSpreadParameter() {
         parameterGetToObserveSpread(this.toGet);
         trackGet(this, "toGet");
-        trackGet(this.toGet, "");
         return 1;
     }
     testGetOfStaticMethod() {
         ParameterGetSetToObserveTestClass.parameterGetToObserveStaticMethod(this.toGet);
         trackGet(this, "toGet");
-        trackGet(this.toGet, "");
         return 1;
     }
     testGetOfMethod() {
         new ParameterGetSetToObserveTestClass(this.toGet).parameterGetToObserveMethod(this.toGet);
         trackGet(this, "toGet");
-        trackGet(this.toGet, "");
         return 1;
     }
     testGetOfClassConstructor() {
         new ParameterGetSetToObserveTestClass(this.toGet);
         trackGet(this, "toGet");
-        trackGet(this.toGet, "");
         return 1;
     }
     testSetOfFunction() {
         parameterSetToObserveFunction(this.toSet);
-        trackSet(this.toSet, "");
     }
     testSetOfStaticMethod() {
         ParameterGetSetToObserveTestClass.parameterSetToObserveStaticMethod(this.toSet);
-        trackSet(this.toSet, "");
     }
     testSetOfMethod() {
         new ParameterGetSetToObserveTestClass(this.toGet).parameterSetToObserveMethod(this.toSet);
-        trackSet(this.toSet, "");
     }
 }
 function parameterGetToObserveFunction(get) {
