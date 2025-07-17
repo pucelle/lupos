@@ -503,7 +503,8 @@ export function helperOfContext(ts: typeof TS, typeCheckerGetter: () => TS.TypeC
 
 		/** 
 		 * Get one property declaration by it's name.
-		 * `resolveChained` specifies whether will look at extended class or interfaces.
+		 * `resolveChained`: specifies whether will look at extended classes or interfaces.
+		 * `resolveAllPossible`: when true, will try resolve all type parameters as unioned.
 		 */
 		getProperty(
 			node: ObjectLike,
@@ -524,7 +525,8 @@ export function helperOfContext(ts: typeof TS, typeCheckerGetter: () => TS.TypeC
 
 		/** 
 		 * Get method declaration by it's name, and which will always have body.
-		 * `resolveChained` specifies whether will look at extended classes or interfaces.
+		 * `resolveChained`: specifies whether will look at extended classes or interfaces.
+		 * `resolveAllPossible`: when true, will try resolve all type parameters as unioned.
 		 */
 		getMethod(
 			node: TS.ClassLikeDeclaration,
@@ -546,7 +548,8 @@ export function helperOfContext(ts: typeof TS, typeCheckerGetter: () => TS.TypeC
 
 		/** 
 		 * Get constructor declaration.
-		 * `resolveChained` specifies whether will look at extended classes or interfaces.
+		 * `resolveChained`: specifies whether will look at extended classes or interfaces.
+		 * `resolveAllPossible`: when true, will try resolve all type parameters as unioned.
 		 */
 		getConstructor(
 			node: ObjectLike,
@@ -562,7 +565,11 @@ export function helperOfContext(ts: typeof TS, typeCheckerGetter: () => TS.TypeC
 			return undefined
 		},
 
-		/** Get constructor parameter list, even from super class. */
+		/** 
+		 * Get constructor parameter list, even from super class.
+		 * `resolveChained`: specifies whether will look at extended classes or interfaces.
+		 * `resolveAllPossible`: when true, will try resolve all type parameters as unioned.
+		 */
 		getConstructorParameters(
 			node: ObjectLike,
 			resolveChained: boolean,
@@ -776,7 +783,8 @@ export function helperOfContext(ts: typeof TS, typeCheckerGetter: () => TS.TypeC
 
 		/** 
 		 * Get one object like member declaration or signature by it's name.
-		 * `resolveChained` specifies whether will look at extended classes or interfaces.
+		 * `resolveChained`: specifies whether will look at extended classes or interfaces.
+		 * `resolveAllPossible`: when true, will try resolve all type parameters as unioned.
 		 */
 		getMember(
 			node: ObjectLike,
@@ -795,7 +803,8 @@ export function helperOfContext(ts: typeof TS, typeCheckerGetter: () => TS.TypeC
 
 		/** 
 		 * Get one property declaration or signature by it's name.
-		 * `resolveChained` specifies whether will look at extended class or interfaces.
+		 * `resolveChained`: specifies whether will look at extended classes or interfaces.
+		 * `resolveAllPossible`: when true, will try resolve all type parameters as unioned.
 		 */
 		getProperty(
 			node: ObjectLike,
@@ -816,7 +825,8 @@ export function helperOfContext(ts: typeof TS, typeCheckerGetter: () => TS.TypeC
 
 		/** 
 		 * Get method declaration or signature by it's name.
-		 * `resolveChained` specifies whether will look at extended classes or interfaces.
+		 * `resolveChained`: specifies whether will look at extended classes or interfaces.
+		 * `resolveAllPossible`: when true, will try resolve all type parameters as unioned.
 		 */
 		getMethod(
 			node: TS.ClassLikeDeclaration,
@@ -837,7 +847,8 @@ export function helperOfContext(ts: typeof TS, typeCheckerGetter: () => TS.TypeC
 
 		/** 
 		 * Get constructor declaration or signature.
-		 * `resolveChained` specifies whether will look at extended classes or interfaces.
+		 * `resolveChained`: specifies whether will look at extended classes or interfaces.
+		 * `resolveAllPossible`: when true, will try resolve all type parameters as unioned.
 		 */
 		getConstructor(
 			node: ObjectLike,
@@ -853,7 +864,11 @@ export function helperOfContext(ts: typeof TS, typeCheckerGetter: () => TS.TypeC
 			return undefined
 		},
 
-		/** Get constructor parameter list, even from super class. */
+		/** 
+		 * Get constructor parameter list, even from super class.
+		 * `resolveChained`: specifies whether will look at extended classes or interfaces.
+		 * `resolveAllPossible`: when true, will try resolve all type parameters as unioned.
+		 */
 		getConstructorParameters(
 			node: ObjectLike,
 			resolveChained: boolean,
@@ -905,7 +920,8 @@ export function helperOfContext(ts: typeof TS, typeCheckerGetter: () => TS.TypeC
 		/** 
 		 * Resolve class or interface or object literal and all it's extended interfaces,
 		 * and walk their members.
-		 * If `resolveAllPossible`, will try resolve all type parameters as unioned.
+		 * `resolveChained`: specifies whether will look at extended classes or interfaces.
+		 * `resolveAllPossible`: when true, will try resolve all type parameters as unioned.
 		 */
 		*walkMembers(
 			node: ObjectLike,
@@ -1107,7 +1123,8 @@ export function helperOfContext(ts: typeof TS, typeCheckerGetter: () => TS.TypeC
 
 			// `call(arg)` ~ `decl(param: ParameterGetToObserve<...>)`
 			if (node.parent
-				&& ts.isCallExpression(node.parent)
+				&& (ts.isCallExpression(node.parent)
+					|| ts.isNewExpression(node.parent))
 			) {
 				if (access._isOfLuposParameterType(node as TS.Expression, node.parent, 'ParameterGetToObserve')) {
 					return true
@@ -1117,13 +1134,71 @@ export function helperOfContext(ts: typeof TS, typeCheckerGetter: () => TS.TypeC
 			return false
 		},
 		
-		_isOfLuposParameterType(callArg: TS.Expression, callExp: TS.CallExpression, name: string): boolean {
+		/** 
+		 * Test whether be all elements write access like:
+		 *   - `[...a] = ...`, or `{...a} = ...`
+		 *   - `Object.assign(a, ...)`
+		 */
+		isAllElementsWriteAccess(node: TS.Node): boolean {
+			if (node.parent
+				&& (ts.isSpreadElement(node.parent)
+					|| ts.isSpreadAssignment(node.parent)
+				)
+				&& assign.isWithinAssignmentTo(node)
+			) {
+				return true
+			}
+
+			// `Object.xx(...)`
+			if (node.parent
+				&& ts.isCallExpression(node.parent)
+				&& ts.isPropertyAccessExpression(node.parent.expression)
+				&& getText(node.parent.expression.expression) === 'Object'
+				&& node.parent.arguments.includes(node as TS.Expression)
+			) {
+				let methodName = getText(node.parent.expression.name)
+				if (methodName === 'assign') {
+					if (node.parent.arguments.indexOf(node as TS.Expression) === 0) {
+						return true
+					}
+				}
+			}
+
+			// `call(arg)` ~ `decl(param: ParameterSetToObserve<...>)`
+			if (node.parent
+				&& (ts.isCallExpression(node.parent)
+					|| ts.isNewExpression(node.parent))
+			) {
+				if (access._isOfLuposParameterType(node as TS.Expression, node.parent, 'ParameterSetToObserve')) {
+					return true
+				}
+			}
+
+			return false
+		},
+		
+		/** `call(arg)` ~ `decl(param: ParameterSetToObserve<...>)` */
+		_isOfLuposParameterType(callArg: TS.Expression, callExp: TS.CallExpression | TS.NewExpression, name: string): boolean {
+			if (!callExp.arguments) {
+				return false
+			}
+
 			let argIndex = callExp.arguments.findIndex(arg => arg === callArg)
 			if (argIndex === -1) {
 				return false
 			}
 
-			let decl = symbol.resolveDeclaration(callExp.expression, n => isFunctionLike(n) || isMethodLike(n))
+			let decl:  TS.FunctionLikeDeclaration | TS.MethodSignature | TS.MethodDeclaration | TS.ConstructorDeclaration | undefined
+			if (ts.isCallExpression(callExp)) {
+				decl = symbol.resolveDeclaration(callExp.expression, n => isFunctionLike(n) || isMethodLike(n))
+			}
+			else {
+				let classDecl = symbol.resolveDeclaration(callExp.expression, ts.isClassLike)
+				if (classDecl) {
+					decl = cls.getConstructor(classDecl, true)
+				}
+			}
+
 			if (!decl) {
 				return false
 			}
@@ -1166,48 +1241,6 @@ export function helperOfContext(ts: typeof TS, typeCheckerGetter: () => TS.TypeC
 			return false
 		},
 
-		/** 
-		 * Test whether be all elements write access like:
-		 *   - `[...a] = ...`, or `{...a} = ...`
-		 *   - `Object.assign(a, ...)`
-		 */
-		isAllElementsWriteAccess(node: TS.Node): boolean {
-			if (node.parent
-				&& (ts.isSpreadElement(node.parent)
-					|| ts.isSpreadAssignment(node.parent)
-				)
-				&& assign.isWithinAssignmentTo(node)
-			) {
-				return true
-			}
-
-			// `Object.xx(...)`
-			if (node.parent
-				&& ts.isCallExpression(node.parent)
-				&& ts.isPropertyAccessExpression(node.parent.expression)
-				&& getText(node.parent.expression.expression) === 'Object'
-				&& node.parent.arguments.includes(node as TS.Expression)
-			) {
-				let methodName = getText(node.parent.expression.name)
-				if (methodName === 'assign') {
-					if (node.parent.arguments.indexOf(node as TS.Expression) === 0) {
-						return true
-					}
-				}
-			}
-
-			// `call(arg)` ~ `decl(param: ParameterSetToObserve<...>)`
-			if (node.parent
-				&& ts.isCallExpression(node.parent)
-			) {
-				if (access._isOfLuposParameterType(node as TS.Expression, node.parent, 'ParameterSetToObserve')) {
-					return true
-				}
-			}
-
-			return false
-		},
-		
 		/** 
 		 * Test whether be `Map` or `Set`, or of `Array`.
 		 * Otherwise if resolved type is `MethodsToObserve`,
@@ -2058,7 +2091,10 @@ export function helperOfContext(ts: typeof TS, typeCheckerGetter: () => TS.TypeC
 			return (test ? decls?.find(test) : decls?.[0]) as T | undefined
 		},
 
-		/** Resolve for chained object like: classes, interfaces, or object types. */
+		/** 
+		 * Resolve for chained object like: classes, interfaces, or object types.
+		 * `resolveAllPossible`: when true, will try resolve all type parameters as unioned.
+		 */
 		*resolveChainedObjectLike(node: TS.Node, resolveAllPossible: boolean = false): Iterable<ObjectLike> {
 			let objectLikeDecls = symbol.resolveDeclarations(node, isObjectLike)
 			if (!objectLikeDecls) {

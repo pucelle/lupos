@@ -262,40 +262,46 @@ class AnyMethodsObserved {
 export class TestParameterGetSetToObserve extends Component {
     toGet = { value: 0 };
     toSet = { value: 0 };
-    testGetFunction() {
+    testGetOfFunction() {
         parameterGetToObserveFunction(this.toGet);
         trackGet(this, "toGet");
         trackGet(this.toGet, "");
         return 1;
     }
-    testGetSpreadParameter() {
+    testGetOfSpreadParameter() {
         parameterGetToObserveSpread(this.toGet);
         trackGet(this, "toGet");
         trackGet(this.toGet, "");
         return 1;
     }
-    testGetStaticMethod() {
+    testGetOfStaticMethod() {
         ParameterGetSetToObserveTestClass.parameterGetToObserveStaticMethod(this.toGet);
         trackGet(this, "toGet");
         trackGet(this.toGet, "");
         return 1;
     }
-    testGetMethod() {
-        new ParameterGetSetToObserveTestClass().parameterGetToObserveMethod(this.toGet);
+    testGetOfMethod() {
+        new ParameterGetSetToObserveTestClass(this.toGet).parameterGetToObserveMethod(this.toGet);
         trackGet(this, "toGet");
         trackGet(this.toGet, "");
         return 1;
     }
-    testSetFunction() {
+    testGetOfClassConstructor() {
+        new ParameterGetSetToObserveTestClass(this.toGet);
+        trackGet(this, "toGet");
+        trackGet(this.toGet, "");
+        return 1;
+    }
+    testSetOfFunction() {
         parameterSetToObserveFunction(this.toSet);
         trackSet(this.toSet, "");
     }
-    testStaticMethod() {
+    testSetOfStaticMethod() {
         ParameterGetSetToObserveTestClass.parameterSetToObserveStaticMethod(this.toSet);
         trackSet(this.toSet, "");
     }
-    testSetMethod() {
-        new ParameterGetSetToObserveTestClass().parameterSetToObserveMethod(this.toSet);
+    testSetOfMethod() {
+        new ParameterGetSetToObserveTestClass(this.toGet).parameterSetToObserveMethod(this.toSet);
         trackSet(this.toSet, "");
     }
 }
@@ -314,6 +320,9 @@ class ParameterGetSetToObserveTestClass {
     }
     static parameterSetToObserveStaticMethod(set) {
         set.value = 1;
+    }
+    constructor(get) {
+        get.value;
     }
     parameterGetToObserveMethod(get) {
         return get.value;

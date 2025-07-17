@@ -283,36 +283,41 @@ export class TestParameterGetSetToObserve extends Component {
 	toGet: {value: number} = {value: 0}
 	toSet: {value: number} = {value: 0}
 
-	testGetFunction() {
+	testGetOfFunction() {
 		parameterGetToObserveFunction(this.toGet)
 		return 1
 	}
 
-	testGetSpreadParameter() {
+	testGetOfSpreadParameter() {
 		parameterGetToObserveSpread(this.toGet)
 		return 1
 	}
 
-	testGetStaticMethod() {
+	testGetOfStaticMethod() {
 		ParameterGetSetToObserveTestClass.parameterGetToObserveStaticMethod(this.toGet)
 		return 1
 	}
 
-	testGetMethod() {
-		new ParameterGetSetToObserveTestClass().parameterGetToObserveMethod(this.toGet)
+	testGetOfMethod() {
+		new ParameterGetSetToObserveTestClass(this.toGet).parameterGetToObserveMethod(this.toGet)
 		return 1
 	}
 
-	testSetFunction() {
+	testGetOfClassConstructor() {
+		new ParameterGetSetToObserveTestClass(this.toGet)
+		return 1
+	}
+
+	testSetOfFunction() {
 		parameterSetToObserveFunction(this.toSet)
 	}
 
-	testStaticMethod() {
+	testSetOfStaticMethod() {
 		ParameterGetSetToObserveTestClass.parameterSetToObserveStaticMethod(this.toSet)
 	}
 
-	testSetMethod() {
-		new ParameterGetSetToObserveTestClass().parameterSetToObserveMethod(this.toSet)
+	testSetOfMethod() {
+		new ParameterGetSetToObserveTestClass(this.toGet).parameterSetToObserveMethod(this.toSet)
 	}
 }
 
@@ -332,6 +337,9 @@ class ParameterGetSetToObserveTestClass {
 	}
 	static parameterSetToObserveStaticMethod(set: ParameterSetToObserve<{value: number}>) {
 		set.value = 1
+	}
+	constructor(get: ParameterGetToObserve<{value: number}>) {
+		get.value
 	}
 	parameterGetToObserveMethod(get: ParameterGetToObserve<{value: number}>) {
 		return get.value
