@@ -1,4 +1,4 @@
-import {effect, MethodsToObserve, Observed, UnObserved, ParameterGetToObserve, ParameterSetToObserve} from '../../../../web/out'
+import {effect, MethodsToObserve, Observed, UnObserved, ParameterToObserve, SetOfParameterToObserve} from '../../../../web/out'
 import {Component} from '@pucelle/lupos.js'
 
 
@@ -321,30 +321,30 @@ export class TestParameterGetSetToObserve extends Component {
 	}
 }
 
-function parameterGetToObserveFunction(get: ParameterGetToObserve<{value: number}>) {
+function parameterGetToObserveFunction(get: ParameterToObserve<{value: number}>) {
 	return get.value
 }
-function parameterGetToObserveSpread(...gets: ParameterGetToObserve<{value: number}>[]) {
+function parameterGetToObserveSpread(...gets: ParameterToObserve<{value: number}>[]) {
 	return gets[0].value
 }
-function parameterSetToObserveFunction(set: ParameterSetToObserve<{value: number}>) {
+function parameterSetToObserveFunction(set: SetOfParameterToObserve<{value: number}>) {
 	set.value = 1
 }
 
 class ParameterGetSetToObserveTestClass {
-	static parameterGetToObserveStaticMethod(get: ParameterGetToObserve<{value: number}>) {
+	static parameterGetToObserveStaticMethod(get: ParameterToObserve<{value: number}>) {
 		return get.value
 	}
-	static parameterSetToObserveStaticMethod(set: ParameterSetToObserve<{value: number}>) {
+	static parameterSetToObserveStaticMethod(set: SetOfParameterToObserve<{value: number}>) {
 		set.value = 1
 	}
-	constructor(get: ParameterGetToObserve<{value: number}>) {
+	constructor(get: ParameterToObserve<{value: number}>) {
 		get.value
 	}
-	parameterGetToObserveMethod(get: ParameterGetToObserve<{value: number}>) {
+	parameterGetToObserveMethod(get: ParameterToObserve<{value: number}>) {
 		return get.value
 	}
-	parameterSetToObserveMethod(set: ParameterSetToObserve<{value: number}>) {
+	parameterSetToObserveMethod(set: SetOfParameterToObserve<{value: number}>) {
 		set.value = 1
 	}
 }

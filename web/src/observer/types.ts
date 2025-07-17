@@ -36,21 +36,24 @@ export type MethodsToObserve<GetMethods, SetMethods>
 
 
 /** 
- * It a parameter is of type `ParameterGetToObserve<>`, it indicates that
+ * It a parameter is of type `ParameterToObserve<...>`, it indicates that
  * the implementation will get elements of this parameter.
+ * 
+ * It's full name should be `GetOfParameterToObserve`,
+ * but since it uses frequently, `GetOf` get omitted.
  * 
  * Note this type doesn't affect compiling of the function declaration,
  * but affect the compiling of the places where use this function.
  * So, normally it runs fast, and also can be tracked as a property of an observed.
  */
-export type ParameterGetToObserve<T extends object = object> = T
+export type ParameterToObserve<T extends object = object> = T
 
 /** 
-* It a parameter is of type `ParameterSetToObserve<>`, it indicates that
+* It a parameter is of type `SetOfParameterToObserve<...>`, it indicates that
  * the implementation will set elements of this parameter.
  *
  * Note this type doesn't affect compiling of the function declaration,
  * but affect the compiling of the places where use this function.
  * So, normally it runs fast, and also can be tracked as a property of an observed.
  */
-export type ParameterSetToObserve<T extends object = object> = T
+export type SetOfParameterToObserve<T extends object = object> = T
