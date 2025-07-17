@@ -1109,16 +1109,54 @@ export function helperOfContext(ts: typeof TS, typeCheckerGetter: () => TS.TypeC
 			if (node.parent
 				&& ts.isCallExpression(node.parent)
 			) {
-				let callExp = node.parent
-				let argIndex = callExp.arguments.findIndex(arg => arg === node)
+				if (access._isOfLuposParameterType(node as TS.Expression, node.parent, 'ParameterGetToObserve')) {
+					return true
+				}
+			}
 
-				if (argIndex !== -1) {
-					let callDecl = symbol.resolveDeclaration(node.parent.expression, n => isFunctionLike(n) || isMethodLike(n))
-					let parameter = callDecl?.parameters[argIndex]
+			return false
+		},
+		
+		_isOfLuposParameterType(callArg: TS.Expression, callExp: TS.CallExpression, name: string): boolean {
+			let argIndex = callExp.arguments.findIndex(arg => arg === callArg)
+			if (argIndex === -1) {
+				return false
+			}
 
-					if (parameter
-						&& parameter.type
-						&& symbol.isImportedFrom(parameter.type, 'ParameterGetToObserve', '@pucelle/lupos')
+			let decl = symbol.resolveDeclaration(callExp.expression, n => isFunctionLike(n) || isMethodLike(n))
+			if (!decl) {
+				return false
+			}
+
+			let parameter = decl.parameters[argIndex]
+			if (parameter
+				&& parameter.type
+				&& symbol.isImportedFrom(parameter.type, name, '@pucelle/lupos')
+			) {
+				return true
+			}
+
+			if (argIndex >= decl.parameters.length - 1
+				&& decl.parameters.length > 0
+				&& decl.parameters[decl.parameters.length - 1].dotDotDotToken
+			) {
+				parameter = decl.parameters[decl.parameters.length - 1]
+
+				if (!parameter.type) {
+					return false
+				}
+
+				if (ts.isArrayTypeNode(parameter.type)
+					&& symbol.isImportedFrom(parameter.type.elementType, name, '@pucelle/lupos'))
+				{
+					return true
+				}
+
+				if (ts.isTypeReferenceNode(parameter.type)) {
+					let name = types.getTypeNodeReferenceName(parameter.type)
+					if ((name === 'Array' || name === 'ReadonlyArray')
+						&& parameter.type.typeArguments?.length === 1
+						&& symbol.isImportedFrom(parameter.type.typeArguments[0], name, '@pucelle/lupos')
 					) {
 						return true
 					}
@@ -1162,19 +1200,8 @@ export function helperOfContext(ts: typeof TS, typeCheckerGetter: () => TS.TypeC
 			if (node.parent
 				&& ts.isCallExpression(node.parent)
 			) {
-				let callExp = node.parent
-				let argIndex = callExp.arguments.findIndex(arg => arg === node)
-
-				if (argIndex !== -1) {
-					let callDecl = symbol.resolveDeclaration(node.parent.expression, n => isFunctionLike(n) || isMethodLike(n))
-					let parameter = callDecl?.parameters[argIndex]
-
-					if (parameter
-						&& parameter.type
-						&& symbol.isImportedFrom(parameter.type, 'ParameterSetToObserve', '@pucelle/lupos')
-					) {
-						return true
-					}
+				if (access._isOfLuposParameterType(node as TS.Expression, node.parent, 'ParameterSetToObserve')) {
+					return true
 				}
 			}
 
