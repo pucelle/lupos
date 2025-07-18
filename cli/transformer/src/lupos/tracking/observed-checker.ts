@@ -62,10 +62,12 @@ export namespace ObservedChecker {
 		// But `@computed` decorated will always continue.
 		if (decl && ts.isAccessor(decl)) {
 			let decoNameBeComputed = helper.deco.getFirstName(decl) === 'computed'
-			let isClassDeclObserved = getDeclarationObserved(helper.symbol.resolveDeclaration(decl.parent))
-
-			if (isClassDeclObserved && !decoNameBeComputed) {
-				return false
+			let declParentResolved = helper.symbol.resolveDeclaration(decl.parent)
+			if (declParentResolved) {
+				let isClassDeclObserved = getDeclarationObserved(declParentResolved)
+				if (isClassDeclObserved && !decoNameBeComputed) {
+					return false
+				}
 			}
 		}
 		
@@ -132,6 +134,9 @@ export namespace ObservedChecker {
 				return getElementsObserved(rawNode.left)
 					?? getElementsObserved(rawNode.right)
 			}
+			else {
+				return null
+			}
 		}
 
 		// `(...)`
@@ -147,9 +152,11 @@ export namespace ObservedChecker {
 		// `(a as Observed<{b: number}>).b`
 		else if (ts.isAsExpression(rawNode)) {
 			let typeNode = rawNode.type
-			if (typeNode) {
-				return getTypeNodeObserved(typeNode)
+			if (!typeNode) {
+				return null
 			}
+
+			return getTypeNodeObserved(typeNode)
 		}
 
 		// `a ? b : c`, can observe only if both b & c should be observed.
@@ -170,10 +177,16 @@ export namespace ObservedChecker {
 			)
 		) {
 			let decl = helper.symbol.resolveDeclaration(rawNode.expression)
+			if (!decl) {
+				return null
+			}
+
 			return getDeclarationObserved(decl)
 		}
 
-		return null
+		else {
+			return null
+		}
 	}
 
 
@@ -230,6 +243,9 @@ export namespace ObservedChecker {
 			}
 
 			let decl = helper.symbol.resolveDeclaration(resolveFrom)
+			if (!decl) {
+				return null
+			}
 			return getDeclarationObserved(decl)
 		}
 	}
@@ -281,7 +297,7 @@ export namespace ObservedChecker {
 	}
 
 	/** Whether resolved declaration should be observed. */
-	function getDeclarationObserved(decl: ts.Declaration | undefined): boolean | null {
+	function getDeclarationObserved(decl: ts.Declaration): boolean | null {
 		if (!decl) {
 			return null
 		}
@@ -308,7 +324,8 @@ export namespace ObservedChecker {
 			return getVariableDeclarationObserved(decl)
 		}
 
-		// Test whether variable declaration is observed.
+		// Test whether `[a]` or `{a}` is observed.
+		// Get resolved from a variable identifier.
 		else if (ts.isBindingElement(decl)) {
 			return getBindingElementObserved(decl)
 		}
@@ -327,6 +344,8 @@ export namespace ObservedChecker {
 			else if (firstDerived === 'UnObserved') {
 				return false
 			}
+
+			return null
 		}
 
 		// Observed class.
@@ -338,9 +357,13 @@ export namespace ObservedChecker {
 			else if (firstImplemented === 'UnObserved') {
 				return false
 			}
+
+			return null
 		}
 
-		return null
+		else {
+			return null
+		}
 	}
 
 
@@ -489,8 +512,33 @@ export namespace ObservedChecker {
 
 	/** Test whether a binding element, like a of `{a} = ...`, `[a] = ...` should be observed. */
 	function getBindingElementObserved(rawNode: ts.BindingElement): boolean | null {
+		let result: boolean | null
+
 		let decl = helper.findOutward(rawNode, ts.isVariableDeclaration)
-		return getDeclarationObserved(decl)
+		if (!decl) {
+			return null
+		}
+
+		result = getVariableDeclarationObserved(decl)
+		if (result !== null) {
+			return result
+		}
+
+		// Would better if we walk to variable declaration and collect keys,
+		// and then walk down follow keys at initializer.
+		// Here we simply assume there would be very few deconstructed assignment elements.
+		for (let item of helper.variable.walkDeconstructedDeclarationItems(decl)) {
+			if (item.node.parent === rawNode) {
+				if (item.initializer) {
+					result = getElementsObserved(item.initializer)
+					if (result !== null) {
+						return result
+					}
+				}
+			}
+		}
+
+		return null
 	}
 
 
@@ -520,6 +568,9 @@ export namespace ObservedChecker {
 
 		// Test declaration.
 		let decl = helper.symbol.resolveDeclaration(rawNode)
+		if (!decl) {
+			return null
+		}
 
 		// Always not observe method, it works like a value type.
 		if (decl && helper.isMethodLike(decl)) {
@@ -551,6 +602,10 @@ export namespace ObservedChecker {
 
 		// May resolve to this parameter, class declaration name.
 		let decl = helper.symbol.resolveDeclaration(rawNode)
+		if (!decl) {
+			return null
+		}
+
 		return getDeclarationObserved(decl)
 	}
 
@@ -560,6 +615,10 @@ export namespace ObservedChecker {
 
 		// May resolve to variable declaration, parameter declaration.
 		let decl = helper.symbol.resolveDeclaration(rawNode)
+		if (!decl) {
+			return null
+		}
+
 		return getDeclarationObserved(decl)
 	}
 

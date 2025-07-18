@@ -105,11 +105,11 @@ export class TrackingScope {
 
 			// `let {a} = b`, track `b.a`.
 			if (rawNode.initializer) {
-				for (let {node: nameNode, keys} of helper.variable.walkDeclarationItems(rawNode)) {
+				for (let {node, initializer, keys} of helper.variable.walkDeconstructedDeclarationItems(rawNode)) {
 
 					// Skips let `a = b`.
-					if (keys.length > 0) {
-						this.mayAddGetTracking(nameNode, rawNode.initializer, keys)
+					if (initializer && keys.length > 0) {
+						this.mayAddGetTracking(node, initializer, keys)
 					}
 				}
 			}
@@ -158,6 +158,31 @@ export class TrackingScope {
 		else if (ts.isBreakOrContinueStatement(rawNode)) {
 			this.state.unionFlowInterruptionType(FlowInterruptionTypeMask.BreakLike)
 			this.capturer.breakCaptured(this.node, FlowInterruptionTypeMask.BreakLike)
+		}
+
+		// `call(...)` or `new C(...)`.
+		// Would be better if adding the test to `isAllElementsReadAccess` and `isAllElementsWriteAccess`,
+		// But it required to look above to find closest call expression.
+		else if (ts.isCallExpression(rawNode) || ts.isNewExpression(rawNode)) {
+			let args = rawNode.arguments
+			if (args && args.length > 0) {
+				let parameters = helper.parameter.getCallParameters(rawNode)
+				if (parameters && parameters.length > 0) {
+					for (let {arg, typeNode} of helper.parameter.walkDeconstructedArgumentTypeItems(args, parameters)) {
+						if (typeNode && (ts.isIdentifier(arg) || helper.access.isAccess(arg))) {
+							let resolved = helper.symbol.resolveImport(typeNode)
+							if (resolved?.moduleName === '@pucelle/lupos') {
+								if (resolved.memberName === 'ParameterToObserve') {
+									this.mayAddGetTracking(arg, arg, [''])
+								}
+								else if (resolved.memberName === 'SetOfParameterToObserve') {
+									this.mayAddSetTracking(arg, arg, [''])
+								}
+							}
+						}
+					}
+				}
+			}
 		}
 
 		

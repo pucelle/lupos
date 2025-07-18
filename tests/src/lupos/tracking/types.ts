@@ -28,10 +28,17 @@ export class TestObservedVariableType {
 		return item.value
 	}
 
-	variableArrayDeconstructedAssignmentOfElementsObserved() {
+	variableArrayDeconstructedAssignmentOfElements() {
 		var a: Observed<{value: number}> = {value: 1}
 		var b: Observed<{value: number}> = {value: 1}
 		var [c, d] = [a, b]
+		return c.value + d.value
+	}
+
+	variableObjectDeconstructedAssignmentOfElements() {
+		var a: Observed<{value: number}> = {value: 1}
+		var b: Observed<{value: number}> = {value: 1}
+		var {a: c, b: d} = {a, b}
 		return c.value + d.value
 	}
 
@@ -301,6 +308,16 @@ export class TestParameterGetSetToObserve extends Component {
 		return 1
 	}
 
+	testGetOfDeconstructedObject() {
+		parameterGetToObserveDeconstructedObject({param: this.toGet})
+		return 1
+	}
+
+	testGetOfDeconstructedArray() {
+		parameterGetToObserveDeconstructedArray([this.toGet])
+		return 1
+	}
+
 	testGetOfStaticMethod() {
 		ParameterGetSetToObserveTestClass.parameterGetToObserveStaticMethod(this.toGet)
 		return 1
@@ -333,6 +350,12 @@ function parameterGetToObserveFunction(get: ParameterToObserve<{value: number}>)
 	return get.value
 }
 function parameterGetToObserveSpread(...gets: ParameterToObserve<{value: number}>[]) {
+	return gets[0].value
+}
+function parameterGetToObserveDeconstructedObject(gets: {param: ParameterToObserve<{value: number}>}) {
+	return gets.param.value
+}
+function parameterGetToObserveDeconstructedArray(gets: [ParameterToObserve<{value: number}>]) {
 	return gets[0].value
 }
 function parameterSetToObserveFunction(set: SetOfParameterToObserve<{value: number}>) {
