@@ -1,4 +1,4 @@
-import {effect, MethodsToObserve, Observed, UnObserved, ParameterToObserve, SetOfParameterToObserve} from '../../../../web/out'
+import {effect, MethodsToObserve, Observed, UnObserved, ToObserve, SetToObserve} from '../../../../web/out'
 import {Component} from '@pucelle/lupos.js'
 
 
@@ -346,36 +346,36 @@ export class TestParameterGetSetToObserve extends Component {
 	}
 }
 
-function parameterGetToObserveFunction(get: ParameterToObserve<{value: number}>) {
+function parameterGetToObserveFunction(get: ToObserve<{value: number}>) {
 	return get.value
 }
-function parameterGetToObserveSpread(...gets: ParameterToObserve<{value: number}>[]) {
+function parameterGetToObserveSpread(...gets: ToObserve<{value: number}>[]) {
 	return gets[0].value
 }
-function parameterGetToObserveDeconstructedObject(gets: {param: ParameterToObserve<{value: number}>}) {
+function parameterGetToObserveDeconstructedObject(gets: {param: ToObserve<{value: number}>}) {
 	return gets.param.value
 }
-function parameterGetToObserveDeconstructedArray(gets: [ParameterToObserve<{value: number}>]) {
+function parameterGetToObserveDeconstructedArray(gets: [ToObserve<{value: number}>]) {
 	return gets[0].value
 }
-function parameterSetToObserveFunction(set: SetOfParameterToObserve<{value: number}>) {
+function parameterSetToObserveFunction(set: SetToObserve<{value: number}>) {
 	set.value = 1
 }
 
 class ParameterGetSetToObserveTestClass {
-	static parameterGetToObserveStaticMethod(get: ParameterToObserve<{value: number}>) {
+	static parameterGetToObserveStaticMethod(get: ToObserve<{value: number}>) {
 		return get.value
 	}
-	static parameterSetToObserveStaticMethod(set: SetOfParameterToObserve<{value: number}>) {
+	static parameterSetToObserveStaticMethod(set: SetToObserve<{value: number}>) {
 		set.value = 1
 	}
-	constructor(get: ParameterToObserve<{value: number}>) {
+	constructor(get: ToObserve<{value: number}>) {
 		get.value
 	}
-	parameterGetToObserveMethod(get: ParameterToObserve<{value: number}>) {
+	parameterGetToObserveMethod(get: ToObserve<{value: number}>) {
 		return get.value
 	}
-	parameterSetToObserveMethod(set: SetOfParameterToObserve<{value: number}>) {
+	parameterSetToObserveMethod(set: SetToObserve<{value: number}>) {
 		set.value = 1
 	}
 }

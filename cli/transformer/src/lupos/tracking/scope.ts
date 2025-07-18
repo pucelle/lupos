@@ -172,10 +172,10 @@ export class TrackingScope {
 						if (typeNode && (ts.isIdentifier(arg) || helper.access.isAccess(arg))) {
 							let resolved = helper.symbol.resolveImport(typeNode)
 							if (resolved?.moduleName === '@pucelle/lupos') {
-								if (resolved.memberName === 'ParameterToObserve') {
+								if (resolved.memberName === 'ToObserve') {
 									this.mayAddGetTracking(arg, arg, [''])
 								}
-								else if (resolved.memberName === 'SetOfParameterToObserve') {
+								else if (resolved.memberName === 'SetToObserve') {
 									this.mayAddSetTracking(arg, arg, [''])
 								}
 							}
