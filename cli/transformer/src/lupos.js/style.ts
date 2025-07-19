@@ -36,5 +36,16 @@ defineVisitor(function(node: ts.Node) {
 		[]
 	)
 
+	// For tree shaking.
+	ts.setSyntheticLeadingComments(callEnsureStyle, [
+		{
+			text: "#__PURE__",
+			kind: ts.SyntaxKind.MultiLineCommentTrivia,
+			pos: -1,
+			end: -1,
+			hasTrailingNewLine: false,
+		}
+	])
+
 	Interpolator.after(node, InterpolationContentType.Normal, () => callEnsureStyle)
 })
