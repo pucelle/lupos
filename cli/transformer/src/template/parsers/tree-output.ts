@@ -102,6 +102,31 @@ export class TreeOutputHandler {
 
 		let templateInitParams = this.outputTemplateInitParameters(templateBlock)
 
+		let templateMaker = factory.createNewExpression(
+			factory.createIdentifier('TemplateMaker'),
+			undefined,
+			[factory.createFunctionExpression(
+				undefined,
+				undefined,
+				undefined,
+				undefined,
+				templateInitParams,
+				undefined,
+				templateBlock
+			)]
+		)
+
+		// For tree shaking.
+		ts.setSyntheticLeadingComments(templateMaker, [
+			{
+				text: "#__PURE__",
+				kind: ts.SyntaxKind.MultiLineCommentTrivia,
+				pos: -1,
+				end: -1,
+				hasTrailingNewLine: false,
+			}
+		])
+
 		let templateNode = factory.createVariableStatement(
 			undefined,
 			factory.createVariableDeclarationList(
@@ -109,20 +134,7 @@ export class TreeOutputHandler {
 					factory.createIdentifier(templateName),
 					undefined,
 					undefined,
-					factory.createNewExpression(
-					factory.createIdentifier('TemplateMaker'),
-					undefined,
-					[
-						factory.createFunctionExpression(
-							undefined,
-							undefined,
-							undefined,
-							undefined,
-							templateInitParams,
-							undefined,
-							templateBlock
-						)]
-					)
+					templateMaker
 				)],
 				ts.NodeFlags.Const
 			)

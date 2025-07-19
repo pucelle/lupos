@@ -41,6 +41,23 @@ export namespace HTMLOutputHandler {
 		if (wrapped) {
 			parameters.push(factory.createTrue())
 		}
+
+		let htmlMaker = factory.createNewExpression(
+			factory.createIdentifier('HTMLMaker'),
+			undefined,
+			parameters
+		)
+
+		// For tree shaking.
+		ts.setSyntheticLeadingComments(htmlMaker, [
+			{
+				text: "#__PURE__",
+				kind: ts.SyntaxKind.MultiLineCommentTrivia,
+				pos: -1,
+				end: -1,
+				hasTrailingNewLine: false,
+			}
+		])
 		
 		// const $html_0 = new HTMLMaker('...', wrapped)
 		let htmlNode = factory.createVariableStatement(
@@ -50,11 +67,7 @@ export namespace HTMLOutputHandler {
 					factory.createIdentifier(htmlName),
 					undefined,
 					undefined,
-					factory.createNewExpression(
-						factory.createIdentifier('HTMLMaker'),
-						undefined,
-						parameters
-					)
+					htmlMaker
 				)],
 				ts.NodeFlags.Const
 			)

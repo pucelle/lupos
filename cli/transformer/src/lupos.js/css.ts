@@ -24,53 +24,48 @@ function parseCSSTemplate(node: ts.TaggedTemplateExpression) {
 	let template = node.template
 
 	Interpolator.replace(node, InterpolationContentType.Normal, () => {
-		let replaced: ts.TaggedTemplateExpression | null = null
+		let replaced: ts.Expression | null = null
 
 		if (ts.isNoSubstitutionTemplateLiteral(template)) {
-			replaced = factory.createTaggedTemplateExpression(
-				node.tag,
-				undefined,
-				factory.createNoSubstitutionTemplateLiteral(
-					strings![0].text,
-					strings![0].text
-				)
-			)
+			replaced = factory.createStringLiteral(strings![0].text)
 		}
 		else {
+			let stringTexts = strings?.map(v => v.text) ?? ['', '']
 			let oldSpans = template.templateSpans
 
-			let newSpans = valueIndices!.map(({index: spanIndex}, index) => {
-				let inEnd = index === valueIndices!.length - 1
-				let part = strings![index + 1].text
+			let newValues = valueIndices!.map(({index: spanIndex}) => {
 				let oldSpan = oldSpans[spanIndex]
-
-				let middleOrTail = inEnd ?
-					factory.createTemplateTail(
-						part,
-						part
-					) :
-					factory.createTemplateMiddle(
-						part,
-						part
-					)
-
-				return factory.createTemplateSpan(
-					Interpolator.outputNodeSelf(oldSpan.expression) as ts.Expression,
-					middleOrTail
-				)
+				return Interpolator.outputNodeSelf(oldSpan.expression) as ts.Expression
 			})
 
-			replaced = factory.createTaggedTemplateExpression(
+			replaced = factory.createCallExpression(
 				node.tag,
 				undefined,
-				factory.createTemplateExpression(
-					factory.createTemplateHead(
-						strings![0].text,
-						strings![0].text
-					),
-					newSpans
-				)
+				[
+					factory.createArrayLiteralExpression(stringTexts.map(text => factory.createStringLiteral(text))),
+					factory.createArrayLiteralExpression(newValues),
+				]
 			)
+
+			// For tree shaking.
+			if (node.parent
+				&& ts.isPropertyDeclaration(node.parent)
+				&& helper.getText(node.parent.name) === 'style'
+				&& helper.objectLike.hasModifier(node.parent, 'static')
+				&& ts.isClassDeclaration(node.parent.parent)
+				&& ts.isSourceFile(node.parent.parent.parent)
+			) {
+				ts.setSyntheticLeadingComments(replaced, [
+					{
+						text: "#__PURE__",
+						kind: ts.SyntaxKind.MultiLineCommentTrivia,
+						pos: -1,
+						end: -1,
+						hasTrailingNewLine: false,
+					}
+				])
+			}
+
 		}
 
 		return replaced
@@ -80,6 +75,8 @@ function parseCSSTemplate(node: ts.TaggedTemplateExpression) {
 
 /** Minify CSS string, eliminate useless whitespace. */
 function minifyCSSString(string: string) {
+	string = string.replace(/\/\*[\s\S]*?\*\//g, '')
+
 	let re = /(["']).*?\1/g
 	let output = ''
 	let lastIndex = 0
