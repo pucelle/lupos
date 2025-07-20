@@ -162,13 +162,17 @@ async function update() {
 
 
 
-let firstPaintPromiseResolve = /*#__PURE__*/promiseWithResolves()
+let firstPaintPromiseResolve = /*#__PURE__*/(() => {
+	let pr = promiseWithResolves()
 
-/*#__PURE__*/untilUpdateComplete().then(() => {
-	setTimeout(() => {
-		firstPaintPromiseResolve.resolve()
-	}, 0)
-})
+	untilUpdateComplete().then(() => {
+		setTimeout(() => {
+			pr.resolve()
+		}, 0)
+	})
+
+	return pr
+})()
 
 /** 
  * Returns a promise, which will be resolved after the first time
