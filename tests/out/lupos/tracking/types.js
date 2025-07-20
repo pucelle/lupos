@@ -1,4 +1,4 @@
-import { MethodsToObserve, Observed, UnObserved, ParameterToObserve, SetOfParameterToObserve } from '../../../../web/out';
+import { MethodsToObserve, Observed, UnObserved, ToObserve, SetToObserve } from '../../../../web/out';
 import { Component } from '@pucelle/lupos.js';
 import { EffectMaker, trackGet, trackSet } from "@pucelle/lupos";
 export class TestObservedVariableType {

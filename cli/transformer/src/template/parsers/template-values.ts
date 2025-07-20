@@ -132,7 +132,7 @@ export class TemplateValues {
 
 		// Output static node.
 		if (toTransfer) {
-			let interpolated = Interpolator.outputNodeSelf(rawValueNode) as ts.Expression
+			let interpolated = Interpolator.outputUniqueSelf(rawValueNode) as ts.Expression
 
 			let transferred = DeclarationScopeTree.transferToTopmostScope(
 				interpolated,
@@ -191,7 +191,7 @@ export class TemplateValues {
 			valueIndex = this.valueIndexHash.get(hash)!
 		}
 		else {
-			let interpolated = Interpolator.outputNodeSelf(node) as ts.Expression
+			let interpolated = Interpolator.outputUniqueSelf(node) as ts.Expression
 
 			valueIndex = this.outputNodes.length
 			this.outputNodes.push(interpolated)

@@ -1,11 +1,11 @@
 import { Component, TemplateSlot, SlotPosition, CompiledTemplateResult, TemplateMaker, DynamicComponentBlock, HTMLMaker } from '@pucelle/lupos.js';
 import { trackGet, trackSet } from "@pucelle/lupos";
-const $html_0 = new HTMLMaker("<!----><div></div><!---->");
+const $html_0 = /*#__PURE__*/ new HTMLMaker("<!----><div></div><!---->");
 /*
 <root>
     <${ChildComponent} .comProp=${this.prop} />
 </root>
-*/ const $template_0 = new TemplateMaker(function () {
+*/ const $template_0 = /*#__PURE__*/ new TemplateMaker(function () {
     let $latest_0, $com_0;
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;

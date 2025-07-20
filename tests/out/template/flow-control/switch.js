@@ -1,11 +1,11 @@
 import { Component, TemplateSlot, SlotPosition, CompiledTemplateResult, TemplateMaker, HTMLMaker, SwitchBlock } from '@pucelle/lupos.js';
 import { trackGet } from "@pucelle/lupos";
-const $html_0 = new HTMLMaker("<!----><!---->");
+const $html_0 = /*#__PURE__*/ new HTMLMaker("<!----><!---->");
 /*
 <root>
     <lu:switch ${this.value} />
 </root>
-*/ const $template_0 = new TemplateMaker(function () {
+*/ const $template_0 = /*#__PURE__*/ new TemplateMaker(function () {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
@@ -22,10 +22,10 @@ const $html_0 = new HTMLMaker("<!----><!---->");
         ]
     };
 });
-const $html_1 = new HTMLMaker("Case Content 1");
+const $html_1 = /*#__PURE__*/ new HTMLMaker("Case Content 1");
 /*
 <root>Case Content 1</root>
-*/ const $template_1 = new TemplateMaker(function () {
+*/ const $template_1 = /*#__PURE__*/ new TemplateMaker(function () {
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     return {
@@ -33,10 +33,10 @@ const $html_1 = new HTMLMaker("Case Content 1");
         position: new SlotPosition(1, $node_0)
     };
 });
-const $html_2 = new HTMLMaker("Case Content 2");
+const $html_2 = /*#__PURE__*/ new HTMLMaker("Case Content 2");
 /*
 <root>Case Content 2</root>
-*/ const $template_2 = new TemplateMaker(function () {
+*/ const $template_2 = /*#__PURE__*/ new TemplateMaker(function () {
     let $node = $html_2.make();
     let $node_0 = $node.content.firstChild;
     return {
@@ -48,7 +48,7 @@ const $html_2 = new HTMLMaker("Case Content 2");
 <root>
     <lu:switch ${this.value} />
 </root>
-*/ const $template_3 = new TemplateMaker(function () {
+*/ const $template_3 = /*#__PURE__*/ new TemplateMaker(function () {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
@@ -67,7 +67,7 @@ const $html_2 = new HTMLMaker("Case Content 2");
 });
 /*
 <root>Case Content 1</root>
-*/ const $template_4 = new TemplateMaker(function () {
+*/ const $template_4 = /*#__PURE__*/ new TemplateMaker(function () {
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     return {
@@ -77,7 +77,7 @@ const $html_2 = new HTMLMaker("Case Content 2");
 });
 /*
 <root>Case Content 2</root>
-*/ const $template_5 = new TemplateMaker(function () {
+*/ const $template_5 = /*#__PURE__*/ new TemplateMaker(function () {
     let $node = $html_2.make();
     let $node_0 = $node.content.firstChild;
     return {
@@ -85,10 +85,10 @@ const $html_2 = new HTMLMaker("Case Content 2");
         position: new SlotPosition(1, $node_0)
     };
 });
-const $html_6 = new HTMLMaker("Case Content 3");
+const $html_6 = /*#__PURE__*/ new HTMLMaker("Case Content 3");
 /*
 <root>Case Content 3</root>
-*/ const $template_6 = new TemplateMaker(function () {
+*/ const $template_6 = /*#__PURE__*/ new TemplateMaker(function () {
     let $node = $html_6.make();
     let $node_0 = $node.content.firstChild;
     return {

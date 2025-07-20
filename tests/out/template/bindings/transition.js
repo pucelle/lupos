@@ -1,11 +1,11 @@
 import { fade, Component, TransitionBinding, PartDelegator, CompiledTemplateResult, TemplateMaker, SlotPosition, HTMLMaker } from '@pucelle/lupos.js';
 import { trackGet } from "@pucelle/lupos";
-const $html_0 = new HTMLMaker("<div></div>");
+const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
 /*
 <root>
     <div :transition=${fade({duration: this.duration})} />
 </root>
-*/ const $template_0 = new TemplateMaker(function ($context) {
+*/ const $template_0 = /*#__PURE__*/ new TemplateMaker(function ($context) {
     let $latest_0;
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
@@ -28,7 +28,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 <root>
     <div :transition=${fade({duration: 300})} />
 </root>
-*/ const $template_1 = new TemplateMaker(function ($context) {
+*/ const $template_1 = /*#__PURE__*/ new TemplateMaker(function ($context) {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $binding_0 = new TransitionBinding($node_0, $context);
@@ -45,7 +45,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 <root>
     <div ?:transition=${this.duration, fade({duration: this.duration})} />
 </root>
-*/ const $template_2 = new TemplateMaker(function ($context) {
+*/ const $template_2 = /*#__PURE__*/ new TemplateMaker(function ($context) {
     let $latest_0, $latest_1;
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
@@ -79,7 +79,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 <root>
     <div ?:transition=${this.duration, fade({duration: 3000})} />
 </root>
-*/ const $template_3 = new TemplateMaker(function ($context) {
+*/ const $template_3 = /*#__PURE__*/ new TemplateMaker(function ($context) {
     let $latest_0;
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;

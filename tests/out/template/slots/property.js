@@ -1,11 +1,11 @@
 import { Component, TemplateSlot, SlotPosition, CompiledTemplateResult, TemplateMaker, HTMLMaker, DynamicComponentBlock } from '@pucelle/lupos.js';
 import { trackGet } from "@pucelle/lupos";
-const $html_0 = new HTMLMaker("<div></div>");
+const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
 /*
 <root>
     <Com1 .comProp=${1} />
 </root>
-*/ const $template_0 = new TemplateMaker(function () {
+*/ const $template_0 = /*#__PURE__*/ new TemplateMaker(function () {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $com_0 = new Com1($node_0);
@@ -18,12 +18,12 @@ const $html_0 = new HTMLMaker("<div></div>");
         ]
     };
 });
-const $html_1 = new HTMLMaker("<!----><div></div><!---->");
+const $html_1 = /*#__PURE__*/ new HTMLMaker("<!----><div></div><!---->");
 /*
 <root>
     <${this.UnionedCom} .comProp=${1} />
 </root>
-*/ const $template_1 = new TemplateMaker(function () {
+*/ const $template_1 = /*#__PURE__*/ new TemplateMaker(function () {
     let $com_0;
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
@@ -50,7 +50,7 @@ const $html_1 = new HTMLMaker("<!----><div></div><!---->");
 <root>
     <${this.ConstructedCom} .comProp=${1} />
 </root>
-*/ const $template_2 = new TemplateMaker(function () {
+*/ const $template_2 = /*#__PURE__*/ new TemplateMaker(function () {
     let $com_0;
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
@@ -77,7 +77,7 @@ const $html_1 = new HTMLMaker("<!----><div></div><!---->");
 <root>
     <Com1 ..comProp=${1} />
 </root>
-*/ const $template_3 = new TemplateMaker(function () {
+*/ const $template_3 = /*#__PURE__*/ new TemplateMaker(function () {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $com_0 = new Com1($node_0);
@@ -94,7 +94,7 @@ const $html_1 = new HTMLMaker("<!----><div></div><!---->");
 <root>
     <Com3 .comProp=${1} />
 </root>
-*/ const $template_4 = new TemplateMaker(function () {
+*/ const $template_4 = /*#__PURE__*/ new TemplateMaker(function () {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $com_0 = new Com3($node_0);
@@ -111,7 +111,7 @@ const $html_1 = new HTMLMaker("<!----><div></div><!---->");
 <root>
     <div .elProp=${1} />
 </root>
-*/ const $template_5 = new TemplateMaker(function () {
+*/ const $template_5 = /*#__PURE__*/ new TemplateMaker(function () {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     $node_0.elProp = 1;

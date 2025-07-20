@@ -1,9 +1,9 @@
 import { Component, TemplateSlot, SlotPosition, CompiledTemplateResult, TemplateMaker, HTMLMaker, ForBlock } from '@pucelle/lupos.js';
 import { trackGet } from "@pucelle/lupos";
-const $html_0 = new HTMLMaker(" ");
+const $html_0 = /*#__PURE__*/ new HTMLMaker(" ");
 /*
 <root>${n + this.prop}</root>
-*/ const $template_0 = new TemplateMaker(function () {
+*/ const $template_0 = /*#__PURE__*/ new TemplateMaker(function () {
     let $latest_0;
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
@@ -18,12 +18,12 @@ const $html_0 = new HTMLMaker(" ");
         }
     };
 });
-const $html_1 = new HTMLMaker("<!----><!---->");
+const $html_1 = /*#__PURE__*/ new HTMLMaker("<!----><!---->");
 /*
 <root>
     <lu:for ${[1,2,3]} />
 </root>
-*/ const $template_1 = new TemplateMaker(function ($context) {
+*/ const $template_1 = /*#__PURE__*/ new TemplateMaker(function ($context) {
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
@@ -43,7 +43,7 @@ const $html_1 = new HTMLMaker("<!----><!---->");
 <root>
     <lu:for ${[1,2,3]} />
 </root>
-*/ const $template_2 = new TemplateMaker(function ($context) {
+*/ const $template_2 = /*#__PURE__*/ new TemplateMaker(function ($context) {
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
@@ -63,7 +63,7 @@ const $html_1 = new HTMLMaker("<!----><!---->");
 });
 /*
 <root>${n + this.prop}</root>
-*/ const $template_3 = new TemplateMaker(function () {
+*/ const $template_3 = /*#__PURE__*/ new TemplateMaker(function () {
     let $latest_0;
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
@@ -82,7 +82,7 @@ const $html_1 = new HTMLMaker("<!----><!---->");
 <root>
     <lu:for ${[1,2,3]} />
 </root>
-*/ const $template_4 = new TemplateMaker(function ($context) {
+*/ const $template_4 = /*#__PURE__*/ new TemplateMaker(function ($context) {
     let $latest_0;
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
@@ -106,7 +106,7 @@ const $html_1 = new HTMLMaker("<!----><!---->");
 });
 /*
 <root>${n + prop}</root>
-*/ const $template_5 = new TemplateMaker(function () {
+*/ const $template_5 = /*#__PURE__*/ new TemplateMaker(function () {
     let $latest_0;
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
@@ -125,7 +125,7 @@ const $html_1 = new HTMLMaker("<!----><!---->");
 <root>
     <lu:for ${this.items} />
 </root>
-*/ const $template_6 = new TemplateMaker(function ($context) {
+*/ const $template_6 = /*#__PURE__*/ new TemplateMaker(function ($context) {
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
@@ -150,7 +150,7 @@ const $html_1 = new HTMLMaker("<!----><!---->");
 });
 /*
 <root>${item.value}</root>
-*/ const $template_7 = new TemplateMaker(function () {
+*/ const $template_7 = /*#__PURE__*/ new TemplateMaker(function () {
     let $latest_0;
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
@@ -169,7 +169,7 @@ const $html_1 = new HTMLMaker("<!----><!---->");
 <root>
     <lu:for ${this.getItems()} />
 </root>
-*/ const $template_8 = new TemplateMaker(function ($context) {
+*/ const $template_8 = /*#__PURE__*/ new TemplateMaker(function ($context) {
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
@@ -194,7 +194,7 @@ const $html_1 = new HTMLMaker("<!----><!---->");
 });
 /*
 <root>${item.value}</root>
-*/ const $template_9 = new TemplateMaker(function () {
+*/ const $template_9 = /*#__PURE__*/ new TemplateMaker(function () {
     let $latest_0;
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
@@ -213,7 +213,7 @@ const $html_1 = new HTMLMaker("<!----><!---->");
 <root>
     <lu:for ${items} />
 </root>
-*/ const $template_10 = new TemplateMaker(function ($context) {
+*/ const $template_10 = /*#__PURE__*/ new TemplateMaker(function ($context) {
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
@@ -238,7 +238,7 @@ const $html_1 = new HTMLMaker("<!----><!---->");
 });
 /*
 <root>${item.value}</root>
-*/ const $template_11 = new TemplateMaker(function () {
+*/ const $template_11 = /*#__PURE__*/ new TemplateMaker(function () {
     let $latest_0;
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
@@ -257,7 +257,7 @@ const $html_1 = new HTMLMaker("<!----><!---->");
 <root>
     <lu:for ${this.readonlyItems} />
 </root>
-*/ const $template_12 = new TemplateMaker(function ($context) {
+*/ const $template_12 = /*#__PURE__*/ new TemplateMaker(function ($context) {
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
@@ -282,7 +282,7 @@ const $html_1 = new HTMLMaker("<!----><!---->");
 });
 /*
 <root>${item.value}</root>
-*/ const $template_13 = new TemplateMaker(function () {
+*/ const $template_13 = /*#__PURE__*/ new TemplateMaker(function () {
     let $latest_0;
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
@@ -301,7 +301,7 @@ const $html_1 = new HTMLMaker("<!----><!---->");
 <root>
     <lu:for ${items} />
 </root>
-*/ const $template_14 = new TemplateMaker(function ($context) {
+*/ const $template_14 = /*#__PURE__*/ new TemplateMaker(function ($context) {
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
@@ -326,7 +326,7 @@ const $html_1 = new HTMLMaker("<!----><!---->");
 });
 /*
 <root>${item.value}</root>
-*/ const $template_15 = new TemplateMaker(function () {
+*/ const $template_15 = /*#__PURE__*/ new TemplateMaker(function () {
     let $latest_0;
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
@@ -345,7 +345,7 @@ const $html_1 = new HTMLMaker("<!----><!---->");
 <root>
     <lu:for ${this.deepReadonlyItems} />
 </root>
-*/ const $template_16 = new TemplateMaker(function ($context) {
+*/ const $template_16 = /*#__PURE__*/ new TemplateMaker(function ($context) {
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
@@ -365,7 +365,7 @@ const $html_1 = new HTMLMaker("<!----><!---->");
 });
 /*
 <root>${item.value}</root>
-*/ const $template_17 = new TemplateMaker(function () {
+*/ const $template_17 = /*#__PURE__*/ new TemplateMaker(function () {
     let $latest_0;
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
@@ -384,7 +384,7 @@ const $html_1 = new HTMLMaker("<!----><!---->");
 <root>
     <lu:for ${items} />
 </root>
-*/ const $template_18 = new TemplateMaker(function ($context) {
+*/ const $template_18 = /*#__PURE__*/ new TemplateMaker(function ($context) {
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
@@ -406,7 +406,7 @@ const $html_1 = new HTMLMaker("<!----><!---->");
 });
 /*
 <root>${item.value}</root>
-*/ const $template_19 = new TemplateMaker(function () {
+*/ const $template_19 = /*#__PURE__*/ new TemplateMaker(function () {
     let $latest_0;
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;

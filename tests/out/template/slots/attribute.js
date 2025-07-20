@@ -1,11 +1,11 @@
 import { Component, CompiledTemplateResult, TemplateMaker, SlotPosition, HTMLMaker } from '@pucelle/lupos.js';
 import { trackGet } from "@pucelle/lupos";
-const $html_0 = new HTMLMaker("<div></div>");
+const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
 /*
 <root>
     <div class="${this.className} className2" />
 </root>
-*/ const $template_0 = new TemplateMaker(function () {
+*/ const $template_0 = /*#__PURE__*/ new TemplateMaker(function () {
     let $latest_0;
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
@@ -24,7 +24,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 <root>
     <div class=${this.className} />
 </root>
-*/ const $template_1 = new TemplateMaker(function () {
+*/ const $template_1 = /*#__PURE__*/ new TemplateMaker(function () {
     let $latest_0;
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
@@ -43,7 +43,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 <root>
     <div class=${this.nullableClassName} />
 </root>
-*/ const $template_2 = new TemplateMaker(function () {
+*/ const $template_2 = /*#__PURE__*/ new TemplateMaker(function () {
     let $latest_0;
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
@@ -62,7 +62,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 <root>
     <Com class="className" />
 </root>
-*/ const $template_3 = new TemplateMaker(function () {
+*/ const $template_3 = /*#__PURE__*/ new TemplateMaker(function () {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $com_0 = new Com($node_0);
@@ -79,7 +79,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 <root>
     <div ?hidden=${this.booleanValue} />
 </root>
-*/ const $template_4 = new TemplateMaker(function () {
+*/ const $template_4 = /*#__PURE__*/ new TemplateMaker(function () {
     let $latest_0;
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
@@ -98,7 +98,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 <root>
     <Com autofocus />
 </root>
-*/ const $template_5 = new TemplateMaker(function () {
+*/ const $template_5 = /*#__PURE__*/ new TemplateMaker(function () {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $com_0 = new Com($node_0);
@@ -111,12 +111,12 @@ const $html_0 = new HTMLMaker("<div></div>");
         ]
     };
 });
-const $html_6 = new HTMLMaker("<!---->");
+const $html_6 = /*#__PURE__*/ new HTMLMaker("<!---->");
 /*
 <root>
     <template class="classNameSelf" />
 </root>
-*/ const $template_6 = new TemplateMaker(function ($context) {
+*/ const $template_6 = /*#__PURE__*/ new TemplateMaker(function ($context) {
     let $node = $html_6.make();
     let $node_0 = $context.el;
     let $node_1 = $node.content.firstChild;

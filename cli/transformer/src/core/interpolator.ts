@@ -65,6 +65,13 @@ export enum InterpolationContentType {
 	Tracking,
 }
 
+/** Output options, default values of all items are `true`. */
+export interface OutputOptions {
+	canReplace?: boolean
+	canRemove?: boolean
+	canInsert?: boolean
+}
+
 
 /** 
  * It attaches to each context.
@@ -325,11 +332,15 @@ export namespace Interpolator {
 	 * and may replace itself.
 	 * If `addNeighbors` is `true`, will output all neighbor nodes.
 	 */
-	export function outputSelf(atNode: ts.Node, addNeighbors: boolean = true): ts.Node | ts.Node[] | undefined {
+	export function outputSelf(atNode: ts.Node, options: OutputOptions = {}): ts.Node | ts.Node[] | undefined {
 		let items = getOrderedItems(atNode)
 		if (!items) {
 			return outputChildren(atNode)
 		}
+
+		let canInsert = options.canInsert ?? true
+		let canRemove = options.canRemove ?? true
+		let canReplace = options.canReplace ?? true
 
 		let prependNodes = items.filter(item => item.position === InterpolationPosition.Prepend)
 			.map(item => item.exps!()).flat()
@@ -338,18 +349,17 @@ export namespace Interpolator {
 			.map(item => item.exps!()).flat()
 
 		let replace = items.filter(item => item.position === InterpolationPosition.Replace)
-		if (replace.length > 1) {
+		if (canReplace && replace.length > 1) {
 			throw new Error(`Only one replace is allowed, happen at "${helper.getFullText(atNode)}"!`)
 		}
 
 		let remove = items.find(item => item.position === InterpolationPosition.Remove)
-
 		let node: ts.Node | ts.Node[] | undefined
 
-		if (remove) {
+		if (canRemove && remove) {
 			node = undefined
 		}
-		else if (replace.length > 0) {
+		else if (canReplace && replace.length > 0) {
 			node = replace[0].replace!()
 
 			if (prependNodes.length > 0 || appendNodes.length > 0) {
@@ -365,7 +375,7 @@ export namespace Interpolator {
 			}
 		}
 
-		if (addNeighbors) {
+		if (canInsert) {
 			let beforeNodes = items.filter(item => item.position === InterpolationPosition.Before)
 				.map(item => item.exps!()).flat()
 
@@ -382,6 +392,27 @@ export namespace Interpolator {
 		// console.log('TO', Array.isArray(node) ? node.map(n => helper.getText(n)) : node ? helper.getText((node)) : 'NONE')
 
 		return node && Array.isArray(node) && node.length === 1 ? node[0] : node
+	}
+
+	/** 
+	 * Output an unique node.
+	 * It requires to output an unique node.
+	 * `canInsert` of `options` will be forced to `false`.
+	 */
+	export function outputUniqueSelf(atNode: ts.Node, options: OutputOptions = {}): ts.Node {
+		options.canInsert = false
+
+		let node = Interpolator.outputSelf(atNode, options)
+
+		if (!node) {
+			throw new Error(`"${helper.getFullText(atNode)}" has been removed!`)
+		}
+
+		if (Array.isArray(node)) {
+			throw new Error(`"${helper.getFullText(atNode)}" has been replaced to several!`)
+		}
+
+		return node
 	}
 
 
@@ -407,26 +438,6 @@ export namespace Interpolator {
 		return items
 	}
 
-
-	/** 
-	 * Output raw node.
-	 * It may overwrite all descendant nodes,
-	 * and may replace itself.
-	 * but will not output neighbor nodes.
-	 */
-	export function outputNodeSelf(atNode: ts.Node): ts.Node {
-		let node = Interpolator.outputSelf(atNode, false)
-
-		if (!node) {
-			throw new Error(`"${helper.getFullText(atNode)}" has been removed!`)
-		}
-
-		if (Array.isArray(node)) {
-			throw new Error(`"${helper.getFullText(atNode)}" has been replaced to several!`)
-		}
-
-		return node
-	}
 
 	/** Try to replace node to make it can contain neighbor nodes. */
 	function replaceToAddNeighborNodes(

@@ -1,12 +1,12 @@
 import { Component, SlotBinding, CompiledTemplateResult, TemplateMaker, SlotPosition, TemplateSlot, HTMLMaker } from '@pucelle/lupos.js';
-const $html_0 = new HTMLMaker("<div><slot name=\"slotName\"></slot></div>");
+const $html_0 = /*#__PURE__*/ new HTMLMaker("<div><slot name=\"slotName\"></slot></div>");
 /*
 <root>
     <div>
         <slot name="slotName" />
     </div>
 </root>
-*/ const $template_0 = new TemplateMaker(function () {
+*/ const $template_0 = /*#__PURE__*/ new TemplateMaker(function () {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node_0.firstChild;
@@ -28,7 +28,7 @@ const $html_0 = new HTMLMaker("<div><slot name=\"slotName\"></slot></div>");
         <slot name="slotName" />
     </div>
 </root>
-*/ const $template_1 = new TemplateMaker(function () {
+*/ const $template_1 = /*#__PURE__*/ new TemplateMaker(function () {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node_0.firstChild;
@@ -44,10 +44,10 @@ const $html_0 = new HTMLMaker("<div><slot name=\"slotName\"></slot></div>");
         ]
     };
 });
-const $html_2 = new HTMLMaker("Content");
+const $html_2 = /*#__PURE__*/ new HTMLMaker("Content");
 /*
 <root>Content</root>
-*/ const $template_2 = new TemplateMaker(function () {
+*/ const $template_2 = /*#__PURE__*/ new TemplateMaker(function () {
     let $node = $html_2.make();
     let $node_0 = $node.content.firstChild;
     return {
@@ -55,14 +55,14 @@ const $html_2 = new HTMLMaker("Content");
         position: new SlotPosition(1, $node_0)
     };
 });
-const $html_3 = new HTMLMaker("<div><!----><div>Content</div></div>");
+const $html_3 = /*#__PURE__*/ new HTMLMaker("<div><!----><div>Content</div></div>");
 /*
 <root>
     <ChildCom>
         <div :slot="slotName">Content</div>
     </ChildCom>
 </root>
-*/ const $template_3 = new TemplateMaker(function () {
+*/ const $template_3 = /*#__PURE__*/ new TemplateMaker(function () {
     let $node = $html_3.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node_0.firstChild;
@@ -80,14 +80,14 @@ const $html_3 = new HTMLMaker("<div><!----><div>Content</div></div>");
         ]
     };
 });
-const $html_4 = new HTMLMaker("<div><slot></slot></div>");
+const $html_4 = /*#__PURE__*/ new HTMLMaker("<div><slot></slot></div>");
 /*
 <root>
     <div>
         <slot />
     </div>
 </root>
-*/ const $template_4 = new TemplateMaker(function ($context) {
+*/ const $template_4 = /*#__PURE__*/ new TemplateMaker(function ($context) {
     let $node = $html_4.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node_0.firstChild;

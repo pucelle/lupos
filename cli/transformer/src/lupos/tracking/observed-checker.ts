@@ -568,19 +568,18 @@ export namespace ObservedChecker {
 
 		// Test declaration.
 		let decl = helper.symbol.resolveDeclaration(rawNode)
-		if (!decl) {
-			return null
-		}
+		if (decl) {
 
-		// Always not observe method, it works like a value type.
-		if (decl && helper.isMethodLike(decl)) {
-			return false
-		}
+			// Always not observe method, it works like a value type.
+			if (helper.isMethodLike(decl)) {
+				return false
+			}
 
-		// Property declaration has specified as observed type or initializer is observed.
-		result = getDeclarationObserved(decl)
-		if (result !== null) {
-			return result
+			// Property declaration has specified as observed type or initializer is observed.
+			result = getDeclarationObserved(decl)
+			if (result !== null) {
+				return result
+			}
 		}
 
 		// Take type, e.g., for `node = a.b.c`, exp is `a.b`.
@@ -591,7 +590,6 @@ export namespace ObservedChecker {
 		if (helper.types.isValueType(expType)) {
 			return false
 		}
-
 
 		return getElementsObserved(exp)
 	}

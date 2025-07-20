@@ -1,11 +1,11 @@
 import { Component, CompiledTemplateResult, TemplateMaker, SlotPosition, HTMLMaker } from '@pucelle/lupos.js';
 import { trackGet } from "@pucelle/lupos";
-const $html_0 = new HTMLMaker("<div> </div>");
+const $html_0 = /*#__PURE__*/ new HTMLMaker("<div> </div>");
 /*
 <root>
     <div>${'abc'}</div>
 </root>
-*/ const $template_0 = new TemplateMaker(function () {
+*/ const $template_0 = /*#__PURE__*/ new TemplateMaker(function () {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node_0.firstChild;
@@ -19,7 +19,7 @@ const $html_0 = new HTMLMaker("<div> </div>");
 <root>
     <div>${this.stringProp}</div>
 </root>
-*/ const $template_1 = new TemplateMaker(function () {
+*/ const $template_1 = /*#__PURE__*/ new TemplateMaker(function () {
     let $latest_0;
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
@@ -39,7 +39,7 @@ const $html_0 = new HTMLMaker("<div> </div>");
 <root>
     <div>${this.getStringProp()}</div>
 </root>
-*/ const $template_2 = new TemplateMaker(function () {
+*/ const $template_2 = /*#__PURE__*/ new TemplateMaker(function () {
     let $latest_0;
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
@@ -59,7 +59,7 @@ const $html_0 = new HTMLMaker("<div> </div>");
 <root>
     <div>${this.numericProp}</div>
 </root>
-*/ const $template_3 = new TemplateMaker(function () {
+*/ const $template_3 = /*#__PURE__*/ new TemplateMaker(function () {
     let $latest_0;
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;

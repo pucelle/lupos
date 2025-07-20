@@ -1,10 +1,10 @@
 import { fade, Component, TransitionBinding, TemplateSlot, SlotPosition, CompiledTemplateResult, TemplateMaker, HTMLMaker } from '@pucelle/lupos.js';
-const $html_0 = new HTMLMaker("<!---->");
+const $html_0 = /*#__PURE__*/ new HTMLMaker("<!---->");
 /*
 <root>
     <template class="className" />
 </root>
-*/ const $template_0 = new TemplateMaker(function ($context) {
+*/ const $template_0 = /*#__PURE__*/ new TemplateMaker(function ($context) {
     let $node = $html_0.make();
     let $node_0 = $context.el;
     let $node_1 = $node.content.firstChild;
@@ -18,7 +18,7 @@ const $html_0 = new HTMLMaker("<!---->");
 <root>
     <template :transition=${fade()} />
 </root>
-*/ const $template_1 = new TemplateMaker(function ($context) {
+*/ const $template_1 = /*#__PURE__*/ new TemplateMaker(function ($context) {
     let $node = $html_0.make();
     let $node_0 = $context.el;
     let $node_1 = $node.content.firstChild;
@@ -36,7 +36,7 @@ const $html_0 = new HTMLMaker("<!---->");
 <root>
     <template style="background-color: red" />
 </root>
-*/ const $template_2 = new TemplateMaker(function ($context) {
+*/ const $template_2 = /*#__PURE__*/ new TemplateMaker(function ($context) {
     let $node = $html_0.make();
     let $node_0 = $context.el;
     let $node_1 = $node.content.firstChild;
@@ -50,7 +50,7 @@ const $html_0 = new HTMLMaker("<!---->");
 <root>
     <template attr="value" />
 </root>
-*/ const $template_3 = new TemplateMaker(function ($context) {
+*/ const $template_3 = /*#__PURE__*/ new TemplateMaker(function ($context) {
     let $node = $html_0.make();
     let $node_0 = $context.el;
     let $node_1 = $node.content.firstChild;
@@ -60,7 +60,7 @@ const $html_0 = new HTMLMaker("<!---->");
         position: new SlotPosition(1, $node_1)
     };
 });
-const $html_4 = new HTMLMaker("<div><!----></div>");
+const $html_4 = /*#__PURE__*/ new HTMLMaker("<div><!----></div>");
 /*
 <root>
     <template attr="value">
@@ -69,7 +69,7 @@ const $html_4 = new HTMLMaker("<div><!----></div>");
         </div>
     </template>
 </root>
-*/ const $template_4 = new TemplateMaker(function ($context) {
+*/ const $template_4 = /*#__PURE__*/ new TemplateMaker(function ($context) {
     let $node = $html_4.make();
     let $node_0 = $context.el;
     let $node_1 = $node.content.firstChild;
@@ -86,12 +86,12 @@ const $html_4 = new HTMLMaker("<div><!----></div>");
         ]
     };
 });
-const $html_5 = new HTMLMaker("<div></div>");
+const $html_5 = /*#__PURE__*/ new HTMLMaker("<div></div>");
 /*
 <root>
     <div />
 </root>
-*/ const $template_5 = new TemplateMaker(function () {
+*/ const $template_5 = /*#__PURE__*/ new TemplateMaker(function () {
     let $node = $html_5.make();
     let $node_0 = $node.content.firstChild;
     return {
@@ -99,7 +99,7 @@ const $html_5 = new HTMLMaker("<div></div>");
         position: new SlotPosition(1, $node_0)
     };
 });
-const $html_6 = new HTMLMaker("<div></div><div></div>");
+const $html_6 = /*#__PURE__*/ new HTMLMaker("<div></div><div></div>");
 /*
 <root>
     <template class="className">
@@ -107,7 +107,7 @@ const $html_6 = new HTMLMaker("<div></div><div></div>");
         <div attr=${'value'} />
     </template>
 </root>
-*/ const $template_6 = new TemplateMaker(function ($context) {
+*/ const $template_6 = /*#__PURE__*/ new TemplateMaker(function ($context) {
     let $node = $html_6.make();
     let $node_0 = $context.el;
     let $node_1 = $node.content.firstChild;

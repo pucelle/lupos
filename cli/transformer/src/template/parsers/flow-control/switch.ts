@@ -49,7 +49,7 @@ export class SwitchFlowControl extends IfFlowControl {
 				return factory.createBinaryExpression(
 					switchValue,
 					factory.createToken(ts.SyntaxKind.EqualsEqualsEqualsToken),
-					Interpolator.outputNodeSelf(rawNode) as ts.Expression
+					Interpolator.outputUniqueSelf(rawNode) as ts.Expression
 				)
 			}
 		})

@@ -1,11 +1,11 @@
 import { Component, TemplateSlot, SlotPosition, CompiledTemplateResult, TemplateMaker, AwaitBlock, HTMLMaker } from '@pucelle/lupos.js';
 import { trackGet } from "@pucelle/lupos";
-const $html_0 = new HTMLMaker("<!----><!---->");
+const $html_0 = /*#__PURE__*/ new HTMLMaker("<!----><!---->");
 /*
 <root>
     <lu:await ${this.promise} />
 </root>
-*/ const $template_0 = new TemplateMaker(function ($context) {
+*/ const $template_0 = /*#__PURE__*/ new TemplateMaker(function ($context) {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
@@ -22,10 +22,10 @@ const $html_0 = new HTMLMaker("<!----><!---->");
         ]
     };
 });
-const $html_1 = new HTMLMaker("Pending Content");
+const $html_1 = /*#__PURE__*/ new HTMLMaker("Pending Content");
 /*
 <root>Pending Content</root>
-*/ const $template_1 = new TemplateMaker(function () {
+*/ const $template_1 = /*#__PURE__*/ new TemplateMaker(function () {
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     return {
@@ -33,10 +33,10 @@ const $html_1 = new HTMLMaker("Pending Content");
         position: new SlotPosition(1, $node_0)
     };
 });
-const $html_2 = new HTMLMaker("Then Content");
+const $html_2 = /*#__PURE__*/ new HTMLMaker("Then Content");
 /*
 <root>Then Content</root>
-*/ const $template_2 = new TemplateMaker(function () {
+*/ const $template_2 = /*#__PURE__*/ new TemplateMaker(function () {
     let $node = $html_2.make();
     let $node_0 = $node.content.firstChild;
     return {
@@ -48,7 +48,7 @@ const $html_2 = new HTMLMaker("Then Content");
 <root>
     <lu:await ${this.promise} />
 </root>
-*/ const $template_3 = new TemplateMaker(function ($context) {
+*/ const $template_3 = /*#__PURE__*/ new TemplateMaker(function ($context) {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
@@ -67,7 +67,7 @@ const $html_2 = new HTMLMaker("Then Content");
 });
 /*
 <root>Pending Content</root>
-*/ const $template_4 = new TemplateMaker(function () {
+*/ const $template_4 = /*#__PURE__*/ new TemplateMaker(function () {
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     return {
@@ -75,10 +75,10 @@ const $html_2 = new HTMLMaker("Then Content");
         position: new SlotPosition(1, $node_0)
     };
 });
-const $html_5 = new HTMLMaker("Catch Content");
+const $html_5 = /*#__PURE__*/ new HTMLMaker("Catch Content");
 /*
 <root>Catch Content</root>
-*/ const $template_5 = new TemplateMaker(function () {
+*/ const $template_5 = /*#__PURE__*/ new TemplateMaker(function () {
     let $node = $html_5.make();
     let $node_0 = $node.content.firstChild;
     return {
@@ -90,7 +90,7 @@ const $html_5 = new HTMLMaker("Catch Content");
 <root>
     <lu:await ${this.promise} />
 </root>
-*/ const $template_6 = new TemplateMaker(function ($context) {
+*/ const $template_6 = /*#__PURE__*/ new TemplateMaker(function ($context) {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
@@ -109,7 +109,7 @@ const $html_5 = new HTMLMaker("Catch Content");
 });
 /*
 <root>Pending Content</root>
-*/ const $template_7 = new TemplateMaker(function () {
+*/ const $template_7 = /*#__PURE__*/ new TemplateMaker(function () {
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     return {
@@ -119,7 +119,7 @@ const $html_5 = new HTMLMaker("Catch Content");
 });
 /*
 <root>Then Content</root>
-*/ const $template_8 = new TemplateMaker(function () {
+*/ const $template_8 = /*#__PURE__*/ new TemplateMaker(function () {
     let $node = $html_2.make();
     let $node_0 = $node.content.firstChild;
     return {
@@ -129,7 +129,7 @@ const $html_5 = new HTMLMaker("Catch Content");
 });
 /*
 <root>Catch Content</root>
-*/ const $template_9 = new TemplateMaker(function () {
+*/ const $template_9 = /*#__PURE__*/ new TemplateMaker(function () {
     let $node = $html_5.make();
     let $node_0 = $node.content.firstChild;
     return {

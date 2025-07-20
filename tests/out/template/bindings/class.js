@@ -1,11 +1,11 @@
 import { Component, ClassBinding, CompiledTemplateResult, TemplateMaker, SlotPosition, HTMLMaker } from '@pucelle/lupos.js';
 import { trackGet } from "@pucelle/lupos";
-const $html_0 = new HTMLMaker("<div></div>");
+const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
 /*
 <root>
     <div :class="${this.className} className2" />
 </root>
-*/ const $template_0 = new TemplateMaker(function () {
+*/ const $template_0 = /*#__PURE__*/ new TemplateMaker(function () {
     let $latest_0;
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
@@ -25,7 +25,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 <root>
     <div :class=${this.className} />
 </root>
-*/ const $template_1 = new TemplateMaker(function () {
+*/ const $template_1 = /*#__PURE__*/ new TemplateMaker(function () {
     let $latest_0;
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
@@ -45,7 +45,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 <root>
     <div :class="${this.booleanValue}" />
 </root>
-*/ const $template_2 = new TemplateMaker(function () {
+*/ const $template_2 = /*#__PURE__*/ new TemplateMaker(function () {
     let $latest_0;
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
@@ -65,7 +65,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 <root>
     <div :class=${[this.className]} />
 </root>
-*/ const $template_3 = new TemplateMaker(function () {
+*/ const $template_3 = /*#__PURE__*/ new TemplateMaker(function () {
     let $latest_0;
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
@@ -85,7 +85,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 <root>
     <div :class=${{'className': this.booleanValue}} />
 </root>
-*/ const $template_4 = new TemplateMaker(function () {
+*/ const $template_4 = /*#__PURE__*/ new TemplateMaker(function () {
     let $latest_0;
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
@@ -105,7 +105,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 <root>
     <div :class.className=${this.booleanValue} />
 </root>
-*/ const $template_5 = new TemplateMaker(function () {
+*/ const $template_5 = /*#__PURE__*/ new TemplateMaker(function () {
     let $latest_0;
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
@@ -125,7 +125,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 <root>
     <div class=${this.className} :class.className=${this.booleanValue} />
 </root>
-*/ const $template_6 = new TemplateMaker(function () {
+*/ const $template_6 = /*#__PURE__*/ new TemplateMaker(function () {
     let $latest_0, $latest_1;
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
@@ -150,7 +150,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 <root>
     <div class="className" :class.className=${this.booleanValue} />
 </root>
-*/ const $template_7 = new TemplateMaker(function () {
+*/ const $template_7 = /*#__PURE__*/ new TemplateMaker(function () {
     let $latest_0;
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
@@ -171,7 +171,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 <root>
     <div :class="${'className'} className2" />
 </root>
-*/ const $template_8 = new TemplateMaker(function () {
+*/ const $template_8 = /*#__PURE__*/ new TemplateMaker(function () {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $binding_0 = new ClassBinding($node_0);
@@ -185,7 +185,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 <root>
     <div :class=${'className'} />
 </root>
-*/ const $template_9 = new TemplateMaker(function () {
+*/ const $template_9 = /*#__PURE__*/ new TemplateMaker(function () {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $binding_0 = new ClassBinding($node_0);
@@ -199,7 +199,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 <root>
     <div :class=${['className']} />
 </root>
-*/ const $template_10 = new TemplateMaker(function () {
+*/ const $template_10 = /*#__PURE__*/ new TemplateMaker(function () {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $binding_0 = new ClassBinding($node_0);
@@ -213,7 +213,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 <root>
     <div :class=${{'className': true}} />
 </root>
-*/ const $template_11 = new TemplateMaker(function () {
+*/ const $template_11 = /*#__PURE__*/ new TemplateMaker(function () {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $binding_0 = new ClassBinding($node_0);
@@ -227,7 +227,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 <root>
     <div :class.className=${true} />
 </root>
-*/ const $template_12 = new TemplateMaker(function () {
+*/ const $template_12 = /*#__PURE__*/ new TemplateMaker(function () {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $binding_0 = new ClassBinding($node_0);

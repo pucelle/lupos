@@ -15,5 +15,5 @@
 		"noImplicitAny": true,
 		"noImplicitThis": true
 	},
-	"include": ["src/**/types.ts"],
+	"include": ["src/**/*.ts"],
 }

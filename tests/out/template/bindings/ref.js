@@ -1,11 +1,11 @@
 import { fade, ClassBinding, Component, RefBinding, TransitionBinding, PartDelegator, CompiledTemplateResult, TemplateMaker, SlotPosition, HTMLMaker } from '@pucelle/lupos.js';
 import { trackGet, trackSet } from "@pucelle/lupos";
-const $html_0 = new HTMLMaker("<div></div>");
+const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
 /*
 <root>
     <div :ref=${this.refEl} />
 </root>
-*/ const $template_0 = new TemplateMaker(function ($context) {
+*/ const $template_0 = /*#__PURE__*/ new TemplateMaker(function ($context) {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $binding_0 = new RefBinding($node_0, $context, ["el"]);
@@ -22,7 +22,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 <root>
     <ChildComponent :ref=${this.refCom} />
 </root>
-*/ const $template_1 = new TemplateMaker(function ($context) {
+*/ const $template_1 = /*#__PURE__*/ new TemplateMaker(function ($context) {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $com_0 = new ChildComponent($node_0);
@@ -41,7 +41,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 <root>
     <ChildComponent :ref.el=${this.refEl} />
 </root>
-*/ const $template_2 = new TemplateMaker(function ($context) {
+*/ const $template_2 = /*#__PURE__*/ new TemplateMaker(function ($context) {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $com_0 = new ChildComponent($node_0);
@@ -60,7 +60,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 <root>
     <ChildComponent :ref=${this.refElByType} />
 </root>
-*/ const $template_3 = new TemplateMaker(function ($context) {
+*/ const $template_3 = /*#__PURE__*/ new TemplateMaker(function ($context) {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $com_0 = new ChildComponent($node_0);
@@ -79,7 +79,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 <root>
     <ChildComponent :class="className" :ref.binding=${this.refBinding} />
 </root>
-*/ const $template_4 = new TemplateMaker(function ($context) {
+*/ const $template_4 = /*#__PURE__*/ new TemplateMaker(function ($context) {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $com_0 = new ChildComponent($node_0);
@@ -100,7 +100,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 <root>
     <div :ref=${this.refElMethod} />
 </root>
-*/ const $template_5 = new TemplateMaker(function ($context) {
+*/ const $template_5 = /*#__PURE__*/ new TemplateMaker(function ($context) {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $binding_0 = new RefBinding($node_0, $context, ["el"]);
@@ -117,7 +117,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 <root>
     <div :ref=${(el: HTMLElement) => this.refElMethod(el)} />
 </root>
-*/ const $template_6 = new TemplateMaker(function ($context) {
+*/ const $template_6 = /*#__PURE__*/ new TemplateMaker(function ($context) {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $binding_0 = new RefBinding($node_0, $context, ["el"]);
@@ -134,7 +134,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 <root>
     <div :ref=${(el: HTMLElement) => this.refElMethodWithAdditionalData(el, data)} />
 </root>
-*/ const $template_7 = new TemplateMaker(function ($context) {
+*/ const $template_7 = /*#__PURE__*/ new TemplateMaker(function ($context) {
     let $latest_0;
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
@@ -155,7 +155,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 <root>
     <ChildComponent :class="className" :ref.binding=${this.refBindingMethod} />
 </root>
-*/ const $template_8 = new TemplateMaker(function ($context) {
+*/ const $template_8 = /*#__PURE__*/ new TemplateMaker(function ($context) {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $com_0 = new ChildComponent($node_0);
@@ -176,7 +176,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 <root>
     <ChildComponent ?:transition=${this.shouldTransition, fade()} :ref.binding=${this.refBinding} />
 </root>
-*/ const $template_9 = new TemplateMaker(function ($context) {
+*/ const $template_9 = /*#__PURE__*/ new TemplateMaker(function ($context) {
     let $latest_0, $latest_1;
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
@@ -219,7 +219,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 <root>
     <div :ref=${value} />
 </root>
-*/ const $template_10 = new TemplateMaker(function ($context) {
+*/ const $template_10 = /*#__PURE__*/ new TemplateMaker(function ($context) {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $binding_0 = new RefBinding($node_0, $context, ["el"]);
@@ -238,7 +238,7 @@ const $html_0 = new HTMLMaker("<div></div>");
 <root>
     <div :ref=${(el: HTMLElement) => this.refEl[index] = el} />
 </root>
-*/ const $template_11 = new TemplateMaker(function ($context) {
+*/ const $template_11 = /*#__PURE__*/ new TemplateMaker(function ($context) {
     let $latest_0;
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;

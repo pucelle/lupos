@@ -1,11 +1,11 @@
 import { Component, TemplateSlot, SlotPosition, CompiledTemplateResult, TemplateMaker, HTMLMaker, IfBlock, CacheableIfBlock } from '@pucelle/lupos.js';
 import { trackGet } from "@pucelle/lupos";
-const $html_0 = new HTMLMaker("<!----><!---->");
+const $html_0 = /*#__PURE__*/ new HTMLMaker("<!----><!---->");
 /*
 <root>
     <lu:if ${this.prop} />
 </root>
-*/ const $template_0 = new TemplateMaker(function () {
+*/ const $template_0 = /*#__PURE__*/ new TemplateMaker(function () {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
@@ -22,10 +22,10 @@ const $html_0 = new HTMLMaker("<!----><!---->");
         ]
     };
 });
-const $html_1 = new HTMLMaker("If Content");
+const $html_1 = /*#__PURE__*/ new HTMLMaker("If Content");
 /*
 <root>If Content</root>
-*/ const $template_1 = new TemplateMaker(function () {
+*/ const $template_1 = /*#__PURE__*/ new TemplateMaker(function () {
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     return {
@@ -37,7 +37,7 @@ const $html_1 = new HTMLMaker("If Content");
 <root>
     <lu:if ${this.prop} cache />
 </root>
-*/ const $template_2 = new TemplateMaker(function () {
+*/ const $template_2 = /*#__PURE__*/ new TemplateMaker(function () {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
@@ -56,7 +56,7 @@ const $html_1 = new HTMLMaker("If Content");
 });
 /*
 <root>If Content</root>
-*/ const $template_3 = new TemplateMaker(function () {
+*/ const $template_3 = /*#__PURE__*/ new TemplateMaker(function () {
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     return {
@@ -68,7 +68,7 @@ const $html_1 = new HTMLMaker("If Content");
 <root>
     <lu:if ${this.prop} />
 </root>
-*/ const $template_4 = new TemplateMaker(function () {
+*/ const $template_4 = /*#__PURE__*/ new TemplateMaker(function () {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
@@ -85,10 +85,10 @@ const $html_1 = new HTMLMaker("If Content");
         ]
     };
 });
-const $html_5 = new HTMLMaker(" ");
+const $html_5 = /*#__PURE__*/ new HTMLMaker(" ");
 /*
 <root>${this.content!}</root>
-*/ const $template_5 = new TemplateMaker(function () {
+*/ const $template_5 = /*#__PURE__*/ new TemplateMaker(function () {
     let $latest_0;
     let $node = $html_5.make();
     let $node_0 = $node.content.firstChild;
@@ -107,7 +107,7 @@ const $html_5 = new HTMLMaker(" ");
 <root>
     <lu:if ${this.prop} />
 </root>
-*/ const $template_6 = new TemplateMaker(function () {
+*/ const $template_6 = /*#__PURE__*/ new TemplateMaker(function () {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
@@ -126,7 +126,7 @@ const $html_5 = new HTMLMaker(" ");
 });
 /*
 <root>If Content</root>
-*/ const $template_7 = new TemplateMaker(function () {
+*/ const $template_7 = /*#__PURE__*/ new TemplateMaker(function () {
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     return {
@@ -134,10 +134,10 @@ const $html_5 = new HTMLMaker(" ");
         position: new SlotPosition(1, $node_0)
     };
 });
-const $html_8 = new HTMLMaker("Else Content");
+const $html_8 = /*#__PURE__*/ new HTMLMaker("Else Content");
 /*
 <root>Else Content</root>
-*/ const $template_8 = new TemplateMaker(function () {
+*/ const $template_8 = /*#__PURE__*/ new TemplateMaker(function () {
     let $node = $html_8.make();
     let $node_0 = $node.content.firstChild;
     return {
@@ -149,7 +149,7 @@ const $html_8 = new HTMLMaker("Else Content");
 <root>
     <lu:if ${this.prop} />
 </root>
-*/ const $template_9 = new TemplateMaker(function () {
+*/ const $template_9 = /*#__PURE__*/ new TemplateMaker(function () {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
@@ -168,7 +168,7 @@ const $html_8 = new HTMLMaker("Else Content");
 });
 /*
 <root>If Content</root>
-*/ const $template_10 = new TemplateMaker(function () {
+*/ const $template_10 = /*#__PURE__*/ new TemplateMaker(function () {
     let $node = $html_1.make();
     let $node_0 = $node.content.firstChild;
     return {
@@ -176,10 +176,10 @@ const $html_8 = new HTMLMaker("Else Content");
         position: new SlotPosition(1, $node_0)
     };
 });
-const $html_11 = new HTMLMaker("Then Content 1");
+const $html_11 = /*#__PURE__*/ new HTMLMaker("Then Content 1");
 /*
 <root>Then Content 1</root>
-*/ const $template_11 = new TemplateMaker(function () {
+*/ const $template_11 = /*#__PURE__*/ new TemplateMaker(function () {
     let $node = $html_11.make();
     let $node_0 = $node.content.firstChild;
     return {
@@ -187,10 +187,10 @@ const $html_11 = new HTMLMaker("Then Content 1");
         position: new SlotPosition(1, $node_0)
     };
 });
-const $html_12 = new HTMLMaker("Then Content 2");
+const $html_12 = /*#__PURE__*/ new HTMLMaker("Then Content 2");
 /*
 <root>Then Content 2</root>
-*/ const $template_12 = new TemplateMaker(function () {
+*/ const $template_12 = /*#__PURE__*/ new TemplateMaker(function () {
     let $node = $html_12.make();
     let $node_0 = $node.content.firstChild;
     return {
@@ -198,10 +198,10 @@ const $html_12 = new HTMLMaker("Then Content 2");
         position: new SlotPosition(1, $node_0)
     };
 });
-const $html_13 = new HTMLMaker("Then Content");
+const $html_13 = /*#__PURE__*/ new HTMLMaker("Then Content");
 /*
 <root>Then Content</root>
-*/ const $template_13 = new TemplateMaker(function () {
+*/ const $template_13 = /*#__PURE__*/ new TemplateMaker(function () {
     let $node = $html_13.make();
     let $node_0 = $node.content.firstChild;
     return {
@@ -213,7 +213,7 @@ const $html_13 = new HTMLMaker("Then Content");
 <root>
     <lu:if ${this.item && this.item.value} />
 </root>
-*/ const $template_14 = new TemplateMaker(function () {
+*/ const $template_14 = /*#__PURE__*/ new TemplateMaker(function () {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
@@ -234,7 +234,7 @@ const $html_13 = new HTMLMaker("Then Content");
 <root>
     ${this.item!.value.map(v => html`<div>${v}</div>`)}
 </root>
-*/ const $template_15 = new TemplateMaker(function () {
+*/ const $template_15 = /*#__PURE__*/ new TemplateMaker(function () {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
@@ -252,7 +252,7 @@ const $html_13 = new HTMLMaker("Then Content");
 });
 /*
 <root>${this.content}</root>
-*/ const $template_16 = new TemplateMaker(function () {
+*/ const $template_16 = /*#__PURE__*/ new TemplateMaker(function () {
     let $latest_0;
     let $node = $html_5.make();
     let $node_0 = $node.content.firstChild;
@@ -267,12 +267,12 @@ const $html_13 = new HTMLMaker("Then Content");
         }
     };
 });
-const $html_17 = new HTMLMaker("<div> </div>");
+const $html_17 = /*#__PURE__*/ new HTMLMaker("<div> </div>");
 /*
 <root>
     <div>${v}</div>
 </root>
-*/ const $template_17 = new TemplateMaker(function () {
+*/ const $template_17 = /*#__PURE__*/ new TemplateMaker(function () {
     let $latest_0;
     let $node = $html_17.make();
     let $node_0 = $node.content.firstChild;
@@ -292,7 +292,7 @@ const $html_17 = new HTMLMaker("<div> </div>");
 <root>
     <lu:if ${this.item && this.item.value} />
 </root>
-*/ const $template_18 = new TemplateMaker(function () {
+*/ const $template_18 = /*#__PURE__*/ new TemplateMaker(function () {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;
@@ -309,13 +309,13 @@ const $html_17 = new HTMLMaker("<div> </div>");
         ]
     };
 });
-const $html_19 = new HTMLMaker("<div>Content 1</div><div>Content 2</div>");
+const $html_19 = /*#__PURE__*/ new HTMLMaker("<div>Content 1</div><div>Content 2</div>");
 /*
 <root>
     <div>Content 1</div>
     <div>Content 2</div>
 </root>
-*/ const $template_19 = new TemplateMaker(function () {
+*/ const $template_19 = /*#__PURE__*/ new TemplateMaker(function () {
     let $node = $html_19.make();
     let $node_0 = $node.content.firstChild;
     return {

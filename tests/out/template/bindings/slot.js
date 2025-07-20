@@ -1,10 +1,10 @@
 import { Component, SlotBinding, CompiledTemplateResult, TemplateMaker, SlotPosition, HTMLMaker } from '@pucelle/lupos.js';
-const $html_0 = new HTMLMaker("<!----><div></div>");
+const $html_0 = /*#__PURE__*/ new HTMLMaker("<!----><div></div>");
 /*
 <root>
     <div :slot="slotName" />
 </root>
-*/ const $template_0 = new TemplateMaker(function () {
+*/ const $template_0 = /*#__PURE__*/ new TemplateMaker(function () {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $node_1 = $node.content.lastChild;

@@ -1,12 +1,12 @@
 import { Component, RefBinding, CompiledTemplateResult, TemplateMaker, SlotPosition, HTMLMaker } from '@pucelle/lupos.js';
 import { trackGet, trackSet } from '../../../../web/out';
 import { ComputedMaker, trackGet, trackSet, WatchMaker } from "@pucelle/lupos";
-const $html_0 = new HTMLMaker("<div></div>");
+const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
 /*
 <root>
     <div :ref=${this.ref} />
 </root>
-*/ const $template_0 = new TemplateMaker(function ($context) {
+*/ const $template_0 = /*#__PURE__*/ new TemplateMaker(function ($context) {
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
     let $binding_0 = new RefBinding($node_0, $context, ["el"]);

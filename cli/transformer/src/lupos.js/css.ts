@@ -26,16 +26,19 @@ function parseCSSTemplate(node: ts.TaggedTemplateExpression) {
 	Interpolator.replace(node, InterpolationContentType.Normal, () => {
 		let replaced: ts.Expression | null = null
 
+		// Output as string.
 		if (ts.isNoSubstitutionTemplateLiteral(template)) {
 			replaced = factory.createStringLiteral(strings![0].text)
 		}
+
+		// Output as `css` function call.
 		else {
 			let stringTexts = strings?.map(v => v.text) ?? ['', '']
 			let oldSpans = template.templateSpans
 
 			let newValues = valueIndices!.map(({index: spanIndex}) => {
 				let oldSpan = oldSpans[spanIndex]
-				return Interpolator.outputNodeSelf(oldSpan.expression) as ts.Expression
+				return Interpolator.outputUniqueSelf(oldSpan.expression) as ts.Expression
 			})
 
 			replaced = factory.createCallExpression(
@@ -46,26 +49,6 @@ function parseCSSTemplate(node: ts.TaggedTemplateExpression) {
 					factory.createArrayLiteralExpression(newValues),
 				]
 			)
-
-			// For tree shaking.
-			if (node.parent
-				&& ts.isPropertyDeclaration(node.parent)
-				&& helper.getText(node.parent.name) === 'style'
-				&& helper.objectLike.hasModifier(node.parent, 'static')
-				&& ts.isClassDeclaration(node.parent.parent)
-				&& ts.isSourceFile(node.parent.parent.parent)
-			) {
-				ts.setSyntheticLeadingComments(replaced, [
-					{
-						text: "#__PURE__",
-						kind: ts.SyntaxKind.MultiLineCommentTrivia,
-						pos: -1,
-						end: -1,
-						hasTrailingNewLine: false,
-					}
-				])
-			}
-
 		}
 
 		return replaced
