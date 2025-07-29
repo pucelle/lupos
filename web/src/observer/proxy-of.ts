@@ -9,10 +9,10 @@ const ProxyMap: WeakMap<object | ProxyOf<any>, ProxyOf<any>> = /*#__PURE__*/new 
 
 
 /** 
- * Proxy an object or an array, map or set (not weak map or weak set), returns the proxy of an object.
- * Will track properties, or deep descendant properties of this object or array,
- * Change them will cause the dependency callback function that depend on them to be called.
- * But will not track elements of map or set.
+ * Proxy an object or an array, map or set (not weak map or weak set), 
+ * and all the descendant properties as dependencies, returns the proxy of this object.
+ * 
+ * It's the final way of observing when other ways fail.
  * 
  * Multiple times of proxy a same object will always return the same output.
  * Otherwise note after tracked, properties accessing is 50x slower. So, avoid use it often.

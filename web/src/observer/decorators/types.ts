@@ -34,9 +34,9 @@ export declare function effect(originalMethod: any, context: ClassMethodDecorato
 
 
 /** 
- * `@watch` decorates a class method to watch one property,
+ * `@watch` decorates a class method to watch value of a property,
  * or returned value of a getter function,
- * and calls current method after this value becomes changed.
+ * and calls current method after this value changed.
  * 
  * Use it like:
  * ```

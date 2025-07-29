@@ -1,14 +1,17 @@
 /** 
- * Decorate a class property to declare a context variable,
+ * Decorate a component property to declare a context variable,
  * this property can be shared with all descendant components,
  * after declared `@useContext property` at descendant components.
+ * 
+ * Target component must extend `ContextVariableConstructor`.
  */
 export declare function setContext(target: any, context: ClassFieldDecoratorContext): void
 
 /** 
- * Decorate a class property to reference a context variable,
- * this property was declared by any level of ancestral components
- * use `@setContext property`.
+ * Decorate a component property to reference a context variable defined in any ancestral component,
+ * this property was declared by any level of ancestral components use `@setContext property`.
+ * 
+ * Target component must extend `ContextVariableConstructor`.
  */
 export declare function useContext(target: any, context: ClassFieldDecoratorContext): void
 

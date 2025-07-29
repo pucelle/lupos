@@ -39,7 +39,7 @@ defineVisitor(function(node: ts.Node) {
 
 		Interpolator.after(initializer, InterpolationContentType.Normal, () => {
 
-			// Old initializer will be remove.
+			// Old initializer will be remove, here output here without removing.
 			let newInitializer = Interpolator.outputUniqueSelf(initializer, {canRemove: false}) as ts.Expression
 
 			// `addComponentStyle(css`...`)`

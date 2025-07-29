@@ -1,5 +1,5 @@
 import {beginTrack, DependencyTracker, endTrack, untrack} from '../dependency-tracker'
-import {enqueueUpdate} from '../update-queue'
+import {enqueueUpdate} from '../../queue/update-queue'
 import {getIncrementalOrder} from './order'
 
 

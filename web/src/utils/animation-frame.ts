@@ -10,7 +10,7 @@ let currentTimestamp: number = 0
 
 
 /** 
- * Request for current animation frame.
+ * Request to call `callback` in current animation frame.
  * If current animation frame is started, calls callback soon.
  */
 export function requestCurrent(callback: AnimationFrameCallback): number {
@@ -33,7 +33,7 @@ export function requestCurrent(callback: AnimationFrameCallback): number {
 
 
 /** 
- * Request for next animation frame.
+ * Request to call `callback` before next animation frame.
  * Equals to `requestAnimationFrame`.
  */
 export function requestNext(callback: AnimationFrameCallback): number {

@@ -101,7 +101,7 @@ function bindOnce(el: EventTarget, type: EventType, handler: EventHandler, scope
 
 /** 
  * Unbind all event listeners that match specified parameters.
- * If `handler` binds a `scope`, here it must provide the same value to remove the listener.
+ * If provides `scope` here, only bound listeners with this scope will be released.
  */
 export function off<T extends EventType>(el: EventTarget, type: T, handler: InferEventHandler<T>, scope: any = null) {
 	let listeners = EventListenerMap.get(el, type)
