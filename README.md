@@ -46,6 +46,37 @@ Normally observed state of an object will broadcast to it's child properties, ex
 - Check `trackGetDeeply` and `proxyOf` apis below.
 
 
+#### Examples
+
+ts```
+class Example implements Observed {
+	value: number = 0
+	get(): number {
+		return this.value
+	}
+	set(value: number) {
+		this.value = value
+	}
+}
+```
+
+After compiled:
+
+js```
+class Example {
+	value = 0
+	get(): {
+		trackGet(this, 'value')
+		return this.value
+	}
+	set(value:) {
+		trackSet(this, 'value')
+		this.value = value
+	}
+}
+```
+
+
 
 ### 2. Template compiling
 
@@ -54,14 +85,16 @@ Normally observed state of an object will broadcast to it's child properties, ex
 
 
 
-## cli APIs
+## APIs
+
+### 1. cli APIs
 
 - `luc`: compile lupos based project by typescript and transformer.
 - `luc -e`: compile to esm codes, import paths will be resolved to file path, so outputted codes can do tree shaking easier.
 - `luc -w`: compile in watch mode.
 
 
-## web APIs
+### 2. web APIs
 
 - **Component**:
 	- `@setContext`: decorates a component property to declare a context variable. Target component must extend `ContextVariableConstructor`.
