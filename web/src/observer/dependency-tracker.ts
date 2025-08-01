@@ -22,29 +22,6 @@ let currentTracker: DependencyTracker | null = null
 
 
 /** 
- * Execute `fn`, and captures all the dependencies during execution,
- * Will execute `fn` in a `try{...}` statement.
- * If any dependency get changed, calls `callback`.
- * 
- * Note for tracking same content, `callback` should keep consistent,
- * or it would cant replace old tracking.
- */
-export function trackExecution(fn: () => void, callback: Function, scope: object | null = null) {
-	beginTrack(callback, scope)
-
-	try {
-		fn()
-	}
-	catch (err) {
-		console.error(err)
-	}
-	finally {
-		endTrack()
-	}
-}
-
-
-/** 
  * Begin to capture dependencies.
  * `callback` will be called when any dependency get changed.
  * Would suggest executing the following codes in a `try{...}` statement.
