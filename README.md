@@ -1,21 +1,29 @@
 # lupos
 
-**lupos** is a module and a compiler to support component-based programming in typescript.
+**lupos** is a module and a compiler to support component-based programming in TypeScript.
 
 Currently it serves project [lupos.js](https://github.com/pucelle/lupos.js), and will serve [lupos.paint](https://github.com/pucelle/lupos.paint) in the future.
 
 
+
 **lupos** includes two parts:
 
-- `cli` provides command which uses internal Typescript Transformer to compile **lupos** based projects.
+- `cli` provides command line which uses internal TypeScript Transformer to compile **lupos** based projects.
 - `web` is the runtime that needs to be imported from your projects.
+
 
 
 ## Features
 
-### 1. Data change tracking
+### 1. Property Get and Set Tracking
 
-If an object should be observed, **lupos** will track get and set actions of it's properties and even descendant properties and then add statements besides like `trackGet` and `trackSet`.
+If an object should be observed, **lupos** will track get and set actions of it's properties and even descendant properties, then inject statements besides like `trackGet` and `trackSet`.
+
+Compare with some modern tracking ways like **Proxy**, **Signal**, **State**..., **lupos** is:
+
+- No need to design or even pay attention to data tracking, it naturally works after declared type as **Observed**.
+- Much more efficient, additionally lupos will merge tracking statements and hoist them when possible to improve performance.
+- Can easily debug data tracking by compiled statements.
 
 
 #### Become Observed
@@ -33,45 +41,40 @@ Here are the rules to decide whether an object should be observed:
 
 #### Observed Broadcasting
 
-Normally observed state of an object will broadcast to it's child properties, except:
+Normally observed state of an object will broadcast to it's properties:
 
 - `readonly property`: readonly property get or set action is not tracked, but still broadcast observed state to property value.
+- `list.map(item => ...)`: if `list` is observed, broadcast to `item`.
 - `UnObserved<...>`: which's resolved type is `UnObserved` become not observed.
 - `$variable / $property / $parameter`: which's name starts with `$` become not observed.
-- `list.map(item => ...)`: if `list` is observed, broadcast to `item`.
-
-
-#### Other APIs
-
-- Check `trackGetDeeply` and `proxyOf` apis below.
 
 
 #### Examples
 
-ts```
+```ts
 class Example implements Observed {
-	value: number = 0
+	value: number = 0;
 	get(): number {
-		return this.value
+		return this.value;
 	}
 	set(value: number) {
-		this.value = value
+		this.value = value;
 	}
 }
 ```
 
 After compiled:
 
-js```
+```js
 class Example {
-	value = 0
-	get(): {
-		trackGet(this, 'value')
-		return this.value
+	value = 0;
+	get() {
+		trackGet(this, 'value');
+		return this.value;
 	}
-	set(value:) {
-		trackSet(this, 'value')
-		this.value = value
+	set(value) {
+		trackSet(this, 'value');
+		this.value = value;
 	}
 }
 ```
@@ -80,8 +83,8 @@ class Example {
 
 ### 2. Template compiling
 
-- compile `html`, `svg` and `paint` template to vanilla codes, and hoist partial codes to optimize.
-- compile `css` template to compress it.
+- compile `html` and `svg` template of [lupos.js](https://github.com/pucelle/lupos.js), and `paint` template of [lupos.paint](https://github.com/pucelle/lupos.paint) to vanilla codes, and hoist codes to optimize.
+- compile `css` template of [lupos.js](https://github.com/pucelle/lupos.js) to compress it.
 
 
 
@@ -107,7 +110,7 @@ class Example {
 	- `EventKeys`: help to get event key and code of an key events.
 
 - **Observer**:
-	- **Decorators**:
+	- **Decorators**: note these decorators get updated in their declaration order.
 		- `@computed`: decorates a class getter to make it compute value when required, and refresh result when required.
 		- `@effect`: decorates a class method, it execute this method, and if any dependency it used get changed, re-execute.
 		- `@watch(publicProperty / getterFn)`: decorates a class method to watch value of a property or returned value of a getter function, and calls current method after this value changed.
@@ -117,7 +120,6 @@ class Example {
 		- `beginTrack(callback)`: begin to capture dependencies. refresh `callback` get called when any dependencies get changed.
 		- `endTrack`: end capturing dependencies.
 		- `untrack(callback)`: remove all dependencies of a refresh callback.
-		- `trackExecution(fn)`: execute `fn`, and captures all dependencies during execution.
 		- `trackGet`: when doing property getting, add a dependency.
 		- `trackSet`: when doing setting property, notify the dependency is changed.
 		- `trackGetDeeply`: when need to track all properties and descendant properties of an object recursively of an object as dependency. Like `JSON.stringify(...)`.
@@ -136,6 +138,45 @@ class Example {
 
 
 
-## License
+## FAQ
 
-MIT
+### Why name is **lupos**?
+
+When I first started implementing this library in 2024, I was playing WoW Classic, and just tamed my lifelong companion **Lupos**.
+
+I hope this library will play the roles in my development just like **Lupos** in my WoW adventures.
+
+![lupos-of-wow](images/lupos-of-wow.jpg)
+
+
+
+### What's origin of this library?
+
+
+#### 2013
+
+In 2013, I'm learning AngularJS, but find it's source code is incredibly difficult to understand, so I created a [small library](https://github.com/purhya/vm-2013) which helps me to understand it.
+
+During coding, I realized expressions like `$bind="name"` will change `name` property. So naturally after `name` property changed, only need to update places like `{{name}}` where replies on `name` property.
+
+
+#### 2017
+
+In 2017, drawing from my experience in AngularJS and VueJS, I wrote a [new library](https://github.com/purhya/vm-2017). This library focus on component implementation, and uses **Proxy APIs** to track object properties.
+
+The new tracking system with **Proxy APIs** make it performs like a real library, but brings new problems -- besides performance issues, the primary is: the proxied object becomes another object, not original.
+
+This led me to search for a better and simpler solution.
+
+
+#### 2019
+
+In 2019, I created [flit.js](https://github.com/purhya/flit.js), it gets inspired by [lit-html](https://lit-html.polymer-project.org/) and adopt `` html`...` `` syntax for component templates.
+
+This library made a big progress, but I still hadn't discovered a solution to replace **Proxy APIs** for property tracking.
+
+
+#### 2022
+
+In 2022, in the bus heading to my hometown, I suddenly realized I can implement a TypeScript transformer, which simply inject `trackGet` and `trackSet` besides to do properties tracking, similar to what I had designed in 2013, but empowered by TypeScript. After a full cycle, everything go to it's origin.
+
