@@ -162,14 +162,7 @@ async function update() {
 }
 
 
-
-let firstPaintPromise = /*#__PURE__*/(async () => {
-	await untilDocumentComplete()
-	await untilUpdateComplete()
-	await sleep()
-})()
-
-
+/** Wait for a macro task tick. */
 function sleep() {
 	let {promise, resolve} = promiseWithResolves()
 	setTimeout(resolve, 0)
@@ -190,6 +183,14 @@ function untilDocumentComplete(): Promise<void> {
 
 	return promise
 }
+
+
+/** Promise to be resolved after first paint complete. */
+let firstPaintPromise = /*#__PURE__*/(async () => {
+	await untilDocumentComplete()
+	await untilUpdateComplete()
+	await sleep()
+})()
 
 
 /** 
