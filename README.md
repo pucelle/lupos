@@ -1,6 +1,6 @@
 # lupos
 
-**lupos** is a module and a compiler to support component-based programming in TypeScript.
+**lupos** is a framework to support component-based programming in TypeScript.
 
 Currently it serves project [lupos.js](https://github.com/pucelle/lupos.js), and will serve [lupos.paint](https://github.com/pucelle/lupos.paint) in the future.
 
