@@ -163,17 +163,34 @@ async function update() {
 
 
 
-let firstPaintPromiseResolve = /*#__PURE__*/(() => {
-	let pr = promiseWithResolves()
+let firstPaintPromise = /*#__PURE__*/(async () => {
+	await untilDocumentComplete()
+	await untilUpdateComplete()
+	await sleep()
+})()
 
-	untilUpdateComplete().then(() => {
-		setTimeout(() => {
-			pr.resolve()
-		}, 0)
+
+function sleep() {
+	let {promise, resolve} = promiseWithResolves()
+	setTimeout(resolve, 0)
+	return promise
+}
+
+
+/** Wait until document state becomes complete. */
+function untilDocumentComplete(): Promise<void> {
+	if (document.readyState === "complete") {
+		return Promise.resolve()
+	}
+
+	let {promise, resolve} = promiseWithResolves()
+	document.addEventListener('readystatechange', () => {
+		resolve()
 	})
 
-	return pr
-})()
+	return promise
+}
+
 
 /** 
  * Returns a promise, which will be resolved after the first time
@@ -182,6 +199,6 @@ let firstPaintPromiseResolve = /*#__PURE__*/(() => {
  * If a component will read dom properties and cause force re-layout
  * before first paint, you may use this to wait for paint complete.
  */
-export function untilFirstPaintCompleted() {
-	return firstPaintPromiseResolve.promise
+export function untilFirstPaintCompleted(): Promise<void> {
+	return firstPaintPromise
 }
