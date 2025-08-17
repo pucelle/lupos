@@ -4,3 +4,4 @@ node_modules
 /web/out
 .VSCodeCounter
 *.tsbuildinfo
+**/.DS_STORE
