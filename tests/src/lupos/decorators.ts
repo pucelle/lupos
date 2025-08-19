@@ -1,4 +1,4 @@
-import {Observed, computed, effect, watch} from '../../../web/out'
+import {Observed, computed, effect, watch, Connectable} from '../../../web/out'
 import {Component} from '@pucelle/lupos.js'
 
 
@@ -82,6 +82,20 @@ export class TestWatchCallbackDerived extends TestWatchCallback {
 export class TestObservedImplemented implements Observed {
 
 	prop: number = 1
+
+	@effect
+	onPropChangeEffect() {
+		console.log(this.prop)
+	}
+}
+
+export class TestConnectable implements Connectable, Observed {
+
+	prop: number = 1
+
+	connect() {}
+
+	disconnect() {}
 
 	@effect
 	onPropChangeEffect() {

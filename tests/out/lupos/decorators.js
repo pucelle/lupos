@@ -1,9 +1,8 @@
-import { Observed } from '../../../web/out';
+import { Observed, Connectable } from '../../../web/out';
 import { Component } from '@pucelle/lupos.js';
 import { ComputedMaker, trackGet, trackSet, EffectMaker, WatchMaker } from "@pucelle/lupos";
 export class TestComputed extends Component {
     prop = 1;
-    $prop2_computer = undefined;
     $compute_prop2() {
         trackGet(this, "prop");
         return this.prop + 1;
@@ -15,8 +14,8 @@ export class TestComputed extends Component {
     $reset_prop2() {
         trackSet(this, "prop2");
     }
-    onCreated() {
-        super.onCreated();
+    constructor(el) {
+        super(el);
         this.$prop2_computer = new ComputedMaker(this.$compute_prop2, this.$reset_prop2, this);
     }
     onConnected() {
@@ -37,8 +36,8 @@ export class TestComputedDerived extends TestComputed {
 export class TestEffect extends Component {
     propRead = 1;
     propWrite = 1;
-    onCreated() {
-        super.onCreated();
+    constructor(el) {
+        super(el);
         this.$onPropChangeEffect_effector = new EffectMaker(this.onPropChangeEffect, this);
     }
     onConnected() {
@@ -49,7 +48,6 @@ export class TestEffect extends Component {
         super.onWillDisconnect();
         this.$onPropChangeEffect_effector.disconnect();
     }
-    $onPropChangeEffect_effector = undefined;
     onPropChangeEffect() {
         this.propWrite = this.propRead;
         trackGet(this, "propRead");
@@ -65,8 +63,8 @@ export class TestEffectDerived extends TestEffect {
 }
 export class TestWatchProperty extends Component {
     prop = 1;
-    onCreated() {
-        super.onCreated();
+    constructor(el) {
+        super(el);
         this.$onPropChange_watcher = new WatchMaker(function () { trackGet(this, 'prop'); return this.prop; }, this.onPropChange, this);
     }
     onConnected() {
@@ -77,7 +75,6 @@ export class TestWatchProperty extends Component {
         super.onWillDisconnect();
         this.$onPropChange_watcher.disconnect();
     }
-    $onPropChange_watcher = undefined;
     onPropChange(prop) {
         console.log(prop);
     }
@@ -89,8 +86,8 @@ export class TestWatchPropertyDerived extends TestWatchProperty {
 }
 export class TestWatchCallback extends Component {
     prop = 1;
-    onCreated() {
-        super.onCreated();
+    constructor(el) {
+        super(el);
         this.$onPropChange_watcher = new WatchMaker(function () { trackGet(this, "prop"); return this.prop; }, this.onPropChange, this);
     }
     onConnected() {
@@ -101,7 +98,6 @@ export class TestWatchCallback extends Component {
         super.onWillDisconnect();
         this.$onPropChange_watcher.disconnect();
     }
-    $onPropChange_watcher = undefined;
     onPropChange(prop) {
         console.log(prop);
     }
@@ -117,7 +113,18 @@ export class TestObservedImplemented {
         this.$onPropChangeEffect_effector = new EffectMaker(this.onPropChangeEffect, this);
         this.$onPropChangeEffect_effector.connect();
     }
-    $onPropChangeEffect_effector = undefined;
+    onPropChangeEffect() {
+        console.log(this.prop);
+        trackGet(this, "prop");
+    }
+}
+export class TestConnectable {
+    prop = 1;
+    constructor() {
+        this.$onPropChangeEffect_effector = new EffectMaker(this.onPropChangeEffect, this);
+    }
+    connect() { this.$onPropChangeEffect_effector.connect(); }
+    disconnect() { this.$onPropChangeEffect_effector.disconnect(); }
     onPropChangeEffect() {
         console.log(this.prop);
         trackGet(this, "prop");

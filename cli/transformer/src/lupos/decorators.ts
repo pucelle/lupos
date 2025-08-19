@@ -31,7 +31,7 @@ defineVisitor(function(node: ts.Node) {
 		replace = compileComputedDecorator(decoName, node as ts.GetAccessorDeclaration, isOverwritten)
 	}
 	else {
-		replace = compileEffectWatchDecorator(decoName, node as ts.MethodDeclaration, isOverwritten)
+		replace = compileEffectWatchDecorator(node as ts.MethodDeclaration)
 	}
 
 	Interpolator.replace(node, InterpolationContentType.Normal, replace)
@@ -75,14 +75,6 @@ function compileComputedDecorator(
 
 	return () => {
 		let newBody = Interpolator.outputChildren(decl.body!) as ts.Block
-
-		let property = factory.createPropertyDeclaration(
-			undefined,
-			factory.createIdentifier(processorPropName),
-			undefined,
-			undefined,
-			factory.createIdentifier('undefined')
-		)
 
 		let modifiers = decl.modifiers?.filter(m => !ts.isDecorator(m))
 
@@ -157,7 +149,6 @@ function compileComputedDecorator(
 		}
 		else {
 			return [
-				property,
 				newMethod,
 				getter,
 				onReset,
@@ -187,24 +178,13 @@ method() {...}
 ```
 */
 function compileEffectWatchDecorator(
-	decoName: string,
-	decl: ts.MethodDeclaration,
-	isOverwritten: boolean
+	decl: ts.MethodDeclaration
 ): () => ts.Node[] {
 	let propName = helper.getFullText(decl.name)
-	let processorPropName = '$' + propName + '_' + ProcessorPropNameMap[decoName]
 	let overwrittenMethodName = propName
 
 	return () => {
 		let newBody = Interpolator.outputChildren(decl.body!) as ts.Block
-
-		let property = factory.createPropertyDeclaration(
-			undefined,
-			factory.createIdentifier(processorPropName),
-			undefined,
-			undefined,
-			factory.createIdentifier('undefined')
-		)
 
 		let modifiers = decl.modifiers?.filter(m => !ts.isDecorator(m))
 
@@ -219,14 +199,6 @@ function compileEffectWatchDecorator(
 			newBody
 		)
 
-		if (isOverwritten) {
-			return [newMethod]
-		}
-		else {
-			return [
-				property,
-				newMethod,
-			]
-		}
+		return [newMethod]
 	}
 }

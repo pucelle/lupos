@@ -26,6 +26,12 @@ defineVisitor(function(node: ts.Node) {
 		connect = new MethodOverwrite(node, 'onConnected')
 		disconnect = new MethodOverwrite(node, 'onWillDisconnect')
 	}
+	// Be a connectable.
+	else if (helper.class.isImplementedOf(node, 'Connectable', '@pucelle/lupos')) {
+		create = new MethodOverwrite(node, 'constructor')
+		connect = new MethodOverwrite(node, 'connect')
+		disconnect = new MethodOverwrite(node, 'disconnect')
+	}
 	else {
 		create = new MethodOverwrite(node, 'constructor')
 	}

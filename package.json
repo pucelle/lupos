@@ -24,7 +24,7 @@
 		"build-web": "cd web && node ../cli/bin/luc -e",
 		"watch-web": "cd web && node ../cli/bin/luc -e -w",
 		"prepublish": "npm run build",
-		"test": "cd tests && node ../cli/bin/luc && echo Compare git changes to get test result && del tsconfig.tsbuildinfo",
+		"test": "cd tests && node ../cli/bin/luc && echo Compare git changes to get test result && rm tsconfig.tsbuildinfo",
 		"test-web": "jest"
 	},
 	"bin": {

@@ -11,9 +11,9 @@ import {WatchOptions} from './watch'
  * Decorated method can be overwritten, but should also be decorated.
  * 
  * So if your computing is expensive, and don't like re-computing each time
- * after re-connected, consider using `@watch` or `@immediateWatch`.
+ * after re-connected, consider using `@watch` or `@watchMulti`.
  * 
- * This is only a declaration, it will be replaced after compiled by `@pucelle/lupos.compiler`.
+ * This is only a declaration, it will be replaced after compiled.
  */
 export declare function computed(originalGetter: any, context: ClassGetterDecoratorContext): any
 
@@ -26,9 +26,9 @@ export declare function computed(originalGetter: any, context: ClassGetterDecora
  * and to be enqueued each time after any visited dependencies get changed.
  * 
  * So if your effect method is expensive, and don't like re-computing each time
- * after re-connected, consider using `@watch` or `@immediateWatch`.
+ * after re-connected, consider using `@watch` or `@watchMulti`.
  * 
- * This is only a declaration, it will be replaced after been compiled by `@pucelle/lupos.compiler`.
+ * This is only a declaration, it will be replaced after been compiled.
  */
 export declare function effect(originalMethod: any, context: ClassMethodDecoratorContext): any
 
@@ -52,9 +52,9 @@ export declare function effect(originalMethod: any, context: ClassMethodDecorato
  * and later be enqueued again when any visited dependencies get changed.
  * 
  * Otherwise current watch action would can't be released and GC if any dependencies still existing.
- * If you want to make sure watching things can be released, use `Watcher` apis and release it yourself.
+ * If you want to make sure watching things can be released, use `Watcher` APIs and release it yourself.
  * 
- * This is only a declaration, it will be replaced after been compiled by `@pucelle/lupos.compiler`.
+ * This is only a declaration, it will be replaced after been compiled.
  */
 export declare function watch<T, P extends ((this: T) => any) | keyof T>(fnOrProps: P, options?: Partial<WatchOptions>):
 	(originalMethod: InferMethod<T, P>, context: ClassMethodDecoratorContext<T>) => any
@@ -90,7 +90,7 @@ type InferPropertyType<T, P extends ((() => any) | keyof T)>
  * Otherwise current watch action would can't be released and GC if any dependencies still existing.
  * If you want to make sure watching things can be released, use `Watcher` apis and release it yourself.
  * 
- * This is only a declaration, it will be replaced after been compiled by `@pucelle/lupos.compiler`.
+ * This is only a declaration, it will be replaced after been compiled.
  */
 export declare function watchMulti<T, PS extends (((this: T) => any) | keyof T)[]>(fnOrProps: PS, options?: Partial<WatchOptions>):
 	(originalMethod: InferMultiMethod<T, PS>, context: ClassMethodDecoratorContext<T>) => any
@@ -102,3 +102,16 @@ type InferMultiMethod<T, PS extends ((() => any) | keyof T)[]>
 /** Infer watch multi method parameters by class T, and list of property or getter. */
 type InferMultiMethodParameters<T, PS extends ((() => any) | keyof T)[]>
 	= {[K in keyof PS]: InferPropertyType<T, PS[K]>}
+
+
+export interface Connectable {
+
+	/** 
+	 * Will re-connect all dependencies after connected.
+	 * Note don't call `connect` in constructor declaration.
+	 */
+	connect(): void
+
+	/** Will disconnect all dependencies before will disconnect. */
+	disconnect() : void
+}
