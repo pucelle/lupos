@@ -2,7 +2,12 @@
 
 **lupos** is a framework to support component-based programming in TypeScript.
 
-Currently it serves project [lupos.js](https://github.com/pucelle/lupos.js), and will serve [lupos.paint](https://github.com/pucelle/lupos.paint) in the future.
+It solves two problems in web system programming, which can't be solved by experience or design:
+
+- Observing data changes - by TypeScript aot analysis
+- Efficiently update after data changes - by pre-compiling template literal
+
+Currently it serves project [lupos.js](https://github.com/pucelle/lupos.js), and will serve [lupos.paint](https://github.com/pucelle/lupos.paint) later.
 
 
 
@@ -157,7 +162,7 @@ I hope this library will play the roles in my development just like **Lupos** in
 
 In 2013, I'm learning AngularJS, but find it's source code is incredibly difficult to understand, so I created a [small library](https://github.com/purhya/vm-2013) which helps me to understand it.
 
-During coding, I realized expressions like `$bind="name"` will change `name` property. So naturally after `name` property changed, only need to update places like `{{name}}` where replies on `name` property.
+During coding, I realized expressions like `$bind="name"` will change `name` property. So naturally after `name` property changed, only need to update places like `{{name}}` where replies on `name` property, so I implemented it.
 
 
 #### 2017
@@ -178,5 +183,11 @@ This library made a big progress, but I still hadn't discovered a solution to re
 
 #### 2022
 
-In 2022, in the bus heading to my hometown, I suddenly realized I can implement a TypeScript transformer, which simply inject `trackGet` and `trackSet` besides to do properties tracking, similar to what I had designed in 2013, but empowered by TypeScript. After a full cycle, everything go to it's origin.
+In 2022, on the bus heading to my hometown, I suddenly realized I can implement a TypeScript transformer, which simply inject `trackGet` and `trackSet` besides to do properties tracking, similar to what I did in 2013, but empowered by TypeScript. After a full cycle, everything go to it's origin.
 
+
+#### 2024
+
+The work had finally began, what's unexpected is that it's much harder than I thought before. Even when it's nearly completed, I still wasn't sure it would work as what's expected.
+
+Finally it comes out, [flit](https://github.com/pucelle/flit) and some internal apps prove it worked, and efficient.
