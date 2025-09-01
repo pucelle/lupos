@@ -50,6 +50,9 @@ export class ComputedMaker<V = any> {
 
 		// Here doesn't reset value immediately after dependency get changed,
 		// but update them in the same order with effectors and watchers.
+
+		// This means you can still get old value after any dependency changes,
+		// before next time update.
 		enqueueUpdate(this.update, this, this.order)
 		this.needsUpdate = true
 	}

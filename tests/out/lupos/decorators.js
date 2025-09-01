@@ -123,8 +123,8 @@ export class TestConnectable {
     constructor() {
         this.$onPropChangeEffect_effector = new EffectMaker(this.onPropChangeEffect, this);
     }
-    connect() { this.$onPropChangeEffect_effector.connect(); }
-    disconnect() { this.$onPropChangeEffect_effector.disconnect(); }
+    onConnected() { this.$onPropChangeEffect_effector.connect(); }
+    onWillDisconnect() { this.$onPropChangeEffect_effector.disconnect(); }
     onPropChangeEffect() {
         console.log(this.prop);
         trackGet(this, "prop");

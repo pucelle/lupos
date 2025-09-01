@@ -6,11 +6,12 @@ import {WatchOptions} from './watch'
  * Compare with `get property() {...}`, computed property value will be cached,
  * and refresh only when required.
  * 
- * The computed value will be cleared each time after any visited dependencies get changed.
+ * A clearing task will be enqueued after any visited dependencies get changed,
+ * and .
  * 
  * Decorated method can be overwritten, but should also be decorated.
  * 
- * So if your computing is expensive, and don't like re-computing each time
+ * If your computing is expensive, and don't like re-computing each time
  * after re-connected, consider using `@watch` or `@watchMulti`.
  * 
  * This is only a declaration, it will be replaced after compiled.
@@ -25,7 +26,7 @@ export declare function computed(originalGetter: any, context: ClassGetterDecora
  * The effect action will be activated after instance initialized, in declaration order,
  * and to be enqueued each time after any visited dependencies get changed.
  * 
- * So if your effect method is expensive, and don't like re-computing each time
+ * If your effect method is expensive, and don't like re-computing each time
  * after re-connected, consider using `@watch` or `@watchMulti`.
  * 
  * This is only a declaration, it will be replaced after been compiled.
@@ -70,7 +71,7 @@ type InferPropertyType<T, P extends ((() => any) | keyof T)>
 
 
 /** 
- * `@watchMulti` decorates a class method to watch several property,
+ * `@watchMulti` decorates a class method to watch several properties,
  * or returned values of a function list,
  * and calls current method after any value becomes changed.
  * 
@@ -104,14 +105,19 @@ type InferMultiMethodParameters<T, PS extends ((() => any) | keyof T)[]>
 	= {[K in keyof PS]: InferPropertyType<T, PS[K]>}
 
 
+/** 
+ * Can connect and disconnect, so life-cycle callbacks of
+ * `@computed`, `@effect`, `@watch`, `@watchMulti` can be compiled
+ * and injected into `onConnected` and `onWillDisconnect` methods.
+ */
 export interface Connectable {
 
 	/** 
 	 * Will re-connect all dependencies after connected.
 	 * Note don't call `connect` in constructor declaration.
 	 */
-	connect(): void
+	onConnected(): void
 
 	/** Will disconnect all dependencies before will disconnect. */
-	disconnect() : void
+	onWillDisconnect() : void
 }
