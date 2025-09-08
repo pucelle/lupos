@@ -101,8 +101,8 @@ export class TestIgnoringWriteonlyPrivate extends Component {
 }
 export class TestIgnoringOfPrivateComputedProperty extends Component {
     prop = 1;
-    onCreated() {
-        super.onCreated();
+    constructor(el) {
+        super(el);
         this.$computedProp_computer = new ComputedMaker(this.$compute_computedProp, this.$reset_computedProp, this);
     }
     onConnected() {
@@ -117,7 +117,6 @@ export class TestIgnoringOfPrivateComputedProperty extends Component {
         trackGet(this, "computedProp");
         return this.computedProp;
     }
-    $computedProp_computer = undefined;
     $compute_computedProp() {
         return this.prop;
     }
@@ -153,8 +152,8 @@ export class TestIgnoringCustomTracked extends Component {
 export class TestPreventIgnoringWatcherGetter extends Component {
     static SlotContentType = 0;
     ref;
-    onCreated() {
-        super.onCreated();
+    constructor(el) {
+        super(el);
         this.$read_watcher = new WatchMaker(function () { trackGet(this, "ref"); return this.ref; }, this.read, this);
     }
     onConnected() {
@@ -168,7 +167,6 @@ export class TestPreventIgnoringWatcherGetter extends Component {
     render() {
         return new CompiledTemplateResult($template_0, [], this);
     }
-    $read_watcher = undefined;
     read(prop) {
         prop;
     }

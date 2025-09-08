@@ -257,7 +257,6 @@ export class TestPropertyOfMethodsObserved {
         data && trackGet(data, "");
         return data?.get();
     }
-    $setOverlapSetKeys_effector = undefined;
     setOverlapSetKeys() {
         let a = this.data.get();
         this.data.set(a);

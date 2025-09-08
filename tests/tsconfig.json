@@ -15,5 +15,5 @@
 		"noImplicitAny": true,
 		"noImplicitThis": true
 	},
-	"include": ["src/**/decorators.ts"],
+	"include": ["src/**/*.ts"],
 }
