@@ -1,4 +1,8 @@
-# lupos
+<h1 align="left">
+    <img src="https://github.com/pucelle/lupos/blob/master/images/logo.png?raw=true" width="32" height="32" alt="Lupos Logo" />
+    Lupos
+</h1>
+
 
 **lupos** is a framework to support component-based programming in TypeScript.
 
