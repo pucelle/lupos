@@ -1,5 +1,5 @@
 import {definePostVisitCallback, definePreVisitCallback} from './visitor-callbacks'
-import {diagnosticModifier, sourceFile, helper} from './global'
+import {compilerDiagnosticModifier, sourceFile, helper} from './global'
 import {DiagnosticModifier} from '../lupos-ts-module'
 
 
@@ -15,13 +15,9 @@ export class ExtendedDiagnosticModifier extends DiagnosticModifier {
 
 	/** Output added and removed. */
 	output() {
-		for (let diag of this.added) {
-			diagnosticModifier.add(diag)
-		}
-
-		for (let diag of this.deleted) {
-			diagnosticModifier.delete(sourceFile.fileName, diag)
-		}
+		compilerDiagnosticModifier.add(sourceFile.fileName, this.added)
+		compilerDiagnosticModifier.delete(sourceFile.fileName, this.deleted)
+		compilerDiagnosticModifier.setPotentialAllImportsUnUsed(sourceFile.fileName, this.potentialAllImportsUnUsed)
 	}
 }
 
@@ -29,7 +25,7 @@ export class ExtendedDiagnosticModifier extends DiagnosticModifier {
 export let SourceFileDiagnosticModifier: ExtendedDiagnosticModifier
 
 definePreVisitCallback(() => {
-	diagnosticModifier.beforeVisitSourceFile(sourceFile)
+	compilerDiagnosticModifier.beforeVisitSourceFile(sourceFile)
 	SourceFileDiagnosticModifier = new ExtendedDiagnosticModifier()
 	SourceFileDiagnosticModifier.setSourceFile(sourceFile)
 })

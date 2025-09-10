@@ -49,21 +49,15 @@ export class TestObservingOfMapMember extends Component {
 	// /** Not supported yet. */
 	// filterList() {
 	// 	let items = this.list.filter(v => v.value === 0)!
+	//  items.push({value: 1})
 	// 	return items.map(v => v.value)
 	// }
 
 	// /** Not supported yet. */
 	// sortList() {
 	// 	let items = this.list
-	// 	items.sort()
-	// 	return items.map(v => v.value)
-	// }
-
-	// /** Not supported yet. */
-	// sortFilteredList() {
-	// 	let items = this.list.filter(v => v.value === 0)!
-	// 	items.sort()
-	// 	return items.map(v => v.value)
+	// 	let items2 = items.sort()
+	// 	return items2.map(v => v.value)
 	// }
 
 	// /** Not supported yet. */

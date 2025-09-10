@@ -1,5 +1,4 @@
 import * as ts from 'typescript'
-import {ListMap} from './utils'
 
 
 /** Extend of TransformerFactory */
@@ -12,7 +11,7 @@ export interface TransformerExtras {
 	compileToESM: boolean
 
 	program: ts.BuilderProgram
-	diagnosticModifier: DiagnosticModifier
+	compilerDiagnosticModifier: CompilerDiagnosticModifier
 }
 
 
@@ -22,7 +21,7 @@ export function patchHost(
 		| ts.SolutionBuilderWithWatchHost<ts.EmitAndSemanticDiagnosticsBuilderProgram>,
 	extended: ExtendedTransformerFactory,
 	toESM: boolean,
-	diagModifier: DiagnosticModifier
+	diagModifier: CompilerDiagnosticModifier
 ) {
 	let originalHostCreateProgram = host.createProgram
 
@@ -41,13 +40,13 @@ export function patchProgram(
 	program: ts.EmitAndSemanticDiagnosticsBuilderProgram,
 	extended: ExtendedTransformerFactory,
 	toESM: boolean,
-	diagModifier: DiagnosticModifier
+	diagModifier: CompilerDiagnosticModifier
 ) {
 	let standardTransformer: ts.TransformerFactory<ts.SourceFile> = (context: ts.TransformationContext) => {
 		let extras: TransformerExtras = {
 			compileToESM: toESM,
 			program: program!,	// Use newly updated program.
-			diagnosticModifier: diagModifier,
+			compilerDiagnosticModifier: diagModifier,
 		}
 
 		return extended(context, extras)
@@ -68,14 +67,14 @@ export function patchProgram(
 		let emitResult = originalEmit(targetSourceFile, writeFile, cancellationToken, emitOnlyDtsFiles, transformers)
 
 		// Report added diagnostics.
-		diagModifier.reportAdded();
+		diagModifier.reportAdded()
 
 		return emitResult
 	}
 }
 
 
-export class DiagnosticModifier {
+export class CompilerDiagnosticModifier {
 
 	private reporter: ts.DiagnosticReporter | null = null
 
@@ -83,8 +82,47 @@ export class DiagnosticModifier {
 	private reportedDiags: Set<ts.Diagnostic> = new Set()
 
 	/** They are not using source file as key, because source files may be updated without re-compiling. */
-	private added: ListMap<string, ts.Diagnostic> = new ListMap()
-	private deleted: ListMap<string, {start: number, code: number}> = new ListMap()
+	private added: Map<string, ts.Diagnostic[]> = new Map()
+	private deleted: Map<string, {start: number, code: number}[]> = new Map()
+	private potentialAllImportsUnUsed: Map<string, ts.ImportDeclaration[]> = new Map()
+
+	/** Check whether diagnostic has been deleted. */
+	hasDeleted(diag: {file: ts.SourceFile | undefined, start: number | undefined, code: number}): boolean {
+		if (!diag.file) {
+			return false
+		}
+
+		let deletedDiags = this.deleted.get(diag.file.fileName)
+		if (!deletedDiags) {
+			return false
+		}
+
+		return !!deletedDiags.find(d => d.start === diag.start && d.code === diag.code)
+	}
+
+	/** Get added diagnostic count. */
+	getAddedCount(): number {
+		let count = 0
+		for (let diags of this.added.values()) {
+			count += diags.length
+		}
+		return count
+	}
+
+	/** Add custom diagnostics. */
+	add(fileName: string, diags: ts.Diagnostic[]) {
+		this.added.set(fileName, diags)
+	}
+
+	/** Delete diagnostics. */
+	delete(fileName: string, diags: {start: number, code: number}[]) {
+		this.deleted.set(fileName, diags)
+	}
+
+	/** Set potential all imports which . */
+	setPotentialAllImportsUnUsed(fileName: string, decls: ts.ImportDeclaration[]) {
+		this.potentialAllImportsUnUsed.set(fileName, decls)
+	}
 
 	/** Patch diagnostic reporter to do filtering. */
 	patchDiagnosticReporter(reporter: ts.DiagnosticReporter): ts.DiagnosticReporter {
@@ -95,7 +133,48 @@ export class DiagnosticModifier {
 				reporter(diag)
 				this.reportedDiags.add(diag)
 			}
+			else if (diag.file) {
+				let usUsedSiblingImportDiags = this.getUnUsedSiblingImportDiags(diag.file, diag.start!)
+
+				for(let diag of usUsedSiblingImportDiags) {
+					this.reporter!(diag)
+				}
+			}
 		}
+	}
+
+	private getUnUsedSiblingImportDiags(sourceFile: ts.SourceFile, start: number): ts.Diagnostic[] {
+		let unUsedDecls = this.potentialAllImportsUnUsed.get(sourceFile.fileName)
+		if (!unUsedDecls) {
+			return []
+		}
+
+		let importDecl = unUsedDecls.find(decl => decl.getStart() === start)
+		if (!importDecl) {
+			return []
+		}
+
+		let unImported: ts.Diagnostic[] = []
+
+		for (let element of (importDecl.importClause!.namedBindings! as ts.NamedImports).elements) {
+			if (!this.hasDeleted({file: sourceFile, start: element.name.getStart(), code: 6133})) {
+				let start = element.name.getStart()
+				let length = element.name.getEnd() - start
+
+				let diag: ts.Diagnostic = {
+					category: ts.DiagnosticCategory.Error,
+					code: 6133,
+					messageText: `'${element.name.text}' is declared but its value is never read.`,
+					file: sourceFile,
+					start,
+					length,
+				}
+
+				unImported.push(diag)
+			}
+		}
+		
+		return unImported
 	}
 
 	/** 
@@ -104,7 +183,7 @@ export class DiagnosticModifier {
 	 */
 	patchWatchStatusReporter(reporter: ts.WatchStatusReporter): ts.WatchStatusReporter {
 		return (diagnostic: ts.Diagnostic, newLine: string, options: ts.CompilerOptions, errorCount?: number) => {
-			let countAfterModified = this.reportedDiags.size + this.added.valueCount()
+			let countAfterModified = this.reportedDiags.size + this.getAddedCount()
 
 			if (typeof diagnostic.messageText === 'string') {
 				diagnostic.messageText = diagnostic.messageText.replace(/\d+/, countAfterModified.toString())
@@ -120,40 +199,16 @@ export class DiagnosticModifier {
 
 	/** Before visit a source file, clean all the modification of it. */
 	beforeVisitSourceFile(file: ts.SourceFile) {
-		this.added.deleteOf(file.fileName)
-		this.deleted.deleteOf(file.fileName)
+		this.added.delete(file.fileName)
+		this.deleted.delete(file.fileName)
 	}
 
 	/** Report all added diagnostics. */
 	reportAdded() {
-		for (let diag of this.added.values()) {
-			this.reporter!(diag)
+		for (let diags of this.added.values()) {
+			for (let diag of diags) {
+				this.reporter!(diag)
+			}
 		}
-	}
-
-	/** Check whether diagnostic has been deleted. */
-	hasDeleted(diag: ts.Diagnostic): boolean {
-		if (!diag.file) {
-			return false
-		}
-
-		let deletedDiags = this.deleted.get(diag.file.fileName)
-		if (!deletedDiags) {
-			return false
-		}
-
-		return !!deletedDiags.find(d => d.start === diag.start && d.code === diag.code)
-	}
-
-	/** Add a custom diagnostic. */
-	add(diag: ts.Diagnostic) {
-		if (diag.file) {
-			this.added.add(diag.file.fileName, diag)
-		}
-	}
-
-	/** Delete a diagnostic. */
-	delete(fileName: string, diag: {start: number, code: number}) {
-		this.deleted.add(fileName, diag)
 	}
 }

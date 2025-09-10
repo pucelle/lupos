@@ -5,7 +5,7 @@ import * as ts from 'typescript'
 import * as fs from 'node:fs';
 import {createDiagnosticReporter, createWatchStatusReporter} from './watch';
 import {hasProperty} from './core';
-import {DiagnosticModifier, ExtendedTransformerFactory, patchHost} from '../patch';
+import {CompilerDiagnosticModifier, ExtendedTransformerFactory, patchHost} from '../patch';
 
 
 export function executeCommandLine(
@@ -20,7 +20,7 @@ export function executeCommandLine(
 
 	let commandLine = ts.parseCommandLine(commandLineArgs);
 	let pretty = shouldBePretty(system, commandLine.options);
-	let diagModifier = new DiagnosticModifier();
+	let diagModifier = new CompilerDiagnosticModifier();
 	let rawReportDiagnostic = createDiagnosticReporter(system, pretty);
 	let reportDiagnostic = diagModifier.patchDiagnosticReporter(rawReportDiagnostic);
 
@@ -100,7 +100,7 @@ function isWatchSet(options: ts.CompilerOptions) {
 function performWatchCompilation(
 	system: ts.System,
 	reportDiagnostic: ts.DiagnosticReporter,
-	diagModifier: DiagnosticModifier,
+	diagModifier: CompilerDiagnosticModifier,
 	projects: string[],
 	compilerOptions: ts.CompilerOptions,
 	buildOptions: ts.BuildOptions,
@@ -134,7 +134,7 @@ function performWatchCompilation(
 function createWatchReporter(
 	system: ts.System,
 	options: ts.CompilerOptions | ts.BuildOptions,
-	diagModifier: DiagnosticModifier
+	diagModifier: CompilerDiagnosticModifier
 ): ts.WatchStatusReporter {
 	let pretty = shouldBePretty(system, options);
 	let rawReporter = createWatchStatusReporter(system, pretty);
@@ -160,7 +160,7 @@ function defaultIsPretty(system: ts.System) {
 function performCompilation(
 	system: ts.System,
 	reportDiagnostic: ts.DiagnosticReporter,
-	diagModifier: DiagnosticModifier,
+	diagModifier: CompilerDiagnosticModifier,
 	projects: string[],
 	compilerOptions: ts.CompilerOptions,
 	buildOptions: ts.BuildOptions,

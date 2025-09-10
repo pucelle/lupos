@@ -1,12 +1,12 @@
 import * as ts from 'typescript'
-import {DiagnosticModifier, TransformerExtras} from '../../../compiler/out/patch'
+import {CompilerDiagnosticModifier, TransformerExtras} from '../../../compiler/out/patch'
 import {helperOfContext, TemplateSlotPlaceholder} from '../lupos-ts-module'
 
 
 export let program: ts.Program
 export let compileToESM: boolean
 export let typeChecker: ts.TypeChecker
-export let diagnosticModifier: DiagnosticModifier
+export let compilerDiagnosticModifier: CompilerDiagnosticModifier
 export let factory: ts.NodeFactory
 export let transformContext: ts.TransformationContext
 export let sourceFile: ts.SourceFile
@@ -19,7 +19,7 @@ export function setTransformContext(ctx: ts.TransformationContext, extras: Trans
 	compileToESM = extras.compileToESM
 	program = extras.program.getProgram()
 	typeChecker = program.getTypeChecker()
-	diagnosticModifier = extras.diagnosticModifier
+	compilerDiagnosticModifier = extras.compilerDiagnosticModifier
 	helper = helperOfContext(ts, () => typeChecker)
 	TemplateSlotPlaceholder.initialize(ts)
 }
