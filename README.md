@@ -6,12 +6,10 @@
 
 **lupos** is a framework to support component-based programming in TypeScript.
 
-It solves two problems in web system programming, which can't be solved by experience or design:
+It was designed to solve two problems in web programming, which are hard to solve by experience or programming design:
 
 - Observing data changes - by TypeScript aot analysis
 - Efficiently update after data changes - by pre-compiling template literal
-
-**lupos** was designed to solve them.
 
 Currently it serves project [lupos.js](https://github.com/pucelle/lupos.js), and will serve [lupos.paint](https://github.com/pucelle/lupos.paint) later.
 
