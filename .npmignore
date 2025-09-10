@@ -1,7 +1,9 @@
 node_modules
 .vscode
-src
 tests
+tests-web
 tsconfig.json
 README.md
 *.tgz
+jest.config.js
+images

@@ -13,6 +13,8 @@ It was designed to solve two problems in web programming, which are hard to solv
 
 Currently it serves project [lupos.js](https://github.com/pucelle/lupos.js), and will serve [lupos.paint](https://github.com/pucelle/lupos.paint) later.
 
+[lupos-vscode](https://github.com/pucelle/lupos-vscode) is the vscode plugin provides Syntax Highlighting and IntelliSense for **lupos**.
+
 
 
 **lupos** includes two parts:
@@ -48,7 +50,8 @@ Here are the rules to decide whether an object should be observed:
 - `let variable = xxx as Observed<...>`: declared variable becomes observed if it's initializer is declared as `Observed`.
 
 
-#### Observed Broadcasting
+
+#### Observed State Broadcasting
 
 Normally observed state of an object will broadcast to it's properties:
 
@@ -56,6 +59,7 @@ Normally observed state of an object will broadcast to it's properties:
 - `list.map(item => ...)`: if `list` is observed, broadcast to `item`.
 - `UnObserved<...>`: which's resolved type is `UnObserved` become not observed.
 - `$variable / $property / $parameter`: which's name starts with `$` become not observed.
+
 
 
 #### Examples
@@ -147,6 +151,16 @@ class Example {
 
 
 
+## Weakness
+
+**lupos** is not perfect yet.
+
+- Can only work with TypeScript, and slows TypeScript compiling speed.
+- If a library made by **lupos**, normally places use this library should also be compiled by **lupos**. There are some alternative solutions existing, which will be provided when required.
+- Some expressions, like `let newItems = observedItems.filter(...)`, you may expect `newItems` to become observed, but in fact it's not. Plan to indicate observed state of expressions by vscode plugin decorate feature.
+
+
+
 ## FAQ
 
 ### Why name is **lupos**?
@@ -187,11 +201,11 @@ This library made a big progress, but I still hadn't discovered a solution to re
 
 #### 2022
 
-In 2022, on the bus heading to my hometown, I suddenly realized I can implement a TypeScript transformer, which simply inject `trackGet` and `trackSet` besides to do properties tracking, similar to what I did in 2013, but empowered by TypeScript. After a full cycle, everything go to it's origin.
+In 2022, on the bus heading to my hometown, I suddenly realized I can implement a TypeScript Transformer, which simply inject `trackGet` and `trackSet` besides to do properties tracking, similar to what I did in 2013, but empowered by TypeScript. After a full cycle, everything go to it's origin.
 
 
 #### 2024
 
-The work had finally began, what's unexpected is that it's much harder than I thought before. Even when it's nearly completed, I still wasn't sure it would work as what's expected.
+The work had finally began, what's unexpected is that it's much harder than I thought before.
 
-Finally it comes out, [flit](https://github.com/pucelle/flit) and some internal apps prove it worked, and efficient.
+Finally it comes out, [flit](https://github.com/pucelle/flit) and some internal apps prove it works, and efficient.
