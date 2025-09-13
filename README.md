@@ -134,7 +134,7 @@ class Example {
 		- `endTrack`: end capturing dependencies.
 		- `untrack(callback)`: remove all dependencies of a refresh callback.
 		- `trackGet`: when doing property getting, add a dependency.
-		- `trackSet`: when doing setting property, notify the dependency is changed.
+		- `trackSet`: when doing setting property, notify the dependency get changed.
 		- `trackGetDeeply`: when need to track all properties and descendant properties of an object recursively of an object as dependency. Like `JSON.stringify(...)`.
 		- `proxyOf`: proxy an object or an array, map or set (not weak map or weak set), and all the descendant properties of them. It's the final way of observing when other ways fail.
 
@@ -156,7 +156,7 @@ class Example {
 **lupos** is not perfect yet.
 
 - Can only work with TypeScript, and slows TypeScript compiling speed.
-- If a library made by **lupos**, normally places use this library should also be compiled by **lupos**. There are some alternative solutions existing, which will be provided when required.
+- If a library made by **lupos**, normally places use this library should also be compiled by **lupos**. There are some solutions existing, which will be provided when required.
 - Some expressions, like `let newItems = observedItems.filter(...)`, you may expect `newItems` to become observed, but in fact it's not. Plan to indicate observed state of expressions by vscode plugin decorate feature.
 
 
@@ -172,9 +172,16 @@ I hope this library will play the roles in my development just like **Lupos** in
 ![lupos-of-wow](images/lupos-of-wow.jpg)
 
 
+### Why created **lupos**?
 
-### What's origin of this library?
+I'm not satisfied with today's frameworks or libraries. They made tools for simplifying daily web development, but these tools becomes too complex, all what you are doing is to be trained using these tools, not design itself.
 
+In my early stage of work, I used [Ext.js](https://www.sencha.com/products/extjs/) framework much, it solves complex problems elegantly through component design. **Ext.js** has totally affected my code style, and way of thinking.
+
+**lupos** brings very few new concepts, and try to fill the missing parts on implementing components.
+
+
+### What's origin of **lupos**?
 
 #### 2013
 
