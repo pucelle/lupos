@@ -8,7 +8,7 @@
 
 It was designed to solve two problems in web programming, which are hard to solve by experience or programming design:
 
-- Observing data changes - by TypeScript aot analysis
+- Observing data changes - by TypeScript AOT analysis
 - Efficiently update after data changes - by pre-compiling template literal
 
 Currently it serves project [lupos.js](https://github.com/pucelle/lupos.js), and will serve [lupos.paint](https://github.com/pucelle/lupos.paint) later.
