@@ -62,15 +62,15 @@ Normally observed state of an object will broadcast to it's properties:
 
 
 
-#### Examples
+#### Example about how lupos compiling
 
 ```ts
 class Example implements Observed {
 	value: number = 0;
-	get(): number {
+	getValue(): number {
 		return this.value;
 	}
-	set(value: number) {
+	setValue(value: number) {
 		this.value = value;
 	}
 }
@@ -81,17 +81,16 @@ After compiled:
 ```js
 class Example {
 	value = 0;
-	get() {
+	getValue() {
 		trackGet(this, 'value');
 		return this.value;
 	}
-	set(value) {
+	setValue(value) {
 		trackSet(this, 'value');
 		this.value = value;
 	}
 }
 ```
-
 
 
 ### 2. Template compiling
