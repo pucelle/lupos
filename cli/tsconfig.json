@@ -2,7 +2,7 @@
     "compilerOptions": {
         "module": "CommonJS",
 		"moduleResolution": "Node",
-       	"target": "ES2023",
+       	"target": "ES2024",
 		"lib": ["ESNext", "DOM", "DOM.Iterable"],
 		"declaration": false,
 		"strict": true,
