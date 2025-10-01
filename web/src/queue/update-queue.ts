@@ -187,6 +187,12 @@ function untilDocumentComplete(): Promise<void> {
 
 /** Promise to be resolved after first paint complete. */
 let firstPaintPromise = /*#__PURE__*/(async () => {
+
+	// Avoid error in node environment.
+	if (typeof document === 'undefined') {
+		return
+	}
+
 	await untilDocumentComplete()
 	await untilUpdateComplete()
 	await sleep()
