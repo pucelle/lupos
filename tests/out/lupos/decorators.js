@@ -14,8 +14,8 @@ export class TestComputed extends Component {
     $reset_prop2() {
         trackSet(this, "prop2");
     }
-    constructor(el) {
-        super(el);
+    onCreated() {
+        super.onCreated();
         this.$prop2_computer = new ComputedMaker(this.$compute_prop2, this.$reset_prop2, this);
     }
     onConnected() {
@@ -36,8 +36,8 @@ export class TestComputedDerived extends TestComputed {
 export class TestEffect extends Component {
     propRead = 1;
     propWrite = 1;
-    constructor(el) {
-        super(el);
+    onCreated() {
+        super.onCreated();
         this.$onPropChangeEffect_effector = new EffectMaker(this.onPropChangeEffect, this);
     }
     onConnected() {
@@ -63,8 +63,8 @@ export class TestEffectDerived extends TestEffect {
 }
 export class TestWatchProperty extends Component {
     prop = 1;
-    constructor(el) {
-        super(el);
+    onCreated() {
+        super.onCreated();
         this.$onPropChange_watcher = new WatchMaker(function () { trackGet(this, 'prop'); return this.prop; }, this.onPropChange, this);
     }
     onConnected() {
@@ -86,8 +86,8 @@ export class TestWatchPropertyDerived extends TestWatchProperty {
 }
 export class TestWatchCallback extends Component {
     prop = 1;
-    constructor(el) {
-        super(el);
+    onCreated() {
+        super.onCreated();
         this.$onPropChange_watcher = new WatchMaker(function () { trackGet(this, "prop"); return this.prop; }, this.onPropChange, this);
     }
     onConnected() {
@@ -120,9 +120,7 @@ export class TestObservedImplemented {
 }
 export class TestConnectable {
     prop = 1;
-    constructor() {
-        this.$onPropChangeEffect_effector = new EffectMaker(this.onPropChangeEffect, this);
-    }
+    onCreated() { this.$onPropChangeEffect_effector = new EffectMaker(this.onPropChangeEffect, this); }
     onConnected() { this.$onPropChangeEffect_effector.connect(); }
     onWillDisconnect() { this.$onPropChangeEffect_effector.disconnect(); }
     onPropChangeEffect() {

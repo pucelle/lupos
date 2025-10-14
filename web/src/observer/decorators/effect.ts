@@ -10,6 +10,8 @@ import {getIncrementalOrder} from './order'
  * If a method decorated with `@effect`, both get and set type tracking can exist.
  * But if you instantiate `EffectMaker` by yourself, you should separate get and set
  * type of parts separately by move get or set part to a new method.
+ * 
+ * Note: it gets updated in initialization order of all effectors / computers / watchers.
  */
 export class EffectMaker {
 

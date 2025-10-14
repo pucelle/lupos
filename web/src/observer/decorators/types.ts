@@ -7,7 +7,9 @@ import {WatchOptions} from './watch'
  * and refresh only when required.
  * 
  * A clearing task will be enqueued after any visited dependencies get changed,
- * and .
+ * and to be enqueued each time after any visited dependencies get changed.
+ * 
+ * Note it gets updated in initialization order of all effectors / computers / watchers.
  * 
  * Decorated method can be overwritten, but should also be decorated.
  * 
@@ -25,6 +27,8 @@ export declare function computed(originalGetter: any, context: ClassGetterDecora
  * 
  * The effect action will be activated after instance initialized, in declaration order,
  * and to be enqueued each time after any visited dependencies get changed.
+ * 
+ * Note it gets updated in initialization order of all effectors / computers / watchers.
  * 
  * If your effect method is expensive, and don't like re-computing each time
  * after re-connected, consider using `@watch` or `@watchMulti`.
@@ -51,6 +55,8 @@ export declare function effect(originalMethod: any, context: ClassMethodDecorato
  * The watch action will be activated after instance initialized,
  * in declaration order, and to be called in the update queue.
  * and later be enqueued again when any visited dependencies get changed.
+ * 
+ * Note it gets updated in initialization order of all effectors / computers / watchers.
  * 
  * Otherwise current watch action would can't be released and GC if any dependencies still existing.
  * If you want to make sure watching things can be released, use `Watcher` APIs and release it yourself.
@@ -113,9 +119,12 @@ type InferMultiMethodParameters<T, PS extends ((() => any) | keyof T)[]>
 export interface Connectable {
 
 	/** 
-	 * Will re-connect all dependencies after connected.
-	 * Note don't call `connect` in constructor declaration.
+	 * After created.
+	 * Provide it for overwriting before calling super.
 	 */
+	onCreated(): void
+
+	/** Will re-connect all dependencies after connected. */
 	onConnected(): void
 
 	/** Will disconnect all dependencies before will disconnect. */

@@ -20,11 +20,11 @@ defineVisitor(function(node: ts.Node) {
 	let disconnect: MethodOverwrite | null = null
 	let hasDeletedContextVariables = false
 
-	// Be a `Connectable`, or a `Component`.
+	// Be a `Connectable` or a `Component`.
 	if (helper.class.isImplementedOf(node, 'Connectable', '@pucelle/lupos')
 		|| helper.objectLike.isDerivedOf(node, 'Component', '@pucelle/lupos.js')
 	) {
-		create = new MethodOverwrite(node, 'constructor')
+		create = new MethodOverwrite(node, 'onCreated')
 		connect = new MethodOverwrite(node, 'onConnected')
 		disconnect = new MethodOverwrite(node, 'onWillDisconnect')
 	}

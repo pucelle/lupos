@@ -28,6 +28,8 @@ const DefaultWatchOptions: WatchOptions = {
  * 
  * If wanting to watch several values, can use `MultipleWatchMaker`,
  * but note `MultipleWatchMaker` accepts no option.
+ * 
+ * Note: it gets updated in initialization order of all effectors / computers / watchers.
  */
 export class WatchMaker<V = any> {
 
@@ -108,6 +110,8 @@ type InferValueGetters<V extends any[]> = {[K in keyof V]: () => V[K]}
 /** 
  * Watch returned values of `getters` and calls `callback` after any of values become changed.
  * Normally use it to process the decoration of `@watchMulti.`
+ * 
+ * Note: it gets updated in initialization order of all effectors / computers / watchers.
  */
 export class WatchMultiMaker<V extends any[] = any> {
 

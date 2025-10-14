@@ -19,6 +19,7 @@
 		"./transformer": "./transformer/out/index.js"
 	},
 	"scripts": {
+		"build": "npm run build-cli && npm run build-web",
 		"build-cli": "cd cli && tsc -b",
 		"watch-cli": "cd cli && tsc -b -w",
 		"build-web": "cd web && node ../cli/bin/luc -e",

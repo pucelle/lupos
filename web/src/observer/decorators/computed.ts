@@ -13,6 +13,8 @@ const enum ComputedValueState {
 /** 
  * Make a similar computed getter from a getter function.
  * and automatically re-computing the value after any dependency changed.
+ * 
+ * Note: it gets updated in initialization order of all effectors / computers / watchers.
  */
 export class ComputedMaker<V = any> {
 

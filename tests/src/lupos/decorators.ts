@@ -93,8 +93,8 @@ export class TestConnectable implements Connectable, Observed {
 
 	prop: number = 1
 
+	onCreated() {}
 	onConnected() {}
-
 	onWillDisconnect() {}
 
 	@effect
