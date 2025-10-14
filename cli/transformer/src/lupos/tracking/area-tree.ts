@@ -1,12 +1,12 @@
 import * as ts from 'typescript'
 import {Packer, helper} from '../../core'
-import {TrackingScope} from './scope'
+import {TrackingArea} from './area'
 import {CapturedOutputWay, TrackingRange, TrackingRanges} from './ranges'
 import {ListMap} from '../../lupos-ts-module'
 import {TrackingPatch} from './patch'
 
 
-export enum TrackingScopeTypeMask {
+export enum TrackingAreaTypeMask {
 
 	/** Source file. */
 	SourceFile = 2 ** 0,
@@ -57,7 +57,7 @@ export enum TrackingScopeTypeMask {
 	/** 
 	 * Like content of `case xxx: ...`, `default ...`,
 	 * or a specified range to contain partial of a template literal.
-	 * A scope with `Range` must have `rangeStartNode` and `rangeEndNode` nodes.
+	 * An area with `Range` must have `rangeStartNode` and `rangeEndNode` nodes.
 	 * And `node` is the container node contains both `rangeStartNode` and `rangeEndNode` nodes.
 	 */
 	Range = 2 ** 12,
@@ -83,76 +83,79 @@ export enum TrackingScopeTypeMask {
 	 */
 	IterationContent = 2 ** 18,
 
-	/** `return`, `break`, `continue`, `yield `, `await`, and with content. */
+	/** 
+	 * `return`, `break`, `continue`, `yield `, `await`, and with content.
+	 * () => content, content also have this flag.
+	 */
 	FlowInterruption = 2 ** 19,
 }
 
-/** Tracking scope and node position. */
-export interface TrackingScopeTargetPosition{
-	scope: TrackingScope
+/** Tracking area and node position. */
+export interface TrackingAreaTargetPosition{
+	area: TrackingArea
 	toNode: ts.Node
 }
 
 
-export namespace TrackingScopeTree {
+export namespace TrackingAreaTree {
 
-	let stack: (TrackingScope | null)[] = []
+	let stack: (TrackingArea | null)[] = []
 	
-	export let current: TrackingScope | null = null
+	export let current: TrackingArea | null = null
 
-	/** Visit index -> scope list. */
-	const ScopeMap: ListMap<ts.Node, TrackingScope> = new ListMap()
+	/** Visit index -> area list. */
+	const AreaMap: ListMap<ts.Node, TrackingArea> = new ListMap()
 
-	/** Visit index -> scope list. */
-	const SpecifiedAdditionalScopeType: Map<ts.Node, 0 | TrackingScopeTypeMask> = new Map()
+	/** Visit index -> area list. */
+	const SpecifiedAdditionalAreaType: Map<ts.Node, 0 | TrackingAreaTypeMask> = new Map()
 
 
 	/** Initialize before visiting a new source file. */
 	export function init() {
 		stack = []
 		current = null
-		ScopeMap.clear()
-		SpecifiedAdditionalScopeType.clear()
+		AreaMap.clear()
+		SpecifiedAdditionalAreaType.clear()
 	}
 
 	/** Specifies additional type for a node. */
-	export function specifyType(node: ts.Node, additionalType: TrackingScopeTypeMask | 0) {
-		SpecifiedAdditionalScopeType.set(node, additionalType)
+	export function specifyType(node: ts.Node, additionalType: TrackingAreaTypeMask | 0) {
+		SpecifiedAdditionalAreaType.set(node, additionalType)
 	}
 
 
-	/** Check tracking scope type of a node. */
-	export function checkType(node: ts.Node): TrackingScopeTypeMask | 0 {
+	/** Check tracking area type of a node. */
+	export function checkType(node: ts.Node): TrackingAreaTypeMask | 0 {
 		let parent = node.parent
 		let type = 0
 
 		// Source file
 		if (ts.isSourceFile(node)) {
-			type |= TrackingScopeTypeMask.SourceFile
+			type |= TrackingAreaTypeMask.SourceFile
 		}
 
 		// Class
 		else if (ts.isClassLike(node)) {
-			type |= TrackingScopeTypeMask.Class
+			type |= TrackingAreaTypeMask.Class
 		}
 
 		// Function like
 		else if (helper.isFunctionLike(node)) {
-			type |= TrackingScopeTypeMask.FunctionLike
+			type |= TrackingAreaTypeMask.FunctionLike
 
 			if (helper.isInstantlyRunFunction(node) || TrackingPatch.isForceInstantlyRun(node)) {
-				type |= TrackingScopeTypeMask.InstantlyRunFunction
+				type |= TrackingAreaTypeMask.InstantlyRunFunction
 			}
 		}
 
 		// For `if...else if...`
 		else if (ts.isIfStatement(node)) {
-			type |= TrackingScopeTypeMask.Conditional
+			type |= TrackingAreaTypeMask.Conditional
 		}
 
 		// `a ? b : c`
 		else if (ts.isConditionalExpression(node)) {
-			type |= TrackingScopeTypeMask.Conditional
+			type |= TrackingAreaTypeMask.Conditional
 		}
 
 		//  `a && b`, `a || b`, `a ?? b`
@@ -163,17 +166,17 @@ export namespace TrackingScopeTree {
 				|| node.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken
 			)
 		) {
-			type |= TrackingScopeTypeMask.Conditional
+			type |= TrackingAreaTypeMask.Conditional
 		}
 
 		// `switch(...) {...}`
 		else if (ts.isSwitchStatement(node)) {
-			type |= TrackingScopeTypeMask.Switch
+			type |= TrackingAreaTypeMask.Switch
 		}
 
 		// `case ...`, `default ...`.
 		else if (ts.isCaseOrDefaultClause(node)) {
-			type |= TrackingScopeTypeMask.CaseDefault
+			type |= TrackingAreaTypeMask.CaseDefault
 		}
 
 		// Iteration
@@ -183,13 +186,14 @@ export namespace TrackingScopeTree {
 			|| ts.isWhileStatement(node)
 			|| ts.isDoStatement(node)
 		) {
-			type |= TrackingScopeTypeMask.Iteration
+			type |= TrackingAreaTypeMask.Iteration
 		}
 
 		// Flow stop, and has content.
-		// `break` and `continue` contains no expressions, so should not be a scope type.
-		else if (Packer.getFlowInterruptionType(node) > 0) {
-			type |= TrackingScopeTypeMask.FlowInterruption
+		// `break` and `continue` contains no expressions, so should not be a area type.
+		// Or default-returned content of arrow function `() => content`
+		if (Packer.getFlowInterruptionType(node) > 0) {
+			type |= TrackingAreaTypeMask.FlowInterruption
 		}
 
 
@@ -200,20 +204,20 @@ export namespace TrackingScopeTree {
 		// `if (...) ...`
 		if (ts.isIfStatement(parent)) {
 			if (node === parent.expression) {
-				type |= TrackingScopeTypeMask.ConditionalCondition
+				type |= TrackingAreaTypeMask.ConditionalCondition
 			}
 			else if (node === parent.thenStatement || node === parent.elseStatement) {
-				type |= TrackingScopeTypeMask.ConditionalContent
+				type |= TrackingAreaTypeMask.ConditionalContent
 			}
 		}
 
 		// `a ? b : c`
 		else if (ts.isConditionalExpression(parent)) {
 			if (node === parent.condition) {
-				type |= TrackingScopeTypeMask.ConditionalCondition
+				type |= TrackingAreaTypeMask.ConditionalCondition
 			}
 			else if (node === parent.whenTrue || node === parent.whenFalse) {
-				type |= TrackingScopeTypeMask.ConditionalContent
+				type |= TrackingAreaTypeMask.ConditionalContent
 			}
 		}
 
@@ -224,10 +228,10 @@ export namespace TrackingScopeTree {
 				|| parent.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken)
 			) {
 				if (node === parent.left) {
-					type |= TrackingScopeTypeMask.ConditionalCondition
+					type |= TrackingAreaTypeMask.ConditionalCondition
 				}
 				else if (node === parent.right) {
-					type |= TrackingScopeTypeMask.ConditionalContent
+					type |= TrackingAreaTypeMask.ConditionalContent
 				}
 			}
 		}
@@ -235,16 +239,16 @@ export namespace TrackingScopeTree {
 		// `for (;;) ...`
 		else if (ts.isForStatement(parent)) {
 			if (node === parent.initializer) {
-				type |= TrackingScopeTypeMask.IterationInitializer
+				type |= TrackingAreaTypeMask.IterationInitializer
 			}
 			else if (node === parent.condition) {
-				type |= TrackingScopeTypeMask.IterationCondition
+				type |= TrackingAreaTypeMask.IterationCondition
 			}
 			else if (node === parent.incrementor) {
-				type |= TrackingScopeTypeMask.IterationIncreasement
+				type |= TrackingAreaTypeMask.IterationIncreasement
 			}
 			else if (node === parent.statement) {
-				type |= TrackingScopeTypeMask.IterationContent
+				type |= TrackingAreaTypeMask.IterationContent
 			}
 		}
 
@@ -253,13 +257,13 @@ export namespace TrackingScopeTree {
 			|| ts.isForInStatement(parent)
 		) {
 			if (node === parent.initializer) {
-				type |= TrackingScopeTypeMask.IterationInitializer
+				type |= TrackingAreaTypeMask.IterationInitializer
 			}
 			else if (node === parent.expression) {
-				type |= TrackingScopeTypeMask.IterationExpression
+				type |= TrackingAreaTypeMask.IterationExpression
 			}
 			else if (node === parent.statement) {
-				type |= TrackingScopeTypeMask.IterationContent
+				type |= TrackingAreaTypeMask.IterationContent
 			}
 		}
 
@@ -268,42 +272,42 @@ export namespace TrackingScopeTree {
 			|| ts.isDoStatement(parent)
 		) {
 			if (node === parent.expression) {
-				type |= TrackingScopeTypeMask.IterationExpression
+				type |= TrackingAreaTypeMask.IterationExpression
 			}
 			else if (node === parent.statement) {
-				type |= TrackingScopeTypeMask.IterationContent
+				type |= TrackingAreaTypeMask.IterationContent
 			}
 		}
 
 		// `switch (...) ...`
 		else if (ts.isSwitchStatement(parent)) {
 			if (node === parent.expression) {
-				type |= TrackingScopeTypeMask.SwitchCondition
+				type |= TrackingAreaTypeMask.SwitchCondition
 			}
 		}
 
 		// `case (...) ...`
 		else if (ts.isCaseClause(parent)) {
 			if (node === parent.expression) {
-				type |= TrackingScopeTypeMask.CaseCondition
+				type |= TrackingAreaTypeMask.CaseCondition
 			}
 		}
 
 		// Add specified type.
-		type |= (SpecifiedAdditionalScopeType.get(node) || 0)
+		type |= (SpecifiedAdditionalAreaType.get(node) || 0)
 
 		return type
 	}
 
-	/** Create a scope from node and push to stack. */
-	export function createScope(type: TrackingScopeTypeMask, node: ts.Node, range: TrackingRange | null = null): TrackingScope {
-		let scope = new TrackingScope(type, node, current, range)
+	/** Create an area from node and push to stack. */
+	export function createArea(type: TrackingAreaTypeMask, node: ts.Node, range: TrackingRange | null = null): TrackingArea {
+		let area = new TrackingArea(type, node, current, range)
 
-		ScopeMap.add(node, scope)
+		AreaMap.add(node, area)
 		stack.push(current)
 
 		if (range) {
-			TrackingRanges.setScopeByRangeId(range.id, scope)
+			TrackingRanges.setAreaByRangeId(range.id, area)
 		}
 
 		// Child `case/default` statements start a content range.
@@ -314,24 +318,24 @@ export namespace TrackingScopeTree {
 					node,
 					statements[0],
 					statements[statements.length - 1],
-					TrackingScopeTypeMask.CaseDefaultContent,
+					TrackingAreaTypeMask.CaseDefaultContent,
 					CapturedOutputWay.FollowNode
 				)
 			}
 		}
 
-		return current = scope
+		return current = area
 	}
 
-	/** Pop scope. */
+	/** Pop area. */
 	export function pop() {
 		current!.beforeExit()
 		current = stack.pop()!
 	}
 
 	/** 
-	 * Visit scope node and each descendant node within current scope.
-	 * Recently all child scopes have been visited.
+	 * Visit area node and each descendant node within current area.
+	 * Recently all child areas have been visited.
 	 */
 	export function visitNode(node: ts.Node) {
 		if (current) {
@@ -341,57 +345,57 @@ export namespace TrackingScopeTree {
 
 
 
-	/** Returns whether scope with type may run or not run. */
-	export function mayRunOrNot(type: TrackingScopeTypeMask): boolean {
+	/** Returns whether area with type may run or not run. */
+	export function mayRunOrNot(type: TrackingAreaTypeMask): boolean {
 		return (type & (
-			TrackingScopeTypeMask.ConditionalContent
-			| TrackingScopeTypeMask.IterationIncreasement
-			| TrackingScopeTypeMask.IterationContent
-			| TrackingScopeTypeMask.CaseDefaultContent
+			TrackingAreaTypeMask.ConditionalContent
+			| TrackingAreaTypeMask.IterationIncreasement
+			| TrackingAreaTypeMask.IterationContent
+			| TrackingAreaTypeMask.CaseDefaultContent
 		)) > 0
 	}
 
-	/** Get scope by node. */
-	export function get(node: ts.Node): TrackingScope | undefined {
-		let scopes = ScopeMap.get(node)
-		return scopes?.[scopes.length - 1]
+	/** Get area by node. */
+	export function get(node: ts.Node): TrackingArea | undefined {
+		let areas = AreaMap.get(node)
+		return areas?.[areas.length - 1]
 	}
 
-	/** Find closest scope contains or equals node. */
-	export function findClosest(node: ts.Node): TrackingScope {
-		let scopes = ScopeMap.get(node)
+	/** Find closest area contains or equals node. */
+	export function findClosest(node: ts.Node): TrackingArea {
+		let areas = AreaMap.get(node)
 
-		while (!scopes) {
+		while (!areas) {
 			node = node.parent!
-			scopes = ScopeMap.get(node)
+			areas = AreaMap.get(node)
 		}
 
-		return scopes[scopes.length - 1]
+		return areas[areas.length - 1]
 	}
 
 	/** 
-	 * Walk scope itself and descendants.
+	 * Walk area itself and descendants.
 	 * Always walk descendants before self.
 	 */
-	export function* walkInwardChildFirst(scope: TrackingScope, filter?: (scope: TrackingScope) => boolean): Iterable<TrackingScope> {
-		if (!filter || filter(scope)) {
-			for (let child of scope.children) {
+	export function* walkInwardChildFirst(area: TrackingArea, filter?: (area: TrackingArea) => boolean): Iterable<TrackingArea> {
+		if (!filter || filter(area)) {
+			for (let child of area.children) {
 				yield* walkInwardChildFirst(child, filter)
 			}
 	
-			yield scope
+			yield area
 		}
 	}
 
 	/** 
-	 * Walk scope itself and descendants.
+	 * Walk area itself and descendants.
 	 * Always walk descendants after self.
 	 */
-	export function* walkInwardSelfFirst(scope: TrackingScope, filter?: (scope: TrackingScope) => boolean): Iterable<TrackingScope> {
-		if (!filter || filter(scope)) {
-			yield scope
+	export function* walkInwardSelfFirst(area: TrackingArea, filter?: (area: TrackingArea) => boolean): Iterable<TrackingArea> {
+		if (!filter || filter(area)) {
+			yield area
 		
-			for (let child of scope.children) {
+			for (let child of area.children) {
 				yield* walkInwardSelfFirst(child, filter)
 			}
 		}
@@ -399,12 +403,12 @@ export namespace TrackingScopeTree {
 
 
 	/** 
-	 * Find an ancestral index and scope, which can add statements to before it.
+	 * Find an ancestral index and area, which can add statements to before it.
 	 * If current position can add statements, return current position.
-	 * Must before current position, and must not cross any conditional or iteration scope.
+	 * Must before current position, and must not cross any conditional or iteration area.
 	 */
-	export function findClosestPositionToAddStatements(fromNode: ts.Node, from: TrackingScope): TrackingScopeTargetPosition {
-		let scope = from
+	export function findClosestPositionToAddStatements(fromNode: ts.Node, from: TrackingArea): TrackingAreaTargetPosition {
+		let area = from
 		let toNode = fromNode
 
 		while (true) {
@@ -420,35 +424,35 @@ export namespace TrackingScopeTree {
 			// `{...}`, insert before toNode.
 			if (Packer.canPutStatements(toNode.parent)) {
 
-				// scope of toNode.parent.
-				if (toNode === scope.node) {
-					scope = scope.parent!
+				// area of toNode.parent.
+				if (toNode === area.node) {
+					area = area.parent!
 				}
 				break
 			}
 
-			// To outer scope.
-			if (toNode === scope.node) {
+			// To outer area.
+			if (toNode === area.node) {
 				
-				// Can't cross these types of scopes, will end at the inner start of them.
-				if (scope.type & (
-					TrackingScopeTypeMask.ConditionalContent
-					| TrackingScopeTypeMask.IterationCondition
-					| TrackingScopeTypeMask.IterationIncreasement
-					| TrackingScopeTypeMask.IterationExpression
-					| TrackingScopeTypeMask.IterationContent
+				// Can't cross these types of areas, will end at the inner start of them.
+				if (area.type & (
+					TrackingAreaTypeMask.ConditionalContent
+					| TrackingAreaTypeMask.IterationCondition
+					| TrackingAreaTypeMask.IterationIncreasement
+					| TrackingAreaTypeMask.IterationExpression
+					| TrackingAreaTypeMask.IterationContent
 				)) {
 					break
 				}
 
-				scope = scope.parent!
+				area = area.parent!
 			}
 
 			toNode = toNode.parent
 		}
 
 		return {
-			scope,
+			area,
 			toNode,
 		}
 	}

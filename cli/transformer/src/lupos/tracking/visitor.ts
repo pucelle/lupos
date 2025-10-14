@@ -1,6 +1,6 @@
 import * as ts from 'typescript'
 import {defineVisitor} from '../../core'
-import {TrackingScopeTree, TrackingScopeTypeMask} from './scope-tree'
+import {TrackingAreaTree, TrackingAreaTypeMask} from './area-tree'
 import {TrackingReferences} from './references'
 import {TrackingPatch} from './patch'
 import {TrackingRanges} from './ranges'
@@ -11,42 +11,42 @@ defineVisitor(function(node: ts.Node) {
 
 	// Initialize
 	if (ts.isSourceFile(node)) {
-		TrackingScopeTree.init()
+		TrackingAreaTree.init()
 		TrackingRanges.init()
 		TrackingReferences.init()
 		TrackingPatch.init()
 	}
 
-	// Check scope type.
+	// Check area type.
 	let ranges = TrackingRanges.getRangesByStartNode(node)
 	if (ranges) {
 		for (let range of ranges) {
-			TrackingScopeTree.createScope(range.scopeType, node, range)
+			TrackingAreaTree.createArea(range.areaType, node, range)
 		}
 	}
 
-	// Check scope type.
-	let type = TrackingScopeTree.checkType(node)
+	// Check area type.
+	let type = TrackingAreaTree.checkType(node)
 	if (type !== 0) {
-		TrackingScopeTree.createScope(type, node)
+		TrackingAreaTree.createArea(type, node)
 	}
 	
 	// after visited children.
 	return () => {
-		TrackingScopeTree.visitNode(node)
+		TrackingAreaTree.visitNode(node)
 
 		// Non content range type.
 		if (type !== 0) {
-			TrackingScopeTree.pop()
+			TrackingAreaTree.pop()
 		}
 
-		// If current scope is range type,
+		// If current area is range type,
 		// it get popped on when match range end node.
-		while (TrackingScopeTree.current
-			&& TrackingScopeTree.current.type & TrackingScopeTypeMask.Range
+		while (TrackingAreaTree.current
+			&& TrackingAreaTree.current.type & TrackingAreaTypeMask.Range
 		) {
-			if (node === TrackingScopeTree.current.range!.endNode) {
-				TrackingScopeTree.pop()
+			if (node === TrackingAreaTree.current.range!.endNode) {
+				TrackingAreaTree.pop()
 			}
 			else {
 				break

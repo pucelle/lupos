@@ -1,7 +1,7 @@
 import {factory, InterpolationContentType, Interpolator, Modifier, VisitTree, DeclarationScopeTree, helper} from '../../core'
 import * as ts from 'typescript'
-import {TrackingScopeTree} from './scope-tree'
-import {TrackingScope} from './scope'
+import {TrackingAreaTree} from './area-tree'
+import {TrackingArea} from './area'
 
 
 /** 
@@ -35,7 +35,7 @@ export namespace TrackingReferences {
 	}
 
 	/** Reference exp and name part of an access node if needed. */
-	export function mayReferenceAccess(accessNode: ts.Expression, toNode: ts.Node, scope: TrackingScope) {
+	export function mayReferenceAccess(accessNode: ts.Expression, toNode: ts.Node, area: TrackingArea) {
 		if (!helper.access.isAccess(accessNode)) {
 			return
 		}
@@ -45,13 +45,13 @@ export namespace TrackingReferences {
 
 		// Use a reference variable to replace expression.
 		if (shouldReference(expNode, toNode)) {
-			reference(expNode, scope)
+			reference(expNode, area)
 			ReferencedNodes.add(expNode)
 		}
 
 		// Use a reference variable to replace name.
 		if (shouldReference(nameNode, toNode)) {
-			reference(nameNode, scope)
+			reference(nameNode, area)
 			ReferencedNodes.add(nameNode)
 		}
 	}
@@ -61,11 +61,11 @@ export namespace TrackingReferences {
 	 * Reference an expression if needed.
 	 * Note `expNode` may not be raw node.
 	 */
-	export function mayReferenceExp(expNode: ts.Expression, toNode: ts.Node, scope: TrackingScope) {
+	export function mayReferenceExp(expNode: ts.Expression, toNode: ts.Node, area: TrackingArea) {
 
 		// Use a reference variable to replace expression.
 		if (shouldReference(expNode, toNode)) {
-			reference(expNode, scope)
+			reference(expNode, area)
 			ReferencedNodes.add(expNode)
 		}
 	}
@@ -155,8 +155,8 @@ export namespace TrackingReferences {
 	 * 	   `a.b().c`-> `$ref_0 = a.b(); ... $ref_`
 	 *     `a[b++]` -> `$ref_0 = b++; ... a[$ref_0]`
 	 */
-	function reference(node: ts.Node, scope: TrackingScope) {
-		let varDeclListNode = helper.findOutwardUntil(node, scope.node, ts.isVariableDeclaration)
+	function reference(node: ts.Node, area: TrackingArea) {
+		let varDeclListNode = helper.findOutwardUntil(node, area.node, ts.isVariableDeclaration)
 		let varScope = DeclarationScopeTree.findClosest(node).findClosestToAddStatements()
 		let refName = varScope.makeUniqueVariable('$ref_')
 
@@ -172,8 +172,8 @@ export namespace TrackingReferences {
 
 		// Insert two: `var $ref_0`, and `$ref_0 = ...`
 		else {
-			let refPosition = TrackingScopeTree.findClosestPositionToAddStatements(node, scope)
-			let declAssignTogether = varScope.node === refPosition.scope.node
+			let refPosition = TrackingAreaTree.findClosestPositionToAddStatements(node, area)
+			let declAssignTogether = varScope.node === refPosition.area.node
 
 			if (!DeclarationScopeTree.canSafelyMoveBeforeNode(node, refPosition.toNode)) {
 

@@ -26,12 +26,23 @@ function parseCSSTemplate(node: ts.TaggedTemplateExpression) {
 	Interpolator.replace(node, InterpolationContentType.Normal, () => {
 		let replaced: ts.Expression | null = null
 
-		// Output as string.
+		// Output as template literal css`...`.
 		if (ts.isNoSubstitutionTemplateLiteral(template)) {
-			replaced = factory.createStringLiteral(strings![0].text)
+			let text = strings![0].text
+
+			replaced = factory.createTaggedTemplateExpression(
+				factory.createIdentifier('css'),
+				undefined,
+				factory.createNoSubstitutionTemplateLiteral(
+					text,
+					text
+				)
+			)
+			
+			factory.createStringLiteral(strings![0].text)
 		}
 
-		// Output as `css` function call.
+		// Output as `css(...)` function call.
 		else {
 			let stringTexts = strings?.map(v => v.text) ?? ['', '']
 			let oldSpans = template.templateSpans

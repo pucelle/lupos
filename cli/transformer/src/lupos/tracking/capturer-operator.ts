@@ -2,8 +2,8 @@ import * as ts from 'typescript'
 import {VisitTree, DeclarationScopeTree, helper, FlowInterruptionTypeMask} from '../../core'
 import {removeFromList} from '../../utils'
 import {CapturedItem, TrackingCapturer} from './capturer'
-import {TrackingScope} from './scope'
-import {TrackingScopeTree, TrackingScopeTypeMask} from './scope-tree'
+import {TrackingArea} from './area'
+import {TrackingAreaTree, TrackingAreaTypeMask} from './area-tree'
 import {CapturedHash, CapturedHashing, CapturedHashMap} from './captured-hashing'
 
 
@@ -14,11 +14,11 @@ import {CapturedHash, CapturedHashing, CapturedHashMap} from './captured-hashing
 export class TrackingCapturerOperator {
 
 	readonly capturer: TrackingCapturer
-	readonly scope: TrackingScope
+	readonly area: TrackingArea
 	
 	constructor(capturer: TrackingCapturer) {
 		this.capturer = capturer
-		this.scope = capturer.scope
+		this.area = capturer.area
 	}
 
 	/** Normally move captured items to an sibling capturer. */
@@ -55,8 +55,8 @@ export class TrackingCapturerOperator {
 	safelyMoveCapturedItemsOutwardTo(items: Iterable<CapturedItem>, toCapturer: TrackingCapturer): CapturedItem[] {
 
 		// Note these are declaration scopes, not tracking scopes.
-		let fromScope = this.scope.getDeclarationScope()
-		let toScope = toCapturer.scope.getDeclarationScope()
+		let fromScope = this.area.getDeclarationScope()
+		let toScope = toCapturer.area.getDeclarationScope()
 
 		let scopesLeaves = DeclarationScopeTree.findWalkingOutwardLeaves(fromScope, toScope)
 		let residualItems: CapturedItem[] = []
@@ -65,16 +65,16 @@ export class TrackingCapturerOperator {
 		let haveAwaitExpressionInLeaves = false
 
 		for (let scopeLeaves of scopesLeaves) {
-			let trackingScope = TrackingScopeTree.get(scopeLeaves.node)
+			let trackingScope = TrackingAreaTree.get(scopeLeaves.node)
 			if (!trackingScope) {
 				continue
 			}
 
-			if ((trackingScope.type & TrackingScopeTypeMask.Iteration) === 0) {
+			if ((trackingScope.type & TrackingAreaTypeMask.Iteration) === 0) {
 				continue
 			}
 
-			let nonContentChildren = trackingScope.children.filter(s => (s.type & TrackingScopeTypeMask.IterationContent) === 0)
+			let nonContentChildren = trackingScope.children.filter(s => (s.type & TrackingAreaTypeMask.IterationContent) === 0)
 			haveAwaitExpressionInLeaves = nonContentChildren.some(s => s.state.flowInterruptionType & FlowInterruptionTypeMask.Await)
 
 			if (haveAwaitExpressionInLeaves) {
@@ -87,8 +87,8 @@ export class TrackingCapturerOperator {
 		// If can't find, use the last one.
 		let group = toCapturer.captured.find(item => {
 			return haveAwaitExpressionInLeaves
-				? VisitTree.isPrecedingOfOrEqual(this.scope.node, item.toNode)
-				: VisitTree.isPrecedingOfOrEqualInChildFirstOrder(this.scope.node, item.toNode)
+				? VisitTree.isPrecedingOfOrEqual(this.area.node, item.toNode)
+				: VisitTree.isPrecedingOfOrEqualInChildFirstOrder(this.area.node, item.toNode)
 		}) ?? toCapturer.latestCaptured
 
 		for (let item of items) {
@@ -181,8 +181,8 @@ export class TrackingCapturerOperator {
 
 			// Every time after updated hash map,
 			// recursively eliminating not processed child contexts in the preceding.
-			for (; startChildIndex < this.scope.children.length; startChildIndex++) {
-				let child = this.scope.children[startChildIndex]
+			for (; startChildIndex < this.area.children.length; startChildIndex++) {
+				let child = this.area.children[startChildIndex]
 
 				// Child must in the preceding or equal of current group `toNode`.
 				if (!VisitTree.isPrecedingOfOrEqual(child.node, group.toNode)) {
@@ -200,12 +200,12 @@ export class TrackingCapturerOperator {
 
 		// Last captured item may have wrong `toNode` because it haven't been break.
 		// Here ensure to visit all rest child contexts.
-		for (; startChildIndex < this.scope.children.length; startChildIndex++) {
-			let child = this.scope.children[startChildIndex]
+		for (; startChildIndex < this.area.children.length; startChildIndex++) {
+			let child = this.area.children[startChildIndex]
 
 			// Not function, or instantly run function.
-			if ((child.type & TrackingScopeTypeMask.FunctionLike) === 0
-				|| (child.type & TrackingScopeTypeMask.InstantlyRunFunction)
+			if ((child.type & TrackingAreaTypeMask.FunctionLike) === 0
+				|| (child.type & TrackingAreaTypeMask.InstantlyRunFunction)
 			) {
 				child.capturer.operator.eliminateRepetitiveRecursively(ownHashMap)
 			}
@@ -260,7 +260,7 @@ export class TrackingCapturerOperator {
 			})
 		}
 
-		for (let child of this.scope.children) {
+		for (let child of this.area.children) {
 			child.capturer.operator.removeCapturedRecursively(toRemove)
 		}
 	}

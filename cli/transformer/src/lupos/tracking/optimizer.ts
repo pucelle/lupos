@@ -1,95 +1,95 @@
 import * as ts from 'typescript'
 import {Modifier, helper} from '../../core'
-import {TrackingScope} from './scope'
-import {TrackingScopeTree, TrackingScopeTypeMask} from './scope-tree'
+import {TrackingArea} from './area'
+import {TrackingAreaTree, TrackingAreaTypeMask} from './area-tree'
 import {CapturedHashMap} from './captured-hashing'
 import {TrackingPatch} from './patch'
 
 
 /**
  * 0. Should find a way to hash access expression.
- * 1. If parent scope has a captured, child scopes should eliminate it.
- * 2. If all conditional scopes have same captured, move it higher.
- * 3. Try to move captured from iteration scope higher.
+ * 1. If parent area has a captured, child areas should eliminate it.
+ * 2. If all conditional areas have same captured, move it higher.
+ * 3. Try to move captured from iteration area higher.
  * 4. If previous captured has a captured, should eliminate it from following captured.
  */
 export namespace Optimizer {
 
 	/** 
-	 * Optimize each scope before it will exit.
-	 * All child scopes must have been optimized.
+	 * Optimize each area before it will exit.
+	 * All child areas must have been optimized.
 	 */
-	export function optimize(scope: TrackingScope) {
+	export function optimize(area: TrackingArea) {
 
 		// `return a.b` -> `track(a.b); return ...`
-		if (scope.type & TrackingScopeTypeMask.FlowInterruption) {
-			moveFlowInterruptionCapturedOutward(scope)
+		if (area.type & TrackingAreaTypeMask.FlowInterruption) {
+			moveFlowInterruptionCapturedOutward(area)
 		}
 
 		// `if (...) {a.b} else {a.b}` -> `track(a.b); if ...`
-		if (scope.type & TrackingScopeTypeMask.Conditional) {
-			mergeConditionalContentCapturedBranches(scope)
+		if (area.type & TrackingAreaTypeMask.Conditional) {
+			mergeConditionalContentCapturedBranches(area)
 		}
 
 		// `if (a.b) ...`-> `track(a.b); if ...`
-		if (scope.type & TrackingScopeTypeMask.ConditionalCondition
-			|| scope.type & TrackingScopeTypeMask.SwitchCondition
+		if (area.type & TrackingAreaTypeMask.ConditionalCondition
+			|| area.type & TrackingAreaTypeMask.SwitchCondition
 		) {
-			moveAnyConditionCapturedOutward(scope)
+			moveAnyConditionCapturedOutward(area)
 		}
 
 		// `if (a.b && a.c) {a.c}` -> Remove `track(a.c)` from content.`
-		if (scope.type & TrackingScopeTypeMask.ConditionalContent) {
-			eliminateRepetitiveFromContentByCondition(scope)
+		if (area.type & TrackingAreaTypeMask.ConditionalContent) {
+			eliminateRepetitiveFromContentByCondition(area)
 		}
 
 		// `case a.b: ... case a.b + 1: ...` -> `track(a.b); ...`
 		// `if (a.b) ...`-> `track(a.b); if ...`
-		if (scope.type & TrackingScopeTypeMask.Switch) {
-			moveCaseConditionCapturedBranchesOutward(scope)
-			mergeCaseContentCapturedBranches(scope)
+		if (area.type & TrackingAreaTypeMask.Switch) {
+			moveCaseConditionCapturedBranchesOutward(area)
+			mergeCaseContentCapturedBranches(area)
 		}
 
 		// `for(let c = a.b;)` -> `track(a.b); for ...`.
-		if (scope.type & TrackingScopeTypeMask.IterationInitializer) {
-			moveIterationInitializerCapturedOutward(scope)
+		if (area.type & TrackingAreaTypeMask.IterationInitializer) {
+			moveIterationInitializerCapturedOutward(area)
 		}
 
 		// `for (let c = 0; c < a.b; )` -> `track(a.b); for...`
 		// `for (let a = xx; a.b; )` -> `for (...) {track(a.b); ...}`
-		if (scope.type & TrackingScopeTypeMask.IterationCondition
-			|| scope.type & TrackingScopeTypeMask.IterationIncreasement
-			|| scope.type & TrackingScopeTypeMask.IterationExpression
+		if (area.type & TrackingAreaTypeMask.IterationCondition
+			|| area.type & TrackingAreaTypeMask.IterationIncreasement
+			|| area.type & TrackingAreaTypeMask.IterationExpression
 		) {
-			moveIterationConditionIncreasementCapturedOutward(scope)
-			moveIterationConditionIncreasementCapturedToIterationContent(scope)
+			moveIterationConditionIncreasementCapturedOutward(area)
+			moveIterationConditionIncreasementCapturedToIterationContent(area)
 		}
 
 		// This optimizing has low risk, loop codes may not run when do 0 loop.
 		// Must after `moveIterationConditionIncreasementCapturedToIterationContent` step.
 		// `for (...) {a.b}` -> `track(a.b); for ...
 		// `for (let i; ...) {a[i]}` -> `for (...) {}; track(a, '');`
-		if (scope.type & TrackingScopeTypeMask.IterationContent) {
-			moveIterationContentCapturedOutward(scope)
-			moveIterationContentDynamicIndexCapturedOutward(scope)
+		if (area.type & TrackingAreaTypeMask.IterationContent) {
+			moveIterationContentCapturedOutward(area)
+			moveIterationContentDynamicIndexCapturedOutward(area)
 		}
 
 		// This optimizing has low risk, array methods may not run when have no items.
 		// `[].map(i => {i + a.b})` -> `track(a.b); [].map...`
-		if (scope.type & TrackingScopeTypeMask.InstantlyRunFunction) {
-			moveInstantlyRunFunctionCapturedOutward(scope)
+		if (area.type & TrackingAreaTypeMask.InstantlyRunFunction) {
+			moveInstantlyRunFunctionCapturedOutward(area)
 		}
 
 		// Eliminate repetitive.
 		// `track(a.b); if (...) {track(a.b)}` -> `track(a.b); if (...) {}`
-		if (scope.type & TrackingScopeTypeMask.FunctionLike) {
-			eliminateRepetitiveCapturedRecursively(scope)
+		if (area.type & TrackingAreaTypeMask.FunctionLike) {
+			eliminateRepetitiveCapturedRecursively(area)
 		}
 
 		// Eliminate private and don't have both get and set capture types.
 		// `class {private prop}`, has only `prop` getting, or only setting -> remove it.
-		if (scope.type & TrackingScopeTypeMask.Class) {
-			eliminatePrivateUniqueTrackingType(scope)
+		if (area.type & TrackingAreaTypeMask.Class) {
+			eliminatePrivateUniqueTrackingType(area)
 		}
 	}
 
@@ -98,20 +98,20 @@ export namespace Optimizer {
 	 * Move flow interruption captured outward.
 	 * `return a.b` -> `track(a.b); return ...`
 	 */
-	function moveFlowInterruptionCapturedOutward(scope: TrackingScope) {
-		if (!scope.capturer.hasCaptured()) {
+	function moveFlowInterruptionCapturedOutward(area: TrackingArea) {
+		if (!area.capturer.hasCaptured()) {
 			return
 		}
 
 		// Can't across conditional content.
-		if (scope.type & TrackingScopeTypeMask.ConditionalContent) {
+		if (area.type & TrackingAreaTypeMask.ConditionalContent) {
 			return
 		}
 
 		// parent of flow interruption.
-		let targetScope = scope.parent!
+		let targetArea = area.parent!
 
-		scope.capturer.operator.safelyMoveCapturedOutwardTo(targetScope.capturer)
+		area.capturer.operator.safelyMoveCapturedOutwardTo(targetArea.capturer)
 	}
 
 
@@ -120,8 +120,8 @@ export namespace Optimizer {
 	 * `if (a.b) ...`-> `track(a.b); if ...`
 	 * `switch (a.b) ...`-> `track(a.b); switch ...`
 	 */
-	function moveAnyConditionCapturedOutward(scope: TrackingScope) {
-		if (!scope.capturer.hasCaptured()) {
+	function moveAnyConditionCapturedOutward(area: TrackingArea) {
+		if (!area.capturer.hasCaptured()) {
 			return
 		}
 
@@ -131,20 +131,20 @@ export namespace Optimizer {
 		// Conditional
 
 		// Look for the end of `ConditionalCondition` chain.
-		let conditionScope = scope
-		while (conditionScope.parent!.type & TrackingScopeTypeMask.ConditionalCondition) {
-			conditionScope = conditionScope.parent!
+		let conditionArea = area
+		while (conditionArea.parent!.type & TrackingAreaTypeMask.ConditionalCondition) {
+			conditionArea = conditionArea.parent!
 		}
 
 		// parent of conditional or switch.
-		let targetScope = conditionScope.parent!.parent!
+		let targetArea = conditionArea.parent!.parent!
 
 		// Can't across `ConditionalContent`, so move to Conditional.
-		if (conditionScope.parent!.type & TrackingScopeTypeMask.ConditionalContent) {
-			targetScope = conditionScope.parent!
+		if (conditionArea.parent!.type & TrackingAreaTypeMask.ConditionalContent) {
+			targetArea = conditionArea.parent!
 		}
 
-		scope.capturer.operator.safelyMoveCapturedOutwardTo(targetScope.capturer)
+		area.capturer.operator.safelyMoveCapturedOutwardTo(targetArea.capturer)
 	}
 
 
@@ -152,9 +152,9 @@ export namespace Optimizer {
 	 * Eliminate capture from conditional content, when repetitive with binary and right part.
 	 * `if (a.b && a.c) {a.c}` -> Remove `track(a.c)` from content.
 	 */
-	function eliminateRepetitiveFromContentByCondition(scope: TrackingScope) {
-		let condition = scope.parent!.children.find(s => s.type & TrackingScopeTypeMask.ConditionalCondition)
-		let content = scope
+	function eliminateRepetitiveFromContentByCondition(area: TrackingArea) {
+		let condition = area.parent!.children.find(s => s.type & TrackingAreaTypeMask.ConditionalCondition)
+		let content = area
 
 		if (!condition || !content) {
 			return
@@ -169,28 +169,28 @@ export namespace Optimizer {
 		content.capturer.operator.eliminateRepetitiveRecursively(conditionHashMap)
 	}
 
-	/** Walk for partial scopes that must run. */
-	function *walkForMustRunParts(scope: TrackingScope): Iterable<TrackingScope> {
-		if (scope.type & TrackingScopeTypeMask.CaseDefaultContent) {
+	/** Walk for partial areas that must run. */
+	function *walkForMustRunParts(area: TrackingArea): Iterable<TrackingArea> {
+		if (area.type & TrackingAreaTypeMask.CaseDefaultContent) {
 			return
 		}
 
-		yield scope
+		yield area
 
-		if (scope.type & TrackingScopeTypeMask.Conditional) {
+		if (area.type & TrackingAreaTypeMask.Conditional) {
 
 			// Both parts of `a && b`.
-			if (ts.isBinaryExpression(scope.node)
-				&& scope.node.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken
+			if (ts.isBinaryExpression(area.node)
+				&& area.node.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken
 			) {
-				for (let child of scope.children) {
+				for (let child of area.children) {
 					yield* walkForMustRunParts(child)
 				}
 			}
 
 			// Left parts of `a && b`, or `a ? b : c`.
 			else {
-				let condition = scope.children.find(s => s.type & TrackingScopeTypeMask.ConditionalCondition)
+				let condition = area.children.find(s => s.type & TrackingAreaTypeMask.ConditionalCondition)
 				if (condition) {
 					yield *walkForMustRunParts(condition)
 				}
@@ -203,13 +203,13 @@ export namespace Optimizer {
 	 * Merge all branches captured and move outward.
 	 * `if (...) {a.b} else {a.b}` -> `track(a.b); if ...`
 	 */
-	function mergeConditionalContentCapturedBranches(scope: TrackingScope) {
-		let contentChildren = scope.children.filter(child => {
-			return child.type & TrackingScopeTypeMask.ConditionalContent
+	function mergeConditionalContentCapturedBranches(area: TrackingArea) {
+		let contentChildren = area.children.filter(child => {
+			return child.type & TrackingAreaTypeMask.ConditionalContent
 		})
 
-		// Must have both two branches.
-		let canMerge = contentChildren.length >= 2
+		// Must have both two branches, and each have some captured.
+		let canMerge = contentChildren.length >= 2 && contentChildren.every(child => child.capturer.hasCaptured())
 		if (!canMerge) {
 			return
 		}
@@ -222,31 +222,31 @@ export namespace Optimizer {
 		let sharedMap = CapturedHashMap.fromCapturersIntersection(capturers)
 		
 		// parent of conditional or switch.
-		let targetScope = scope.parent!
+		let targetArea = area.parent!
 
 		// Can't across `ConditionalContent`, move to Conditional.
-		if (scope.type & TrackingScopeTypeMask.ConditionalContent) {
-			targetScope = scope
+		if (area.type & TrackingAreaTypeMask.ConditionalContent) {
+			targetArea = area
 		}
 
-		contentChildren[0].capturer.operator.safelyMoveCapturedItemsOutwardTo(sharedMap.items(), targetScope.capturer)
+		contentChildren[0].capturer.operator.safelyMoveCapturedItemsOutwardTo(sharedMap.items(), targetArea.capturer)
 	}
 
 
 	/** 
-	 * Move all case condition captured and move outward.
+	 * Move all case condition captured to outward.
 	 * `case a.b: ... case a.c: ...` -> `track(a.b, a.c); ...`
 	 */
-	function moveCaseConditionCapturedBranchesOutward(scope: TrackingScope) {
-		let caseConditionChildren = scope.children.map(child => child.children).flat().filter(child => {
-			return child.type & TrackingScopeTypeMask.CaseCondition
+	function moveCaseConditionCapturedBranchesOutward(area: TrackingArea) {
+		let caseConditionChildren = area.children.map(child => child.children).flat().filter(child => {
+			return child.type & TrackingAreaTypeMask.CaseCondition
 		})
 
 		let capturers = caseConditionChildren.map(c => c.capturer)
-		let targetScope = scope.parent!
+		let targetArea = area.parent!
 
 		for (let capturer of capturers) {
-			capturer.operator.safelyMoveCapturedOutwardTo(targetScope.capturer)
+			capturer.operator.safelyMoveCapturedOutwardTo(targetArea.capturer)
 		}
 	}
 
@@ -255,9 +255,9 @@ export namespace Optimizer {
 	 * Merge all case content captured and move outward.
 	 * `case xxx: a.b; case xxx: a.b` -> `track(a.b); ...`
 	 */
-	function mergeCaseContentCapturedBranches(scope: TrackingScope) {
-		let caseContentChildren = scope.children.map(child => child.children).flat().filter(child => {
-			return child.type & TrackingScopeTypeMask.CaseDefaultContent
+	function mergeCaseContentCapturedBranches(area: TrackingArea) {
+		let caseContentChildren = area.children.map(child => child.children).flat().filter(child => {
+			return child.type & TrackingAreaTypeMask.CaseDefaultContent
 		})
 
 		let capturers = caseContentChildren.map(c => c.capturer)
@@ -267,8 +267,8 @@ export namespace Optimizer {
 
 		let sharedMap = CapturedHashMap.fromCapturersIntersection(capturers)
 
-		let targetScope = scope.parent!
-		caseContentChildren[0].capturer.operator.safelyMoveCapturedItemsOutwardTo(sharedMap.items(), targetScope.capturer)
+		let targetArea = area.parent!
+		caseContentChildren[0].capturer.operator.safelyMoveCapturedItemsOutwardTo(sharedMap.items(), targetArea.capturer)
 	}
 
 
@@ -276,30 +276,30 @@ export namespace Optimizer {
 	 * Move whole content of iteration initializer outward.
 	 * `for(let c = a.b;)` -> `track(a.b); for ...`.
 	 */
-	function moveIterationInitializerCapturedOutward(scope: TrackingScope) {
-		if (!scope.capturer.hasCaptured()) {
+	function moveIterationInitializerCapturedOutward(area: TrackingArea) {
+		if (!area.capturer.hasCaptured()) {
 			return
 		}
 
-		let toPosition = TrackingScopeTree.findClosestPositionToAddStatements(
-			scope.node, scope
+		let toPosition = TrackingAreaTree.findClosestPositionToAddStatements(
+			area.node, area
 		)
 
-		Modifier.moveOnce(scope.node, toPosition.toNode)
-		scope.capturer.operator.safelyMoveCapturedOutwardTo(toPosition.scope.capturer)
+		Modifier.moveOnce(area.node, toPosition.toNode)
+		area.capturer.operator.safelyMoveCapturedOutwardTo(toPosition.area.capturer)
 	}
 
 
 	/** Move iteration condition or increasement or expression captured outward. */
-	function moveIterationConditionIncreasementCapturedOutward(scope: TrackingScope) {
-		if (!scope.capturer.hasCaptured()) {
+	function moveIterationConditionIncreasementCapturedOutward(area: TrackingArea) {
+		if (!area.capturer.hasCaptured()) {
 			return
 		}
 
 		// parent of iteration.
-		let targetScope = scope.parent!.parent!
+		let targetArea = area.parent!.parent!
 
-		scope.capturer.operator.safelyMoveCapturedOutwardTo(targetScope.capturer)
+		area.capturer.operator.safelyMoveCapturedOutwardTo(targetArea.capturer)
 	}
 
 
@@ -307,15 +307,15 @@ export namespace Optimizer {
 	 * Move iteration condition or increasement or expression captured inward to iteration content.
 	 * `for (let a = xx; a.b; )` -> `for (...) {track(a.b); ...}`
 	 */
-	function moveIterationConditionIncreasementCapturedToIterationContent(scope: TrackingScope) {
-		if (!scope.capturer.hasCaptured()) {
+	function moveIterationConditionIncreasementCapturedToIterationContent(area: TrackingArea) {
+		if (!area.capturer.hasCaptured()) {
 			return
 		}
 
 		// Iteration Content.
-		let targetScope = scope.parent!.children.find(c => c.type & TrackingScopeTypeMask.IterationContent)
-		if (targetScope) {
-			scope.capturer.operator.moveCapturedTo(targetScope.capturer)
+		let targetArea = area.parent!.children.find(c => c.type & TrackingAreaTypeMask.IterationContent)
+		if (targetArea) {
+			area.capturer.operator.moveCapturedTo(targetArea.capturer)
 		}
 	}
 
@@ -324,15 +324,15 @@ export namespace Optimizer {
 	 * Move iteration captured outward.
 	 * `for (...) {a.b}` -> `for (...) {}; track(a.b);`
 	 */
-	function moveIterationContentCapturedOutward(scope: TrackingScope) {
-		if (!scope.capturer.hasCaptured()) {
+	function moveIterationContentCapturedOutward(area: TrackingArea) {
+		if (!area.capturer.hasCaptured()) {
 			return
 		}
 
 		// parent of iteration.
-		let targetScope = scope.parent!.parent!
+		let targetArea = area.parent!.parent!
 
-		scope.capturer.operator.safelyMoveCapturedOutwardTo(targetScope.capturer)
+		area.capturer.operator.safelyMoveCapturedOutwardTo(targetArea.capturer)
 	}
 
 
@@ -340,15 +340,15 @@ export namespace Optimizer {
 	 * Move iteration captured which uses dynamic index declared in for statement outward.
 	 * `for (let i; ...) {a[i]}` -> `for (...) {}; track(a, '');`
 	 */
-	function moveIterationContentDynamicIndexCapturedOutward(scope: TrackingScope) {
-		if (!scope.capturer.hasCaptured()) {
+	function moveIterationContentDynamicIndexCapturedOutward(area: TrackingArea) {
+		if (!area.capturer.hasCaptured()) {
 			return
 		}
 
 		// parent of iteration.
-		let targetScope = scope.parent!.parent!
+		let targetArea = area.parent!.parent!
 
-		scope.capturer.operator.moveDynamicIndexedCapturedOutward(targetScope.capturer)
+		area.capturer.operator.moveDynamicIndexedCapturedOutward(targetArea.capturer)
 	}
 
 
@@ -356,15 +356,15 @@ export namespace Optimizer {
 	 * Move instantly run function like array methods captured outward.
 	 * `[].map(i => {i + a.b})` -> `track(a.b); [].map...`
 	 */
-	function moveInstantlyRunFunctionCapturedOutward(scope: TrackingScope) {
-		if (!scope.capturer.hasCaptured()) {
+	function moveInstantlyRunFunctionCapturedOutward(area: TrackingArea) {
+		if (!area.capturer.hasCaptured()) {
 			return
 		}
 
 		// parent of array method.
-		let targetScope = scope.parent!
+		let targetArea = area.parent!
 
-		scope.capturer.operator.safelyMoveCapturedOutwardTo(targetScope.capturer)
+		area.capturer.operator.safelyMoveCapturedOutwardTo(targetArea.capturer)
 	}
 
 
@@ -372,8 +372,8 @@ export namespace Optimizer {
 	 * Eliminate repetitive captured items that repeat itself or with it's descendants.
 	 * `track(a.b); if (...) {track(a.b)}` -> `track(a.b); if (...) {}`
 	 */
-	function eliminateRepetitiveCapturedRecursively(scope: TrackingScope) {
-		scope.capturer.operator.eliminateRepetitiveRecursively(new CapturedHashMap())
+	function eliminateRepetitiveCapturedRecursively(area: TrackingArea) {
+		area.capturer.operator.eliminateRepetitiveRecursively(new CapturedHashMap())
 	}
 
 
@@ -381,24 +381,24 @@ export namespace Optimizer {
 	 * Eliminate private and don't have both get and set capture types.
 	 * `class {private prop}`, has only `prop` getting, or only setting -> remove it.
 	 */
-	function eliminatePrivateUniqueTrackingType(scope: TrackingScope) {
+	function eliminatePrivateUniqueTrackingType(area: TrackingArea) {
 		enum TypeMask {
 			Get = 1,
 			Set = 2,
 		}
 
-		let classNode = scope.node as ts.ClassLikeDeclaration
+		let classNode = area.node as ts.ClassLikeDeclaration
 		let keyMap: Map<string, {nodes: ts.Node[], typeMask: TypeMask | 0}> = new Map()
 
-		// All captured items, include those within current scope, and force tracked.
-		let allCapturedItems = [...scope.capturer.walkCapturedRecursively()].filter(item => !TrackingPatch.hasIgnored(item.node))
+		// All captured items, include those within current area, and force tracked.
+		let allCapturedItems = [...area.capturer.walkCapturedRecursively()].filter(item => !TrackingPatch.hasIgnored(item.node))
 
 		// Custom items should be do filtering by `hasIgnored`, see `ref`.
 		allCapturedItems.push(...TrackingPatch.walkCustomTrackingItems())
 
 		// Group captured by property name.
 		for (let capturedItem of allCapturedItems) {
-			let privateItem = scope.capturer.operator.getPrivatePropertyCaptured(capturedItem, classNode)
+			let privateItem = area.capturer.operator.getPrivatePropertyCaptured(capturedItem, classNode)
 			if (!privateItem) {
 				continue
 			}
@@ -453,6 +453,6 @@ export namespace Optimizer {
 			}
 		}
 
-		scope.capturer.operator.removeCapturedRecursively(removeNodes)
+		area.capturer.operator.removeCapturedRecursively(removeNodes)
 	}
 }

@@ -1,12 +1,12 @@
 import * as ts from 'typescript'
 import {InterpolationContentType, Interpolator, InterpolationPosition, VisitTree, FlowInterruptionTypeMask, Packer, helper, sourceFile, Hashing} from '../../core'
 import {AccessNode} from '../../lupos-ts-module'
-import {TrackingScope} from './scope'
-import {TrackingScopeTree, TrackingScopeTypeMask} from './scope-tree'
+import {TrackingArea} from './area'
+import {TrackingAreaTree, TrackingAreaTypeMask} from './area-tree'
 import {AccessGrouper} from './access-grouper'
 import {TrackingReferences} from './references'
 import {Optimizer} from './optimizer'
-import {TrackingScopeState} from './scope-state'
+import {TrackingAreaState} from './area-state'
 import {TrackingCapturerOperator} from './capturer-operator'
 import {TrackingPatch} from './patch'
 import {CapturedOutputWay} from './ranges'
@@ -51,12 +51,12 @@ export interface CapturedItem {
 
 
 /** 
- * It attaches to each scope,
+ * It attaches to each area,
  * Captures get and set expressions, and remember reference variables.
  */
 export class TrackingCapturer {
 
-	readonly scope: TrackingScope
+	readonly area: TrackingArea
 	readonly operator: TrackingCapturerOperator
 	readonly outputWay: CapturedOutputWay
 
@@ -71,8 +71,8 @@ export class TrackingCapturer {
 	 */
 	preventGettingAfterAwait: boolean = false
 
-	constructor(scope: TrackingScope, state: TrackingScopeState, outputWay: CapturedOutputWay) {
-		this.scope = scope
+	constructor(area: TrackingArea, state: TrackingAreaState, outputWay: CapturedOutputWay) {
+		this.area = area
 		this.operator = new TrackingCapturerOperator(this)
 		this.outputWay = outputWay
 
@@ -81,7 +81,7 @@ export class TrackingCapturer {
 		this.initCaptureType(state)
 
 		// Broadcast `preventGettingAfterAwait` to child capturers, but not to function.
-		if (scope.parent && scope.parent.capturer.preventGettingAfterAwait && !helper.isFunctionLike(scope.node)) {
+		if (area.parent && area.parent.capturer.preventGettingAfterAwait && !helper.isFunctionLike(area.node)) {
 			this.preventGettingAfterAwait = true
 		}
 	}
@@ -96,8 +96,8 @@ export class TrackingCapturer {
 	}
 
 	/** Transfer from some captured properties to child. */
-	private initCaptureType(state: TrackingScopeState) {
-		let parent = this.scope.parent
+	private initCaptureType(state: TrackingAreaState) {
+		let parent = this.area.parent
 
 		// Source file.
 		if (!parent) {
@@ -109,15 +109,15 @@ export class TrackingCapturer {
 			this.captureType = 'both'
 		}
 
-		// Not instantly run function-like scope not inherit capture type.
-		else if (this.scope.type & TrackingScopeTypeMask.FunctionLike
-			&& !(this.scope.type & TrackingScopeTypeMask.InstantlyRunFunction)
+		// Not instantly run function-like area not inherit capture type.
+		else if (this.area.type & TrackingAreaTypeMask.FunctionLike
+			&& !(this.area.type & TrackingAreaTypeMask.InstantlyRunFunction)
 		) {
 			this.captureType = 'not-determined'
 		}
 
-		// Broadcast downward capture type from function-like scope,
-		// or instantly run function-like scope like function not exist.
+		// Broadcast downward capture type from function-like area,
+		// or instantly run function-like area like function not exist.
 		else {
 			this.captureType = parent.capturer.captureType
 		}
@@ -126,14 +126,14 @@ export class TrackingCapturer {
 	/** Every time capture a new index, check type and may toggle capture type. */
 	private addCaptureType(type: 'get' | 'set') {
 
-		// Broadcast downward from closest function-like scope,
+		// Broadcast downward from closest function-like area,
 		// to all get-type descendants exclude non-instantly run functions.
 		if (type === 'set' && (this.captureType === 'get' || this.captureType === 'not-determined')) {
-			let closest = this.scope.closestNonInstantlyRunFunction!
+			let closest = this.area.closestNonInstantlyRunFunction!
 
-			let walking = TrackingScopeTree.walkInwardChildFirst(closest, c => {
+			let walking = TrackingAreaTree.walkInwardChildFirst(closest, c => {
 
-				// Topmost scope is always persist.
+				// Topmost area is always persist.
 				if (c === closest) {
 					return true
 				}
@@ -144,8 +144,8 @@ export class TrackingCapturer {
 				}
 
 				// Skip inner function.
-				if (c.type & TrackingScopeTypeMask.FunctionLike
-					&& (c.type & TrackingScopeTypeMask.InstantlyRunFunction) === 0
+				if (c.type & TrackingAreaTypeMask.FunctionLike
+					&& (c.type & TrackingAreaTypeMask.InstantlyRunFunction) === 0
 				) {
 					return false
 				}
@@ -229,7 +229,7 @@ export class TrackingCapturer {
 			yield* group.items
 		}
 
-		for (let child of this.scope.children) {
+		for (let child of this.area.children) {
 			yield* child.capturer.walkCapturedRecursively()
 		}
 	}
@@ -251,8 +251,8 @@ export class TrackingCapturer {
 
 		// Conditional can't be break, it captures only condition expression.
 		// This is required, or inner captured can't be moved to head, and cause interpolation issue.
-		if (this.scope.type & TrackingScopeTypeMask.Conditional
-			|| this.scope.type & TrackingScopeTypeMask.Switch
+		if (this.area.type & TrackingAreaTypeMask.Conditional
+			|| this.area.type & TrackingAreaTypeMask.Switch
 		) {
 			return
 		}
@@ -271,19 +271,19 @@ export class TrackingCapturer {
 		this.preventGettingAfterAwait = this.preventGettingAfterAwait || (flowInterruptedBy & FlowInterruptionTypeMask.Await) > 0
 	}
 
-	/** Before each scope will exit. */
+	/** Before each area will exit. */
 	beforeExit() {
 		this.endCapture()
 
-		if (this.scope.type & TrackingScopeTypeMask.SourceFile) {
+		if (this.area.type & TrackingAreaTypeMask.SourceFile) {
 
 			// Do reference and optimization, ensure child-first then self.
-			for (let descent of TrackingScopeTree.walkInwardChildFirst(this.scope)) {
+			for (let descent of TrackingAreaTree.walkInwardChildFirst(this.area)) {
 				descent.capturer.preProcessCaptured()
 			}
 
 			// Do output, either child-first or self-first should be OK.
-			for (let descent of TrackingScopeTree.walkInwardSelfFirst(this.scope)) {
+			for (let descent of TrackingAreaTree.walkInwardSelfFirst(this.area)) {
 				descent.capturer.postProcessCaptured()
 			}
 		}
@@ -292,12 +292,12 @@ export class TrackingCapturer {
 	/** Prepare latest captured item. */
 	private endCapture() {
 		let item = this.latestCaptured
-		let node = this.scope.node
+		let node = this.area.node
 
 		item.toNode = node
 
 		// For function declaration, insert to function body.
-		if (this.scope.type & TrackingScopeTypeMask.FunctionLike) {
+		if (this.area.type & TrackingAreaTypeMask.FunctionLike) {
 			let body = (node as ts.FunctionLikeDeclarationBase).body
 
 			// Abstract function or function type declaration has no body.
@@ -316,9 +316,9 @@ export class TrackingCapturer {
 		// Insert before whole content of target capturer.
 		// Normally codes will be moved outward on optimization step.
 		// This codes can avoid error occurred even no optimization.
-		else if (this.scope.type & TrackingScopeTypeMask.FlowInterruption
-			|| this.scope.type & TrackingScopeTypeMask.Conditional
-			|| this.scope.type & TrackingScopeTypeMask.Switch
+		else if (this.area.type & TrackingAreaTypeMask.FlowInterruption
+			|| this.area.type & TrackingAreaTypeMask.Conditional
+			|| this.area.type & TrackingAreaTypeMask.Switch
 		) {
 			item.position = InterpolationPosition.Before
 		}
@@ -383,8 +383,8 @@ export class TrackingCapturer {
 		this.checkReferences()
 
 		// Must after reference step, reference step will look for position,
-		// which requires captured stay at their scope.
-		Optimizer.optimize(this.scope)
+		// which requires captured stay at their area.
+		Optimizer.optimize(this.area)
 	}
 
 	/** 
@@ -406,10 +406,10 @@ export class TrackingCapturer {
 		for (let group of this.captured) {
 			for (let item of group.items) {
 				if (item.exp) {
-					TrackingReferences.mayReferenceExp(item.exp, group.toNode, this.scope)
+					TrackingReferences.mayReferenceExp(item.exp, group.toNode, this.area)
 				}
 				else {
-					TrackingReferences.mayReferenceAccess(item.node, group.toNode, this.scope)
+					TrackingReferences.mayReferenceAccess(item.node, group.toNode, this.area)
 				}
 
 				item.referencedAtInternal = TrackingReferences.hasInternalReferenced(item.exp ?? item.node)
@@ -488,7 +488,7 @@ export class TrackingCapturer {
 
 	/** Try to find a better position to insert captured. */
 	private findBetterInsertPosition(toNode: ts.Node): ts.Node | null {
-		let position = TrackingScopeTree.findClosestPositionToAddStatements(toNode, this.scope)
+		let position = TrackingAreaTree.findClosestPositionToAddStatements(toNode, this.area)
 		if (!position) {
 			return null
 		}

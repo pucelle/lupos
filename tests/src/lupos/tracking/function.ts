@@ -17,4 +17,14 @@ export class TestFunction extends Component {
 		}
 		this.prop = getValue()
 	}
+
+	testArrowFunctionBlockBody() {
+		return () => {
+			return this.prop === 0 ? 0 : 1
+		}
+	}
+
+	testArrowFunctionNonBlockBody() {
+		return () => this.prop === 0 ? 0 : 1
+	}
 }

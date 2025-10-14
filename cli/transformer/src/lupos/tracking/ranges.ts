@@ -1,17 +1,20 @@
 import type * as ts from 'typescript'
 import {VisitTree} from '../../core'
-import {TrackingScope} from './scope'
+import {TrackingArea} from './area'
 import {ListMap} from '../../lupos-ts-module'
-import {TrackingScopeTypeMask} from './scope-tree'
+import {TrackingAreaTypeMask} from './area-tree'
 
 
-/** Describe a tracking range. */
+/** 
+ * Describe a tracking range, which starts from a node, and ends at another node.
+ * Sometimes a single node can't cover complex tracking area, so we have a range as an addition.
+ */
 export interface TrackingRange {
 	id: number
 	container: ts.Node
 	startNode: ts.Node
 	endNode: ts.Node
-	scopeType: TrackingScopeTypeMask
+	areaType: TrackingAreaTypeMask
 	outputWay: CapturedOutputWay
 }
 
@@ -29,34 +32,34 @@ export namespace TrackingRanges {
 	/** All ranges, group by start node. */
 	const RangesByStartNode: ListMap<ts.Node, TrackingRange> = new ListMap()
 
-	/** Range id -> scope. */
-	const ScopeByRangeIdMap: Map<number, TrackingScope> = new Map()
+	/** Range id -> area. */
+	const AreaByRangeIdMap: Map<number, TrackingArea> = new Map()
 
 
 	/** Initialize before visiting a new source file. */
 	export function init() {
 		RangesByStartNode.clear()
-		ScopeByRangeIdMap.clear()
+		AreaByRangeIdMap.clear()
 	}
 
 
 	/** 
-	 * Mark a scope by node range, later will be made as a `Range` scope.
-	 * Note must mark before scope visitor visit it.
+	 * Mark a area by node range, later will be made as a `Range` area.
+	 * Note must mark before area visitor visit it.
 	 * Return range id.
 	 */
 	export function markRange(
 		container: ts.Node,
 		startNode: ts.Node,
 		endNode: ts.Node,
-		scopeType: 0 | TrackingScopeTypeMask,
+		areaType: 0 | TrackingAreaTypeMask,
 		outputWay: CapturedOutputWay
 	): number {
 		let existed = RangesByStartNode.get(startNode)
 
 		let sameRange = existed?.find(r => r.startNode === startNode && r.endNode === endNode)
 		if (sameRange) {
-			sameRange.scopeType |= scopeType
+			sameRange.areaType |= areaType
 			sameRange.outputWay = outputWay
 			return sameRange.id
 		}
@@ -68,7 +71,7 @@ export namespace TrackingRanges {
 			container,
 			startNode,
 			endNode,
-			scopeType: scopeType | TrackingScopeTypeMask.Range,
+			areaType: areaType | TrackingAreaTypeMask.Range,
 			outputWay
 		})
 
@@ -90,13 +93,13 @@ export namespace TrackingRanges {
 		return ranges
 	}
 
-	/** Get tracking scope by range id. */
-	export function setScopeByRangeId(id: number, scope: TrackingScope) {
-		return ScopeByRangeIdMap.set(id, scope)
+	/** Get tracking area by range id. */
+	export function setAreaByRangeId(id: number, area: TrackingArea) {
+		return AreaByRangeIdMap.set(id, area)
 	}
 
-	/** Set tracking scope by range id. */
-	export function getScopeByRangeId(id: number): TrackingScope | undefined {
-		return ScopeByRangeIdMap.get(id)
+	/** Set tracking area by range id. */
+	export function getAreaByRangeId(id: number): TrackingArea | undefined {
+		return AreaByRangeIdMap.get(id)
 	}
 }

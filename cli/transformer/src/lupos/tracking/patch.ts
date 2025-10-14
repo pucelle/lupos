@@ -103,12 +103,12 @@ export namespace TrackingPatch {
 
 	/** Output custom range tracking expressions by. */
 	export function outputCustomRangeTracking(rangeId: number): ts.Expression[] {
-		let scope = TrackingRanges.getScopeByRangeId(rangeId)
-		if (!scope) {
+		let area = TrackingRanges.getAreaByRangeId(rangeId)
+		if (!area) {
 			return []
 		}
 
-		return scope.capturer.outputCustomCaptured()
+		return area.capturer.outputCustomCaptured()
 	}
 
 	/** 

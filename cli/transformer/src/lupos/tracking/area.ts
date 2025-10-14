@@ -1,8 +1,8 @@
 import * as ts from 'typescript'
 import {ObservedChecker} from './observed-checker'
 import {FlowInterruptionTypeMask, DeclarationScope, DeclarationScopeTree, helper} from '../../core'
-import {TrackingScopeState} from './scope-state'
-import {TrackingScopeTypeMask} from './scope-tree'
+import {TrackingAreaState} from './area-state'
+import {TrackingAreaTypeMask} from './area-tree'
 import {TrackingCapturer} from './capturer'
 import {CapturedOutputWay, TrackingRange} from './ranges'
 import {TrackingPatch} from './patch'
@@ -10,29 +10,29 @@ import {TrackingPatch} from './patch'
 
 /** 
  * A source file, a method, or a namespace, a function, an arrow function
- * initialize a tracking scope.
- * Otherwise, a logic or a flow statement will also initialize a tracking scope.
+ * initialize a tracking area.
+ * Otherwise, a logic or a flow statement will also initialize a tracking area.
  */
-export class TrackingScope {
+export class TrackingArea {
 
-	readonly type: TrackingScopeTypeMask
+	readonly type: TrackingAreaTypeMask
 	readonly node: ts.Node
-	readonly parent: TrackingScope | null
+	readonly parent: TrackingArea | null
 	readonly range: TrackingRange | null
-	readonly children: TrackingScope[] = []
-	readonly state: TrackingScopeState
+	readonly children: TrackingArea[] = []
+	readonly state: TrackingAreaState
 	readonly capturer: TrackingCapturer
 
 	/** 
-	 * Self or closest ancestral scope, which's type is function-like,
+	 * Self or closest ancestral area, which's type is function-like,
 	 * and should normally non-instantly run.
 	 */
-	readonly closestNonInstantlyRunFunction: TrackingScope | null
+	readonly closestNonInstantlyRunFunction: TrackingArea | null
 
 	constructor(
-		type: TrackingScopeTypeMask,
+		type: TrackingAreaTypeMask,
 		rawNode: ts.Node,
-		parent: TrackingScope | null,
+		parent: TrackingArea | null,
 		range: TrackingRange | null
 	) {
 		this.type = type
@@ -40,11 +40,11 @@ export class TrackingScope {
 		this.parent = parent
 		this.range = range
 
-		this.state = new TrackingScopeState(this)
+		this.state = new TrackingAreaState(this)
 		this.capturer = new TrackingCapturer(this, this.state, range?.outputWay ?? CapturedOutputWay.FollowNode)
 
-		let beNonInstantlyRunFunction = (type & TrackingScopeTypeMask.FunctionLike)
-			&& (type & TrackingScopeTypeMask.InstantlyRunFunction) === 0
+		let beNonInstantlyRunFunction = (type & TrackingAreaTypeMask.FunctionLike)
+			&& (type & TrackingAreaTypeMask.InstantlyRunFunction) === 0
 		
 		this.closestNonInstantlyRunFunction = beNonInstantlyRunFunction
 			? this
@@ -56,8 +56,8 @@ export class TrackingScope {
 	}
 
 	/** 
-	 * Get declaration scope for putting declarations.
-	 * For function scope, it returns the scope of function body.
+	 * Get declaration area for putting declarations.
+	 * For function area, it returns the area of function body.
 	 */
 	getDeclarationScope(): DeclarationScope {
 		if (helper.isFunctionLike(this.node) && this.node.body) {
@@ -69,8 +69,8 @@ export class TrackingScope {
 	}
 
 	/** 
-	 * Call after children scopes are ready,
-	 * and current scope will exit.
+	 * Call after children areas are ready,
+	 * and current area will exit.
 	 */
 	beforeExit() {
 		this.capturer.beforeExit()
@@ -80,14 +80,14 @@ export class TrackingScope {
 		}
 	}
 
-	/** Enter a child scope. */
-	enterChild(child: TrackingScope) {
+	/** Enter a child area. */
+	enterChild(child: TrackingArea) {
 		this.children.push(child)
 	}
 
-	/** Leave a child scope. */
-	leaveChild(child: TrackingScope) {
-		this.state.mergeChildScope(child)
+	/** Leave a child area. */
+	leaveChild(child: TrackingArea) {
+		this.state.mergeChildArea(child)
 
 		if (child.state.isFlowInterrupted()) {
 			this.capturer.breakCaptured(child.node, child.state.flowInterruptionType)
@@ -95,7 +95,7 @@ export class TrackingScope {
 	}
 
 	/** 
-	 * Visit scope node and each descendant node inside current scope.
+	 * Visit area node and each descendant node inside current area.
 	 * When visiting a node, child nodes of this node have visited.
 	 */
 	visitNode(rawNode: ts.Node) {

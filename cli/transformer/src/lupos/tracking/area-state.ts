@@ -1,12 +1,12 @@
 import * as ts from 'typescript'
-import {TrackingScope} from './scope'
-import {TrackingScopeTree, TrackingScopeTypeMask} from './scope-tree'
+import {TrackingArea} from './area'
+import {TrackingAreaTree, TrackingAreaTypeMask} from './area-tree'
 import {FlowInterruptionTypeMask, Packer, helper} from '../../core'
 
 
-export class TrackingScopeState {
+export class TrackingAreaState {
 
-	readonly scope: TrackingScope
+	readonly area: TrackingArea
 
 	/** 
 	 * Whether be included in a constructor function,
@@ -17,13 +17,13 @@ export class TrackingScopeState {
 	/** 
 	 * Whether inside a function that has nothing returned.
 	 * If a function returns nothing, we stop tracking it's property getting.
-	 * Initialize from a function-like type of scope, and broadcast to descendants.
+	 * Initialize from a function-like type of area, and broadcast to descendants.
 	 * A generator returns an `Iterable`, so it is not nothing returned.
 	 */
 	readonly stopGetTracking: boolean
 
 	/** 
-	 * If a function like scope has any tracking code,
+	 * If a function like area has any tracking code,
 	 * stop any tracking.
 	 */
 	readonly stopAnyTracking: boolean
@@ -35,27 +35,27 @@ export class TrackingScopeState {
 	 */
 	readonly effectDecorated: boolean
 
-	/** How flow inside of a scope was interrupted. */
+	/** How flow inside of a area was interrupted. */
 	flowInterruptionType: FlowInterruptionTypeMask | 0 = 0
 
-	constructor(scope: TrackingScope) {
-		this.scope = scope
+	constructor(area: TrackingArea) {
+		this.area = area
 		this.withinLifeFunction = this.checkWithinLifeFunction()
 		this.stopGetTracking = this.checkStopGetTracking()
 		this.stopAnyTracking = this.checkStopAnyTracking()
 		this.effectDecorated = this.checkEffectDecorated()
 
-		if (scope.type & TrackingScopeTypeMask.FlowInterruption) {
-			this.flowInterruptionType = Packer.getFlowInterruptionType(scope.node)
+		if (area.type & TrackingAreaTypeMask.FlowInterruption) {
+			this.flowInterruptionType = Packer.getFlowInterruptionType(area.node)
 		}
 	}
 
 	private checkWithinLifeFunction(): boolean {
-		let node = this.scope.node
+		let node = this.area.node
 
-		// Inherit from parent scope.
-		if ((this.scope.type & TrackingScopeTypeMask.FunctionLike) === 0) {
-			return this.scope.parent?.state.withinLifeFunction ?? false
+		// Inherit from parent area.
+		if ((this.area.type & TrackingAreaTypeMask.FunctionLike) === 0) {
+			return this.area.parent?.state.withinLifeFunction ?? false
 		}
 
 		if (ts.isConstructorDeclaration(node)) {
@@ -80,21 +80,21 @@ export class TrackingScopeState {
 	}
 
 	private checkStopGetTracking(): boolean {
-		let node = this.scope.node
-		let parent = this.scope.parent
+		let node = this.area.node
+		let parent = this.area.parent
 
 		if (!parent) {
 			return false
 		}
 
-		// Self is not function, inherit from parent scope.
-		if ((this.scope.type & TrackingScopeTypeMask.FunctionLike) === 0) {
+		// Self is not function, inherit from parent area.
+		if ((this.area.type & TrackingAreaTypeMask.FunctionLike) === 0) {
 			return parent.state.stopGetTracking ?? false
 		}
 
-		// If current scope was included by a decorator, treat parent as global scope.
+		// If current area was included by a decorator, treat parent as global area.
 		let decorator = helper.findOutwardUntil(
-			this.scope.node,
+			this.area.node,
 			parent.node,
 			ts.isDecorator
 		)
@@ -106,7 +106,7 @@ export class TrackingScopeState {
 		let isVoidReturning = helper.isVoidReturning(node as ts.FunctionLikeDeclaration)
 
 		// An instantly run function should inherit whether stop get tracking.
-		if (this.scope.type & TrackingScopeTypeMask.InstantlyRunFunction) {
+		if (this.area.type & TrackingAreaTypeMask.InstantlyRunFunction) {
 			return parent.state.stopGetTracking || isVoidReturning
 		}
 		else {
@@ -115,15 +115,15 @@ export class TrackingScopeState {
 	}
 
 	private checkStopAnyTracking() {
-		let node = this.scope.node
-		let parent = this.scope.parent
+		let node = this.area.node
+		let parent = this.area.parent
 
 		if (!parent) {
 			return false
 		}
 
-		// Self is not function, inherit from parent scope.
-		if ((this.scope.type & TrackingScopeTypeMask.FunctionLike) === 0) {
+		// Self is not function, inherit from parent area.
+		if ((this.area.type & TrackingAreaTypeMask.FunctionLike) === 0) {
 			return parent.state.stopAnyTracking ?? false
 		}
 
@@ -146,11 +146,11 @@ export class TrackingScopeState {
 	}
 
 	private checkEffectDecorated(): boolean {
-		let node = this.scope.node
+		let node = this.area.node
 
-		// Inherit from parent scope.
+		// Inherit from parent area.
 		if (!ts.isMethodDeclaration(node)) {
-			return this.scope.parent?.state.effectDecorated ?? false
+			return this.area.parent?.state.effectDecorated ?? false
 		}
 
 		let decoName = helper.deco.getFirstName(node)
@@ -161,7 +161,7 @@ export class TrackingScopeState {
 	unionFlowInterruptionType(type: FlowInterruptionTypeMask | 0) {
 
 		// Union never cross function declaration.
-		if (this.scope.type & TrackingScopeTypeMask.FunctionLike) {
+		if (this.area.type & TrackingAreaTypeMask.FunctionLike) {
 			return 
 		}
 
@@ -173,8 +173,8 @@ export class TrackingScopeState {
 
 			// Break would not broadcast out of `iteration` and `case`, `default`.
 			if (!(
-				this.scope.type & TrackingScopeTypeMask.IterationContent
-				|| this.scope.type & TrackingScopeTypeMask.CaseDefaultContent
+				this.area.type & TrackingAreaTypeMask.IterationContent
+				|| this.area.type & TrackingAreaTypeMask.CaseDefaultContent
 			)) {
 				this.flowInterruptionType |= FlowInterruptionTypeMask.BreakLike
 			}
@@ -188,7 +188,7 @@ export class TrackingScopeState {
 			
 			// `if (...) await ...`
 			if ((type & FlowInterruptionTypeMask.Await)
-				&& TrackingScopeTree.mayRunOrNot(this.scope.type)
+				&& TrackingAreaTree.mayRunOrNot(this.area.type)
 			) {
 				this.flowInterruptionType |= FlowInterruptionTypeMask.ConditionalAwait
 			}
@@ -203,10 +203,10 @@ export class TrackingScopeState {
 	}
 
 	/** 
-	 * After a child scope is visiting completed, visit it.
+	 * After a child area is visiting completed, visit it.
 	 * returns whether break or return or yield.
 	 */
-	mergeChildScope(child: TrackingScope) {
+	mergeChildArea(child: TrackingArea) {
 		this.unionFlowInterruptionType(child.state.flowInterruptionType)
 	}
 

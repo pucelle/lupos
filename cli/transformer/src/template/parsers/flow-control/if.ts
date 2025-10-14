@@ -3,7 +3,7 @@ import {factory, Interpolator, Modifier, Packer} from '../../../core'
 import {FlowControlBase} from './base'
 import {TemplateParser} from '../template'
 import {SlotContentType} from '../../../enums'
-import {CapturedOutputWay, TrackingPatch, TrackingRanges, TrackingScopeTree, TrackingScopeTypeMask} from '../../../lupos'
+import {CapturedOutputWay, TrackingPatch, TrackingRanges, TrackingAreaTree, TrackingAreaTypeMask} from '../../../lupos'
 import {HTMLNode, TemplateSlotPlaceholder} from '../../../lupos-ts-module'
 
 
@@ -94,7 +94,7 @@ export class IfFlowControl extends FlowControlBase {
 
 			if (conditionIndex !== null) {
 				let valueNode = rawValueNodes[conditionIndex]
-				TrackingScopeTree.specifyType(valueNode, TrackingScopeTypeMask.ConditionalCondition)
+				TrackingAreaTree.specifyType(valueNode, TrackingAreaTypeMask.ConditionalCondition)
 			}
 
 
@@ -103,7 +103,7 @@ export class IfFlowControl extends FlowControlBase {
 					this.template.node,
 					rawValueNodes[contentIndices[0]].parent,
 					rawValueNodes[contentIndices[contentIndices.length - 1]].parent,
-					TrackingScopeTypeMask.ConditionalContent,
+					TrackingAreaTypeMask.ConditionalContent,
 					CapturedOutputWay.Custom
 				)
 
@@ -115,10 +115,10 @@ export class IfFlowControl extends FlowControlBase {
 
 
 			if (conditionIndex !== null && contentIndices.length > 0) {
-				let type = TrackingScopeTypeMask.Conditional
+				let type = TrackingAreaTypeMask.Conditional
 				
 				if (i > 0) {
-					type |= TrackingScopeTypeMask.ConditionalContent
+					type |= TrackingAreaTypeMask.ConditionalContent
 				}
 
 				let conditionalRangeId = TrackingRanges.markRange(

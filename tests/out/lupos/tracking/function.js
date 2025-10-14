@@ -20,4 +20,16 @@ export class TestFunction extends Component {
         this.prop = getValue();
         trackSet(this, "prop");
     }
+    testArrowFunctionBlockBody() {
+        return () => {
+            trackGet(this, "prop");
+            return this.prop === 0 ? 0 : 1;
+        };
+    }
+    testArrowFunctionNonBlockBody() {
+        return () => {
+            trackGet(this, "prop");
+            return this.prop === 0 ? 0 : 1;
+        };
+    }
 }
