@@ -3,6 +3,7 @@ import {CompilerDiagnosticModifier, TransformerExtras} from '../../../compiler/o
 import {helperOfContext, TemplateSlotPlaceholder} from '../lupos-ts-module'
 
 
+export let builderProgram: ts.BuilderProgram
 export let program: ts.Program
 export let compileToESM: boolean
 export let typeChecker: ts.TypeChecker
@@ -17,6 +18,7 @@ export function setTransformContext(ctx: ts.TransformationContext, extras: Trans
 	transformContext = ctx
 	factory = ctx.factory
 	compileToESM = extras.compileToESM
+	builderProgram = extras.program
 	program = extras.program.getProgram()
 	typeChecker = program.getTypeChecker()
 	compilerDiagnosticModifier = extras.compilerDiagnosticModifier

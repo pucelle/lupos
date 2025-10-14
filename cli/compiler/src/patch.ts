@@ -74,6 +74,13 @@ export function patchProgram(
 }
 
 
+interface DiagnosticLike {
+	file?: ts.SourceFile,
+	start: number | undefined,
+	code: number
+}
+
+
 export class CompilerDiagnosticModifier {
 
 	private reporter: ts.DiagnosticReporter | null = null
@@ -83,11 +90,11 @@ export class CompilerDiagnosticModifier {
 
 	/** They are not using source file as key, because source files may be updated without re-compiling. */
 	private added: Map<string, ts.Diagnostic[]> = new Map()
-	private deleted: Map<string, {start: number, code: number}[]> = new Map()
+	private deleted: Map<string, DiagnosticLike[]> = new Map()
 	private potentialAllImportsUnUsed: Map<string, ts.ImportDeclaration[]> = new Map()
 
 	/** Check whether diagnostic has been deleted. */
-	hasDeleted(diag: {file: ts.SourceFile | undefined, start: number | undefined, code: number}): boolean {
+	hasDeleted(diag: DiagnosticLike): boolean {
 		if (!diag.file) {
 			return false
 		}
@@ -97,7 +104,12 @@ export class CompilerDiagnosticModifier {
 			return false
 		}
 
-		return !!deletedDiags.find(d => d.start === diag.start && d.code === diag.code)
+		return this.testExistingIn(diag, deletedDiags)
+	}
+
+	/** Note it doesn't validate filename. */
+	private testExistingIn(diag: ts.Diagnostic | DiagnosticLike, list: DiagnosticLike[]): boolean {
+		return !!list.find(d => d.start === diag.start && d.code === diag.code)
 	}
 
 	/** Get added diagnostic count. */
@@ -110,12 +122,49 @@ export class CompilerDiagnosticModifier {
 	}
 
 	/** Add custom diagnostics. */
-	add(fileName: string, diags: ts.Diagnostic[]) {
+	add(fileName: string, diags: ts.Diagnostic[], program: ts.BuilderProgram) {
+		if (diags.length === 0) {
+			return
+		}
+
+		// A dirty hack.
+		let state = (program as any).state
+		if (state && state.semanticDiagnosticsPerFile) {
+
+			// State use lower key
+			let lowerFileName = fileName.toLowerCase()
+
+			let diagsOfFile = state.semanticDiagnosticsPerFile.get(lowerFileName) as ts.Diagnostic[] | undefined
+			if (diagsOfFile) {
+				diagsOfFile.push(...diags)
+			}
+		}
+
 		this.added.set(fileName, diags)
 	}
 
 	/** Delete diagnostics. */
-	delete(fileName: string, diags: {start: number, code: number}[]) {
+	delete(fileName: string, diags: DiagnosticLike[], program: ts.BuilderProgram) {
+		if (diags.length === 0) {
+			return
+		}
+
+		// A dirty hack.
+		let state = (program as any).state
+		if (state && state.semanticDiagnosticsPerFile) {
+
+			// State use lower key
+			let lowerFileName = fileName.toLowerCase()
+
+			let diagsOfFile = state.semanticDiagnosticsPerFile.get(lowerFileName) as ts.Diagnostic[] | undefined
+			if (diagsOfFile && diagsOfFile.length > 0) {
+				let newDiagsOfFile = diagsOfFile.filter(diagOfFile => this.testExistingIn(diagOfFile, diags))
+				if (newDiagsOfFile.length !== diagsOfFile.length) {
+					state.semanticDiagnosticsPerFile.set(lowerFileName, newDiagsOfFile)
+				}
+			}
+		}
+
 		this.deleted.set(fileName, diags)
 	}
 
@@ -128,6 +177,9 @@ export class CompilerDiagnosticModifier {
 	patchDiagnosticReporter(reporter: ts.DiagnosticReporter): ts.DiagnosticReporter {
 		this.reporter = reporter
 
+		// The ts internal logic `emitFilesAndReportErrors` get semantic diags firstly,
+		// then run transformer, and join with program diagnostics.
+		// So here we must exclude
 		return (diag: ts.Diagnostic) => {
 			if (!this.hasDeleted(diag) && !this.reportedDiags.has(diag)) {
 				reporter(diag)
