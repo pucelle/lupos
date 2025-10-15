@@ -62,9 +62,11 @@ export function endTrack() {
  * Note if one property is not empty string, you must ensure it's the key of `obj`.
  */
 export function trackGet(obj: object, ...properties: PropertyKey[]) {
-	if (currentTracker) {
-		currentTracker.dependencies.addSeveral(obj, properties)
+	if (!currentTracker) {
+		return
 	}
+
+	currentTracker.dependencies.addSeveral(obj, properties)
 }
 
 
@@ -74,6 +76,10 @@ export function trackGet(obj: object, ...properties: PropertyKey[]) {
  * Note that compiler will not generate statements to call this, you must call it manually.
  */
 export function trackGetDeeply(obj: object, maxDepth = 10) {
+	if (!currentTracker) {
+		return
+	}
+
 	if (maxDepth === 0) {
 		return
 	}
@@ -106,7 +112,7 @@ export function trackGetDeeply(obj: object, maxDepth = 10) {
 /** 
  * When doing setting property, notify the dependency is changed.
  * Normally you have no need to call this, compiler will insert statements calls `trackSet` automatically.
- * Note if one property is not empty string, you must ensure it's the key of `obj`.
+ * Note if one property is not empty string, you must ensure it's the existing key of `obj`.
  */
 export function trackSet(obj: object, ...properties: PropertyKey[]) {
 	for (let prop of properties) {
