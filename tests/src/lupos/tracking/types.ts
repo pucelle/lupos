@@ -1,4 +1,4 @@
-import {effect, MethodsToObserve, Observed, UnObserved, ToObserve, SetToObserve} from '../../../../web/out'
+import {effect, MethodsObserved, Observed, UnObserved, GetObserved, SetObserved} from '../../../../web/out'
 import {Component} from '@pucelle/lupos.js'
 
 
@@ -152,12 +152,12 @@ export class TestMethodReturnedType extends Component {
 		return (this.getNormalItem() as Observed<{value: string}>).value
 	}
 
-	getValueUseObservedMethod() {
+	getValueOfObservedMethodReturn1() {
 		var item = this.getObservedItem()
 		return item.value
 	}
 
-	getValueUseObservedMethodSingleExp() {
+	getValueOfObservedMethodReturned2() {
 		return this.getObservedItem().value
 	}
 
@@ -226,7 +226,7 @@ export class TestMethodsObserved implements Observed {
 	}
 }
 
-class ListMap implements MethodsToObserve<'get', 'set'> {
+class ListMap implements MethodsObserved<'get', 'set'> {
 	get(key: number) {
 		return key
 	}
@@ -283,7 +283,7 @@ export class TestPropertyOfMethodsObserved {
 	}
 }
 
-class AnyMethodsObserved implements MethodsToObserve<'get', 'set'> {
+class AnyMethodsObserved implements MethodsObserved<'get', 'set'> {
 	value: number = 1
 	get() {
 		return this.value
@@ -294,88 +294,88 @@ class AnyMethodsObserved implements MethodsToObserve<'get', 'set'> {
 }
 
 
-export class TestParameterGetSetToObserve extends Component {
+export class TestParameterGetSetObserved extends Component {
 	toGet: {value: number} = {value: 0}
 	toSet: {value: number} = {value: 0}
 
 	testGetOfFunction() {
-		parameterGetToObserveFunction(this.toGet)
+		parameterGetObservedFunction(this.toGet)
 		return 1
 	}
 
 	testGetOfSpreadParameter() {
-		parameterGetToObserveSpread(this.toGet)
+		parameterGetObservedSpread(this.toGet)
 		return 1
 	}
 
 	testGetOfDeconstructedObject() {
-		parameterGetToObserveDeconstructedObject({param: this.toGet})
+		parameterGetObservedDeconstructedObject({param: this.toGet})
 		return 1
 	}
 
 	testGetOfDeconstructedArray() {
-		parameterGetToObserveDeconstructedArray([this.toGet])
+		parameterGetObservedDeconstructedArray([this.toGet])
 		return 1
 	}
 
 	testGetOfStaticMethod() {
-		ParameterGetSetToObserveTestClass.parameterGetToObserveStaticMethod(this.toGet)
+		ParameterSetObservedTestClass.parameterGetObservedStaticMethod(this.toGet)
 		return 1
 	}
 
 	testGetOfMethod() {
-		new ParameterGetSetToObserveTestClass(this.toGet).parameterGetToObserveMethod(this.toGet)
+		new ParameterSetObservedTestClass(this.toGet).parameterGetObservedMethod(this.toGet)
 		return 1
 	}
 
 	testGetOfClassConstructor() {
-		new ParameterGetSetToObserveTestClass(this.toGet)
+		new ParameterSetObservedTestClass(this.toGet)
 		return 1
 	}
 
 	testSetOfFunction() {
-		parameterSetToObserveFunction(this.toSet)
+		parameterSetObservedFunction(this.toSet)
 	}
 
 	testSetOfStaticMethod() {
-		ParameterGetSetToObserveTestClass.parameterSetToObserveStaticMethod(this.toSet)
+		ParameterSetObservedTestClass.parameterSetObservedStaticMethod(this.toSet)
 	}
 
 	testSetOfMethod() {
-		new ParameterGetSetToObserveTestClass(this.toGet).parameterSetToObserveMethod(this.toSet)
+		new ParameterSetObservedTestClass(this.toGet).parameterSetObservedMethod(this.toSet)
 	}
 }
 
-function parameterGetToObserveFunction(get: ToObserve<{value: number}>) {
+function parameterGetObservedFunction(get: GetObserved<{value: number}>) {
 	return get.value
 }
-function parameterGetToObserveSpread(...gets: ToObserve<{value: number}>[]) {
+function parameterGetObservedSpread(...gets: GetObserved<{value: number}>[]) {
 	return gets[0].value
 }
-function parameterGetToObserveDeconstructedObject(gets: {param: ToObserve<{value: number}>}) {
+function parameterGetObservedDeconstructedObject(gets: {param: GetObserved<{value: number}>}) {
 	return gets.param.value
 }
-function parameterGetToObserveDeconstructedArray(gets: [ToObserve<{value: number}>]) {
+function parameterGetObservedDeconstructedArray(gets: [GetObserved<{value: number}>]) {
 	return gets[0].value
 }
-function parameterSetToObserveFunction(set: SetToObserve<{value: number}>) {
+function parameterSetObservedFunction(set: SetObserved<{value: number}>) {
 	set.value = 1
 }
 
-class ParameterGetSetToObserveTestClass {
-	static parameterGetToObserveStaticMethod(get: ToObserve<{value: number}>) {
+class ParameterSetObservedTestClass {
+	static parameterGetObservedStaticMethod(get: GetObserved<{value: number}>) {
 		return get.value
 	}
-	static parameterSetToObserveStaticMethod(set: SetToObserve<{value: number}>) {
+	static parameterSetObservedStaticMethod(set: SetObserved<{value: number}>) {
 		set.value = 1
 	}
-	constructor(get: ToObserve<{value: number}>) {
+	constructor(get: GetObserved<{value: number}>) {
 		get.value
 	}
-	parameterGetToObserveMethod(get: ToObserve<{value: number}>) {
+	parameterGetObservedMethod(get: GetObserved<{value: number}>) {
 		return get.value
 	}
-	parameterSetToObserveMethod(set: SetToObserve<{value: number}>) {
+	parameterSetObservedMethod(set: SetObserved<{value: number}>) {
 		set.value = 1
 	}
 }

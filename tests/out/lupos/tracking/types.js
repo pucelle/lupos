@@ -1,4 +1,4 @@
-import { MethodsToObserve, Observed, UnObserved, ToObserve, SetToObserve } from '../../../../web/out';
+import { MethodsObserved, Observed, UnObserved, GetObserved, SetObserved } from '../../../../web/out';
 import { Component } from '@pucelle/lupos.js';
 import { EffectMaker, trackGet, trackSet } from "@pucelle/lupos";
 export class TestObservedVariableType {
@@ -138,12 +138,12 @@ export class TestMethodReturnedType extends Component {
         trackGet($ref_0, "value");
         return $ref_0.value;
     }
-    getValueUseObservedMethod() {
+    getValueOfObservedMethodReturn1() {
         var item = this.getObservedItem();
         trackGet(item, "value");
         return item.value;
     }
-    getValueUseObservedMethodSingleExp() {
+    getValueOfObservedMethodReturned2() {
         let $ref_0;
         $ref_0 = this.getObservedItem();
         trackGet($ref_0, "value");
@@ -272,92 +272,92 @@ class AnyMethodsObserved {
         this.value = value;
     }
 }
-export class TestParameterGetSetToObserve extends Component {
+export class TestParameterGetSetObserved extends Component {
     toGet = { value: 0 };
     toSet = { value: 0 };
     testGetOfFunction() {
-        parameterGetToObserveFunction(this.toGet);
+        parameterGetObservedFunction(this.toGet);
         trackGet(this, "toGet");
         trackGet(this.toGet, "");
         return 1;
     }
     testGetOfSpreadParameter() {
-        parameterGetToObserveSpread(this.toGet);
+        parameterGetObservedSpread(this.toGet);
         trackGet(this, "toGet");
         return 1;
     }
     testGetOfDeconstructedObject() {
-        parameterGetToObserveDeconstructedObject({ param: this.toGet });
+        parameterGetObservedDeconstructedObject({ param: this.toGet });
         trackGet(this, "toGet");
         trackGet(this.toGet, "");
         return 1;
     }
     testGetOfDeconstructedArray() {
-        parameterGetToObserveDeconstructedArray([this.toGet]);
+        parameterGetObservedDeconstructedArray([this.toGet]);
         trackGet(this, "toGet");
         trackGet(this.toGet, "");
         return 1;
     }
     testGetOfStaticMethod() {
-        ParameterGetSetToObserveTestClass.parameterGetToObserveStaticMethod(this.toGet);
+        ParameterSetObservedTestClass.parameterGetObservedStaticMethod(this.toGet);
         trackGet(this, "toGet");
         trackGet(this.toGet, "");
         return 1;
     }
     testGetOfMethod() {
-        new ParameterGetSetToObserveTestClass(this.toGet).parameterGetToObserveMethod(this.toGet);
+        new ParameterSetObservedTestClass(this.toGet).parameterGetObservedMethod(this.toGet);
         trackGet(this, "toGet");
         trackGet(this.toGet, "");
         return 1;
     }
     testGetOfClassConstructor() {
-        new ParameterGetSetToObserveTestClass(this.toGet);
+        new ParameterSetObservedTestClass(this.toGet);
         trackGet(this, "toGet");
         trackGet(this.toGet, "");
         return 1;
     }
     testSetOfFunction() {
-        parameterSetToObserveFunction(this.toSet);
+        parameterSetObservedFunction(this.toSet);
         trackSet(this.toSet, "");
     }
     testSetOfStaticMethod() {
-        ParameterGetSetToObserveTestClass.parameterSetToObserveStaticMethod(this.toSet);
+        ParameterSetObservedTestClass.parameterSetObservedStaticMethod(this.toSet);
         trackSet(this.toSet, "");
     }
     testSetOfMethod() {
-        new ParameterGetSetToObserveTestClass(this.toGet).parameterSetToObserveMethod(this.toSet);
+        new ParameterSetObservedTestClass(this.toGet).parameterSetObservedMethod(this.toSet);
         trackSet(this.toSet, "");
     }
 }
-function parameterGetToObserveFunction(get) {
+function parameterGetObservedFunction(get) {
     return get.value;
 }
-function parameterGetToObserveSpread(...gets) {
+function parameterGetObservedSpread(...gets) {
     return gets[0].value;
 }
-function parameterGetToObserveDeconstructedObject(gets) {
+function parameterGetObservedDeconstructedObject(gets) {
     return gets.param.value;
 }
-function parameterGetToObserveDeconstructedArray(gets) {
+function parameterGetObservedDeconstructedArray(gets) {
     return gets[0].value;
 }
-function parameterSetToObserveFunction(set) {
+function parameterSetObservedFunction(set) {
     set.value = 1;
 }
-class ParameterGetSetToObserveTestClass {
-    static parameterGetToObserveStaticMethod(get) {
+class ParameterSetObservedTestClass {
+    static parameterGetObservedStaticMethod(get) {
         return get.value;
     }
-    static parameterSetToObserveStaticMethod(set) {
+    static parameterSetObservedStaticMethod(set) {
         set.value = 1;
     }
     constructor(get) {
         get.value;
     }
-    parameterGetToObserveMethod(get) {
+    parameterGetObservedMethod(get) {
         return get.value;
     }
-    parameterSetToObserveMethod(set) {
+    parameterSetObservedMethod(set) {
         set.value = 1;
     }
 }

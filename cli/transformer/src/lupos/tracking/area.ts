@@ -172,10 +172,10 @@ export class TrackingArea {
 						if (typeNode && (ts.isIdentifier(arg) || helper.access.isAccess(arg))) {
 							let resolved = helper.symbol.resolveImport(typeNode)
 							if (resolved?.moduleName === '@pucelle/lupos') {
-								if (resolved.memberName === 'ToObserve') {
+								if (resolved.memberName === 'GetObserved') {
 									this.mayAddGetTracking(arg, arg, [''])
 								}
-								else if (resolved.memberName === 'SetToObserve') {
+								else if (resolved.memberName === 'SetObserved') {
 									this.mayAddSetTracking(arg, arg, [''])
 								}
 							}
