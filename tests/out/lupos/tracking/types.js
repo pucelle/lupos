@@ -385,6 +385,11 @@ export class TestUnObserved extends Component {
     assignUnObservedPropValue() {
         Object.assign(this.unObservedProp, { value: 1 });
     }
+    unObservedOfObservedPropertyGetting() {
+        let o = { prop: { value: 1 } };
+        let prop = o.prop;
+        return prop.value;
+    }
 }
 export class TestUnObservedImplements extends Component {
     prop = { value: 1 };

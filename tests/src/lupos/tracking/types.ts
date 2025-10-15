@@ -413,7 +413,19 @@ export class TestUnObserved extends Component {
 	assignUnObservedPropValue() {
 		Object.assign(this.unObservedProp, {value: 1})
 	}
+
+	unObservedOfObservedPropertyGetting() {
+		let o: {prop: ObservedProp} = {prop: {value: 1}}
+		let prop = o.prop as UnObserved<ObservedProp>
+		return prop.value
+	}
+	
 }
+
+interface ObservedProp extends Observed {
+	value: number
+}
+
 
 export class TestUnObservedImplements extends Component implements UnObserved {
 

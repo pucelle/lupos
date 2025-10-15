@@ -475,6 +475,15 @@ export namespace ObservedChecker {
 
 		let result: boolean | null
 		
+		// `var a = b.c`.
+		// Closer to declaration, so check it firstly.
+		if (rawNode.initializer) {
+			result = getElementsObserved(rawNode.initializer)
+			if (result !== null) {
+				return result
+			}
+		}
+
 		let typeNode = rawNode.type
 		if (typeNode) {
 			result = getTypeNodeObserved(typeNode)
@@ -486,14 +495,6 @@ export namespace ObservedChecker {
 		let type = helper.types.typeOf(rawNode)
 		if (type) {
 			result = getTypeObserved(type)
-			if (result !== null) {
-				return result
-			}
-		}
-
-		// `var a = b.c`.
-		if (rawNode.initializer) {
-			result = getElementsObserved(rawNode.initializer)
 			if (result !== null) {
 				return result
 			}
