@@ -1,11 +1,12 @@
 import {trackGet, EffectMaker, untilUpdateComplete, trackSet} from '../../web/src'
+import { describe, it, expect, vi} from 'vitest'
 
 
 describe('Test effect', () => {
 
 	it('Test effect', async () => {
 		let a = {b: 1}
-		let fn = jest.fn()
+		let fn = vi.fn()
 
 		let effect = new EffectMaker(() => {
 			trackGet(a, 'b')

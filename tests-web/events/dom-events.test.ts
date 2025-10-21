@@ -1,11 +1,12 @@
 import {DOMEvents} from '../../web/src'
+import { describe, it, expect, vi} from 'vitest'
 
 
 describe('Test EventFirer', () => {
 
-	test('on & off for click', () => {
+	it('on & off for click', () => {
 		let div = document.createElement('div')
-		let fn = jest.fn()
+		let fn = vi.fn()
 	
 		DOMEvents.on(div, 'click', fn)
 		div.click()
@@ -17,9 +18,9 @@ describe('Test EventFirer', () => {
 	})
 
 
-	test('once for click', () => {
+	it('once for click', () => {
 		let div = document.createElement('div')
-		let fn = jest.fn()
+		let fn = vi.fn()
 
 		DOMEvents.once(div, 'click', fn)
 		div.click()
@@ -30,10 +31,10 @@ describe('Test EventFirer', () => {
 	})
 
 	
-	test('mouseenter & mouseleave', () => {
+	it('mouseenter & mouseleave', () => {
 		let div = document.createElement('div')
-		let fn1 = jest.fn()
-		let fn2 = jest.fn()
+		let fn1 = vi.fn()
+		let fn2 = vi.fn()
 
 		DOMEvents.once(div, 'mouseenter', fn1)
 		DOMEvents.once(div, 'mouseleave', fn2)

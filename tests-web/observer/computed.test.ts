@@ -1,4 +1,5 @@
 import {ComputedMaker, trackGet, trackSet, untilUpdateComplete} from '../../web/src'
+import { describe, it, expect, vi} from 'vitest'
 
 
 describe('Test computed', () => {
@@ -9,7 +10,7 @@ describe('Test computed', () => {
 		}
 
 		let a = new A()
-		let fn1 = jest.fn()
+		let fn1 = vi.fn()
 
 		let v1 = new ComputedMaker(() => {
 			trackGet(a, 'v')

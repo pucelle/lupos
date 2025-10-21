@@ -24,7 +24,7 @@ const ProxyMap: WeakMap<object | ProxyOf<any>, ProxyOf<any>> = /*#__PURE__*/new 
  */
 export function proxyOf<T extends object>(v: T): ProxyOf<T> {
 	if (!v || typeof v !== 'object') {
-		return v
+		return v as ProxyOf<T>
 	}
 
 	return proxyObject(v)

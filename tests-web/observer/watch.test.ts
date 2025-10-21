@@ -1,12 +1,13 @@
 import {trackGet, trackSet, untilUpdateComplete, WatchMaker, WatchMultiMaker} from '../../web/src'
+import { describe, it, expect, vi} from 'vitest'
 
 
 describe('Test watch', () => {
 
 	it('Test watch', async () => {
 		let a = {b: 1}
-		let fn = jest.fn()
-		let callback = jest.fn()
+		let fn = vi.fn()
+		let callback = vi.fn()
 
 		let watch = new WatchMaker(() => {
 			trackGet(a, 'b')
@@ -47,7 +48,7 @@ describe('Test watch', () => {
 
 	it('Test watch immediately', async () => {
 		let a = {b: 1}
-		let fn = jest.fn()
+		let fn = vi.fn()
 
 		let watch = new WatchMaker(() => {
 			trackGet(a, 'b')
@@ -67,7 +68,7 @@ describe('Test watch', () => {
 
 	it('Test watch once', async () => {
 		let a = {b: 1}
-		let fn = jest.fn()
+		let fn = vi.fn()
 
 		let watch = new WatchMaker(() => {
 			trackGet(a, 'b')
@@ -91,7 +92,7 @@ describe('Test watch', () => {
 
 	it('Test watch until', async () => {
 		let a = {b: 0}
-		let fn = jest.fn()
+		let fn = vi.fn()
 
 		let watch = new WatchMaker(() => {
 			trackGet(a, 'b')
@@ -112,7 +113,7 @@ describe('Test watch', () => {
 
 	it('Test watch multiple', async () => {
 		let a = {b: 0, c: 0}
-		let fn = jest.fn()
+		let fn = vi.fn()
 
 		let watch = new WatchMultiMaker([
 			() => {

@@ -1,4 +1,5 @@
 import {beginTrack, endTrack, trackGet, trackSet} from '../../web/src'
+import { describe, it, expect, vi} from 'vitest'
 
 
 describe('Test DependencyTracker', () => {
@@ -6,7 +7,7 @@ describe('Test DependencyTracker', () => {
 	it('Test DependencyTracker APIs', () => {
 		class A {
 			key!: {b: number, c: number[]}
-			update = jest.fn()
+			update = vi.fn()
 		}
 	
 		let a = new A()

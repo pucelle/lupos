@@ -1,8 +1,9 @@
 import {EventKeys} from '../../web/src'
+import { describe, it, expect} from 'vitest'
 
 
 describe('Test EventKeys', () => {
-	test('EventKeys', () => {
+	it('EventKeys', () => {
 		expect(EventKeys.pressedCharacterKey({which: 48})).toEqual(true)
 		expect(EventKeys.pressedCharacterKey({which: 46})).toEqual(false)
 		expect(EventKeys.pressedCharacterKey({which: 48, ctrlKey: true})).toEqual(false)

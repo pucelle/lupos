@@ -1,11 +1,12 @@
 import {beginTrack, endTrack, proxyOf} from '../../web/src'
+import { describe, it, expect, vi} from 'vitest'
 
 
 describe('Test proxyOf', () => {
 	
 	it('Test proxyOf', () => {
 		let a = proxyOf({b: 1, c: [1]})
-		let update = jest.fn()
+		let update = vi.fn()
 
 		function reCapture() {
 			beginTrack(update)

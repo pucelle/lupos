@@ -1,9 +1,10 @@
 import {MiniHeap} from '../../web/src'
+import { describe, it, expect} from 'vitest'
 
 
 describe('Test MiniHeap', () => {
 	
-	test('MiniHeap', () => {
+	it('MiniHeap', () => {
 		let m = new MiniHeap<number>((a, b) => a - b)
 		
 		for (let i = 0; i < 100; i++) {
@@ -20,7 +21,7 @@ describe('Test MiniHeap', () => {
 	})
 
 	// Not possible for heap struct.
-	// test('MiniHeap keep add order when having same comparing value', () => {
+	// it('MiniHeap keep add order when having same comparing value', () => {
 	// 	let m = new MiniHeap<{value: number, order: number}>((a, b) => a.order - b.order)
 		
 	// 	for (let i = 0; i < 100; i++) {

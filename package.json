@@ -27,18 +27,16 @@
 		"prepublish": "npm run build",
 		"test-win": "cd tests && node ../cli/bin/luc && echo Compare git changes to get test result && del tsconfig.tsbuildinfo",
 		"test-mac": "cd tests && node ../cli/bin/luc && echo Compare git changes to get test result && rm tsconfig.tsbuildinfo",
-		"test-web": "jest"
+		"test-web": "vitest"
 	},
 	"bin": {
 		"luc": "./cli/bin/luc"
 	},
 	"devDependencies": {
 		"@pucelle/lupos.js": "^0.1.0",
-		"@types/jest": "^27.4.0",
 		"@types/node": "^22.10.7",
-		"jest": "^29.7.0",
-		"jest-environment-jsdom": "^29.7.0",
-		"ts-jest": "^29.2.5",
-		"typescript": "^5.8.3"
+		"typescript": "^5.8.3",
+		"vitest": "^3.2.4",
+		"jsdom": "^27.0.1"
 	}
 }

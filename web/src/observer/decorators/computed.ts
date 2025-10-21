@@ -85,6 +85,7 @@ export class ComputedMaker<V = any> {
 		this.onReset?.()
 	}
 
+	/** If not connected, will always get old value. */
 	get(): V {
 		if (this.valueState === ComputedValueState.Fresh) {
 			return this.value!

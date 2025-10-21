@@ -1,12 +1,13 @@
 import {EventFirer} from '../../web/src'
+import { describe, it, expect, vi} from 'vitest'
 
 
 describe('Test EventFirer', () => {
 	let e = new EventFirer()
-	let fn = jest.fn()
+	let fn = vi.fn()
 	let scope = {}
 
-	test('EventFirer', () => {
+	it('EventFirer', () => {
 		e.on('name', fn, scope)
 		expect(e.hasListenerType('name')).toEqual(true)
 		expect(e.hasListener('name', fn)).toEqual(true)
