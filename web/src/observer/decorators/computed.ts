@@ -43,6 +43,11 @@ export class ComputedMaker<V = any> {
 
 	disconnect() {
 		this.tracker?.remove()
+
+		// Treat as fresh after connected.
+		if (this.valueState === ComputedValueState.Stale) {
+			this.valueState = ComputedValueState.Fresh
+		}
 	}
 
 	private willUpdate() {

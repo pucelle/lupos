@@ -46,12 +46,22 @@ export function beginTrack(callback: Function, scope: object | null = null): Dep
  */
 export function endTrack() {
 	currentTracker!.apply()
+	debug(currentTracker!)
 
 	if (trackerStack.length > 0) {
 		currentTracker = trackerStack.pop()!
 	}
 	else {
 		currentTracker = null
+	}
+}
+
+
+/** This debug function will be eliminated in production mode. */
+function debug(currentTracker: DependencyTracker) {
+	if (currentTracker!.dependencies.keyCount() > 500) {
+		console.warn(`Too many dependencies (${currentTracker!.dependencies.keyCount()}) captured, try reduce some.`)
+		console.log(currentTracker!.dependencies)
 	}
 }
 
