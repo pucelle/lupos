@@ -71,7 +71,7 @@ const heap: UpdateHeap = /*#__PURE__*/new UpdateHeap()
 let updateCompleteCallbacks: (() => void)[] = []
 
 /** What's updating right now. */
-let phase: QueueUpdatePhase = /*#__PURE__*/QueueUpdatePhase.NotStarted
+let phase: QueueUpdatePhase = QueueUpdatePhase.NotStarted
 
 
 /** 
