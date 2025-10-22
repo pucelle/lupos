@@ -420,10 +420,17 @@ export class TestUnObserved extends Component {
 		return prop.value
 	}
 	
+	unObservedParameter(data: UnObserved<ObservedData>) {
+		return data.prop.value
+	}
 }
 
 interface ObservedProp extends Observed {
 	value: number
+}
+
+interface ObservedData extends Observed {
+	prop: ObservedProp
 }
 
 

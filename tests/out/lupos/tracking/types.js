@@ -390,6 +390,10 @@ export class TestUnObserved extends Component {
         let prop = o.prop;
         return prop.value;
     }
+    unObservedParameter(data) {
+        trackGet(data.prop, "value");
+        return data.prop.value;
+    }
 }
 export class TestUnObservedImplements extends Component {
     prop = { value: 1 };
