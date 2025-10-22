@@ -31,7 +31,7 @@ function parseCSSTemplate(node: ts.TaggedTemplateExpression) {
 			let text = strings![0].text
 
 			replaced = factory.createTaggedTemplateExpression(
-				factory.createIdentifier('css'),
+				node.tag,
 				undefined,
 				factory.createNoSubstitutionTemplateLiteral(
 					text,
