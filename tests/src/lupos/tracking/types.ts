@@ -294,6 +294,17 @@ class AnyMethodsObserved implements MethodsObserved<'get', 'set'> {
 }
 
 
+export class TestEffectDecorator extends Component {
+
+	value: number = 1
+
+	// Recently not support exclude get when set existing.
+	@effect onChange() {
+		this.value = this.value + 1
+	}
+}
+
+
 export class TestParameterGetSetObserved extends Component {
 	toGet: {value: number} = {value: 0}
 	toSet: {value: number} = {value: 0}

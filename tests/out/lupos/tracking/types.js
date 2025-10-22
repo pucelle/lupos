@@ -272,6 +272,26 @@ class AnyMethodsObserved {
         this.value = value;
     }
 }
+export class TestEffectDecorator extends Component {
+    value = 1;
+    onCreated() {
+        super.onCreated();
+        this.$onChange_effector = new EffectMaker(this.onChange, this);
+    }
+    onConnected() {
+        super.onConnected();
+        this.$onChange_effector.connect();
+    }
+    onWillDisconnect() {
+        super.onWillDisconnect();
+        this.$onChange_effector.disconnect();
+    }
+    onChange() {
+        this.value = this.value + 1;
+        trackGet(this, "value");
+        trackSet(this, "value");
+    }
+}
 export class TestParameterGetSetObserved extends Component {
     toGet = { value: 0 };
     toSet = { value: 0 };
