@@ -111,6 +111,10 @@ export class TestObservedProperty extends Component {
 		return prop.value
 	}
 
+	getObservedPropResetType() {
+		return (this.prop as {value: number}).value
+	}
+
 	expressionDistinct() {
 		return this.prop.value + (this.prop as Observed<{value: number}>).value
 	}

@@ -156,7 +156,14 @@ export namespace ObservedChecker {
 				return null
 			}
 
-			return getTypeNodeObserved(typeNode)
+			// If `this.prop as Prop`, this is observed but prop not,
+			// will still analyze for this.
+			let result = getTypeNodeObserved(typeNode)
+			if (result !== null) {
+				return result
+			}
+
+			return getElementsObserved(rawNode.expression)
 		}
 
 		// `a ? b : c`, can observe only if both b & c should be observed.

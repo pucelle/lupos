@@ -100,6 +100,11 @@ export class TestObservedProperty extends Component {
         trackGet(prop, "value");
         return prop.value;
     }
+    getObservedPropResetType() {
+        trackGet(this, "prop");
+        trackGet(this.prop, "value");
+        return this.prop.value;
+    }
     expressionDistinct() {
         trackGet(this, "prop");
         trackGet(this.prop, "value");
