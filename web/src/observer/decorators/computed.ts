@@ -16,7 +16,17 @@ const enum ComputedValueState {
  * 
  * Note: it gets updated in initialization order of all effectors / computers / watchers.
  */
-export class ComputedMaker<V = any> {
+export class Computed<V = any> {
+
+	/** Make a quick getter by a getter function. */
+	static getter<V>(getter: () => V, scope?: any): () => V {
+		let computer = new Computed(getter, undefined, scope)
+
+		return () => {
+			return computer.get()
+		}
+	}
+
 
 	readonly order = getIncrementalOrder()
 

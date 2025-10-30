@@ -1,6 +1,6 @@
 import { Observed, Connectable } from '../../../web/out';
 import { Component } from '@pucelle/lupos.js';
-import { ComputedMaker, trackGet, trackSet, EffectMaker, WatchMaker } from "@pucelle/lupos";
+import { Computed, trackGet, trackSet, Effector, Watcher } from "@pucelle/lupos";
 export class TestComputed extends Component {
     prop = 1;
     $compute_prop2() {
@@ -16,7 +16,7 @@ export class TestComputed extends Component {
     }
     onCreated() {
         super.onCreated();
-        this.$prop2_computer = new ComputedMaker(this.$compute_prop2, this.$reset_prop2, this);
+        this.$prop2_computer = new Computed(this.$compute_prop2, this.$reset_prop2, this);
     }
     onConnected() {
         super.onConnected();
@@ -38,7 +38,7 @@ export class TestEffect extends Component {
     propWrite = 1;
     onCreated() {
         super.onCreated();
-        this.$onPropChangeEffect_effector = new EffectMaker(this.onPropChangeEffect, this);
+        this.$onPropChangeEffect_effector = new Effector(this.onPropChangeEffect, this);
     }
     onConnected() {
         super.onConnected();
@@ -65,7 +65,7 @@ export class TestWatchProperty extends Component {
     prop = 1;
     onCreated() {
         super.onCreated();
-        this.$onPropChange_watcher = new WatchMaker(function () { trackGet(this, 'prop'); return this.prop; }, this.onPropChange, this);
+        this.$onPropChange_watcher = new Watcher(function () { trackGet(this, 'prop'); return this.prop; }, this.onPropChange, this);
     }
     onConnected() {
         super.onConnected();
@@ -88,7 +88,7 @@ export class TestWatchCallback extends Component {
     prop = 1;
     onCreated() {
         super.onCreated();
-        this.$onPropChange_watcher = new WatchMaker(function () { trackGet(this, "prop"); return this.prop; }, this.onPropChange, this);
+        this.$onPropChange_watcher = new Watcher(function () { trackGet(this, "prop"); return this.prop; }, this.onPropChange, this);
     }
     onConnected() {
         super.onConnected();
@@ -110,7 +110,7 @@ export class TestWatchCallbackDerived extends TestWatchCallback {
 export class TestObservedImplemented {
     prop = 1;
     constructor() {
-        this.$onPropChangeEffect_effector = new EffectMaker(this.onPropChangeEffect, this);
+        this.$onPropChangeEffect_effector = new Effector(this.onPropChangeEffect, this);
         this.$onPropChangeEffect_effector.connect();
     }
     onPropChangeEffect() {
@@ -120,7 +120,7 @@ export class TestObservedImplemented {
 }
 export class TestConnectable {
     prop = 1;
-    onCreated() { this.$onPropChangeEffect_effector = new EffectMaker(this.onPropChangeEffect, this); }
+    onCreated() { this.$onPropChangeEffect_effector = new Effector(this.onPropChangeEffect, this); }
     onConnected() { this.$onPropChangeEffect_effector.connect(); }
     onWillDisconnect() { this.$onPropChangeEffect_effector.disconnect(); }
     onPropChangeEffect() {

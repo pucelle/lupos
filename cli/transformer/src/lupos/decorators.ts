@@ -44,7 +44,7 @@ defineVisitor(function(node: ts.Node) {
 Compile `@computed prop(){...}` to:
 
 onCreated() {
-	this.$prop_computer = new ComputedMaker(this.$compute_prop, this.$reset_prop, this)
+	this.$prop_computer = new Computed(this.$compute_prop, this.$reset_prop, this)
 }
 
 onConnected() {
@@ -163,7 +163,7 @@ function compileComputedDecorator(
 Compile `@effect method(){...}` to:
 
 onCreated() {
-	this.$method_effector = new EffectMaker(this.$compute_method, this)
+	this.$method_effector = new Effector(this.$compute_method, this)
 }
 
 onConnected() {

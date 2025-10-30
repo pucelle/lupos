@@ -1,4 +1,4 @@
-import {trackGet, EffectMaker, untilUpdateComplete, trackSet} from '../../web/src'
+import {trackGet, Effector, untilUpdateComplete, trackSet} from '../../web/src'
 import { describe, it, expect, vi} from 'vitest'
 
 
@@ -8,7 +8,7 @@ describe('Test effect', () => {
 		let a = {b: 1}
 		let fn = vi.fn()
 
-		let effect = new EffectMaker(() => {
+		let effect = new Effector(() => {
 			trackGet(a, 'b')
 			a.b
 			fn()

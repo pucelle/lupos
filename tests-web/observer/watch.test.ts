@@ -1,4 +1,4 @@
-import {trackGet, trackSet, untilUpdateComplete, WatchMaker, WatchMultiMaker} from '../../web/src'
+import {trackGet, trackSet, untilUpdateComplete, Watcher, MultiWatcher} from '../../web/src'
 import { describe, it, expect, vi} from 'vitest'
 
 
@@ -9,7 +9,7 @@ describe('Test watch', () => {
 		let fn = vi.fn()
 		let callback = vi.fn()
 
-		let watch = new WatchMaker(() => {
+		let watch = new Watcher(() => {
 			trackGet(a, 'b')
 			fn()
 			return a.b
@@ -50,7 +50,7 @@ describe('Test watch', () => {
 		let a = {b: 1}
 		let fn = vi.fn()
 
-		let watch = new WatchMaker(() => {
+		let watch = new Watcher(() => {
 			trackGet(a, 'b')
 			return a.b
 		}, fn, null, {immediate: true})
@@ -70,7 +70,7 @@ describe('Test watch', () => {
 		let a = {b: 1}
 		let fn = vi.fn()
 
-		let watch = new WatchMaker(() => {
+		let watch = new Watcher(() => {
 			trackGet(a, 'b')
 			return a.b
 		}, fn, null, {once: true})
@@ -94,7 +94,7 @@ describe('Test watch', () => {
 		let a = {b: 0}
 		let fn = vi.fn()
 
-		let watch = new WatchMaker(() => {
+		let watch = new Watcher(() => {
 			trackGet(a, 'b')
 			return a.b
 		}, fn, null, {untilTrue: true})
@@ -115,7 +115,7 @@ describe('Test watch', () => {
 		let a = {b: 0, c: 0}
 		let fn = vi.fn()
 
-		let watch = new WatchMultiMaker([
+		let watch = new MultiWatcher([
 			() => {
 				trackGet(a, 'b')
 				return a.b

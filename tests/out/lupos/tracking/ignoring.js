@@ -1,6 +1,6 @@
 import { Component, RefBinding, CompiledTemplateResult, TemplateMaker, SlotPosition, HTMLMaker } from '@pucelle/lupos.js';
 import { trackGet, trackSet } from '../../../../web/out';
-import { ComputedMaker, trackGet, trackSet, WatchMaker } from "@pucelle/lupos";
+import { Computed, trackGet, trackSet, Watcher } from "@pucelle/lupos";
 const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
 /*
 <root>
@@ -103,7 +103,7 @@ export class TestIgnoringOfPrivateComputedProperty extends Component {
     prop = 1;
     onCreated() {
         super.onCreated();
-        this.$computedProp_computer = new ComputedMaker(this.$compute_computedProp, this.$reset_computedProp, this);
+        this.$computedProp_computer = new Computed(this.$compute_computedProp, this.$reset_computedProp, this);
     }
     onConnected() {
         super.onConnected();
@@ -154,7 +154,7 @@ export class TestPreventIgnoringWatcherGetter extends Component {
     ref;
     onCreated() {
         super.onCreated();
-        this.$read_watcher = new WatchMaker(function () { trackGet(this, "ref"); return this.ref; }, this.read, this);
+        this.$read_watcher = new Watcher(function () { trackGet(this, "ref"); return this.ref; }, this.read, this);
     }
     onConnected() {
         super.onConnected();

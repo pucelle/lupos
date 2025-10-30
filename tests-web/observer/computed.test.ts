@@ -1,4 +1,4 @@
-import {ComputedMaker, trackGet, trackSet, untilUpdateComplete} from '../../web/src'
+import {Computed, trackGet, trackSet, untilUpdateComplete} from '../../web/src'
 import { describe, it, expect, vi} from 'vitest'
 
 
@@ -12,7 +12,7 @@ describe('Test computed', () => {
 		let a = new A()
 		let fn1 = vi.fn()
 
-		let v1 = new ComputedMaker(() => {
+		let v1 = new Computed(() => {
 			trackGet(a, 'v')
 			fn1()
 			return a.v + 1

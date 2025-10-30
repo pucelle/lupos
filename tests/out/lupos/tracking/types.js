@@ -1,6 +1,6 @@
 import { MethodsObserved, Observed, UnObserved, GetObserved, SetObserved } from '../../../../web/out';
 import { Component } from '@pucelle/lupos.js';
-import { EffectMaker, trackGet, trackSet } from "@pucelle/lupos";
+import { Effector, trackGet, trackSet } from "@pucelle/lupos";
 export class TestObservedVariableType {
     variables() {
         var a = { value: 1 };
@@ -223,7 +223,7 @@ class ListMap {
 export class TestPropertyOfMethodsObserved {
     data = new AnyMethodsObserved();
     constructor() {
-        this.$setOverlapSetKeys_effector = new EffectMaker(this.setOverlapSetKeys, this);
+        this.$setOverlapSetKeys_effector = new Effector(this.setOverlapSetKeys, this);
         this.$setOverlapSetKeys_effector.connect();
     }
     getItem() {
@@ -281,7 +281,7 @@ export class TestEffectDecorator extends Component {
     value = 1;
     onCreated() {
         super.onCreated();
-        this.$onChange_effector = new EffectMaker(this.onChange, this);
+        this.$onChange_effector = new Effector(this.onChange, this);
     }
     onConnected() {
         super.onConnected();

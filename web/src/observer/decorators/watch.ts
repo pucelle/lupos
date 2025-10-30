@@ -26,12 +26,12 @@ const DefaultWatchOptions: WatchOptions = {
 /** 
  * Watch returned value of `getter` and calls `callback` after the value becomes changed.
  * 
- * If wanting to watch several values, can use `MultipleWatchMaker`,
- * but note `MultipleWatchMaker` accepts no option.
+ * If wanting to watch several values, can use `MultipleWatcher`,
+ * but note `MultipleWatcher` accepts no option.
  * 
  * Note: it gets updated in initialization order of all effectors / computers / watchers.
  */
-export class WatchMaker<V = any> {
+export class Watcher<V = any> {
 
 	readonly order = getIncrementalOrder()
 
@@ -113,7 +113,7 @@ type InferValueGetters<V extends any[]> = {[K in keyof V]: () => V[K]}
  * 
  * Note: it gets updated in initialization order of all effectors / computers / watchers.
  */
-export class WatchMultiMaker<V extends any[] = any> {
+export class MultiWatcher<V extends any[] = any> {
 
 	readonly order = getIncrementalOrder()
 
