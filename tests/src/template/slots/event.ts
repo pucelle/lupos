@@ -62,8 +62,7 @@ export class TestEvent extends Component {
 
 	testLocalAssignment() {
 		let value: any
-		value
-		return html`<div @click=${(e: any) => value = e} />`
+		return html`<div @click=${(e: any) => value = e}>${value}</div>`
 	}
 
 	testIgnoringBound() {

@@ -179,8 +179,8 @@ class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 
 		// Has no local reference, can transfer.
 		let hasLocalReference = (mask & MutableMask.HasLocalReference) > 0
-		if (!hasLocalReference) {
-			return true
+		if (hasLocalReference) {
+			return false
 		}
 
 		// Can transfer as a callback, and local reference will be passed by `$latest_x`.
