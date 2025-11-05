@@ -16,14 +16,17 @@ const enum QueueUpdatePhase {
 }
 
 
+type UpdateCallback = () => void | Promise<void>
+
+
 /** Caches things that need to be update. */
 class UpdateHeap {
 	
 	/** Cache existed callbacks. */
-	private set: Set<Function> = new Set()
+	private set: Set<UpdateCallback> = new Set()
 
 	/** Dynamically sorted callbacks. */
-	private heap: MiniHeap<{callback: Function, order: number}>
+	private heap: MiniHeap<{callback: UpdateCallback, order: number}>
 
 	constructor() {
 		this.heap = new MiniHeap(function(a, b) {
@@ -35,11 +38,11 @@ class UpdateHeap {
 		return this.heap.isEmpty()
 	}
 
-	has(callback: Function, scope: object | null): boolean {
+	has(callback: UpdateCallback, scope: object | null): boolean {
 		return this.set.has(bindCallback(callback, scope))
 	}
 
-	add(callback: Function, scope: object | null, order: number) {
+	add(callback: UpdateCallback, scope: object | null, order: number) {
 		let boundCallback = bindCallback(callback, scope)
 
 		this.heap.add({
@@ -83,8 +86,11 @@ let phase: QueueUpdatePhase = QueueUpdatePhase.NotStarted
  * 
  * Note you should prevent adding same callback multiple times before updating.
  * E.g., you may implement a `needsUpdate` property, and avoid enqueuing if it's still `true`.
+ * 
+ * `callback` can be an async function, but note never place `untilUpdateComplete` into it,
+ * or the whole callback and whole queue will be stuck and never run.
  */
-export function enqueueUpdate(callback: () => void, scope: object | null = null, order: number = 0) {
+export function enqueueUpdate(callback: UpdateCallback, scope: object | null = null, order: number = 0) {
 	heap.add(callback, scope, order)
 	willUpdateIfNotYet()
 }
@@ -94,8 +100,11 @@ export function enqueueUpdate(callback: () => void, scope: object | null = null,
  * Enqueue a callback with a scope, will call it when:
  * 	- Before all enqueued callbacks with order `0`, normally watchers / effectors / computers.
  *  - After all components update callbacks.
+ * 
+ * `callback` can be an async function, but note never place `untilUpdateComplete` into it,
+ * or the whole callback and whole queue will be stuck and never run.
  */
-export function enqueueAfterDataApplied(callback: () => void, scope: object | null = null) {
+export function enqueueAfterDataApplied(callback: UpdateCallback, scope: object | null = null) {
 	heap.add(callback, scope, 0.5)
 	willUpdateIfNotYet()
 }
@@ -130,11 +139,24 @@ async function update() {
 	try {
 		while (!heap.isEmpty() || updateCompleteCallbacks.length > 0) {
 			while (!heap.isEmpty()) {
+				let promises: Promise<void>[] = []
+
 				do {
 					let callback = heap.shift()!
-					callback()
+					let returned = callback()
+
+					if (returned) {
+						promises.push(returned)
+					}
 				}
 				while (!heap.isEmpty())
+
+				// Here starts all the async updates at same time,
+				// means if parent component want to remove child in an async update,
+				// child component may be in updating.
+				if (promises.length > 0) {
+					await Promise.all(promises)
+				}
 			}
 
 			let callbacks = updateCompleteCallbacks
@@ -194,7 +216,6 @@ let firstPaintPromise = /*#__PURE__*/(async () => {
 	}
 
 	await untilDocumentComplete()
-	await untilUpdateComplete()
 	await sleep()
 })()
 
