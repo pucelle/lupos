@@ -11,8 +11,11 @@ const enum QueueUpdatePhase {
 	/** Will update in next animation frame. */
 	Prepended,
 
-	/** Are updating, back to `NotStarted` after ended. */
-	Updating,
+	/** Handling update callbacks, can't push complete callbacks now. */
+	HandlingUpdateCallbacks,
+
+	/** Handling complete callbacks. */
+	HandlingCompleteCallbacks,
 }
 
 
@@ -115,6 +118,11 @@ export function enqueueAfterDataApplied(callback: UpdateCallback, scope: object 
  * Can safely read computed style and rendered properties after promise resolved.
  */
 export function untilUpdateComplete(): Promise<void> {
+	if (phase === QueueUpdatePhase.HandlingUpdateCallbacks) {
+		console.warn(`You should not use 'untilUpdateComplete' in an async update.`)
+		return Promise.resolve()
+	}
+
 	let {promise, resolve} = promiseWithResolves()
 	updateCompleteCallbacks.push(resolve)
 	willUpdateIfNotYet()
@@ -134,10 +142,10 @@ function willUpdateIfNotYet() {
 
 /** Do updating. */
 async function update() {
-	phase = QueueUpdatePhase.Updating
-
 	try {
 		while (!heap.isEmpty() || updateCompleteCallbacks.length > 0) {
+			phase = QueueUpdatePhase.HandlingUpdateCallbacks
+
 			while (!heap.isEmpty()) {
 				let promises: Promise<void>[] = []
 
@@ -159,6 +167,8 @@ async function update() {
 				}
 			}
 
+
+			phase = QueueUpdatePhase.HandlingCompleteCallbacks
 			let callbacks = updateCompleteCallbacks
 			updateCompleteCallbacks = []
 
