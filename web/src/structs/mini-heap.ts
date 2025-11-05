@@ -5,13 +5,18 @@
 export class MiniHeap<T> {
 	
 	/** If `a < b`, returns `-1`. */
-	private comparer: (a: T, b: T) => number
+	private readonly comparer: (a: T, b: T) => number
 
 	/** List of items. */
 	private list: T[] = []
 
 	constructor(comparer: (a: T, b: T) => number) {
 		this.comparer = comparer
+	}
+
+	/** Get heap size. */
+	get size() {
+		return this.list.length
 	}
 
 	/** Whether have no items. */
@@ -30,6 +35,11 @@ export class MiniHeap<T> {
 	/** Get all items in mini map. */
 	getItems(): T[] {
 		return this.list
+	}
+
+	/** Get item at specified index. */
+	getAt(index: number): T {
+		return this.list[index]
 	}
 
 	/** Get the minimum item in the head. */
@@ -57,6 +67,13 @@ export class MiniHeap<T> {
 		this.shiftDown(0)
 
 		return firstValue
+	}
+
+	/** Remove element at specified index. */
+	removeAt(index: number) {
+		this.list[index] = this.list.pop()!
+		this.shiftDown(index)
+		this.shiftUp(index)
 	}
 	
 	/** 
