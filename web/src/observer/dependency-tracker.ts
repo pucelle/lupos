@@ -53,8 +53,7 @@ export function endTrack() {
 /** This debug function will be eliminated in production mode. */
 function debug(currentTracker: DependencyTracker) {
 	if (currentTracker!.dependencies.keyCount() > 500) {
-		console.warn(`Too many dependencies (${currentTracker!.dependencies.keyCount()}) captured, try reduce some.`)
-		console.log(currentTracker!.dependencies)
+		console.warn(`Too many dependencies (${currentTracker!.dependencies.keyCount()}) captured, try reduce some.`, currentTracker!.dependencies)
 	}
 }
 

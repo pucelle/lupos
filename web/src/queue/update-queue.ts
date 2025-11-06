@@ -72,6 +72,15 @@ export function enqueueUpdate(upd: Updatable) {
  * 
  * Use it when you need to wait for child and descendant components
  * update completed and do some measurement.
+ * 
+ * ```ts
+ * async update() {
+ *     this.updateRendering()
+ *     await untilChildCompletePromise()
+ *     await barrierDOMReading()
+ *     ...
+ * }
+ * ```
  */
 export function untilChildUpdateComplete(upd: Updatable): Promise<void> {
 	return queue.treeMap.getChildCompletePromise(upd)
@@ -131,7 +140,9 @@ class UpdateQueue {
 	enqueue(upd: Updatable) {
 
 		// Although has been enqueued independently, here must enqueue to TreeMap.
-		this.treeMap.onEnqueue(upd)
+		if (upd.iid >= 1) {
+			this.treeMap.onEnqueue(upd)
+		}
 
 		// Must update it immediately, or it will be stuck because can't resolve promises.
 		if (this.phase === QueueUpdatePhase.WaitingAsyncUpdates) {

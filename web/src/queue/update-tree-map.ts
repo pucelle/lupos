@@ -41,12 +41,15 @@ export class UpdatableTreeMap {
 
 	/** On enqueue an upd. */
 	onEnqueue(upd: Updatable) {
-
-		// Only when should update after currently updating.
-		if (this.updating && upd.iid > this.updating.iid) {
-			this.childParentMap.set(upd, this.updating)
-			let parentInfo = this.getInfo(this.updating)
-			parentInfo.childCount++
+		if (this.updating) {
+			if (upd.iid > this.updating.iid) {
+				this.childParentMap.set(upd, this.updating)
+				let parentInfo = this.getInfo(this.updating)
+				parentInfo.childCount++
+			}
+			else {
+				debug(upd, this.updating)
+			}
 		}
 	}
 
@@ -72,14 +75,6 @@ export class UpdatableTreeMap {
 	/** 
 	 * Get a promise which will be resolved after all children update completed.
 	 * Must call it after updated child properties.
-	 * 
-	 * ```ts
-	 * async update() {
-	 *     this.updateRendering()
-	 *     await getChildCompletePromise()
-	 *     ...
-	 * }
-	 * ```
 	 */
 	getChildCompletePromise(upd: Updatable): Promise<void> {
 		if (upd === this.updating) {
@@ -117,4 +112,10 @@ export class UpdatableTreeMap {
 			}
 		}
 	}
+}
+
+
+/** This debug function will be eliminated in production mode. */
+function debug(upd: Updatable, updating: Updatable) {
+	console.warn(`Outer get enqueued when updating inner`, upd, updating)
 }
