@@ -4,20 +4,6 @@ import {AnimationFrame, promiseWithResolves} from '../utils'
 import {UpdatableTreeMap} from './update-tree-map'
 
 
-/** Indicates queue update phase. */
-const enum QueueUpdatePhase {
-
-	/** Nothing to update. */
-	NotStarted,
-
-	/** Will update in next animation frame. */
-	Prepended,
-
-	/** Are updating, back to `NotStarted` after ended. */
-	Updating,
-}
-
-
 /** Caches things that need to be update. */
 class UpdateHeap {
 	
@@ -37,19 +23,23 @@ class UpdateHeap {
 		return this.heap.isEmpty()
 	}
 
-	has(udp: Updatable): boolean {
-		return this.set.has(udp)
+	has(upd: Updatable): boolean {
+		return this.set.has(upd)
 	}
 
-	add(udp: Updatable) {
-		this.heap.add(udp)
-		this.set.add(udp)
+	add(upd: Updatable) {
+		this.heap.add(upd)
+		this.set.add(upd)
 	}
 
-	shift() {
-		let udp = this.heap.popHead()!
-		this.set.delete(udp)
-		return udp
+	getHead(): Updatable {
+		return this.heap.getHead()!
+	}
+
+	popHead() {
+		let upd = this.heap.popHead()!
+		this.set.delete(upd)
+		return upd
 	}
 
 	clear() {
@@ -59,38 +49,20 @@ class UpdateHeap {
 }
 
 
-/** Caches all callbacks in order. */
-const Heap: UpdateHeap = /*#__PURE__*/new UpdateHeap()
-
-/** Callbacks wait to be called after all the things update. */
-let updateCompleteCallbacks: (() => void)[] = []
-
-/** What's updating right now. */
-let phase: QueueUpdatePhase = QueueUpdatePhase.NotStarted
-
-/** To support tracking child complete and do callback. */
-const TreeMap: UpdatableTreeMap = /*#__PURE__*/new UpdatableTreeMap()
+/** Whether target updatable has been enqueued and not. */
+export function hasEnqueuedUpdate(upd: Updatable): boolean {
+	return queue.heap.has(upd)
+}
 
 
 /** 
  * Enqueue a callback with a scope, will call it before the next animate frame.
- *  
- * `order` specifies the callback order:
- *  - For a watcher / effector / computer, it's default value `0`.
- * 	- For a component, it's the incremental id of this component.
  * 
- * `callback` can be an async function, but note never place `untilUpdateComplete` into it,
+ * `update` method can be an async function, but note never place `untilUpdateComplete` into it,
  * or the whole callback and whole queue will be stuck and never run.
  */
-export function enqueueUpdate(udp: Updatable) {
-
-	// Although has been enqueued independently, here must enqueue to TreeMap.
-	TreeMap.onEnqueue(udp)
-
-	if (!Heap.has(udp)) {
-		Heap.add(udp)
-		willUpdateIfNotYet()
-	}
+export function enqueueUpdate(upd: Updatable) {
+	queue.enqueue(upd)
 }
 
 
@@ -101,8 +73,8 @@ export function enqueueUpdate(udp: Updatable) {
  * Use it when you need to wait for child and descendant components
  * update completed and do some measurement.
  */
-export function untilChildUpdateComplete(udp: Updatable): Promise<void> {
-	return TreeMap.getChildCompletePromise(udp)
+export function untilChildUpdateComplete(upd: Updatable): Promise<void> {
+	return queue.treeMap.getChildCompletePromise(upd)
 }
 
 
@@ -114,77 +86,150 @@ export function untilChildUpdateComplete(udp: Updatable): Promise<void> {
  */
 export function untilAllUpdateComplete(): Promise<void> {
 	let {promise, resolve} = promiseWithResolves()
-	updateCompleteCallbacks.push(resolve)
-	willUpdateIfNotYet()
-	
+	queue.addCompleteCallback(resolve)
 	return promise
 }
 
 
-/** Enqueue a update task if not have. */
-function willUpdateIfNotYet() {
-	if (phase === QueueUpdatePhase.NotStarted) {
-		AnimationFrame.requestCurrent(update)
-		phase = QueueUpdatePhase.Prepended
-	}
+
+/** Indicates queue update phase. */
+const enum QueueUpdatePhase {
+
+	/** Nothing to update. */
+	NotStarted,
+
+	/** Will update in next animation frame. */
+	Prepended,
+
+	/** Are updating, back to `NotStarted` after ended. */
+	UpdatingInOrder,
+
+	/** Are waiting for async updates complete. */
+	WaitingAsyncUpdates,
+
+	/** Are calling complete callbacks. */
+	CallingCompleteCallbacks,
 }
 
+class UpdateQueue {
+		
+	/** Caches all callbacks in order. */
+	readonly heap: UpdateHeap = new UpdateHeap()
 
-/** Do updating. */
-async function update() {
-	phase = QueueUpdatePhase.Updating
+	/** To support tracking child complete and do callback. */
+	readonly treeMap: UpdatableTreeMap = new UpdatableTreeMap()
 
-	try {
-		while (!Heap.isEmpty() || updateCompleteCallbacks.length > 0) {
-			while (!Heap.isEmpty()) {
-				let promises: Promise<void>[] = []
+	/** What's updating right now. */
+	private phase: QueueUpdatePhase = QueueUpdatePhase.NotStarted
 
-				do {
-					let udp = Heap.shift()!
-					TreeMap.onUpdateStart(udp)
+	/** Callbacks wait to be called after all the things update. */
+	private completeCallbacks: (() => void)[] = []
 
-					let returned = udp.update()
+	/** The promises that will wait for. */
+	private promises: Promise<void>[] = []
 
-					if (returned) {
-						promises.push(returned)
-						returned.then(() => {
-							TreeMap.onUpdateEnd(udp)
-						})
-					}
-					else {
-						TreeMap.onUpdateEnd(udp)
-					}
-				}
-				while (!Heap.isEmpty())
+	enqueue(upd: Updatable) {
 
-				// Here starts all the async updates at same time,
-				// means if parent component want to remove child in an async update,
-				// child component may be in updating.
-				if (promises.length > 0) {
-					await Promise.all(promises)
-				}
-			}
+		// Although has been enqueued independently, here must enqueue to TreeMap.
+		this.treeMap.onEnqueue(upd)
 
-			let callbacks = updateCompleteCallbacks
-			updateCompleteCallbacks = []
-
-			// Calls callbacks, all components and watchers become stable now.
-			for (let callback of callbacks) {
-				callback()
-			}
-
-			// Wait for a micro task to see if more callbacks come.
-			await Promise.resolve()
-
-			// Wait for those very deep micro tasks to be completed.
-			// Bad part is it may postpone callback to next frame.
-			// await sleep(0)
+		// Must update it immediately, or it will be stuck because can't resolve promises.
+		if (this.phase === QueueUpdatePhase.WaitingAsyncUpdates) {
+			this.updateOne(upd)
+		}
+		else if (!this.heap.has(upd)) {
+			this.heap.add(upd)
+			queue.willUpdate()
 		}
 	}
-	catch (err) {
-		console.error(err)
+
+	/** Enqueue a update task if not have. */
+	willUpdate() {
+		if (this.phase === QueueUpdatePhase.NotStarted) {
+			AnimationFrame.requestCurrent(this.update.bind(this))
+			this.phase = QueueUpdatePhase.Prepended
+		}
 	}
 
-	// Back to start stage.
-	phase = QueueUpdatePhase.NotStarted
+	/** Add a complete callback. */
+	addCompleteCallback(callback: () => void) {
+		this.completeCallbacks.push(callback)
+		this.willUpdate()
+	}
+
+	/** Do updating. */
+	private async update() {
+		try {
+			while (!this.heap.isEmpty() || this.completeCallbacks.length > 0) {
+				await this.updateInOrder()
+			}
+		}
+		catch (err) {
+			this.heap.clear()
+			this.completeCallbacks = []
+			console.error(err)
+		}
+
+		// Back to start stage.
+		this.phase = QueueUpdatePhase.NotStarted
+	}
+
+	private async updateInOrder() {
+		this.phase = QueueUpdatePhase.UpdatingInOrder
+
+		while (!this.heap.isEmpty()) {
+			let upd = this.heap.popHead()!
+			this.updateOne(upd)
+		}
+
+
+		// Here starts all the async updates at same time,
+		// means if parent component want to remove child in an async update,
+		// child component may be in updating.
+		this.phase = QueueUpdatePhase.WaitingAsyncUpdates
+
+		while (this.promises.length > 0) {
+			let promises = this.promises
+			this.promises = []
+			await Promise.all(promises)
+		}
+
+
+		this.phase = QueueUpdatePhase.CallingCompleteCallbacks
+		let callbacks = this.completeCallbacks
+		this.completeCallbacks = []
+
+		// Calls callbacks, all components and watchers become stable now.
+		for (let callback of callbacks) {
+			callback()
+		}
+
+		// Wait for a micro task to see if more callbacks come.
+		await Promise.resolve()
+
+		// Wait for those very deep micro tasks to be completed.
+		// Bad part is it may postpone callback to next frame.
+		// await sleep(0)
+	}
+
+	private updateOne(upd: Updatable) {
+		if (upd.iid < 1) {
+			upd.update()
+		}
+		else {
+			let returned = upd.update()
+			if (returned) {
+				let promise = returned.then(() => {
+					this.treeMap.onUpdateEnd(upd)
+				})
+
+				this.promises.push(promise)
+			}
+			else {
+				this.treeMap.onUpdateEnd(upd)
+			}
+		}
+	}
 }
+
+const queue = /*#__PURE__*/new UpdateQueue()

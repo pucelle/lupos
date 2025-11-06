@@ -2,7 +2,7 @@ import {Updatable} from '../types'
 import {promiseWithResolves} from '../utils'
 
 
-/** updating udp list, and all their related child udp. */
+/** updating upd list, and all their related child upd. */
 interface UpdatableInfo {
 
 	/** Not update complete child count. */
@@ -13,16 +13,17 @@ interface UpdatableInfo {
 }
 
 
-/** To manage udp `Parent <=> Child` relationship. */
+/** To manage upd `Parent <=> Child` relationship. */
 export class UpdatableTreeMap {
 
+	/** If a -> b, b -> a, will cause both can't release. */
 	private childParentMap: Map<Updatable, Updatable> = new Map()
 	private infoMap: Map<Updatable, UpdatableInfo> = new Map()
 	private updating: Updatable | null = null
 
 	/** Only after subscribe, or have child enqueued, initialize info. */
-	private getInfo(udp: Updatable): UpdatableInfo {
-		let info = this.infoMap.get(udp)
+	private getInfo(upd: Updatable): UpdatableInfo {
+		let info = this.infoMap.get(upd)
 		if (!info) {
 			let {promise, resolve} = promiseWithResolves()
 
@@ -32,42 +33,45 @@ export class UpdatableTreeMap {
 				resolve,
 			}
 
-			this.infoMap.set(udp, info)
+			this.infoMap.set(upd, info)
 		}
 
 		return info
 	}
 
-	/** On enqueue an udp. */
-	onEnqueue(udp: Updatable) {
-		if (this.updating) {
-			this.childParentMap.set(udp, this.updating)
+	/** On enqueue an upd. */
+	onEnqueue(upd: Updatable) {
+
+		// Only when should update after currently updating.
+		if (this.updating && upd.iid > this.updating.iid) {
+			this.childParentMap.set(upd, this.updating)
 			let parentInfo = this.getInfo(this.updating)
 			parentInfo.childCount++
 		}
 	}
 
 	/** On update started. */
-	onUpdateStart(udp: Updatable) {
-		this.updating = udp
+	onUpdateStart(upd: Updatable) {
+		this.updating = upd
 	}
 
 	/** On update ended. */
-	onUpdateEnd(udp: Updatable) {
-		let info = this.infoMap.get(udp)
+	onUpdateEnd(upd: Updatable) {
+		let info = this.infoMap.get(upd)
 
 		if (!info) {	
-			this.complete(udp)
+			this.complete(upd)
 		}
 		else if (info.childCount === 0) {
+			this.infoMap.delete(upd)
 			info.resolve()
-			this.complete(udp)
+			this.complete(upd)
 		}
 	}
 
 	/** 
 	 * Get a promise which will be resolved after all children update completed.
-	 * Must call it after updated child properties, and before ending update:
+	 * Must call it after updated child properties.
 	 * 
 	 * ```ts
 	 * async update() {
@@ -77,23 +81,33 @@ export class UpdatableTreeMap {
 	 * }
 	 * ```
 	 */
-	getChildCompletePromise(udp: Updatable): Promise<void> {
-		let info = this.getInfo(udp)
-		return info.promise
+	getChildCompletePromise(upd: Updatable): Promise<void> {
+		if (upd === this.updating) {
+			let info = this.getInfo(upd)
+			return info.promise
+		}
+		else {
+			let info = this.infoMap.get(upd)
+			if (info) {
+				return info.promise
+			}
+			else {
+				return Promise.resolve()
+			}
+		}
 	}
 
 	/** After an updatable complete, need to complete parent recursively. */
-	private complete(udp: Updatable) {
-		this.infoMap.delete(udp)
-
-		let parent = this.childParentMap.get(udp)
+	private complete(upd: Updatable) {
+		let parent = this.childParentMap.get(upd)
 		if (parent) {
-			this.childParentMap.delete(udp)
+			this.childParentMap.delete(upd)
 
 			let parentInfo = this.infoMap.get(parent)!
 			let count = parentInfo.childCount - 1
 
 			if (count === 0) {
+				this.infoMap.delete(parent)
 				parentInfo.resolve()
 				this.complete(parent)
 			}
