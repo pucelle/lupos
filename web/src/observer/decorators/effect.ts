@@ -1,6 +1,7 @@
 import {beginTrack, DependencyTracker, endTrack, untrack} from '../dependency-tracker'
 import {enqueueUpdate} from '../../queue/update-queue'
 import {getIncrementalOrder} from './order'
+import {Updatable} from '../../types'
 
 
 /** 
@@ -13,14 +14,13 @@ import {getIncrementalOrder} from './order'
  * 
  * Note: it gets updated in initialization order of all effectors / computers / watchers.
  */
-export class Effector {
+export class Effector implements Updatable {
 
-	readonly order = getIncrementalOrder()
+	readonly iid = getIncrementalOrder()
 
 	private fn: () => void
 	private tracker: DependencyTracker | null = null
 	private trackerSnapshot: any[] | null = null
-	private needsUpdate: boolean = false
 
 	constructor(fn: () => void, scope?: any) {
 		this.fn = scope ? fn.bind(scope) : fn
@@ -34,13 +34,8 @@ export class Effector {
 		this.tracker?.remove()
 	}
 
-	private willUpdate() {
-		if (this.needsUpdate) {
-			return
-		}
-
-		enqueueUpdate(this.update, this, this.order)
-		this.needsUpdate = true
+	willUpdate() {
+		enqueueUpdate(this)
 	}
 
 	update() {
@@ -50,8 +45,6 @@ export class Effector {
 		else if (!this.tracker!.tracking) {
 			this.tracker!.apply()
 		}
-
-		this.needsUpdate = false
 	}
 
 	/** Returns whether have changed and need to update. */
@@ -66,7 +59,7 @@ export class Effector {
 
 	private doUpdate() {
 		try {
-			this.tracker = beginTrack(this.willUpdate, this)
+			this.tracker = beginTrack(this)
 			this.fn()
 		}
 		catch (err) {
@@ -82,6 +75,6 @@ export class Effector {
 	}
 
 	clear() {
-		untrack(this.willUpdate, this)
+		untrack(this)
 	}
 }

@@ -1,5 +1,7 @@
 import {MiniHeap} from '../structs'
-import {AnimationFrame, bindCallback, promiseWithResolves} from '../utils'
+import {Updatable} from '../types'
+import {AnimationFrame, promiseWithResolves} from '../utils'
+import {UpdatableTreeMap} from './update-tree-map'
 
 
 /** Indicates queue update phase. */
@@ -16,21 +18,18 @@ const enum QueueUpdatePhase {
 }
 
 
-type UpdateCallback = () => void | Promise<void>
-
-
 /** Caches things that need to be update. */
 class UpdateHeap {
 	
 	/** Cache existed callbacks. */
-	private set: Set<UpdateCallback> = new Set()
+	private set: Set<Updatable> = new Set()
 
 	/** Dynamically sorted callbacks. */
-	private heap: MiniHeap<{callback: UpdateCallback, order: number}>
+	private heap: MiniHeap<Updatable>
 
 	constructor() {
 		this.heap = new MiniHeap(function(a, b) {
-			return a.order - b.order
+			return a.iid - b.iid
 		})
 	}
 
@@ -38,26 +37,19 @@ class UpdateHeap {
 		return this.heap.isEmpty()
 	}
 
-	has(callback: UpdateCallback, scope: object | null): boolean {
-		return this.set.has(bindCallback(callback, scope))
+	has(udp: Updatable): boolean {
+		return this.set.has(udp)
 	}
 
-	add(callback: UpdateCallback, scope: object | null, order: number) {
-		let boundCallback = bindCallback(callback, scope)
-
-		this.heap.add({
-			callback: boundCallback,
-			order,
-		})
-
-		this.set.add(boundCallback)
+	add(udp: Updatable) {
+		this.heap.add(udp)
+		this.set.add(udp)
 	}
 
 	shift() {
-		let {callback} = this.heap.popHead()!
-		this.set.delete(callback)
-		
-		return callback
+		let udp = this.heap.popHead()!
+		this.set.delete(udp)
+		return udp
 	}
 
 	clear() {
@@ -68,13 +60,16 @@ class UpdateHeap {
 
 
 /** Caches all callbacks in order. */
-const heap: UpdateHeap = /*#__PURE__*/new UpdateHeap()
+const Heap: UpdateHeap = /*#__PURE__*/new UpdateHeap()
 
 /** Callbacks wait to be called after all the things update. */
 let updateCompleteCallbacks: (() => void)[] = []
 
 /** What's updating right now. */
 let phase: QueueUpdatePhase = QueueUpdatePhase.NotStarted
+
+/** To support tracking child complete and do callback. */
+const TreeMap: UpdatableTreeMap = /*#__PURE__*/new UpdatableTreeMap()
 
 
 /** 
@@ -84,29 +79,30 @@ let phase: QueueUpdatePhase = QueueUpdatePhase.NotStarted
  *  - For a watcher / effector / computer, it's default value `0`.
  * 	- For a component, it's the incremental id of this component.
  * 
- * Note you should prevent adding same callback multiple times before updating.
- * E.g., you may implement a `needsUpdate` property, and avoid enqueuing if it's still `true`.
- * 
  * `callback` can be an async function, but note never place `untilUpdateComplete` into it,
  * or the whole callback and whole queue will be stuck and never run.
  */
-export function enqueueUpdate(callback: UpdateCallback, scope: object | null = null, order: number = 0) {
-	heap.add(callback, scope, order)
-	willUpdateIfNotYet()
+export function enqueueUpdate(udp: Updatable) {
+
+	// Although has been enqueued independently, here must enqueue to TreeMap.
+	TreeMap.onEnqueue(udp)
+
+	if (!Heap.has(udp)) {
+		Heap.add(udp)
+		willUpdateIfNotYet()
+	}
 }
 
 
 /** 
- * Enqueue a callback with a scope, will call it when:
- * 	- Before all enqueued callbacks with order `0`, normally watchers / effectors / computers.
- *  - After all components update callbacks.
+ * Enqueue a promise, which will be resolved after all children,
+ * and all descendants update completed.
  * 
- * `callback` can be an async function, but note never place `untilUpdateComplete` into it,
- * or the whole callback and whole queue will be stuck and never run.
+ * Use it when you need to wait for child and descendant components
+ * update completed and do some measurement.
  */
-export function enqueueAfterDataApplied(callback: UpdateCallback, scope: object | null = null) {
-	heap.add(callback, scope, 0.5)
-	willUpdateIfNotYet()
+export function untilChildUpdateComplete(udp: Updatable): Promise<void> {
+	return TreeMap.getChildCompletePromise(udp)
 }
 
 
@@ -116,7 +112,7 @@ export function enqueueAfterDataApplied(callback: UpdateCallback, scope: object 
  * 
  * Note 'never' await it in an async update, or whole update process will be stuck.
  */
-export function untilUpdateComplete(): Promise<void> {
+export function untilAllUpdateComplete(): Promise<void> {
 	let {promise, resolve} = promiseWithResolves()
 	updateCompleteCallbacks.push(resolve)
 	willUpdateIfNotYet()
@@ -139,19 +135,27 @@ async function update() {
 	phase = QueueUpdatePhase.Updating
 
 	try {
-		while (!heap.isEmpty() || updateCompleteCallbacks.length > 0) {
-			while (!heap.isEmpty()) {
+		while (!Heap.isEmpty() || updateCompleteCallbacks.length > 0) {
+			while (!Heap.isEmpty()) {
 				let promises: Promise<void>[] = []
 
 				do {
-					let callback = heap.shift()!
-					let returned = callback()
+					let udp = Heap.shift()!
+					TreeMap.onUpdateStart(udp)
+
+					let returned = udp.update()
 
 					if (returned) {
 						promises.push(returned)
+						returned.then(() => {
+							TreeMap.onUpdateEnd(udp)
+						})
+					}
+					else {
+						TreeMap.onUpdateEnd(udp)
 					}
 				}
-				while (!heap.isEmpty())
+				while (!Heap.isEmpty())
 
 				// Here starts all the async updates at same time,
 				// means if parent component want to remove child in an async update,
@@ -183,52 +187,4 @@ async function update() {
 
 	// Back to start stage.
 	phase = QueueUpdatePhase.NotStarted
-}
-
-
-/** Wait for a macro task tick. */
-function sleep() {
-	let {promise, resolve} = promiseWithResolves()
-	setTimeout(resolve, 0)
-	return promise
-}
-
-
-/** Wait until document state becomes complete. */
-function untilDocumentComplete(): Promise<void> {
-	if (document.readyState === "complete") {
-		return Promise.resolve()
-	}
-
-	let {promise, resolve} = promiseWithResolves()
-	document.addEventListener('readystatechange', () => {
-		resolve()
-	})
-
-	return promise
-}
-
-
-/** Promise to be resolved after first paint complete. */
-let firstPaintPromise = /*#__PURE__*/(async () => {
-
-	// Avoid error in node environment.
-	if (typeof document === 'undefined') {
-		return
-	}
-
-	await untilDocumentComplete()
-	await sleep()
-})()
-
-
-/** 
- * Returns a promise, which will be resolved after the first time
- * update complete, and browser paint completed.
- * 
- * If a component will read dom properties and cause force re-layout
- * before first paint, you may use this to wait for paint complete.
- */
-export function untilFirstPaintCompleted(): Promise<void> {
-	return firstPaintPromise
 }

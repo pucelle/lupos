@@ -1,6 +1,7 @@
 import {beginTrack, endTrack, untrack} from '../dependency-tracker'
 import {enqueueUpdate} from '../../queue/update-queue'
 import {getIncrementalOrder} from './order'
+import {Updatable} from '../../types'
 
 
 export interface WatchOptions {
@@ -31,16 +32,15 @@ const DefaultWatchOptions: WatchOptions = {
  * 
  * Note: it gets updated in initialization order of all effectors / computers / watchers.
  */
-export class Watcher<V = any> {
+export class Watcher<V = any> implements Updatable {
 
-	readonly order = getIncrementalOrder()
+	readonly iid = getIncrementalOrder()
 
 	private getter: () => V
 	private callback: (value: V, oldValue: V | undefined) => void
 	private value: V | undefined = undefined
 	private valueAssigned: boolean = false
 	private options: WatchOptions
-	private needsUpdate: boolean = false
 
 	constructor(getter: () => V, callback: (value: V, oldValue: V | undefined) => void, scope?: any, options?: Partial<WatchOptions>) {
 		this.getter = scope ? getter.bind(scope) : getter
@@ -53,23 +53,18 @@ export class Watcher<V = any> {
 	}
 
 	disconnect() {
-		untrack(this.willUpdate, this)
+		untrack(this)
 	}
 
-	private willUpdate() {
-		if (this.needsUpdate) {
-			return
-		}
-
-		enqueueUpdate(this.update, this, this.order)
-		this.needsUpdate = true
+	willUpdate() {
+		enqueueUpdate(this)
 	}
 
 	update() {
 		let value: V
 
 		try {
-			beginTrack(this.willUpdate, this)
+			beginTrack(this)
 			value = this.getter()
 		}
 		catch (err) {
@@ -85,8 +80,7 @@ export class Watcher<V = any> {
 		if (shouldCallback) {
 			this.callback(value!, this.value)
 		}
-		
-		this.needsUpdate = false
+
 		this.value = value!
 		this.valueAssigned = true
 
@@ -99,7 +93,7 @@ export class Watcher<V = any> {
 	}
 
 	clear() {
-		untrack(this.willUpdate, this)
+		untrack(this)
 	}
 }
 
@@ -113,15 +107,14 @@ type InferValueGetters<V extends any[]> = {[K in keyof V]: () => V[K]}
  * 
  * Note: it gets updated in initialization order of all effectors / computers / watchers.
  */
-export class MultiWatcher<V extends any[] = any> {
+export class MultiWatcher<V extends any[] = any> implements Updatable {
 
-	readonly order = getIncrementalOrder()
+	readonly iid = getIncrementalOrder()
 
 	private getters: InferValueGetters<V>
 	private callback: (values: V, oldValues: V | undefined) => void
 	private values: V | undefined = undefined
 	private options: WatchOptions
-	private needsUpdate: boolean = false
 
 	constructor(getters: InferValueGetters<V>, callback: (values: V, oldValues: V | undefined) => void, scope?: any, options?: Partial<WatchOptions>) {
 		this.getters = scope ? getters.map(getter => getter.bind(scope)) as InferValueGetters<V> : getters
@@ -134,23 +127,18 @@ export class MultiWatcher<V extends any[] = any> {
 	}
 
 	disconnect() {
-		untrack(this.willUpdate, this)
+		untrack(this)
 	}
 
-	private willUpdate() {
-		if (this.needsUpdate) {
-			return
-		}
-
-		enqueueUpdate(this.update, this, this.order)
-		this.needsUpdate = true
+	willUpdate() {
+		enqueueUpdate(this)
 	}
 
 	update() {
 		let values: V
 
 		try {
-			beginTrack(this.willUpdate, this)
+			beginTrack(this)
 			values = this.getters.map(getter => getter()) as V
 		}
 		catch (err) {
@@ -170,8 +158,6 @@ export class MultiWatcher<V extends any[] = any> {
 			
 			this.values = values
 		}
-
-		this.needsUpdate = false
 	}
 
 	/** Returns whether each value is same. */
@@ -186,6 +172,6 @@ export class MultiWatcher<V extends any[] = any> {
 	}
 
 	clear() {
-		untrack(this.willUpdate, this)
+		untrack(this)
 	}
 }

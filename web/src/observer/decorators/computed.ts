@@ -1,6 +1,7 @@
 import {beginTrack, DependencyTracker, endTrack, untrack} from '../dependency-tracker'
 import {enqueueUpdate} from '../../queue/update-queue'
 import {getIncrementalOrder} from './order'
+import {Updatable} from '../../types'
 
 
 const enum ComputedValueState {
@@ -16,7 +17,7 @@ const enum ComputedValueState {
  * 
  * Note: it gets updated in initialization order of all effectors / computers / watchers.
  */
-export class Computed<V = any> {
+export class Computed<V = any> implements Updatable {
 
 	/** Make a quick getter by a getter function. */
 	static getter<V>(getter: () => V, scope?: any): () => V {
@@ -28,7 +29,7 @@ export class Computed<V = any> {
 	}
 
 
-	readonly order = getIncrementalOrder()
+	readonly iid = getIncrementalOrder()
 
 	private getter: () => V
 	private onReset: (() => void) | undefined
@@ -36,7 +37,6 @@ export class Computed<V = any> {
 	private valueState: ComputedValueState = ComputedValueState.Initial
 	private tracker: DependencyTracker | null = null
 	private trackerSnapshot: any[] | null = null
-	private needsUpdate: boolean = false
 
 	constructor(getter: () => V, onReset?: () => void, scope?: any) {
 		this.getter = scope ? getter.bind(scope) : getter
@@ -60,18 +60,14 @@ export class Computed<V = any> {
 		}
 	}
 
-	private willUpdate() {
-		if (this.needsUpdate) {
-			return
-		}
-
+	willUpdate() {
 		// Here doesn't reset value immediately after dependency get changed,
 		// but update them in the same order with effectors and watchers.
 
 		// This means you can still get old value after any dependency changes,
 		// before next time update.
-		enqueueUpdate(this.update, this, this.order)
-		this.needsUpdate = true
+
+		enqueueUpdate(this)
 	}
 
 	update() {
@@ -81,8 +77,6 @@ export class Computed<V = any> {
 		else if (!this.tracker!.tracking) {
 			this.tracker!.apply()
 		}
-
-		this.needsUpdate = false
 	}
 
 	/** Returns whether have changed and need to update. */
@@ -107,7 +101,7 @@ export class Computed<V = any> {
 		}
 
 		try {
-			this.tracker = beginTrack(this.willUpdate, this)
+			this.tracker = beginTrack(this)
 			this.value = this.getter()
 			this.valueState = ComputedValueState.Fresh
 		}
@@ -126,6 +120,6 @@ export class Computed<V = any> {
 	}
 
 	clear() {
-		untrack(this.willUpdate, this)
+		untrack(this)
 	}
 }

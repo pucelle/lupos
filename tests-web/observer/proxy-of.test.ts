@@ -6,10 +6,15 @@ describe('Test proxyOf', () => {
 	
 	it('Test proxyOf', () => {
 		let a = proxyOf({b: 1, c: [1]})
-		let update = vi.fn()
+
+		let updatable = {
+			iid: 0,
+			willUpdate: vi.fn(),
+			update: () => {},
+		}
 
 		function reCapture() {
-			beginTrack(update)
+			beginTrack(updatable)
 			a.b
 			a.c.length
 
@@ -22,23 +27,23 @@ describe('Test proxyOf', () => {
 
 		reCapture()
 		a.b = 2
-		expect(update).toHaveBeenCalledTimes(1)
+		expect(updatable.willUpdate).toHaveBeenCalledTimes(1)
 
 		reCapture()
 		a.b = 2
-		expect(update).toHaveBeenCalledTimes(1)
+		expect(updatable.willUpdate).toHaveBeenCalledTimes(1)
 
 		reCapture()
 		a.c = [2]
-		expect(update).toHaveBeenCalledTimes(2)
+		expect(updatable.willUpdate).toHaveBeenCalledTimes(2)
 
 		reCapture()
 		a.c[0] = 3
-		expect(update).toHaveBeenCalledTimes(3)
+		expect(updatable.willUpdate).toHaveBeenCalledTimes(3)
 
 		reCapture()
 		a.c.push(3)
-		expect(update).toHaveBeenCalledTimes(4)
+		expect(updatable.willUpdate).toHaveBeenCalledTimes(4)
 	})
 
 

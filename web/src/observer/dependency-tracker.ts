@@ -1,14 +1,9 @@
 import {InternalSetMap} from '../structs/map'
-import {bindCallback} from '../utils'
-import {DependencyMap} from './helpers/dependency-map'
+import {DependencyMap} from './dependency-map'
+import {Updatable} from '../types'
 
 
-// This file was exported as `DependencyTracker` before,
-// but it's apis are used frequently by Lupos Compiler,
-// so finally it export all members directly.
-
-
-/** Caches `Dependency <=> Callback`. */
+/** Caches `Dependency <=> Updatable`. */
 const DepMap: DependencyMap = /*#__PURE__*/new DependencyMap()
 
 /** Mark the latest version of objects which are tracking elements. */
@@ -17,26 +12,24 @@ const ElementsDepVersionMap: WeakMap<object, number> = /*#__PURE__*/new WeakMap(
 /** Tracker stack list. */
 const trackerStack: DependencyTracker[] = []
 
-/** Current callback and dependencies that is doing capturing. */
+/** Current updatable and dependencies that is doing capturing. */
 let currentTracker: DependencyTracker | null = null
 
 
 /** 
  * Begin to capture dependencies.
- * `callback` will be called when any dependency get changed.
+ * `updatable.willUpdate` will be called when any dependency get changed.
  * Would suggest executing the following codes in a `try{...}` statement.
  * 
  * You must ensure to end each begun capturing, or fatal error will happen.
  * You may use returned tracker object to do snapshot comparing.
  */
-export function beginTrack(callback: Function, scope: object | null = null): DependencyTracker {
-	let boundCallback = bindCallback(callback, scope)
-
+export function beginTrack(updatable: Updatable): DependencyTracker {
 	if (currentTracker) {
 		trackerStack.push(currentTracker)
 	}
 
-	return currentTracker = new DependencyTracker(boundCallback)
+	return currentTracker = new DependencyTracker(updatable)
 }
 
 
@@ -127,29 +120,29 @@ export function trackGetDeeply(obj: object, maxDepth = 10) {
 export function trackSet(obj: object, ...properties: PropertyKey[]) {
 	for (let prop of properties) {
 		if (prop === '') {
-			let callbacks = DepMap.getAllPropCallbacks(obj)
-			if (callbacks) {
-				for (let callback of callbacks) {
-					callback()
+			let updatableList = DepMap.getAllUpdatable(obj)
+			if (updatableList) {
+				for (let updatable of updatableList) {
+					updatable.willUpdate()
 				}
 			}
 		}
 		else {
-			let callbacks = DepMap.getCallbacks(obj, prop)
-			if (callbacks) {
-				for (let callback of callbacks) {
-					callback()
+			let updatableList = DepMap.getUpdatable(obj, prop)
+			if (updatableList) {
+				for (let updatable of updatableList) {
+					updatable.willUpdate()
 				}
 			}
 		}	
 	}
 
-	// Should also calls elements callbacks, low frequency.
+	// Should also calls elements updatable, low frequency.
 	if (!properties.includes('')) {
-		let elementsCallbacks = DepMap.getCallbacks(obj, '')
-		if (elementsCallbacks) {
-			for (let callback of elementsCallbacks) {
-				callback()
+		let elementsUpdatableList = DepMap.getUpdatable(obj, '')
+		if (elementsUpdatableList) {
+			for (let updatable of elementsUpdatableList) {
+				updatable.willUpdate()
 			}
 		}
 	}
@@ -162,15 +155,14 @@ export function trackSet(obj: object, ...properties: PropertyKey[]) {
 }
 
 
-/** Remove all dependencies of a refresh callback. */
-export function untrack(callback: Function, scope: object | null = null) {
-	let boundCallback = bindCallback(callback, scope)
-	DepMap.deleteCallback(boundCallback)
+/** Remove all dependencies of a updatable. */
+export function untrack(updatable: Updatable) {
+	DepMap.deleteUpdatable(updatable)
 }
 
 
 /** 
- * Contains captured dependencies, and the refresh callbacks,
+ * Contains captured dependencies, and the updatable,
  * which it need to call after any dependency get changed.
  * 
  * Can also use it to generate a dependency values snapshot,
@@ -178,8 +170,8 @@ export function untrack(callback: Function, scope: object | null = null) {
  */
 export class DependencyTracker {
 
-	/** Refresh callback, to call it after any dependency changed. */
-	readonly callback: Function
+	/** updatable, to call it's `willUpdate` after any dependency changed. */
+	readonly updatable: Updatable
 
 	/** Each object and accessed property. */
 	readonly dependencies: InternalSetMap<object, PropertyKey> = new InternalSetMap()
@@ -187,19 +179,19 @@ export class DependencyTracker {
 	/** Whether in tracking. */
 	tracking: boolean = false
 
-	constructor(callback: Function) {
-		this.callback = callback
+	constructor(updatable: Updatable) {
+		this.updatable = updatable
 	}
 
 	/** Apply or restore current tracking to global tracking. */
 	apply() {
-		DepMap.apply(this.callback, this.dependencies)
+		DepMap.apply(this.updatable, this.dependencies)
 		this.tracking = true
 	}
 
 	/** Remove current tracking from global tracking.  */
 	remove() {
-		DepMap.deleteCallback(this.callback)
+		DepMap.deleteUpdatable(this.updatable)
 		this.tracking = false
 	}
 

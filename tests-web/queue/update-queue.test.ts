@@ -1,24 +1,32 @@
-import {enqueueUpdate, untilUpdateComplete} from '../../web/src'
+import {enqueueUpdate, untilAllUpdateComplete} from '../../web/src'
 import { describe, it, expect} from 'vitest'
 
 
 describe('Test UpdateQueue', () => {
 
-	it('Test enqueue', async () => {
+	it('Test enqueue order', async () => {
 		let v = 1
 
-		let f1 = () => {
-			expect(v).toEqual(2)
+		let u1 = {
+			iid: 1,
+			willUpdate: () => {},
+			update: () => {
+				expect(v).toEqual(2)
+			}
 		}
 
-		let f2 = () => {
-			expect(v).toEqual(1)
-			v++
+		let u2 = {
+			iid: 0,
+			willUpdate: () => {},
+			update: () => {
+				expect(v).toEqual(1)
+				v++
+			}
 		}
 
-		enqueueUpdate(f1, null, 1)
-		enqueueUpdate(f2, null, 0)
+		enqueueUpdate(u1)
+		enqueueUpdate(u2)
 
-		await untilUpdateComplete()
+		await untilAllUpdateComplete()
 	})
 })
