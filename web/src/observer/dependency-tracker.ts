@@ -39,7 +39,7 @@ export function beginTrack(updatable: Updatable): DependencyTracker {
  */
 export function endTrack() {
 	currentTracker!.apply()
-	debug(currentTracker!)
+	debug()
 
 	if (trackerStack.length > 0) {
 		currentTracker = trackerStack.pop()!
@@ -51,7 +51,7 @@ export function endTrack() {
 
 
 /** This debug function will be eliminated in production mode. */
-function debug(currentTracker: DependencyTracker) {
+function debug() {
 	if (currentTracker!.dependencies.keyCount() > 500) {
 		console.warn(`Too many dependencies (${currentTracker!.dependencies.keyCount()}) captured, try reduce some.`, currentTracker!.dependencies)
 	}
