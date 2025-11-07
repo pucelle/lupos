@@ -137,7 +137,15 @@ class UpdateQueue {
 	/** The promises that will wait for. */
 	private promises: Promise<void>[] = []
 
+	/** Async and updating. */
+	private asyncUpdatingSet: Set<Updatable> = new Set()
+
 	enqueue(upd: Updatable) {
+
+		// Already in updating.
+		if (this.asyncUpdatingSet.has(upd)) {
+			return
+		}
 
 		// Although has been enqueued independently, here must enqueue to TreeMap.
 		if (upd.iid >= 1) {
@@ -232,9 +240,11 @@ class UpdateQueue {
 			if (returned) {
 				let promise = returned.then(() => {
 					this.treeMap.onUpdateEnd(upd)
+					this.asyncUpdatingSet.delete(upd)
 				})
 
 				this.promises.push(promise)
+				this.asyncUpdatingSet.add(upd)
 			}
 			else {
 				this.treeMap.onUpdateEnd(upd)
