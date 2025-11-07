@@ -8,10 +8,11 @@ export class MiniHeap<T> {
 	private readonly comparer: (a: T, b: T) => number
 
 	/** List of items. */
-	private list: T[] = []
+	list: T[]
 
-	constructor(comparer: (a: T, b: T) => number) {
+	constructor(comparer: (a: T, b: T) => number, list: T[] = []) {
 		this.comparer = comparer
+		this.list = list
 	}
 
 	/** Get heap size. */
@@ -72,8 +73,8 @@ export class MiniHeap<T> {
 	/** Remove element at specified index. */
 	removeAt(index: number) {
 		this.list[index] = this.list.pop()!
-		this.shiftDown(index)
 		this.shiftUp(index)
+		this.shiftDown(index)
 	}
 	
 	/** 
@@ -124,6 +125,11 @@ export class MiniHeap<T> {
 		let vi = this.list[i]
 		this.list[i] = this.list[j]
 		this.list[j] = vi
+	}
+
+	/** Clone MiniHeap */
+	clone() {
+		return new MiniHeap(this.comparer, [...this.list])
 	}
 
 	/** Clear all items */
