@@ -1,5 +1,5 @@
 import {beginTrack, DependencyTracker, endTrack, untrack} from '../dependency-tracker'
-import {enqueueUpdate} from '../../queue/update-queue'
+import {UpdateQueue} from '../../queue'
 import {getIncrementalOrder} from './order'
 import {Updatable} from '../../types'
 
@@ -35,7 +35,7 @@ export class Effector implements Updatable {
 	}
 
 	willUpdate() {
-		enqueueUpdate(this)
+		UpdateQueue.enqueue(this)
 	}
 
 	update() {

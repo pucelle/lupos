@@ -1,5 +1,5 @@
 import {beginTrack, endTrack, untrack} from '../dependency-tracker'
-import {enqueueUpdate} from '../../queue/update-queue'
+import {UpdateQueue} from '../../queue'
 import {getIncrementalOrder} from './order'
 import {Updatable} from '../../types'
 
@@ -57,7 +57,7 @@ export class Watcher<V = any> implements Updatable {
 	}
 
 	willUpdate() {
-		enqueueUpdate(this)
+		UpdateQueue.enqueue(this)
 	}
 
 	update() {
@@ -131,7 +131,7 @@ export class MultiWatcher<V extends any[] = any> implements Updatable {
 	}
 
 	willUpdate() {
-		enqueueUpdate(this)
+		UpdateQueue.enqueue(this)
 	}
 
 	update() {

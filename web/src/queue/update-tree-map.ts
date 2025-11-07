@@ -8,6 +8,9 @@ interface UpdatableInfo {
 	/** Not update complete child count. */
 	childCount: number
 
+	/** Whether in async mode. */
+	asyncMode: boolean
+
 	promise: Promise<void>
 	resolve: () => void
 }
@@ -29,6 +32,7 @@ export class UpdatableTreeMap {
 
 			info = {
 				childCount: 0,
+				asyncMode: false,
 				promise,
 				resolve,
 			}
@@ -37,39 +41,6 @@ export class UpdatableTreeMap {
 		}
 
 		return info
-	}
-
-	/** On enqueue an upd. */
-	onEnqueue(upd: Updatable) {
-		if (this.updating) {
-			if (upd.iid > this.updating.iid) {
-				this.childParentMap.set(upd, this.updating)
-				let parentInfo = this.getInfo(this.updating)
-				parentInfo.childCount++
-			}
-			else {
-				debug(upd, this.updating)
-			}
-		}
-	}
-
-	/** On update started. */
-	onUpdateStart(upd: Updatable) {
-		this.updating = upd
-	}
-
-	/** On update ended. */
-	onUpdateEnd(upd: Updatable) {
-		let info = this.infoMap.get(upd)
-
-		if (!info) {	
-			this.complete(upd)
-		}
-		else if (info.childCount === 0) {
-			this.infoMap.delete(upd)
-			info.resolve()
-			this.complete(upd)
-		}
 	}
 
 	/** 
@@ -92,6 +63,47 @@ export class UpdatableTreeMap {
 		}
 	}
 
+	/** On enqueue an upd. */
+	onEnqueue(upd: Updatable) {
+		if (this.updating) {
+			if (upd.iid > this.updating.iid) {
+				this.childParentMap.set(upd, this.updating)
+				let parentInfo = this.getInfo(this.updating)
+				parentInfo.childCount++
+			}
+			else {
+				debug(upd, this.updating)
+			}
+		}
+	}
+
+	/** On update started. */
+	onUpdateStart(upd: Updatable) {
+		this.updating = upd
+	}
+
+	/** On update ended. */
+	onUpdateEnd(upd: Updatable, asyncMode: boolean) {
+		let info = this.infoMap.get(upd)
+
+		if (!info) {	
+			this.complete(upd)
+		}
+		else if (info.childCount === 0) {
+			this.infoMap.delete(upd)
+			info.resolve()
+			this.complete(upd)
+		}
+		else if (asyncMode) {
+			info.asyncMode = asyncMode
+		}
+
+		// Release updating immediately for non-async mode.
+		if (!asyncMode) {
+			this.updating = null
+		}
+	}
+
 	/** After an updatable complete, need to complete parent recursively. */
 	private complete(upd: Updatable) {
 		let parent = this.childParentMap.get(upd)
@@ -108,7 +120,11 @@ export class UpdatableTreeMap {
 			}
 			else {
 				parentInfo.childCount = count
-				this.updating = parent
+
+				// Keep updating for long for async mode.
+				if (parentInfo.asyncMode) {
+					this.updating = parent
+				}
 			}
 		}
 	}

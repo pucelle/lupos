@@ -1,5 +1,5 @@
 import {beginTrack, DependencyTracker, endTrack, untrack} from '../dependency-tracker'
-import {enqueueUpdate} from '../../queue/update-queue'
+import {UpdateQueue} from '../../queue/update-queue'
 import {getIncrementalOrder} from './order'
 import {Updatable} from '../../types'
 
@@ -67,7 +67,7 @@ export class Computed<V = any> implements Updatable {
 		// This means you can still get old value after any dependency changes,
 		// before next time update.
 
-		enqueueUpdate(this)
+		UpdateQueue.enqueue(this)
 	}
 
 	update() {
