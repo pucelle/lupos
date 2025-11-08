@@ -183,7 +183,7 @@ class UpdateQueueClass {
 			this.phase = QueueUpdatePhase.WillUpdate
 		}
 		else if (this.phase === QueueUpdatePhase.WaitingAsync) {
-			AnimationFrame.requestCurrent(this.updateSub.bind(this))
+			this.promises.push(Promise.resolve().then(() => this.updateSub()))
 			this.phase = QueueUpdatePhase.WillUpdateSub
 		}
 	}
