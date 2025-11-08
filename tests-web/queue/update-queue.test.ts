@@ -1,4 +1,4 @@
-import {enqueueUpdate, untilAllUpdateComplete} from '../../web/src'
+import {UpdateQueue} from '../../web/src'
 import { describe, it, expect} from 'vitest'
 
 
@@ -24,9 +24,9 @@ describe('Test UpdateQueue', () => {
 			}
 		}
 
-		enqueueUpdate(u1)
-		enqueueUpdate(u2)
+		UpdateQueue.enqueue(u1)
+		UpdateQueue.enqueue(u2)
 
-		await untilAllUpdateComplete()
+		await UpdateQueue.untilAllComplete()
 	})
 })

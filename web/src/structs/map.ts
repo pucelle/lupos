@@ -88,6 +88,11 @@ export class InternalSetMap<K, V> {
 		}
 	}
 
+	/** Has specified key and value pair existed. */
+	has(k: K, v: V): boolean {
+		return !!this.map.get(k)?.has(v)
+	}
+
 	/** Get the count of all the keys. */
 	keyCount(): number {
 		return this.map.size
@@ -137,5 +142,10 @@ export class InternalSetMap<K, V> {
 				this.map.delete(k)
 			}
 		}
+	}
+
+	/** Delete all values by associated key. */
+	deleteOf(k: K) {
+		this.map.delete(k)
 	}
 }

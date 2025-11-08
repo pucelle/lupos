@@ -1,4 +1,4 @@
-import {Computed, trackGet, trackSet, untilAllUpdateComplete} from '../../web/src'
+import {Computed, trackGet, trackSet, UpdateQueue} from '../../web/src'
 import { describe, it, expect, vi} from 'vitest'
 
 
@@ -20,13 +20,13 @@ describe('Test computed', () => {
 
 		a.v = 1
 		trackSet(a, 'v')
-		await untilAllUpdateComplete()
+		await UpdateQueue.untilAllComplete()
 		expect(v1.get()).toEqual(2)
 		expect(fn1).toBeCalledTimes(1)
 
 		a.v = 2
 		trackSet(a, 'v')
-		await untilAllUpdateComplete()
+		await UpdateQueue.untilAllComplete()
 		expect(v1.get()).toEqual(3)
 		expect(fn1).toBeCalledTimes(2)
 
@@ -35,7 +35,7 @@ describe('Test computed', () => {
 		a.v = 3
 		trackSet(a, 'v')
 		v1.connect()
-		await untilAllUpdateComplete()
+		await UpdateQueue.untilAllComplete()
 		expect(v1.get()).toEqual(4)
 		expect(fn1).toBeCalledTimes(3)
 
@@ -44,7 +44,7 @@ describe('Test computed', () => {
 		a.v = 3
 		trackSet(a, 'v')
 		v1.connect()
-		await untilAllUpdateComplete()
+		await UpdateQueue.untilAllComplete()
 		expect(v1.get()).toEqual(4)
 		expect(fn1).toBeCalledTimes(3)
 	})

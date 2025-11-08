@@ -1,4 +1,4 @@
-import {trackGet, Effector, untilAllUpdateComplete, trackSet} from '../../web/src'
+import {trackGet, Effector, UpdateQueue, trackSet} from '../../web/src'
 import { describe, it, expect, vi} from 'vitest'
 
 
@@ -14,30 +14,30 @@ describe('Test effect', () => {
 			fn()
 		})
 		effect.connect()
-		await untilAllUpdateComplete()
+		await UpdateQueue.untilAllComplete()
 		expect(fn).toHaveBeenCalledTimes(1)
 
 		a.b = 2
 		trackSet(a, 'b')
-		await untilAllUpdateComplete()
+		await UpdateQueue.untilAllComplete()
 		expect(fn).toHaveBeenCalledTimes(2)
 
 		effect.disconnect()
 		a.b = 3
 		trackSet(a, 'b')
-		await untilAllUpdateComplete()
+		await UpdateQueue.untilAllComplete()
 		expect(fn).toHaveBeenCalledTimes(2)
 
 		// Refresh after re-connected
 		effect.connect()
-		await untilAllUpdateComplete()
+		await UpdateQueue.untilAllComplete()
 		expect(fn).toHaveBeenCalledTimes(3)
 
 		// No need to refresh since no dependency has changed
 		effect.disconnect()
 		a.b = 3
 		effect.connect()
-		await untilAllUpdateComplete()
+		await UpdateQueue.untilAllComplete()
 		expect(fn).toHaveBeenCalledTimes(3)
 	})
 })

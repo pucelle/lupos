@@ -16,11 +16,7 @@ describe('UpdatableTreeMap', () => {
 	it('resolves immediately when no children and promise requested', async () => {
 		let map = new UpdatableTreeMap()
 		let parent = mkUdp(1)
-
-		map.onUpdateStart(parent)
 		let promise = map.getChildCompletePromise(parent)
-		map.onUpdateEnd(parent)
-
 		await expect(promise).resolves.toBeUndefined()
 	})
 
@@ -29,8 +25,7 @@ describe('UpdatableTreeMap', () => {
 		let parent = mkUdp(1)
 		let child = mkUdp(2)
 
-		map.onUpdateStart(parent)
-		map.onEnqueue(child)
+		map.onEnqueue(child, parent)
 		let parentDone = map.getChildCompletePromise(parent)
 		map.onUpdateEnd(parent)
 
@@ -41,7 +36,6 @@ describe('UpdatableTreeMap', () => {
 		await Promise.resolve()
 		expect(resolved).toBe(false)
 
-		map.onUpdateStart(child)
 		map.onUpdateEnd(child)
 
 		await parentDone
@@ -54,21 +48,18 @@ describe('UpdatableTreeMap', () => {
 		let c1 = mkUdp(2)
 		let c2 = mkUdp(3)
 
-		map.onUpdateStart(parent)
-		map.onEnqueue(c1)
-		map.onEnqueue(c2)
+		map.onEnqueue(c1, parent)
+		map.onEnqueue(c2, parent)
 		let parentDone = map.getChildCompletePromise(parent)
 		map.onUpdateEnd(parent)
 
 		let resolved = false
 		parentDone.then(() => { resolved = true })
 
-		map.onUpdateStart(c1)
 		map.onUpdateEnd(c1)
 		await Promise.resolve()
 		expect(resolved).toBe(false)
 
-		map.onUpdateStart(c2)
 		map.onUpdateEnd(c2)
 		await parentDone
 		expect(resolved).toBe(true)
@@ -81,14 +72,12 @@ describe('UpdatableTreeMap', () => {
 		let grand = mkUdp(3)
 
 		// Parent starts and enqueues child
-		map.onUpdateStart(parent)
-		map.onEnqueue(child)
+		map.onEnqueue(child, parent)
 		let parentDone = map.getChildCompletePromise(parent)
 		map.onUpdateEnd(parent)
 
 		// Child starts and enqueues grandchild
-		map.onUpdateStart(child)
-		map.onEnqueue(grand)
+		map.onEnqueue(grand, child)
 		map.onUpdateEnd(child) // not resolved yet because grandchild not finished
 
 		let resolved = false
@@ -98,7 +87,6 @@ describe('UpdatableTreeMap', () => {
 		expect(resolved).toBe(false)
 
 		// Grandchild completes, should resolve child then parent recursively
-		map.onUpdateStart(grand)
 		map.onUpdateEnd(grand)
 
 		await parentDone
