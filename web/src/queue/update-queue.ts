@@ -214,8 +214,9 @@ class UpdateQueueClass {
 			for (let i = 0; i < this.promises.length; i++) {
 				await this.promises[i]
 			}
+			this.promises = []
 
-
+			
 			this.phase = QueueUpdatePhase.CallingCompleteCallbacks
 			let callbacks = this.completeCallbacks
 			this.completeCallbacks = []
