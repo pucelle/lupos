@@ -130,10 +130,7 @@ class UpdateQueueClass {
 		}
 
 		// Must update it immediately, or it will be stuck because can't resolve promises.
-		if (this.phase === QueueUpdatePhase.WaitingAsync) {
-			this.updateEach(upd)
-		}
-		else if (!this.heap.has(upd)) {
+		if (!this.heap.has(upd)) {
 			this.heap.add(upd)
 			this.willUpdate()
 		}
