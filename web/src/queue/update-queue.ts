@@ -144,7 +144,7 @@ class UpdateQueueClass {
 	}
 
 	/** Whether target updatable is updating. */
-	isUpdating(upd: Updatable): boolean {
+	private isUpdating(upd: Updatable): boolean {
 		return this.updating === upd
 			|| this.asyncUpdatingSet.has(upd)
 	}
@@ -152,8 +152,7 @@ class UpdateQueueClass {
 	/** 
 	 * Calls callback after all children, and all descendants update completed.
 	 * 
-	 * Must call this after have just updated, and enqueued child components.
-	 * So you may need to use `whenUpdated` or `untilUpdated` to enter the time point.
+	 * Must call this after Updatable has been enqueued.
 	 * 
 	 * Use it when you need to wait for child and descendant components
 	 * update completed and do some measurement.
@@ -168,6 +167,11 @@ class UpdateQueueClass {
 	 */
 	whenChildComplete(upd: Updatable, callback: () => void) {
 		this.treeMap.addChildCompleteCallback(upd, callback)
+
+		// If is updating, callback immediately if has no child.
+		if (this.isUpdating(upd)) {
+			this.treeMap.onCheck(upd)
+		}
 	}
 
 	/** 
@@ -275,14 +279,14 @@ class UpdateQueueClass {
 				if (returned) {
 					let promise = returned.finally(() => {
 						this.asyncUpdatingSet.delete(upd)
-						this.treeMap.onUpdateEnd(upd)
+						this.treeMap.onCheck(upd)
 					})
 
 					this.promises.push(promise)
 					this.asyncUpdatingSet.add(upd)
 				}
 				else {
-					this.treeMap.onUpdateEnd(upd)
+					this.treeMap.onCheck(upd)
 				}
 
 				this.updating = null

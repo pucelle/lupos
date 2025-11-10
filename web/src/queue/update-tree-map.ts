@@ -40,13 +40,8 @@ export class UpdatableTreeMap {
 	 * Must call it after updated child properties.
 	 */
 	addChildCompleteCallback(upd: Updatable, callback: () => void) {
-		let info = this.infoMap.get(upd)
-		if (info) {
-			info.callbacks.push(callback)
-		}
-		else {
-			callback()
-		}
+		let info = this.ensureInfo(upd)
+		info.callbacks.push(callback)
 	}
 
 	/** On enqueue an Updatable when doing sync updating. */
@@ -64,15 +59,23 @@ export class UpdatableTreeMap {
 	}
 
 	/** On after synchronous or asynchronous update ended. */
-	onUpdateEnd(upd: Updatable) {
+	onCheck(upd: Updatable) {
 		let info = this.infoMap.get(upd)
-		if (!info) {	
-			this.complete(upd)
+		if (!info || info.childCount === 0) {	
+			this.complete(upd, info)
 		}
 	}
 
 	/** After an updatable complete, need to complete parent recursively. */
-	private complete(upd: Updatable) {
+	private complete(upd: Updatable, info: UpdatableInfo | undefined) {
+		if (info) {
+			this.infoMap.delete(upd)
+
+			for (let callback of info.callbacks) {
+				callback()
+			}
+		}
+
 		let parents = this.parentMap.get(upd)
 		if (!parents) {
 			return
@@ -85,13 +88,7 @@ export class UpdatableTreeMap {
 			let count = parentInfo.childCount - 1
 
 			if (count === 0) {
-				this.infoMap.delete(parent)
-
-				for (let callback of parentInfo.callbacks) {
-					callback()
-				}
-
-				this.complete(parent)
+				this.complete(parent, parentInfo)
 			}
 			else {
 				parentInfo.childCount = count
