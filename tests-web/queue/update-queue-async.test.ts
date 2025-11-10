@@ -1,6 +1,7 @@
 import {describe, it, expect} from 'vitest'
 import {UpdateQueue} from '../../web/src/queue/update-queue'
 import type {Updatable} from '../../web/src/types'
+import {promisify} from '../../web/src'
 
 
 function mkUpd(iid: number, fn: () => void | Promise<void>): Updatable {
@@ -37,8 +38,10 @@ describe('UpdateQueue async and sub-process', () => {
 			logs.push('u1-started')
 			UpdateQueue.enqueue(u2)
 			await delay(0)
-			await UpdateQueue.untilChildComplete(u1)
-			logs.push('u1-ended')
+
+			UpdateQueue.whenChildComplete(u1, () => {
+				logs.push('u1-ended')
+			})
 		})
 
 		let u2 = mkUpd(2, () => {
@@ -60,8 +63,10 @@ describe('UpdateQueue async and sub-process', () => {
 			UpdateQueue.onSyncUpdateStart(u1)
 			UpdateQueue.enqueue(u2)
 			UpdateQueue.onSyncUpdateEnd()
-			await UpdateQueue.untilChildComplete(u1)
-			logs.push('u1-ended')
+			
+			UpdateQueue.whenChildComplete(u1, () => {
+				logs.push('u1-ended')
+			})
 		})
 
 		let u2 = mkUpd(2, () => {
