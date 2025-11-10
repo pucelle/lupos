@@ -73,7 +73,6 @@ class BarrierQueue {
 
 				// Wait for more same stepped barriers come.
 				await Promise.resolve()
-				await Promise.resolve()
 
 				// Note here reset it late, means if barrier more writing
 				// after resolving writing, should directly resolve.
