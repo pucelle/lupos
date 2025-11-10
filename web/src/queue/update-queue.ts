@@ -138,7 +138,15 @@ class UpdateQueueClass {
 
 	/** Whether target updatable has been enqueued or is updating. */
 	hasEnqueued(upd: Updatable): boolean {
-		return this.heap.has(upd) || this.updating === upd || this.asyncUpdatingSet.has(upd)
+		return this.heap.has(upd)
+			|| this.updating === upd
+			|| this.asyncUpdatingSet.has(upd)
+	}
+
+	/** Whether target updatable is updating. */
+	isUpdating(upd: Updatable): boolean {
+		return this.updating === upd
+			|| this.asyncUpdatingSet.has(upd)
 	}
 
 	/** 
