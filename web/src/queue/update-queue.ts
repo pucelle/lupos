@@ -1,6 +1,6 @@
 import {MiniHeap} from '../structs'
 import {Updatable} from '../types'
-import {AnimationFrame, promiseWithResolves, promisify} from '../utils'
+import {AnimationFrame, promisify} from '../utils'
 import {UpdatableTreeMap} from './update-tree-map'
 
 
@@ -138,13 +138,14 @@ class UpdateQueueClass {
 
 	/** Whether target updatable has been enqueued or is updating. */
 	hasEnqueued(upd: Updatable): boolean {
-		return this.heap.has(upd) || this.updating === upd
+		return this.heap.has(upd) || this.updating === upd || this.asyncUpdatingSet.has(upd)
 	}
 
 	/** 
 	 * Calls callback after all children, and all descendants update completed.
 	 * 
-	 * Must call this after have updated, and enqueued child components.
+	 * Must call this after have just updated, and enqueued child components.
+	 * So you may need to use `whenUpdated` or `untilUpdated` to enter the time point.
 	 * 
 	 * Use it when you need to wait for child and descendant components
 	 * update completed and do some measurement.
@@ -159,30 +160,6 @@ class UpdateQueueClass {
 	 */
 	whenChildComplete(upd: Updatable, callback: () => void) {
 		this.treeMap.addChildCompleteCallback(upd, callback)
-	}
-
-	/** 
-	 * Returns a promise, which will be resolved after all children,
-	 * and all descendants update completed.
-	 * 
-	 * Must call this after have updated, and enqueued child components.
-	 * 
-	 * Use it when you need to wait for child and descendant components
-	 * update completed and do some measurement.
-	 * 
-	 * ```ts
-	 * async update() {
-	 *     this.updateRendering()
-	 *     await UpdateQueue.untilChildComplete()
-	 *     await barrierDOMReading()
-	 *     ...
-	 * }
-	 * ```
-	 */
-	untilChildComplete(upd: Updatable): Promise<void> {
-		let {promise, resolve} = promiseWithResolves<void>()
-		this.treeMap.addChildCompleteCallback(upd, resolve)
-		return promise
 	}
 
 	/** 
