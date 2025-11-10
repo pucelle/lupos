@@ -136,14 +136,16 @@ class UpdateQueueClass {
 		}
 	}
 
-	/** Whether target updatable has been enqueued and not. */
+	/** Whether target updatable has been enqueued or is updating. */
 	hasEnqueued(upd: Updatable): boolean {
-		return this.heap.has(upd)
+		return this.heap.has(upd) || this.updating === upd
 	}
 
 	/** 
 	 * Enqueue a promise, which will be resolved after all children,
 	 * and all descendants update completed.
+	 * 
+	 * Must call this after have updated, and enqueued child components.
 	 * 
 	 * Use it when you need to wait for child and descendant components
 	 * update completed and do some measurement.
@@ -208,10 +210,17 @@ class UpdateQueueClass {
 			this.phase = QueueUpdatePhase.WaitingAsync
 
 			// Promise list may be pushed by sub updates.
-			for (let i = 0; i < this.promises.length; i++) {
-				await this.promises[i]
+			while (this.promises.length > 0) {
+				let promises = this.promises
+				this.promises = []
+
+				try {
+					await Promise.all(promises)
+				}
+				catch (err) {
+					console.warn(err)
+				}
 			}
-			this.promises = []
 
 			
 			this.phase = QueueUpdatePhase.CallingCompleteCallbacks
