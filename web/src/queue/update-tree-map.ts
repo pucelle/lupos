@@ -1,6 +1,5 @@
 import {InternalSetMap} from '../structs/map'
 import {Updatable} from '../types'
-import {promiseWithResolves} from '../utils'
 
 
 /** updating upd list, and all their related child upd. */
@@ -9,8 +8,8 @@ interface UpdatableInfo {
 	/** Not update complete child count. */
 	childCount: number
 
-	promise: Promise<void>
-	resolve: () => void
+	/** Calls them after all children update completed. */
+	callbacks: (() => void)[]
 }
 
 
@@ -25,12 +24,9 @@ export class UpdatableTreeMap {
 	private ensureInfo(upd: Updatable): UpdatableInfo {
 		let info = this.infoMap.get(upd)
 		if (!info) {
-			let {promise, resolve} = promiseWithResolves()
-
 			info = {
 				childCount: 0,
-				promise,
-				resolve,
+				callbacks: [],
 			}
 
 			this.infoMap.set(upd, info)
@@ -43,13 +39,13 @@ export class UpdatableTreeMap {
 	 * Get a promise which will be resolved after all children update completed.
 	 * Must call it after updated child properties.
 	 */
-	getChildCompletePromise(upd: Updatable): Promise<void> {
+	addChildCompleteCallback(upd: Updatable, callback: () => void) {
 		let info = this.infoMap.get(upd)
 		if (info) {
-			return info.promise
+			info.callbacks.push(callback)
 		}
 		else {
-			return Promise.resolve()
+			callback()
 		}
 	}
 
@@ -90,7 +86,11 @@ export class UpdatableTreeMap {
 
 			if (count === 0) {
 				this.infoMap.delete(parent)
-				parentInfo.resolve()
+
+				for (let callback of parentInfo.callbacks) {
+					callback()
+				}
+
 				this.complete(parent)
 			}
 			else {

@@ -1,6 +1,6 @@
 import {MiniHeap} from '../structs'
 import {Updatable} from '../types'
-import {AnimationFrame, promiseWithResolves} from '../utils'
+import {AnimationFrame, promiseWithResolves, promisify} from '../utils'
 import {UpdatableTreeMap} from './update-tree-map'
 
 
@@ -142,7 +142,27 @@ class UpdateQueueClass {
 	}
 
 	/** 
-	 * Enqueue a promise, which will be resolved after all children,
+	 * Calls callback after all children, and all descendants update completed.
+	 * 
+	 * Must call this after have updated, and enqueued child components.
+	 * 
+	 * Use it when you need to wait for child and descendant components
+	 * update completed and do some measurement.
+	 * 
+	 * ```ts
+	 * update() {
+	 *     this.updateRendering()
+	 *     UpdateQueue.whenChildComplete(this.doMoreAfterChildUpdateCompleted)
+	 *     ...
+	 * }
+	 * ```
+	 */
+	whenChildComplete(upd: Updatable, callback: () => void) {
+		this.treeMap.addChildCompleteCallback(upd, callback)
+	}
+
+	/** 
+	 * Returns a promise, which will be resolved after all children,
 	 * and all descendants update completed.
 	 * 
 	 * Must call this after have updated, and enqueued child components.
@@ -153,14 +173,25 @@ class UpdateQueueClass {
 	 * ```ts
 	 * async update() {
 	 *     this.updateRendering()
-	 *     await untilChildCompletePromise()
+	 *     await UpdateQueue.untilChildComplete()
 	 *     await barrierDOMReading()
 	 *     ...
 	 * }
 	 * ```
 	 */
 	untilChildComplete(upd: Updatable): Promise<void> {
-		return this.treeMap.getChildCompletePromise(upd)
+		let {promise, resolve} = promiseWithResolves<void>()
+		this.treeMap.addChildCompleteCallback(upd, resolve)
+		return promise
+	}
+
+	/** 
+	 * Calls callback all the enqueued callbacks called.
+	 * Can safely read computed style and rendered properties after promise resolved.
+	 */
+	whenAllComplete(callback: () => void) {
+		this.completeCallbacks.push(callback)
+		this.willUpdate()
 	}
 
 	/** 
@@ -170,9 +201,7 @@ class UpdateQueueClass {
 	 * Note 'never' await it in an async update, or whole update process will be stuck.
 	 */
 	untilAllComplete(): Promise<void> {
-		let {promise, resolve} = promiseWithResolves()
-		this.addCompleteCallback(resolve)
-		return promise
+		return promisify(this.whenAllComplete, this)
 	}
 
 	/** Enqueue a update task if not have. */
@@ -185,12 +214,6 @@ class UpdateQueueClass {
 			this.promises.push(Promise.resolve().then(() => this.updateSub()))
 			this.phase = QueueUpdatePhase.WillUpdateSub
 		}
-	}
-
-	/** Add a complete callback. */
-	addCompleteCallback(callback: () => void) {
-		this.completeCallbacks.push(callback)
-		this.willUpdate()
 	}
 
 	/** Do updating. */
