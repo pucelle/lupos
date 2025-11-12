@@ -53,9 +53,6 @@ export class UpdatableTreeMap {
 				parentInfo.childCount++
 			}
 		}
-		else {
-			debug(upd, updating)
-		}
 	}
 
 	/** On after synchronous or asynchronous update ended. */
@@ -98,12 +95,15 @@ export class UpdatableTreeMap {
 }
 
 
-/** This debug function will be eliminated in production mode. */
-function debug(upd: Updatable, updating: Updatable) {
-	if (upd.iid === updating.iid) {
-		console.warn(`Itself re-enqueued when updating:`, upd)
-	}
-	else {
-		console.warn(`Outer enqueued when updating inner:`, upd, updating)
-	}
-}
+/** 
+ * This debug function will be eliminated in production mode.
+ * It doesn't work as expected because of some reusing components like `<Popup>`.
+ */
+// function debug(upd: Updatable, updating: Updatable) {
+// 	if (upd.iid === updating.iid) {
+// 		console.warn(`Itself re-enqueued when updating:`, upd)
+// 	}
+// 	else {
+// 		console.warn(`Outer enqueued when updating inner:`, upd, updating)
+// 	}
+// }
