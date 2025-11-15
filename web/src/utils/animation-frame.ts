@@ -71,7 +71,6 @@ async function processCallbacks() {
 
 
 function onNextFrame(timestamp: number) {
-	nextFrameId = null
 	inCurrentFrame = true
 	currentTimestamp = timestamp
 	currentCallbackMap = nextCallbackMap
@@ -81,6 +80,7 @@ function onNextFrame(timestamp: number) {
 	// Current frame is sent after timeout.
 	setTimeout(function() {
 		inCurrentFrame = false
+		nextFrameId = null
 	}, 0)
 }
 
