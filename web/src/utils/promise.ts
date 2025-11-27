@@ -1,5 +1,5 @@
 /** Promise and resolve, reject callbacks. */
-export type PromiseWithResolves<T = void> = {
+export type PromiseAndResolves<T = void> = {
 	promise: Promise<T>,
 	resolve: (value: T | PromiseLike<T>) => void,
 	reject: (err?: any) => void
@@ -7,7 +7,7 @@ export type PromiseWithResolves<T = void> = {
 
 
 /** Returns a promise, with it's resolve and reject. */
-export function promiseWithResolves<T = void>(): PromiseWithResolves<T> {
+export function promiseWithResolves<T = void>(): PromiseAndResolves<T> {
 	let resolve: (value: T | PromiseLike<T>) => void
 	let reject: (err: any) => void
 
