@@ -28,10 +28,10 @@ export class MethodOverwrite {
 		this.name = name
 
 		if (name === 'constructor') {
-			this.rawNode = helper.class.getConstructor(classNode, false) ?? null
+			this.rawNode = helper.class.getConstructorDeclaration(classNode, false) ?? null
 		}
 		else {
-			this.rawNode = helper.class.getMethod(classNode, name, false) ?? null
+			this.rawNode = helper.class.getMethodDeclaration(classNode, name, false) ?? null
 		}
 
 		if (this.rawNode) {
