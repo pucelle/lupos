@@ -214,4 +214,4 @@ In 2022, on the bus heading to my hometown, I suddenly realized I can implement 
 
 The work had finally began, what's unexpected is that it's much harder than I thought before.
 
-Finally it comes out, [flit](https://github.com/pucelle/flit) and some internal apps prove it works, and efficient.
+Finally it comes out, [ff-ui](https://github.com/pucelle/ff-ui) and some internal apps prove it works, and efficient.
