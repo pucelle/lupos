@@ -299,8 +299,8 @@ export abstract class SlotParserBase {
 	 * Return a callback to get `new TemplateSlot(...)`.
 	 */
 	prepareAsTemplateSlot(slotContentType: number | null): () => ts.Expression {
-		Modifier.addImport('TemplateSlot', '@pucelle/lupos.js')
-		Modifier.addImport('SlotPosition', '@pucelle/lupos.js')
+		Modifier.addImport('TemplateSlot', 'lupos.html')
+		Modifier.addImport('SlotPosition', 'lupos.html')
 
 		let parameterGetter = this.prepareTemplateSlotParametersGetter()
 

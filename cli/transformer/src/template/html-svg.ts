@@ -19,7 +19,7 @@ defineVisitor(function(node: ts.Node) {
 		return
 	}
 
-	if (nm.moduleName !== '@pucelle/lupos.js') {
+	if (nm.moduleName !== 'lupos.html') {
 		return
 	}
 

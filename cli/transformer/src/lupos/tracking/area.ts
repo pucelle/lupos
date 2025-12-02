@@ -171,7 +171,7 @@ export class TrackingArea {
 					for (let {arg, typeNode} of helper.parameter.walkDeconstructedArgumentTypeItems(args, parameters)) {
 						if (typeNode && (ts.isIdentifier(arg) || helper.access.isAccess(arg))) {
 							let resolved = helper.symbol.resolveImport(typeNode)
-							if (resolved?.moduleName === '@pucelle/lupos') {
+							if (resolved?.moduleName === 'lupos') {
 								if (resolved.memberName === 'GetObserved') {
 									this.mayAddGetTracking(arg, arg, [''])
 								}

@@ -1,7 +1,7 @@
 {
-	"name": "@pucelle/lupos",
+	"name": "lupos",
 	"version": "0.1.0",
-	"description": "A Typescript Transformer helps to compile lupos.js based projects.",
+	"description": "A Typescript Transformer helps to compile lupos based projects.",
 	"author": "pucelle",
 	"license": "MIT",
 	"homepage": "https://github.com/pucelle/lupos",
@@ -25,15 +25,13 @@
 		"build-web": "cd web && node ../cli/bin/luc -e",
 		"watch-web": "cd web && node ../cli/bin/luc -e -w",
 		"prepublish": "npm run build",
-		"test-win": "cd tests && node ../cli/bin/luc && echo Compare git changes to get test result && del tsconfig.tsbuildinfo",
-		"test-mac": "cd tests && node ../cli/bin/luc && echo Compare git changes to get test result && rm tsconfig.tsbuildinfo",
+		"test": "cd tests && node ../cli/bin/luc && echo Compare git changes to get test result && node ../scripts/delete-tsbuildinfo.js",
 		"test-web": "vitest"
 	},
 	"bin": {
 		"luc": "./cli/bin/luc"
 	},
 	"devDependencies": {
-		"@pucelle/lupos.js": "^0.1.0",
 		"@types/node": "^22.10.7",
 		"typescript": "^5.8.3",
 		"vitest": "^3.2.4",

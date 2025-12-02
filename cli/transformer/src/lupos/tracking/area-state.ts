@@ -71,7 +71,7 @@ export class TrackingAreaState {
 			return false
 		}
 
-		if (!helper.objectLike.isDerivedOf(classNode, 'Component', '@pucelle/lupos.js')) {
+		if (!helper.objectLike.isDerivedOf(classNode, 'Component', 'lupos.html')) {
 			return false
 		}
 

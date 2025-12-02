@@ -8,7 +8,7 @@ defineVisitor(function(node: ts.Node) {
 		return
 	}
 
-	if (!helper.symbol.isImportedFrom(node.tag, 'css', '@pucelle/lupos.js')) {
+	if (!helper.symbol.isImportedFrom(node.tag, 'css', 'lupos.html')) {
 		return
 	}
 

@@ -22,7 +22,7 @@ export namespace HTMLOutputHandler {
 	export function prepareOutput(tree: TreeParser, wrapped: boolean, htmlName: string):
 		{name: string, output: () => void}
 	{
-		Modifier.addImport('HTMLMaker', '@pucelle/lupos.js')
+		Modifier.addImport('HTMLMaker', 'lupos.html')
 
 		let htmlString = tree.root.getContentHTMLString()
 

@@ -117,7 +117,7 @@ export class BindingBase {
 
 		// Use a delegator to delegate binding part because it may be deleted.
 		if (this.withQueryToken) {
-			Modifier.addImport('PartDelegator', '@pucelle/lupos.js')
+			Modifier.addImport('PartDelegator', 'lupos.html')
 			this.delegatorVariableName = this.tree.makeUniqueDelegatorName()
 
 			if (this.implementsPart) {
@@ -144,7 +144,7 @@ export class BindingBase {
 			}
 
 			// Import binding class.
-			Modifier.addImport(item.name, '@pucelle/lupos.js') 
+			Modifier.addImport(item.name, 'lupos.html') 
 
 			// Remember class parameter count.
 			this.bindingClassParameterCount = item.parameterCount
@@ -169,7 +169,7 @@ export class BindingBase {
 				this.template.addRefedDeclaration(decl)
 
 				if (bindingClass
-					&& helper.class.isImplementedOf(bindingClass, 'Part', '@pucelle/lupos.js')
+					&& helper.class.isImplementedOf(bindingClass, 'Part', 'lupos.html')
 				) {
 					this.implementsPart = true
 				}

@@ -21,8 +21,8 @@ defineVisitor(function(node: ts.Node) {
 	let hasDeletedContextVariables = false
 
 	// Be a `Connectable` or a `Component`.
-	if (helper.class.isImplementedOf(node, 'Connectable', '@pucelle/lupos')
-		|| helper.objectLike.isDerivedOf(node, 'Component', '@pucelle/lupos.js')
+	if (helper.class.isImplementedOf(node, 'Connectable', 'lupos')
+		|| helper.objectLike.isDerivedOf(node, 'Component', 'lupos.html')
 	) {
 		create = new MethodOverwrite(node, 'onCreated')
 		connect = new MethodOverwrite(node, 'onConnected')
@@ -139,7 +139,7 @@ function compileComputedEffectWatchDecorator(
 	let processorPropName = '$' + methodName + '_' + ProcessorPropNameMap[decoName]
 	let makerParameters = makeMakerParameters(deco, decoName, decl)
 
-	Modifier.addImport(processorClassName, '@pucelle/lupos')
+	Modifier.addImport(processorClassName, 'lupos')
 
 	let createStatementGetter = () => factory.createExpressionStatement(factory.createBinaryExpression(
 		factory.createPropertyAccessExpression(
@@ -270,7 +270,7 @@ function compileWatchGetters(deco: ts.Decorator, decoName: string): () => ts.Exp
 	}
 
 	if (decoArgs.some(arg => ts.isStringLiteral(arg))) {
-		Modifier.addImport('trackGet', '@pucelle/lupos')
+		Modifier.addImport('trackGet', 'lupos')
 	}
 
 	return () => {
@@ -360,7 +360,7 @@ function compileSetContextDecorator(
 	disconnect: MethodOverwrite | null,
 	hasDeletedContextVariables: boolean
 ) {
-	Modifier.addImport('Component', '@pucelle/lupos.js')
+	Modifier.addImport('Component', 'lupos.html')
 
 	let propName = helper.getFullText(propDecl.name)
 
@@ -419,7 +419,7 @@ function compileUseContextDecorator(
 	disconnect: MethodOverwrite | null,
 	hasDeletedContextVariables: boolean
 ) {
-	Modifier.addImport('Component', '@pucelle/lupos.js')
+	Modifier.addImport('Component', 'lupos.html')
 
 	let propName = helper.getFullText(propDecl.name)
 

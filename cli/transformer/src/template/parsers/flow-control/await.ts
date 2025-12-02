@@ -53,7 +53,7 @@ export class AwaitFlowControl extends FlowControlBase {
 	}
 
 	outputInit() {
-		Modifier.addImport('AwaitBlock', '@pucelle/lupos.js')
+		Modifier.addImport('AwaitBlock', 'lupos.html')
 
 		// let $block_0 = new AwaitBlock(
 		//   makers,

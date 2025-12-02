@@ -69,7 +69,7 @@ export class PropertySlotParser extends SlotParserBase {
 
 		// trackSet
 		if (this.targetType === 'component' && this.latestVariableNames) {
-			Modifier.addImport('trackSet', '@pucelle/lupos')
+			Modifier.addImport('trackSet', 'lupos')
 		}
 
 		// $com_0

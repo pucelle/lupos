@@ -70,8 +70,8 @@ function compileComputedDecorator(
 	let overwrittenMethodName = '$compute_' + propName
 	let resetMethodName = '$reset_' + propName
 
-	Modifier.addImport('trackGet', '@pucelle/lupos')
-	Modifier.addImport('trackSet', '@pucelle/lupos')
+	Modifier.addImport('trackGet', 'lupos')
+	Modifier.addImport('trackSet', 'lupos')
 
 	return () => {
 		let newBody = Interpolator.outputChildren(decl.body!) as ts.Block

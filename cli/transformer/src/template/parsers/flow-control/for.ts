@@ -154,7 +154,7 @@ export class ForFlowControl extends FlowControlBase {
 	}
 
 	outputInit() {
-		Modifier.addImport('ForBlock', '@pucelle/lupos.js')
+		Modifier.addImport('ForBlock', 'lupos.html')
 
 		// let $block_0 = new ForBlock(
 		//   new TemplateSlot(new SlotPosition(SlotPositionType.Before, nextChild)),

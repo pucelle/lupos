@@ -149,7 +149,7 @@ export class EventSlotParser extends SlotParserBase {
 	}
 
 	private outputModifiableInit() {
-		Modifier.addImport('DOMModifiableEvents', '@pucelle/lupos')
+		Modifier.addImport('DOMModifiableEvents', 'lupos')
 
 		let nodeName = this.getRefedNodeName()
 

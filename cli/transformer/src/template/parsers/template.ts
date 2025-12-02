@@ -102,7 +102,7 @@ export class TemplateParser extends TemplateBasis {
 	 * but we want to output children firstly, then self.
 	 */
 	prepareToOutputCompiled(): () => void {
-		Modifier.addImport('CompiledTemplateResult', '@pucelle/lupos.js')
+		Modifier.addImport('CompiledTemplateResult', 'lupos.html')
 		
 		let outputSub: (() => void)[] = []
 		let outputSelf: (() => void)[] = []

@@ -11,7 +11,7 @@ It was designed to solve two problems in web programming, which are hard to solv
 - Observing data changes - by TypeScript AOT analysis
 - Efficiently update after data changes - by pre-compiling template literal
 
-Currently it serves project [lupos.js](https://github.com/pucelle/lupos.js), and will serve [lupos.paint](https://github.com/pucelle/lupos.paint) later.
+Currently it serves project [lupos.html](https://github.com/pucelle/lupos.html), and will serve [lupos.paint](https://github.com/pucelle/lupos.paint) later.
 
 [lupos-vscode](https://github.com/pucelle/lupos-vscode) is the vscode plugin provides Syntax Highlighting and IntelliSense for **lupos**.
 
@@ -168,7 +168,7 @@ When I first started implementing this library in 2024, I was playing WoW Classi
 
 I hope this library will play the roles in my development just like **Lupos** in my WoW adventures.
 
-![lupos-of-wow](images/lupos-of-wow.jpg)
+![lupos-of-wow](https://github.com/pucelle/lupos/raw/master/images/lupos-of-wow.jpg)
 
 
 ### Why created **lupos**?

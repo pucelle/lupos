@@ -143,7 +143,7 @@ export class IfFlowControl extends FlowControlBase {
 	}
 
 	protected outputInitByBlockClassName(blockClassName: string) {
-		Modifier.addImport(blockClassName, '@pucelle/lupos.js')
+		Modifier.addImport(blockClassName, 'lupos.html')
 
 		// let $block_0 = new IfBlock / CacheableIfBlock(
 		//   new TemplateSlot(new SlotPosition(SlotPositionType.Before, nextChild)),

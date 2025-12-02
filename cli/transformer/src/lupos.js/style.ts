@@ -14,7 +14,7 @@ defineVisitor(function(node: ts.Node) {
 	}
 
 	// Be a component.
-	if (!helper.objectLike.isDerivedOf(node, 'Component', '@pucelle/lupos.js')) {
+	if (!helper.objectLike.isDerivedOf(node, 'Component', 'lupos.html')) {
 		return
 	}
 
@@ -29,7 +29,7 @@ defineVisitor(function(node: ts.Node) {
 		return
 	}
 
-	Modifier.addImport('addComponentStyle', '@pucelle/lupos.js')
+	Modifier.addImport('addComponentStyle', 'lupos.html')
 
 	let className = node.name ? helper.getText(node.name) : ''
 

@@ -231,12 +231,12 @@ export namespace ObservedChecker {
 		}
 
 		// `Observed<>`
-		else if (helper.symbol.isImportedFrom(typeNode, 'Observed', '@pucelle/lupos')) {
+		else if (helper.symbol.isImportedFrom(typeNode, 'Observed', 'lupos')) {
 			return true
 		}
 
 		// `UnObserved<>`
-		else if (helper.symbol.isImportedFrom(typeNode, 'UnObserved', '@pucelle/lupos')) {
+		else if (helper.symbol.isImportedFrom(typeNode, 'UnObserved', 'lupos')) {
 			return false
 		}
 
@@ -344,7 +344,7 @@ export namespace ObservedChecker {
 
 		// Observed interface.
 		else if (ts.isInterfaceDeclaration(decl)) {
-			let firstDerived = helper.objectLike.getFirstDerivedOf(decl, ['Observed', 'UnObserved'], '@pucelle/lupos')
+			let firstDerived = helper.objectLike.getFirstDerivedOf(decl, ['Observed', 'UnObserved'], 'lupos')
 			if (firstDerived === 'Observed') {
 				return true
 			}
@@ -357,7 +357,7 @@ export namespace ObservedChecker {
 
 		// Observed class.
 		else if (ts.isClassDeclaration(decl)) {
-			let firstImplemented = helper.class.getFirstImplementedOf(decl, ['Observed', 'UnObserved'], '@pucelle/lupos')
+			let firstImplemented = helper.class.getFirstImplementedOf(decl, ['Observed', 'UnObserved'], 'lupos')
 			if (firstImplemented === 'Observed') {
 				return true
 			}

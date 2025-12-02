@@ -5,5 +5,12 @@ tests-web
 tsconfig.json
 README.md
 *.tgz
-jest.config.js
+*.config.js
+*.config.cjs
 images
+.gitmodules
+web/src
+cli/compiler/src
+cli/transformer/src
+.VSCodeCounter
+*.tsbuildinfo

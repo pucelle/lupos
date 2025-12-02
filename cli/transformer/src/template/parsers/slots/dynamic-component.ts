@@ -30,7 +30,7 @@ export class DynamicComponentSlotParser extends SlotParserBase {
 		let hasContentExisted = this.node.children.length > 0
 
 		if (hasContentExisted) {
-			Modifier.addImport('SlotRange', '@pucelle/lupos.js')
+			Modifier.addImport('SlotRange', 'lupos.html')
 			this.slotRangeNodesGetter = this.prepareNodesSlotRangeNodes()
 		}
 	}
@@ -71,7 +71,7 @@ export class DynamicComponentSlotParser extends SlotParserBase {
 	}
 
 	outputInit(nodeAttrInits: ts.Statement[]) {
-		Modifier.addImport('DynamicComponentBlock', '@pucelle/lupos.js')
+		Modifier.addImport('DynamicComponentBlock', 'lupos.html')
 
 		let hasNodeRefed = this.hasNodeRefed()
 		let nodeName = this.getRefedNodeName()

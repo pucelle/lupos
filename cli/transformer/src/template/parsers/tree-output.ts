@@ -44,7 +44,7 @@ export class TreeOutputHandler {
 		parts: Part[],
 		scope: DeclarationScope
 	): () => void {
-		Modifier.addImport('TemplateMaker', '@pucelle/lupos.js')
+		Modifier.addImport('TemplateMaker', 'lupos.html')
 
 		// May modify nodes, must before outputting HTML.
 		let templatePosition = this.outputSlotPosition()
@@ -248,7 +248,7 @@ export class TreeOutputHandler {
 
 	/** Make `new SlotPosition(...)` to indicate the start inner position of template. */
 	private outputSlotPosition(): ts.Expression | null {
-		Modifier.addImport('SlotPosition', '@pucelle/lupos.js')
+		Modifier.addImport('SlotPosition', 'lupos.html')
 
 		let position = SlotPositionType.Before
 		let container: HTMLNode = this.root

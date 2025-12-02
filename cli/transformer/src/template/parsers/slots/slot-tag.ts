@@ -44,8 +44,8 @@ export class SlotTagSlotParser extends SlotParserBase {
 	}
 
 	private outputNamedInit() {
-		Modifier.addImport('TemplateSlot', '@pucelle/lupos.js')
-		Modifier.addImport('SlotPosition', '@pucelle/lupos.js')
+		Modifier.addImport('TemplateSlot', 'lupos.html')
+		Modifier.addImport('SlotPosition', 'lupos.html')
 
 		let nodeName = this.getRefedNodeName()
 		let slotContentType = this.defaultContentParser ? null : SlotContentType.Node
@@ -110,7 +110,7 @@ export class SlotTagSlotParser extends SlotParserBase {
 	}
 
 	private outputNamedUpdate() {
-		Modifier.addImport('TemplateSlot', '@pucelle/lupos.js')
+		Modifier.addImport('TemplateSlot', 'lupos.html')
 
 		// `this.$getSlotElement(slotName)`
 		let value: ts.Expression = factory.createCallExpression(
@@ -126,7 +126,7 @@ export class SlotTagSlotParser extends SlotParserBase {
 		if (this.defaultContentParser) {
 
 			// Haven't prepared `defaultContentParser`, so must add import manually.
-			Modifier.addImport('CompiledTemplateResult', '@pucelle/lupos.js')
+			Modifier.addImport('CompiledTemplateResult', 'lupos.html')
 
 			value = factory.createBinaryExpression(
 				value,

@@ -47,7 +47,7 @@ export class KeyedFlowControl extends FlowControlBase {
 			? 'WeakCacheableKeyedBlock'
 			: 'KeyedBlock'
 
-		Modifier.addImport(blockClassName, '@pucelle/lupos.js')
+		Modifier.addImport(blockClassName, 'lupos.html')
 
 		// let $block_0 = new KeyedBlock(
 		//   new TemplateSlot(new SlotPosition(SlotPositionType.Before, nextChild)),
