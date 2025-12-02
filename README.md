@@ -95,8 +95,8 @@ class Example {
 
 ### 2. Template compiling
 
-- compile `html` and `svg` template of [lupos.js](https://github.com/pucelle/lupos.js), and `paint` template of [lupos.paint](https://github.com/pucelle/lupos.paint) to vanilla codes, and hoist codes to optimize.
-- compile `css` template of [lupos.js](https://github.com/pucelle/lupos.js) to compress it.
+- compile `html` and `svg` template of [lupos.html](https://github.com/pucelle/lupos.html), and `paint` template of [lupos.paint](https://github.com/pucelle/lupos.paint) to vanilla codes, and hoist codes to optimize.
+- compile `css` template of [lupos.html](https://github.com/pucelle/lupos.html) to compress it.
 
 
 
