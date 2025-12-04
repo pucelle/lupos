@@ -1,5 +1,5 @@
 import {Observed, computed, effect, watch, Connectable} from '../../../web/out'
-import {Component} from '@pucelle/lupos.js'
+import {Component} from 'lupos.html'
 
 
 export class TestComputed extends Component {

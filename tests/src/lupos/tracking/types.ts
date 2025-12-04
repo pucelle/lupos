@@ -1,5 +1,5 @@
 import {effect, MethodsObserved, Observed, UnObserved, GetObserved, SetObserved} from '../../../../web/out'
-import {Component} from '@pucelle/lupos.js'
+import {Component} from 'lupos.html'
 
 
 export class TestObservedVariableType {

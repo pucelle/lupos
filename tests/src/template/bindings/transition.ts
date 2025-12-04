@@ -1,4 +1,4 @@
-import {fade, Component, html} from '@pucelle/lupos.js'
+import {fade, Component, html} from 'lupos.html'
 
 
 export class TestTransitionBinding extends Component {

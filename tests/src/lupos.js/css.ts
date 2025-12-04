@@ -1,4 +1,4 @@
-import {Component, addGlobalStyle, css} from '@pucelle/lupos.js'
+import {Component, css} from 'lupos.html'
 
 
 export class TestNormalStyle extends Component {
@@ -77,8 +77,8 @@ export class TestCodesInterpolated extends Component {
 }
 
 
-addGlobalStyle(css`.a{
+css`.a{
 	.b{
 		color: red;
 	}
-}`)
+}`

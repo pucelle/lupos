@@ -1,4 +1,4 @@
-import {Component, html} from '@pucelle/lupos.js'
+import {Component, html} from 'lupos.html'
 
 
 export class TestContent extends Component {

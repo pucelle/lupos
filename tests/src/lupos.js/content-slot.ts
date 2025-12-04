@@ -1,10 +1,9 @@
-import * as L from '@pucelle/lupos.js'
-import {Component, TemplateResult} from '@pucelle/lupos.js'
+import {Component, TemplateResult} from 'lupos.html'
 
 
-export class TestTemplateResult extends L.Component {
+export class TestTemplateResult extends Component {
 
-	render(): L.TemplateResult {
+	render(): TemplateResult {
 		return null as any
 	}
 }

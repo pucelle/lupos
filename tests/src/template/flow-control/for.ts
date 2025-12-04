@@ -1,5 +1,5 @@
 import {Observed} from '../../../../web/out'
-import {Component, html} from '@pucelle/lupos.js'
+import {Component, html} from 'lupos.html'
 
 
 export class TestFor extends Component {
