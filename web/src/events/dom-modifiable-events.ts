@@ -133,11 +133,7 @@ export function on<T extends EventType>(
 	scope: any = null,
 	options: AddEventListenerOptions = {}
 ) {
-	if (scope) {
-		handler = handler.bind(scope)
-	}
-
-	let wrappedHandler = wrapHandler(el, type, modifiers as string[] | null, handler as EventHandler)
+	let wrappedHandler = wrapHandler(el, type, modifiers as string[] | null, handler as EventHandler, scope)
 	let capture = !!modifiers && (modifiers as string[]).includes('capture')
 	let passive = !!modifiers && (modifiers as string[]).includes('passive')
 
@@ -154,7 +150,7 @@ export function on<T extends EventType>(
 
 
 /** Wrap handler to filter by modifiers. */
-function wrapHandler(el: EventTarget, type: string, modifiers: string[] | null, handler: EventHandler): EventHandler {
+function wrapHandler(el: EventTarget, type: string, modifiers: string[] | null, handler: EventHandler, scope: any): EventHandler {
 	let filterModifiers = modifiers?.filter(m => !GlobalEventModifiers.includes(m as any))
 
 	return function wrappedHandler(e: Event) {
@@ -178,10 +174,10 @@ function wrapHandler(el: EventTarget, type: string, modifiers: string[] | null, 
 		}
 
 		if (modifiers && modifiers.includes('once')) {
-			DOMEvents.off(el, type as EventType, wrappedHandler)
+			DOMEvents.off(el, type as EventType, handler)
 		}
 
-		handler(e)
+		handler.call(scope, e)
 	}
 }
 
