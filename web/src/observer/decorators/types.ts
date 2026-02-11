@@ -46,10 +46,10 @@ export declare function effect(originalMethod: any, context: ClassMethodDecorato
  * Use it like:
  * ```
  * @watch('publicProperty', ?options)
- * onPropertyChange(propertyValue) {...}
+ * onPropertyChange(propertyValue, oldPropertyValue) {...}
  *
  * @watch(function(this: C) {return this.property}, ?options)
- * onPropertyChange(watchFnReturnedValue) {...}
+ * onPropertyChange(watchFnReturnedValue, oldWatchFnReturnedValue) {...}
  * ```
  * 
  * The watch action will be activated after instance initialized,
