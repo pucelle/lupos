@@ -188,16 +188,12 @@ export class TrackingArea {
 		
 		// `[...a]`, `{...o}`, `Object.keys(a)`
 		if (helper.access.isAllElementsReadAccess(rawNode)) {
-			if (ts.isIdentifier(rawNode) || helper.access.isAccess(rawNode)) {
-				this.mayAddGetTracking(rawNode, rawNode, [''])
-			}
+			this.mayAddGetTracking(rawNode, rawNode, [''])
 		}
 
 		// `Object.assign(a, ...)`
 		else if (helper.access.isAllElementsWriteAccess(rawNode)) {
-			if (ts.isIdentifier(rawNode) || helper.access.isAccess(rawNode)) {
-				this.mayAddSetTracking(rawNode, rawNode, [''])
-			}
+			this.mayAddSetTracking(rawNode, rawNode, [''])
 		}
 		
 		// Custom tracking.

@@ -86,11 +86,15 @@ export class TestArrayBroadcastingObservedToMapFn extends Component {
 }
 
 
-export class TestArrayElementSpread {
+export class TestArrayElementsSpread {
 
 	prop: Observed<number[]> = [1]
 
-	getProp() {
+	getProp(): Observed<number[]> {
 		return [...this.prop]
+	}
+
+	getSpreadProp() {
+		return [...this.getProp()]
 	}
 }

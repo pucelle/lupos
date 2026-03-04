@@ -86,10 +86,16 @@ export class TestArrayBroadcastingObservedToMapFn extends Component {
         return this.prop.map(function (v) { trackGet(v, "value"); return v.value; }).join('');
     }
 }
-export class TestArrayElementSpread {
+export class TestArrayElementsSpread {
     prop = [1];
     getProp() {
         trackGet(this.prop, "");
         return [...this.prop];
+    }
+    getSpreadProp() {
+        let $ref_0;
+        $ref_0 = this.getProp();
+        trackGet($ref_0, "");
+        return [...$ref_0];
     }
 }
