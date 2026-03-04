@@ -21,7 +21,10 @@ export class BindingBase {
 	readonly tree: TreeParser
 	readonly template: TemplateParser
 
-	/** Whether output update content as a lazy callback. */
+	/** 
+	 * Whether output update content as a lazy callback.
+	 * So it will be wrapped as a callback and becomes always transferrable.
+	 */
 	readonly asLazyCallback: boolean = false
 
 	name: string
@@ -104,7 +107,8 @@ export class BindingBase {
 			return factory.createNull()
 		}
 
-		let value = this.template.values.outputValueOfIndex(this.queryParameter!, this.slot.valueIndices![0], this.tree, this.asLazyCallback)
+		let value = this.template.
+		values.outputValueOfIndex(this.queryParameter!, this.slot.valueIndices![0], this.tree, this.asLazyCallback)
 		return value
 	}
 

@@ -16,6 +16,9 @@ export enum MutableMask {
 
 	/** Whether have any local variable referenced. */
 	HasLocalReference = 2,
+
+	/** Whether have any local variable assignment. */
+	HasLocalAssignment = 4,
 }
 
 /** Replace an identifier or this keyword. */
@@ -149,6 +152,26 @@ class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 		return undefined
 	}
 
+	/** Test whether have assignment within a range. */
+	hasAssignedWithinNodeRange(rawNode: AccessNode | ts.Identifier | ts.ThisExpression, withinNode: ts.Node): boolean {
+		let hashName = Hashing.hashNode(rawNode).name
+		let assignments = this.assignmentMap.get(hashName)
+
+		if (!assignments) {
+			return false
+		}
+
+		for (let assign of assignments) {
+	
+			// Assign node within node range.
+			if (VisitTree.isAncestorOf(withinNode, assign)) {
+				return true
+			}
+		}
+
+		return false
+	}
+
 	/** Where before or after `rawNode`, it has or will be assigned. */
 	haveOrWillBeAssigned(rawNode: AccessNode | ts.Identifier | ts.ThisExpression): boolean {
 		let hashName = Hashing.hashNode(rawNode).name
@@ -172,19 +195,29 @@ class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 	testCanTransfer(mask: MutableMask | 0, asLazyCallback: boolean): boolean {
 		let mutable = (mask & MutableMask.Mutable) > 0
 
-		// Mutable, can't transfer.
+		// If mutable, can't transfer.
 		if (mutable) {
 			return false
 		}
 
-		// Has no local reference, can transfer.
+		// Can transfer as a callback, and local variable reference will be passed by `$latest_x`.
+		// But if has local assignment, will skip it.
+		if (asLazyCallback) {
+			let hasLocalAssignment = (mask & MutableMask.HasLocalAssignment) > 0
+			if (hasLocalAssignment) {
+				return false
+			}
+
+			return true
+		}
+
+		// If have local reference, can't transfer.
 		let hasLocalReference = (mask & MutableMask.HasLocalReference) > 0
 		if (hasLocalReference) {
 			return false
 		}
 
-		// Can transfer as a callback, and local reference will be passed by `$latest_x`.
-		return asLazyCallback
+		return true
 	}
 
 	private testMutableRecursively(rawNode: ts.Node, topmostFunction: ts.Node | null): MutableMask | 0{
@@ -227,12 +260,17 @@ class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 				mutable |= MutableMask.Mutable
 			}
 
-			// Have referenced local variable, which must be declared outside of function range.
+			// Have referenced local variable within range, which must be declared outside of function range.
 			if (asLocalVariable
 				&& (!topmostFunction
 					|| !this.isDeclaredWithinNodeRange(rawNode as ts.Identifier, rawNode, topmostFunction))
 			) {
 				mutable |= MutableMask.HasLocalReference
+
+				// If will be assigned within a handler.
+				if (topmostFunction && this.hasAssignedWithinNodeRange(rawNode, topmostFunction)) {
+					mutable |= MutableMask.HasLocalAssignment
+				}
 			}
 		}
 

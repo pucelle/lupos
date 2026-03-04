@@ -1,6 +1,5 @@
-import * as L from 'lupos.html';
 import { Component } from 'lupos.html';
-export class TestTemplateResult extends L.Component {
+export class TestTemplateResult extends Component {
     static SlotContentType = 0;
     render() {
         return null;

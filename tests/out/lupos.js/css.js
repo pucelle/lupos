@@ -1,4 +1,4 @@
-import { Component, addGlobalStyle, css, addComponentStyle } from 'lupos.html';
+import { Component, css, addComponentStyle } from 'lupos.html';
 export class TestNormalStyle extends Component {
     static style = /*#__PURE__*/ addComponentStyle(css `.a{.b{color:red;}}`, "TestNormalStyle");
 }
@@ -26,4 +26,4 @@ export class TestCodesInterpolated extends Component {
         return css(["", ".a{background:red;}", ""], [code1, code2]);
     }, "TestCodesInterpolated");
 }
-addGlobalStyle(css `.a{.b{color:red;}}`);
+css `.a{.b{color:red;}}`;

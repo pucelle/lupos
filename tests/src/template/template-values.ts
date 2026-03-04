@@ -58,5 +58,4 @@ export class TestTemplateValues extends Component {
 	testMergingSameValues() {
 		return html`<div attr="${this.prop}" attr2=${this.prop}></div>`
 	}
-
 }

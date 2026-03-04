@@ -199,13 +199,11 @@ const $html_3 = /*#__PURE__*/ new HTMLMaker("<!----><div></div><!---->");
 <root>
     <div @click=${() => value} />
 </root>
-*/ const $template_11 = /*#__PURE__*/ new TemplateMaker(function ($context) {
+*/ const $template_11 = /*#__PURE__*/ new TemplateMaker(function () {
     let $latest_0;
     let $node = $html_0.make();
     let $node_0 = $node.content.firstChild;
-    $node_0.addEventListener("click", (...args) => {
-        $latest_0.call($context, ...args);
-    });
+    $node_0.addEventListener("click", () => $latest_0);
     return {
         el: $node,
         position: new SlotPosition(1, $node_0),
@@ -310,7 +308,7 @@ export class TestEvent extends Component {
     testLocalReference() {
         let value = 1;
         return new CompiledTemplateResult($template_11, [
-            () => value
+            value
         ], this);
     }
     testLocalAssignment() {
