@@ -1,4 +1,4 @@
-import { fade, Component, TransitionBinding, TemplateSlot, SlotPosition, CompiledTemplateResult, TemplateMaker, HTMLMaker } from '@pucelle/lupos.js';
+import { fade, Component, TransitionBinding, TemplateSlot, SlotPosition, CompiledTemplateResult, TemplateMaker, HTMLMaker } from 'lupos.html';
 const $html_0 = /*#__PURE__*/ new HTMLMaker("<!---->");
 /*
 <root>

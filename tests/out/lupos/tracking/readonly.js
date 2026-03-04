@@ -1,5 +1,5 @@
-import { Component } from '@pucelle/lupos.js';
-import { trackGet } from "@pucelle/lupos";
+import { Component } from 'lupos.html';
+import { trackGet } from "lupos";
 export class TestReadonlyModifier extends Component {
     static SlotContentType = 2;
     prop1 = { value: 'Text' };

@@ -1,6 +1,6 @@
-import { Component, RefBinding, CompiledTemplateResult, TemplateMaker, SlotPosition, HTMLMaker } from '@pucelle/lupos.js';
+import { Component, RefBinding, CompiledTemplateResult, TemplateMaker, SlotPosition, HTMLMaker } from 'lupos.html';
 import { trackGet, trackSet } from '../../../../web/out';
-import { Computed, trackGet, trackSet, Watcher } from "@pucelle/lupos";
+import { Computed, trackGet, trackSet, Watcher } from "lupos";
 const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
 /*
 <root>

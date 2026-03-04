@@ -1,4 +1,4 @@
-import { Component, addGlobalStyle, css, addComponentStyle } from '@pucelle/lupos.js';
+import { Component, addGlobalStyle, css, addComponentStyle } from 'lupos.html';
 export class TestNormalStyle extends Component {
     static style = /*#__PURE__*/ addComponentStyle(css `.a{.b{color:red;}}`, "TestNormalStyle");
 }

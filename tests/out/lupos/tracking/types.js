@@ -1,6 +1,6 @@
 import { MethodsObserved, Observed, UnObserved, GetObserved, SetObserved } from '../../../../web/out';
-import { Component } from '@pucelle/lupos.js';
-import { Effector, trackGet, trackSet } from "@pucelle/lupos";
+import { Component } from 'lupos.html';
+import { Effector, trackGet, trackSet } from "lupos";
 export class TestObservedVariableType {
     variables() {
         var a = { value: 1 };

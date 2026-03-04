@@ -1,5 +1,5 @@
-import { Component } from '@pucelle/lupos.js';
-import { trackGet } from "@pucelle/lupos";
+import { Component } from 'lupos.html';
+import { trackGet } from "lupos";
 let $ref_0;
 export class TestRef extends Component {
     prop = { value: 1 };

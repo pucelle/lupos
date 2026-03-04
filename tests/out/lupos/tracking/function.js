@@ -1,5 +1,5 @@
-import { Component } from '@pucelle/lupos.js';
-import { trackSet, trackGet } from "@pucelle/lupos";
+import { Component } from 'lupos.html';
+import { trackSet, trackGet } from "lupos";
 export class TestFunction extends Component {
     prop = 0;
     list = [{ value: 1 }];

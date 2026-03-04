@@ -1,5 +1,5 @@
-import { Component } from '@pucelle/lupos.js';
-import { trackGet } from "@pucelle/lupos";
+import { Component } from 'lupos.html';
+import { trackGet } from "lupos";
 export class TestAndOrDoubleQuestionOperators extends Component {
     prop1 = { value: '1' };
     prop2 = { value: '2' };

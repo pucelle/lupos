@@ -1,4 +1,4 @@
-import { Component, CompiledTemplateResult, TemplateMaker, SlotPosition, HTMLMaker } from '@pucelle/lupos.js';
+import { Component, CompiledTemplateResult, TemplateMaker, SlotPosition, HTMLMaker } from 'lupos.html';
 const $html_0 = /*#__PURE__*/ new HTMLMaker("<!----><template><div>Portal Content</div></template>");
 /*
 <root>

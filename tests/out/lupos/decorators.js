@@ -1,6 +1,6 @@
 import { Observed, Connectable } from '../../../web/out';
-import { Component } from '@pucelle/lupos.js';
-import { Computed, trackGet, trackSet, Effector, Watcher } from "@pucelle/lupos";
+import { Component } from 'lupos.html';
+import { Computed, trackGet, trackSet, Effector, Watcher } from "lupos";
 export class TestComputed extends Component {
     prop = 1;
     $compute_prop2() {

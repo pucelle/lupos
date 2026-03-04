@@ -1,5 +1,5 @@
 import {} from '../../../web/out';
-import { Component } from '@pucelle/lupos.js';
+import { Component } from 'lupos.html';
 export class Parent extends Component {
     prop = 1;
     onConnected() {
