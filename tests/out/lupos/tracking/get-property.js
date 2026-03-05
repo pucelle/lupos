@@ -1,15 +1,16 @@
 import { Component } from 'lupos.html';
 import { trackGet } from "lupos";
 export class TestNormalProp extends Component {
-    prop = 1;
+    prop1 = 1;
+    prop2 = 1;
     getProp() {
-        trackGet(this, "prop");
-        return this.prop;
+        trackGet(this, "prop1");
+        return this.prop1;
     }
     destructedGetProp() {
-        let { prop } = this;
-        trackGet(this, "prop");
-        return prop;
+        let { prop1, prop2 } = this;
+        trackGet(this, "prop1", "prop2");
+        return prop1 + prop2;
     }
 }
 export class TestElementProp extends Component {

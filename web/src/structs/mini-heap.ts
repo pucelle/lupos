@@ -10,6 +10,7 @@ export class MiniHeap<T> {
 	/** List of items. */
 	list: T[]
 
+	/** `comparer` to sort items from lower to upper. */
 	constructor(comparer: (a: T, b: T) => number, list: T[] = []) {
 		this.comparer = comparer
 		this.list = list
@@ -70,6 +71,11 @@ export class MiniHeap<T> {
 		return firstValue
 	}
 
+	/** Remove the item in the tail and return it. */
+	popTail(): T | undefined {
+		return this.list.pop()
+	}
+
 	/** Remove element at specified index. */
 	removeAt(index: number) {
 		this.list[index] = this.list.pop()!
@@ -127,7 +133,7 @@ export class MiniHeap<T> {
 		this.list[j] = vi
 	}
 
-	/** Clone MiniHeap */
+	/** Clone MiniHeap. */
 	clone() {
 		return new MiniHeap(this.comparer, [...this.list])
 	}

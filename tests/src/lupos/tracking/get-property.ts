@@ -4,15 +4,16 @@ import {Component} from 'lupos.html'
 
 export class TestNormalProp extends Component {
 
-	prop: number =  1
+	prop1: number =  1
+	prop2: number =  1
 
 	getProp() {
-		return this.prop
+		return this.prop1
 	}
 
 	destructedGetProp() {
-		let {prop} = this
-		return prop
+		let {prop1, prop2} = this
+		return prop1 + prop2
 	}
 }
 
