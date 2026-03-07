@@ -10,6 +10,7 @@ interface EventListener {
 	handler: EventHandler
 	boundHandler: EventHandler
 	scope: any
+	capture: boolean
 }
 
 
@@ -69,6 +70,7 @@ export function bindEvent(
 		handler,
 		boundHandler,
 		scope,
+		capture: options.capture ?? false,
 	}
 
 	EventListenerMap.add(el, type, eventListener)
@@ -88,7 +90,7 @@ function bindOnce(el: EventTarget, type: EventType, handler: EventHandler, scope
  * Unbind all event listeners that match specified parameters.
  * If provides `scope` here, only bound listeners with this scope will be released.
  */
-export function off<T extends EventType>(el: EventTarget, type: T, handler: InferEventHandler<T>, scope: any = null) {
+export function off<T extends EventType>(el: EventTarget, type: T, handler: InferEventHandler<T>, scope: any = null, capture: boolean = false) {
 	let listeners = EventListenerMap.get(el, type)
 	if (!listeners) {
 		return
@@ -97,8 +99,11 @@ export function off<T extends EventType>(el: EventTarget, type: T, handler: Infe
 	for (let i = listeners.length - 1; i >= 0; i--) {
 		let listener = listeners[i]
 		
-		if (listener.handler === handler && (!scope || listener.scope === scope)) {
-			el.removeEventListener(type, listener.boundHandler)
+		if (listener.handler === handler
+			&& (!scope || listener.scope === scope)
+			&& listener.capture === capture
+		) {
+			el.removeEventListener(type, listener.boundHandler, capture)
 			EventListenerMap.delete(el, type, listener)
 		}
 	}
