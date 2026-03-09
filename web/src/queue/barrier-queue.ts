@@ -88,6 +88,17 @@ class BarrierQueue {
 		let {resolve} = this.list[step]!
 		resolve()
 	}
+
+	/** Resolves after all barriers completed. */
+	async untilAllComplete() {
+		while (this.state !== BarrierQueueState.Pending) {
+			for (let item of this.list) {
+				if (item) {
+					await item.promise
+				}
+			}
+		}
+	}
 }
 
 
@@ -145,4 +156,10 @@ export function barrierDOMReading() {
  */
 export function barrierDOMWriting() {
 	return queue.barrier(BarrierQueueStep.WriteDOM)
+}
+
+
+/** Wait for all barriers complete. */
+export function untilBarriersComplete() {
+	return queue.untilAllComplete()
 }

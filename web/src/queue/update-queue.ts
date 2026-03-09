@@ -1,6 +1,7 @@
 import {MiniHeap} from '../structs'
 import {Updatable} from '../types'
 import {AnimationFrame, promisify} from '../utils'
+import {untilBarriersComplete} from './barrier-queue'
 import {UpdatableTreeMap} from './update-tree-map'
 
 
@@ -244,8 +245,8 @@ class UpdateQueueClass {
 				callback()
 			}
 
-			// Wait for a micro task to see if more callbacks come.
-			await Promise.resolve()
+			// Also wait for all barriers complete.
+			await untilBarriersComplete()
 
 			// Wait for those very deep micro tasks to be completed.
 			// Bad part is it may postpone callback to next frame.
