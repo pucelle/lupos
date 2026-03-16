@@ -19,7 +19,10 @@ interface VisitItem {
 export namespace VisitTree {
 
 	let stack: VisitItem[] = []
+
+	/** Current not in stack. */
 	let current: VisitItem | null = null
+
 	let indexSeed: number = -1
 
 	/** Parent -> child. */
@@ -41,9 +44,7 @@ export namespace VisitTree {
 		
 		// In the first visiting initialize visit and scope tree.
 		function visitor(node: ts.Node) {
-			VisitTree.toNext(node)
-
-			VisitTree.toChild()
+			VisitTree.toChild(node)
 			ts.forEachChild(node, visitor)
 			VisitTree.toParent()
 		}
@@ -63,13 +64,15 @@ export namespace VisitTree {
 		IndexMap.clear()
 	}
 
-	/** To next sibling. */
-	export function toNext(node: ts.Node) {
+	/** Before entering child nodes. */
+	export function toChild(node: ts.Node) {
 		let index = ++indexSeed
+		let parent = current
+
 		current = {node, index}
 
-		if (stack.length > 0) {
-			let parent = stack[stack.length - 1]
+		if (parent) {
+			stack.push(parent)
 			ChildMap.add(parent.node, node)
 			ParentMap.set(node, parent.node)
 		}
@@ -78,13 +81,7 @@ export namespace VisitTree {
 		IndexMap.set(node, index)
 	}
 
-	/** To first child. */
-	export function toChild() {
-		stack.push(current!)
-		current = null
-	}
-
-	/** To parent. */
+	/** Exit self and enter parent node. */
 	export function toParent() {
 		current = stack.pop()!
 	}

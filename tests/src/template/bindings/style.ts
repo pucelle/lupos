@@ -1,4 +1,4 @@
-import {Component, html} from 'lupos.html'
+import {Component, html, RenderResult} from 'lupos.html'
 
 
 export class TestStyleBinding extends Component {
@@ -40,6 +40,27 @@ export class TestStyleBinding extends Component {
 
 	testConflictWithStyleAttr() {
 		return html`<div style="background: ${this.styleValue}" :style.background=${this.styleValue} />`
+	}
+
+	testStylesInFor() {
+		let rendered: RenderResult[] = []
+		for (let i = 0; i < 10; i++) {
+			
+		}
+
+		let left = 0
+
+		for (let i = 0; i < 10; i++) {
+			if (i % 2 === 0) {
+				rendered.push(html`
+					<div :style.left.px=${left}>
+						${i}
+					</div>`
+				)
+			}
+		}
+
+		return rendered
 	}
 }
 

@@ -32,6 +32,9 @@ type NodeReplacer = (
 /** Manages all the declaration scopes as a tree struct. */
 class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 
+	/** Cache for faster visiting. */
+	private nodeMutableMaskCache: Map<ts.Node, number> = new Map()
+
 	/** Cache assign to hash name -> assignment expression. */
 	private assignmentMap: ListMap<string, AssignmentNode> = new ListMap()
 
@@ -180,7 +183,14 @@ class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 
 	/** Get mutable musk from an expression represented value. */
 	checkMutableMask(rawNode: ts.Expression): MutableMask | 0 {
-		return this.testMutableRecursively(rawNode, null)
+		if (this.nodeMutableMaskCache.has(rawNode)) {
+			return this.nodeMutableMaskCache.get(rawNode)!
+		}
+
+		let mask = this.testMutableRecursively(rawNode, null)
+		this.nodeMutableMaskCache.set(rawNode, mask)
+		
+		return mask
 	}
 
 	/** Test whether expression represented value is mutable. */
