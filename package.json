@@ -32,10 +32,10 @@
 		"luc": "./cli/bin/luc"
 	},
 	"devDependencies": {
-		"@types/node": "^22.19.3",
+		"@types/node": "^22.19.15",
+		"happy-dom": "^20.8.4",
+		"lupos.html": "^0.1.1",
 		"typescript": "^5.9.3",
-		"vitest": "^4.0.16",
-		"happy-dom": "^20.0.11",
-		"lupos.html": "^0.1.1"
+		"vitest": "^4.1.0"
 	}
 }
