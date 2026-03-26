@@ -1,6 +1,3 @@
-import {promiseWithResolves} from '../utils'
-
-
 /** State of BarrierQueue. */
 const enum BarrierQueueState {
 	Pending,
@@ -33,7 +30,7 @@ class BarrierQueue {
 			return this.list[step].promise
 		}
 
-		let {promise, resolve} = promiseWithResolves()
+		let {promise, resolve} = Promise.withResolvers<void>()
 
 		this.list[step] = {
 			promise,
