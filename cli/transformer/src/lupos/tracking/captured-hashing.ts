@@ -4,8 +4,14 @@ import {CapturedItem, TrackingCapturer} from './capturer'
 
 
 export interface CapturedHash {
+
+	/** Captured item. */
 	item: CapturedItem
+
+	/** Exp or raw node hash string. */
 	expHashName: string
+
+	/** Key hash string. */
 	keyHashName: string
 
 	/** The variable declaration scopes that current node used. */
@@ -13,7 +19,7 @@ export interface CapturedHash {
 }
 
 
-/** Manage a group of hashed captured items. */
+/** Manage a group of captured items hash result. */
 export class CapturedHashMap {
 
 	/** Make a hash map from items. */

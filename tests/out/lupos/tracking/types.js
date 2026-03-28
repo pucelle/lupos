@@ -293,7 +293,6 @@ export class TestEffectDecorator extends Component {
     }
     onChange() {
         this.value = this.value + 1;
-        trackGet(this, "value");
         trackSet(this, "value");
     }
 }

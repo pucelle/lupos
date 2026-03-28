@@ -10,6 +10,7 @@ import {TrackingAreaState} from './area-state'
 import {TrackingCapturerOperator} from './capturer-operator'
 import {TrackingPatch} from './patch'
 import {CapturedOutputWay} from './ranges'
+import {CapturedHashing} from './captured-hashing'
 
 
 /** Captured item, will be inserted to a position. */
@@ -439,6 +440,11 @@ export class TrackingCapturer {
 			return !TrackingPatch.hasIgnored(item.exp ?? item.node)
 		})
 
+		// Save set type will covers get type.
+		if (this.captureType === 'both') {
+			items = this.coversSameGetTypeBySet(items)
+		}
+
 		if (newToNode !== null) {
 			for (let item of items) {
 				let hashed = Hashing.hashNode(item.node)
@@ -499,6 +505,36 @@ export class TrackingCapturer {
 		}
 
 		return position.toNode
+	}
+
+	/** 
+	 * For `@effect` and tracks both get and set type of same expression, will ignores get type.
+	 * E.g., `a++`, will removes `trackGet(a)`.
+	 */
+	private coversSameGetTypeBySet(items: CapturedItem[]) {
+		let hashStrings: string[] = []
+		let hashTrackTypeMap: Map<string, 'get' | 'set'> = new Map()
+
+		for (let item of items) {
+			let hash = CapturedHashing.hash(item)
+			let hashString = hash.expHashName + '[' + hash.keyHashName + ']'
+
+			hashStrings.push(hashString)
+
+			// get can be reset to set, or set can't.
+			let existingType = hashTrackTypeMap.get(hashString)
+			if (existingType !== 'set' || item.type === 'set') {
+				hashTrackTypeMap.set(hashString, item.type)
+			}
+		}
+
+		// Filter out get types.
+		items = items.filter((item, index) => {
+			let hashString = hashStrings[index]
+			return hashTrackTypeMap.get(hashString) === item.type
+		})
+
+		return items
 	}
 
 	/** Transfer specified captured items to specified position. */
