@@ -204,6 +204,15 @@ export namespace Modifier {
 			if (existingImportDecl) {
 				for (let element of (existingImportDecl.importClause!.namedBindings as ts.NamedImports).elements) {
 					existingNames.set(element.name.text, element)
+
+					// Removes const enum imports, which will cause error in bun.
+					let resolved = helper.symbol.resolveDeclaration(element.name)
+					if (resolved
+						&& ts.isEnumDeclaration(resolved)
+						&& resolved.modifiers?.find(m => m.kind === ts.SyntaxKind.ConstKeyword)
+					) {
+						Interpolator.remove(element)
+					}
 				}
 			}
 
@@ -240,7 +249,7 @@ export namespace Modifier {
 				let newImportDecl = factory.createImportDeclaration(
 					undefined,
 					factory.createImportClause(
-						false,
+						undefined,
 						undefined,
 						factory.createNamedImports(namedImports)
 					),
