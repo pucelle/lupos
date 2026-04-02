@@ -150,6 +150,13 @@ class Example {
 
 
 
+## Use transformer API
+
+Use default export at `lupos/transformer` to do custom transformation.
+Note you may need to set `"moduleResolution": "Bundler"` in `tsconfig.json`.
+
+
+
 ## Weakness
 
 **lupos** is not perfect yet.

@@ -14,9 +14,14 @@
 	"types": "./web/out/index.d.ts",
 	"sideEffects": false,
 	"exports": {
-		".": "./web/out/index.js",
-		"./compiler": "./compiler/out/index.js",
-		"./transformer": "./transformer/out/index.js"
+		".": {
+			"types": "./web/out/index.d.ts",
+			"import": "./web/out/index.js"
+		},
+		"./transformer": {
+			"types": "./transformer/out/index.d.ts",
+			"import": "./transformer/out/index.js"
+		}
 	},
 	"scripts": {
 		"build": "npm run build-cli && npm run build-web",
