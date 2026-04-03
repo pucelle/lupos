@@ -18,7 +18,10 @@ defineVisitor(function(node: ts.Node) {
 	}
 
 	let relativePath = specifier.text
-	if (!relativePath.startsWith('.')) {
+	if (!relativePath.startsWith('.')
+		|| relativePath.endsWith('.js')
+		|| relativePath.endsWith('.d.ts')
+	) {
 		return
 	}
 
@@ -32,9 +35,9 @@ defineVisitor(function(node: ts.Node) {
 		return
 	}
 
-	if (relativeRealPath.endsWith('.ts') && !relativeRealPath.endsWith('.d.ts')) {
+	if (relativeRealPath.endsWith('.ts')) {
 		Interpolator.replace(specifier, InterpolationContentType.Normal, () => {
-			return ts.factory.createStringLiteral(relativeRealPath.replace(/\.ts/, '.js'))
+			return ts.factory.createStringLiteral(relativeRealPath.replace(/(?:\.d)?\.ts/, '.js'))
 		})
 	}
 })
