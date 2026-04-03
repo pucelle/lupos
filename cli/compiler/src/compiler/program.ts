@@ -6,5 +6,5 @@ export enum ForegroundColorEscapeSequences {
 }
 
 export function formatColorAndReset(text: string, formatStyle: string) {
-    return formatStyle + text + resetEscapeSequence;
+    return formatStyle + text + resetEscapeSequence
 }

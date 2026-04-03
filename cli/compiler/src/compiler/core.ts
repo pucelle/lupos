@@ -3,28 +3,28 @@
 
 
 interface MapLike<T> {
-    [index: string]: T;
+    [index: string]: T
 }
 
-type EqualityComparer<T> = (a: T, b: T) => boolean;
+type EqualityComparer<T> = (a: T, b: T) => boolean
 
 export function hasProperty(map: MapLike<any>, key: string): boolean {
-    return hasOwnProperty.call(map, key);
+    return hasOwnProperty.call(map, key)
 }
 
-const hasOwnProperty = Object.prototype.hasOwnProperty;
+const hasOwnProperty = Object.prototype.hasOwnProperty
 
 export function contains<T>(array: readonly T[] | undefined, value: T, equalityComparer: EqualityComparer<T> = equateValues): boolean {
     if (array) {
         for (const v of array) {
             if (equalityComparer(v, value)) {
-                return true;
+                return true
             }
         }
     }
-    return false;
+    return false
 }
 
 function equateValues<T>(a: T, b: T) {
-    return a === b;
+    return a === b
 }
