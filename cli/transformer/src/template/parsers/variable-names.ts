@@ -8,6 +8,8 @@ export namespace VariableNames {
 	export const html = '$html'
 	export const template = '$template'
 	export const node = '$node'
+	export const hydrates = '$hydrates'
+	export const locator = '$locator'
 	export const latest = '$latest'
 	export const slot = '$slot'
 	export const com = '$com'

@@ -1,6 +1,6 @@
 import * as ts from 'typescript'
 import {CompilerDiagnosticModifier, TransformerExtras} from '../../../compiler/out/patch'
-import {helperOfContext, TemplateSlotPlaceholder} from '../lupos-ts-module'
+import {helperOfContext, TemplateSlotPlaceholder, setFingerPrintSalt} from '../lupos-ts-module'
 
 
 export let builderProgram: ts.BuilderProgram
@@ -29,4 +29,5 @@ export function setTransformContext(ctx: ts.TransformationContext, extras: Trans
 
 export function setSourceFile(file: ts.SourceFile) {
 	sourceFile = file
+	setFingerPrintSalt(file.fileName)
 }

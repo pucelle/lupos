@@ -5,13 +5,13 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
 <root>
     <Com1 .comProp=${1} />
 </root>
-*/ const $template_0 = /*#__PURE__*/ new TemplateMaker(function () {
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
+*/ const $template_0 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $locator = $html_0.make($hydrates);
+    let $node_0 = $locator.childAt(0);
     let $com_0 = new Com1($node_0);
     $com_0.comProp = 1;
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0),
         parts: [
             [$com_0, 1]
@@ -23,12 +23,12 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<!----><div></div><!---->");
 <root>
     <${this.UnionedCom} .comProp=${1} />
 </root>
-*/ const $template_1 = /*#__PURE__*/ new TemplateMaker(function () {
+*/ const $template_1 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $com_0;
-    let $node = $html_1.make();
-    let $node_0 = $node.content.firstChild;
-    let $node_1 = $node.content.childNodes[1];
-    let $node_2 = $node.content.lastChild;
+    let $locator = $html_1.make($hydrates);
+    let $node_0 = $locator.childAt(0);
+    let $node_1 = $locator.childAt(1);
+    let $node_2 = $locator.childAt(2);
     let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_2));
     let $block_0 = new DynamicComponentBlock(function (com) {
         $node_1 = com.el;
@@ -36,7 +36,7 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<!----><div></div><!---->");
         $com_0.comProp = 1;
     }, $node_1, $slot_0);
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
             $block_0.update($values[0]);
@@ -50,12 +50,12 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<!----><div></div><!---->");
 <root>
     <${this.ConstructedCom} .comProp=${1} />
 </root>
-*/ const $template_2 = /*#__PURE__*/ new TemplateMaker(function () {
+*/ const $template_2 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $com_0;
-    let $node = $html_1.make();
-    let $node_0 = $node.content.firstChild;
-    let $node_1 = $node.content.childNodes[1];
-    let $node_2 = $node.content.lastChild;
+    let $locator = $html_1.make($hydrates);
+    let $node_0 = $locator.childAt(0);
+    let $node_1 = $locator.childAt(1);
+    let $node_2 = $locator.childAt(2);
     let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_2));
     let $block_0 = new DynamicComponentBlock(function (com) {
         $node_1 = com.el;
@@ -63,7 +63,7 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<!----><div></div><!---->");
         $com_0.comProp = 1;
     }, $node_1, $slot_0);
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
             $block_0.update($values[0]);
@@ -77,13 +77,13 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<!----><div></div><!---->");
 <root>
     <Com1 ..comProp=${1} />
 </root>
-*/ const $template_3 = /*#__PURE__*/ new TemplateMaker(function () {
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
+*/ const $template_3 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $locator = $html_0.make($hydrates);
+    let $node_0 = $locator.childAt(0);
     let $com_0 = new Com1($node_0);
     $com_0.comProp = 1;
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0),
         parts: [
             [$com_0, 1]
@@ -94,13 +94,13 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<!----><div></div><!---->");
 <root>
     <Com3 .comProp=${1} />
 </root>
-*/ const $template_4 = /*#__PURE__*/ new TemplateMaker(function () {
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
+*/ const $template_4 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $locator = $html_0.make($hydrates);
+    let $node_0 = $locator.childAt(0);
     let $com_0 = new Com3($node_0);
     $com_0.comProp = 1;
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0),
         parts: [
             [$com_0, 1]
@@ -111,12 +111,12 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<!----><div></div><!---->");
 <root>
     <div .elProp=${1} />
 </root>
-*/ const $template_5 = /*#__PURE__*/ new TemplateMaker(function () {
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
+*/ const $template_5 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $locator = $html_0.make($hydrates);
+    let $node_0 = $locator.childAt(0);
     $node_0.elProp = 1;
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0)
     };
 });

@@ -5,13 +5,13 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div> </div>");
 <root>
     <div>${'abc'}</div>
 </root>
-*/ const $template_0 = /*#__PURE__*/ new TemplateMaker(function () {
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
+*/ const $template_0 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $locator = $html_0.make($hydrates);
+    let $node_0 = $locator.childAt(0);
     let $node_1 = $node_0.firstChild;
     $node_1.data = 'abc';
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0)
     };
 });
@@ -19,13 +19,13 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div> </div>");
 <root>
     <div>${this.stringProp}</div>
 </root>
-*/ const $template_1 = /*#__PURE__*/ new TemplateMaker(function () {
+*/ const $template_1 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $latest_0;
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
+    let $locator = $html_0.make($hydrates);
+    let $node_0 = $locator.childAt(0);
     let $node_1 = $node_0.firstChild;
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {
@@ -39,13 +39,13 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div> </div>");
 <root>
     <div>${this.getStringProp()}</div>
 </root>
-*/ const $template_2 = /*#__PURE__*/ new TemplateMaker(function () {
+*/ const $template_2 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $latest_0;
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
+    let $locator = $html_0.make($hydrates);
+    let $node_0 = $locator.childAt(0);
     let $node_1 = $node_0.firstChild;
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {
@@ -59,13 +59,13 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div> </div>");
 <root>
     <div>${this.numericProp}</div>
 </root>
-*/ const $template_3 = /*#__PURE__*/ new TemplateMaker(function () {
+*/ const $template_3 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $latest_0;
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
+    let $locator = $html_0.make($hydrates);
+    let $node_0 = $locator.childAt(0);
     let $node_1 = $node_0.firstChild;
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {

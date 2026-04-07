@@ -5,12 +5,12 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<!----><div></div><!---->");
 <root>
     <${ChildComponent} .comProp=${this.prop} />
 </root>
-*/ const $template_0 = /*#__PURE__*/ new TemplateMaker(function () {
+*/ const $template_0 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $latest_0, $com_0;
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
-    let $node_1 = $node.content.childNodes[1];
-    let $node_2 = $node.content.lastChild;
+    let $locator = $html_0.make($hydrates);
+    let $node_0 = $locator.childAt(0);
+    let $node_1 = $locator.childAt(1);
+    let $node_2 = $locator.childAt(2);
     let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_2));
     let $block_0 = new DynamicComponentBlock(function (com) {
         $node_1 = com.el;
@@ -18,7 +18,7 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<!----><div></div><!---->");
     }, $node_1, $slot_0);
     $block_0.update(ChildComponent);
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {

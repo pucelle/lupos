@@ -1,18 +1,18 @@
 import { Component, TemplateSlot, SlotPosition, CompiledTemplateResult, TemplateMaker, HTMLMaker, SwitchBlock } from 'lupos.html';
 import { trackGet } from "lupos";
-const $html_0 = /*#__PURE__*/ new HTMLMaker("<!----><!---->");
+const $html_0 = /*#__PURE__*/ new HTMLMaker("<!----><!--b9615f-->");
 /*
 <root>
     <lu:switch ${this.value} />
 </root>
-*/ const $template_0 = /*#__PURE__*/ new TemplateMaker(function () {
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
-    let $node_1 = $node.content.lastChild;
+*/ const $template_0 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $locator = $html_0.make($hydrates);
+    let $node_0 = $locator.childAt(0);
+    let $node_1 = $locator.get("b9615f");
     let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1));
     let $block_0 = new SwitchBlock($slot_0);
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
             $block_0.update($values[0]);
@@ -25,22 +25,22 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<!----><!---->");
 const $html_1 = /*#__PURE__*/ new HTMLMaker("Case Content 1");
 /*
 <root>Case Content 1</root>
-*/ const $template_1 = /*#__PURE__*/ new TemplateMaker(function () {
-    let $node = $html_1.make();
-    let $node_0 = $node.content.firstChild;
+*/ const $template_1 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $locator = $html_1.make($hydrates);
+    let $node_0 = $locator.childAt(0);
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0)
     };
 });
 const $html_2 = /*#__PURE__*/ new HTMLMaker("Case Content 2");
 /*
 <root>Case Content 2</root>
-*/ const $template_2 = /*#__PURE__*/ new TemplateMaker(function () {
-    let $node = $html_2.make();
-    let $node_0 = $node.content.firstChild;
+*/ const $template_2 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $locator = $html_2.make($hydrates);
+    let $node_0 = $locator.childAt(0);
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0)
     };
 });
@@ -48,14 +48,14 @@ const $html_2 = /*#__PURE__*/ new HTMLMaker("Case Content 2");
 <root>
     <lu:switch ${this.value} />
 </root>
-*/ const $template_3 = /*#__PURE__*/ new TemplateMaker(function () {
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
-    let $node_1 = $node.content.lastChild;
+*/ const $template_3 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $locator = $html_0.make($hydrates);
+    let $node_0 = $locator.childAt(0);
+    let $node_1 = $locator.get("b9615f");
     let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 0);
     let $block_0 = new SwitchBlock($slot_0);
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
             $block_0.update($values[0]);
@@ -67,32 +67,32 @@ const $html_2 = /*#__PURE__*/ new HTMLMaker("Case Content 2");
 });
 /*
 <root>Case Content 1</root>
-*/ const $template_4 = /*#__PURE__*/ new TemplateMaker(function () {
-    let $node = $html_1.make();
-    let $node_0 = $node.content.firstChild;
+*/ const $template_4 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $locator = $html_1.make($hydrates);
+    let $node_0 = $locator.childAt(0);
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0)
     };
 });
 /*
 <root>Case Content 2</root>
-*/ const $template_5 = /*#__PURE__*/ new TemplateMaker(function () {
-    let $node = $html_2.make();
-    let $node_0 = $node.content.firstChild;
+*/ const $template_5 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $locator = $html_2.make($hydrates);
+    let $node_0 = $locator.childAt(0);
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0)
     };
 });
 const $html_6 = /*#__PURE__*/ new HTMLMaker("Case Content 3");
 /*
 <root>Case Content 3</root>
-*/ const $template_6 = /*#__PURE__*/ new TemplateMaker(function () {
-    let $node = $html_6.make();
-    let $node_0 = $node.content.firstChild;
+*/ const $template_6 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $locator = $html_6.make($hydrates);
+    let $node_0 = $locator.childAt(0);
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0)
     };
 });

@@ -6,11 +6,11 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<!----><template><div>Portal Conten
         <div>Portal Content</div>
     </lu:portal>
 </root>
-*/ const $template_0 = /*#__PURE__*/ new TemplateMaker(function () {
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
+*/ const $template_0 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $locator = $html_0.make($hydrates);
+    let $node_0 = $locator.childAt(0);
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0)
     };
 });

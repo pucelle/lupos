@@ -56,4 +56,3 @@ function parseHTMLTemplate(node: ts.TaggedTemplateExpression, templateType: 'htm
 		Interpolator.replace(node, InterpolationContentType.Normal, () => outputted)
 	}
 }
-

@@ -3,12 +3,12 @@ import { trackGet } from "lupos";
 const $html_0 = /*#__PURE__*/ new HTMLMaker(" ");
 /*
 <root>${n + this.prop}</root>
-*/ const $template_0 = /*#__PURE__*/ new TemplateMaker(function () {
+*/ const $template_0 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $latest_0;
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
+    let $locator = $html_0.make($hydrates);
+    let $node_0 = $locator.childAt(0);
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {
@@ -18,21 +18,21 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker(" ");
         }
     };
 });
-const $html_1 = /*#__PURE__*/ new HTMLMaker("<!----><!---->");
+const $html_1 = /*#__PURE__*/ new HTMLMaker("<!----><!--980122-->");
 /*
 <root>
     <lu:for ${[1,2,3]} />
 </root>
-*/ const $template_1 = /*#__PURE__*/ new TemplateMaker(function ($context) {
-    let $node = $html_1.make();
-    let $node_0 = $node.content.firstChild;
-    let $node_1 = $node.content.lastChild;
+*/ const $template_1 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
+    let $locator = $html_1.make($hydrates);
+    let $node_0 = $locator.childAt(0);
+    let $node_1 = $locator.get("980122");
     let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1);
     let $block_0 = new ForBlock($slot_0);
     $block_0.updateRenderFn($context.renderItem);
     $block_0.updateData([1, 2, 3]);
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0),
         parts: [
             [$slot_0, 1]
@@ -43,10 +43,10 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<!----><!---->");
 <root>
     <lu:for ${[1,2,3]} />
 </root>
-*/ const $template_2 = /*#__PURE__*/ new TemplateMaker(function ($context) {
-    let $node = $html_1.make();
-    let $node_0 = $node.content.firstChild;
-    let $node_1 = $node.content.lastChild;
+*/ const $template_2 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
+    let $locator = $html_1.make($hydrates);
+    let $node_0 = $locator.childAt(0);
+    let $node_1 = $locator.get("980122");
     let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1);
     let $block_0 = new ForBlock($slot_0);
     $block_0.updateRenderFn((n) => new CompiledTemplateResult($template_3, [
@@ -54,7 +54,7 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<!----><!---->");
     ], $context));
     $block_0.updateData([1, 2, 3]);
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0),
         parts: [
             [$slot_0, 1]
@@ -63,12 +63,12 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<!----><!---->");
 });
 /*
 <root>${n + this.prop}</root>
-*/ const $template_3 = /*#__PURE__*/ new TemplateMaker(function () {
+*/ const $template_3 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $latest_0;
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
+    let $locator = $html_0.make($hydrates);
+    let $node_0 = $locator.childAt(0);
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {
@@ -82,11 +82,11 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<!----><!---->");
 <root>
     <lu:for ${[1,2,3]} />
 </root>
-*/ const $template_4 = /*#__PURE__*/ new TemplateMaker(function ($context) {
+*/ const $template_4 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
     let $latest_0;
-    let $node = $html_1.make();
-    let $node_0 = $node.content.firstChild;
-    let $node_1 = $node.content.lastChild;
+    let $locator = $html_1.make($hydrates);
+    let $node_0 = $locator.childAt(0);
+    let $node_1 = $locator.get("980122");
     let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1);
     let $block_0 = new ForBlock($slot_0);
     $block_0.updateRenderFn((n) => new CompiledTemplateResult($template_5, [
@@ -94,7 +94,7 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<!----><!---->");
     ], $context));
     $block_0.updateData([1, 2, 3]);
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
             $latest_0 = $values[0];
@@ -106,12 +106,12 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<!----><!---->");
 });
 /*
 <root>${n + prop}</root>
-*/ const $template_5 = /*#__PURE__*/ new TemplateMaker(function () {
+*/ const $template_5 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $latest_0;
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
+    let $locator = $html_0.make($hydrates);
+    let $node_0 = $locator.childAt(0);
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {
@@ -125,10 +125,10 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<!----><!---->");
 <root>
     <lu:for ${this.items} />
 </root>
-*/ const $template_6 = /*#__PURE__*/ new TemplateMaker(function ($context) {
-    let $node = $html_1.make();
-    let $node_0 = $node.content.firstChild;
-    let $node_1 = $node.content.lastChild;
+*/ const $template_6 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
+    let $locator = $html_1.make($hydrates);
+    let $node_0 = $locator.childAt(0);
+    let $node_1 = $locator.get("980122");
     let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1);
     let $block_0 = new ForBlock($slot_0);
     $block_0.updateRenderFn((item) => {
@@ -138,7 +138,7 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<!----><!---->");
         ], $context);
     });
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
             $block_0.updateData($values[0]);
@@ -150,12 +150,12 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<!----><!---->");
 });
 /*
 <root>${item.value}</root>
-*/ const $template_7 = /*#__PURE__*/ new TemplateMaker(function () {
+*/ const $template_7 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $latest_0;
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
+    let $locator = $html_0.make($hydrates);
+    let $node_0 = $locator.childAt(0);
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {
@@ -169,10 +169,10 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<!----><!---->");
 <root>
     <lu:for ${this.getItems()} />
 </root>
-*/ const $template_8 = /*#__PURE__*/ new TemplateMaker(function ($context) {
-    let $node = $html_1.make();
-    let $node_0 = $node.content.firstChild;
-    let $node_1 = $node.content.lastChild;
+*/ const $template_8 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
+    let $locator = $html_1.make($hydrates);
+    let $node_0 = $locator.childAt(0);
+    let $node_1 = $locator.get("980122");
     let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1);
     let $block_0 = new ForBlock($slot_0);
     $block_0.updateRenderFn((item) => {
@@ -182,7 +182,7 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<!----><!---->");
         ], $context);
     });
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
             $block_0.updateData($values[0]);
@@ -194,12 +194,12 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<!----><!---->");
 });
 /*
 <root>${item.value}</root>
-*/ const $template_9 = /*#__PURE__*/ new TemplateMaker(function () {
+*/ const $template_9 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $latest_0;
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
+    let $locator = $html_0.make($hydrates);
+    let $node_0 = $locator.childAt(0);
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {
@@ -213,10 +213,10 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<!----><!---->");
 <root>
     <lu:for ${items} />
 </root>
-*/ const $template_10 = /*#__PURE__*/ new TemplateMaker(function ($context) {
-    let $node = $html_1.make();
-    let $node_0 = $node.content.firstChild;
-    let $node_1 = $node.content.lastChild;
+*/ const $template_10 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
+    let $locator = $html_1.make($hydrates);
+    let $node_0 = $locator.childAt(0);
+    let $node_1 = $locator.get("980122");
     let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1);
     let $block_0 = new ForBlock($slot_0);
     $block_0.updateRenderFn((item) => {
@@ -226,7 +226,7 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<!----><!---->");
         ], $context);
     });
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
             $block_0.updateData($values[0]);
@@ -238,12 +238,12 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<!----><!---->");
 });
 /*
 <root>${item.value}</root>
-*/ const $template_11 = /*#__PURE__*/ new TemplateMaker(function () {
+*/ const $template_11 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $latest_0;
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
+    let $locator = $html_0.make($hydrates);
+    let $node_0 = $locator.childAt(0);
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {
@@ -257,10 +257,10 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<!----><!---->");
 <root>
     <lu:for ${this.readonlyItems} />
 </root>
-*/ const $template_12 = /*#__PURE__*/ new TemplateMaker(function ($context) {
-    let $node = $html_1.make();
-    let $node_0 = $node.content.firstChild;
-    let $node_1 = $node.content.lastChild;
+*/ const $template_12 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
+    let $locator = $html_1.make($hydrates);
+    let $node_0 = $locator.childAt(0);
+    let $node_1 = $locator.get("980122");
     let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1);
     let $block_0 = new ForBlock($slot_0);
     $block_0.updateRenderFn((item) => {
@@ -270,7 +270,7 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<!----><!---->");
         ], $context);
     });
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update() {
             $block_0.updateData($context.readonlyItems);
@@ -282,12 +282,12 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<!----><!---->");
 });
 /*
 <root>${item.value}</root>
-*/ const $template_13 = /*#__PURE__*/ new TemplateMaker(function () {
+*/ const $template_13 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $latest_0;
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
+    let $locator = $html_0.make($hydrates);
+    let $node_0 = $locator.childAt(0);
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {
@@ -301,10 +301,10 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<!----><!---->");
 <root>
     <lu:for ${items} />
 </root>
-*/ const $template_14 = /*#__PURE__*/ new TemplateMaker(function ($context) {
-    let $node = $html_1.make();
-    let $node_0 = $node.content.firstChild;
-    let $node_1 = $node.content.lastChild;
+*/ const $template_14 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
+    let $locator = $html_1.make($hydrates);
+    let $node_0 = $locator.childAt(0);
+    let $node_1 = $locator.get("980122");
     let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1);
     let $block_0 = new ForBlock($slot_0);
     $block_0.updateRenderFn((item) => {
@@ -314,7 +314,7 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<!----><!---->");
         ], $context);
     });
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
             $block_0.updateData($values[0]);
@@ -326,12 +326,12 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<!----><!---->");
 });
 /*
 <root>${item.value}</root>
-*/ const $template_15 = /*#__PURE__*/ new TemplateMaker(function () {
+*/ const $template_15 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $latest_0;
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
+    let $locator = $html_0.make($hydrates);
+    let $node_0 = $locator.childAt(0);
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {
@@ -345,10 +345,10 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<!----><!---->");
 <root>
     <lu:for ${this.deepReadonlyItems} />
 </root>
-*/ const $template_16 = /*#__PURE__*/ new TemplateMaker(function ($context) {
-    let $node = $html_1.make();
-    let $node_0 = $node.content.firstChild;
-    let $node_1 = $node.content.lastChild;
+*/ const $template_16 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
+    let $locator = $html_1.make($hydrates);
+    let $node_0 = $locator.childAt(0);
+    let $node_1 = $locator.get("980122");
     let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1);
     let $block_0 = new ForBlock($slot_0);
     $block_0.updateRenderFn((item) => new CompiledTemplateResult($template_17, [
@@ -356,7 +356,7 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<!----><!---->");
     ], $context));
     $block_0.updateData($context.deepReadonlyItems);
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0),
         parts: [
             [$slot_0, 1]
@@ -365,12 +365,12 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<!----><!---->");
 });
 /*
 <root>${item.value}</root>
-*/ const $template_17 = /*#__PURE__*/ new TemplateMaker(function () {
+*/ const $template_17 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $latest_0;
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
+    let $locator = $html_0.make($hydrates);
+    let $node_0 = $locator.childAt(0);
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {
@@ -384,17 +384,17 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<!----><!---->");
 <root>
     <lu:for ${items} />
 </root>
-*/ const $template_18 = /*#__PURE__*/ new TemplateMaker(function ($context) {
-    let $node = $html_1.make();
-    let $node_0 = $node.content.firstChild;
-    let $node_1 = $node.content.lastChild;
+*/ const $template_18 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
+    let $locator = $html_1.make($hydrates);
+    let $node_0 = $locator.childAt(0);
+    let $node_1 = $locator.get("980122");
     let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1);
     let $block_0 = new ForBlock($slot_0);
     $block_0.updateRenderFn((item) => new CompiledTemplateResult($template_19, [
         item.value
     ], $context));
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
             $block_0.updateData($values[0]);
@@ -406,12 +406,12 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<!----><!---->");
 });
 /*
 <root>${item.value}</root>
-*/ const $template_19 = /*#__PURE__*/ new TemplateMaker(function () {
+*/ const $template_19 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $latest_0;
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
+    let $locator = $html_0.make($hydrates);
+    let $node_0 = $locator.childAt(0);
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {

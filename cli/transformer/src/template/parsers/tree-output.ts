@@ -7,7 +7,7 @@ import {VariableNames} from './variable-names'
 import {SlotPositionType} from '../../enums'
 import {HTMLOutputHandler} from './html-output'
 import {TemplateParser} from './template'
-import {HTMLNodeHelper} from '../html-syntax'
+import {HTMLNodeHelper, VisitStepType} from '../html-syntax'
 
 
 type OutputNodes = ts.Expression | ts.Statement | (ts.Expression | ts.Statement)[]
@@ -278,15 +278,15 @@ export class TreeOutputHandler {
 		// $html_0
 		let {name: htmlName, output} = HTMLOutputHandler.prepareOutput(this.tree, this.wrappedBySVG, this.htmlName)
 
-		// $node
-		let rootNodeName = VariableNames.node
+		// $locator
+		let locatorName = VariableNames.locator
 
-		// $node = $html_0.make()
+		// $locator = $html_0.make()
 		let node = factory.createVariableStatement(
 			undefined,
 			factory.createVariableDeclarationList(
 				[factory.createVariableDeclaration(
-					factory.createIdentifier(rootNodeName),
+					factory.createIdentifier(locatorName),
 					undefined,
 					undefined,
 					factory.createCallExpression(
@@ -295,7 +295,9 @@ export class TreeOutputHandler {
 							factory.createIdentifier('make')
 						),
 						undefined,
-						[]
+						[
+							factory.createIdentifier(VariableNames.hydrates)
+						]
 					)
 				)],
 				ts.NodeFlags.Let
@@ -333,11 +335,8 @@ export class TreeOutputHandler {
 			// Where the reference from.
 			else if (visitFromNode === this.root) {
 
-				// $node.content
-				fromExp = factory.createPropertyAccessExpression(
-					factory.createIdentifier(VariableNames.node),
-					'content'
-				)
+				// $locator
+				fromExp = factory.createIdentifier(VariableNames.locator)
 
 				// Eliminate the first path piece.
 				if (this.wrappedBySVG || this.wrappedByTemplate) {
@@ -351,31 +350,70 @@ export class TreeOutputHandler {
 				fromExp = factory.createIdentifier(fromNodeName)
 			}
 
-			// $node.content.firstChild.lastChild.childNodes[0]
-			for (let {node, index} of visitSteps) {
-				if (index === 0) {
-					fromExp = factory.createPropertyAccessExpression(
-						fromExp,
-						'firstChild'
-					)
-				}
-				else if (index === -1) {
-					fromExp = factory.createPropertyAccessExpression(
-						fromExp,
-						'lastChild'
-					)
-				}
-				else {
-					fromExp = factory.createElementAccessExpression(
-						factory.createPropertyAccessExpression(
+			// $locator.childAt(0).firstChild.lastChild.childNodes[0]
+			// $locator.get('abcdef')...
+			for (let {type, node, index} of visitSteps) {
+				if (type === VisitStepType.ChildIndex) {
+
+					// $locator.childAt(0)
+					if (visitFromNode === this.root) {
+						fromExp = factory.createCallExpression(
+							factory.createPropertyAccessExpression(
+								fromExp,
+								factory.createIdentifier("childAt")
+							),
+							undefined,
+							[factory.createNumericLiteral(index)]
+						)
+					}
+					else if (index === 0) {
+						fromExp = factory.createPropertyAccessExpression(
 							fromExp,
-							factory.createIdentifier('childNodes')
-						),
-						factory.createNumericLiteral(index)
-					)
+							'firstChild'
+						)
+					}
+					else if (index === -1) {
+						fromExp = factory.createPropertyAccessExpression(
+							fromExp,
+							'lastChild'
+						)
+					}
+					else {
+						fromExp = factory.createElementAccessExpression(
+							factory.createPropertyAccessExpression(
+								fromExp,
+								factory.createIdentifier('childNodes')
+							),
+							factory.createNumericLiteral(index)
+						)
+					}
 				}
 
-				// Access `template.content`.
+				// Visit next siblings.
+				else {
+					if (!node.fingerPrintId!) {
+						throw new Error(node.toHTMLString())
+					}
+
+					// $locator.get('abcdef')
+					fromExp = factory.createCallExpression(
+						factory.createPropertyAccessExpression(
+							fromExp,
+							factory.createIdentifier("get")
+						),
+						undefined,
+						[factory.createStringLiteral(node.fingerPrintId!)]
+					)
+
+					for (let i = 0; i < index; i++) {
+						fromExp = factory.createPropertyAccessExpression(
+							fromExp,
+							'nextSibling'
+						)
+					}
+				}
+				
+				// Access `template.content` for element in <Portal>.
 				if (node.tagName === 'template' || node.tagName === 'lu:portal') {
 					fromExp = factory.createPropertyAccessExpression(
 						fromExp,
@@ -479,7 +517,10 @@ export class TreeOutputHandler {
 			[
 				factory.createPropertyAssignment(
 					factory.createIdentifier('el'),
-					factory.createIdentifier(VariableNames.node)
+					factory.createPropertyAccessExpression(
+						factory.createIdentifier(VariableNames.locator),
+						'el'
+					)
 				),
 				...(positionNode ? [positionNode] : []),
 				...(updateNode ? [updateNode] : []),
@@ -509,22 +550,29 @@ export class TreeOutputHandler {
 		return params
 	}
 
-	/** Output parameters `(?$context, ?$latestValues)` of template maker init function. */
+	/** Output parameters `($context, $hydrates)` of template maker init function. */
 	private outputTemplateInitParameters(block: ts.Block): ts.ParameterDeclaration[] {
 		let test = (node => ts.isIdentifier(node) && node.text === VariableNames.context) as (node: ts.Node) => node is ts.Node
 		let hasContextRef = !!helper.findInward(block, test)
-		let params: ts.ParameterDeclaration[] = []
 
-		if (hasContextRef) {
-			params.push(factory.createParameterDeclaration(
+		let params: ts.ParameterDeclaration[] = [
+			factory.createParameterDeclaration(
 				undefined,
 				undefined,
-				factory.createIdentifier(VariableNames.context),
+				factory.createIdentifier(hasContextRef ? VariableNames.context : '_' + VariableNames.context),
 				undefined,
 				undefined,
 				undefined
-			))
-		}
+			),
+			factory.createParameterDeclaration(
+				undefined,
+				undefined,
+				factory.createIdentifier(VariableNames.hydrates),
+				undefined,
+				undefined,
+				undefined
+			)
+		]
 
 		return params
 	}

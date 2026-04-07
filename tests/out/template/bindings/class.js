@@ -5,13 +5,13 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
 <root>
     <div :class="${this.className} className2" />
 </root>
-*/ const $template_0 = /*#__PURE__*/ new TemplateMaker(function () {
+*/ const $template_0 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $latest_0;
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
+    let $locator = $html_0.make($hydrates);
+    let $node_0 = $locator.childAt(0);
     let $binding_0 = new ClassBinding($node_0);
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {
@@ -25,13 +25,13 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
 <root>
     <div :class=${this.className} />
 </root>
-*/ const $template_1 = /*#__PURE__*/ new TemplateMaker(function () {
+*/ const $template_1 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $latest_0;
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
+    let $locator = $html_0.make($hydrates);
+    let $node_0 = $locator.childAt(0);
     let $binding_0 = new ClassBinding($node_0);
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {
@@ -45,13 +45,13 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
 <root>
     <div :class="${this.booleanValue}" />
 </root>
-*/ const $template_2 = /*#__PURE__*/ new TemplateMaker(function () {
+*/ const $template_2 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $latest_0;
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
+    let $locator = $html_0.make($hydrates);
+    let $node_0 = $locator.childAt(0);
     let $binding_0 = new ClassBinding($node_0);
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {
@@ -65,13 +65,13 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
 <root>
     <div :class=${[this.className]} />
 </root>
-*/ const $template_3 = /*#__PURE__*/ new TemplateMaker(function () {
+*/ const $template_3 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $latest_0;
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
+    let $locator = $html_0.make($hydrates);
+    let $node_0 = $locator.childAt(0);
     let $binding_0 = new ClassBinding($node_0);
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {
@@ -85,13 +85,13 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
 <root>
     <div :class=${{'className': this.booleanValue}} />
 </root>
-*/ const $template_4 = /*#__PURE__*/ new TemplateMaker(function () {
+*/ const $template_4 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $latest_0;
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
+    let $locator = $html_0.make($hydrates);
+    let $node_0 = $locator.childAt(0);
     let $binding_0 = new ClassBinding($node_0);
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {
@@ -105,13 +105,13 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
 <root>
     <div :class.className=${this.booleanValue} />
 </root>
-*/ const $template_5 = /*#__PURE__*/ new TemplateMaker(function () {
+*/ const $template_5 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $latest_0;
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
+    let $locator = $html_0.make($hydrates);
+    let $node_0 = $locator.childAt(0);
     let $binding_0 = new ClassBinding($node_0);
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {
@@ -125,14 +125,14 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
 <root>
     <div class=${this.className} :class.className=${this.booleanValue} />
 </root>
-*/ const $template_6 = /*#__PURE__*/ new TemplateMaker(function () {
+*/ const $template_6 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $latest_0, $latest_1;
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
+    let $locator = $html_0.make($hydrates);
+    let $node_0 = $locator.childAt(0);
     let $binding_0 = new ClassBinding($node_0);
     let $binding_1 = new ClassBinding($node_0);
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {
@@ -150,14 +150,14 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
 <root>
     <div class="className" :class.className=${this.booleanValue} />
 </root>
-*/ const $template_7 = /*#__PURE__*/ new TemplateMaker(function () {
+*/ const $template_7 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $latest_0;
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
+    let $locator = $html_0.make($hydrates);
+    let $node_0 = $locator.childAt(0);
     let $binding_0 = new ClassBinding($node_0);
     $node_0.classList.add("className");
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {
@@ -171,13 +171,13 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
 <root>
     <div :class="${'className'} className2" />
 </root>
-*/ const $template_8 = /*#__PURE__*/ new TemplateMaker(function () {
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
+*/ const $template_8 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $locator = $html_0.make($hydrates);
+    let $node_0 = $locator.childAt(0);
     let $binding_0 = new ClassBinding($node_0);
     $binding_0.updateString('className' + " className2");
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0)
     };
 });
@@ -185,13 +185,13 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
 <root>
     <div :class=${'className'} />
 </root>
-*/ const $template_9 = /*#__PURE__*/ new TemplateMaker(function () {
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
+*/ const $template_9 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $locator = $html_0.make($hydrates);
+    let $node_0 = $locator.childAt(0);
     let $binding_0 = new ClassBinding($node_0);
     $binding_0.updateString('className');
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0)
     };
 });
@@ -199,13 +199,13 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
 <root>
     <div :class=${['className']} />
 </root>
-*/ const $template_10 = /*#__PURE__*/ new TemplateMaker(function () {
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
+*/ const $template_10 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $locator = $html_0.make($hydrates);
+    let $node_0 = $locator.childAt(0);
     let $binding_0 = new ClassBinding($node_0);
     $binding_0.updateList(['className']);
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0)
     };
 });
@@ -213,13 +213,13 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
 <root>
     <div :class=${{'className': true}} />
 </root>
-*/ const $template_11 = /*#__PURE__*/ new TemplateMaker(function () {
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
+*/ const $template_11 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $locator = $html_0.make($hydrates);
+    let $node_0 = $locator.childAt(0);
     let $binding_0 = new ClassBinding($node_0);
     $binding_0.updateObject({ 'className': true });
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0)
     };
 });
@@ -227,13 +227,13 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
 <root>
     <div :class.className=${true} />
 </root>
-*/ const $template_12 = /*#__PURE__*/ new TemplateMaker(function () {
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
+*/ const $template_12 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $locator = $html_0.make($hydrates);
+    let $node_0 = $locator.childAt(0);
     let $binding_0 = new ClassBinding($node_0);
     $binding_0.updateObject({ className: true });
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0)
     };
 });

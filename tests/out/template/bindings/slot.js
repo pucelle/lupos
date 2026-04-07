@@ -4,14 +4,14 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<!----><div></div>");
 <root>
     <div :slot="slotName" />
 </root>
-*/ const $template_0 = /*#__PURE__*/ new TemplateMaker(function () {
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
-    let $node_1 = $node.content.lastChild;
+*/ const $template_0 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $locator = $html_0.make($hydrates);
+    let $node_0 = $locator.childAt(0);
+    let $node_1 = $locator.childAt(1);
     let $binding_0 = new SlotBinding($node_1);
     $binding_0.update("slotName");
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0),
         parts: [
             [$binding_0, 1]

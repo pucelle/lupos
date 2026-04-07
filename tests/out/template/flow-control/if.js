@@ -1,18 +1,18 @@
 import { Component, TemplateSlot, SlotPosition, CompiledTemplateResult, TemplateMaker, HTMLMaker, IfBlock, CacheableIfBlock } from 'lupos.html';
 import { trackGet } from "lupos";
-const $html_0 = /*#__PURE__*/ new HTMLMaker("<!----><!---->");
+const $html_0 = /*#__PURE__*/ new HTMLMaker("<!----><!--8f8d2d-->");
 /*
 <root>
     <lu:if ${this.prop} />
 </root>
-*/ const $template_0 = /*#__PURE__*/ new TemplateMaker(function () {
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
-    let $node_1 = $node.content.lastChild;
+*/ const $template_0 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $locator = $html_0.make($hydrates);
+    let $node_0 = $locator.childAt(0);
+    let $node_1 = $locator.get("8f8d2d");
     let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1));
     let $block_0 = new IfBlock($slot_0);
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
             $block_0.update($values[0]);
@@ -25,11 +25,11 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<!----><!---->");
 const $html_1 = /*#__PURE__*/ new HTMLMaker("If Content");
 /*
 <root>If Content</root>
-*/ const $template_1 = /*#__PURE__*/ new TemplateMaker(function () {
-    let $node = $html_1.make();
-    let $node_0 = $node.content.firstChild;
+*/ const $template_1 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $locator = $html_1.make($hydrates);
+    let $node_0 = $locator.childAt(0);
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0)
     };
 });
@@ -37,14 +37,14 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("If Content");
 <root>
     <lu:if ${this.prop} cache />
 </root>
-*/ const $template_2 = /*#__PURE__*/ new TemplateMaker(function () {
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
-    let $node_1 = $node.content.lastChild;
+*/ const $template_2 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $locator = $html_0.make($hydrates);
+    let $node_0 = $locator.childAt(0);
+    let $node_1 = $locator.get("8f8d2d");
     let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1));
     let $block_0 = new CacheableIfBlock($slot_0);
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
             $block_0.update($values[0]);
@@ -56,11 +56,11 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("If Content");
 });
 /*
 <root>If Content</root>
-*/ const $template_3 = /*#__PURE__*/ new TemplateMaker(function () {
-    let $node = $html_1.make();
-    let $node_0 = $node.content.firstChild;
+*/ const $template_3 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $locator = $html_1.make($hydrates);
+    let $node_0 = $locator.childAt(0);
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0)
     };
 });
@@ -68,14 +68,14 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("If Content");
 <root>
     <lu:if ${this.prop} />
 </root>
-*/ const $template_4 = /*#__PURE__*/ new TemplateMaker(function () {
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
-    let $node_1 = $node.content.lastChild;
+*/ const $template_4 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $locator = $html_0.make($hydrates);
+    let $node_0 = $locator.childAt(0);
+    let $node_1 = $locator.get("8f8d2d");
     let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1));
     let $block_0 = new IfBlock($slot_0);
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
             $block_0.update($values[0]);
@@ -88,12 +88,12 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("If Content");
 const $html_5 = /*#__PURE__*/ new HTMLMaker(" ");
 /*
 <root>${this.content!}</root>
-*/ const $template_5 = /*#__PURE__*/ new TemplateMaker(function () {
+*/ const $template_5 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $latest_0;
-    let $node = $html_5.make();
-    let $node_0 = $node.content.firstChild;
+    let $locator = $html_5.make($hydrates);
+    let $node_0 = $locator.childAt(0);
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {
@@ -107,14 +107,14 @@ const $html_5 = /*#__PURE__*/ new HTMLMaker(" ");
 <root>
     <lu:if ${this.prop} />
 </root>
-*/ const $template_6 = /*#__PURE__*/ new TemplateMaker(function () {
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
-    let $node_1 = $node.content.lastChild;
+*/ const $template_6 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $locator = $html_0.make($hydrates);
+    let $node_0 = $locator.childAt(0);
+    let $node_1 = $locator.get("8f8d2d");
     let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 0);
     let $block_0 = new IfBlock($slot_0);
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
             $block_0.update($values[0]);
@@ -126,22 +126,22 @@ const $html_5 = /*#__PURE__*/ new HTMLMaker(" ");
 });
 /*
 <root>If Content</root>
-*/ const $template_7 = /*#__PURE__*/ new TemplateMaker(function () {
-    let $node = $html_1.make();
-    let $node_0 = $node.content.firstChild;
+*/ const $template_7 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $locator = $html_1.make($hydrates);
+    let $node_0 = $locator.childAt(0);
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0)
     };
 });
 const $html_8 = /*#__PURE__*/ new HTMLMaker("Else Content");
 /*
 <root>Else Content</root>
-*/ const $template_8 = /*#__PURE__*/ new TemplateMaker(function () {
-    let $node = $html_8.make();
-    let $node_0 = $node.content.firstChild;
+*/ const $template_8 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $locator = $html_8.make($hydrates);
+    let $node_0 = $locator.childAt(0);
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0)
     };
 });
@@ -149,14 +149,14 @@ const $html_8 = /*#__PURE__*/ new HTMLMaker("Else Content");
 <root>
     <lu:if ${this.prop} />
 </root>
-*/ const $template_9 = /*#__PURE__*/ new TemplateMaker(function () {
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
-    let $node_1 = $node.content.lastChild;
+*/ const $template_9 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $locator = $html_0.make($hydrates);
+    let $node_0 = $locator.childAt(0);
+    let $node_1 = $locator.get("8f8d2d");
     let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 0);
     let $block_0 = new IfBlock($slot_0);
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
             $block_0.update($values[0]);
@@ -168,44 +168,44 @@ const $html_8 = /*#__PURE__*/ new HTMLMaker("Else Content");
 });
 /*
 <root>If Content</root>
-*/ const $template_10 = /*#__PURE__*/ new TemplateMaker(function () {
-    let $node = $html_1.make();
-    let $node_0 = $node.content.firstChild;
+*/ const $template_10 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $locator = $html_1.make($hydrates);
+    let $node_0 = $locator.childAt(0);
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0)
     };
 });
 const $html_11 = /*#__PURE__*/ new HTMLMaker("Then Content 1");
 /*
 <root>Then Content 1</root>
-*/ const $template_11 = /*#__PURE__*/ new TemplateMaker(function () {
-    let $node = $html_11.make();
-    let $node_0 = $node.content.firstChild;
+*/ const $template_11 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $locator = $html_11.make($hydrates);
+    let $node_0 = $locator.childAt(0);
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0)
     };
 });
 const $html_12 = /*#__PURE__*/ new HTMLMaker("Then Content 2");
 /*
 <root>Then Content 2</root>
-*/ const $template_12 = /*#__PURE__*/ new TemplateMaker(function () {
-    let $node = $html_12.make();
-    let $node_0 = $node.content.firstChild;
+*/ const $template_12 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $locator = $html_12.make($hydrates);
+    let $node_0 = $locator.childAt(0);
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0)
     };
 });
 const $html_13 = /*#__PURE__*/ new HTMLMaker("Then Content");
 /*
 <root>Then Content</root>
-*/ const $template_13 = /*#__PURE__*/ new TemplateMaker(function () {
-    let $node = $html_13.make();
-    let $node_0 = $node.content.firstChild;
+*/ const $template_13 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $locator = $html_13.make($hydrates);
+    let $node_0 = $locator.childAt(0);
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0)
     };
 });
@@ -213,14 +213,14 @@ const $html_13 = /*#__PURE__*/ new HTMLMaker("Then Content");
 <root>
     <lu:if ${this.item && this.item.value} />
 </root>
-*/ const $template_14 = /*#__PURE__*/ new TemplateMaker(function () {
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
-    let $node_1 = $node.content.lastChild;
+*/ const $template_14 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $locator = $html_0.make($hydrates);
+    let $node_0 = $locator.childAt(0);
+    let $node_1 = $locator.get("8f8d2d");
     let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1));
     let $block_0 = new IfBlock($slot_0);
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
             $block_0.update($values[0]);
@@ -234,13 +234,13 @@ const $html_13 = /*#__PURE__*/ new HTMLMaker("Then Content");
 <root>
     ${this.item!.value.map(v => html`<div>${v}</div>`)}
 </root>
-*/ const $template_15 = /*#__PURE__*/ new TemplateMaker(function () {
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
-    let $node_1 = $node.content.lastChild;
+*/ const $template_15 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $locator = $html_0.make($hydrates);
+    let $node_0 = $locator.childAt(0);
+    let $node_1 = $locator.get("8f8d2d");
     let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1);
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
             $slot_0.update($values[0]);
@@ -252,12 +252,12 @@ const $html_13 = /*#__PURE__*/ new HTMLMaker("Then Content");
 });
 /*
 <root>${this.content}</root>
-*/ const $template_16 = /*#__PURE__*/ new TemplateMaker(function () {
+*/ const $template_16 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $latest_0;
-    let $node = $html_5.make();
-    let $node_0 = $node.content.firstChild;
+    let $locator = $html_5.make($hydrates);
+    let $node_0 = $locator.childAt(0);
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {
@@ -272,13 +272,13 @@ const $html_17 = /*#__PURE__*/ new HTMLMaker("<div> </div>");
 <root>
     <div>${v}</div>
 </root>
-*/ const $template_17 = /*#__PURE__*/ new TemplateMaker(function () {
+*/ const $template_17 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $latest_0;
-    let $node = $html_17.make();
-    let $node_0 = $node.content.firstChild;
+    let $locator = $html_17.make($hydrates);
+    let $node_0 = $locator.childAt(0);
     let $node_1 = $node_0.firstChild;
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {
@@ -292,14 +292,14 @@ const $html_17 = /*#__PURE__*/ new HTMLMaker("<div> </div>");
 <root>
     <lu:if ${this.item && this.item.value} />
 </root>
-*/ const $template_18 = /*#__PURE__*/ new TemplateMaker(function () {
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
-    let $node_1 = $node.content.lastChild;
+*/ const $template_18 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $locator = $html_0.make($hydrates);
+    let $node_0 = $locator.childAt(0);
+    let $node_1 = $locator.get("8f8d2d");
     let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1));
     let $block_0 = new IfBlock($slot_0);
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
             $block_0.update($values[0]);
@@ -315,11 +315,11 @@ const $html_19 = /*#__PURE__*/ new HTMLMaker("<div>Content 1</div><div>Content 2
     <div>Content 1</div>
     <div>Content 2</div>
 </root>
-*/ const $template_19 = /*#__PURE__*/ new TemplateMaker(function () {
-    let $node = $html_19.make();
-    let $node_0 = $node.content.firstChild;
+*/ const $template_19 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $locator = $html_19.make($hydrates);
+    let $node_0 = $locator.childAt(0);
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0)
     };
 });

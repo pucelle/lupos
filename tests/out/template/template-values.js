@@ -5,12 +5,12 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
 <root>
     <div attr="${'className'}" />
 </root>
-*/ const $template_0 = /*#__PURE__*/ new TemplateMaker(function () {
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
+*/ const $template_0 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $locator = $html_0.make($hydrates);
+    let $node_0 = $locator.childAt(0);
     $node_0.setAttribute("attr", 'className');
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0)
     };
 });
@@ -18,12 +18,12 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
 <root>
     <div attr=${this.prop} />
 </root>
-*/ const $template_1 = /*#__PURE__*/ new TemplateMaker(function () {
+*/ const $template_1 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $latest_0;
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
+    let $locator = $html_0.make($hydrates);
+    let $node_0 = $locator.childAt(0);
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {
@@ -37,12 +37,12 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
 <root>
     <div attr=${this.readonlyProp} />
 </root>
-*/ const $template_2 = /*#__PURE__*/ new TemplateMaker(function ($context) {
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
+*/ const $template_2 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
+    let $locator = $html_0.make($hydrates);
+    let $node_0 = $locator.childAt(0);
     $node_0.setAttribute("attr", $context.readonlyProp);
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0)
     };
 });
@@ -50,12 +50,12 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
 <root>
     <div .prop=${this.getValue} />
 </root>
-*/ const $template_3 = /*#__PURE__*/ new TemplateMaker(function ($context) {
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
+*/ const $template_3 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
+    let $locator = $html_0.make($hydrates);
+    let $node_0 = $locator.childAt(0);
     $node_0.prop = $context.getValue;
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0)
     };
 });
@@ -63,12 +63,12 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
 <root>
     <div attr=${this.getValue()} />
 </root>
-*/ const $template_4 = /*#__PURE__*/ new TemplateMaker(function () {
+*/ const $template_4 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $latest_0;
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
+    let $locator = $html_0.make($hydrates);
+    let $node_0 = $locator.childAt(0);
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {
@@ -82,12 +82,12 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
 <root>
     <div @click=${() => this.handleEvent(this.prop)} />
 </root>
-*/ const $template_5 = /*#__PURE__*/ new TemplateMaker(function ($context) {
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
+*/ const $template_5 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
+    let $locator = $html_0.make($hydrates);
+    let $node_0 = $locator.childAt(0);
     $node_0.addEventListener("click", () => $context.handleEvent($context.prop));
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0)
     };
 });
@@ -95,12 +95,12 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
 <root>
     <div @click=${() => this.handleEvent(globalVariable)} />
 </root>
-*/ const $template_6 = /*#__PURE__*/ new TemplateMaker(function ($context) {
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
+*/ const $template_6 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
+    let $locator = $html_0.make($hydrates);
+    let $node_0 = $locator.childAt(0);
     $node_0.addEventListener("click", () => $context.handleEvent(globalVariable));
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0)
     };
 });
@@ -108,12 +108,12 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
 <root>
     <div @click=${this.handleEvent.bind(this)} />
 </root>
-*/ const $template_7 = /*#__PURE__*/ new TemplateMaker(function ($context) {
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
+*/ const $template_7 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
+    let $locator = $html_0.make($hydrates);
+    let $node_0 = $locator.childAt(0);
     $node_0.addEventListener("click", $context.handleEvent.bind($context));
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0)
     };
 });
@@ -121,12 +121,12 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
 <root>
     <div @click=${() => this.handleEvent(Math.PI)} />
 </root>
-*/ const $template_8 = /*#__PURE__*/ new TemplateMaker(function ($context) {
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
+*/ const $template_8 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
+    let $locator = $html_0.make($hydrates);
+    let $node_0 = $locator.childAt(0);
     $node_0.addEventListener("click", () => $context.handleEvent(Math.PI));
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0)
     };
 });
@@ -134,12 +134,12 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
 <root>
     <div attr="name1 ${this.prop} name2 ${this.prop}" />
 </root>
-*/ const $template_9 = /*#__PURE__*/ new TemplateMaker(function () {
+*/ const $template_9 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $latest_0;
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
+    let $locator = $html_0.make($hydrates);
+    let $node_0 = $locator.childAt(0);
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {
@@ -153,12 +153,12 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
 <root>
     <div attr="${this.prop}" attr2=${this.prop} />
 </root>
-*/ const $template_10 = /*#__PURE__*/ new TemplateMaker(function () {
+*/ const $template_10 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $latest_0, $latest_1;
-    let $node = $html_0.make();
-    let $node_0 = $node.content.firstChild;
+    let $locator = $html_0.make($hydrates);
+    let $node_0 = $locator.childAt(0);
     return {
-        el: $node,
+        el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {

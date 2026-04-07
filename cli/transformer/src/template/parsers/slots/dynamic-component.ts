@@ -53,6 +53,8 @@ export class DynamicComponentSlotParser extends SlotParserBase {
 
 		// Use a comment node as template slot position, but will not remove current node.
 		else {
+
+			// No need to generate finger print for it because will not add more contents before.
 			let comment = new HTMLNode(HTMLNodeType.Comment, -1, -1)
 			this.node.after(comment)
 			useNode = comment

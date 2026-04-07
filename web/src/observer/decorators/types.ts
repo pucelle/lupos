@@ -99,8 +99,13 @@ type InferPropertyType<T, P extends ((() => any) | keyof T)>
  * 
  * This is only a declaration, it will be replaced after been compiled.
  */
-export declare function watchMulti<T, PS extends (((this: T) => any) | keyof T)[]>(fnOrProps: PS, options?: Partial<WatchOptions>):
+export declare function watchMulti<T, PS extends (((this: T) => any) | keyof T)[]>(fnOrProps: [...PS], options?: Partial<WatchOptions>):
 	(originalMethod: InferMultiMethod<T, PS>, context: ClassMethodDecoratorContext<T>) => any
+
+// Note the function signature `[...PS]`, changing the argument type to [...PS] is a "hint" to the compiler.
+// It tells TypeScript that if the user passes ['name', 'age'], it should be treated as a fixed-length tuple
+// [string, string] rather than string[].
+
 
 /** Infer watch multi method declaration by class T, and list of property or getter. */
 type InferMultiMethod<T, PS extends ((() => any) | keyof T)[]>
