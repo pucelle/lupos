@@ -43,12 +43,10 @@ export class TestObservedVariableType {
     }
     variableGetter() {
         var a = { get b() { return 1; } };
-        trackGet(a, "b");
         return a.b;
     }
     variableInstanceGetter() {
         var a = new ObservedHasGetter();
-        trackGet(a, "b");
         return a.b;
     }
 }

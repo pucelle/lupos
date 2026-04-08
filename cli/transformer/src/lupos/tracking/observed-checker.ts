@@ -57,17 +57,14 @@ export namespace ObservedChecker {
 			return false
 		}
 
-		// Ignore get and set accessor, and class implements observed,
-		// getter or setter should implements tracking itself, so stop.
-		// But `@computed` decorated will always continue.
+		// Ignores get and set accessors, because getter or setter
+		// include tracking logics in access body.
+		// But `@computed` decorated will continue, because it's
+		// content get cached after get computed.
 		if (decl && ts.isAccessor(decl)) {
 			let decoNameBeComputed = helper.deco.getFirstName(decl) === 'computed'
-			let declParentResolved = helper.symbol.resolveDeclaration(decl.parent)
-			if (declParentResolved) {
-				let isClassDeclObserved = getDeclarationObserved(declParentResolved)
-				if (isClassDeclObserved && !decoNameBeComputed) {
-					return false
-				}
+			if (!decoNameBeComputed) {
+				return false
 			}
 		}
 		
@@ -83,7 +80,26 @@ export namespace ObservedChecker {
 
 
 		// Normally if parent expression is observed, child is mutable.
-		return getElementsObserved(rawNode.expression)
+		let elementsObserved = getElementsObserved(rawNode.expression)
+		if (elementsObserved !== null) {
+			return elementsObserved
+		}
+
+
+		// Sometimes when searching from parent expression may not work
+		// because it may search at a returned generic type.
+		// Should re-search at access declaration resolved.
+		if (decl
+			&& helper.isPropertyLike(decl)
+			&& ts.isClassLike(decl.parent)
+		) {
+			let declParentClassObserved = getDeclarationObserved(decl.parent)
+			if (declParentClassObserved !== null) {
+				return declParentClassObserved
+			}
+		}
+
+		return null
 	}
 
 
