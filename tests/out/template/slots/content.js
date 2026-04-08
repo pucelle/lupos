@@ -1,6 +1,6 @@
 import { Component, TemplateSlot, SlotPosition, CompiledTemplateResult, TemplateMaker, HTMLMaker, IfBlock } from 'lupos.html';
 import { trackGet } from "lupos";
-const $html_0 = /*#__PURE__*/ new HTMLMaker("<div><!--8e82c1--></div>");
+const $html_0 = /*#__PURE__*/ new HTMLMaker("<div><!--108697--></div>");
 /*
 <root>
     <div>
@@ -10,8 +10,8 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div><!--8e82c1--></div>");
 */ const $template_0 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
     let $locator = $html_0.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $node_1 = $node_0.get("8e82c1");
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 0);
+    let $node_1 = $locator.getMarker("108697");
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 0, $locator.getNodes("108697"));
     $slot_0.update(new CompiledTemplateResult($template_1, [], $context));
     return {
         el: $locator.el,
@@ -34,6 +34,7 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<div></div>");
         position: new SlotPosition(1, $node_0)
     };
 });
+const $html_2 = /*#__PURE__*/ new HTMLMaker("<div><!--c8262b--></div>");
 /*
 <root>
     <div>
@@ -41,10 +42,10 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<div></div>");
     </div>
 </root>
 */ const $template_2 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
-    let $locator = $html_0.make($hydrates);
+    let $locator = $html_2.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $node_1 = $node_0.get("8e82c1");
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1);
+    let $node_1 = $locator.getMarker("c8262b");
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1, $locator.getNodes("c8262b"));
     $slot_0.update([new CompiledTemplateResult($template_3, [], $context)]);
     return {
         el: $locator.el,
@@ -66,6 +67,7 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<div></div>");
         position: new SlotPosition(1, $node_0)
     };
 });
+const $html_4 = /*#__PURE__*/ new HTMLMaker("<div><!--0b3868--></div>");
 /*
 <root>
     <div>
@@ -74,10 +76,10 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<div></div>");
 </root>
 */ const $template_4 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $latest_0;
-    let $locator = $html_0.make($hydrates);
+    let $locator = $html_4.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $node_1 = $node_0.get("8e82c1");
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1));
+    let $node_1 = $locator.getMarker("0b3868");
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), null, $locator.getNodes("0b3868"));
     return {
         el: $locator.el,
         position: new SlotPosition(1, $node_0),
@@ -104,7 +106,7 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<div></div>");
         position: new SlotPosition(1, $node_0)
     };
 });
-const $html_6 = /*#__PURE__*/ new HTMLMaker("<div> <!--8e82c1--> </div>");
+const $html_6 = /*#__PURE__*/ new HTMLMaker("<div> <!--36766e--> </div>");
 /*
 <root>
     <div>
@@ -117,9 +119,9 @@ const $html_6 = /*#__PURE__*/ new HTMLMaker("<div> <!--8e82c1--> </div>");
     let $locator = $html_6.make($hydrates);
     let $node_0 = $locator.childAt(0);
     let $node_1 = $node_0.firstChild;
-    let $node_2 = $node_0.get("8e82c1");
-    let $node_3 = $node_0.childNodes[2];
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_2), 0);
+    let $node_2 = $locator.getMarker("36766e");
+    let $node_3 = $node_2.nextSibling;
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_2), 0, $locator.getNodes("36766e"));
     $node_1.data = '1' + " ";
     $slot_0.update(new CompiledTemplateResult($template_7, [], $context));
     $node_3.data = " " + '1';
@@ -143,7 +145,7 @@ const $html_6 = /*#__PURE__*/ new HTMLMaker("<div> <!--8e82c1--> </div>");
         position: new SlotPosition(1, $node_0)
     };
 });
-const $html_8 = /*#__PURE__*/ new HTMLMaker("<div><!--8e82c1--><!--8e82c1--></div>");
+const $html_8 = /*#__PURE__*/ new HTMLMaker("<div><!--484aad--><!--018800--></div>");
 /*
 <root>
     <div>
@@ -154,10 +156,10 @@ const $html_8 = /*#__PURE__*/ new HTMLMaker("<div><!--8e82c1--><!--8e82c1--></di
 */ const $template_8 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
     let $locator = $html_8.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $node_1 = $node_0.get("8e82c1");
-    let $node_2 = $node_0.get("8e82c1");
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 0);
-    let $slot_1 = new TemplateSlot(new SlotPosition(1, $node_2), 0);
+    let $node_1 = $locator.getMarker("484aad");
+    let $node_2 = $locator.getMarker("018800");
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 0, $locator.getNodes("484aad"));
+    let $slot_1 = new TemplateSlot(new SlotPosition(1, $node_2), 0, $locator.getNodes("018800"));
     $slot_0.update(new CompiledTemplateResult($template_9, [], $context));
     $slot_1.update(new CompiledTemplateResult($template_10, [], $context));
     return {
@@ -193,7 +195,7 @@ const $html_8 = /*#__PURE__*/ new HTMLMaker("<div><!--8e82c1--><!--8e82c1--></di
         position: new SlotPosition(1, $node_0)
     };
 });
-const $html_11 = /*#__PURE__*/ new HTMLMaker("<!----><!--8e82c1--><!--8e82c1-->");
+const $html_11 = /*#__PURE__*/ new HTMLMaker("<!----><!--d48322--><!--be246b-->");
 /*
 <root>
     <template>
@@ -204,11 +206,11 @@ const $html_11 = /*#__PURE__*/ new HTMLMaker("<!----><!--8e82c1--><!--8e82c1-->"
 */ const $template_11 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
     let $locator = $html_11.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $node_1 = $locator;
-    let $node_2 = $locator;
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1));
+    let $node_1 = $locator.getMarker("d48322");
+    let $node_2 = $locator.getMarker("be246b");
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), null, $locator.getNodes("d48322"));
     let $block_0 = new IfBlock($slot_0);
-    let $slot_1 = new TemplateSlot(new SlotPosition(1, $node_2), 0);
+    let $slot_1 = new TemplateSlot(new SlotPosition(1, $node_2), 0, $locator.getNodes("be246b"));
     $slot_1.update(new CompiledTemplateResult($template_13, [], $context));
     return {
         el: $locator.el,

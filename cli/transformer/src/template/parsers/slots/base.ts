@@ -5,6 +5,7 @@ import {factory, Modifier, DeclarationScopeTree, Packer, Hashing} from '../../..
 import {TemplateParser} from '../template'
 import {SlotPositionType} from '../../../enums'
 import {HTMLNodeHelper, PrecedingPositionStability} from '../../html-syntax'
+import {VariableNames} from '../variable-names'
 
 
 export abstract class SlotParserBase {
@@ -167,12 +168,12 @@ export abstract class SlotParserBase {
 
 	/** Get whether node has been referenced. */
 	protected hasNodeRefed(): boolean {
-		return this.tree.references.hasRefed(this.node)
+		return this.tree.references.hasNeededRef(this.node)
 	}
 
 	/** Will later reference node as a variable. */
 	protected refNode() {
-		this.tree.references.ref(this.node)
+		this.tree.references.needRef(this.node)
 	}
 
 	/** Get node variable name. */
@@ -305,15 +306,33 @@ export abstract class SlotParserBase {
 		let parameterGetter = this.prepareTemplateSlotParametersGetter()
 
 		return () => {
-			let {nodeName, position} = parameterGetter()
+			let {nodeName, fingerPrintId, position} = parameterGetter()
 
 			// new TemplateSlot(
 			//   new SlotPosition(SlotPositionType.Before / AfterContent, $context),
-			//   context,
-			//   ?SlotContentType.xxx
+			//   SlotContentType.xxx | null,
+			//   hydrateNodes
 			// )
 
-			let slotContentTypeNodes = slotContentType !== null ? [factory.createNumericLiteral(slotContentType)] : []
+			// Can omit if `fingerPrintId` is not exist.
+			let slotContentTypeParams = slotContentType !== null
+				? [factory.createNumericLiteral(slotContentType)]
+				: fingerPrintId
+				? [factory.createNull()]
+				: []
+
+			let hydrateNodesParams: ts.Expression[] = fingerPrintId
+				? [
+					factory.createCallExpression(
+						factory.createPropertyAccessExpression(
+							factory.createIdentifier(VariableNames.locator),
+							factory.createIdentifier('getNodes')
+						),
+						undefined,
+						[factory.createStringLiteral(fingerPrintId)]
+					)
+				]
+				: []
 
 			return factory.createNewExpression(
 				factory.createIdentifier('TemplateSlot'),
@@ -327,13 +346,17 @@ export abstract class SlotParserBase {
 							factory.createIdentifier(nodeName)
 						]
 					),
-					...slotContentTypeNodes
+					...slotContentTypeParams,
+					...hydrateNodesParams
 				]
 			)
 		}
 	}
 
-	/** Return a callback to get node name and position parameters for outputting template slot. */
+	/** 
+	 * Return a callback to get node name and position parameters for outputting template slot.
+	 * It's a getter because html node tree may be modified before outputting.
+	 */
 	protected prepareTemplateSlotParametersGetter() {
 		let position = SlotPositionType.Before
 		let nextNode = this.node.nextSibling
@@ -342,6 +365,7 @@ export abstract class SlotParserBase {
 		// Use next node to locate if it's stable,
 		// and remove current node to reduce HTML output.
 		if (nextNode
+			&& !this.node.fingerPrintId
 			&& HTMLNodeHelper.getPrecedingPositionStability(nextNode, this.template.values.valueNodes)
 				=== PrecedingPositionStability.Stable
 			&& HTMLNodeHelper.canSafelyRemoveNode(this.node)
@@ -357,13 +381,14 @@ export abstract class SlotParserBase {
 			useNode = this.node
 		}
 
-		this.tree.references.ref(useNode)
+		this.tree.references.needRef(useNode)
 
 		return () => {
 			let nodeName = this.tree.references.getRefedName(useNode)
 
 			return {
 				nodeName,
+				fingerPrintId: useNode.fingerPrintId,
 				position,
 			}
 		}
@@ -382,7 +407,7 @@ export abstract class SlotParserBase {
 		let lastChild = this.node.lastChild!
 
 		// Find next stable.
-		let firstStableNode = HTMLNodeHelper.findNextStableNode(firstChild, this.template.values.valueNodes)
+		let firstStableNode = HTMLNodeHelper.getNextStableNode(firstChild, this.template.values.valueNodes)
 		if (firstStableNode) {
 			firstChild = firstStableNode
 		}
@@ -396,10 +421,10 @@ export abstract class SlotParserBase {
 		}
 
 		// Find previous stable, it always exists.
-		lastChild = HTMLNodeHelper.findPreviousStableNode(lastChild)!
+		lastChild = HTMLNodeHelper.getPreviousStableNode(lastChild)!
 
-		this.tree.references.ref(firstChild)
-		this.tree.references.ref(lastChild)
+		this.tree.references.needRef(firstChild)
+		this.tree.references.needRef(lastChild)
 
 		return () => {
 			let firstChildName = this.tree.references.getRefedName(firstChild)

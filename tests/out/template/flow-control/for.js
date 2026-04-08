@@ -18,7 +18,7 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker(" ");
         }
     };
 });
-const $html_1 = /*#__PURE__*/ new HTMLMaker("<!----><!--980122-->");
+const $html_1 = /*#__PURE__*/ new HTMLMaker("<!----><!--a9ef2e-->");
 /*
 <root>
     <lu:for ${[1,2,3]} />
@@ -26,8 +26,8 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<!----><!--980122-->");
 */ const $template_1 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
     let $locator = $html_1.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $node_1 = $locator.get("980122");
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1);
+    let $node_1 = $locator.getMarker("a9ef2e");
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1, $locator.getNodes("a9ef2e"));
     let $block_0 = new ForBlock($slot_0);
     $block_0.updateRenderFn($context.renderItem);
     $block_0.updateData([1, 2, 3]);
@@ -39,15 +39,16 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<!----><!--980122-->");
         ]
     };
 });
+const $html_2 = /*#__PURE__*/ new HTMLMaker("<!----><!--a26b45-->");
 /*
 <root>
     <lu:for ${[1,2,3]} />
 </root>
 */ const $template_2 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
-    let $locator = $html_1.make($hydrates);
+    let $locator = $html_2.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $node_1 = $locator.get("980122");
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1);
+    let $node_1 = $locator.getMarker("a26b45");
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1, $locator.getNodes("a26b45"));
     let $block_0 = new ForBlock($slot_0);
     $block_0.updateRenderFn((n) => new CompiledTemplateResult($template_3, [
         n + $context.prop
@@ -78,16 +79,17 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<!----><!--980122-->");
         }
     };
 });
+const $html_4 = /*#__PURE__*/ new HTMLMaker("<!----><!--490faa-->");
 /*
 <root>
     <lu:for ${[1,2,3]} />
 </root>
 */ const $template_4 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
     let $latest_0;
-    let $locator = $html_1.make($hydrates);
+    let $locator = $html_4.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $node_1 = $locator.get("980122");
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1);
+    let $node_1 = $locator.getMarker("490faa");
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1, $locator.getNodes("490faa"));
     let $block_0 = new ForBlock($slot_0);
     $block_0.updateRenderFn((n) => new CompiledTemplateResult($template_5, [
         n + $latest_0
@@ -121,15 +123,16 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<!----><!--980122-->");
         }
     };
 });
+const $html_6 = /*#__PURE__*/ new HTMLMaker("<!----><!--093286-->");
 /*
 <root>
     <lu:for ${this.items} />
 </root>
 */ const $template_6 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
-    let $locator = $html_1.make($hydrates);
+    let $locator = $html_6.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $node_1 = $locator.get("980122");
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1);
+    let $node_1 = $locator.getMarker("093286");
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1, $locator.getNodes("093286"));
     let $block_0 = new ForBlock($slot_0);
     $block_0.updateRenderFn((item) => {
         trackGet(item, "value");
@@ -165,15 +168,16 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<!----><!--980122-->");
         }
     };
 });
+const $html_8 = /*#__PURE__*/ new HTMLMaker("<!----><!--ae9f17-->");
 /*
 <root>
     <lu:for ${this.getItems()} />
 </root>
 */ const $template_8 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
-    let $locator = $html_1.make($hydrates);
+    let $locator = $html_8.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $node_1 = $locator.get("980122");
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1);
+    let $node_1 = $locator.getMarker("ae9f17");
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1, $locator.getNodes("ae9f17"));
     let $block_0 = new ForBlock($slot_0);
     $block_0.updateRenderFn((item) => {
         trackGet(item, "value");
@@ -209,15 +213,16 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<!----><!--980122-->");
         }
     };
 });
+const $html_10 = /*#__PURE__*/ new HTMLMaker("<!----><!--4ee39b-->");
 /*
 <root>
     <lu:for ${items} />
 </root>
 */ const $template_10 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
-    let $locator = $html_1.make($hydrates);
+    let $locator = $html_10.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $node_1 = $locator.get("980122");
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1);
+    let $node_1 = $locator.getMarker("4ee39b");
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1, $locator.getNodes("4ee39b"));
     let $block_0 = new ForBlock($slot_0);
     $block_0.updateRenderFn((item) => {
         trackGet(item, "value");
@@ -253,15 +258,16 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<!----><!--980122-->");
         }
     };
 });
+const $html_12 = /*#__PURE__*/ new HTMLMaker("<!----><!--4eacf5-->");
 /*
 <root>
     <lu:for ${this.readonlyItems} />
 </root>
 */ const $template_12 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
-    let $locator = $html_1.make($hydrates);
+    let $locator = $html_12.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $node_1 = $locator.get("980122");
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1);
+    let $node_1 = $locator.getMarker("4eacf5");
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1, $locator.getNodes("4eacf5"));
     let $block_0 = new ForBlock($slot_0);
     $block_0.updateRenderFn((item) => {
         trackGet(item, "value");
@@ -297,15 +303,16 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<!----><!--980122-->");
         }
     };
 });
+const $html_14 = /*#__PURE__*/ new HTMLMaker("<!----><!--dc90d5-->");
 /*
 <root>
     <lu:for ${items} />
 </root>
 */ const $template_14 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
-    let $locator = $html_1.make($hydrates);
+    let $locator = $html_14.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $node_1 = $locator.get("980122");
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1);
+    let $node_1 = $locator.getMarker("dc90d5");
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1, $locator.getNodes("dc90d5"));
     let $block_0 = new ForBlock($slot_0);
     $block_0.updateRenderFn((item) => {
         trackGet(item, "value");
@@ -341,15 +348,16 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<!----><!--980122-->");
         }
     };
 });
+const $html_16 = /*#__PURE__*/ new HTMLMaker("<!----><!--9833c7-->");
 /*
 <root>
     <lu:for ${this.deepReadonlyItems} />
 </root>
 */ const $template_16 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
-    let $locator = $html_1.make($hydrates);
+    let $locator = $html_16.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $node_1 = $locator.get("980122");
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1);
+    let $node_1 = $locator.getMarker("9833c7");
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1, $locator.getNodes("9833c7"));
     let $block_0 = new ForBlock($slot_0);
     $block_0.updateRenderFn((item) => new CompiledTemplateResult($template_17, [
         item.value
@@ -380,15 +388,16 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<!----><!--980122-->");
         }
     };
 });
+const $html_18 = /*#__PURE__*/ new HTMLMaker("<!----><!--8fbaa5-->");
 /*
 <root>
     <lu:for ${items} />
 </root>
 */ const $template_18 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
-    let $locator = $html_1.make($hydrates);
+    let $locator = $html_18.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $node_1 = $locator.get("980122");
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1);
+    let $node_1 = $locator.getMarker("8fbaa5");
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1, $locator.getNodes("8fbaa5"));
     let $block_0 = new ForBlock($slot_0);
     $block_0.updateRenderFn((item) => new CompiledTemplateResult($template_19, [
         item.value

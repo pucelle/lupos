@@ -332,16 +332,9 @@ export class TreeOutputHandler {
 				visitSteps = []
 			}
 
-			// From root.
+			// From root, use `$locator`.
 			else if (visitFromNode === this.root) {
-
-				// $locator
 				fromExp = factory.createIdentifier(VariableNames.locator)
-
-				// Eliminate the first path piece.
-				if (this.wrappedBySVG || this.wrappedByTemplate) {
-					visitSteps = visitSteps.slice(1)
-				}
 			}
 
 			// $node_0
@@ -392,24 +385,23 @@ export class TreeOutputHandler {
 				}
 
 				// Visit next siblings from `$locator.getMarker('abcdef')`.
-				else {
-					
-					// $locator.getMarker('abcdef')
+				else if (type === VisitStepType.Marker) {
 					fromExp = factory.createCallExpression(
 						factory.createPropertyAccessExpression(
-							fromExp = factory.createIdentifier(VariableNames.locator),
+							factory.createIdentifier(VariableNames.locator),
 							factory.createIdentifier('getMarker')
 						),
 						undefined,
 						[factory.createStringLiteral(node.fingerPrintId!)]
 					)
+				}
 
-					for (let i = 0; i < index; i++) {
-						fromExp = factory.createPropertyAccessExpression(
-							fromExp,
-							'nextSibling'
-						)
-					}
+				// Visit next siblings from `$locator.getMarker('abcdef')`.
+				else {
+					fromExp = factory.createPropertyAccessExpression(
+						fromExp,
+						'nextSibling'
+					)
 				}
 				
 				// Access `template.content` for element in <lu:portal>.

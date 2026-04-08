@@ -70,9 +70,9 @@ export class TreeParser {
 		this.parent = parent
 		this.fromNode = fromNode
 		this.index = VariableNames.getUniqueIndex('tree-index')
-		this.references = new HTMLNodeReferences(this.root)
 
 		this.initWrapping()
+		this.references = new HTMLNodeReferences(this.root, this.wrappedBySVG || this.wrappedByTemplate)
 		this.outputHandler = new TreeOutputHandler(this, this.index, this.wrappedBySVG, this.wrappedByTemplate)
 	}
 
@@ -169,7 +169,7 @@ export class TreeParser {
 
 		this.templateParts.push(part)
 		this.slotParsers.push(parser)
-		this.references.ref(part.node)
+		this.references.needRef(part.node)
 
 		return () => {
 			parser.postInit()
@@ -201,7 +201,7 @@ export class TreeParser {
 		}
 
 		// Make it to be referenced.
-		this.references.ref(firstNode)
+		this.references.needRef(firstNode)
 	}
 
 	/** 

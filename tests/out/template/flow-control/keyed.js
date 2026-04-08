@@ -1,6 +1,6 @@
 import { Component, TemplateSlot, SlotPosition, CompiledTemplateResult, TemplateMaker, HTMLMaker, KeyedBlock } from 'lupos.html';
 import { trackGet } from "lupos";
-const $html_0 = /*#__PURE__*/ new HTMLMaker("<!----><!--5592a1-->");
+const $html_0 = /*#__PURE__*/ new HTMLMaker("<!----><!--ad4c33-->");
 /*
 <root>
     <lu:keyed ${this.key} />
@@ -8,8 +8,8 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<!----><!--5592a1-->");
 */ const $template_0 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $locator = $html_0.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $node_1 = $locator.get("5592a1");
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 0);
+    let $node_1 = $locator.getMarker("ad4c33");
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 0, $locator.getNodes("ad4c33"));
     let $block_0 = new KeyedBlock($slot_0);
     return {
         el: $locator.el,

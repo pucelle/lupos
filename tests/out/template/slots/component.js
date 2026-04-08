@@ -46,10 +46,11 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<div>Rest Content</div>");
         ]
     };
 });
-const $html_2 = /*#__PURE__*/ new HTMLMaker("<div><!---->Rest Content</div>");
+const $html_2 = /*#__PURE__*/ new HTMLMaker("<div><!----><!--ebdfad-->Rest Content</div>");
 /*
 <root>
     <ChildComponent>
+        ${html`<div />`}
         Rest Content
     </ChildComponent>
 </root>
@@ -57,10 +58,11 @@ const $html_2 = /*#__PURE__*/ new HTMLMaker("<div><!---->Rest Content</div>");
     let $locator = $html_2.make($hydrates);
     let $node_0 = $locator.childAt(0);
     let $node_1 = $node_0.firstChild;
-    let $node_2 = $node_0.childNodes[1];
+    let $node_2 = $locator.getMarker("ebdfad");
+    let $node_3 = $node_2.nextSibling;
     let $com_0 = new ChildComponent($node_0);
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_2), 0);
-    $com_0.$applyRestSlotRangeNodes($node_1, $node_2);
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_2), 0, $locator.getNodes("ebdfad"));
+    $com_0.$applyRestSlotRangeNodes($node_1, $node_3);
     $slot_0.update(new CompiledTemplateResult($template_3, [], $context));
     return {
         el: $locator.el,

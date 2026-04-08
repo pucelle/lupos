@@ -56,31 +56,37 @@ export const enum VisitStepType {
 	/** Visit from parent and a child index. */
 	ChildIndex,
 
+	/** Visit specified marker. */
+	Marker,
+
 	/** Visit from a fixed node for it's next sibling. */
-	Next,
+	NextSibling,
 }
 
 
 export class HTMLNodeReferences {
 
 	readonly root: HTMLRoot
+	readonly firstLevelWillBeEliminated: boolean
+
 	private determined: boolean = false
 	private indexMap: Map<HTMLNode, number> = new Map()
-	private referencedNodes: Set<HTMLNode> = new Set()
-	private referenceMap: Map<HTMLNode, ReferenceItem> = new Map()
+	private needReferenceNodes: Set<HTMLNode> = new Set()
+	private referencedMap: Map<HTMLNode, ReferenceItem> = new Map()
 
-	constructor(root: HTMLRoot) {
+	constructor(root: HTMLRoot, firstLevelWillBeEliminated: boolean) {
 		this.root = root
+		this.firstLevelWillBeEliminated = firstLevelWillBeEliminated
 	}
 
-	/** Reference node if not */
-	ref(node: HTMLNode) {
-		this.referencedNodes.add(node)
+	/** Notify need to reference node. */
+	needRef(node: HTMLNode) {
+		this.needReferenceNodes.add(node)
 	}
 
 	/** Whether node has been referenced. */
-	hasRefed(node: HTMLNode): boolean {
-		return this.referencedNodes.has(node)
+	hasNeededRef(node: HTMLNode): boolean {
+		return this.needReferenceNodes.has(node)
 	}
 
 	/** 
@@ -129,7 +135,7 @@ export class HTMLNodeReferences {
 			}
 		}
 
-		if (this.referencedNodes.has(node) || children.length > 0) {
+		if (this.needReferenceNodes.has(node) || children.length > 0) {
 			return {
 				node,
 				siblingIndex,
@@ -141,24 +147,13 @@ export class HTMLNodeReferences {
 	}
 
 	/** `steps` doesn't include current item sibling index. */
-	private makeReferenceMap(item: DeepReferenceCheck, visitFromNode: HTMLNode, parentalSteps: VisitStep[], afterFingerPrintSibling: boolean) {
+	private makeReferenceMap(item: DeepReferenceCheck, visitFromNode: HTMLNode, levelSteps: VisitStep[], afterFingerPrintSibling: boolean) {
 		let node = item.node
-		let levelSteps: VisitStep[] = [...parentalSteps]
 		let selfSteps: VisitStep[] | null = null
 		let type: ReferenceCheckTypeMask | 0 = 0
 
-		// Visit comment node from comment compiling id.
-		if (node.fingerPrintId) {
-			levelSteps = [{type: VisitStepType.Next, node, index: 0}]
-		}
-
-		// Not visit step for tree.
-		else if (node !== this.root) {
-			levelSteps.push({type: VisitStepType.ChildIndex, node, index: item.siblingIndex})
-		}
-
 		// Output directly.
-		if (this.hasRefed(node)) {
+		if (this.hasNeededRef(node)) {
 			type |= ReferenceCheckTypeMask.Reference
 		}
 
@@ -171,7 +166,13 @@ export class HTMLNodeReferences {
 		// f = a.b.c
 		// f.d
 		// f.e
-		if (node !== this.root && selfSteps !== null) {
+
+		let selfBeEliminatedLevel = node.parent === this.root && this.firstLevelWillBeEliminated
+
+		// Root node will be replaced by `$locator`,
+		// context node `<template>` will be eliminated.
+		// sometimes `<svg>` will be eliminated.
+		if (!(node === this.root || selfBeEliminatedLevel)) {
 			if (item.children.length > 1
 				|| item.children.length === 1 && afterFingerPrintSibling
 			) {
@@ -179,64 +180,73 @@ export class HTMLNodeReferences {
 			}
 		}
 
-		// Output node, and output descendants relative to it.
+		// Output node self, and output descendants relative to it.
 		if (type !== 0) {
-			selfSteps = levelSteps
-			
+
 			// Template tags will be replace by `$context.el`, 
-			// so no need to visit steps.
-			// Set to null to persist visiting from parent steps.
-			if (node.tagName === 'template'
+			// so no need to visit steps, but still persist level steps for children.
+			let beContextElement = node.tagName === 'template'
 				&& node.parent === this.root
-			) {
-				selfSteps = null
+			
+			if (!beContextElement) {
+				selfSteps = levelSteps
 			}
 
 			this.refAsIndex(node)
 
-			this.referenceMap.set(node, {
+			this.referencedMap.set(node, {
 				type,
 				node,
 				fromNode: visitFromNode,
 				visitSteps: selfSteps,
 			})
 		}
-		else {
-			selfSteps = null
+
+		// Visit child from current node.
+		if (selfSteps) {
+			visitFromNode = node
+			levelSteps = []
 		}
 
 		// Means position is not stable, may add some more nodes before.
 		let afterFingerPrint = false
+
+		// Whether will eliminated child step level.
+		let childBeEliminatedLevel = node === this.root && this.firstLevelWillBeEliminated
 		
 		for (let child of item.children) {
-
-			// May append more node before it.
+	
+			// May append more node before this node.
 			let haveFingerPrint = !!child.node.fingerPrintId
-
-			// Visit child from current node.
-			if (selfSteps) {
-				this.makeReferenceMap(child, node, [], afterFingerPrint)
-			}
-			// For `<template>`, not break parent visiting link.
-			else {
-				this.makeReferenceMap(child, visitFromNode, levelSteps, afterFingerPrint)
-			}
-
 			if (haveFingerPrint) {
-				levelSteps = [{type: VisitStepType.Next, node, index: 0}]
+				levelSteps = [{type: VisitStepType.Marker, node: child.node, index: 0}]
 			}
-			else if (afterFingerPrint) {
 
-				// If current child get referenced, redirect next sibling chain from it.
-				if (this.referenceMap.has(child.node)) {
-					levelSteps = [{type: VisitStepType.Next, node: child.node, index: 1}]
-				}
-				else {
-					levelSteps = [{type: VisitStepType.Next, node: levelSteps[0].node, index: levelSteps[0].index + 1}]
-				}
+			let childSteps = [...levelSteps]
+
+			// Visit child.
+			if (!haveFingerPrint
+				&& !afterFingerPrint
+				&& !childBeEliminatedLevel
+			) {
+				childSteps.push({type: VisitStepType.ChildIndex, node: child.node, index: child.siblingIndex})
 			}
+
+			this.makeReferenceMap(child, visitFromNode, childSteps, afterFingerPrint)
 
 			afterFingerPrint = afterFingerPrint || haveFingerPrint
+
+			if (afterFingerPrint) {
+
+				// If current child get referenced, redirect next sibling chain from it.
+				if (this.referencedMap.has(child.node)) {
+					visitFromNode = child.node
+					levelSteps = []
+				}
+
+				// Visit next sibling.
+				levelSteps.push({type: VisitStepType.NextSibling, node: child.node, index: 0})
+			}
 		}
 	}
 
@@ -244,11 +254,11 @@ export class HTMLNodeReferences {
 	private refAsIndex(node: HTMLNode) {
 		let index = VariableNames.getUniqueIndex(this)
 		this.indexMap.set(node, index)
-		this.referencedNodes.add(node)
+		this.needReferenceNodes.add(node)
 	}
 
 	/** Output reference items. */
 	output(): Iterable<ReferenceItem> {
-		return this.referenceMap.values()
+		return this.referencedMap.values()
 	}
 }
