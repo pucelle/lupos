@@ -8,7 +8,7 @@ export class ComponentSlotParser extends SlotParserBase {
 	/** Nodes parameters for `new SlotRange(...)` */
 	private slotRangeNodesGetter: (() => ts.Expression[]) | null = null
 
-	preInit() {
+	override preInit() {
 		let comName = this.node.tagName!
 
 		this.refAsComponent()
@@ -26,7 +26,7 @@ export class ComponentSlotParser extends SlotParserBase {
 		}
 	}
 
-	postInit() {
+	override postInit() {
 		let hasRestSlotContentExisted = this.node.children.length > 0
 
 		if (hasRestSlotContentExisted) {
@@ -34,7 +34,7 @@ export class ComponentSlotParser extends SlotParserBase {
 		}
 	}
 
-	outputInit() {
+	override outputInit() {
 		let nodeName = this.getRefedNodeName()
 		let comName = this.node.tagName!
 		let comVariableName = this.getRefedComponentName()!
@@ -54,7 +54,7 @@ export class ComponentSlotParser extends SlotParserBase {
 		return comInit
 	}
 
-	outputMoreInit() {
+	override outputMoreInit() {
 		let hasRestSlotContentExisted = this.node.children.length > 0
 
 		// $com_0.$applyRestSlotNodes(startNode, endNode)

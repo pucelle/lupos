@@ -13,7 +13,7 @@ export class BindingSlotParser extends SlotParserBase {
 	/** To process output via binding type. */
 	private binding!: BindingBase
 
-	preInit() {
+	override preInit() {
 		let binding: BindingBase
 
 		switch (this.name) {
@@ -38,15 +38,15 @@ export class BindingSlotParser extends SlotParserBase {
 		binding.preInit()
 	}
 
-	postInit() {
+	override postInit() {
 		this.binding.postInit()
 	}
 
-	outputInit() {
+	override outputInit() {
 		return this.binding.outputInit()
 	}
 
-	outputUpdate() {
+	override outputUpdate() {
 		return this.binding.outputUpdate()
 	}
 }

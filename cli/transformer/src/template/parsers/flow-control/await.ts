@@ -19,7 +19,7 @@ export class AwaitFlowControl extends FlowControlBase {
 	private templateNames: (string | null)[] = []
 	private promiseIndex: number | null = null
 
-	preInit() {
+	override preInit() {
 		this.blockVariableName = this.tree.makeUniqueBlockName()
 		this.slotVariableName = this.slot.makeSlotName()
 
@@ -52,7 +52,7 @@ export class AwaitFlowControl extends FlowControlBase {
 		this.templateSlotGetter = this.slot.prepareAsTemplateSlot(null)
 	}
 
-	outputInit() {
+	override outputInit() {
 		Modifier.addImport('AwaitBlock', 'lupos.html')
 
 		// let $block_0 = new AwaitBlock(
@@ -86,7 +86,7 @@ export class AwaitFlowControl extends FlowControlBase {
 		]
 	}
 
-	outputUpdate() {
+	override outputUpdate() {
 		// This promise may be static, will still update each time.
 		let valueIndices = this.promiseIndex !== null ? [this.promiseIndex] : null
 		let promiseNode = this.template.values.outputValue(null, valueIndices, this.tree, this.asLazyCallback, TemplatePartType.FlowControl).joint

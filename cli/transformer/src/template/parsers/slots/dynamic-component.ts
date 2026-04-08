@@ -20,13 +20,13 @@ export class DynamicComponentSlotParser extends SlotParserBase {
 	/** Nodes parameters for `new SlotRange(...)` */
 	private slotRangeNodesGetter: (() => ts.Expression[]) | null = null
 
-	preInit() {
+	override preInit() {
 		this.blockVariableName = this.tree.makeUniqueBlockName()
 		this.slotVariableName = this.makeSlotName()
 		this.templateSlotGetter = this.prepareAsTemplateSlot(null)
 	}
 
-	postInit() {
+	override postInit() {
 		let hasContentExisted = this.node.children.length > 0
 
 		if (hasContentExisted) {
@@ -35,8 +35,7 @@ export class DynamicComponentSlotParser extends SlotParserBase {
 		}
 	}
 
-	/** Get node name and position parameters for outputting template slot. */
-	protected prepareTemplateSlotParametersGetter() {
+	protected override prepareTemplateSlotParametersGetter() {
 		let position = SlotPositionType.Before
 		let nextNode = this.node.nextSibling
 		let useNode: HTMLNode
@@ -67,12 +66,13 @@ export class DynamicComponentSlotParser extends SlotParserBase {
 
 			return {
 				nodeName,
+				fingerPrintId: useNode.fingerPrintId,
 				position
 			}
 		}
 	}
 
-	outputInit(nodeAttrInits: ts.Statement[]) {
+	override outputInit(nodeAttrInits: ts.Statement[]) {
 		Modifier.addImport('DynamicComponentBlock', 'lupos.html')
 
 		let hasNodeRefed = this.hasNodeRefed()
@@ -172,7 +172,7 @@ export class DynamicComponentSlotParser extends SlotParserBase {
 		]
 	}
 
-	outputUpdate() {
+	override outputUpdate() {
 		let value = this.outputValue()
 
 		// $block_0.update($values[0])

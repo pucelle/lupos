@@ -190,7 +190,7 @@ export class TreeParser {
 		// Skip all sibling nodes that will be removed.
 		// Reset to null if still not stable.
 		if (firstNode) {
-			firstNode = HTMLNodeHelper.findNextStableNode(firstNode, this.template.values.valueNodes)
+			firstNode = HTMLNodeHelper.getNextStableNode(firstNode, this.template.values.valueNodes)
 		}
 
 		// Insert a comment at start as start inner position.

@@ -5,7 +5,7 @@ import {BindingBase, BindingUpdateCallWith} from './base'
 
 export class StyleBinding extends BindingBase {
 	
-	protected patchCallMethodAndValues(callWith: BindingUpdateCallWith): BindingUpdateCallWith {
+	protected override patchCallMethodAndValues(callWith: BindingUpdateCallWith): BindingUpdateCallWith {
 		let value = callWith.values[0]
 
 		if (this.modifiers.length > 0) {

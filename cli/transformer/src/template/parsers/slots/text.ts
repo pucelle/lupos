@@ -10,13 +10,13 @@ export class TextSlotParser extends SlotParserBase {
 	/** $latest_0 */
 	private latestVariableNames: (string | null)[] | null = null
 
-	preInit() {
+	override preInit() {
 		if (this.isAnyValueCantTransfer()) {
 			this.latestVariableNames = this.makeGroupOfLatestNames()
 		}
 	}
 
-	outputUpdate() {
+	override outputUpdate() {
 		let nodeName = this.getRefedNodeName()
 
 		// $values[0]

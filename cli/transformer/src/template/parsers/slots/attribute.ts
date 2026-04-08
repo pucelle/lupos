@@ -26,7 +26,7 @@ export class AttributeSlotParser extends SlotParserBase {
 	 * */
 	private isSharedModification: boolean = false
 
-	preInit() {
+	override preInit() {
 		if (this.prefix === '?') {
 			this.withQueryToken = true
 		}
@@ -40,7 +40,7 @@ export class AttributeSlotParser extends SlotParserBase {
 		}
 	}
 
-	outputUpdate() {
+	override outputUpdate() {
 		let slotNode = this.getFirstRawValueNode()
 		let slotNodeType = slotNode ? helper.types.typeOf(slotNode) : null
 

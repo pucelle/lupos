@@ -24,7 +24,7 @@ export class IfFlowControl extends FlowControlBase {
 	protected contentRangeIds: (number | null)[] = []
 	protected conditionalRangeIds: (number | null)[] = []
 
-	preInit() {
+	override preInit() {
 		let tags = ['lu:elseif', 'lu:else']
 		let nextNodes = this.eatNext(...tags)
 		let allNodes = [this.node, ...nextNodes]
@@ -137,7 +137,7 @@ export class IfFlowControl extends FlowControlBase {
 		}
 	}
 
-	outputInit() {
+	override outputInit() {
 		let blockClassName = this.cacheable ? 'CacheableIfBlock' : 'IfBlock'
 		return this.outputInitByBlockClassName(blockClassName)
 	}
@@ -170,7 +170,7 @@ export class IfFlowControl extends FlowControlBase {
 		]
 	}
 
-	outputUpdate(): ts.Statement | ts.Expression | (ts.Statement| ts.Expression)[] {
+	override outputUpdate(): ts.Statement | ts.Expression | (ts.Statement| ts.Expression)[] {
 		let toValue = this.outputConditionalExp()
 
 		// $block_0.update($values[0])

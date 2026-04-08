@@ -46,7 +46,7 @@ class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 	}
 
 	/** To parent. */
-	protected toParent(node: ts.Node) {
+	protected override toParent(node: ts.Node) {
 		super.toParent(node)
 
 		// Must after visited all descendant nodes.

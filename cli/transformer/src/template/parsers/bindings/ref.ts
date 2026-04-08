@@ -8,7 +8,7 @@ import {TemplateSlotPlaceholder} from '../../../lupos-ts-module'
 
 export class RefBinding extends BindingBase {
 	
-	readonly asLazyCallback: boolean = true
+	override readonly asLazyCallback: boolean = true
 
 	/** :ref=${xxx}. */
 	private usePropAccess: boolean = false
@@ -23,7 +23,7 @@ export class RefBinding extends BindingBase {
 	private previousBindingInfo: LatestBindingInfo | null = null
 
 	/** Treat as lazy callback. */
-	outputValue() {
+	override outputValue() {
 
 		// Ignore original ref value output and avoid output original access node.
 		if (this.usePropAccess) {
@@ -38,7 +38,7 @@ export class RefBinding extends BindingBase {
 		}
 	}
 
-	preInit() {
+	override preInit() {
 		if (this.modifiers.includes('binding')) {
 			this.previousBindingInfo = getLatestBindingInfo(this.node)
 		}
@@ -123,7 +123,7 @@ export class RefBinding extends BindingBase {
 		}
 	}
 
-	protected initParameters() {
+	protected override initParameters() {
 		super.initParameters()
 
 		// Be overwritten by built expressions.
@@ -141,13 +141,13 @@ export class RefBinding extends BindingBase {
 		}
 	}
 
-	protected initLatestVariableNames() {
+	protected override initLatestVariableNames() {
 		if (!this.usePropAccess) {
 			super.initLatestVariableNames()
 		}
 	}
 	
-	protected patchCallMethodAndValues(callWith: BindingUpdateCallWith): BindingUpdateCallWith {
+	protected override patchCallMethodAndValues(callWith: BindingUpdateCallWith): BindingUpdateCallWith {
 		let rawValueNode = this.getRawValueNode()!
 		let callValue = callWith.values[0]
 

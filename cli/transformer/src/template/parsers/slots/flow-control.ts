@@ -11,11 +11,11 @@ export class FlowControlSlotParser extends SlotParserBase {
 	 * Flow control should always be updated dynamically,
 	 * Or it's meaningless to use a flow.
 	 */
-	shouldUpdateDynamically(): boolean {
+	override shouldUpdateDynamically(): boolean {
 		return true
 	}
 
-	preInit() {
+	override preInit() {
 		let control: FlowControlBase | null = null
 
 		switch (this.node.tagName) {
@@ -47,15 +47,15 @@ export class FlowControlSlotParser extends SlotParserBase {
 		}
 	}
 
-	postInit() {
+	override postInit() {
 		this.control.postInit()
 	}
 
-	outputInit(): ts.Statement | ts.Expression | (ts.Statement| ts.Expression)[] {
+	override outputInit(): ts.Statement | ts.Expression | (ts.Statement| ts.Expression)[] {
 		return this.control.outputInit()
 	}
 
-	outputUpdate(): ts.Statement | ts.Expression | (ts.Statement| ts.Expression)[] {
+	override outputUpdate(): ts.Statement | ts.Expression | (ts.Statement| ts.Expression)[] {
 		return this.control.outputUpdate()
 	}
 }

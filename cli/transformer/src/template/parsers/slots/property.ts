@@ -18,7 +18,7 @@ export class PropertySlotParser extends SlotParserBase {
 	/** Indicates whether attach to target component or element. */
 	private targetType: 'component' | 'element' = 'element'
 
-	preInit() {
+	override preInit() {
 		if (this.prefix === '..') {
 			this.forceComponentTargetType = TemplateSlotPlaceholder.isComponent(this.node.tagName!)
 		}
@@ -63,7 +63,7 @@ export class PropertySlotParser extends SlotParserBase {
 		return 'element'
 	}
 
-	outputUpdate() {
+	override outputUpdate() {
 		let target: ts.Identifier
 		let comVariableName = this.getRefedComponentName()!
 

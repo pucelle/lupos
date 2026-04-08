@@ -47,7 +47,7 @@ export class TreeOutputHandler {
 		Modifier.addImport('TemplateMaker', 'lupos.html')
 
 		// May modify nodes, must before outputting HTML.
-		let templatePosition = this.outputSlotPosition()
+		let templatePosition = this.outputStartInnerSlotPosition()
 
 		// Must output slots firstly, it completes references.
 		let {init, moreInit, staticUpdate, update} = this.outputSlots(slots)
@@ -247,7 +247,7 @@ export class TreeOutputHandler {
 	}
 
 	/** Make `new SlotPosition(...)` to indicate the start inner position of template. */
-	private outputSlotPosition(): ts.Expression | null {
+	private outputStartInnerSlotPosition(): ts.Expression | null {
 		Modifier.addImport('SlotPosition', 'lupos.html')
 
 		let position = SlotPositionType.Before
@@ -332,7 +332,7 @@ export class TreeOutputHandler {
 				visitSteps = []
 			}
 
-			// Where the reference from.
+			// From root.
 			else if (visitFromNode === this.root) {
 
 				// $locator
@@ -351,16 +351,18 @@ export class TreeOutputHandler {
 			}
 
 			// $locator.childAt(0).firstChild.lastChild.childNodes[0]
-			// $locator.get('abcdef')...
-			for (let {type, node, index} of visitSteps) {
+			// $locator.getMarker('abcdef')...
+			for (let i= 0; i < visitSteps.length; i++) {
+				let {type, node, index} = visitSteps[i]
+
 				if (type === VisitStepType.ChildIndex) {
 
 					// $locator.childAt(0)
-					if (visitFromNode === this.root) {
+					if (i === 0 && visitFromNode === this.root) {
 						fromExp = factory.createCallExpression(
 							factory.createPropertyAccessExpression(
 								fromExp,
-								factory.createIdentifier("childAt")
+								factory.createIdentifier('childAt')
 							),
 							undefined,
 							[factory.createNumericLiteral(index)]
@@ -389,17 +391,14 @@ export class TreeOutputHandler {
 					}
 				}
 
-				// Visit next siblings.
+				// Visit next siblings from `$locator.getMarker('abcdef')`.
 				else {
-					if (!node.fingerPrintId!) {
-						throw new Error(node.toHTMLString())
-					}
-
-					// $locator.get('abcdef')
+					
+					// $locator.getMarker('abcdef')
 					fromExp = factory.createCallExpression(
 						factory.createPropertyAccessExpression(
-							fromExp,
-							factory.createIdentifier("get")
+							fromExp = factory.createIdentifier(VariableNames.locator),
+							factory.createIdentifier('getMarker')
 						),
 						undefined,
 						[factory.createStringLiteral(node.fingerPrintId!)]
@@ -413,7 +412,7 @@ export class TreeOutputHandler {
 					}
 				}
 				
-				// Access `template.content` for element in <Portal>.
+				// Access `template.content` for element in <lu:portal>.
 				if (node.tagName === 'template' || node.tagName === 'lu:portal') {
 					fromExp = factory.createPropertyAccessExpression(
 						fromExp,

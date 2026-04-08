@@ -141,7 +141,7 @@ export class HTMLNodeReferences {
 	}
 
 	/** `steps` doesn't include current item sibling index. */
-	private makeReferenceMap(item: DeepReferenceCheck, visitFromNode: HTMLNode, parentalSteps: VisitStep[], afterCommentSibling: boolean) {
+	private makeReferenceMap(item: DeepReferenceCheck, visitFromNode: HTMLNode, parentalSteps: VisitStep[], afterFingerPrintSibling: boolean) {
 		let node = item.node
 		let levelSteps: VisitStep[] = [...parentalSteps]
 		let selfSteps: VisitStep[] | null = null
@@ -173,7 +173,7 @@ export class HTMLNodeReferences {
 		// f.e
 		if (node !== this.root && selfSteps !== null) {
 			if (item.children.length > 1
-				|| item.children.length === 1 && afterCommentSibling
+				|| item.children.length === 1 && afterFingerPrintSibling
 			) {
 				type |= ReferenceCheckTypeMask.PassingBy
 			}
@@ -206,7 +206,7 @@ export class HTMLNodeReferences {
 		}
 
 		// Means position is not stable, may add some more nodes before.
-		let afterComment = false
+		let afterFingerPrint = false
 		
 		for (let child of item.children) {
 
@@ -215,17 +215,17 @@ export class HTMLNodeReferences {
 
 			// Visit child from current node.
 			if (selfSteps) {
-				this.makeReferenceMap(child, node, [], afterComment)
+				this.makeReferenceMap(child, node, [], afterFingerPrint)
 			}
 			// For `<template>`, not break parent visiting link.
 			else {
-				this.makeReferenceMap(child, visitFromNode, levelSteps, afterComment)
+				this.makeReferenceMap(child, visitFromNode, levelSteps, afterFingerPrint)
 			}
 
 			if (haveFingerPrint) {
 				levelSteps = [{type: VisitStepType.Next, node, index: 0}]
 			}
-			else if (afterComment) {
+			else if (afterFingerPrint) {
 
 				// If current child get referenced, redirect next sibling chain from it.
 				if (this.referenceMap.has(child.node)) {
@@ -236,7 +236,7 @@ export class HTMLNodeReferences {
 				}
 			}
 
-			afterComment = afterComment || haveFingerPrint
+			afterFingerPrint = afterFingerPrint || haveFingerPrint
 		}
 	}
 

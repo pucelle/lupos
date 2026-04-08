@@ -22,7 +22,7 @@ export class KeyedFlowControl extends FlowControlBase {
 	private contentTemplate: TemplateParser | null = null
 	private valueIndex: number | null = null
 
-	preInit() {
+	override preInit() {
 		this.blockVariableName = this.tree.makeUniqueBlockName()
 		this.slotVariableName = this.slot.makeSlotName()
 		this.normalCacheable = this.hasAttrValue(this.node, 'cache')
@@ -40,7 +40,7 @@ export class KeyedFlowControl extends FlowControlBase {
 		this.templateSlotGetter = this.slot.prepareAsTemplateSlot(slotContentType)
 	}
 
-	outputInit() {
+	override outputInit() {
 		let blockClassName = this.normalCacheable
 			? 'CacheableKeyedBlock'
 			: this.weakCacheable
@@ -74,7 +74,7 @@ export class KeyedFlowControl extends FlowControlBase {
 		]
 	}
 
-	outputUpdate() {
+	override outputUpdate() {
 		let keyedValueIndices = this.valueIndex !== null ? [this.valueIndex] : null
 		let keyedValue = this.template.values.outputValue(null, keyedValueIndices, this.tree, this.asLazyCallback, TemplatePartType.FlowControl).joint
 		let resultValue = this.contentTemplate ? this.contentTemplate.outputReplaced() : null

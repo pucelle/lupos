@@ -15,7 +15,7 @@ export class ContentSlotParser extends SlotParserBase {
 	/** new TemplateSlot(...) */
 	private templateSlotGetter!: () => ts.Expression
 
-	preInit() {
+	override preInit() {
 		let slotContentType = this.identifySlotContentType()
 		this.slotVariableName = this.makeSlotName()
 
@@ -58,7 +58,7 @@ export class ContentSlotParser extends SlotParserBase {
 		return slotContentType
 	}
 
-	outputInit() {
+	override outputInit() {
 		let templateSlot = this.templateSlotGetter()
 
 		return this.createVariableAssignment(
@@ -67,7 +67,7 @@ export class ContentSlotParser extends SlotParserBase {
 		)
 	}
 
-	outputUpdate() {
+	override outputUpdate() {
 
 		// $values[0]
 		let value = this.outputValue()

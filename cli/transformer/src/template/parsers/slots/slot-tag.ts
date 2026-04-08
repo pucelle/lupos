@@ -14,7 +14,7 @@ export class SlotTagSlotParser extends SlotParserBase {
 	/** $slot_0 */
 	private slotVariableName: string = ''
 
-	preInit() {
+	override preInit() {
 
 		// Slot default content.
 		if (this.name && this.node.children.length > 0) {
@@ -27,7 +27,7 @@ export class SlotTagSlotParser extends SlotParserBase {
 		}
 	}
 
-	outputInit() {
+	override outputInit() {
 		if (this.name) {
 			return this.outputNamedInit()
 		}
@@ -35,7 +35,7 @@ export class SlotTagSlotParser extends SlotParserBase {
 		return []
 	}
 
-	outputMoreInit() {
+	override outputMoreInit() {
 		if (!this.name) {
 			return this.outputNonNamedInit()
 		}
@@ -100,7 +100,7 @@ export class SlotTagSlotParser extends SlotParserBase {
 		)
 	}
 
-	outputUpdate() {
+	override outputUpdate() {
 		if (this.name) {
 			return this.outputNamedUpdate()
 		}

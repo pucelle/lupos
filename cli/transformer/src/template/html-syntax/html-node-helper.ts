@@ -101,7 +101,7 @@ export namespace HTMLNodeHelper {
 
 
 	/** Get next sibling which is stable, skips all nodes that will be removed. */
-	export function findNextStableNode(startNode: HTMLNode, rawValueNodes: ts.Node[]): HTMLNode | null {
+	export function getNextStableNode(startNode: HTMLNode, rawValueNodes: ts.Node[]): HTMLNode | null {
 		let node: HTMLNode | null = startNode
 
 		// Skip all sibling nodes that will be removed.
@@ -126,7 +126,7 @@ export namespace HTMLNodeHelper {
 
 
 	/** Get previous sibling which is stable, skips all nodes that will be removed. */
-	export function findPreviousStableNode(endNode: HTMLNode): HTMLNode | null {
+	export function getPreviousStableNode(endNode: HTMLNode): HTMLNode | null {
 		let node: HTMLNode | null = endNode
 
 		// Skip all sibling nodes that will be removed.

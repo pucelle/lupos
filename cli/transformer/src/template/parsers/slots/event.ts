@@ -11,7 +11,7 @@ export class EventSlotParser extends SlotParserBase {
 	declare name: string
 
 	/** Whether output update content as a lazy callback. */
-	asLazyCallback: boolean = true
+	override asLazyCallback: boolean = true
 
 	/** For `@@comEvent`. */
 	private forceComponentTargetType: boolean = false
@@ -22,7 +22,7 @@ export class EventSlotParser extends SlotParserBase {
 	/** Indicates whether attach to target component or element. */
 	private targetType: 'component' | 'element' = 'element'
 
-	preInit() {
+	override preInit() {
 		if (this.prefix === '@@') {
 			this.forceComponentTargetType = TemplateSlotPlaceholder.isComponent(this.node.tagName!)
 		}
@@ -68,7 +68,7 @@ export class EventSlotParser extends SlotParserBase {
 		return	'element'
 	}
 
-	outputMoreInit() {
+	override outputMoreInit() {
 		if (this.targetType === 'component') {
 			return this.outputComponentInit()
 		}
@@ -264,7 +264,7 @@ export class EventSlotParser extends SlotParserBase {
 		return true
 	}
 
-	outputUpdate() {
+	override outputUpdate() {
 		if (this.latestVariableNames) {
 			return factory.createBinaryExpression(
 				factory.createIdentifier(this.latestVariableNames[0]!),

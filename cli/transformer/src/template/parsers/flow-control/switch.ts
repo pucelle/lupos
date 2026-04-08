@@ -7,7 +7,7 @@ export class SwitchFlowControl extends IfFlowControl {
 
 	private switchValueIndex: number | null = null
 
-	preInit() {
+	override preInit() {
 		let switchValueIndex = this.getAttrValueIndex(this.node)
 		this.switchValueIndex = switchValueIndex
 		
@@ -16,7 +16,7 @@ export class SwitchFlowControl extends IfFlowControl {
 		this.node.empty()
 	}
 
-	outputInit() {
+	override outputInit() {
 		if (this.switchValueIndex === null) {
 			return []
 		}
@@ -25,7 +25,7 @@ export class SwitchFlowControl extends IfFlowControl {
 		return this.outputInitByBlockClassName(blockClassName)
 	}
 
-	outputUpdate() {
+	override outputUpdate() {
 		if (this.switchValueIndex === null) {
 			return []
 		}
@@ -34,7 +34,7 @@ export class SwitchFlowControl extends IfFlowControl {
 		return super.outputUpdate()
 	}
 
-	protected outputConditionsExps() {
+	protected override outputConditionsExps() {
 		let switchValue = this.switchValueIndex !== null
 			? this.template.values.getRawValue(this.switchValueIndex)
 			: factory.createNull()

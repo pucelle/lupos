@@ -28,7 +28,7 @@ export class ForFlowControl extends FlowControlBase {
 
 	private fnLatestVariableName: string | null = null
 
-	preInit() {
+	override preInit() {
 		this.blockVariableName = this.tree.makeUniqueBlockName()
 		this.slotVariableName = this.slot.makeSlotName()
 		this.templateSlotGetter = this.slot.prepareAsTemplateSlot(SlotContentType.TemplateResultList)
@@ -153,7 +153,7 @@ export class ForFlowControl extends FlowControlBase {
 		)
 	}
 
-	outputInit() {
+	override outputInit() {
 		Modifier.addImport('ForBlock', 'lupos.html')
 
 		// let $block_0 = new ForBlock(
@@ -187,7 +187,7 @@ export class ForFlowControl extends FlowControlBase {
 		]
 	}
 
-	outputUpdate() {
+	override outputUpdate() {
 		return [
 			...this.fnValueIndexMutable ? [this.outputFnUpdate()] : [],
 			...this.ofValueIndexElementsMutable ? [this.outputOfUpdate()] : [],
