@@ -79,6 +79,7 @@ export namespace ObservedChecker {
 		}
 
 
+		// Then resolve from access chain.
 		// Normally if parent expression is observed, child is mutable.
 		let elementsObserved = getElementsObserved(rawNode.expression)
 		if (elementsObserved !== null) {
@@ -86,6 +87,7 @@ export namespace ObservedChecker {
 		}
 
 
+		// At last try to resolve from declaration.
 		// Sometimes when searching from parent expression may not work
 		// because it may search at a returned generic type.
 		// Should re-search at access declaration resolved.
