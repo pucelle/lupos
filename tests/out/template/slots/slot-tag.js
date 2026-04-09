@@ -55,7 +55,7 @@ const $html_2 = /*#__PURE__*/ new HTMLMaker("Content");
         position: new SlotPosition(1, $node_0)
     };
 });
-const $html_3 = /*#__PURE__*/ new HTMLMaker("<div><!----><div>Content</div></div>");
+const $html_3 = /*#__PURE__*/ new HTMLMaker("<div com><!----><div>Content</div></div>");
 /*
 <root>
     <ChildCom>
@@ -67,7 +67,7 @@ const $html_3 = /*#__PURE__*/ new HTMLMaker("<div><!----><div>Content</div></div
     let $node_0 = $locator.childAt(0);
     let $node_1 = $node_0.firstChild;
     let $node_2 = $node_0.childNodes[1];
-    let $com_0 = new ChildCom($node_0);
+    let $com_0 = new ChildCom($node_0, !!$hydrates);
     let $binding_0 = new SlotBinding($node_2);
     $com_0.$applyRestSlotRangeNodes($node_1);
     $binding_0.update("slotName");

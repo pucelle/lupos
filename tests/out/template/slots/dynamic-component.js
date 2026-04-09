@@ -1,6 +1,6 @@
 import { Component, TemplateSlot, SlotPosition, CompiledTemplateResult, TemplateMaker, DynamicComponentBlock, HTMLMaker } from 'lupos.html';
 import { trackGet, trackSet } from "lupos";
-const $html_0 = /*#__PURE__*/ new HTMLMaker("<!----><div></div><!---->");
+const $html_0 = /*#__PURE__*/ new HTMLMaker("<!----><div com></div><!---->");
 /*
 <root>
     <${ChildComponent} .comProp=${this.prop} />

@@ -18,14 +18,15 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
         ]
     };
 });
+const $html_1 = /*#__PURE__*/ new HTMLMaker("<div com></div>");
 /*
 <root>
     <ChildComponent :ref=${this.refCom} />
 </root>
 */ const $template_1 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
-    let $locator = $html_0.make($hydrates);
+    let $locator = $html_1.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $com_0 = new ChildComponent($node_0);
+    let $com_0 = new ChildComponent($node_0, !!$hydrates);
     let $binding_0 = new RefBinding($node_0, $context, ["com"]);
     $binding_0.update(function (refed) { this.refCom = refed; trackSet(this, "refCom"); });
     return {
@@ -42,9 +43,9 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
     <ChildComponent :ref.el=${this.refEl} />
 </root>
 */ const $template_2 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
-    let $locator = $html_0.make($hydrates);
+    let $locator = $html_1.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $com_0 = new ChildComponent($node_0);
+    let $com_0 = new ChildComponent($node_0, !!$hydrates);
     let $binding_0 = new RefBinding($node_0, $context, ["el"]);
     $binding_0.update(function (refed) { this.refEl = refed; trackSet(this, "refEl"); });
     return {
@@ -61,9 +62,9 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
     <ChildComponent :ref=${this.refElByType} />
 </root>
 */ const $template_3 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
-    let $locator = $html_0.make($hydrates);
+    let $locator = $html_1.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $com_0 = new ChildComponent($node_0);
+    let $com_0 = new ChildComponent($node_0, !!$hydrates);
     let $binding_0 = new RefBinding($node_0, $context, ["el"]);
     $binding_0.update(function (refed) { this.refElByType = refed; trackSet(this, "refElByType"); });
     return {
@@ -80,9 +81,9 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
     <ChildComponent :class="className" :ref.binding=${this.refBinding} />
 </root>
 */ const $template_4 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
-    let $locator = $html_0.make($hydrates);
+    let $locator = $html_1.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $com_0 = new ChildComponent($node_0);
+    let $com_0 = new ChildComponent($node_0, !!$hydrates);
     let $binding_0 = new ClassBinding($node_0);
     let $binding_1 = new RefBinding($node_0, $context, ["binding"]);
     $binding_0.updateString("className");
@@ -156,9 +157,9 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
     <ChildComponent :class="className" :ref.binding=${this.refBindingMethod} />
 </root>
 */ const $template_8 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
-    let $locator = $html_0.make($hydrates);
+    let $locator = $html_1.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $com_0 = new ChildComponent($node_0);
+    let $com_0 = new ChildComponent($node_0, !!$hydrates);
     let $binding_0 = new ClassBinding($node_0);
     let $binding_1 = new RefBinding($node_0, $context, ["binding"]);
     $binding_0.updateString("className");
@@ -178,9 +179,9 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
 </root>
 */ const $template_9 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
     let $latest_0, $latest_1;
-    let $locator = $html_0.make($hydrates);
+    let $locator = $html_1.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $com_0 = new ChildComponent($node_0);
+    let $com_0 = new ChildComponent($node_0, !!$hydrates);
     let $binding_0 = new TransitionBinding($node_0, $context);
     let $delegator_0 = new PartDelegator();
     let $binding_1 = new RefBinding($node_0, $context, ["binding"]);

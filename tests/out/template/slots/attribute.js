@@ -58,14 +58,15 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
         }
     };
 });
+const $html_3 = /*#__PURE__*/ new HTMLMaker("<div com></div>");
 /*
 <root>
     <Com class="className" />
 </root>
 */ const $template_3 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
-    let $locator = $html_0.make($hydrates);
+    let $locator = $html_3.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $com_0 = new Com($node_0);
+    let $com_0 = new Com($node_0, !!$hydrates);
     $node_0.classList.add("className");
     return {
         el: $locator.el,
@@ -99,9 +100,9 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
     <Com autofocus />
 </root>
 */ const $template_5 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
-    let $locator = $html_0.make($hydrates);
+    let $locator = $html_3.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $com_0 = new Com($node_0);
+    let $com_0 = new Com($node_0, !!$hydrates);
     $node_0.setAttribute("autofocus", "");
     return {
         el: $locator.el,

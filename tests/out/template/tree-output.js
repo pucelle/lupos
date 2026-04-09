@@ -65,7 +65,7 @@ const $html_2 = /*#__PURE__*/ new HTMLMaker("<svg><slot name=\"slotName\"></slot
         position: new SlotPosition(1, $node_0)
     };
 });
-const $html_4 = /*#__PURE__*/ new HTMLMaker("<div></div>");
+const $html_4 = /*#__PURE__*/ new HTMLMaker("<div com></div>");
 export class TestTemplateOutput extends Component {
     prop = 1;
     readonlyProp = 1;
@@ -88,7 +88,7 @@ export class TestTemplateOutput extends Component {
         */ const $template_4 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
             let $locator = $html_4.make($hydrates);
             let $node_0 = $locator.childAt(0);
-            let $com_0 = new Child($node_0);
+            let $com_0 = new Child($node_0, !!$hydrates);
             return {
                 el: $locator.el,
                 position: new SlotPosition(1, $node_0),

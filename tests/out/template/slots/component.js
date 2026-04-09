@@ -1,6 +1,6 @@
 import { Component, ClassBinding, TemplateSlot, SlotPosition, CompiledTemplateResult, TemplateMaker, HTMLMaker } from 'lupos.html';
 import { trackGet, trackSet } from "lupos";
-const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
+const $html_0 = /*#__PURE__*/ new HTMLMaker("<div com></div>");
 /*
 <root>
     <ChildComponent :class=${'className'} .prop=${this.prop} />
@@ -9,7 +9,7 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
     let $latest_0;
     let $locator = $html_0.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $com_0 = new ChildComponent($node_0);
+    let $com_0 = new ChildComponent($node_0, !!$hydrates);
     let $binding_0 = new ClassBinding($node_0);
     $binding_0.updateString('className');
     return {
@@ -27,7 +27,7 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
         ]
     };
 });
-const $html_1 = /*#__PURE__*/ new HTMLMaker("<div>Rest Content</div>");
+const $html_1 = /*#__PURE__*/ new HTMLMaker("<div com>Rest Content</div>");
 /*
 <root>
     <ChildComponent>Rest Content</ChildComponent>
@@ -36,7 +36,7 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<div>Rest Content</div>");
     let $locator = $html_1.make($hydrates);
     let $node_0 = $locator.childAt(0);
     let $node_1 = $node_0.firstChild;
-    let $com_0 = new ChildComponent($node_0);
+    let $com_0 = new ChildComponent($node_0, !!$hydrates);
     $com_0.$applyRestSlotRangeNodes($node_1);
     return {
         el: $locator.el,
@@ -46,7 +46,7 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<div>Rest Content</div>");
         ]
     };
 });
-const $html_2 = /*#__PURE__*/ new HTMLMaker("<div><!----><!--ebdfad-->Rest Content</div>");
+const $html_2 = /*#__PURE__*/ new HTMLMaker("<div com><!----><!--ebdfad-->Rest Content</div>");
 /*
 <root>
     <ChildComponent>
@@ -60,7 +60,7 @@ const $html_2 = /*#__PURE__*/ new HTMLMaker("<div><!----><!--ebdfad-->Rest Conte
     let $node_1 = $node_0.firstChild;
     let $node_2 = $locator.getMarker("ebdfad");
     let $node_3 = $node_2.nextSibling;
-    let $com_0 = new ChildComponent($node_0);
+    let $com_0 = new ChildComponent($node_0, !!$hydrates);
     let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_2), 0, $locator.getNodes("ebdfad"));
     $com_0.$applyRestSlotRangeNodes($node_1, $node_3);
     $slot_0.update(new CompiledTemplateResult($template_3, [], $context));
@@ -73,12 +73,13 @@ const $html_2 = /*#__PURE__*/ new HTMLMaker("<div><!----><!--ebdfad-->Rest Conte
         ]
     };
 });
+const $html_3 = /*#__PURE__*/ new HTMLMaker("<div></div>");
 /*
 <root>
     <div />
 </root>
 */ const $template_3 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
-    let $locator = $html_0.make($hydrates);
+    let $locator = $html_3.make($hydrates);
     let $node_0 = $locator.childAt(0);
     return {
         el: $locator.el,

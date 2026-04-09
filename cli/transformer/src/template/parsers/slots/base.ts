@@ -365,7 +365,7 @@ export abstract class SlotParserBase {
 		// Use next node to locate if it's stable,
 		// and remove current node to reduce HTML output.
 		if (nextNode
-			&& !this.node.fingerPrintId
+			&& !this.node.markerId
 			&& HTMLNodeHelper.getPrecedingPositionStability(nextNode, this.template.values.valueNodes)
 				=== PrecedingPositionStability.Stable
 			&& HTMLNodeHelper.canSafelyRemoveNode(this.node)
@@ -388,7 +388,7 @@ export abstract class SlotParserBase {
 
 			return {
 				nodeName,
-				fingerPrintId: useNode.fingerPrintId,
+				fingerPrintId: useNode.markerId,
 				position,
 			}
 		}

@@ -1,6 +1,6 @@
 import { Component, TemplateSlot, SlotPosition, CompiledTemplateResult, TemplateMaker, HTMLMaker, DynamicComponentBlock } from 'lupos.html';
 import { trackGet } from "lupos";
-const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
+const $html_0 = /*#__PURE__*/ new HTMLMaker("<div com></div>");
 /*
 <root>
     <Com1 .comProp=${1} />
@@ -8,7 +8,7 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
 */ const $template_0 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $locator = $html_0.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $com_0 = new Com1($node_0);
+    let $com_0 = new Com1($node_0, !!$hydrates);
     $com_0.comProp = 1;
     return {
         el: $locator.el,
@@ -18,7 +18,7 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
         ]
     };
 });
-const $html_1 = /*#__PURE__*/ new HTMLMaker("<!----><div></div><!---->");
+const $html_1 = /*#__PURE__*/ new HTMLMaker("<!----><div com></div><!---->");
 /*
 <root>
     <${this.UnionedCom} .comProp=${1} />
@@ -80,7 +80,7 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<!----><div></div><!---->");
 */ const $template_3 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $locator = $html_0.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $com_0 = new Com1($node_0);
+    let $com_0 = new Com1($node_0, !!$hydrates);
     $com_0.comProp = 1;
     return {
         el: $locator.el,
@@ -97,7 +97,7 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<!----><div></div><!---->");
 */ const $template_4 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $locator = $html_0.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $com_0 = new Com3($node_0);
+    let $com_0 = new Com3($node_0, !!$hydrates);
     $com_0.comProp = 1;
     return {
         el: $locator.el,
@@ -107,12 +107,13 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<!----><div></div><!---->");
         ]
     };
 });
+const $html_5 = /*#__PURE__*/ new HTMLMaker("<div></div>");
 /*
 <root>
     <div .elProp=${1} />
 </root>
 */ const $template_5 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
-    let $locator = $html_0.make($hydrates);
+    let $locator = $html_5.make($hydrates);
     let $node_0 = $locator.childAt(0);
     $node_0.elProp = 1;
     return {

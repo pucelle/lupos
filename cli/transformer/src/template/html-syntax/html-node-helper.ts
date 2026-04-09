@@ -182,7 +182,7 @@ export namespace HTMLNodeHelper {
 
 			return tab
 				+ TemplateSlotPlaceholder.replaceTemplateContent(
-					`<${tagName}${node.toStringOfAttrs(true)}${children.length === 0 ? ' /' : ''}>`,
+					`<${tagName}${node.toStringOfAttrs(false)}${children.length === 0 ? ' /' : ''}>`,
 					(index: number) => '${' + helper.getFullText(rawValueNodes[index]) + '}'
 				)
 				+ children.map(child => toReadableString(child, rawValueNodes, wrap ? tab + '\t' : ''))

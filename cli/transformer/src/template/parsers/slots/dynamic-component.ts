@@ -43,7 +43,7 @@ export class DynamicComponentSlotParser extends SlotParserBase {
 		// Use next node to locate.
 		// Use next node as template slot position, but will not remove current node.
 		if (nextNode
-			&& !this.node.fingerPrintId
+			&& !this.node.markerId
 			&& HTMLNodeHelper.getPrecedingPositionStability(nextNode, this.template.values.valueNodes)
 				=== PrecedingPositionStability.Stable
 		) {
@@ -67,7 +67,7 @@ export class DynamicComponentSlotParser extends SlotParserBase {
 
 			return {
 				nodeName,
-				fingerPrintId: useNode.fingerPrintId,
+				fingerPrintId: useNode.markerId,
 				position
 			}
 		}

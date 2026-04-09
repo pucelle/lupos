@@ -392,7 +392,7 @@ export class TreeOutputHandler {
 							factory.createIdentifier('getMarker')
 						),
 						undefined,
-						[factory.createStringLiteral(node.fingerPrintId!)]
+						[factory.createStringLiteral(node.markerId!)]
 					)
 				}
 

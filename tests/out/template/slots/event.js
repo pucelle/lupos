@@ -1,6 +1,6 @@
 import { Component, TemplateSlot, SlotPosition, CompiledTemplateResult, TemplateMaker, HTMLMaker, DynamicComponentBlock } from 'lupos.html';
 import { trackGet, trackSet, DOMModifiableEvents } from "lupos";
-const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
+const $html_0 = /*#__PURE__*/ new HTMLMaker("<div com></div>");
 /*
 <root>
     <Com1 @connected=${this.handleEvent} />
@@ -8,7 +8,7 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
 */ const $template_0 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
     let $locator = $html_0.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $com_0 = new Com1($node_0);
+    let $com_0 = new Com1($node_0, !!$hydrates);
     $com_0.on("connected", $context.handleEvent, $context);
     return {
         el: $locator.el,
@@ -25,7 +25,7 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
 */ const $template_1 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
     let $locator = $html_0.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $com_0 = new Com1($node_0);
+    let $com_0 = new Com1($node_0, !!$hydrates);
     $com_0.on("eventName", $context.handleEvent, $context);
     return {
         el: $locator.el,
@@ -42,7 +42,7 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
 */ const $template_2 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
     let $locator = $html_0.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $com_0 = new Com2($node_0);
+    let $com_0 = new Com2($node_0, !!$hydrates);
     $com_0.on("eventName", $context.handleEvent, $context);
     return {
         el: $locator.el,
@@ -52,7 +52,7 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
         ]
     };
 });
-const $html_3 = /*#__PURE__*/ new HTMLMaker("<!----><div></div><!---->");
+const $html_3 = /*#__PURE__*/ new HTMLMaker("<!----><div com></div><!---->");
 /*
 <root>
     <${this.UnionedCom} @connected=${this.handleEvent} />
@@ -114,7 +114,7 @@ const $html_3 = /*#__PURE__*/ new HTMLMaker("<!----><div></div><!---->");
 */ const $template_5 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
     let $locator = $html_0.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $com_0 = new Com1($node_0);
+    let $com_0 = new Com1($node_0, !!$hydrates);
     $com_0.on("eventName", $context.handleEvent, $context);
     return {
         el: $locator.el,
@@ -124,12 +124,13 @@ const $html_3 = /*#__PURE__*/ new HTMLMaker("<!----><div></div><!---->");
         ]
     };
 });
+const $html_6 = /*#__PURE__*/ new HTMLMaker("<div></div>");
 /*
 <root>
     <div @click=${this.handleEvent} />
 </root>
 */ const $template_6 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
-    let $locator = $html_0.make($hydrates);
+    let $locator = $html_6.make($hydrates);
     let $node_0 = $locator.childAt(0);
     $node_0.addEventListener("click", $context.handleEvent.bind($context));
     return {
@@ -142,7 +143,7 @@ const $html_3 = /*#__PURE__*/ new HTMLMaker("<!----><div></div><!---->");
     <div @click.prevent=${this.handleEvent} />
 </root>
 */ const $template_7 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
-    let $locator = $html_0.make($hydrates);
+    let $locator = $html_6.make($hydrates);
     let $node_0 = $locator.childAt(0);
     DOMModifiableEvents.on($node_0, "click", ["prevent"], $context.handleEvent, $context);
     return {
@@ -156,7 +157,7 @@ const $html_3 = /*#__PURE__*/ new HTMLMaker("<!----><div></div><!---->");
 </root>
 */ const $template_8 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
     let $latest_0;
-    let $locator = $html_0.make($hydrates);
+    let $locator = $html_6.make($hydrates);
     let $node_0 = $locator.childAt(0);
     $node_0.addEventListener("click", (...args) => {
         $latest_0.call($context, ...args);
@@ -174,7 +175,7 @@ const $html_3 = /*#__PURE__*/ new HTMLMaker("<!----><div></div><!---->");
     <div @click=${() => {this.booleanValue = true}} />
 </root>
 */ const $template_9 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
-    let $locator = $html_0.make($hydrates);
+    let $locator = $html_6.make($hydrates);
     let $node_0 = $locator.childAt(0);
     $node_0.addEventListener("click", () => { $context.booleanValue = true; trackSet($context, "booleanValue"); });
     return {
@@ -187,7 +188,7 @@ const $html_3 = /*#__PURE__*/ new HTMLMaker("<!----><div></div><!---->");
     <div @click=${() => this.handleEventWithParameter(this.booleanValue)} />
 </root>
 */ const $template_10 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
-    let $locator = $html_0.make($hydrates);
+    let $locator = $html_6.make($hydrates);
     let $node_0 = $locator.childAt(0);
     $node_0.addEventListener("click", () => $context.handleEventWithParameter($context.booleanValue));
     return {
@@ -201,7 +202,7 @@ const $html_3 = /*#__PURE__*/ new HTMLMaker("<!----><div></div><!---->");
 </root>
 */ const $template_11 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $latest_0;
-    let $locator = $html_0.make($hydrates);
+    let $locator = $html_6.make($hydrates);
     let $node_0 = $locator.childAt(0);
     $node_0.addEventListener("click", () => $latest_0);
     return {
@@ -248,7 +249,7 @@ const $html_12 = /*#__PURE__*/ new HTMLMaker("<div><!--16daa6--></div>");
     <div @click=${this.handleEvent.bind(this)} />
 </root>
 */ const $template_13 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
-    let $locator = $html_0.make($hydrates);
+    let $locator = $html_6.make($hydrates);
     let $node_0 = $locator.childAt(0);
     $node_0.addEventListener("click", $context.handleEvent.bind($context));
     return {
