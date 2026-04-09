@@ -67,7 +67,7 @@ const $html_3 = /*#__PURE__*/ new HTMLMaker("<div com><!----><div>Content</div><
     let $node_0 = $locator.childAt(0);
     let $node_1 = $node_0.firstChild;
     let $node_2 = $node_0.childNodes[1];
-    let $com_0 = new ChildCom($node_0, !!$hydrates);
+    let $com_0 = new ChildCom($node_0);
     let $binding_0 = new SlotBinding($node_2);
     $com_0.$applyRestSlotRangeNodes($node_1);
     $binding_0.update("slotName");

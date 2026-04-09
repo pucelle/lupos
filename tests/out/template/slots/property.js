@@ -8,7 +8,7 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div com></div>");
 */ const $template_0 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $locator = $html_0.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $com_0 = new Com1($node_0, !!$hydrates);
+    let $com_0 = new Com1($node_0);
     $com_0.comProp = 1;
     return {
         el: $locator.el,
@@ -80,7 +80,7 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<!----><div com></div><!---->");
 */ const $template_3 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $locator = $html_0.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $com_0 = new Com1($node_0, !!$hydrates);
+    let $com_0 = new Com1($node_0);
     $com_0.comProp = 1;
     return {
         el: $locator.el,
@@ -97,7 +97,7 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<!----><div com></div><!---->");
 */ const $template_4 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $locator = $html_0.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $com_0 = new Com3($node_0, !!$hydrates);
+    let $com_0 = new Com3($node_0);
     $com_0.comProp = 1;
     return {
         el: $locator.el,

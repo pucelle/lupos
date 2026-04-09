@@ -8,7 +8,7 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div com></div>");
 */ const $template_0 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
     let $locator = $html_0.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $com_0 = new Com1($node_0, !!$hydrates);
+    let $com_0 = new Com1($node_0);
     $com_0.on("connected", $context.handleEvent, $context);
     return {
         el: $locator.el,
@@ -25,7 +25,7 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div com></div>");
 */ const $template_1 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
     let $locator = $html_0.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $com_0 = new Com1($node_0, !!$hydrates);
+    let $com_0 = new Com1($node_0);
     $com_0.on("eventName", $context.handleEvent, $context);
     return {
         el: $locator.el,
@@ -42,7 +42,7 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div com></div>");
 */ const $template_2 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
     let $locator = $html_0.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $com_0 = new Com2($node_0, !!$hydrates);
+    let $com_0 = new Com2($node_0);
     $com_0.on("eventName", $context.handleEvent, $context);
     return {
         el: $locator.el,
@@ -114,7 +114,7 @@ const $html_3 = /*#__PURE__*/ new HTMLMaker("<!----><div com></div><!---->");
 */ const $template_5 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
     let $locator = $html_0.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $com_0 = new Com1($node_0, !!$hydrates);
+    let $com_0 = new Com1($node_0);
     $com_0.on("eventName", $context.handleEvent, $context);
     return {
         el: $locator.el,

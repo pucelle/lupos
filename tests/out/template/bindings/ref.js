@@ -26,7 +26,7 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<div com></div>");
 */ const $template_1 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
     let $locator = $html_1.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $com_0 = new ChildComponent($node_0, !!$hydrates);
+    let $com_0 = new ChildComponent($node_0);
     let $binding_0 = new RefBinding($node_0, $context, ["com"]);
     $binding_0.update(function (refed) { this.refCom = refed; trackSet(this, "refCom"); });
     return {
@@ -45,7 +45,7 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<div com></div>");
 */ const $template_2 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
     let $locator = $html_1.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $com_0 = new ChildComponent($node_0, !!$hydrates);
+    let $com_0 = new ChildComponent($node_0);
     let $binding_0 = new RefBinding($node_0, $context, ["el"]);
     $binding_0.update(function (refed) { this.refEl = refed; trackSet(this, "refEl"); });
     return {
@@ -64,7 +64,7 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<div com></div>");
 */ const $template_3 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
     let $locator = $html_1.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $com_0 = new ChildComponent($node_0, !!$hydrates);
+    let $com_0 = new ChildComponent($node_0);
     let $binding_0 = new RefBinding($node_0, $context, ["el"]);
     $binding_0.update(function (refed) { this.refElByType = refed; trackSet(this, "refElByType"); });
     return {
@@ -83,7 +83,7 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<div com></div>");
 */ const $template_4 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
     let $locator = $html_1.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $com_0 = new ChildComponent($node_0, !!$hydrates);
+    let $com_0 = new ChildComponent($node_0);
     let $binding_0 = new ClassBinding($node_0);
     let $binding_1 = new RefBinding($node_0, $context, ["binding"]);
     $binding_0.updateString("className");
@@ -159,7 +159,7 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<div com></div>");
 */ const $template_8 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
     let $locator = $html_1.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $com_0 = new ChildComponent($node_0, !!$hydrates);
+    let $com_0 = new ChildComponent($node_0);
     let $binding_0 = new ClassBinding($node_0);
     let $binding_1 = new RefBinding($node_0, $context, ["binding"]);
     $binding_0.updateString("className");
@@ -181,7 +181,7 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<div com></div>");
     let $latest_0, $latest_1;
     let $locator = $html_1.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $com_0 = new ChildComponent($node_0, !!$hydrates);
+    let $com_0 = new ChildComponent($node_0);
     let $binding_0 = new TransitionBinding($node_0, $context);
     let $delegator_0 = new PartDelegator();
     let $binding_1 = new RefBinding($node_0, $context, ["binding"]);

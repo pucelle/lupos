@@ -1,7 +1,6 @@
 import * as ts from 'typescript'
 import {SlotParserBase} from './base'
 import {factory, Modifier, DeclarationScopeTree} from '../../../core'
-import {VariableNames} from '../variable-names'
 
 
 export class ComponentSlotParser extends SlotParserBase {
@@ -40,21 +39,14 @@ export class ComponentSlotParser extends SlotParserBase {
 		let comName = this.node.tagName!
 		let comVariableName = this.getRefedComponentName()!
 
-		// let $com_0 = new Com($node_0, !!$hydrates), after component has been referenced.
+		// `let $com_0 = new Com($node_0)`, after component node has been referenced.
 		let comInit = this.createVariableAssignment(
 			comVariableName,
 			factory.createNewExpression(
 				factory.createIdentifier(comName),
 				undefined,
 				[
-					factory.createIdentifier(nodeName),
-					factory.createPrefixUnaryExpression(
-						ts.SyntaxKind.ExclamationToken,
-						factory.createPrefixUnaryExpression(
-							ts.SyntaxKind.ExclamationToken,
-							factory.createIdentifier(VariableNames.hydrates)
-						)
-					)
+					factory.createIdentifier(nodeName)
 				]
 			)
 		)
