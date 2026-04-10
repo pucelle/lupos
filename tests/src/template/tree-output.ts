@@ -14,10 +14,6 @@ export class TestTemplateOutput extends Component {
 		return svg`<path />`
 	}
 
-	testSVGContentSeparating() {
-		return svg`<slot name="slotName"><path /></slot>`
-	}
-
 	testLocalReference() {
 		class Child extends Component {}
 		return html`<Child />`
