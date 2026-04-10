@@ -16,7 +16,7 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div><slot></slot></div>");
         position: new SlotPosition(1, $node_0)
     };
 });
-const $html_1 = /*#__PURE__*/ new HTMLMaker("<div com><div>Content</div></div>");
+const $html_1 = /*#__PURE__*/ new HTMLMaker("<div com><!--bc5c3b--><div>Content</div></div>");
 /*
 <root>
     <ChildCom>
@@ -26,9 +26,10 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<div com><div>Content</div></div>")
 */ const $template_1 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $locator = $html_1.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $node_1 = $node_0.firstChild;
+    let $node_1 = $locator.getMarker("bc5c3b");
+    let $node_2 = $node_1.nextSibling;
     let $com_0 = new ChildCom($node_0);
-    $com_0.$applyRestSlotRangeNodes($node_1);
+    $com_0.$applyRestSlotRangeNodes($node_1, $node_2);
     return {
         el: $locator.el,
         position: new SlotPosition(1, $node_0),

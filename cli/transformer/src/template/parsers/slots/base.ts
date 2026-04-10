@@ -1,5 +1,5 @@
 import * as ts from 'typescript'
-import {HTMLAttribute, HTMLNode, HTMLNodeType, TemplatePart, TemplatePartType, TemplateSlotPlaceholder} from '../../../lupos-ts-module'
+import {generateFingerPrint, HTMLAttribute, HTMLNode, HTMLNodeType, TemplatePart, TemplatePartType, TemplateSlotPlaceholder} from '../../../lupos-ts-module'
 import {PartType, TreeParser} from '../tree'
 import {factory, Modifier, DeclarationScopeTree, Packer, Hashing} from '../../../core'
 import {TemplateParser} from '../template'
@@ -406,19 +406,12 @@ export abstract class SlotParserBase {
 		let firstChild = this.node.firstChild!
 		let lastChild = this.node.lastChild!
 
-		// Find next stable.
-		let firstStableNode = HTMLNodeHelper.getNextStableNode(firstChild, this.template.values.valueNodes)
-		if (firstStableNode) {
-			firstChild = firstStableNode
-		}
-		else {
+		// Will always have marker id, so can locate rest nodes from hydration.
+		let comment = new HTMLNode(HTMLNodeType.Comment, -1, -1)
+		comment.markerId = generateFingerPrint()
 
-			// No need to generate finger print for it because will not add more contents before.
-			let comment = new HTMLNode(HTMLNodeType.Comment, -1, -1)
-
-			firstChild.before(comment)
-			firstChild = comment
-		}
+		firstChild.before(comment)
+		firstChild = comment
 
 		// Find previous stable, it always exists.
 		lastChild = HTMLNodeHelper.getPreviousStableNode(lastChild)!
