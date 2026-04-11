@@ -10,7 +10,6 @@ export class ComponentSlotParser extends SlotParserBase {
 
 	override preInit() {
 		let comName = this.node.tagName!
-
 		this.refAsComponent()
 
 		let decl = DeclarationScopeTree.getReferenceByName(comName, this.template.node)

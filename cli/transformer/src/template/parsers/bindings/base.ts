@@ -117,6 +117,12 @@ export class BindingBase {
 		this.initParameters()
 		this.initLatestQueryVariableName()
 		this.initLatestVariableNames()
+
+		// Mark as will applying `:html`.
+		if (this.name === 'html' && !this.queryParameter) {
+			this.node.setAttr('html', null)
+		}
+
 		this.bindingVariableName = this.tree.makeUniqueBindingName()
 
 		// Use a delegator to delegate binding part because it may be deleted.
