@@ -10,7 +10,7 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div><slot></slot></div>");
     let $locator = $html_0.make($hydrates);
     let $node_0 = $locator.childAt(0);
     let $node_1 = $node_0.firstChild;
-    $node_1.append(...$context.$getRestSlotNodes());
+    $context.$applyRestSlotNodes($node_1);
     return {
         el: $locator.el,
         position: new SlotPosition(1, $node_0)
@@ -29,7 +29,7 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<div com><!--bc5c3b--><div>Content<
     let $node_1 = $locator.getMarker("bc5c3b");
     let $node_2 = $node_1.nextSibling;
     let $com_0 = new ChildCom($node_0);
-    $com_0.$applyRestSlotRangeNodes($node_1, $node_2);
+    $com_0.$setRestSlotRangeNodes($node_1, $node_2);
     return {
         el: $locator.el,
         position: new SlotPosition(1, $node_0),
@@ -46,7 +46,7 @@ const $html_2 = /*#__PURE__*/ new HTMLMaker("<slot></slot>");
 */ const $template_2 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
     let $locator = $html_2.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    $node_0.append(...$context.$getRestSlotNodes());
+    $context.$applyRestSlotNodes($node_0);
     return {
         el: $locator.el,
         position: new SlotPosition(1, $node_0)

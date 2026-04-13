@@ -10,21 +10,16 @@ export class SlotTagSlotParser extends SlotParserBase {
 	override outputMoreInit() {
 		let nodeName = this.getRefedNodeName()
 
-		// `$node_0.append(...$context.$getRestSlotNodes())`
+		// `$context.$applyRestSlotNodes($node_0)`
 		return factory.createCallExpression(
 			factory.createPropertyAccessExpression(
-				factory.createIdentifier(nodeName),
-				factory.createIdentifier('append')
+				factory.createIdentifier(VariableNames.context),
+				factory.createIdentifier('$applyRestSlotNodes')
 			),
 			undefined,
-			[factory.createSpreadElement(factory.createCallExpression(
-				factory.createPropertyAccessExpression(
-				factory.createIdentifier(VariableNames.context),
-				factory.createIdentifier('$getRestSlotNodes')
-				),
-				undefined,
-				[]
-			))]
+			[
+				factory.createIdentifier(nodeName)
+			]
 		)
 	}
 

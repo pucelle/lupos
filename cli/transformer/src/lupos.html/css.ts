@@ -57,7 +57,7 @@ function parseCSSTemplate(node: ts.TaggedTemplateExpression) {
 				undefined,
 				[
 					factory.createArrayLiteralExpression(stringTexts.map(text => factory.createStringLiteral(text))),
-					factory.createArrayLiteralExpression(newValues),
+					...newValues,
 				]
 			)
 		}

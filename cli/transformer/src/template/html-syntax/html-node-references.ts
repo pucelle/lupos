@@ -56,7 +56,7 @@ export interface VisitStep {
 
 	/** 
 	 * For `ChildIndex` type, means child node index.
-	 * For `Next` type, means how many steps to visit next sibling.
+	 * For `Next` type, means how many next sibling steps.
 	 */
 	index: number
 }
@@ -260,18 +260,19 @@ export class HTMLNodeReferences {
 		// Whether will eliminated child step level.
 		let childBeEliminatedLevel = node === this.root && this.firstLevelWillBeEliminated
 		
-		for (let child of item.children) {
+		for (let i = 0; i < item.children.length; i++) {
+			let child = item.children[i]
 	
 			// May append more node before this node.
-			let haveMarker = !!child.node.markerId
-			if (haveMarker) {
+			let beMarker = !!child.node.markerId
+			if (beMarker) {
 				levelSteps = [{type: VisitStepType.Marker, node: child.node, index: 0}]
 			}
 
 			let childSteps = [...levelSteps]
 
 			// Visit child.
-			if (!haveMarker
+			if (!beMarker
 				&& !afterMarker
 				&& !childBeEliminatedLevel
 			) {
@@ -280,7 +281,7 @@ export class HTMLNodeReferences {
 
 			this.makeReferenceMap(child, visitFromNode, childSteps)
 
-			afterMarker = afterMarker || haveMarker
+			afterMarker = afterMarker || beMarker
 
 			if (afterMarker) {
 
@@ -290,8 +291,9 @@ export class HTMLNodeReferences {
 					levelSteps = []
 				}
 
-				// Visit next sibling.
-				levelSteps.push({type: VisitStepType.NextSibling, node: child.node, index: 0})
+				// How many node next siblings steps for next item.
+				let siblingIndexDiff = i < item.children.length - 1 ? item.children[i + 1].node.siblingIndex - child.node.siblingIndex : 1
+				levelSteps.push({type: VisitStepType.NextSibling, node: child.node, index: siblingIndexDiff})
 			}
 		}
 	}

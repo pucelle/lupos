@@ -345,7 +345,7 @@ export class TreeOutputHandler {
 
 			// $locator.childAt(0).firstChild.lastChild.childNodes[0]
 			// $locator.getMarker('abcdef')...
-			for (let i= 0; i < visitSteps.length; i++) {
+			for (let i = 0; i < visitSteps.length; i++) {
 				let {type, node, index} = visitSteps[i]
 
 				if (type === VisitStepType.ChildIndex) {
@@ -398,10 +398,12 @@ export class TreeOutputHandler {
 
 				// Visit next siblings from `$locator.getMarker('abcdef')`.
 				else {
-					fromExp = factory.createPropertyAccessExpression(
-						fromExp,
-						'nextSibling'
-					)
+					for (let j = 0; j < index; j++) {
+						fromExp = factory.createPropertyAccessExpression(
+							fromExp,
+							'nextSibling'
+						)
+					}
 				}
 				
 				// Access `template.content` for element in <lu:portal>.
