@@ -99,6 +99,8 @@ class UpdateQueueClass {
 	/** 
 	 * On before synchronous update start.
 	 * For an async update, you should call this before doing synchronous update.
+	 * So we can know what is updating, and can enqueue it to update
+	 * after related data changed.
 	 */
 	onSyncUpdateStart(upd: Updatable) {
 		this.updating = upd
