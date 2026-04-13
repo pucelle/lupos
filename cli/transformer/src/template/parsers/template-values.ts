@@ -1,4 +1,4 @@
-import * as ts from 'typescript'
+import ts from 'typescript'
 import {factory, Interpolator, MutableMask, Packer, DeclarationScopeTree, helper, Hashing} from '../../core'
 import {VariableNames} from './variable-names'
 import {TreeParser} from './tree'

@@ -105,8 +105,9 @@ class Example {
 ### 1. cli APIs
 
 - `luc`: compile lupos based project by typescript and transformer.
-- `luc -e`: compile to esm codes, import paths will be resolved to file path, so outputted codes can do tree shaking easier.
-- `luc -w`: compile in watch mode.
+- `-e`: equals `--esm`, compile to esm codes, import paths will be resolved to file path, so outputted codes can do tree shaking easier.
+- `-s`: equals `--svg-embedded`, embed svg imports to string, compress and replace color `#000000` to `currentColor`.
+- `-w`: equals `--watch`, compile in watch mode.
 
 
 ### 2. web APIs

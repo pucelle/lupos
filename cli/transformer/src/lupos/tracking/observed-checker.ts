@@ -1,4 +1,4 @@
-import * as ts from 'typescript'
+import ts from 'typescript'
 import {AccessNode} from '../../lupos-ts-module'
 import {typeChecker, helper} from '../../core'
 import {GenericType} from 'typescript'

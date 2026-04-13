@@ -1,4 +1,4 @@
-import * as ts from 'typescript'
+import ts from 'typescript'
 import {InterpolationContentType, Interpolator, InterpolationPosition, VisitTree, FlowInterruptionTypeMask, Packer, helper, sourceFile, Hashing} from '../../core'
 import {AccessNode} from '../../lupos-ts-module'
 import {TrackingArea} from './area'

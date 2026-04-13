@@ -1,4 +1,4 @@
-import * as ts from 'typescript'
+import ts from 'typescript'
 import {factory, Modifier, Packer, helper, transformContext} from '../../core'
 import {groupBy} from '../../utils'
 import {AccessNode} from '../../lupos-ts-module'

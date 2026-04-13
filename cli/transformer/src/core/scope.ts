@@ -1,4 +1,4 @@
-import * as ts from 'typescript'
+import ts from 'typescript'
 import {VisitTree} from './visit-tree'
 import {helper} from './global'
 import {DeclarationScopeTree} from './scope-tree'

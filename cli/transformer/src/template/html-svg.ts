@@ -1,4 +1,4 @@
-import * as ts from 'typescript'
+import ts from 'typescript'
 import {defineVisitor, Interpolator, InterpolationContentType, Modifier, onVisitedSourceFile, helper} from '../core'
 import {TemplateParser, VariableNames} from './parsers'
 import {HTMLRoot, TemplateSlotPlaceholder} from '../lupos-ts-module'

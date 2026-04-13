@@ -1,5 +1,5 @@
 import {factory, InterpolationContentType, Interpolator, Modifier, VisitTree, DeclarationScopeTree, helper} from '../../core'
-import * as ts from 'typescript'
+import ts from 'typescript'
 import {TrackingAreaTree} from './area-tree'
 import {TrackingArea} from './area'
 

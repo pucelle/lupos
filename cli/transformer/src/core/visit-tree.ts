@@ -1,4 +1,4 @@
-import * as ts from 'typescript'
+import ts from 'typescript'
 import {ListMap} from '../lupos-ts-module'
 import {definePreVisitCallback} from './visitor-callbacks'
 import {helper, sourceFile} from './global'

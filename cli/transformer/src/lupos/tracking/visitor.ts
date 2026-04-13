@@ -1,4 +1,4 @@
-import * as ts from 'typescript'
+import ts from 'typescript'
 import {defineVisitor} from '../../core'
 import {TrackingAreaTree, TrackingAreaTypeMask} from './area-tree'
 import {TrackingReferences} from './references'

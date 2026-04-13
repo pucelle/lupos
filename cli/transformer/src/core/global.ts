@@ -1,4 +1,4 @@
-import * as ts from 'typescript'
+import ts from 'typescript'
 import {CompilerDiagnosticModifier, TransformerExtras} from '../../../compiler/out/patch'
 import {helperOfContext, TemplateSlotPlaceholder, setFingerPrintSalt} from '../lupos-ts-module'
 
@@ -6,6 +6,7 @@ import {helperOfContext, TemplateSlotPlaceholder, setFingerPrintSalt} from '../l
 export let builderProgram: ts.BuilderProgram
 export let program: ts.Program
 export let compileToESM: boolean
+export let embedSVG: boolean
 export let typeChecker: ts.TypeChecker
 export let compilerDiagnosticModifier: CompilerDiagnosticModifier
 export let factory: ts.NodeFactory
@@ -18,6 +19,7 @@ export function setTransformContext(ctx: ts.TransformationContext, extras: Trans
 	transformContext = ctx
 	factory = ctx.factory
 	compileToESM = extras.compileToESM
+	embedSVG = extras.embedSVG
 	builderProgram = extras.program
 	program = extras.program.getProgram()
 	typeChecker = program.getTypeChecker()

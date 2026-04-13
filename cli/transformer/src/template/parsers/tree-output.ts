@@ -1,4 +1,4 @@
-import * as ts from 'typescript'
+import ts from 'typescript'
 import {Part, TreeParser} from './tree'
 import {HTMLNode, HTMLNodeType, HTMLRoot, TemplateSlotPlaceholder} from '../../lupos-ts-module'
 import {factory, Modifier, Packer, DeclarationScope, helper} from '../../core'

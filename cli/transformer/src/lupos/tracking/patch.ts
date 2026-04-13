@@ -1,4 +1,4 @@
-import * as ts from 'typescript'
+import ts from 'typescript'
 import {ObservedChecker} from './observed-checker'
 import {AccessGrouper} from './access-grouper'
 import {TrackingRanges} from './ranges'

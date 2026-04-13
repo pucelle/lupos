@@ -1,4 +1,4 @@
-import * as ts from 'typescript'
+import ts from 'typescript'
 import {TrackingArea} from './area'
 import {TrackingAreaTree, TrackingAreaTypeMask} from './area-tree'
 import {FlowInterruptionTypeMask, Packer, helper} from '../../core'

@@ -1,4 +1,4 @@
-import * as ts from 'typescript'
+import ts from 'typescript'
 import {defineVisitor, Modifier, factory, helper} from '../core'
 import {SlotContentType} from '../enums'
 

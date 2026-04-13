@@ -1,4 +1,4 @@
-import * as ts from 'typescript'
+import ts from 'typescript'
 import {VisitTree, DeclarationScopeTree, helper, FlowInterruptionTypeMask} from '../../core'
 import {removeFromList} from '../../utils'
 import {CapturedItem, TrackingCapturer} from './capturer'

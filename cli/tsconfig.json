@@ -1,7 +1,7 @@
 {
     "compilerOptions": {
         "module": "CommonJS",
-		"moduleResolution": "Node",
+		"moduleResolution": "Bundler",
        	"target": "ES2024",
 		"lib": ["ESNext", "DOM", "DOM.Iterable"],
 		"declaration": false,

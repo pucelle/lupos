@@ -1,4 +1,4 @@
-import * as ts from 'typescript'
+import ts from 'typescript'
 import {ListMap} from '../lupos-ts-module'
 import {factory, sourceFile, helper} from './global'
 import {InterpolationContentType, Interpolator} from './interpolator'

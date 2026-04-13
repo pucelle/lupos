@@ -1,4 +1,4 @@
-import * as ts from 'typescript'
+import ts from 'typescript'
 import {SlotParserBase} from './base'
 import {factory, Modifier, helper} from '../../../core'
 import {VariableNames} from '../variable-names'

@@ -1,4 +1,4 @@
-import * as ts from 'typescript'
+import ts from 'typescript'
 import {SlotParserBase} from './base'
 import {factory, Modifier, Packer, helper} from '../../../core'
 import {TemplateSlotPlaceholder} from '../../../lupos-ts-module'

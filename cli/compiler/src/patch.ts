@@ -1,4 +1,4 @@
-import * as ts from 'typescript'
+import ts from 'typescript'
 
 
 /** Extend of TransformerFactory */
@@ -10,6 +10,9 @@ export interface TransformerExtras {
 	/** If `true`, will add js extension to imports. */
 	compileToESM: boolean
 
+	/** If `true`, will embed svg imports to code string inline. */
+	embedSVG: boolean
+
 	program: ts.BuilderProgram
 	compilerDiagnosticModifier: CompilerDiagnosticModifier
 }
@@ -20,7 +23,8 @@ export function patchHost(
 	host: ts.SolutionBuilderHostBase<ts.EmitAndSemanticDiagnosticsBuilderProgram>
 		| ts.SolutionBuilderWithWatchHost<ts.EmitAndSemanticDiagnosticsBuilderProgram>,
 	extended: ExtendedTransformerFactory,
-	toESM: boolean,
+	compileToESM: boolean,
+	embedSVG: boolean,
 	diagModifier: CompilerDiagnosticModifier
 ) {
 	let originalHostCreateProgram = host.createProgram
@@ -28,7 +32,7 @@ export function patchHost(
 	// Note program may update here.
 	host.createProgram = (rootNames: readonly string[] | undefined, options, host, oldProgram) => {
 		let program = originalHostCreateProgram(rootNames, options, host, oldProgram)
-		patchProgram(program, extended, toESM, diagModifier)
+		patchProgram(program, extended, compileToESM, embedSVG, diagModifier)
 
 		return program
 	}
@@ -39,12 +43,14 @@ export function patchHost(
 export function patchProgram(
 	program: ts.EmitAndSemanticDiagnosticsBuilderProgram,
 	extended: ExtendedTransformerFactory,
-	toESM: boolean,
+	compileToESM: boolean,
+	embedSVG: boolean,
 	diagModifier: CompilerDiagnosticModifier
 ) {
 	let standardTransformer: ts.TransformerFactory<ts.SourceFile> = (context: ts.TransformationContext) => {
 		let extras: TransformerExtras = {
-			compileToESM: toESM,
+			compileToESM,
+			embedSVG,
 			program: program!,	// Use newly updated program.
 			compilerDiagnosticModifier: diagModifier,
 		}

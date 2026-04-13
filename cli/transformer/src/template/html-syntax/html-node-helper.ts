@@ -1,4 +1,4 @@
-import * as ts from 'typescript'
+import ts from 'typescript'
 import {HTMLNode, HTMLNodeType, TemplateSlotPlaceholder} from '../../lupos-ts-module'
 import {helper} from '../../core'
 

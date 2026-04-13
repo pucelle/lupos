@@ -1,4 +1,4 @@
-import * as ts from 'typescript'
+import ts from 'typescript'
 import {defineVisitor, factory, Interpolator, MethodOverwrite, Modifier, helper} from '../core'
 import {ProcessorClassNameMap, ProcessorPropNameMap} from './decorators-shared'
 import {Packer} from '../core/packer'

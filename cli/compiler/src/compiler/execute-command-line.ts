@@ -1,7 +1,7 @@
 //// From https://github.com/microsoft/TypeScript/blob/main/src/compiler/executeCommandLine.ts
 
 
-import * as ts from 'typescript'
+import ts from 'typescript'
 import * as fs from 'node:fs'
 import {createDiagnosticReporter, createWatchStatusReporter} from './watch'
 import {hasProperty} from './core'
@@ -16,6 +16,11 @@ export function executeCommandLine(
 	let toESM = commandLineArgs.includes('--esm') || commandLineArgs.includes('-e')
 	if (toESM) {
 		commandLineArgs = commandLineArgs.filter(arg => arg !== '--esm' && arg !== '-e')
+	}
+
+	let embedSVG = commandLineArgs.includes('--svg-embedded') || commandLineArgs.includes('-s')
+	if (embedSVG) {
+		commandLineArgs = commandLineArgs.filter(arg => arg !== '--svg-embedded' && arg !== '-s')
 	}
 
 	let commandLine = ts.parseCommandLine(commandLineArgs)
@@ -64,7 +69,8 @@ export function executeCommandLine(
 			buildOptions,
 			watchOptions,
 			transformer,
-			toESM
+			toESM,
+			embedSVG
 		)
 	}
 	else {
@@ -76,7 +82,8 @@ export function executeCommandLine(
 			compilerOptions,
 			buildOptions,
 			transformer,
-			toESM
+			toESM,
+			embedSVG
 		)
 	}
 }
@@ -106,7 +113,8 @@ function performWatchCompilation(
 	buildOptions: ts.BuildOptions,
 	watchOptions: ts.WatchOptions | undefined,
 	transformer: ExtendedTransformerFactory,
-	toESM: boolean
+	toESM: boolean,
+	embedSVG: boolean
 ) {
 
 	// Inspired by https://stackoverflow.com/questions/62026189/typescript-custom-transformers-with-ts-createwatchprogram/62132983
@@ -118,7 +126,7 @@ function performWatchCompilation(
 		createWatchReporter(system, compilerOptions, diagModifier),
 	)
 
-	patchHost(watchBuildHost, transformer, toESM, diagModifier)
+	patchHost(watchBuildHost, transformer, toESM, embedSVG, diagModifier)
 	
 	let builder: ts.SolutionBuilder<ts.EmitAndSemanticDiagnosticsBuilderProgram> =
 		ts.createSolutionBuilderWithWatch(
@@ -165,7 +173,8 @@ function performCompilation(
 	compilerOptions: ts.CompilerOptions,
 	buildOptions: ts.BuildOptions,
 	transformer: ExtendedTransformerFactory,
-	toESM: boolean
+	toESM: boolean,
+	embedSVG: boolean
 ) {
 	let buildHost = ts.createSolutionBuilderHost(
         system,
@@ -174,7 +183,7 @@ function performCompilation(
         ts.createBuilderStatusReporter(system, shouldBePretty(system, compilerOptions))
     )
 
-	patchHost(buildHost, transformer, toESM, diagModifier)
+	patchHost(buildHost, transformer, toESM, embedSVG, diagModifier)
 
     let builder = ts.createSolutionBuilder(buildHost, projects, buildOptions)
 	return builder.build()

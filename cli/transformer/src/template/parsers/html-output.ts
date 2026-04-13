@@ -1,4 +1,4 @@
-import * as ts from 'typescript'
+import ts from 'typescript'
 import {definePreVisitCallback, factory, Modifier, DeclarationScopeTree} from '../../core'
 import {TreeParser} from './tree'
 import {PairKeysMap} from '../../lupos-ts-module'

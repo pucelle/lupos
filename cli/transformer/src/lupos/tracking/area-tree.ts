@@ -1,4 +1,4 @@
-import * as ts from 'typescript'
+import ts from 'typescript'
 import {Packer, helper} from '../../core'
 import {TrackingArea} from './area'
 import {CapturedOutputWay, TrackingRange, TrackingRanges} from './ranges'

@@ -1,7 +1,7 @@
 import {SlotParserBase} from './base'
 import {factory, Packer, helper} from '../../../core'
 import {cleanList} from '../../../utils'
-import * as ts from 'typescript'
+import ts from 'typescript'
 import {TemplateSlotPlaceholder} from '../../../lupos-ts-module'
 
 

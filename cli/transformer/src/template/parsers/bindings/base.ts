@@ -1,4 +1,4 @@
-import * as ts from 'typescript'
+import ts from 'typescript'
 import {HTMLNode, LuposKnownInternalBindings} from '../../../lupos-ts-module'
 import {PartType, TreeParser} from '../tree'
 import {BindingSlotParser} from '../slots'

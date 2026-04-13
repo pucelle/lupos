@@ -1,4 +1,4 @@
-import * as ts from 'typescript'
+import ts from 'typescript'
 import {Analyzer, HTMLNode, HTMLRoot, PositionMapper, TemplateBasis, TemplateDiagnostics, TemplatePart, TemplatePartParser} from '../../lupos-ts-module'
 import {TreeParser} from './tree'
 import {TemplateValues} from './template-values'

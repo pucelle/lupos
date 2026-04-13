@@ -1,4 +1,4 @@
-import * as ts from 'typescript'
+import ts from 'typescript'
 import {SlotParserBase} from './base'
 import {factory, Modifier} from '../../../core'
 import {HTMLNode, HTMLNodeType} from '../../../lupos-ts-module'

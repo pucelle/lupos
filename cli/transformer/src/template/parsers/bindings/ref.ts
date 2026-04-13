@@ -1,4 +1,4 @@
-import * as ts from 'typescript'
+import ts from 'typescript'
 import {factory, Packer, helper} from '../../../core'
 import {BindingBase, BindingUpdateCallWith} from './base'
 import {ObservedChecker, TrackingPatch} from '../../../lupos'
