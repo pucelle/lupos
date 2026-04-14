@@ -1,6 +1,6 @@
 import ts from 'typescript'
 import {Part, TreeParser} from './tree'
-import {HTMLNode, HTMLNodeType, HTMLRoot, TemplateSlotPlaceholder} from '../../lupos-ts-module'
+import {HTMLNodeType, HTMLRoot, TemplateSlotPlaceholder} from '../../lupos-ts-module'
 import {factory, Modifier, Packer, DeclarationScope, helper} from '../../core'
 import {SlotParserBase} from './slots'
 import {VariableNames} from './variable-names'
@@ -251,16 +251,20 @@ export class TreeOutputHandler {
 		Modifier.addImport('SlotPosition', 'lupos.html')
 
 		let position = SlotPositionType.Before
-		let container: HTMLNode = this.root
-		let firstNode = container.firstChild!
+		let container = this.root
+		let firstNode = this.root.firstChild
 
 		// Being wrapped.
 		if (this.wrappedBySVG || this.wrappedByTemplate) {
-			container = container.firstChild!
-			firstNode = firstNode.firstChild!
+			container = container?.firstChild!
+			firstNode = firstNode?.firstChild!
 		}
 
-		let nodeName = this.tree.references.getRefedName(firstNode)
+		let nodeName = this.tree.references.getRefedName(firstNode ?? container)
+
+		if (!firstNode) {
+			position = SlotPositionType.AfterContent
+		}
 
 		// new SlotPosition(SlotPositionType.Before, $context),
 		return factory.createNewExpression(

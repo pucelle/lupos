@@ -195,13 +195,13 @@ export class TreeParser {
 
 		// Insert a comment at start as start inner position.
 		// No need to generate finger print for it because will not add more contents before.
-		if (!firstNode) {
+		if (!firstNode && container.children.length > 0) {
 			firstNode = new HTMLNode(HTMLNodeType.Comment, -1, -1)
 			container.prepend(firstNode)
 		}
 
 		// Make it to be referenced.
-		this.references.needRef(firstNode)
+		this.references.needRef(firstNode ?? container)
 	}
 
 	/** 
