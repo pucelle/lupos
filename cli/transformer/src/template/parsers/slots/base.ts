@@ -423,17 +423,10 @@ export abstract class SlotParserBase {
 			let firstChildName = this.tree.references.getRefedName(firstChild)
 			let lastChildName = this.tree.references.getRefedName(lastChild)
 
-			if (firstChildName === lastChildName) {
-				return [
-					factory.createIdentifier(firstChildName)
-				]
-			}
-			else {
-				return [
-					factory.createIdentifier(firstChildName),
-					factory.createIdentifier(lastChildName)
-				]
-			}
+			return [
+				factory.createIdentifier(firstChildName),
+				factory.createIdentifier(lastChildName),
+			]
 		}
 	}
 
