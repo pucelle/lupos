@@ -79,6 +79,7 @@ export class SVGInliner {
 	
 		let svgInner = this.getSVGInner(map)
 		svgInner = this.processFillStroke(svgInner)
+		svgInner = this.processSelfClosing(svgInner)
 		svgInner = this.removeEmptyGroups(svgInner)
 		svgInner = this.removeWhiteSpaces(svgInner)
 
@@ -257,7 +258,13 @@ export class SVGInliner {
 				return m0
 			}
 		})
+	}
 
+	/** Normalize to standard HTML contents. */
+	private processSelfClosing(text: string) {
+		return text.replace(/<(path|circle|rect|ellipse|line|polyline|polygon)(.*?)\/>/g, (_, tag, attrs) => {
+			return `<${tag}${attrs}></${tag}>`
+		})
 	}
 
 	private getMainColorRegExpSource(): string | null {
