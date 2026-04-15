@@ -31,6 +31,7 @@ export class SVGInliner {
 	private readonly filePath: string
 	private readonly source: string
 	private readonly viewBox: [number, number, number, number]
+	private readonly size: {width: number, height: number}
 
 	constructor(
 		filePath: string,
@@ -41,6 +42,7 @@ export class SVGInliner {
 		this.source = fs.readFileSync(filePath, 'utf8')
 
 		this.viewBox = this.checkViewBox()
+		this.size = this.checkSize()
 	}
 
 	private checkViewBox() {
@@ -50,6 +52,21 @@ export class SVGInliner {
 		}
 
 		return match[1].split(/[\s+]/).map(v => Number(v)) as [number, number, number, number]
+	}
+
+	private checkSize() {
+		let tag = this.source.match(/<svg[\s\S]*?>/)?.[0]
+		if (!tag) {
+			return {
+				width: this.viewBox[2],
+				height: this.viewBox[3],
+			}
+		}
+
+		let width = Number(tag.match(/width=["'](\d+)(?:px)?["']/)?.[1] ?? this.viewBox[2])
+		let height = Number(tag.match(/height=["'](\d+)(?:px)?["']/)?.[1] ?? this.viewBox[3])
+
+		return {width, height}
 	}
 
 	output(): string {
@@ -83,7 +100,17 @@ export class SVGInliner {
 		svgInner = this.removeEmptyGroups(svgInner)
 		svgInner = this.removeWhiteSpaces(svgInner)
 
-		return `<svg viewBox="${this.viewBox.join(' ')}">${svgInner}</svg>`
+		let sizeAttr = ''
+
+		if (this.size.width !== this.viewBox[2]) {
+			sizeAttr += ` width="${this.size.width}"`
+		}
+
+		if (this.size.height !== this.viewBox[3]) {
+			sizeAttr += ` height="${this.size.height}"`
+		}
+
+		return `<svg viewBox="${this.viewBox.join(' ')}"${sizeAttr}>${svgInner}</svg>`
 	}
 
 	private parseClassesInStyleTag(style: string, map: ClassDeclaration) {
