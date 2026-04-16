@@ -1,7 +1,8 @@
 {
     "compilerOptions": {
+		"preserveSymlinks": true,
         "module": "CommonJS",
-		"moduleResolution": "Bundler",
+		"moduleResolution": "Node",
        	"target": "ES2024",
 		"lib": ["ESNext", "DOM", "DOM.Iterable"],
 		"declaration": false,

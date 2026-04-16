@@ -1,5 +1,6 @@
 {
 	"compilerOptions": {
+		"preserveSymlinks": true,
 		"module": "CommonJS",
 		"moduleResolution": "Bundler",
 		"target": "ES2023",
@@ -16,9 +17,6 @@
 		"noImplicitAny": true,
 		"noImplicitThis": true,
 		"noImplicitOverride": true,
-		"paths": {
-			"*": ["../../node_modules/*"]
-		},
 		"types": ["node"]
 	},
 	"exclude": [
