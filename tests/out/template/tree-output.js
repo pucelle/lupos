@@ -1,5 +1,5 @@
 import { Component, CompiledTemplateResult, TemplateMaker, SlotPosition, HTMLMaker } from 'lupos.html';
-const $html_0 = /*#__PURE__*/ new HTMLMaker("<!---->");
+const $html_0 = /*#__PURE__*/ new HTMLMaker("");
 /*
 <root>
     <template class="className" />
@@ -7,11 +7,10 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<!---->");
 */ const $template_0 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
     let $locator = $html_0.make($hydrates);
     let $node_0 = $context.el;
-    let $node_1 = $locator.childAt(0);
     $node_0.classList.add("className");
     return {
         el: $locator.el,
-        position: new SlotPosition(1, $node_1)
+        position: new SlotPosition(0, $node_0)
     };
 });
 const $html_1 = /*#__PURE__*/ new HTMLMaker("<svg><path></path></svg>", true);

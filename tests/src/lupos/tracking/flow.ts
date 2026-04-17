@@ -214,16 +214,26 @@ export class TestAwaitStatement extends Component {
 		return 0
 	}
 
+	async asyncGetProp(prop: number) {
+		return prop
+	}
+
 	async asyncGetProps(prop: number) {
 		return [prop]
 	}
 
-	async testAwaitVariableTracking() {
-		let prop = await this.asyncGetProp(this.prop1)
-		return prop
+	async asyncSetProps(prop: number) {
+		await Promise.resolve()
+		this.prop1 = prop
 	}
 
-	async asyncGetProp(prop: number) {
+	protected async onCreated() {
+		await Promise.resolve()
+		this.prop1 = 1
+	}
+
+	async testAwaitVariableTracking() {
+		let prop = await this.asyncGetProp(this.prop1)
 		return prop
 	}
 }

@@ -159,12 +159,6 @@ export class TrackingAreaState {
 
 	/** Union with internal contents type. */
 	unionFlowInterruptionType(type: FlowInterruptionTypeMask | 0) {
-
-		// Union never cross function declaration.
-		if (this.area.type & TrackingAreaTypeMask.FunctionLike) {
-			return 
-		}
-
 		if (type & FlowInterruptionTypeMask.Return) {
 			this.flowInterruptionType |= FlowInterruptionTypeMask.Return
 		}
@@ -207,6 +201,12 @@ export class TrackingAreaState {
 	 * returns whether break or return or yield.
 	 */
 	mergeChildArea(child: TrackingArea) {
+		
+		// Union never across function declaration.
+		if (child.type & TrackingAreaTypeMask.FunctionLike) {
+			return 
+		}
+
 		this.unionFlowInterruptionType(child.state.flowInterruptionType)
 	}
 
@@ -216,7 +216,10 @@ export class TrackingAreaState {
 			return true
 		}
 
-		if (this.withinLifeFunction) {
+		// `onCreated`, and not after `await`.
+		if (this.withinLifeFunction
+			&& (this.flowInterruptionType & (FlowInterruptionTypeMask.Await | FlowInterruptionTypeMask.ConditionalAwait)) === 0
+		) {
 			return true
 		}
 
@@ -233,7 +236,10 @@ export class TrackingAreaState {
 			return true
 		}
 
-		if (this.withinLifeFunction) {
+		// `onCreated`, and not after `await`.
+		if (this.withinLifeFunction
+			&& (this.flowInterruptionType & (FlowInterruptionTypeMask.Await | FlowInterruptionTypeMask.ConditionalAwait)) === 0
+		) {
 			if (helper.access.isAccess(node)
 				&& helper.isThis(node.expression)
 			) {
@@ -246,6 +252,12 @@ export class TrackingAreaState {
 
 	/** Whether break like, or return, or yield like inside. */
 	isFlowInterrupted(): boolean {
+
+		// Function never interrupt the flow.
+		if (this.area.type & TrackingAreaTypeMask.FunctionLike) {
+			return false
+		}
+
 		return this.flowInterruptionType > 0
 	}
 }

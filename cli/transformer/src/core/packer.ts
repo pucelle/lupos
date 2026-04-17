@@ -5,15 +5,21 @@ import {AccessNode} from '../lupos-ts-module'
 
 /** How the flow was interrupted. */
 export enum FlowInterruptionTypeMask {
+
+	/** Currently be or after which return. */
 	Return = 1,
+
+	/** Currently be or after which break or continue. */
 	BreakLike = 2,
+
+	/** Currently be or after which yield. */
 	Yield = 4,
 
-	/** Which stops synchronous execution. */
+	/** Currently be or after which stops synchronous execution. */
 	Await = 8,
 
 	/** 
-	 * Which may stop synchronous execution.
+	 * Currently be or after which may stop synchronous execution.
 	 * Like `if (xxx) {await ...}`.
 	 */
 	ConditionalAwait = 16,

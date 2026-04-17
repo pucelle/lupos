@@ -112,7 +112,7 @@ const $html_3 = /*#__PURE__*/ new HTMLMaker("<div com></div>");
         ]
     };
 });
-const $html_6 = /*#__PURE__*/ new HTMLMaker("<!---->");
+const $html_6 = /*#__PURE__*/ new HTMLMaker("");
 /*
 <root>
     <template class="classNameSelf" />
@@ -120,11 +120,10 @@ const $html_6 = /*#__PURE__*/ new HTMLMaker("<!---->");
 */ const $template_6 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
     let $locator = $html_6.make($hydrates);
     let $node_0 = $context.el;
-    let $node_1 = $locator.childAt(0);
     $node_0.classList.add("classNameSelf");
     return {
         el: $locator.el,
-        position: new SlotPosition(1, $node_1)
+        position: new SlotPosition(0, $node_0)
     };
 });
 export class TestAttribute extends Component {

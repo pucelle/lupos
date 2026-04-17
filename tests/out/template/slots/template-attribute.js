@@ -1,5 +1,5 @@
 import { fade, Component, TransitionBinding, TemplateSlot, SlotPosition, CompiledTemplateResult, TemplateMaker, HTMLMaker } from 'lupos.html';
-const $html_0 = /*#__PURE__*/ new HTMLMaker("<!---->");
+const $html_0 = /*#__PURE__*/ new HTMLMaker("");
 /*
 <root>
     <template class="className" />
@@ -7,11 +7,10 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<!---->");
 */ const $template_0 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
     let $locator = $html_0.make($hydrates);
     let $node_0 = $context.el;
-    let $node_1 = $locator.childAt(0);
     $node_0.classList.add("className");
     return {
         el: $locator.el,
-        position: new SlotPosition(1, $node_1)
+        position: new SlotPosition(0, $node_0)
     };
 });
 /*
@@ -21,12 +20,11 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<!---->");
 */ const $template_1 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
     let $locator = $html_0.make($hydrates);
     let $node_0 = $context.el;
-    let $node_1 = $locator.childAt(0);
     let $binding_0 = new TransitionBinding($node_0, $context);
     $binding_0.update(fade());
     return {
         el: $locator.el,
-        position: new SlotPosition(1, $node_1),
+        position: new SlotPosition(0, $node_0),
         parts: [
             [$binding_0, 2]
         ]
@@ -39,11 +37,10 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<!---->");
 */ const $template_2 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
     let $locator = $html_0.make($hydrates);
     let $node_0 = $context.el;
-    let $node_1 = $locator.childAt(0);
     $node_0.style["background-color"] = "red";
     return {
         el: $locator.el,
-        position: new SlotPosition(1, $node_1)
+        position: new SlotPosition(0, $node_0)
     };
 });
 /*
@@ -53,11 +50,10 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<!---->");
 */ const $template_3 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
     let $locator = $html_0.make($hydrates);
     let $node_0 = $context.el;
-    let $node_1 = $locator.childAt(0);
     $node_0.setAttribute("attr", "value");
     return {
         el: $locator.el,
-        position: new SlotPosition(1, $node_1)
+        position: new SlotPosition(0, $node_0)
     };
 });
 const $html_4 = /*#__PURE__*/ new HTMLMaker("<div><!--1ba7dd--></div>");
