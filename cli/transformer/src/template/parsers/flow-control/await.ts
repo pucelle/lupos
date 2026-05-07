@@ -16,7 +16,7 @@ export class AwaitFlowControl extends FlowControlBase {
 	/** new TemplateSlot(...) */
 	private templateSlotGetter!: () => ts.Expression
 
-	private templateNames: (string | null)[] = []
+	private templateName: string | null = null
 	private promiseIndex: number | null = null
 
 	override preInit() {
@@ -24,31 +24,25 @@ export class AwaitFlowControl extends FlowControlBase {
 		this.slotVariableName = this.slot.makeSlotName()
 
 		let promiseIndex = this.getAttrValueIndex(this.node)
-		let nextNodes = this.eatNext('lu:then', 'lu:catch')
-		let thenNode = nextNodes.find(n => n.tagName === 'lu:then')
-		let catchNode = nextNodes.find(n => n.tagName === 'lu:catch')
-		let allNodes = [this.node, thenNode, catchNode]
-		let templateNames: (string | null)[] = []
+		let makerNode = this.node
+		let templateName: string | null = null
 
-		for (let node of allNodes) {
-			if (!node || node.children.length === 0) {
-				templateNames.push(null)
-			}
-			else {
+		if (!makerNode || makerNode.children.length === 0) {
+			templateName = null
+		}
+		else {
 
-				// Separate as sub tree, not sub template.
-				// So it generates all the values required to render all three branches.
-				// Later inside AwaitBlock, it has no need to compute values after
-				// promise state get changed.
-				let tree = this.tree.separateChildrenAsSubTree(node)
+			// Separate as sub tree, not sub template.
+			// So it generates all the values required to render all three branches.
+			// Later inside AwaitBlock, it has no need to compute values after
+			// promise state get changed.
+			let tree = this.tree.separateChildrenAsSubTree(makerNode)
 
-				let templateName = tree.makeTemplateRefName()
-				templateNames.push(templateName)
-			}
+			templateName = tree.makeTemplateRefName()
 		}
 
 		this.promiseIndex = promiseIndex
-		this.templateNames = templateNames
+		this.templateName = templateName
 		this.templateSlotGetter = this.slot.prepareAsTemplateSlot(null)
 	}
 
@@ -56,12 +50,12 @@ export class AwaitFlowControl extends FlowControlBase {
 		Modifier.addImport('AwaitBlock', 'lupos.html')
 
 		// let $block_0 = new AwaitBlock(
-		//   makers,
+		//   maker,
 		//   new TemplateSlot(new SlotPosition(SlotPositionType.Before, nextChild)),
 		//   $context_0,
 		// )
 
-		let makers = this.outputMakerNodes(this.templateNames)
+		let maker = this.outputMakerNode(this.templateName)
 		let templateSlot = this.templateSlotGetter()
 
 		let slotInit = this.slot.createVariableAssignment(
@@ -77,7 +71,7 @@ export class AwaitFlowControl extends FlowControlBase {
 					factory.createIdentifier('AwaitBlock'),
 					undefined,
 					[
-						makers,
+						maker,
 						factory.createIdentifier(this.slotVariableName),
 						factory.createIdentifier(VariableNames.context)
 					]
