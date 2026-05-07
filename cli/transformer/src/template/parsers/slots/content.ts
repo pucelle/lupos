@@ -51,6 +51,9 @@ export class ContentSlotParser extends SlotParserBase {
 		) {
 			slotContentType = SlotContentType.Text
 		}
+		else if (typeText && /^Promise/.test(typeText)) {
+			slotContentType = SlotContentType.Promise
+		}
 		else if (typeText && /^(?:\w*?Element|Node|Comment|Text)$/.test(typeText)) {
 			slotContentType = SlotContentType.Node
 		}

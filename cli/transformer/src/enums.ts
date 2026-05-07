@@ -8,6 +8,7 @@ export enum SlotContentType {
 	TemplateResultList = 1,
 	Text = 2,
 	Node = 3,
+	Promise = 4,
 }
 
 export enum PartPositionType {
