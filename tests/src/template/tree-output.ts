@@ -14,8 +14,15 @@ export class TestTemplateOutput extends Component {
 		return svg`<path />`
 	}
 
-	testLocalReference() {
-		class Child extends Component {}
-		return html`<Child />`
+	testLocalClass() {
+		class ChildClass extends Component {}
+		return html`<ChildClass />`
+	}
+
+	testLocalVariable() {
+		class ChildClass extends Component {}
+		const ChildVariable = ChildClass
+
+		return html`<ChildVariable />`
 	}
 }

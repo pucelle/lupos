@@ -38,15 +38,15 @@ export class TestTemplateOutput extends Component {
     testSVG() {
         return new CompiledTemplateResult($template_1, [], this);
     }
-    testLocalReference() {
+    testLocalClass() {
         /*
         <root>
-            <Child />
+            <ChildClass />
         </root>
         */ const $template_2 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
             let $locator = $html_2.make($hydrates);
             let $node_0 = $locator.childAt(0);
-            let $com_0 = new Child($node_0);
+            let $com_0 = new ChildClass($node_0);
             return {
                 el: $locator.el,
                 position: new SlotPosition(1, $node_0),
@@ -55,8 +55,30 @@ export class TestTemplateOutput extends Component {
                 ]
             };
         });
-        class Child extends Component {
+        class ChildClass extends Component {
         }
         return new CompiledTemplateResult($template_2, [], this);
+    }
+    testLocalVariable() {
+        /*
+        <root>
+            <ChildVariable />
+        </root>
+        */ const $template_3 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+            let $locator = $html_2.make($hydrates);
+            let $node_0 = $locator.childAt(0);
+            let $com_0 = new ChildVariable($node_0);
+            return {
+                el: $locator.el,
+                position: new SlotPosition(1, $node_0),
+                parts: [
+                    [$com_0, 1]
+                ]
+            };
+        });
+        class ChildClass extends Component {
+        }
+        const ChildVariable = ChildClass;
+        return new CompiledTemplateResult($template_3, [], this);
     }
 }
