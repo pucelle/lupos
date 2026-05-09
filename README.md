@@ -151,6 +151,12 @@ class Example {
 
 
 
+## Production
+
+You should config your bundle tool to eliminate function calls `debug_tracking_count`, `debug_circular_tracking`.
+
+
+
 ## Use transformer API
 
 Use default export at `lupos/transformer` to do custom transformation.
