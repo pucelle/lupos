@@ -56,7 +56,7 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("");
         position: new SlotPosition(0, $node_0)
     };
 });
-const $html_4 = /*#__PURE__*/ new HTMLMaker("<div><!--1ba7dd--></div>");
+const $html_4 = /*#__PURE__*/ new HTMLMaker("<div><!--375ea2--></div>");
 /*
 <root>
     <template attr="value">
@@ -69,8 +69,8 @@ const $html_4 = /*#__PURE__*/ new HTMLMaker("<div><!--1ba7dd--></div>");
     let $locator = $html_4.make($hydrates);
     let $node_0 = $context.el;
     let $node_1 = $locator.childAt(0);
-    let $node_2 = $locator.getMarker("1ba7dd");
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_2), 0, $locator.getNodes("1ba7dd"));
+    let $node_2 = $locator.getMarker("375ea2");
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_2), 0, $locator.getNodes("375ea2"));
     $node_0.setAttribute("attr", "value");
     $node_1.setAttribute("attr", 'value');
     $slot_0.update(new CompiledTemplateResult($template_5, [], $context));

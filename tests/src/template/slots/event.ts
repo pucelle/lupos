@@ -68,6 +68,11 @@ export class TestEvent extends Component {
 	testIgnoringBound() {
 		return html`<div @click=${this.handleEvent.bind(this)} />`
 	}
+
+	testLocalHandler() {
+		let onClick = this.handleEvent.bind(this)
+		return html`<div @click=${onClick} />`
+	}
 }
 
 

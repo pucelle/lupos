@@ -14,11 +14,20 @@ export enum MutableMask {
 	/** If referenced variable value is assignable, and need to update for multiple times. */
 	Mutable = 1,
 
-	/** Whether have any local variable referenced. */
-	HasLocalReference = 2,
+	/** 
+	 * Whether have any local variable referenced outside function,
+	 * so it will be visited immediately.
+	 */
+	HasLocalReferenceOutsideFunction = 2,
+
+	/** 
+	 * Whether have any local variable referenced within a function body,
+	 * so it will be visited later.
+	 */
+	HasLocalReferenceInsideFunction = 4,
 
 	/** Whether have any local variable assignment. */
-	HasLocalAssignment = 4,
+	HasLocalAssignment = 8,
 }
 
 /** Replace an identifier or this keyword. */
@@ -211,10 +220,17 @@ class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 		}
 
 		// Can transfer as a callback, and local variable reference will be passed by `$latest_x`.
-		// But if has local assignment, will skip it.
+		// But if has local assignment, should replace it to a handler.
+		// If have local reference, should replace it to a handler.
 		if (asLazyCallback) {
 			let hasLocalAssignment = (mask & MutableMask.HasLocalAssignment) > 0
 			if (hasLocalAssignment) {
+				return false
+			}
+
+			// Will visit the reference immediately, normally the callback references local.
+			let hasImmediateReference = (mask & MutableMask.HasLocalReferenceOutsideFunction) > 0
+			if (hasImmediateReference) {
 				return false
 			}
 
@@ -222,7 +238,7 @@ class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 		}
 
 		// If have local reference, can't transfer.
-		let hasLocalReference = (mask & MutableMask.HasLocalReference) > 0
+		let hasLocalReference = (mask & (MutableMask.HasLocalReferenceOutsideFunction | MutableMask.HasLocalReferenceInsideFunction)) > 0
 		if (hasLocalReference) {
 			return false
 		}
@@ -270,12 +286,18 @@ class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 				mutable |= MutableMask.Mutable
 			}
 
-			// Have referenced local variable within range, which must be declared outside of function range.
+			// Have referenced local variable within range,
+			// and to be declared outside of function range.
 			if (asLocalVariable
 				&& (!topmostFunction
 					|| !this.isDeclaredWithinNodeRange(rawNode as ts.Identifier, rawNode, topmostFunction))
 			) {
-				mutable |= MutableMask.HasLocalReference
+				if (topmostFunction) {
+					mutable |= MutableMask.HasLocalReferenceInsideFunction
+				}
+				else {
+					mutable |= MutableMask.HasLocalReferenceOutsideFunction
+				}
 
 				// If will be assigned within a handler.
 				if (topmostFunction && this.hasAssignedWithinNodeRange(rawNode, topmostFunction)) {

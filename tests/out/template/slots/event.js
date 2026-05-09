@@ -213,7 +213,7 @@ const $html_6 = /*#__PURE__*/ new HTMLMaker("<div></div>");
         }
     };
 });
-const $html_12 = /*#__PURE__*/ new HTMLMaker("<div><!--f1ee40--></div>");
+const $html_12 = /*#__PURE__*/ new HTMLMaker("<div><!--bcba84--></div>");
 /*
 <root>
     <div @click=${(e: any) => value = e}>
@@ -224,8 +224,8 @@ const $html_12 = /*#__PURE__*/ new HTMLMaker("<div><!--f1ee40--></div>");
     let $latest_0, $latest_1;
     let $locator = $html_12.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $node_1 = $locator.getMarker("f1ee40");
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), null, $locator.getNodes("f1ee40"));
+    let $node_1 = $locator.getMarker("bcba84");
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), null, $locator.getNodes("bcba84"));
     $node_0.addEventListener("click", (...args) => {
         $latest_0.call($context, ...args);
     });
@@ -255,6 +255,25 @@ const $html_12 = /*#__PURE__*/ new HTMLMaker("<div><!--f1ee40--></div>");
     return {
         el: $locator.el,
         position: new SlotPosition(1, $node_0)
+    };
+});
+/*
+<root>
+    <div @click=${onClick} />
+</root>
+*/ const $template_14 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
+    let $latest_0;
+    let $locator = $html_6.make($hydrates);
+    let $node_0 = $locator.childAt(0);
+    $node_0.addEventListener("click", (...args) => {
+        $latest_0.call($context, ...args);
+    });
+    return {
+        el: $locator.el,
+        position: new SlotPosition(1, $node_0),
+        update($values) {
+            $latest_0 = $values[0];
+        }
     };
 });
 export class TestEvent extends Component {
@@ -321,6 +340,12 @@ export class TestEvent extends Component {
     }
     testIgnoringBound() {
         return new CompiledTemplateResult($template_13, [], this);
+    }
+    testLocalHandler() {
+        let onClick = this.handleEvent.bind(this);
+        return new CompiledTemplateResult($template_14, [
+            onClick
+        ], this);
     }
 }
 class Com1 extends Component {

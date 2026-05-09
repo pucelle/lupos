@@ -2,6 +2,7 @@
     "compilerOptions": {
 		"preserveSymlinks": true,
 		"skipLibCheck": true,
+		"ignoreDeprecations": "6.0",
         "module": "CommonJS",
 		"moduleResolution": "Node",
        	"target": "ES2024",

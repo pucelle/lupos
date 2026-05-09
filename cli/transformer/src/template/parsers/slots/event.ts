@@ -27,8 +27,8 @@ export class EventSlotParser extends SlotParserBase {
 			this.forceComponentTargetType = TemplateSlotPlaceholder.isComponent(this.node.tagName!)
 		}
 
-		// Will try to turn event handler to be static.
-		if (!this.isAllValuesCanTransfer()) {
+		// Will try to turn event handler to be static handler.
+		if (this.isAnyValueCantTransfer()) {
 			this.latestVariableNames = this.makeGroupOfLatestNames()
 		}
 
@@ -198,7 +198,7 @@ export class EventSlotParser extends SlotParserBase {
 		let nodeName = this.getRefedNodeName()
 
 		// $node_0.addEventListener('comEventName', (...args) => {$latest_0.call($context, ...args)})
-		if (this.isAnyValueCantTransfer()) {
+		if (this.latestVariableNames) {
 			return factory.createCallExpression(
 				factory.createPropertyAccessExpression(
 					factory.createIdentifier(nodeName),
