@@ -16,6 +16,14 @@ class UpdateHeap {
 
 	constructor() {
 		this.heap = new MiniHeap(function(a, b) {
+
+			// Decremental order for effects like.
+			if (a.iid < 0 && b.iid < 0) {
+				return b.iid - a.iid
+			}
+
+			// Incremental order for components like,
+			// or mixed of them.
 			return a.iid - b.iid
 		})
 	}

@@ -1,6 +1,6 @@
 import {beginTrack, endTrack, untrack} from '../dependency-tracker'
 import {UpdateQueue} from '../../queue'
-import {getIncrementalOrder} from './order'
+import {getDecrementalOrder} from './order'
 import {Updatable} from '../../types'
 
 
@@ -34,7 +34,7 @@ const DefaultWatchOptions: WatchOptions = {
  */
 export class Watcher<V = any> implements Updatable {
 
-	readonly iid = getIncrementalOrder()
+	readonly iid = getDecrementalOrder()
 
 	private getter: () => V
 	private callback: (value: V, oldValue: V | undefined) => void
@@ -109,7 +109,7 @@ type InferValueGetters<V extends any[]> = {[K in keyof V]: () => V[K]}
  */
 export class MultiWatcher<V extends any[] = any> implements Updatable {
 
-	readonly iid = getIncrementalOrder()
+	readonly iid = getDecrementalOrder()
 
 	private getters: InferValueGetters<V>
 	private callback: (values: V, oldValues: V | undefined) => void

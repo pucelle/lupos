@@ -93,6 +93,11 @@ export class InternalSetMap<K, V> {
 		return !!this.map.get(k)?.has(v)
 	}
 
+	/** Has specified key existed. */
+	hasKey(k: K): boolean {
+		return this.map.has(k)
+	}
+
 	/** Get the count of all the keys. */
 	keyCount(): number {
 		return this.map.size

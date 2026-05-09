@@ -39,7 +39,7 @@ export function beginTrack(updatable: Updatable): DependencyTracker {
  */
 export function endTrack() {
 	currentTracker!.apply()
-	debug()
+	debug_tracking_count()
 
 	if (trackerStack.length > 0) {
 		currentTracker = trackerStack.pop()!
@@ -50,8 +50,8 @@ export function endTrack() {
 }
 
 
-/** This debug function will be eliminated in production mode. */
-function debug() {
+/** This `debug_xxx` functions should be eliminated in production mode. */
+function debug_tracking_count() {
 	if (currentTracker!.dependencies.keyCount() > 500) {
 		console.warn(`Too many dependencies (${currentTracker!.dependencies.keyCount()}) captured, try reduce some.`, currentTracker!.dependencies)
 	}
@@ -117,6 +117,8 @@ export function trackGetDeeply(obj: object, maxDepth = 10) {
  * Note if one property is not empty string, you must ensure it's the existing key of `obj`.
  */
 export function trackSet(obj: object, ...properties: PropertyKey[]) {
+	debug_circular_tracking(obj, properties)
+
 	for (let prop of properties) {
 		if (prop === '') {
 			let updatableList = DepMap.getAllUpdatable(obj)
@@ -150,6 +152,41 @@ export function trackSet(obj: object, ...properties: PropertyKey[]) {
 	let version = ElementsDepVersionMap.get(obj)
 	if (version !== undefined) {
 		ElementsDepVersionMap.set(obj, version + 1)
+	}
+}
+
+
+/** This `debug_xxx` functions should be eliminated in production mode. */
+function debug_circular_tracking(obj: object, properties: PropertyKey[]) {
+	if (!currentTracker) {
+		return
+	}
+
+	for (let prop of properties) {
+		if (prop === '') {
+			if (currentTracker.dependencies.hasKey(obj)) {
+				console.warn('Getting and setting same property in one tracking loop', obj, prop)
+			}
+		}
+		else {
+			if (currentTracker.dependencies.has(obj, prop)) {
+				console.warn('Getting and setting same property in one tracking loop', obj, prop)
+			}
+
+			let updatableList = DepMap.getUpdatable(obj, prop)
+			if (updatableList) {
+				for (let updatable of updatableList) {
+					updatable.willUpdate()
+				}
+			}
+		}	
+	}
+
+	// Should also calls elements updatable, low frequency.
+	if (!properties.includes('')) {
+		if (currentTracker.dependencies.has(obj, '')) {
+			console.warn('Getting and setting same property in one tracking loop', obj)
+		}
 	}
 }
 

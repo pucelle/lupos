@@ -1,6 +1,6 @@
 import {beginTrack, DependencyTracker, endTrack, untrack} from '../dependency-tracker'
 import {UpdateQueue} from '../../queue'
-import {getIncrementalOrder} from './order'
+import {getDecrementalOrder} from './order'
 import {Updatable} from '../../types'
 
 
@@ -16,7 +16,7 @@ import {Updatable} from '../../types'
  */
 export class Effector implements Updatable {
 
-	readonly iid = getIncrementalOrder()
+	readonly iid = getDecrementalOrder()
 
 	private fn: () => void
 	private tracker: DependencyTracker | null = null

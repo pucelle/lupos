@@ -1,6 +1,6 @@
 import {beginTrack, DependencyTracker, endTrack, untrack} from '../dependency-tracker'
 import {UpdateQueue} from '../../queue/update-queue'
-import {getIncrementalOrder} from './order'
+import {getDecrementalOrder} from './order'
 import {Updatable} from '../../types'
 
 
@@ -29,7 +29,7 @@ export class Computed<V = any> implements Updatable {
 	}
 
 
-	readonly iid = getIncrementalOrder()
+	readonly iid = getDecrementalOrder()
 
 	private getter: () => V
 	private onReset: (() => void) | undefined
