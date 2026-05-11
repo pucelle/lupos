@@ -1,4 +1,4 @@
-import {InternalSetMap} from '../structs/map'
+import {InternalPairKeysCounter, InternalSetMap} from '../structs/map'
 import {DependencyMap} from './dependency-map'
 import {Updatable} from '../types'
 
@@ -39,21 +39,13 @@ export function beginTrack(updatable: Updatable): DependencyTracker {
  */
 export function endTrack() {
 	currentTracker!.apply()
-	debug_tracking_count()
+	debug_on_tracker_end(currentTracker!)
 
 	if (trackerStack.length > 0) {
 		currentTracker = trackerStack.pop()!
 	}
 	else {
 		currentTracker = null
-	}
-}
-
-
-/** This `debug_xxx` functions should be eliminated in production mode. */
-function debug_tracking_count() {
-	if (currentTracker!.dependencies.keyCount() > 500) {
-		console.warn(`Too many dependencies (${currentTracker!.dependencies.keyCount()}) captured, try reduce some.`, currentTracker!.dependencies)
 	}
 }
 
@@ -117,7 +109,7 @@ export function trackGetDeeply(obj: object, maxDepth = 10) {
  * Note if one property is not empty string, you must ensure it's the existing key of `obj`.
  */
 export function trackSet(obj: object, ...properties: PropertyKey[]) {
-	debug_circular_tracking(obj, properties)
+	debug_on_tracking_set(obj, properties)
 
 	for (let prop of properties) {
 		if (prop === '') {
@@ -156,45 +148,11 @@ export function trackSet(obj: object, ...properties: PropertyKey[]) {
 }
 
 
-/** This `debug_xxx` functions should be eliminated in production mode. */
-function debug_circular_tracking(obj: object, properties: PropertyKey[]) {
-	if (!currentTracker) {
-		return
-	}
-
-	for (let prop of properties) {
-		if (prop === '') {
-			if (currentTracker.dependencies.hasKey(obj)) {
-				console.warn('Getting and setting same property in one tracking loop', obj, prop)
-			}
-		}
-		else {
-			if (currentTracker.dependencies.has(obj, prop)) {
-				console.warn('Getting and setting same property in one tracking loop', obj, prop)
-			}
-
-			let updatableList = DepMap.getUpdatable(obj, prop)
-			if (updatableList) {
-				for (let updatable of updatableList) {
-					updatable.willUpdate()
-				}
-			}
-		}	
-	}
-
-	// Should also calls elements updatable, low frequency.
-	if (!properties.includes('')) {
-		if (currentTracker.dependencies.has(obj, '')) {
-			console.warn('Getting and setting same property in one tracking loop', obj)
-		}
-	}
-}
-
-
 /** Remove all dependencies of a updatable. */
 export function untrack(updatable: Updatable) {
 	DepMap.deleteUpdatable(updatable)
 }
+
 
 
 /** 
@@ -284,4 +242,135 @@ export class DependencyTracker {
 
 		return false
 	}
+}
+
+
+/** Get clear after queue update loop completed. */
+const update_loop_tracking_get_cache: InternalSetMap<object, PropertyKey> = /*#__PURE__*/new InternalSetMap()
+
+/** Get clear after queue update loop completed. */
+let update_loop_tracking_counter: InternalPairKeysCounter<object, PropertyKey> = /*#__PURE__*/new InternalPairKeysCounter()
+
+/** This `debug_xxx` functions should be eliminated in production mode. */
+function debug_on_tracker_end(tracker: DependencyTracker) {
+	debug_tracking_count(tracker)
+
+	// Remember all get trackings in current update loop.
+	for (let [obj, props] of tracker.dependencies.entries()) {
+		update_loop_tracking_get_cache.addSeveral(obj, props)
+	}
+}
+
+/** This `debug_xxx` functions should be eliminated in production mode. */
+function debug_tracking_count(tracker: DependencyTracker) {
+	if (tracker.dependencies.keyCount() > 500) {
+		console.warn(`Too many dependencies (${tracker.dependencies.keyCount()}) captured, try reduce some.`, tracker.dependencies)
+	}
+}
+
+/** 
+ * Call it to debug after each time set completed.
+ * This `debug_xxx` functions should be eliminated in production mode.
+ */
+function debug_on_tracking_set(obj: object, properties: PropertyKey[]) {
+	debug_circular_tracking(obj, properties)
+	debug_infinite_tracking(obj, properties)
+}
+
+/** 
+ * This `debug_xxx` functions should be eliminated in production mode.
+ * 
+ * To debug like:
+ * `
+ *   get property
+ *   ...
+ *   set same property
+ * `
+ */
+function debug_circular_tracking(obj: object, properties: PropertyKey[]) {
+	if (!currentTracker) {
+		return
+	}
+
+	for (let prop of properties) {
+		if (prop === '') {
+			if (currentTracker.dependencies.hasKey(obj)) {
+				throw new Error('Getting and setting same property in one tracking loop', obj)
+			}
+		}
+		else {
+			if (currentTracker.dependencies.has(obj, prop)) {
+				throw new Error('Getting and setting same property in one tracking loop', obj)
+			}
+		}	
+	}
+
+	// Should also calls elements updatable, low frequency.
+	if (!properties.includes('')) {
+		if (currentTracker.dependencies.has(obj, '')) {
+			throw new Error('Getting and setting same property in one tracking loop', obj)
+		}
+	}
+}
+
+/** 
+ * Call it to debug after each time update completed.
+ * This `debug_xxx` functions should be eliminated in production mode.
+ * 
+ * To debug like:
+ * `
+ *   get property
+ *   await ...
+ *   set same property
+ * `
+ */
+function debug_infinite_tracking(obj: object, properties: PropertyKey[]) {
+	function is4TimesPowered(value: number): boolean {
+		while (value > 4 && value % 10 === 0) {
+			value /= 10
+		}
+
+		return value === 4
+	}
+
+	for (let prop of properties) {
+		if (prop === '') {
+			if (update_loop_tracking_get_cache.hasKey(obj)) {
+				update_loop_tracking_counter.add(obj, prop)
+
+				if (is4TimesPowered(update_loop_tracking_counter.get(obj, prop))) {
+					console.warn('May infinitely getting and setting same property in one updating loop', obj, prop)
+				}
+			}
+		}
+		else {
+			if (update_loop_tracking_get_cache.has(obj, prop)) {
+				update_loop_tracking_counter.add(obj, prop)
+
+				if (is4TimesPowered(update_loop_tracking_counter.get(obj, prop))) {
+					console.warn('May infinitely getting and setting same property in one updating loop', obj, prop)
+				}
+			}
+		}	
+	}
+
+	// Should also calls elements updatable, low frequency.
+	if (!properties.includes('')) {
+		if (update_loop_tracking_get_cache.has(obj, '')) {
+			update_loop_tracking_counter.add(obj, '')
+
+			if (is4TimesPowered(update_loop_tracking_counter.get(obj, ''))) {
+				console.warn('May infinitely getting and setting same property in one updating loop', obj)
+			}
+		}
+	}
+}
+
+/** 
+ * Call it to debug after each time update completed.
+ * This `debug_xxx` functions should be eliminated in production mode.
+ */
+export function debug_on_updating_end() {
+	update_loop_tracking_get_cache.clear()
+	update_loop_tracking_counter.clear()
 }
