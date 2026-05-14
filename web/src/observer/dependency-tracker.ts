@@ -295,12 +295,12 @@ function debug_circular_tracking(obj: object, properties: PropertyKey[]) {
 	for (let prop of properties) {
 		if (prop === '') {
 			if (currentTracker.dependencies.hasKey(obj)) {
-				throw new Error('Getting and setting same property in one tracking loop', obj)
+				console.warn('Getting and setting same property in one tracking loop', obj)
 			}
 		}
 		else {
 			if (currentTracker.dependencies.has(obj, prop)) {
-				throw new Error('Getting and setting same property in one tracking loop', obj)
+				console.warn('Getting and setting same property in one tracking loop', obj)
 			}
 		}	
 	}
@@ -308,7 +308,7 @@ function debug_circular_tracking(obj: object, properties: PropertyKey[]) {
 	// Should also calls elements updatable, low frequency.
 	if (!properties.includes('')) {
 		if (currentTracker.dependencies.has(obj, '')) {
-			throw new Error('Getting and setting same property in one tracking loop', obj)
+			console.warn('Getting and setting same property in one tracking loop', obj)
 		}
 	}
 }
