@@ -32,4 +32,19 @@ export class TestFunction extends Component {
             return this.prop === 0 ? 0 : 1;
         };
     }
+    testParameterWithDefaultValue(p = this.prop) {
+        trackGet(this, "prop", "list");
+        trackGet(this.list, "");
+        return p + this.list.length;
+    }
+    testParameterWithDeepDefaultValue(p = this.prop ?? 0) {
+        trackGet(this, "prop", "list");
+        trackGet(this.list, "");
+        return p + this.list.length;
+    }
+    async asyncSetProps(prop) {
+        await Promise.resolve();
+        this.prop = prop;
+        trackSet(this, "prop");
+    }
 }

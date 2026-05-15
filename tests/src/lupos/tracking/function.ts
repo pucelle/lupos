@@ -27,4 +27,17 @@ export class TestFunction extends Component {
 	testArrowFunctionNonBlockBody() {
 		return () => this.prop === 0 ? 0 : 1
 	}
+
+	testParameterWithDefaultValue(p: number = this.prop) {
+		return p + this.list.length
+	}
+
+	testParameterWithDeepDefaultValue(p: number = this.prop ?? 0) {
+		return p + this.list.length
+	}
+
+	async asyncSetProps(prop: number) {
+		await Promise.resolve()
+		this.prop = prop
+	}
 }

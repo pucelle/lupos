@@ -1,5 +1,5 @@
 import ts from 'typescript'
-import {Packer, helper} from '../../core'
+import {InterpolationPosition, Packer, helper} from '../../core'
 import {TrackingArea} from './area'
 import {CapturedOutputWay, TrackingRange, TrackingRanges} from './ranges'
 import {ListMap} from '../../lupos-ts-module'
@@ -94,6 +94,7 @@ export enum TrackingAreaTypeMask {
 export interface TrackingAreaTargetPosition{
 	area: TrackingArea
 	toNode: ts.Node
+	position: InterpolationPosition
 }
 
 
@@ -358,19 +359,27 @@ export namespace TrackingAreaTree {
 	/** Get area by node. */
 	export function get(node: ts.Node): TrackingArea | undefined {
 		let areas = AreaMap.get(node)
-		return areas?.[areas.length - 1]
+		return areas?.at(-1)
 	}
 
 	/** Find closest area contains or equals node. */
-	export function findClosest(node: ts.Node): TrackingArea {
+	export function findClosest(node: ts.Node, test?: (area: TrackingArea) => boolean): TrackingArea | undefined {
 		let areas = AreaMap.get(node)
 
 		while (!areas) {
 			node = node.parent!
 			areas = AreaMap.get(node)
+
+			if (areas && test) {
+				areas = areas.filter(test)
+
+				if (areas.length === 0) {
+					areas = undefined
+				}
+			}
 		}
 
-		return areas[areas.length - 1]
+		return areas?.at(-1)
 	}
 
 	/** 
@@ -406,14 +415,25 @@ export namespace TrackingAreaTree {
 	 * Find an ancestral index and area, which can add statements to before it.
 	 * If current position can add statements, return current position.
 	 * Must before current position, and must not cross any conditional or iteration area.
+	 * 
+	 * If `withinFunction` is true, means we need a position for adding tracking codes.
+	 * So can't cross function edge, can should look forward from function parameter to body.
+	 * Normally tracking capturing logic can correctly redirect from parameter to body,
+	 * here just to make sure crossing function edge would never happen.
 	 */
-	export function findClosestPositionToAddStatements(fromNode: ts.Node, from: TrackingArea): TrackingAreaTargetPosition {
-		let area = from
+	export function findClosestPositionToAddStatements(
+		fromNode: ts.Node,
+		fromPosition: InterpolationPosition,
+		fromArea: TrackingArea,
+		withinFunction: boolean
+	): TrackingAreaTargetPosition {
+		let area = fromArea
 		let toNode = fromNode
+		let position = fromPosition
 
 		while (true) {
 
-			// Can put statements ,
+			// Can put statements, insert into it.
 			// or can extend from `if()...` to `if(){...}`, insert before node.
 			if (Packer.canPutStatements(toNode)
 				|| Packer.canExtendToPutStatements(toNode)
@@ -421,18 +441,35 @@ export namespace TrackingAreaTree {
 				break
 			}
 
-			// `{...}`, insert before toNode.
+			// `{...}`, insert before `toNode`.
 			if (Packer.canPutStatements(toNode.parent)) {
 
-				// area of toNode.parent.
+				// Use area of `toNode.parent`.
 				if (toNode === area.node) {
 					area = area.parent!
 				}
 				break
 			}
 
-			// To outer area.
+			// Touch the edge of area, try find a inner place to insert,
+			// or enter parent area.
 			if (toNode === area.node) {
+
+				// Insert to function body, normally searching from parameter.
+				if (withinFunction && area.type & TrackingAreaTypeMask.FunctionLike) {
+					let fnBody = (area.node as ts.FunctionLikeDeclaration).body!
+					if (fnBody) {
+						toNode = fnBody
+
+						if (ts.isBlock(fnBody)) {
+							position = InterpolationPosition.Prepend
+						}
+						else {
+							position = InterpolationPosition.Before
+						}
+						break
+					}
+				}
 				
 				// Can't cross these types of areas, will end at the inner start of them.
 				if (area.type & (
@@ -449,11 +486,13 @@ export namespace TrackingAreaTree {
 			}
 
 			toNode = toNode.parent
+			position = InterpolationPosition.Before
 		}
 
 		return {
 			area,
 			toNode,
+			position,
 		}
 	}
 }

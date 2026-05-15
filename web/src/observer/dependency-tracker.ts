@@ -39,7 +39,7 @@ export function beginTrack(updatable: Updatable): DependencyTracker {
  */
 export function endTrack() {
 	currentTracker!.apply()
-	debug_on_tracker_end(currentTracker!)
+	debug_on_track_end(currentTracker!)
 
 	if (trackerStack.length > 0) {
 		currentTracker = trackerStack.pop()!
@@ -56,6 +56,8 @@ export function endTrack() {
  * Note if one property is not empty string, you must ensure it's the key of `obj`.
  */
 export function trackGet(obj: object, ...properties: PropertyKey[]) {
+	debug_on_track_get(obj)
+
 	if (!currentTracker) {
 		return
 	}
@@ -70,6 +72,8 @@ export function trackGet(obj: object, ...properties: PropertyKey[]) {
  * Note that compiler will not generate statements to call this, you must call it manually.
  */
 export function trackGetDeeply(obj: object, maxDepth = 10) {
+	debug_on_track_get(obj)
+
 	if (!currentTracker) {
 		return
 	}
@@ -109,7 +113,7 @@ export function trackGetDeeply(obj: object, maxDepth = 10) {
  * Note if one property is not empty string, you must ensure it's the existing key of `obj`.
  */
 export function trackSet(obj: object, ...properties: PropertyKey[]) {
-	debug_on_tracking_set(obj, properties)
+	debug_on_track_set(obj, properties)
 
 	for (let prop of properties) {
 		if (prop === '') {
@@ -251,8 +255,31 @@ const update_loop_tracking_get_cache: InternalSetMap<object, PropertyKey> = /*#_
 /** Get clear after queue update loop completed. */
 let update_loop_tracking_counter: InternalPairKeysCounter<object, PropertyKey> = /*#__PURE__*/new InternalPairKeysCounter()
 
+/** 
+ * Call it to debug after each time set completed.
+ * This `debug_xxx` functions should be eliminated in production mode.
+ */
+function debug_on_track_get(obj: object) {
+	if (!obj) {
+		console.warn(`'trackGet' source object must exist`, obj)
+	}
+}
+
+/** 
+ * Call it to debug after each time set completed.
+ * This `debug_xxx` functions should be eliminated in production mode.
+ */
+function debug_on_track_set(obj: object, properties: PropertyKey[]) {
+	if (!obj) {
+		console.warn(`'trackSet' source object must exist`, obj)
+	}
+
+	debug_circular_tracking(obj, properties)
+	debug_infinite_tracking(obj, properties)
+}
+
 /** This `debug_xxx` functions should be eliminated in production mode. */
-function debug_on_tracker_end(tracker: DependencyTracker) {
+function debug_on_track_end(tracker: DependencyTracker) {
 	debug_tracking_count(tracker)
 
 	// Remember all get trackings in current update loop.
@@ -266,15 +293,6 @@ function debug_tracking_count(tracker: DependencyTracker) {
 	if (tracker.dependencies.keyCount() > 500) {
 		console.warn(`Too many dependencies (${tracker.dependencies.keyCount()}) captured, try reduce some.`, tracker.dependencies)
 	}
-}
-
-/** 
- * Call it to debug after each time set completed.
- * This `debug_xxx` functions should be eliminated in production mode.
- */
-function debug_on_tracking_set(obj: object, properties: PropertyKey[]) {
-	debug_circular_tracking(obj, properties)
-	debug_infinite_tracking(obj, properties)
 }
 
 /** 

@@ -1,4 +1,4 @@
-import {factory, InterpolationContentType, Interpolator, Modifier, VisitTree, DeclarationScopeTree, helper} from '../../core'
+import {factory, InterpolationContentType, Interpolator, Modifier, VisitTree, DeclarationScopeTree, helper, InterpolationPosition} from '../../core'
 import ts from 'typescript'
 import {TrackingAreaTree} from './area-tree'
 import {TrackingArea} from './area'
@@ -172,7 +172,7 @@ export namespace TrackingReferences {
 
 		// Insert two: `var $ref_0`, and `$ref_0 = ...`
 		else {
-			let refPosition = TrackingAreaTree.findClosestPositionToAddStatements(node, area)
+			let refPosition = TrackingAreaTree.findClosestPositionToAddStatements(node, InterpolationPosition.Before, area, false)
 			let declAssignTogether = varScope.node === refPosition.area.node
 
 			if (!DeclarationScopeTree.canSafelyMoveBeforeNode(node, refPosition.toNode)) {

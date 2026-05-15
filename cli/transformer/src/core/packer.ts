@@ -183,13 +183,19 @@ export namespace Packer {
 		return false
 	}
 
-	/** Whether can put statements. */
+	/** 
+	 * Whether can put statements.
+	 * Means block or source file or case/default clause.
+	 */
 	export function canPutStatements(node: ts.Node): node is ts.SourceFile | ts.Block | ts.CaseOrDefaultClause {
 		return canBlock(node)
 			|| ts.isCaseOrDefaultClause(node)
 	}
 
-	/** Whether can be extended to a block to put statements. */
+	/** 
+	 * Whether can be extended to a block to put statements.
+	 * E.g., `if ...` -> `if {...}`, `() => ...` -> `() => {...}`.
+	 */
 	export function canExtendToPutStatements(node: ts.Node): node is ts.Expression | ts.ExpressionStatement {
 		return canExtendToBlock(node)
 	}

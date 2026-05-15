@@ -57,14 +57,22 @@ export class TrackingArea {
 
 	/** 
 	 * Get declaration area for putting declarations.
-	 * For function area, it returns the area of function body.
+	 * For function area, it returns the scope of function body.
 	 */
-	getDeclarationScope(): DeclarationScope {
-		if (helper.isFunctionLike(this.node) && this.node.body) {
+	getDeclarationScope(resolveFromFnToBody: boolean): DeclarationScope {
+		if (resolveFromFnToBody && helper.isFunctionLike(this.node) && this.node.body) {
 			return DeclarationScopeTree.findClosest(this.node.body)
 		}
 		else {
-			return DeclarationScopeTree.findClosest(this.node)
+
+			// Found may be also a function.
+			let closest = DeclarationScopeTree.findClosest(this.node)
+			if (resolveFromFnToBody && helper.isFunctionLike(closest.node) && closest.node.body) {
+				return DeclarationScopeTree.findClosest(closest.node.body)
+			}
+			else {
+				return closest
+			}
 		}
 	}
 

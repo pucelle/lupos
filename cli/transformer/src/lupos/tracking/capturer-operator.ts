@@ -55,8 +55,8 @@ export class TrackingCapturerOperator {
 	safelyMoveCapturedItemsOutwardTo(items: Iterable<CapturedItem>, toCapturer: TrackingCapturer): CapturedItem[] {
 
 		// Note these are declaration scopes, not tracking scopes.
-		let fromScope = this.area.getDeclarationScope()
-		let toScope = toCapturer.area.getDeclarationScope()
+		let fromScope = this.area.getDeclarationScope(true)
+		let toScope = toCapturer.area.getDeclarationScope(true)
 
 		let scopesLeaves = DeclarationScopeTree.findWalkingOutwardLeaves(fromScope, toScope)
 		let residualItems: CapturedItem[] = []

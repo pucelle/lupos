@@ -2,7 +2,7 @@ import ts from 'typescript'
 import {InterpolationContentType, Interpolator, InterpolationPosition, VisitTree, FlowInterruptionTypeMask, Packer, helper, sourceFile, Hashing} from '../../core'
 import {AccessNode} from '../../lupos-ts-module'
 import {TrackingArea} from './area'
-import {TrackingAreaTree, TrackingAreaTypeMask} from './area-tree'
+import {TrackingAreaTargetPosition, TrackingAreaTree, TrackingAreaTypeMask} from './area-tree'
 import {AccessGrouper} from './access-grouper'
 import {TrackingReferences} from './references'
 import {Optimizer} from './optimizer'
@@ -294,12 +294,26 @@ export class TrackingCapturer {
 	private endCapture() {
 		let item = this.latestCaptured
 		let node = this.area.node
+		let area = this.area
 
 		item.toNode = node
-
+		
 		// For function declaration, insert to function body.
-		if (this.area.type & TrackingAreaTypeMask.FunctionLike) {
-			let body = (node as ts.FunctionLikeDeclarationBase).body
+		// Or if within function parameter, insert to function body.
+		if ((area.type & TrackingAreaTypeMask.FunctionLike) === 0) {
+			let closestArea = TrackingAreaTree.findClosestPositionToAddStatements(node, InterpolationPosition.After, area, true).area
+			if (closestArea.type & TrackingAreaTypeMask.FunctionLike) {
+				let fn = closestArea.node as ts.FunctionLikeDeclarationBase
+
+				// Node not within body.
+				if (fn.body && !VisitTree.isContains(fn.body, area.node)) {
+					area = closestArea
+				}
+			}
+		}
+
+		if (area.type & TrackingAreaTypeMask.FunctionLike) {
+			let body = (area.node as ts.FunctionLikeDeclarationBase).body
 
 			// Abstract function or function type declaration has no body.
 			if (body) {
@@ -316,10 +330,10 @@ export class TrackingCapturer {
 
 		// Insert before whole content of target capturer.
 		// Normally codes will be moved outward on optimization step.
-		// This codes can avoid error occurred even no optimization.
-		else if (this.area.type & TrackingAreaTypeMask.FlowInterruption
-			|| this.area.type & TrackingAreaTypeMask.Conditional
-			|| this.area.type & TrackingAreaTypeMask.Switch
+		// This codes can avoid no error occurred even no optimization.
+		else if (area.type & TrackingAreaTypeMask.FlowInterruption
+			|| area.type & TrackingAreaTypeMask.Conditional
+			|| area.type & TrackingAreaTypeMask.Switch
 		) {
 			item.position = InterpolationPosition.Before
 		}
@@ -432,7 +446,7 @@ export class TrackingCapturer {
 	/** Add each `captured` group. */
 	private outputCapturedGroup(group: CapturedGroup) {
 		let oldToNode = group.toNode
-		let newToNode = this.findBetterInsertPosition(oldToNode)!
+		let newPosition = this.findBetterInsertPosition(oldToNode, group.position)
 		let itemsInsertToOldPosition: CapturedItem[] = []
 		let itemsInsertToNewPosition: CapturedItem[] = []
 
@@ -445,12 +459,12 @@ export class TrackingCapturer {
 			items = this.coversSameGetTypeBySet(items)
 		}
 
-		if (newToNode !== null) {
+		if (newPosition !== null) {
 			for (let item of items) {
 				let hashed = Hashing.hashNode(item.node)
 
 				// Only when all used nodes in the preceding of new index.
-				let canMove = hashed.usedDeclarations.every(usedIndex => VisitTree.isPrecedingOf(usedIndex, newToNode))
+				let canMove = hashed.usedDeclarations.every(usedIndex => VisitTree.isPrecedingOf(usedIndex, newPosition.toNode))
 
 				if (canMove) {
 					itemsInsertToNewPosition.push(item)
@@ -465,11 +479,8 @@ export class TrackingCapturer {
 		}
 
 		if (itemsInsertToNewPosition.length > 0) {
-			Interpolator.add(newToNode, {
-
-				// For new position, always insert to `Before`.
-				position: InterpolationPosition.Before,
-
+			Interpolator.add(newPosition!.toNode, {
+				position: newPosition!.position,
 				contentType: InterpolationContentType.Tracking,
 				exps: () => this.makeCapturedExps(itemsInsertToNewPosition),
 			})
@@ -493,18 +504,18 @@ export class TrackingCapturer {
 	}
 
 	/** Try to find a better position to insert captured. */
-	private findBetterInsertPosition(toNode: ts.Node): ts.Node | null {
-		let position = TrackingAreaTree.findClosestPositionToAddStatements(toNode, this.area)
-		if (!position) {
+	private findBetterInsertPosition(toNode: ts.Node, position: InterpolationPosition): TrackingAreaTargetPosition | null {
+		let newPosition = TrackingAreaTree.findClosestPositionToAddStatements(toNode, position, this.area, true)
+		if (!newPosition) {
 			return null
 		}
 
 		// Same position.
-		if (position.toNode === toNode) {
+		if (newPosition.toNode === toNode) {
 			return null
 		}
 
-		return position.toNode
+		return newPosition
 	}
 
 	/** 

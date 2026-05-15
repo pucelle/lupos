@@ -1,5 +1,5 @@
 import ts from 'typescript'
-import {Modifier, helper} from '../../core'
+import {InterpolationPosition, Modifier, helper} from '../../core'
 import {TrackingArea} from './area'
 import {TrackingAreaTree, TrackingAreaTypeMask} from './area-tree'
 import {CapturedHashMap} from './captured-hashing'
@@ -282,7 +282,10 @@ export namespace Optimizer {
 		}
 
 		let toPosition = TrackingAreaTree.findClosestPositionToAddStatements(
-			area.node, area
+			area.node,
+			InterpolationPosition.Before,
+			area,
+			false
 		)
 
 		Modifier.moveOnce(area.node, toPosition.toNode)

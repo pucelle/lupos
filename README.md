@@ -153,7 +153,7 @@ class Example {
 
 ## Production
 
-You should config your bundle tool to eliminate function calls `debug_tracking_count`, `debug_circular_tracking`.
+You should config your bundle tool to eliminate function calls `debug_on_track_get`, `debug_on_track_set`, `debug_on_track_end`, `debug_tracking_count`, `debug_circular_tracking`, `debug_infinite_tracking`.
 
 
 
