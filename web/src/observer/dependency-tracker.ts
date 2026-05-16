@@ -340,14 +340,14 @@ function debug_infinite_tracking(obj: object, properties: PropertyKey[]) {
 		if (prop === '') {
 			update_loop_tracking_counter.add(obj, prop)
 
-			if (is4TimesPowered(update_loop_tracking_counter.get(obj, prop))) {
+			if (is5TimesPowered(update_loop_tracking_counter.get(obj, prop))) {
 				console.warn(`Setting same property ${update_loop_tracking_counter.get(obj, prop)} times in one updating loop`, obj, prop)
 			}
 		}
 		else {
 			update_loop_tracking_counter.add(obj, prop)
 
-			if (is4TimesPowered(update_loop_tracking_counter.get(obj, prop))) {
+			if (is5TimesPowered(update_loop_tracking_counter.get(obj, prop))) {
 				console.warn(`Setting same property ${update_loop_tracking_counter.get(obj, prop)} times in one updating loop`, obj, prop)
 			}
 		}
@@ -359,20 +359,20 @@ function debug_infinite_tracking(obj: object, properties: PropertyKey[]) {
 		if (elementsUpdatableList) {
 			update_loop_tracking_counter.add(obj, '')
 
-			if (is4TimesPowered(update_loop_tracking_counter.get(obj, ''))) {
+			if (is5TimesPowered(update_loop_tracking_counter.get(obj, ''))) {
 				console.warn(`Setting same property ${update_loop_tracking_counter.get(obj, '')} times in one updating loop`, obj)
 			}
 		}
 	}
 }
 
-/** Be 4, 40, 400... */
-function is4TimesPowered(value: number): boolean {
-	while (value > 4 && value % 10 === 0) {
+/** Be 5, 50, 500... */
+function is5TimesPowered(value: number): boolean {
+	while (value > 5 && value % 10 === 0) {
 		value /= 10
 	}
 
-	return value === 4
+	return value === 5
 }
 
 /** 
