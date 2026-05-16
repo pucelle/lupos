@@ -131,11 +131,6 @@ class UpdateQueueClass {
 	 */
 	enqueue(upd: Updatable) {
 
-		// Already in updating.
-		if (this.asyncUpdatingSet.has(upd)) {
-			return
-		}
-
 		// Although has been enqueued independently, here must enqueue to TreeMap.
 		if (upd.iid >= 1 && this.updating) {
 			this.treeMap.onEnqueue(upd, this.updating)
@@ -278,7 +273,7 @@ class UpdateQueueClass {
 			await untilBarriersComplete()
 
 			// Wait for those very deep micro tasks to be completed.
-			// Bad part is it may postpone callback to next frame.
+			// Bad part is it may postpone callbacks to next frame.
 			// await sleep(0)
 		}
 
