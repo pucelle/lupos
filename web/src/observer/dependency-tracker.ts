@@ -311,7 +311,7 @@ function debug_circular_tracking(obj: object, properties: PropertyKey[]) {
 		}
 		else {
 			if (currentTracker.dependencies.has(obj, prop)) {
-				console.warn('Getting and setting same property in one tracking loop', obj)
+				console.warn('Getting and setting same property in one tracking loop', obj, prop)
 			}
 		}	
 	}
