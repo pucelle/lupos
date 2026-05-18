@@ -1,5 +1,5 @@
 import { Component, RefBinding, CompiledTemplateResult, TemplateMaker, SlotPosition, HTMLMaker } from 'lupos.html';
-import { trackGet, trackSet } from '../../../../web/out';
+import { Observed, trackGet, trackSet } from '../../../../web/out';
 import { Computed, trackGet, trackSet, Watcher } from "lupos";
 const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
 /*
@@ -24,6 +24,12 @@ export class TestIgnoringStringIndex extends Component {
     ignoreStringIndex() {
         trackGet(this, "prop");
         return this.prop[0];
+    }
+}
+export class TestIgnoringPrimitiveEvenObserved {
+    ignoreObservedString() {
+        let a = '1';
+        return a.charAt(0);
     }
 }
 export class TestIgnoringLifeFunction extends Component {

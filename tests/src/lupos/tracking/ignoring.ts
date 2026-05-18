@@ -1,5 +1,5 @@
 import {Component, html} from 'lupos.html'
-import {computed, trackGet, trackSet, watch} from '../../../../web/out'
+import {computed, Observed, trackGet, trackSet, watch} from '../../../../web/out'
 
 
 export class TestIgnoringStringIndex extends Component {
@@ -8,6 +8,15 @@ export class TestIgnoringStringIndex extends Component {
 
 	ignoreStringIndex() {
 		return this.prop[0]
+	}
+}
+
+
+export class TestIgnoringPrimitiveEvenObserved {
+
+	ignoreObservedString() {
+		let a: Observed<string> = '1'
+		return a.charAt(0)
 	}
 }
 
