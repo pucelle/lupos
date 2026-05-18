@@ -306,12 +306,12 @@ function debug_circular_tracking(obj: object, properties: PropertyKey[]) {
 	for (let prop of properties) {
 		if (prop === '') {
 			if (currentTracker.dependencies.hasKey(obj)) {
-				console.warn('Getting and setting same property in one tracking loop', obj)
+				console.warn(`Getting any property and setting property '' in one tracking loop`, obj)
 			}
 		}
 		else {
 			if (currentTracker.dependencies.has(obj, prop)) {
-				console.warn('Getting and setting same property in one tracking loop', obj, prop)
+				console.warn(`Getting and setting property '${prop as string}' in one tracking loop`, obj)
 			}
 		}	
 	}
@@ -319,7 +319,7 @@ function debug_circular_tracking(obj: object, properties: PropertyKey[]) {
 	// Should also calls elements updatable, low frequency.
 	if (!properties.includes('')) {
 		if (currentTracker.dependencies.has(obj, '')) {
-			console.warn('Getting and setting same property in one tracking loop', obj)
+			console.warn(`Getting property '' and setting any property in one tracking loop`, obj)
 		}
 	}
 }
@@ -334,45 +334,24 @@ function debug_circular_tracking(obj: object, properties: PropertyKey[]) {
  *   await ...
  *   set same property
  * `
+ * 
+ * and
+ * `
+ * for (...) {
+ *   trackSet(...)
+ * }
+ * `
  */
 function debug_infinite_tracking(obj: object, properties: PropertyKey[]) {
 	for (let prop of properties) {
-		if (prop === '') {
-			update_loop_tracking_counter.add(obj, prop)
+		update_loop_tracking_counter.add(obj, prop)
 
-			if (is5TimesPowered(update_loop_tracking_counter.get(obj, prop))) {
-				console.warn(`Setting same property ${update_loop_tracking_counter.get(obj, prop)} times in one updating loop`, obj, prop)
-			}
-		}
-		else {
-			update_loop_tracking_counter.add(obj, prop)
-
-			if (is5TimesPowered(update_loop_tracking_counter.get(obj, prop))) {
-				console.warn(`Setting same property ${update_loop_tracking_counter.get(obj, prop)} times in one updating loop`, obj, prop)
-			}
+		// Test shows, sliding may cause 10 times firing in one micro task tick.
+		let count = update_loop_tracking_counter.get(obj, prop)
+		if (count >= 10) {
+			console.warn(`Setting property '${prop as string}' at least ${count} times in one updating loop`, obj)
 		}
 	}
-
-	// Should also calls elements updatable, low frequency.
-	if (!properties.includes('')) {
-		let elementsUpdatableList = DepMap.getUpdatable(obj, '')
-		if (elementsUpdatableList) {
-			update_loop_tracking_counter.add(obj, '')
-
-			if (is5TimesPowered(update_loop_tracking_counter.get(obj, ''))) {
-				console.warn(`Setting same property ${update_loop_tracking_counter.get(obj, '')} times in one updating loop`, obj)
-			}
-		}
-	}
-}
-
-/** Be 5, 50, 500... */
-function is5TimesPowered(value: number): boolean {
-	while (value > 5 && value % 10 === 0) {
-		value /= 10
-	}
-
-	return value === 5
 }
 
 /** 
