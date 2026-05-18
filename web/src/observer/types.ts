@@ -7,17 +7,17 @@
  * or make a class declaration implements `Observed`,
  * or make a type parameter extends `Observed<...>`.
  */
-export type Observed<T extends object = object> = T
+export type Observed<T = any> = T
 
 /** 
- * `UnObserved` means we will stop observe this object.
+ * `UnObserved` means we will stop observing this object.
  * 
  * You may declare a variable / property / parameter as `UnObserved<...>` type,
  * or use as expression `a as UnObserved<...>`,
  * or make a class declaration implements `UnObserved` to overwrite super,
  * or make a type parameter extends `UnObserved<...>`.
  */
-export type UnObserved<T extends object = object> = T
+export type UnObserved<T = any> = T
 
 
 
