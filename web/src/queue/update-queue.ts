@@ -234,9 +234,24 @@ class UpdateQueueClass {
 	private async update() {
 		while (!this.heap.isEmpty() || this.completeCallbacks.length > 0) {
 			this.phase = QueueUpdatePhase.Updating
+			let negativeIID: boolean = true
 
 			while (!this.heap.isEmpty()) {
-				let upd = this.heap.popHead()!
+				let upd = this.heap.getHead()!
+
+				if (upd.iid < 0) {
+					negativeIID = true
+				}
+				else if (negativeIID) {
+
+					// Why from effectors to components, need to wait for a micro task tick?
+					// Assume we load cached data by an async loader, in an effector...
+					await Promise.resolve()
+					negativeIID = false
+					continue
+				}
+
+				this.heap.popHead()
 				this.updateEach(upd)
 			}
 
