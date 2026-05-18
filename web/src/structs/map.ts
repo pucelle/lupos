@@ -166,6 +166,11 @@ export class InternalPairKeysCounter<K1, K2> {
 
 	private map: Map<K1, Map<K2, number>> = new Map();
 
+	/** Get all key count. */
+	keyCount(): number {
+		return this.map.size
+	}
+
 	/** Iterate each key pairs and each value after flatted. */
 	*flatEntries(): Iterable<[K1, K2, number]> {
 		for (let [k1, sub] of this.map.entries()) {

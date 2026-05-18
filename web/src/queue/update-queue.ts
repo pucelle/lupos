@@ -1,4 +1,3 @@
-import {debug_on_updating_end} from '../observer/dependency-tracker'
 import {MiniHeap} from '../structs'
 import {Updatable} from '../types'
 import {AnimationFrame, promisify} from '../utils'
@@ -294,8 +293,6 @@ class UpdateQueueClass {
 
 		// Back to start stage.
 		this.phase = QueueUpdatePhase.NotStarted
-
-		debug_on_updating_end()
 	}
 
 	/** Do updating to clear heap only. */

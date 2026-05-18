@@ -1,6 +1,7 @@
 import {InternalPairKeysCounter, InternalSetMap} from '../structs/map'
 import {DependencyMap} from './dependency-map'
 import {Updatable} from '../types'
+import {UpdateQueue} from '../queue'
 
 
 /** Caches `Dependency <=> Updatable`. */
@@ -343,6 +344,12 @@ function debug_circular_tracking(obj: object, properties: PropertyKey[]) {
  * `
  */
 function debug_infinite_tracking(obj: object, properties: PropertyKey[]) {
+	if (update_loop_tracking_counter.keyCount() === 0) {
+		UpdateQueue.whenAllComplete(() => {
+			update_loop_tracking_counter.clear()
+		})
+	}
+
 	for (let prop of properties) {
 		update_loop_tracking_counter.add(obj, prop)
 
@@ -352,12 +359,4 @@ function debug_infinite_tracking(obj: object, properties: PropertyKey[]) {
 			console.warn(`Setting property '${prop as string}' at least ${count} times in one updating loop`, obj)
 		}
 	}
-}
-
-/** 
- * Call it to debug after each time update completed.
- * This `debug_xxx` functions should be eliminated in production mode.
- */
-export function debug_on_updating_end() {
-	update_loop_tracking_counter.clear()
 }
