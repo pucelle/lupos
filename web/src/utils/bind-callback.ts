@@ -1,8 +1,8 @@
-import {InternalWeakerPairKeysMap} from '../structs/map-weak'
+import {InternalWeakPairKeysMap} from '../structs/map-weak'
 
 
 /** Caches all bound callbacks, `Callback -> Scope -> Bound Callback`. */
-const BoundCallbackMap: InternalWeakerPairKeysMap<Function, object, Function> = /*#__PURE__*/new InternalWeakerPairKeysMap()
+const BoundCallbackMap: InternalWeakPairKeysMap<Function, object, Function> = /*#__PURE__*/new InternalWeakPairKeysMap()
 
 
 /** 

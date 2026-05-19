@@ -1,4 +1,4 @@
-import {InternalWeakPairKeysListMap} from '../structs/map-weak'
+import {InternalWeakFirstPairKeysListMap} from '../structs/map-weak'
 import {EventType, InferEventHandler} from './types'
 
 
@@ -16,7 +16,7 @@ interface EventListener {
 
 
 /** Cache event listeners. */
-const EventListenerMap: InternalWeakPairKeysListMap<EventTarget, string, EventListener> = /*#__PURE__*/new InternalWeakPairKeysListMap()
+const EventListenerMap: InternalWeakFirstPairKeysListMap<EventTarget, string, EventListener> = /*#__PURE__*/new InternalWeakFirstPairKeysListMap()
 
 
 /** 

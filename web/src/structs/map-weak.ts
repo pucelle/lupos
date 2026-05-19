@@ -6,7 +6,7 @@ import {InternalListMap, InternalSetMap} from './map'
  * Index single value by a pair of object keys.
  * Both `K1` and `K2` must be object type.
  */
-export class InternalWeakerPairKeysMap<K1 extends object, K2 extends object, V> {
+export class InternalWeakPairKeysMap<K1 extends object, K2 extends object, V> {
 
 	private map: WeakMap<K1, WeakMap<K2, V>> = new WeakMap();
 
@@ -24,7 +24,7 @@ export class InternalWeakerPairKeysMap<K1 extends object, K2 extends object, V> 
 	set(k1: K1, k2: K2, v: V) {
 		let sub = this.map.get(k1)
 		if (!sub) {
-			sub = new Map()
+			sub = new WeakMap()
 			this.map.set(k1, sub)
 		}
 
@@ -38,7 +38,7 @@ export class InternalWeakerPairKeysMap<K1 extends object, K2 extends object, V> 
  * Index value list by a pair of keys.
  * `K1` must be object type.
  */
-export class InternalWeakPairKeysListMap<K1 extends object, K2, V> {
+export class InternalWeakFirstPairKeysListMap<K1 extends object, K2, V> {
 	
 	protected map: WeakMap<K1, InternalListMap<K2, V>> = new WeakMap();
 
