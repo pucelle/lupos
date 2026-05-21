@@ -49,25 +49,15 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
     let $latest_0, $latest_1;
     let $locator = $html_0.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $binding_0 = new TransitionBinding($node_0, $context);
-    let $delegator_0 = new PartDelegator();
+    let $delegator_0 = new PartDelegator(() => new TransitionBinding($node_0, $context));
     return {
         el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
-            if ($values[0]) {
-                if ($latest_1 !== $values[1]) {
-                    $binding_0.update($values[1]);
-                    $latest_1 = $values[1];
-                }
-            }
-            if ($values[0] && !$latest_0) {
-                $delegator_0.update($binding_0);
+            if ($latest_0 !== $values[0] || $latest_1 !== $values[1]) {
+                $delegator_0.update($values[0], $values[1]);
                 $latest_0 = $values[0];
-            }
-            else if (!$values[0] && $latest_0) {
-                $delegator_0.update(null);
-                $latest_0 = $values[0];
+                $latest_1 = $values[1];
             }
         },
         parts: [
@@ -83,19 +73,13 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
     let $latest_0;
     let $locator = $html_0.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $binding_0 = new TransitionBinding($node_0, $context);
-    let $delegator_0 = new PartDelegator();
+    let $delegator_0 = new PartDelegator(() => new TransitionBinding($node_0, $context));
     return {
         el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
-            if ($values[0] && !$latest_0) {
-                $binding_0.update(fade({ duration: 3000 }));
-                $delegator_0.update($binding_0);
-                $latest_0 = $values[0];
-            }
-            else if (!$values[0] && $latest_0) {
-                $delegator_0.update(null);
+            if ($latest_0 !== $values[0]) {
+                $delegator_0.update($values[0], fade({ duration: 3000 }));
                 $latest_0 = $values[0];
             }
         },

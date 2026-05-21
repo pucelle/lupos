@@ -2,7 +2,7 @@ import ts from 'typescript'
 import {HTMLNode, LuposKnownInternalBindings} from '../../../lupos-ts-module'
 import {PartType, TreeParser} from '../tree'
 import {BindingSlotParser} from '../slots'
-import {factory, Modifier, DeclarationScopeTree, Packer, helper} from '../../../core'
+import {factory, Modifier, DeclarationScopeTree, helper} from '../../../core'
 import {TemplateParser} from '../template'
 import {VariableNames} from '../variable-names'
 import {setLatestBindingInfo} from './latest-binding'
@@ -43,12 +43,6 @@ export class BindingBase {
 	/** $binding_0 */
 	protected bindingVariableName: string = ''
 
-	/** Query parameter part like `a` of `?:binding=${a, b}`. */
-	protected queryParameter: ts.Expression | null = null
-
-	/** $latest_0 for query parameter. */
-	protected latestQueryVariableName: string | null = null
-
 	/** 
 	 * After splitting like `:binding=${a, b}` or `:binding=${(a, b)}`.
 	 * It doesn't include query value for optional binding like `?:binding=${a, b}`
@@ -60,6 +54,9 @@ export class BindingBase {
 
 	/** $delegator_0 */
 	protected delegatorVariableName: string | null = null
+
+	/** Binding variable name of next `:ref.binding=...`. */
+	protected refBindingVariableName: string | null = null
 
 	constructor(slot: BindingSlotParser) {
 		this.slot = slot
@@ -100,45 +97,39 @@ export class BindingBase {
 		}
 	}
 
-
-	/** Output query value when having query parameter. */
-	outputQueryValue(): ts.Expression {
-		if (!this.queryParameter) {
-			return factory.createNull()
-		}
-
-		let value = this.template.
-		values.outputValueOfIndex(this.queryParameter!, this.slot.valueIndices![0], this.tree, this.asLazyCallback)
-		return value
-	}
-
 	preInit() {
 		this.initBindingClass()
 		this.initParameters()
-		this.initLatestQueryVariableName()
 		this.initLatestVariableNames()
 
 		// Mark as will applying `:html`.
-		if (this.name === 'html' && !this.queryParameter) {
+		if (this.name === 'html') {
 			this.node.setAttr('html', null)
 		}
 
-		this.bindingVariableName = this.tree.makeUniqueBindingName()
-
 		// Use a delegator to delegate binding part because it may be deleted.
+		// If have no following binding ref, no need to initialize a binding variable name.
 		if (this.withQueryToken) {
 			Modifier.addImport('PartDelegator', 'lupos.html')
 			this.delegatorVariableName = this.tree.makeUniqueDelegatorName()
+			this.tree.addPart(this.delegatorVariableName, this.node, PartType.Delegator)
+		}
+		else {
+			this.bindingVariableName = this.tree.makeUniqueBindingName()
 
 			if (this.implementsPart) {
-				this.tree.addPart(this.delegatorVariableName, this.node, PartType.Delegator)
+				this.tree.addPart(this.bindingVariableName, this.node, PartType.Binding)
 			}
 		}
-		else if (this.implementsPart) {
-			this.tree.addPart(this.bindingVariableName, this.node, PartType.Binding)
-		}
 		
-		setLatestBindingInfo(this.node, this.bindingVariableName, this.queryParameter)
+		// Communicate with next `:ref.binding`.
+		setLatestBindingInfo(
+			this.node,
+			this.bindingVariableName,	// May be '' if will bind it dynamically by `PartDelegator`.
+			(refBindingName: string) => {
+				this.refBindingVariableName = refBindingName
+			}
+		)
 	}
 
 	postInit() {}
@@ -190,21 +181,14 @@ export class BindingBase {
 		}
 	}
 
-	/** Initialize as list parameters, like `:bind=${a, b}` will be parsed as `[a, b]`. */
+	/** Initialize as list parameters, like `:bind=${(a, b)}` will be parsed as `[a, b]`. */
 	protected initParameters() {
 		if (this.slot.strings || !this.slot.valueIndices) {
 			return
 		}
 
 		let parameters = this.splitToParameters()
-
-		if (this.withQueryToken) {
-			this.queryParameter = parameters[0] ?? null
-			this.parameterList = parameters.slice(1)
-		}
-		else {
-			this.parameterList = parameters
-		}
+		this.parameterList = parameters
 	}
 
 	/** 
@@ -221,13 +205,6 @@ export class BindingBase {
 
 		let rawValueNodes = helper.pack.unPackCommaBinaryExpressions(rawValueNode)
 		return rawValueNodes
-	}
-
-	/** Initialize latest query variable name, must after `initParameterList`. */
-	protected initLatestQueryVariableName() {
-		if (this.queryParameter) {
-			this.latestQueryVariableName = this.slot.makeCustomGroupOfLatestNames([this.queryParameter])[0]
-		}
 	}
 
 	/** Initialize latest variable names, must after `initParameterList`. */
@@ -268,38 +245,98 @@ export class BindingBase {
 			))
 		}
 
-		// let $binding_0 = new ClassBinding($node_0, ?context, ?modifiers)
-		let bindingInit = this.slot.createVariableAssignment(
-			this.bindingVariableName,
-			factory.createNewExpression(
-				factory.createIdentifier(bindingClassName),
-				undefined,
-				bindingParams
-			)
+		// new ClassBinding($node_0, ?context, ?modifiers)
+		let newBinding = factory.createNewExpression(
+			factory.createIdentifier(bindingClassName),
+			undefined,
+			bindingParams
 		)
 
-		let init = [bindingInit]
 
+		// Output contents.
+		let init: (ts.Statement | ts.Expression)[] = []
 
-		// let $delegator_0 = new PartDelegator()
-		if (this.delegatorVariableName) {
+		// let $binding_0
+		// () => new ClassBinding($node_0, ?context, ?modifiers)
+		if (this.withQueryToken) {
+
+			// `() => new ClassBinding($node_0, ?context, ?modifiers)` for `PartDelegator` param.
+			let bindingInitFn = factory.createArrowFunction(
+				undefined,
+				undefined,
+				[],
+				undefined,
+				factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
+				newBinding
+			)
+
+			// () => (binding) => {$ref_0.setRefValue(binding)}
+			let refOnUpdated: ts.ArrowFunction | null = null
+
+			if (this.refBindingVariableName) {
+
+				// () => (binding) => {$ref_0.setRefValue(binding)}
+				refOnUpdated = factory.createArrowFunction(
+					undefined,
+					undefined,
+					[factory.createParameterDeclaration(
+						undefined,
+						undefined,
+						factory.createIdentifier('binding'),
+						undefined,
+						undefined,
+						undefined
+					)],
+					undefined,
+					factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
+					factory.createBlock(
+						[
+							factory.createExpressionStatement(factory.createCallExpression(
+								factory.createPropertyAccessExpression(
+									factory.createIdentifier(this.refBindingVariableName!),
+									factory.createIdentifier('setRefValue')
+								),
+								undefined,
+								[
+									factory.createIdentifier('binding')
+								]
+							))
+						],
+						false
+					)
+				)
+			}
+			
+			// let $delegator_0 = new PartDelegator(...)
 			let delegatorPart = this.slot.createVariableAssignment(
-				this.delegatorVariableName,
+				this.delegatorVariableName!,
 				factory.createNewExpression(
 					factory.createIdentifier('PartDelegator'),
 					undefined,
-					[]
+					[
+						bindingInitFn,
+						...(refOnUpdated ? [refOnUpdated] : [])
+					]
 				)
 			)
 
 			init.push(delegatorPart)
 		}
 
+		// let $binding_0 = new ClassBinding($node_0, ?context, ?modifiers)
+		else {
+			let bindingInit = this.slot.createVariableAssignment(
+				this.bindingVariableName,
+				newBinding
+			)
+
+			init.push(bindingInit)
+		}
+
 		return init
 	}
 
 	outputUpdate() {
-		let queryValue = this.outputQueryValue()
 		let values = this.outputValue()
 
 		let callMethod = 'update'
@@ -311,7 +348,7 @@ export class BindingBase {
 		let update: ts.Statement | ts.Expression
 
 		// if ($latest_0 !== $values[0]) {
-		//   $binding_0.callMethod(callValue)
+		//   ($delegator_0 or $binding_0).callMethod(callValue)
 		//   $latest_0 = $values[0]
 		// }
 		if (this.latestVariableNames) {
@@ -321,7 +358,7 @@ export class BindingBase {
 					[
 						factory.createExpressionStatement(factory.createCallExpression(
 							factory.createPropertyAccessExpression(
-								factory.createIdentifier(this.bindingVariableName),
+								factory.createIdentifier(this.delegatorVariableName || this.bindingVariableName),
 								factory.createIdentifier(callMethod)
 							),
 							undefined,
@@ -347,119 +384,11 @@ export class BindingBase {
 			)
 		}
 
-		// For `?:binding=...`.
-		if (this.delegatorVariableName) {
-			let isStaticUpdate = !this.latestVariableNames
-			return this.outputDelegator(queryValue, update, isStaticUpdate)
-		}
-
 		return update
 	}
 
 	/** To patch update call method and values. */
 	protected patchCallMethodAndValues(callWith: BindingUpdateCallWith): BindingUpdateCallWith {
 		return callWith
-	}
-
-	private outputDelegator(queryValue: ts.Expression, update: ts.Statement | ts.Expression, isStaticUpdate: boolean) {
-
-		// if ($values[0]) {
-		//   NormalUpdateLogic
-		// }
-
-		// if ($values[0] && !$latest_0) {
-		//   StaticUpdatePosition
-		//   $delegator_0.update($binding_0)
-		//   $latest_0 = $values[0]
-		// }
-		// else if (!$values[0] && $latest_0) {
-		//   $delegator_0.update(null)
-		//   $latest_0 = $values[0]
-		// }
-
-		// If `isStaticUpdate`,
-		// Moves `NormalUpdateLogic` to `StaticUpdatePosition`.
-
-		let updateIf: ts.Statement | null = null
-		
-		if (!isStaticUpdate) {
-			updateIf = factory.createIfStatement(
-				queryValue,
-				factory.createBlock(
-					[Packer.toStatement(update)],
-					true
-				),
-				undefined
-			)
-		}
-		
-
-		let compare: ts.Statement | null = null
-
-		if (this.latestQueryVariableName) {
-			compare = factory.createIfStatement(
-				factory.createBinaryExpression(
-					queryValue,
-					factory.createToken(ts.SyntaxKind.AmpersandAmpersandToken),
-					factory.createPrefixUnaryExpression(
-						ts.SyntaxKind.ExclamationToken,
-						factory.createIdentifier(this.latestQueryVariableName)
-					)
-				),
-				factory.createBlock(
-					[
-						...(isStaticUpdate ? [Packer.toStatement(update)] : []),
-						factory.createExpressionStatement(factory.createCallExpression(
-							factory.createPropertyAccessExpression(
-								factory.createIdentifier(this.delegatorVariableName!),
-								factory.createIdentifier('update')
-							),
-							undefined,
-							[factory.createIdentifier(this.bindingVariableName)]
-						)),
-						factory.createExpressionStatement(factory.createBinaryExpression(
-							factory.createIdentifier(this.latestQueryVariableName),
-							factory.createToken(ts.SyntaxKind.EqualsToken),
-							queryValue
-						))
-					],
-					true
-				),
-				factory.createIfStatement(
-					factory.createBinaryExpression(
-						factory.createPrefixUnaryExpression(
-							ts.SyntaxKind.ExclamationToken,
-							queryValue
-						),
-						factory.createToken(ts.SyntaxKind.AmpersandAmpersandToken),
-						factory.createIdentifier(this.latestQueryVariableName)
-					),
-					factory.createBlock(
-					[
-						factory.createExpressionStatement(factory.createCallExpression(
-							factory.createPropertyAccessExpression(
-								factory.createIdentifier(this.delegatorVariableName!),
-								factory.createIdentifier('update')
-							),
-							undefined,
-							[factory.createNull()]
-						)),
-						factory.createExpressionStatement(factory.createBinaryExpression(
-							factory.createIdentifier(this.latestQueryVariableName),
-							factory.createToken(ts.SyntaxKind.EqualsToken),
-							queryValue
-						))
-					],
-					true
-					),
-					undefined
-				)
-			)
-		}
-		
-		return [
-			...(updateIf ? [updateIf] : []),
-			...(compare ? [compare] : []),
-		]
 	}
 }

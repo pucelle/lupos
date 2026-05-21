@@ -8,8 +8,4 @@ export class TestHTMLBinding extends Component {
 	testHTML() {
 		return html`<div :html=${this.html} />`
 	}
-
-	testOptionalHTML() {
-		return html`<div ?:html=${true, this.html} />`
-	}
 }

@@ -42,9 +42,13 @@ export class RefBinding extends BindingBase {
 		if (this.modifiers.includes('binding')) {
 			this.previousBindingInfo = getLatestBindingInfo(this.node)
 		}
-		
+
 		this.initRef()
 		super.preInit()
+
+		if (this.previousBindingInfo) {
+			this.previousBindingInfo.setRefBindingName(this.bindingVariableName)
+		}
 	}
 
 	private getRawValueNode(): ts.Expression | undefined {
@@ -130,15 +134,6 @@ export class RefBinding extends BindingBase {
 		if (this.usePropAccess) {
 			this.parameterList = null
 		}
-
-		// Apply, but not overwrite the query parameter from referencing binding to current.
-		if (!this.withQueryToken
-			&& this.previousBindingInfo
-			&& this.previousBindingInfo.queryParameter
-		) {
-			this.withQueryToken = true
-			this.queryParameter = this.previousBindingInfo.queryParameter
-		}
 	}
 
 	protected override initLatestVariableNames() {
@@ -146,92 +141,36 @@ export class RefBinding extends BindingBase {
 			super.initLatestVariableNames()
 		}
 	}
+
+	override outputInit() {
+		let init = super.outputInit()
+
+		// $ref_0.setRefValue(binding)
+		if (this.previousBindingInfo && this.previousBindingInfo.name) {
+			let setRefValue = factory.createExpressionStatement(factory.createCallExpression(
+				factory.createPropertyAccessExpression(
+					factory.createIdentifier(this.bindingVariableName),
+					factory.createIdentifier('setRefValue')
+				),
+				undefined,
+				[
+					factory.createIdentifier(this.previousBindingInfo.name)
+				]
+			))
+
+			init.push(setRefValue)
+		}
+
+		return init
+	}
 	
 	protected override patchCallMethodAndValues(callWith: BindingUpdateCallWith): BindingUpdateCallWith {
 		let rawValueNode = this.getRawValueNode()!
 		let callValue = callWith.values[0]
 
 		// this.refName ->
-		// function(){ this.refName = previousBinding }
-		if (this.previousBindingInfo && this.usePropAccess) {
-			callValue = factory.createFunctionExpression(
-				undefined,
-				undefined,
-				factory.createIdentifier(''),
-				undefined,
-				[factory.createParameterDeclaration(
-					undefined,
-					undefined,
-					factory.createIdentifier('doRef'),
-					undefined,
-					undefined,
-					undefined
-				)],
-				undefined,
-				factory.createBlock(
-					[
-						factory.createExpressionStatement(factory.createBinaryExpression(
-							rawValueNode,
-							factory.createToken(ts.SyntaxKind.EqualsToken),
-							factory.createConditionalExpression(
-								factory.createIdentifier('doRef'),
-								factory.createToken(ts.SyntaxKind.QuestionToken),
-								factory.createIdentifier(this.previousBindingInfo.name),
-								factory.createToken(ts.SyntaxKind.ColonToken),
-								factory.createNull()
-							)
-						)),
-						...Packer.toStatements(TrackingPatch.outputIsolatedTracking(rawValueNode, 'set'))
-					],
-					false
-				)
-			)
-		}
-
-		// function(doRef){ this.refBinding.call(this, doRef ? previousBinding : null) }
-		else if (this.previousBindingInfo) {
-			callValue = factory.createFunctionExpression(
-				undefined,
-				undefined,
-				factory.createIdentifier(''),
-				undefined,
-				[factory.createParameterDeclaration(
-					undefined,
-					undefined,
-					factory.createIdentifier('doRef'),
-					undefined,
-					undefined,
-					undefined
-				)],
-				undefined,
-				factory.createBlock(
-					[
-						factory.createExpressionStatement(factory.createCallExpression(
-							factory.createPropertyAccessExpression(
-								rawValueNode,
-								factory.createIdentifier('call')
-							),
-							undefined,
-							[
-								factory.createThis(),
-								factory.createConditionalExpression(
-									factory.createIdentifier('doRef'),
-									factory.createToken(ts.SyntaxKind.QuestionToken),
-									factory.createIdentifier(this.previousBindingInfo.name),
-									factory.createToken(ts.SyntaxKind.ColonToken),
-									factory.createNull()
-								)
-							]
-						))
-					],
-					false
-				)
-			)
-		}
-
-		// this.refName ->
 		// function(refed){ this.refName = refed }
-		else if (this.usePropAccess) {
+		if (this.usePropAccess) {
 			callValue = factory.createFunctionExpression(
 				undefined,
 				undefined,
