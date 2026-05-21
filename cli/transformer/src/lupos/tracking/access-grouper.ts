@@ -86,9 +86,11 @@ export namespace AccessGrouper {
 		)
 
 		// `a?.b` -> `a && trackGet(a, 'b')`
-		if (node.questionDotToken) {
+		if (helper.access.isOfOptionalChaining(node)) {
+			let unOptionalExp = helper.access.removesLastOptionalChainingTail(node)
+
 			return factory.createBinaryExpression(
-				Packer.removeAccessComments(node.expression),
+				Packer.removeAccessComments(unOptionalExp),
 				factory.createToken(ts.SyntaxKind.AmpersandAmpersandToken),
 				trackGet
 			)

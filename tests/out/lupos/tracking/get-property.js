@@ -69,11 +69,18 @@ export class TestGroupedProp extends Component {
 }
 export class TestQuestionDotPropMerge extends Component {
     prop = undefined;
+    propDeeper = undefined;
     getProp() {
         trackGet(this, "prop");
         this.prop && trackGet(this.prop, "value");
         return '' + this.prop?.value
             + this.prop?.['value'];
+    }
+    getPropDeeper() {
+        trackGet(this, "propDeeper");
+        this.propDeeper && trackGet(this.propDeeper, "value");
+        this.propDeeper && trackGet(this.propDeeper?.value, "value");
+        return this.propDeeper?.value.value;
     }
 }
 export class TestNonObservedClass {

@@ -85,10 +85,15 @@ export class TestGroupedProp extends Component {
 export class TestQuestionDotPropMerge extends Component {
 
 	prop: {value: number} | undefined = undefined
+	propDeeper: {value: {value: number}} | undefined = undefined
 
 	getProp() {
 		return '' + this.prop?.value
 			+ this.prop?.['value']
+	}
+
+	getPropDeeper() {
+		return this.propDeeper?.value.value
 	}
 }
 
