@@ -345,7 +345,7 @@ function debug_circular_tracking(obj: object, properties: PropertyKey[]) {
  */
 function debug_infinite_tracking(obj: object, properties: PropertyKey[]) {
 	if (update_loop_tracking_counter.keyCount() === 0) {
-		UpdateQueue.whenAllComplete(() => {
+		UpdateQueue.whenComplete(() => {
 			update_loop_tracking_counter.clear()
 		})
 	}

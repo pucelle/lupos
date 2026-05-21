@@ -2,7 +2,6 @@ import {MiniHeap} from '../structs'
 import {Updatable} from '../types'
 import {AnimationFrame, promisify} from '../utils'
 import {untilBarriersComplete} from './barrier-queue'
-import {UpdatableTreeMap} from './update-tree-map'
 
 
 /** Caches things that need to be update. */
@@ -86,9 +85,6 @@ class UpdateQueueClass {
 	/** Caches all callbacks in order. */
 	readonly heap: UpdateHeap = new UpdateHeap()
 
-	/** To support tracking child complete and do callback. */
-	readonly treeMap: UpdatableTreeMap = new UpdatableTreeMap()
-
 	/** What's updating right now. */
 	private phase: QueueUpdatePhase = QueueUpdatePhase.NotStarted
 
@@ -97,9 +93,6 @@ class UpdateQueueClass {
 
 	/** The promises that will wait for. */
 	private promises: Promise<void>[] = []
-
-	/** Avoid same async update happens at same time. */
-	private asyncUpdatingSet: Set<Updatable> = new Set()
 
 	/** Synchronous updatable that is updating. */
 	private updating: Updatable | null = null
@@ -130,11 +123,6 @@ class UpdateQueueClass {
 	 */
 	enqueue(upd: Updatable) {
 
-		// Although has been enqueued independently, here must enqueue to TreeMap.
-		if (upd.iid >= 1 && this.updating) {
-			this.treeMap.onEnqueue(upd, this.updating)
-		}
-
 		// Must update it immediately, or it will be stuck because can't resolve promises.
 		if (!this.heap.has(upd)) {
 			this.heap.add(upd)
@@ -146,45 +134,13 @@ class UpdateQueueClass {
 	hasEnqueued(upd: Updatable): boolean {
 		return this.heap.has(upd)
 			|| this.updating === upd
-			|| this.asyncUpdatingSet.has(upd)
-	}
-
-	/** Whether target updatable is updating. */
-	private isUpdating(upd: Updatable): boolean {
-		return this.updating === upd
-			|| this.asyncUpdatingSet.has(upd)
-	}
-
-	/** 
-	 * Calls callback after all children, and all descendants update completed.
-	 * 
-	 * Must call this after Updatable has been enqueued.
-	 * 
-	 * Use it when you need to wait for child and descendant components
-	 * update completed and do some measurement.
-	 * 
-	 * ```ts
-	 * update() {
-	 *     this.updateRendering()
-	 *     UpdateQueue.whenChildComplete(this.doMoreAfterChildUpdateCompleted)
-	 *     ...
-	 * }
-	 * ```
-	 */
-	whenChildComplete(upd: Updatable, callback: () => void) {
-		this.treeMap.addChildCompleteCallback(upd, callback)
-
-		// If is updating, callback immediately if has no child.
-		if (this.isUpdating(upd)) {
-			this.treeMap.onCheck(upd)
-		}
 	}
 
 	/** 
 	 * Calls callback all the enqueued callbacks called.
 	 * Can safely read computed style and rendered properties after promise resolved.
 	 */
-	whenAllComplete(callback: () => void) {
+	whenComplete(callback: () => void) {
 		this.completeCallbacks.push(callback)
 		this.willUpdate()
 	}
@@ -195,8 +151,8 @@ class UpdateQueueClass {
 	 * 
 	 * Note 'never' await it in an async update, or whole update process will be stuck.
 	 */
-	untilAllComplete(): Promise<void> {
-		return promisify(this.whenAllComplete, this)
+	untilComplete(): Promise<void> {
+		return promisify(this.whenComplete, this)
 	}
 
 	/** 
@@ -205,13 +161,13 @@ class UpdateQueueClass {
 	 * after previous all update completed.
 	 */
 	async untilDeepComplete(depth: number = 1): Promise<void> {
-		await this.untilAllComplete()
+		await this.untilComplete()
 
 		for (let i = 0; i < depth; i++) {
 			await Promise.resolve()
 
 			if (this.phase !== QueueUpdatePhase.NotStarted) {
-				await this.untilAllComplete()
+				await this.untilComplete()
 				i = 0
 			}
 		}
@@ -308,7 +264,7 @@ class UpdateQueueClass {
 	/** Update each with error catching. */
 	private updateEach(upd: Updatable) {
 		try {
-			if (upd.iid < 1) {
+			if (upd.iid < 0) {
 				upd.update()
 			}
 			else {
@@ -316,16 +272,7 @@ class UpdateQueueClass {
 
 				let returned = upd.update()
 				if (returned) {
-					let promise = returned.finally(() => {
-						this.asyncUpdatingSet.delete(upd)
-						this.treeMap.onCheck(upd)
-					})
-
-					this.promises.push(promise)
-					this.asyncUpdatingSet.add(upd)
-				}
-				else {
-					this.treeMap.onCheck(upd)
+					this.promises.push(returned)
 				}
 
 				this.updating = null
