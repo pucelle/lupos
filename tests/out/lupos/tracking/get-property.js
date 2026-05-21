@@ -70,6 +70,7 @@ export class TestGroupedProp extends Component {
 export class TestQuestionDotPropMerge extends Component {
     prop = undefined;
     propDeeper = undefined;
+    propDeeperList = undefined;
     getProp() {
         trackGet(this, "prop");
         this.prop && trackGet(this.prop, "value");
@@ -80,7 +81,14 @@ export class TestQuestionDotPropMerge extends Component {
         trackGet(this, "propDeeper");
         this.propDeeper && trackGet(this.propDeeper, "value");
         this.propDeeper && trackGet(this.propDeeper?.value, "value");
-        return this.propDeeper?.value.value;
+        return this.propDeeper?.value.value ?? 0;
+    }
+    getPropDeeperList() {
+        trackGet(this, "propDeeperList");
+        this.propDeeperList && trackGet(this.propDeeperList, "value");
+        this.propDeeperList && trackGet(this.propDeeperList?.value, "list");
+        this.propDeeperList && trackGet((this.propDeeperList?.value.list), "");
+        return this.propDeeperList?.value.list.length ?? 0;
     }
 }
 export class TestNonObservedClass {

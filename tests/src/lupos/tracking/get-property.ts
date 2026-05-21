@@ -86,6 +86,7 @@ export class TestQuestionDotPropMerge extends Component {
 
 	prop: {value: number} | undefined = undefined
 	propDeeper: {value: {value: number}} | undefined = undefined
+	propDeeperList: {value: {list: number[]}} | undefined = undefined
 
 	getProp() {
 		return '' + this.prop?.value
@@ -93,7 +94,11 @@ export class TestQuestionDotPropMerge extends Component {
 	}
 
 	getPropDeeper() {
-		return this.propDeeper?.value.value
+		return this.propDeeper?.value.value ?? 0
+	}
+
+	getPropDeeperList() {
+		return this.propDeeperList?.value.list.length ?? 0
 	}
 }
 

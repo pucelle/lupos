@@ -85,12 +85,13 @@ export namespace AccessGrouper {
 			parameters
 		)
 
-		// `a?.b` -> `a && trackGet(a, 'b')`
-		if (helper.access.isOfOptionalChaining(node)) {
-			let unOptionalExp = helper.access.removesLastOptionalChainingTail(node)
+		let optionalChainingExp = helper.access.getOptionalChainingExp(node)
 
+		// `a?.b` -> `a && trackGet(a, 'b')`
+		// `a?.b.c` -> `a && trackGet(a?.b, 'c')`
+		if (optionalChainingExp) {
 			return factory.createBinaryExpression(
-				Packer.removeAccessComments(unOptionalExp),
+				Packer.removeAccessComments(optionalChainingExp),
 				factory.createToken(ts.SyntaxKind.AmpersandAmpersandToken),
 				trackGet
 			)
