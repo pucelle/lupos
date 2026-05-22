@@ -43,7 +43,7 @@ export class AsyncComputed<V = any> implements Updatable {
 
 	/** 
 	 * By default when next async request send, will reset current value to `undefined`.
-	 * If specified `continuous` as true, will not reset.
+	 * If specified `continuous` as `true`, will not reset and keep the value continuous.
 	 */
 	constructor(getter: () => Promise<V>, onReset?: () => void, scope?: any, continuous?: boolean) {
 		this.getter = scope ? getter.bind(scope) : getter

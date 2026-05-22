@@ -22,12 +22,15 @@ export declare function computed(originalGetter: any, context: ClassGetterDecora
 
 /** 
  * `@asyncComputed` decorates a class method to compute current
- * property value by a async computer function.
+ * property value by an async computer function.
  * and it automatically request for new value after any dependency change.
+ * 
+ * By default when next async request send, will reset current value to `undefined`.
+ * If specified `continuous` as `true`, will not reset and keep the value continuous.
  * 
  * Use it like:
  * ```
- * @asyncComputed(async function(){... return ...})
+ * @asyncComputed(async function(){... return ...}, ?true)
  * property: Type = DefaultValue
  * ```
  * 
