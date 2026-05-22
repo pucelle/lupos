@@ -50,8 +50,11 @@ defineVisitor(function(node: ts.Node) {
 			continue
 		}
 
-		if (['computed', 'effect', 'watch', 'watchMulti'].includes(decoName)
-			&& (ts.isMethodDeclaration(member) || ts.isGetAccessorDeclaration(member))
+		if (['computed', 'asyncComputed', 'effect', 'watch', 'watchMulti'].includes(decoName)
+			&& (ts.isMethodDeclaration(member)
+				|| ts.isGetAccessorDeclaration(member)
+				|| ts.isPropertyDeclaration(member)
+			)
 		) {
 			compileComputedEffectWatchDecorator(deco, decoName, member, create, connect, disconnect)
 		}
@@ -82,7 +85,7 @@ function hasLifeDecorators(node: ts.ClassDeclaration) {
 		}
 
 		let decoName = helper.deco.getFirstName(member)
-		if (decoName && ['computed', 'effect', 'watch', 'watchMulti', 'useContext', 'setContext'].includes(decoName)) {
+		if (decoName && ['computed', 'asyncComputed', 'effect', 'watch', 'watchMulti', 'useContext', 'setContext'].includes(decoName)) {
 			return true
 		}
 
@@ -122,7 +125,7 @@ onWillDisconnect() {
 function compileComputedEffectWatchDecorator(
 	deco: ts.Decorator,
 	decoName: string,
-	decl: ts.MethodDeclaration | ts.GetAccessorDeclaration,
+	decl: ts.MethodDeclaration | ts.GetAccessorDeclaration | ts.PropertyDeclaration,
 	create: MethodOverwrite,
 	connect: MethodOverwrite | null,
 	disconnect: MethodOverwrite | null
@@ -188,14 +191,12 @@ function compileComputedEffectWatchDecorator(
 function makeMakerParameters(
 	deco: ts.Decorator,
 	decoName: string,
-	decl: ts.MethodDeclaration | ts.GetAccessorDeclaration
+	decl: ts.MethodDeclaration | ts.GetAccessorDeclaration | ts.PropertyDeclaration
 ): () => ts.Expression[] {
 	let methodName = helper.getFullText(decl.name)
-	let watchGetters = compileWatchGetters(deco, decoName)
-	let watchOptions = getWatchOptions(deco)
 
 	return () => {
-		if (decoName === 'computed') {
+		if (decoName === 'computed' || decoName === 'asyncComputed') {
 			return [
 				factory.createPropertyAccessExpression(
 					factory.createThis(),
@@ -217,30 +218,35 @@ function makeMakerParameters(
 				factory.createThis(),
 			]
 		}
-		else if (decoName === 'watch') {
-			return [
-				watchGetters()[0],
-				factory.createPropertyAccessExpression(
-					factory.createThis(),
-					factory.createIdentifier(methodName)
-				),
-				factory.createThis(),
-				...(watchOptions ? [watchOptions] : [])
-			]
-		}
-		else if (decoName === 'watchMulti') {
-			return [
-				factory.createArrayLiteralExpression(watchGetters(), true),
-				factory.createPropertyAccessExpression(
-					factory.createThis(),
-					factory.createIdentifier(methodName)
-				),
-				factory.createThis(),
-				...(watchOptions ? [watchOptions] : [])
-			]
-		}
 		else {
-			return []
+			let watchGetters = compileWatchGetters(deco, decoName)
+			let watchOptions = getWatchOptions(deco)
+
+			if (decoName === 'watch') {
+				return [
+					watchGetters()[0],
+					factory.createPropertyAccessExpression(
+						factory.createThis(),
+						factory.createIdentifier(methodName)
+					),
+					factory.createThis(),
+					...(watchOptions ? [watchOptions] : [])
+				]
+			}
+			else if (decoName === 'watchMulti') {
+				return [
+					factory.createArrayLiteralExpression(watchGetters(), true),
+					factory.createPropertyAccessExpression(
+						factory.createThis(),
+						factory.createIdentifier(methodName)
+					),
+					factory.createThis(),
+					...(watchOptions ? [watchOptions] : [])
+				]
+			}
+			else {
+				return []
+			}
 		}
 	}
 }

@@ -20,6 +20,28 @@ import {WatchOptions} from './watch'
  */
 export declare function computed(originalGetter: any, context: ClassGetterDecoratorContext): any
 
+/** 
+ * `@asyncComputed` decorates a class method to compute current
+ * property value by a async computer function.
+ * and it automatically request for new value after any dependency change.
+ * 
+ * Use it like:
+ * ```
+ * @asyncComputed(async function(){... return ...})
+ * property: Type = DefaultValue
+ * ```
+ * 
+ * The async computed action will be activated after instance initialized,
+ * in declaration order, and to be called in the update queue.
+ * and later be enqueued again when any visited dependencies get changed.
+ * 
+ * Note it gets updated in initialization order of all effectors / computers / watchers.
+ * 
+ * This is only a declaration, it will be replaced after been compiled.
+ */
+export declare function asyncComputed<T, V>(getter: (this: T) => Promise<V>):
+	(property: V | undefined, context: ClassFieldDecoratorContext<T>) => any
+
 
 /** 
  * `@effect` decorates a class method, it execute this method,

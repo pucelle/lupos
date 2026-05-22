@@ -2,26 +2,20 @@ import {beginTrack, DependencyTracker, endTrack, untrack} from '../dependency-tr
 import {UpdateQueue} from '../../queue/update-queue'
 import {getDecrementalOrder} from './order'
 import {Updatable} from '../../types'
-
-
-export const enum ComputedValueState {
-	Initial,
-	Stale,
-	Fresh,
-}
+import {ComputedValueState} from './computed'
 
 
 /** 
- * Make a similar computed getter from a getter function.
+ * Make a similar computed getter from a async getter function.
  * and automatically re-computing the value after any dependency changed.
  * 
  * Note: it gets updated in initialization order of all effectors / computers / watchers.
  */
-export class Computed<V = any> implements Updatable {
+export class AsyncComputed<V = any> implements Updatable {
 
 	/** Make a quick getter by a getter function. */
-	static getter<V>(getter: () => V, scope?: any): () => V {
-		let computer = new Computed(getter, undefined, scope)
+	static getter<V>(getter: () => Promise<V>, scope?: any): () => V | undefined {
+		let computer = new AsyncComputed(getter, undefined, scope)
 
 		return () => {
 			return computer.get()
@@ -31,14 +25,15 @@ export class Computed<V = any> implements Updatable {
 
 	readonly iid = getDecrementalOrder()
 
-	private getter: () => V
+	private getter: () => Promise<V>
 	private onReset: (() => void) | undefined
+	private promise: Promise<V> | undefined
 	private value: V | undefined = undefined
 	private valueState: ComputedValueState = ComputedValueState.Initial
 	private tracker: DependencyTracker | null = null
 	private trackerSnapshot: any[] | null = null
 
-	constructor(getter: () => V, onReset?: () => void, scope?: any) {
+	constructor(getter: () => Promise<V>, onReset?: () => void, scope?: any) {
 		this.getter = scope ? getter.bind(scope) : getter
 		this.onReset = onReset && scope ? onReset.bind(scope) : onReset
 	}
@@ -102,8 +97,20 @@ export class Computed<V = any> implements Updatable {
 
 		try {
 			this.tracker = beginTrack(this)
-			this.value = this.getter()
+			let promise = this.getter()
 			this.valueState = ComputedValueState.Fresh
+
+			this.promise = promise
+
+			promise
+				.then((value: V) => {
+					if (promise === this.promise) {
+						this.value = value
+					}
+				})
+				.catch(err => {
+					console.error(err)
+				})
 		}
 		catch (err) {
 			console.error(err)

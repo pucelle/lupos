@@ -1,6 +1,6 @@
 import { Observed, Connectable } from '../../../web/out';
 import { Component } from 'lupos.html';
-import { Computed, trackGet, trackSet, Effector, Watcher } from "lupos";
+import { Computed, trackGet, trackSet, AsyncComputed, Effector, Watcher } from "lupos";
 export class TestComputed extends Component {
     prop = 1;
     $compute_prop2() {
@@ -31,6 +31,31 @@ export class TestComputedDerived extends TestComputed {
     $compute_prop2() {
         trackGet(this, "prop");
         return this.prop + 2;
+    }
+}
+export class TestAsyncComputed extends Component {
+    async $compute_prop() {
+        await Promise.resolve();
+        return 1;
+    }
+    get prop() {
+        trackGet(this, "prop");
+        return this.$prop_asyncComputer.get() ?? 0;
+    }
+    $reset_prop() {
+        trackSet(this, "prop");
+    }
+    onCreated() {
+        super.onCreated();
+        this.$prop_asyncComputer = new AsyncComputed(this.$compute_prop, this.$reset_prop, this);
+    }
+    onConnected() {
+        super.onConnected();
+        this.$prop_asyncComputer.connect();
+    }
+    onWillDisconnect() {
+        super.onWillDisconnect();
+        this.$prop_asyncComputer.disconnect();
     }
 }
 export class TestEffect extends Component {

@@ -1,4 +1,4 @@
-import {Observed, computed, effect, watch, Connectable} from '../../../web/out'
+import {Observed, computed, effect, watch, Connectable, asyncComputed} from '../../../web/out'
 import {Component} from 'lupos.html'
 
 
@@ -18,6 +18,16 @@ export class TestComputedDerived extends TestComputed {
 	get prop2() {
 		return this.prop + 2
 	}
+}
+
+
+export class TestAsyncComputed extends Component {
+
+	@asyncComputed(async function(){
+		await Promise.resolve()
+		return 1
+	})
+	prop: number = 0
 }
 
 

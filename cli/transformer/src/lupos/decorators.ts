@@ -6,7 +6,10 @@ import {ProcessorPropNameMap} from './decorators-shared'
 defineVisitor(function(node: ts.Node) {
 		
 	// Method or getter and decorated.
-	if (!ts.isMethodDeclaration(node) && !ts.isGetAccessorDeclaration(node)) {
+	if (!ts.isMethodDeclaration(node)
+		&& !ts.isGetAccessorDeclaration(node)
+		&& !ts.isPropertyDeclaration(node)
+	) {
 		return
 	}
 
@@ -16,7 +19,7 @@ defineVisitor(function(node: ts.Node) {
 	}
 
 	let decoName = helper.deco.getName(decorator)
-	if (!decoName || !['computed', 'effect', 'watch', 'watchMulti'].includes(decoName)) {
+	if (!decoName || !['computed', 'asyncComputed', 'effect', 'watch', 'watchMulti'].includes(decoName)) {
 		return
 	}
 
@@ -29,6 +32,9 @@ defineVisitor(function(node: ts.Node) {
 
 	if (decoName === 'computed') {
 		replace = compileComputedDecorator(decoName, node as ts.GetAccessorDeclaration, isOverwritten)
+	}
+	else if (decoName === 'asyncComputed') {
+		replace = compileAsyncComputedDecorator(decoName, decorator, node as ts.PropertyDeclaration, isOverwritten)
 	}
 	else {
 		replace = compileEffectWatchDecorator(node as ts.MethodDeclaration)
@@ -78,6 +84,7 @@ function compileComputedDecorator(
 
 		let modifiers = decl.modifiers?.filter(m => !ts.isDecorator(m))
 
+		// `$compute_xxx() {...}`
 		let newMethod = factory.createMethodDeclaration(
 			modifiers,
 			undefined,
@@ -117,6 +124,158 @@ function compileComputedDecorator(
 						undefined,
 						[]
 					))
+				],
+				true
+			)
+		)
+
+		let onReset = factory.createMethodDeclaration(
+			undefined,
+			undefined,
+			factory.createIdentifier(resetMethodName),
+			undefined,
+			undefined,
+			[],
+			undefined,
+			factory.createBlock(
+				[factory.createExpressionStatement(factory.createCallExpression(
+					factory.createIdentifier('trackSet'),
+					undefined,
+					[
+						factory.createThis(),
+						factory.createStringLiteral(propName)
+					]
+				))],
+				true
+			)
+		)
+		  
+
+		if (isOverwritten) {
+			return [newMethod]
+		}
+		else {
+			return [
+				newMethod,
+				getter,
+				onReset,
+			]
+		}
+	}
+}
+
+
+/*
+```ts
+Compile `@asyncComputed prop(){...}` to:
+
+onCreated() {
+	this.$prop_asyncComputer = new AsyncComputed(this.$compute_prop, this.$reset_prop, this)
+}
+
+onConnected() {
+	this.$prop_asyncComputer.connect()
+}
+
+onWillDisconnect() {
+	this.$prop_asyncComputer.disconnect()
+}
+
+$prop_asyncComputer = undefined
+
+$compute_prop() {...}
+```
+*/
+function compileAsyncComputedDecorator(
+	decoName: string,
+	deco: ts.Decorator,
+	decl: ts.PropertyDeclaration,
+	isOverwritten: boolean
+): () => ts.Node[] {
+	let propName = helper.getFullText(decl.name)
+	let processorPropName = '$' + propName + '_' + ProcessorPropNameMap[decoName]
+	let overwrittenMethodName = '$compute_' + propName
+	let resetMethodName = '$reset_' + propName
+
+	Modifier.addImport('trackGet', 'lupos')
+	Modifier.addImport('trackSet', 'lupos')
+
+	let computer: ts.FunctionDeclaration | ts.FunctionExpression | undefined
+	
+	if (ts.isCallExpression(deco.expression)
+		&& deco.expression.arguments[0]
+		&& (
+			ts.isFunctionDeclaration(deco.expression.arguments[0])
+			|| ts.isFunctionExpression(deco.expression.arguments[0])
+		)
+	) {
+		computer = deco.expression.arguments[0]
+	}
+
+	return () => {
+		let newBody = computer && computer.body
+			? Interpolator.outputChildren(computer.body) as ts.Block
+			: undefined
+
+		let modifiers = computer?.modifiers?.filter(m => !ts.isDecorator(m))
+
+		// `$compute_xxx() {...}`
+		let newMethod = factory.createMethodDeclaration(
+			modifiers,
+			undefined,
+			factory.createIdentifier(overwrittenMethodName),
+			undefined,
+			undefined,
+			[],
+			undefined,
+			newBody
+		)
+
+		// `this.$prop_computer.get()`
+		let computerGet: ts.Expression = factory.createCallExpression(
+			factory.createPropertyAccessExpression(
+				factory.createPropertyAccessExpression(
+					factory.createThis(),
+					factory.createIdentifier(processorPropName)
+				),
+				factory.createIdentifier('get')
+			),
+			undefined,
+			[]
+		)
+
+		// `this.$prop_computer.get() ?? ...`
+		if (decl.initializer
+			&& !(
+				ts.isIdentifier(decl.initializer)
+				&& helper.getText(decl.initializer) === 'undefined'
+			)
+		) {
+			computerGet = factory.createBinaryExpression(
+				computerGet,
+				factory.createToken(ts.SyntaxKind.QuestionQuestionToken),
+				decl.initializer
+			)
+		}
+
+		// `trackGet(this, 'prop')`
+		// `return this.$prop_computer.get()`
+		let getter = factory.createGetAccessorDeclaration(
+			undefined,
+			factory.createIdentifier(propName),
+			[],
+			undefined,
+			factory.createBlock(
+				[
+					factory.createExpressionStatement(factory.createCallExpression(
+						factory.createIdentifier('trackGet'),
+						undefined,
+						[
+							factory.createThis(),
+							factory.createStringLiteral(propName)
+						]
+					)),
+					factory.createReturnStatement(computerGet)
 				],
 				true
 			)
