@@ -7,6 +7,6 @@ export interface Updatable {
 	/** After any tracked data change, call it to enqueue to update. */
 	willUpdate: () => void
 
-	/** Update callback, can be a promise */
+	/** Update callback, can return a promise. */
 	update: () => void | Promise<void>
 }
