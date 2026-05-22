@@ -4,7 +4,7 @@ import {getDecrementalOrder} from './order'
 import {Updatable} from '../../types'
 
 
-export const enum ComputedValueState {
+const enum ComputedValueState {
 	Initial,
 	Stale,
 	Fresh,
@@ -44,6 +44,8 @@ export class Computed<V = any> implements Updatable {
 	}
 
 	connect() {
+
+		// Never computed yet.
 		if (this.valueState === ComputedValueState.Initial) {
 			return
 		}
@@ -54,7 +56,7 @@ export class Computed<V = any> implements Updatable {
 	disconnect() {
 		this.tracker?.remove()
 
-		// Treat as fresh after connected.
+		// Treat as fresh after re-connected.
 		if (this.valueState === ComputedValueState.Stale) {
 			this.valueState = ComputedValueState.Fresh
 		}
@@ -72,8 +74,11 @@ export class Computed<V = any> implements Updatable {
 
 	update() {
 		if (this.shouldUpdate()) {
-			this.doUpdate()
+			this.valueState = ComputedValueState.Stale
+			this.onReset?.()
 		}
+
+		// Restore tracker dependencies watching.
 		else if (!this.tracker!.tracking) {
 			this.tracker!.apply()
 		}
@@ -87,11 +92,6 @@ export class Computed<V = any> implements Updatable {
 		else {
 			return true
 		}
-	}
-
-	private doUpdate() {
-		this.valueState = ComputedValueState.Stale
-		this.onReset?.()
 	}
 
 	/** If not connected, will always get old value. */

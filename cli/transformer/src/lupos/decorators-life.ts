@@ -197,7 +197,7 @@ function makeMakerParameters(
 
 	return () => {
 		if (decoName === 'computed' || decoName === 'asyncComputed') {
-			return [
+			let params: ts.Expression[] = [
 				factory.createPropertyAccessExpression(
 					factory.createThis(),
 					factory.createIdentifier('$compute_' + methodName)
@@ -208,6 +208,15 @@ function makeMakerParameters(
 				),
 				factory.createThis(),
 			]
+
+			if (decoName === 'asyncComputed'
+				&& ts.isCallExpression(deco.expression)
+				&& deco.expression.arguments.length > 1
+			) {
+				params.push(deco.expression.arguments[1])
+			}
+
+			return params
 		}
 		else if (decoName === 'effect') {
 			return [

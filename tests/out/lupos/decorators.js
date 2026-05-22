@@ -45,17 +45,31 @@ export class TestAsyncComputed extends Component {
     $reset_prop() {
         trackSet(this, "prop");
     }
+    async $compute_propContinuous() {
+        await Promise.resolve();
+        return 1;
+    }
+    get propContinuous() {
+        trackGet(this, "propContinuous");
+        return this.$propContinuous_asyncComputer.get() ?? 0;
+    }
+    $reset_propContinuous() {
+        trackSet(this, "propContinuous");
+    }
     onCreated() {
         super.onCreated();
         this.$prop_asyncComputer = new AsyncComputed(this.$compute_prop, this.$reset_prop, this);
+        this.$propContinuous_asyncComputer = new AsyncComputed(this.$compute_propContinuous, this.$reset_propContinuous, this, true);
     }
     onConnected() {
         super.onConnected();
         this.$prop_asyncComputer.connect();
+        this.$propContinuous_asyncComputer.connect();
     }
     onWillDisconnect() {
         super.onWillDisconnect();
         this.$prop_asyncComputer.disconnect();
+        this.$propContinuous_asyncComputer.disconnect();
     }
 }
 export class TestEffect extends Component {

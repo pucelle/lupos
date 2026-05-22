@@ -28,6 +28,12 @@ export class TestAsyncComputed extends Component {
 		return 1
 	})
 	prop: number = 0
+
+	@asyncComputed(async function(){
+		await Promise.resolve()
+		return 1
+	}, true)
+	propContinuous: number = 0
 }
 
 
