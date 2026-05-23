@@ -355,8 +355,18 @@ function debug_infinite_tracking(obj: object, properties: PropertyKey[]) {
 
 		// Test shows, sliding may cause 10 times firing in one micro task tick.
 		let count = update_loop_tracking_counter.get(obj, prop)
-		if (count >= 10) {
+		if (is10TimesPowered(count)) {
 			console.warn(`Setting property '${prop as string}' at least ${count} times in one updating loop`, obj)
 		}
 	}
+}
+
+
+/** Be 10, 100, 1000... */
+function is10TimesPowered(value: number): boolean {
+	while (value > 10 && value % 10 === 0) {
+		value /= 10
+	}
+
+	return value === 10
 }
