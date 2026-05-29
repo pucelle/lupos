@@ -1,5 +1,5 @@
 import ts from 'typescript'
-import {HTMLNode, HTMLNodeType, TemplateSlotPlaceholder} from '../../lupos-ts-module'
+import {HTMLNode, HTMLNodeType, TemplateSlotPlaceholder, trimText} from '../../lupos-ts-module'
 import {helper} from '../../core'
 
 
@@ -69,7 +69,7 @@ export namespace HTMLNodeHelper {
 
 			// First part is value, and the value is not object type.
 			// Next text node is not trimmed and splitted yet.
-			if (valueIndices && (!strings || !strings[0].text.trim())) {
+			if (valueIndices && (!strings || !trimText(strings[0].text))) {
 				let firstRawNode = rawValueNodes[valueIndices[0].index]
 				let type = helper.types.typeOf(firstRawNode)
 

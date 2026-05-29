@@ -110,7 +110,7 @@ const $html_6 = /*#__PURE__*/ new HTMLMaker("<div> <!--848833--> </div>");
 /*
 <root>
     <div>
-        ${'1'}
+         ${'1'}
         ${html`<div></div>`}
          ${'1'}
     </div>
@@ -122,7 +122,7 @@ const $html_6 = /*#__PURE__*/ new HTMLMaker("<div> <!--848833--> </div>");
     let $node_2 = $locator.getMarker("848833");
     let $node_3 = $node_2.nextSibling;
     let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_2), 0, $locator.getNodes("848833"));
-    $node_1.data = '1' + " ";
+    $node_1.data = " " + '1' + " ";
     $slot_0.update(new CompiledTemplateResult($template_7, [], $context));
     $node_3.data = " " + '1';
     return {
