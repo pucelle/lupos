@@ -12,7 +12,10 @@ export interface WatchOptions {
 	/** Whether calls callback immediately. */
 	immediate: boolean
 
-	/** If specified, stop watching when watching value becomes true like. */
+	/** 
+	 * If specified, stop watching when watching value becomes true like.
+	 * Note it can still be re-connected.
+	 */
 	untilTrue: boolean
 }
 
