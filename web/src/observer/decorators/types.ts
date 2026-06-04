@@ -44,7 +44,7 @@ export declare function computed(originalGetter: any, context: ClassGetterDecora
  * 
  * This is only a declaration, it will be replaced after been compiled.
  */
-export declare function asyncComputed<T, V>(getter: (this: T) => Promise<V>, continuous?: boolean):
+export declare function asyncComputed<T, V>(getter: (this: T) => Promise<V> | V, continuous?: boolean):
 	(property: V | undefined, context: ClassFieldDecoratorContext<T>) => any
 
 
