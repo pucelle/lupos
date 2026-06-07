@@ -114,6 +114,7 @@ export class AsyncComputed<V = any> implements Updatable {
 		}
 
 		this.valueState = AsyncComputedValueState.Loading
+		let meetsError = false
 
 		try {
 			this.tracker = beginTrack(this)
@@ -151,11 +152,14 @@ export class AsyncComputed<V = any> implements Updatable {
 			}
 		}
 		catch (err) {
+			this.valueState = AsyncComputedValueState.Fresh
+			this.value = undefined
+			
+			meetsError = true
 			console.error(err)
 		}
-		finally {
-			endTrack()
-		}
+
+		endTrack(meetsError)
 
 		if (this.tracker) {
 			this.trackerSnapshot = this.tracker.makeSnapshot()

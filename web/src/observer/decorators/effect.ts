@@ -58,16 +58,18 @@ export class Effector implements Updatable {
 	}
 
 	private doUpdate() {
+		let meetsError = false
+
 		try {
 			this.tracker = beginTrack(this)
 			this.fn()
 		}
 		catch (err) {
+			meetsError = true
 			console.error(err)
 		}
-		finally {
-			endTrack()
-		}
+
+		endTrack(meetsError)
 
 		if (this.tracker) {
 			this.trackerSnapshot = this.tracker.makeSnapshot()

@@ -65,17 +65,18 @@ export class Watcher<V = any> implements Updatable {
 
 	update() {
 		let value: V
+		let meetsError = false
 
 		try {
 			beginTrack(this)
 			value = this.getter()
 		}
 		catch (err) {
+			meetsError = true
 			console.error(err)
 		}
-		finally {
-			endTrack()
-		}
+		
+		endTrack(meetsError)
 
 		let shouldCallback = this.valueAssigned && value! !== this.value
 			|| !this.valueAssigned && this.options.immediate
@@ -139,17 +140,18 @@ export class MultiWatcher<V extends any[] = any> implements Updatable {
 
 	update() {
 		let values: V
+		let meetsError = false
 
 		try {
 			beginTrack(this)
 			values = this.getters.map(getter => getter()) as V
 		}
 		catch (err) {
+			meetsError = true
 			console.error(err)
 		}
-		finally {
-			endTrack()
-		}
+
+		endTrack(meetsError)
 
 		if (values!) {
 			let shouldCallback = this.values && values! && !this.compare(values, this.values!)

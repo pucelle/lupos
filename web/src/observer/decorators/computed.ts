@@ -100,17 +100,19 @@ export class Computed<V = any> implements Updatable {
 			return this.value!
 		}
 
+		let meetsError = false
+
 		try {
 			this.tracker = beginTrack(this)
 			this.value = this.getter()
 			this.valueState = ComputedValueState.Fresh
 		}
 		catch (err) {
+			meetsError = true
 			console.error(err)
 		}
-		finally {
-			endTrack()
-		}
+		
+		endTrack(meetsError)
 
 		if (this.tracker) {
 			this.trackerSnapshot = this.tracker.makeSnapshot()
