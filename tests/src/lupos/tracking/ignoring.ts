@@ -101,6 +101,8 @@ export class TestIgnoringNothingReturnedMethod extends Component {
 export class TestIgnoringReadonlyPrivate extends Component {
 
 	private prop: number = 1
+	private propList: number[] = []
+	private propMap: Map<number, number> = new Map()
 
 	readMethod() {
 		return this.prop
@@ -110,12 +112,30 @@ export class TestIgnoringReadonlyPrivate extends Component {
 		let {prop} = this
 		return prop
 	}
-}
 
+	readListMethod(index: number) {
+		return this.propList[index]
+	}
+
+	readMapMethod() {
+		return this.propMap.keys()
+	}
+
+	readMapMethodByOf() {
+		let items: number[] = []
+		for (let [key] of this.propMap) {
+			items.push(key)
+		}
+
+		return items
+	}
+}
 
 export class TestIgnoringWriteonlyPrivate extends Component {
 
 	private prop: number = 1
+	private propList: number[] = []
+	private propMap: Map<number, number> = new Map()
 
 	readToAvoidNeverReadDiagnostic() {
 		this.prop
@@ -123,6 +143,14 @@ export class TestIgnoringWriteonlyPrivate extends Component {
 
 	writeMethod() {
 		this.prop = 2
+	}
+
+	writeListMethod(index: number, value: number) {
+		this.propList[index] = value
+	}
+
+	writeMapMethod() {
+		this.propMap.clear()
 	}
 }
 

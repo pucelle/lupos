@@ -87,6 +87,8 @@ export class TestIgnoringNothingReturnedMethod extends Component {
 }
 export class TestIgnoringReadonlyPrivate extends Component {
     prop = 1;
+    propList = [];
+    propMap = new Map();
     readMethod() {
         return this.prop;
     }
@@ -95,14 +97,40 @@ export class TestIgnoringReadonlyPrivate extends Component {
         trackGet(this, "prop");
         return prop;
     }
+    readListMethod(index) {
+        trackGet(this.propList, index);
+        return this.propList[index];
+    }
+    readMapMethod() {
+        trackGet(this.propMap, "");
+        return this.propMap.keys();
+    }
+    readMapMethodByOf() {
+        let items = [];
+        for (let [key] of this.propMap) {
+            items.push(key);
+        }
+        trackGet(this.propMap, "");
+        return items;
+    }
 }
 export class TestIgnoringWriteonlyPrivate extends Component {
     prop = 1;
+    propList = [];
+    propMap = new Map();
     readToAvoidNeverReadDiagnostic() {
         this.prop;
     }
     writeMethod() {
         this.prop = 2;
+    }
+    writeListMethod(index, value) {
+        this.propList[index] = value;
+        trackSet(this.propList, index);
+    }
+    writeMapMethod() {
+        this.propMap.clear();
+        trackSet(this.propMap, "");
     }
 }
 export class TestIgnoringOfPrivateComputedProperty extends Component {

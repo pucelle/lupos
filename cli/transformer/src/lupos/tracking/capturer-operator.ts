@@ -218,6 +218,13 @@ export class TrackingCapturerOperator {
 	{
 		let {node, type, key} = item
 
+		// Totally ignores key specifying tracking,
+		// like `a[b]`, a['b'], or `a.get('...')`
+		// Only `a.b` can be tested.
+		if (key !== undefined) {
+			return undefined
+		}
+
 		let propDecls = helper.symbol.resolveDeclarations(node, helper.isPropertyOrGetSetAccessor)
 		if (!propDecls || propDecls.length === 0) {
 			return undefined
@@ -252,16 +259,27 @@ export class TrackingCapturerOperator {
 		}
 	}
 
-	/** Remove captured recursively. */
-	removeCapturedRecursively(toRemove: Set<ts.Node>) {
+	/** 
+	 * Remove captured recursively.
+	 * capture item key can be removed only when key is `undefined`.
+	 */
+	removeNonKeyedCapturedRecursively(toRemove: Set<ts.Node>) {
 		for (let item of this.capturer.captured) {
 			item.items = item.items.filter(item => {
-				return !toRemove.has(item.node)
+				if (item.key !== undefined) {
+					return true
+				}
+
+				if (toRemove.has(item.node)) {
+					return false
+				}
+
+				return true
 			})
 		}
 
 		for (let child of this.area.children) {
-			child.capturer.operator.removeCapturedRecursively(toRemove)
+			child.capturer.operator.removeNonKeyedCapturedRecursively(toRemove)
 		}
 	}
 }
