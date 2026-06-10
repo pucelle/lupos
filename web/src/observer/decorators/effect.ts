@@ -1,6 +1,6 @@
 import {beginTrack, DependencyTracker, endTrack, untrack} from '../dependency-tracker'
 import {UpdateQueue} from '../../queue'
-import {getDecrementalOrder} from './order'
+import {makeObserverIID} from './order'
 import {Updatable} from '../../types'
 
 
@@ -16,7 +16,7 @@ import {Updatable} from '../../types'
  */
 export class Effector implements Updatable {
 
-	readonly iid = getDecrementalOrder()
+	readonly iid
 
 	private fn: () => void
 	private tracker: DependencyTracker | null = null
@@ -24,6 +24,7 @@ export class Effector implements Updatable {
 
 	constructor(fn: () => void, scope?: any) {
 		this.fn = scope ? fn.bind(scope) : fn
+		this.iid = makeObserverIID(scope?.iid)
 	}
 
 	connect() {

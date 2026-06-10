@@ -1,6 +1,6 @@
 import {beginTrack, DependencyTracker, endTrack, untrack} from '../dependency-tracker'
 import {UpdateQueue} from '../../queue/update-queue'
-import {getDecrementalOrder} from './order'
+import {makeObserverIID} from './order'
 import {Updatable} from '../../types'
 
 
@@ -30,7 +30,7 @@ export class AsyncComputed<V = any> implements Updatable {
 	}
 
 
-	readonly iid = getDecrementalOrder()
+	readonly iid
 
 	private getter: () => Promise<V>
 	private onReset: (() => void) | undefined
@@ -49,6 +49,7 @@ export class AsyncComputed<V = any> implements Updatable {
 		this.getter = scope ? getter.bind(scope) : getter
 		this.onReset = onReset && scope ? onReset.bind(scope) : onReset
 		this.continuous = continuous ?? false
+		this.iid = makeObserverIID(scope?.iid)
 	}
 
 	connect() {

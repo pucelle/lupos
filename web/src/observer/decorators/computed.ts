@@ -1,6 +1,6 @@
 import {beginTrack, DependencyTracker, endTrack, untrack} from '../dependency-tracker'
 import {UpdateQueue} from '../../queue/update-queue'
-import {getDecrementalOrder} from './order'
+import {makeObserverIID} from './order'
 import {Updatable} from '../../types'
 
 
@@ -29,7 +29,7 @@ export class Computed<V = any> implements Updatable {
 	}
 
 
-	readonly iid = getDecrementalOrder()
+	readonly iid
 
 	private getter: () => V
 	private onReset: (() => void) | undefined
@@ -41,6 +41,7 @@ export class Computed<V = any> implements Updatable {
 	constructor(getter: () => V, onReset?: () => void, scope?: any) {
 		this.getter = scope ? getter.bind(scope) : getter
 		this.onReset = onReset && scope ? onReset.bind(scope) : onReset
+		this.iid = makeObserverIID(scope?.iid)
 	}
 
 	connect() {

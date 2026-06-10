@@ -1,6 +1,6 @@
 import {beginTrack, endTrack, untrack} from '../dependency-tracker'
 import {UpdateQueue} from '../../queue'
-import {getDecrementalOrder} from './order'
+import {makeObserverIID} from './order'
 import {Updatable} from '../../types'
 
 
@@ -37,7 +37,7 @@ const DefaultWatchOptions: WatchOptions = {
  */
 export class Watcher<V = any> implements Updatable {
 
-	readonly iid = getDecrementalOrder()
+	readonly iid
 
 	private getter: () => V
 	private callback: (value: V, oldValue: V | undefined) => void
@@ -49,6 +49,7 @@ export class Watcher<V = any> implements Updatable {
 		this.getter = scope ? getter.bind(scope) : getter
 		this.callback = scope ? callback.bind(scope) : callback
 		this.options = options ? {...DefaultWatchOptions, ...options} : DefaultWatchOptions
+		this.iid = makeObserverIID(scope?.iid)
 	}
 
 	connect() {
@@ -113,7 +114,7 @@ type InferValueGetters<V extends any[]> = {[K in keyof V]: () => V[K]}
  */
 export class MultiWatcher<V extends any[] = any> implements Updatable {
 
-	readonly iid = getDecrementalOrder()
+	readonly iid
 
 	private getters: InferValueGetters<V>
 	private callback: (values: V, oldValues: V | undefined) => void
@@ -124,6 +125,7 @@ export class MultiWatcher<V extends any[] = any> implements Updatable {
 		this.getters = scope ? getters.map(getter => getter.bind(scope)) as InferValueGetters<V> : getters
 		this.callback = scope ? callback.bind(scope) : callback
 		this.options = options ? {...DefaultWatchOptions, ...options} : DefaultWatchOptions
+		this.iid = makeObserverIID(scope?.iid)
 	}
 
 	connect() {

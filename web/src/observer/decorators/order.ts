@@ -1,14 +1,15 @@
 /** 
  * Start incremental order.
- * Also reset it to `0` after each time update completed.
+ * Smaller than 0 because we want observers update before components.
  */
-let decrementalOrder = -1
+let CurrentOrder = -1
 
 
 /** 
- * Get an order for watchers, effectors, computers.
- * To ensure output in the same order of adding those items.
+ * Get an iid for watchers, effectors, computers.
+ * To ensure get updated firstly by context order,
+ * then by the order of adding those items. 
  */
-export function getDecrementalOrder(): number {
-	return decrementalOrder -= 1
+export function makeObserverIID(contextIID: number | undefined = 0): number {
+	return contextIID += (CurrentOrder += Number.EPSILON)
 }
