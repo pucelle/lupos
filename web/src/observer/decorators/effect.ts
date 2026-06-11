@@ -21,6 +21,7 @@ export class Effector implements Updatable {
 	private fn: () => void
 	private tracker: DependencyTracker | null = null
 	private trackerSnapshot: any[] | null = null
+	private connected: boolean = false
 
 	constructor(fn: () => void, scope?: any) {
 		this.fn = scope ? fn.bind(scope) : fn
@@ -28,18 +29,28 @@ export class Effector implements Updatable {
 	}
 
 	connect() {
+		this.connected = true
 		this.willUpdate()
 	}
 
 	disconnect() {
+		this.connected = false
 		this.tracker?.remove()
 	}
 
 	willUpdate() {
+		if (!this.connected) {
+			return
+		}
+
 		UpdateQueue.enqueue(this)
 	}
 
 	update() {
+		if (!this.connected) {
+			return
+		}
+		
 		if (this.shouldUpdate()) {
 			this.doUpdate()
 		}

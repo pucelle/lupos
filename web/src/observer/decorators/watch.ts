@@ -41,9 +41,10 @@ export class Watcher<V = any> implements Updatable {
 
 	private getter: () => V
 	private callback: (value: V, oldValue: V | undefined) => void
+	private options: WatchOptions
 	private value: V | undefined = undefined
 	private valueAssigned: boolean = false
-	private options: WatchOptions
+	private connected: boolean = false
 
 	constructor(getter: () => V, callback: (value: V, oldValue: V | undefined) => void, scope?: any, options?: Partial<WatchOptions>) {
 		this.getter = scope ? getter.bind(scope) : getter
@@ -53,18 +54,28 @@ export class Watcher<V = any> implements Updatable {
 	}
 
 	connect() {
+		this.connected = true
 		this.willUpdate()
 	}
 
 	disconnect() {
+		this.connected = false
 		untrack(this)
 	}
 
 	willUpdate() {
+		if (!this.connected) {
+			return
+		}
+
 		UpdateQueue.enqueue(this)
 	}
 
 	update() {
+		if (!this.connected) {
+			return
+		}
+
 		let value: V
 		let meetsError = false
 
@@ -118,8 +129,9 @@ export class MultiWatcher<V extends any[] = any> implements Updatable {
 
 	private getters: InferValueGetters<V>
 	private callback: (values: V, oldValues: V | undefined) => void
-	private values: V | undefined = undefined
 	private options: WatchOptions
+	private values: V | undefined = undefined
+	private connected: boolean = false
 
 	constructor(getters: InferValueGetters<V>, callback: (values: V, oldValues: V | undefined) => void, scope?: any, options?: Partial<WatchOptions>) {
 		this.getters = scope ? getters.map(getter => getter.bind(scope)) as InferValueGetters<V> : getters
@@ -129,18 +141,28 @@ export class MultiWatcher<V extends any[] = any> implements Updatable {
 	}
 
 	connect() {
+		this.connected = true
 		this.willUpdate()
 	}
 
 	disconnect() {
+		this.connected = false
 		untrack(this)
 	}
 
 	willUpdate() {
+		if (!this.connected) {
+			return
+		}
+
 		UpdateQueue.enqueue(this)
 	}
 
 	update() {
+		if (!this.connected) {
+			return
+		}
+		
 		let values: V
 		let meetsError = false
 

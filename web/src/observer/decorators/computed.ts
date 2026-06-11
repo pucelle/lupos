@@ -46,6 +46,9 @@ export class Computed<V = any> implements Updatable {
 
 	connect() {
 
+		// No need a connected state here,
+		// The task in the queue only clear previous value.
+
 		// Never computed yet.
 		if (this.valueState === ComputedValueState.Initial) {
 			return
