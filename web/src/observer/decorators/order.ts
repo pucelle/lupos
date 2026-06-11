@@ -11,5 +11,7 @@ let CurrentOrder = -1
  * then by the order of adding those items. 
  */
 export function makeObserverIID(contextIID: number | undefined = 0): number {
-	return contextIID += (CurrentOrder += Number.EPSILON)
+
+	// By IEEE-754, when value range in `1e7`, needs `2.22e-9` precision.
+	return contextIID += (CurrentOrder += 1e-8)
 }
