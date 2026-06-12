@@ -1,4 +1,4 @@
-import type * as ts from 'typescript'
+import type ts from 'typescript'
 import {factory, Interpolator, Modifier, Packer} from '../../../core'
 import {FlowControlBase} from './base'
 import {TemplateParser} from '../template'

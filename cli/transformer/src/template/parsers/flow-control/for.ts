@@ -1,4 +1,4 @@
-import type * as ts from 'typescript'
+import type ts from 'typescript'
 import {factory, Modifier, helper} from '../../../core'
 import {FlowControlBase} from './base'
 import {SlotContentType} from '../../../enums'

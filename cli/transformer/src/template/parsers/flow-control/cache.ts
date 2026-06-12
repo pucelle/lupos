@@ -1,8 +1,9 @@
-import type * as ts from 'typescript'
+import type ts from 'typescript'
 import {factory, Modifier} from '../../../core'
 import {FlowControlBase} from './base'
 import {TemplateParser} from '../template'
 import {SlotContentType} from '../../../enums'
+import {TemplatePartType} from '../../../lupos-ts-module'
 
 
 export class CacheFlowControl extends FlowControlBase {
@@ -16,6 +17,7 @@ export class CacheFlowControl extends FlowControlBase {
 	/** new TemplateSlot(...) */
 	private templateSlotGetter!: () => ts.Expression
 
+	private contentValueIndex: number | null = null
 	private contentTemplate: TemplateParser | null = null
 
 	override preInit() {
@@ -23,11 +25,25 @@ export class CacheFlowControl extends FlowControlBase {
 		this.slotVariableName = this.slot.makeSlotName()
 
 		if (this.node.children.length > 0) {
-			let template = this.template.separateChildrenAsTemplate(this.node)
-			this.contentTemplate = template
+			let contentValueIndex = this.getUniqueChildValueIndex(this.node)
+			if (contentValueIndex !== null) {
+				this.contentValueIndex = contentValueIndex
+
+				// Clean children to avoid it get compiled to a new slot.
+				this.node.empty()
+			}
+			else {
+				let template = this.template.separateChildrenAsTemplate(this.node)
+				this.contentTemplate = template
+			}
 		}
 
-		let slotContentType = this.contentTemplate ? SlotContentType.TemplateResult : null
+		let slotContentType = this.contentValueIndex !== null
+			? this.template.values.identifyValueContentType(this.contentValueIndex)
+			: this.contentTemplate
+			? SlotContentType.TemplateResult
+			: null
+
 		this.templateSlotGetter = this.slot.prepareAsTemplateSlot(slotContentType)
 	}
 
@@ -61,12 +77,22 @@ export class CacheFlowControl extends FlowControlBase {
 	}
 
 	override outputUpdate() {
-		let resultValue = this.contentTemplate ? this.contentTemplate.outputReplaced() : null
+		let resultValue: ts.Expression | null = null
+			
+		if (this.contentValueIndex !== null) {
+			resultValue = this.template.values.outputValue(null, [this.contentValueIndex], this.tree, false, TemplatePartType.FlowControl).joint
+		}
+		else if (this.contentTemplate) {
+			resultValue = this.contentTemplate.outputReplaced()
 
-		// Add it as a value item to original template, and returned it's reference.
-		let toResultValue = resultValue
-			? this.slot.outputCustomValue(resultValue)
-			: factory.createNull()
+			// Add it as a custom value into `render()`, and capture it's reference `$values[i]` to output.
+			resultValue = resultValue
+				? this.slot.outputCustomValue(resultValue)
+				: factory.createNull()
+		}
+		else {
+			resultValue = factory.createNull()
+		}
 
 		// $block_0.update(newKey, $values[i])
 		return factory.createCallExpression(
@@ -76,7 +102,7 @@ export class CacheFlowControl extends FlowControlBase {
 			),
 			undefined,
 			[
-				toResultValue
+				resultValue
 			]
 		)
 	}

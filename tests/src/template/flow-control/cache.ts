@@ -5,7 +5,11 @@ export class TestCache extends Component {
 
 	testCache() {
 		return html`
-			<lu:cache>Keyed Content</lu:cache>
+			<lu:cache>${this.renderCacheContent()}</lu:cache>
 		`
+	}
+
+	private renderCacheContent() {
+		return html`Keyed Content`
 	}
 }

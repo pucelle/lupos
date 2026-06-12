@@ -1,4 +1,4 @@
-import type * as ts from 'typescript'
+import type ts from 'typescript'
 import {factory, Modifier} from '../../../core'
 import {FlowControlBase} from './base'
 import {VariableNames} from '../variable-names'

@@ -1,4 +1,4 @@
-import type * as ts from 'typescript'
+import type ts from 'typescript'
 import {factory, Modifier} from '../../../core'
 import {FlowControlBase} from './base'
 import {TemplateParser} from '../template'
@@ -19,8 +19,9 @@ export class KeyedFlowControl extends FlowControlBase {
 
 	protected normalCacheable: boolean = false
 	protected weakCacheable: boolean = false
+	private contentValueIndex: number | null = null
 	private contentTemplate: TemplateParser | null = null
-	private valueIndex: number | null = null
+	private keyValueIndex: number | null = null
 
 	override preInit() {
 		this.blockVariableName = this.tree.makeUniqueBlockName()
@@ -29,11 +30,20 @@ export class KeyedFlowControl extends FlowControlBase {
 		this.weakCacheable = this.hasAttrValue(this.node, 'weakCache')
 
 		let valueIndex = this.getAttrValueIndex(this.node)
-		this.valueIndex = valueIndex
+		this.keyValueIndex = valueIndex
 
 		if (this.node.children.length > 0) {
-			let template = this.template.separateChildrenAsTemplate(this.node)
-			this.contentTemplate = template
+			let contentValueIndex = this.getUniqueChildValueIndex(this.node)
+			if (contentValueIndex !== null) {
+				this.contentValueIndex = contentValueIndex
+				
+				// Clean children to avoid it get compiled to a new slot.
+				this.node.empty()
+			}
+			else {
+				let template = this.template.separateChildrenAsTemplate(this.node)
+				this.contentTemplate = template
+			}
 		}
 
 		let slotContentType = this.contentTemplate ? SlotContentType.TemplateResult : null
@@ -75,14 +85,26 @@ export class KeyedFlowControl extends FlowControlBase {
 	}
 
 	override outputUpdate() {
-		let keyedValueIndices = this.valueIndex !== null ? [this.valueIndex] : null
-		let keyedValue = this.template.values.outputValue(null, keyedValueIndices, this.tree, this.asLazyCallback, TemplatePartType.FlowControl).joint
-		let resultValue = this.contentTemplate ? this.contentTemplate.outputReplaced() : null
+		let keyedValueIndices = this.keyValueIndex !== null ? [this.keyValueIndex] : null
+		let keyedValue = this.template.values.outputValue(null, keyedValueIndices, this.tree, false, TemplatePartType.FlowControl).joint
+		
+		let resultValue: ts.Expression | null = null
+		
+		if (this.contentValueIndex !== null) {
+			resultValue = this.template.values.outputValue(null, [this.contentValueIndex], this.tree, false, TemplatePartType.FlowControl).joint
+		
+		}
+		else if (this.contentTemplate) {
+			resultValue = this.contentTemplate.outputReplaced()
 
-		// Add it as a value item to original template, and returned it's reference.
-		let toResultValue = resultValue
-			? this.slot.outputCustomValue(resultValue)
-			: factory.createNull()
+			// Add it as a custom value into `render()`, and capture it's reference `$values[i]` to output.
+			resultValue = resultValue
+				? this.slot.outputCustomValue(resultValue)
+				: factory.createNull()
+		}
+		else {
+			resultValue = factory.createNull()
+		}
 
 		// $block_0.update(newKey, $values[i])
 		return factory.createCallExpression(
@@ -93,7 +115,7 @@ export class KeyedFlowControl extends FlowControlBase {
 			undefined,
 			[
 				keyedValue,
-				toResultValue
+				resultValue
 			]
 		)
 	}

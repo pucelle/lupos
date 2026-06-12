@@ -1,4 +1,4 @@
-import { Component, TemplateSlot, SlotPosition, CompiledTemplateResult, TemplateMaker, HTMLMaker, CacheBlock } from 'lupos.html';
+import { Component, TemplateSlot, SlotPosition, CompiledTemplateResult, TemplateMaker, CacheBlock, HTMLMaker } from 'lupos.html';
 const $html_0 = /*#__PURE__*/ new HTMLMaker("<!----><!--3abcdc-->");
 /*
 <root>
@@ -35,7 +35,10 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("Keyed Content");
 export class TestCache extends Component {
     testCache() {
         return new CompiledTemplateResult($template_0, [
-            new CompiledTemplateResult($template_1, [], this)
+            this.renderCacheContent()
         ], this);
+    }
+    renderCacheContent() {
+        return new CompiledTemplateResult($template_1, [], this);
     }
 }

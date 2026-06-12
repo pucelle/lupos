@@ -3,6 +3,7 @@ import {factory, Interpolator, MutableMask, Packer, DeclarationScopeTree, helper
 import {VariableNames} from './variable-names'
 import {TreeParser} from './tree'
 import {TemplatePartType} from '../../lupos-ts-module'
+import {SlotContentType} from '../../enums'
 
 
 /** Help to manage all value nodes. */
@@ -51,6 +52,34 @@ export class TemplateValues {
 	/** Get raw value node at index. */
 	getRawValue(valueIndex: number): ts.Expression {
 		return this.valueNodes[valueIndex]
+	}
+
+	/** To identify value content type at specified index. */
+	identifyValueContentType(valueIndex: number): SlotContentType | null {
+		let valueNode = this.getRawValue(valueIndex)
+		let valueType = valueNode ? helper.types.typeOf(valueNode) : null
+		let typeText = valueType ? helper.types.getTypeFullText(valueType) : null
+		let slotContentType: number | null = null
+
+		if (typeText === 'TemplateResult') {
+			slotContentType = SlotContentType.TemplateResult
+		}
+		else if (typeText === 'TemplateResult[]') {
+			slotContentType = SlotContentType.TemplateResultList
+		}
+		else if (typeText === 'string' || typeText === 'number'
+			|| valueType && helper.types.isNonNullableValueType(valueType)
+		) {
+			slotContentType = SlotContentType.Text
+		}
+		else if (typeText && /^(?:\w*?Element|Node|Comment|Text)$/.test(typeText)) {
+			slotContentType = SlotContentType.Node
+		}
+
+		// Should not specify fixed content type for promise,
+		// which's contents are always dynamic.
+
+		return slotContentType
 	}
 
 	/** 

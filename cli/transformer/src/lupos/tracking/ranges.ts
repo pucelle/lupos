@@ -1,4 +1,4 @@
-import type * as ts from 'typescript'
+import type ts from 'typescript'
 import {VisitTree} from '../../core'
 import {TrackingArea} from './area'
 import {ListMap} from '../../lupos-ts-module'

@@ -1,6 +1,6 @@
-import type * as ts from 'typescript'
+import type ts from 'typescript'
 import {SlotParserBase} from './base'
-import {factory, helper} from '../../../core'
+import {factory} from '../../../core'
 import {SlotContentType} from '../../../enums'
 
 
@@ -35,30 +35,12 @@ export class ContentSlotParser extends SlotParserBase {
 	}
 
 	private identifySlotContentType(): number | null {
-		let valueNode = this.getFirstRawValueNode()
-		let valueType = valueNode ? helper.types.typeOf(valueNode) : null
-		let typeText = valueType ? helper.types.getTypeFullText(valueType) : null
-		let slotContentType: number | null = null
-
-		if (typeText === 'TemplateResult') {
-			slotContentType = SlotContentType.TemplateResult
+		if (this.valueIndices) {
+			return this.template.values.identifyValueContentType(this.valueIndices[0])
 		}
-		else if (typeText === 'TemplateResult[]') {
-			slotContentType = SlotContentType.TemplateResultList
+		else {
+			return null
 		}
-		else if (typeText === 'string' || typeText === 'number'
-			|| valueType && helper.types.isNonNullableValueType(valueType)
-		) {
-			slotContentType = SlotContentType.Text
-		}
-		else if (typeText && /^(?:\w*?Element|Node|Comment|Text)$/.test(typeText)) {
-			slotContentType = SlotContentType.Node
-		}
-
-		// Should not specify fixed content type for promise,
-		// which's contents are always dynamic.
-
-		return slotContentType
 	}
 
 	override outputInit() {
