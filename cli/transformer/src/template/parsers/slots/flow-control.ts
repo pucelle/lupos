@@ -1,6 +1,7 @@
 import type * as ts from 'typescript'
 import {SlotParserBase} from './base'
 import {AwaitFlowControl, FlowControlBase, ForFlowControl, IfFlowControl, KeyedFlowControl, SwitchFlowControl} from '../flow-control'
+import {CacheFlowControl} from '../flow-control/cache'
 
 
 export class FlowControlSlotParser extends SlotParserBase {
@@ -33,6 +34,10 @@ export class FlowControlSlotParser extends SlotParserBase {
 
 			case 'lu:keyed':
 				control = new KeyedFlowControl(this)
+				break
+
+			case 'lu:cache':
+				control = new CacheFlowControl(this)
 				break
 
 			case 'lu:switch':
