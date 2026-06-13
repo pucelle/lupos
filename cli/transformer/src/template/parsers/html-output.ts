@@ -24,7 +24,7 @@ export namespace HTMLOutputHandler {
 	{
 		Modifier.addImport('HTMLMaker', 'lupos.html')
 
-		let htmlString = tree.root.getContentHTMLString()
+		let htmlString = tree.root.getContentHTMLString(tree.template)
 
 		// Cache meet.
 		if (Cache.has(htmlString, wrapped)) {

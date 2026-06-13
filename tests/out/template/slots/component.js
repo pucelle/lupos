@@ -89,6 +89,40 @@ const $html_3 = /*#__PURE__*/ new HTMLMaker("<div></div>");
         position: new SlotPosition(1, $node_0)
     };
 });
+const $html_4 = /*#__PURE__*/ new HTMLMaker("<slot com></slot>");
+/*
+<root>
+    <ChildComponentWithTagName />
+</root>
+*/ const $template_4 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $locator = $html_4.make($hydrates);
+    let $node_0 = $locator.childAt(0);
+    let $com_0 = new ChildComponentWithTagName($node_0);
+    return {
+        el: $locator.el,
+        position: new SlotPosition(1, $node_0),
+        parts: [
+            [$com_0, 1]
+        ]
+    };
+});
+const $html_5 = /*#__PURE__*/ new HTMLMaker("<pre com></pre>");
+/*
+<root>
+    <ChildComponentWithTagName tagName="pre" />
+</root>
+*/ const $template_5 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $locator = $html_5.make($hydrates);
+    let $node_0 = $locator.childAt(0);
+    let $com_0 = new ChildComponentWithTagName($node_0);
+    return {
+        el: $locator.el,
+        position: new SlotPosition(1, $node_0),
+        parts: [
+            [$com_0, 1]
+        ]
+    };
+});
 export class TestComponent extends Component {
     prop = 1;
     testComponent() {
@@ -103,7 +137,16 @@ export class TestComponent extends Component {
     testRestSlotContentWithPrecedingTemplateSlot() {
         return new CompiledTemplateResult($template_2, [], this);
     }
+    testTagNameDeclare() {
+        return new CompiledTemplateResult($template_4, [], this);
+    }
+    testTagNameAttr() {
+        return new CompiledTemplateResult($template_5, [], this);
+    }
 }
 class ChildComponent extends Component {
+    prop;
+}
+class ChildComponentWithTagName extends Component {
     prop;
 }

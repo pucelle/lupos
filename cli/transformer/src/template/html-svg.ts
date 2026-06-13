@@ -1,7 +1,7 @@
 import ts from 'typescript'
-import {defineVisitor, Interpolator, InterpolationContentType, Modifier, onVisitedSourceFile, helper} from '../core'
+import {defineVisitor, Interpolator, InterpolationContentType, Modifier, onJustVisitedSourceFile, helper, definePostVisitCallback} from '../core'
 import {TemplateParser, VariableNames} from './parsers'
-import {HTMLRoot, TemplateSlotPlaceholder} from '../lupos-ts-module'
+import {Analyzer, HTMLRoot, TemplateSlotPlaceholder} from '../lupos-ts-module'
 
 
 defineVisitor(function(node: ts.Node) {
@@ -35,9 +35,10 @@ defineVisitor(function(node: ts.Node) {
 	// Must after all observable interpolation outputted.
 	// So internal html`...` can be replaced.
 	return () => {
-		onVisitedSourceFile(toOutput)
+		onJustVisitedSourceFile(toOutput)
 	}
 })
+
 
 
 /** Parse a html template literal. */
@@ -46,7 +47,9 @@ function parseHTMLTemplate(node: ts.TaggedTemplateExpression, templateType: 'htm
 	let values = TemplateSlotPlaceholder.extractTemplateValues(node.template)
 	let root = HTMLRoot.fromString(string)
 
-	let parser = new TemplateParser(templateType, node.template, string, root, values, mapper)
+	let analyzer = getAnalyzerOfCurrentSourceFile()
+	let parser = new TemplateParser(templateType, node.template, string, root, values, mapper, analyzer)
+
 	parser.diagnose()
 	parser.parse()
 
@@ -56,3 +59,23 @@ function parseHTMLTemplate(node: ts.TaggedTemplateExpression, templateType: 'htm
 		Interpolator.replace(node, InterpolationContentType.Normal, () => outputted)
 	}
 }
+
+
+/** Cached analyzer, for each source file. */
+let analyzer: Analyzer | null = null
+
+/** Get analyzer for current source file. */
+function getAnalyzerOfCurrentSourceFile() {
+	if (!analyzer) {
+		analyzer = new Analyzer(helper)
+	}
+
+	return analyzer
+}
+
+// Clean the analyzer after each time a source file parsed.
+definePostVisitCallback(() => {
+	if (analyzer) {
+		analyzer = null
+	}
+})

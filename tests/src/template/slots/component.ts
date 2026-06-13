@@ -19,9 +19,22 @@ export class TestComponent extends Component {
 	testRestSlotContentWithPrecedingTemplateSlot() {
 		return html`<ChildComponent>${html`<div />`}Rest Content</ChildComponent>`
 	}
+
+	testTagNameDeclare() {
+		return html`<ChildComponentWithTagName />`
+	}
+
+	testTagNameAttr() {
+		return html`<ChildComponentWithTagName tagName="pre" />`
+	}
 }
 
 class ChildComponent extends Component {
 
+	prop!: number
+}
+
+class ChildComponentWithTagName extends Component {
+	declare static tagName: 'slot'
 	prop!: number
 }

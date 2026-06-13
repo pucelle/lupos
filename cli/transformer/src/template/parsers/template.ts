@@ -15,6 +15,9 @@ export class TemplateParser extends TemplateBasis {
 	/** All value nodes even for sub template. */
 	readonly values: TemplateValues
 
+	/** For diagnostic, and query for component tag name. */
+	readonly analyzer: Analyzer
+
 	private readonly treeParsers: TreeParser[] = []
 	private readonly subTemplates: TemplateParser[] = []
 
@@ -27,10 +30,12 @@ export class TemplateParser extends TemplateBasis {
 		content: string,
 		root: HTMLRoot,
 		valueNodes: ts.Expression[],
-		positionMapper: PositionMapper
+		positionMapper: PositionMapper,
+		analyzer: Analyzer
 	) {
 		super(tagName, node, content, root, valueNodes, positionMapper, DeclarationScopeTree, helper)
 		this.values = new TemplateValues(valueNodes)
+		this.analyzer = analyzer
 	}
 
 	/** 
@@ -70,7 +75,7 @@ export class TemplateParser extends TemplateBasis {
 	 */
 	separateChildrenAsTemplate(node: HTMLNode): TemplateParser {
 		let root = HTMLRoot.fromSeparatingChildren(node)
-		let template = new TemplateParser(this.tagName as 'html' | 'svg', this.node, '', root, this.values.valueNodes, this.positionMapper)
+		let template = new TemplateParser(this.tagName as 'html' | 'svg', this.node, '', root, this.values.valueNodes, this.positionMapper, this.analyzer)
 		this.subTemplates.push(template)
 		template.parse()
 		

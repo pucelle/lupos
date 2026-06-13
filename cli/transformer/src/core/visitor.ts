@@ -1,7 +1,7 @@
 import ts from 'typescript'
 import {Interpolator} from './interpolator'
 import {setSourceFile, setTransformContext} from './global'
-import {callVisitedSourceFileCallbacks, runPostVisitCallbacks, runPreVisitCallbacks} from './visitor-callbacks'
+import {callJustVisitedSourceFileCallbacks, runPostVisitCallbacks, runPreVisitCallbacks} from './visitor-callbacks'
 import {TransformerExtras} from '../../../compiler/out/patch'
 
 
@@ -67,7 +67,7 @@ export function transformer(context: ts.TransformationContext, extras: Transform
 
 		try {
 			ts.visitNode(sourceFile, visitor)
-			callVisitedSourceFileCallbacks()
+			callJustVisitedSourceFileCallbacks()
 			runPostVisitCallbacks()
 
 			return Interpolator.outputSelf(sourceFile) as ts.SourceFile
