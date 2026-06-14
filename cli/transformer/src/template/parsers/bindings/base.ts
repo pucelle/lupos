@@ -372,11 +372,11 @@ export class BindingBase {
 			)
 		}
 
-		// $binding_0.update($values[0])
+		// ($delegator_0 or $binding_0).update($values[0])
 		else {
 			update = factory.createCallExpression(
 				factory.createPropertyAccessExpression(
-					factory.createIdentifier(this.bindingVariableName),
+					factory.createIdentifier(this.delegatorVariableName || this.bindingVariableName),
 					factory.createIdentifier(callMethod)
 				),
 				undefined,
