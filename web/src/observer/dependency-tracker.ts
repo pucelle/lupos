@@ -148,7 +148,8 @@ export function trackSet(obj: object, ...properties: PropertyKey[]) {
 		}
 	}
 
-	// Upgrade elements dependency version if it exists, for snapshot comparing.
+	// Upgrade elements dependency version if it exists,
+	// which means it had generated snapshot.
 	let version = ElementsDepVersionMap.get(obj)
 	if (version !== undefined) {
 		ElementsDepVersionMap.set(obj, version + 1)
