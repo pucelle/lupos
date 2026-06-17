@@ -29,6 +29,10 @@ export type UnObserved<T = any> = T
  * Note this type doesn't affect compiling of implemented class,
  * but affect the compiling of the places where use the class instance.
  * So, normally it runs fast, and also can be tracked as a property of an observed.
+ * 
+ * Note this decorator only decorate whole class as observed target,
+ * if it returns a sub object, and later internal methods modify this object,
+ * nothing will happen. E.g.: sub list of `ListMap`.
  */
 export type MethodsObserved<GetMethods, SetMethods>
 	= {[K in (GetMethods extends string ? GetMethods : never) | (SetMethods extends string ? SetMethods : never)]: Function}
