@@ -64,9 +64,6 @@ const enum QueueUpdatePhase {
 	/** Are waiting for async updates complete. */
 	WaitingAsync,
 
-	/** Will update newly added in a sub update process. */
-	WillUpdateSub,
-
 	/** Are calling complete callbacks. */
 	CallingCompleteCallbacks,
 }
@@ -83,29 +80,15 @@ class UpdateQueueClass {
 	/** Callbacks wait to be called after all the things update. */
 	private completeCallbacks: (() => void)[] = []
 
-	/** The promises that will wait for. */
-	private promises: Promise<void>[] = []
-
-	/** Synchronous updatable that is updating. */
-	private updating: Updatable | null = null
-
 	/** 
-	 * On before synchronous update start.
-	 * For an async update, you should call this before doing synchronous update.
-	 * So we can know what is updating, and can enqueue it to update
-	 * after related data changed.
+	 * The promises that will wait for before update next component.
+	 * So if a `asyncComputed` will generate data after several micro task ticks,
+	 * we will wait it, but for at most several micro task ticks.
 	 */
-	onSyncUpdateStart(upd: Updatable) {
-		this.updating = upd
-	}
+	private decoPromises: Promise<void>[] = []
 
-	/** 
-	 * On after synchronous update ended.
-	 * For an async update, you should call this after synchronous update did.
-	 */
-	onSyncUpdateEnd() {
-		this.updating = null
-	}
+	/** The promises that will wait for before fully update completed. */
+	private comPromises: Promise<void>[] = []
 
 	/** 
 	 * Enqueue a callback with a scope, will call it before the next animate frame.
@@ -125,7 +108,6 @@ class UpdateQueueClass {
 	/** Whether target updatable has been enqueued or is updating. */
 	hasEnqueued(upd: Updatable): boolean {
 		return this.heap.has(upd)
-			|| this.updating === upd
 	}
 
 	/** 
@@ -172,8 +154,7 @@ class UpdateQueueClass {
 			this.phase = QueueUpdatePhase.WillUpdate
 		}
 		else if (this.phase === QueueUpdatePhase.WaitingAsync) {
-			this.promises.push(Promise.resolve().then(() => this.updateSub()))
-			this.phase = QueueUpdatePhase.WillUpdateSub
+			this.comPromises.push(Promise.resolve().then(() => this.updateSub()))
 		}
 	}
 
@@ -184,8 +165,16 @@ class UpdateQueueClass {
 
 			while (!this.heap.isEmpty()) {
 				let upd = this.heap.getHead()!
-				this.heap.popHead()
-				this.updateEach(upd)
+				let beCom = Number.isInteger(upd.iid)
+
+				// Will wait for several micro task ticks.
+				if (beCom && this.decoPromises.length > 0) {
+					await this.waitDecoPromises()
+				}
+				else {
+					this.heap.popHead()
+					this.updateEach(upd)
+				}
 			}
 
 
@@ -195,9 +184,9 @@ class UpdateQueueClass {
 			this.phase = QueueUpdatePhase.WaitingAsync
 
 			// Promise list may be pushed by sub updates.
-			while (this.promises.length > 0) {
-				let promises = this.promises
-				this.promises = []
+			while (this.comPromises.length > 0) {
+				let promises = this.comPromises
+				this.comPromises = []
 
 				try {
 					await Promise.all(promises)
@@ -229,31 +218,44 @@ class UpdateQueueClass {
 		this.phase = QueueUpdatePhase.NotStarted
 	}
 
+	/** Wait for a while to see if deco promises resolved. */
+	private waitDecoPromises() {
+		let promises = this.decoPromises
+		this.decoPromises = []
+
+		// Wait for at most 3 micro task ticks.
+		return Promise.race([
+			Promise.all(promises),
+			(async () => {
+				await Promise.resolve()
+				await Promise.resolve()
+				await Promise.resolve()
+			})(),
+		])
+	}
+
 	/** Do updating to clear heap only. */
 	private async updateSub() {
 		while (!this.heap.isEmpty()) {
 			let upd = this.heap.popHead()!
 			this.updateEach(upd)
 		}
-
-		this.phase = QueueUpdatePhase.WaitingAsync
 	}
 
 	/** Update each with error catching. */
 	private updateEach(upd: Updatable) {
 		try {
-			if (upd.iid < 0) {
-				upd.update()
-			}
-			else {
-				this.updating = upd
-
+			if (Number.isInteger(upd.iid)) {
 				let returned = upd.update()
 				if (returned) {
-					this.promises.push(returned)
+					this.comPromises.push(returned)
 				}
-
-				this.updating = null
+			}
+			else {
+				let returned = upd.update()
+				if (returned) {
+					this.decoPromises.push(returned)
+				}
 			}
 		}
 		catch (err) {

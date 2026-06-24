@@ -40,7 +40,7 @@ export class Watcher<V = any> implements Updatable {
 	readonly iid
 
 	private getter: () => V
-	private callback: (value: V, oldValue: V | undefined) => void
+	private callback: (value: V, oldValue: V | undefined) => void | Promise<void>
 	private options: WatchOptions
 	private value: V | undefined = undefined
 	private valueAssigned: boolean = false
@@ -78,6 +78,7 @@ export class Watcher<V = any> implements Updatable {
 
 		let value: V
 		let meetsError = false
+		let result: any
 
 		try {
 			beginTrack(this)
@@ -94,7 +95,7 @@ export class Watcher<V = any> implements Updatable {
 			|| !this.valueAssigned && this.options.immediate
 
 		if (shouldCallback) {
-			this.callback(value!, this.value)
+			result = this.callback(value!, this.value)
 		}
 
 		this.value = value!
@@ -106,6 +107,8 @@ export class Watcher<V = any> implements Updatable {
 		else if (this.options.untilTrue && value!) {
 			this.clear()
 		}
+
+		return result
 	}
 
 	clear() {

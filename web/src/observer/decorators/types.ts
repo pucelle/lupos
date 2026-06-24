@@ -28,7 +28,8 @@ export declare function computed(originalGetter: any, context: ClassGetterDecora
  * By default when next async request send, will reset current value to `undefined`.
  * If specified `continuous` as `true`, will not reset and keep the value continuous.
  * 
- * Note that only the immediate running part of `asyncComputed` is trackable.
+ * Note that only the immediately running part of `asyncComputed` is trackable.
+ * Note not like `@computed`, it computes the new value early.
  * 
  * Use it like:
  * ```

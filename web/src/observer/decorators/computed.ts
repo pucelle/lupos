@@ -59,11 +59,6 @@ export class Computed<V = any> implements Updatable {
 
 	disconnect() {
 		this.tracker?.remove()
-
-		// Treat as fresh after re-connected.
-		if (this.valueState === ComputedValueState.Stale) {
-			this.valueState = ComputedValueState.Fresh
-		}
 	}
 
 	willUpdate() {

@@ -6,7 +6,6 @@ import {Updatable} from '../../types'
 
 const enum AsyncComputedValueState {
 	Initial,
-	Stale,
 	Loading,
 	Fresh,
 }
@@ -40,6 +39,7 @@ export class AsyncComputed<V = any> implements Updatable {
 	private valueState: AsyncComputedValueState = AsyncComputedValueState.Initial
 	private tracker: DependencyTracker | null = null
 	private trackerSnapshot: any[] | null = null
+	private connected: boolean = false
 
 	/** 
 	 * By default when next async request send, will reset current value to `undefined`.
@@ -53,25 +53,20 @@ export class AsyncComputed<V = any> implements Updatable {
 	}
 
 	connect() {
-
-		// Never computed yet.
-		if (this.valueState === AsyncComputedValueState.Initial) {
-			return
-		}
-
+		this.connected = true
 		this.willUpdate()
 	}
 
 	disconnect() {
+		this.connected = false
 		this.tracker?.remove()
-
-		// Treat as fresh after re-connected.
-		if (this.valueState === AsyncComputedValueState.Stale) {
-			this.valueState = AsyncComputedValueState.Fresh
-		}
 	}
 
 	willUpdate() {
+		if (!this.connected) {
+			return
+		}
+
 		// Here doesn't reset value immediately after dependency get changed,
 		// but update them in the same order with effectors and watchers.
 
@@ -82,12 +77,18 @@ export class AsyncComputed<V = any> implements Updatable {
 	}
 
 	update() {
+		if (!this.connected) {
+			return
+		}
 
 		// For the update, it only reset state,
 		// and the final state will be computed when required.
 		if (this.shouldUpdate()) {
-			this.valueState = AsyncComputedValueState.Stale
+			this.valueState = AsyncComputedValueState.Initial
 			this.onReset?.()
+			
+			// Not like `@computed`, it begins to compute new value immediately.
+			return this.updateValue()
 		}
 
 		// Restore tracker dependencies watching.
@@ -106,23 +107,17 @@ export class AsyncComputed<V = any> implements Updatable {
 		}
 	}
 
-	/** If not connected, will always get old value. */
-	get(): V | undefined {
-		if (this.valueState === AsyncComputedValueState.Fresh
-			|| this.valueState === AsyncComputedValueState.Loading
-		) {
-			return this.value
-		}
-
+	/** Update current value. */
+	protected updateValue(): Promise<any> | void {
 		this.valueState = AsyncComputedValueState.Loading
 		let meetsError = false
+		let result: any
 
 		try {
 			this.tracker = beginTrack(this)
-			let promise = this.getter()
+			result = this.getter()
 
-			if (promise instanceof Promise) {
-				this.promise = promise
+			if (result instanceof Promise) {
 
 				// Reset to undefined if not continuous.
 				if (!this.continuous) {
@@ -132,9 +127,9 @@ export class AsyncComputed<V = any> implements Updatable {
 				// Note for `continuous` mode, even the value persist still,
 				// will also cause those which depend on it to get updated.
 
-				promise
+				result = result
 					.then((value: V) => {
-						if (promise === this.promise) {
+						if (result === this.promise) {
 							this.valueState = AsyncComputedValueState.Fresh
 							this.value = value
 							this.promise = undefined
@@ -146,10 +141,12 @@ export class AsyncComputed<V = any> implements Updatable {
 					.catch(err => {
 						console.error(err)
 					})
+					
+				this.promise = result
 			}
 			else {
 				this.valueState = AsyncComputedValueState.Fresh
-				this.value = promise
+				this.value = result
 			}
 		}
 		catch (err) {
@@ -164,6 +161,15 @@ export class AsyncComputed<V = any> implements Updatable {
 
 		if (this.tracker) {
 			this.trackerSnapshot = this.tracker.makeSnapshot()
+		}
+
+		return result
+	}
+
+	/** If not connected, will always get old value. */
+	get(): V | undefined {
+		if (this.valueState === AsyncComputedValueState.Initial) {
+			this.updateValue()
 		}
 
 		return this.value

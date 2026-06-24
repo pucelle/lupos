@@ -52,7 +52,7 @@ export class Effector implements Updatable {
 		}
 		
 		if (this.shouldUpdate()) {
-			this.doUpdate()
+			return this.doUpdate()
 		}
 		else if (!this.tracker!.tracking) {
 			this.tracker!.apply()
@@ -71,10 +71,11 @@ export class Effector implements Updatable {
 
 	private doUpdate() {
 		let meetsError = false
+		let result: any
 
 		try {
 			this.tracker = beginTrack(this)
-			this.fn()
+			result = this.fn()
 		}
 		catch (err) {
 			meetsError = true
@@ -86,6 +87,8 @@ export class Effector implements Updatable {
 		if (this.tracker) {
 			this.trackerSnapshot = this.tracker.makeSnapshot()
 		}
+
+		return result
 	}
 
 	clear() {
