@@ -1,6 +1,6 @@
 import { Component, TemplateSlot, SlotPosition, CompiledTemplateResult, TemplateMaker, HTMLMaker, SwitchBlock } from 'lupos.html';
 import { trackGet } from "lupos";
-const $html_0 = /*#__PURE__*/ new HTMLMaker("<!----><!--b9615f-->");
+const $html_0 = /*#__PURE__*/ new HTMLMaker("<!----><!--b9615f98-->");
 /*
 <root>
     <lu:switch ${this.value} />
@@ -8,8 +8,8 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<!----><!--b9615f-->");
 */ const $template_0 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $locator = $html_0.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $node_1 = $locator.getMarker("b9615f");
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), null, $locator.getNodes("b9615f"));
+    let $node_1 = $locator.getMarker("b9615f98");
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), null, $locator.getNodes("b9615f98"));
     let $block_0 = new SwitchBlock($slot_0);
     return {
         el: $locator.el,
@@ -44,7 +44,7 @@ const $html_2 = /*#__PURE__*/ new HTMLMaker("Case Content 2");
         position: new SlotPosition(1, $node_0)
     };
 });
-const $html_3 = /*#__PURE__*/ new HTMLMaker("<!----><!--e707ad-->");
+const $html_3 = /*#__PURE__*/ new HTMLMaker("<!----><!--e707ad08-->");
 /*
 <root>
     <lu:switch ${this.value} />
@@ -52,8 +52,8 @@ const $html_3 = /*#__PURE__*/ new HTMLMaker("<!----><!--e707ad-->");
 */ const $template_3 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $locator = $html_3.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $node_1 = $locator.getMarker("e707ad");
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 0, $locator.getNodes("e707ad"));
+    let $node_1 = $locator.getMarker("e707ad08");
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 0, $locator.getNodes("e707ad08"));
     let $block_0 = new SwitchBlock($slot_0);
     return {
         el: $locator.el,

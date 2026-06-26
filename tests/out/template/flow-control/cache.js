@@ -1,5 +1,5 @@
 import { Component, TemplateSlot, SlotPosition, CompiledTemplateResult, TemplateMaker, CacheBlock, HTMLMaker } from 'lupos.html';
-const $html_0 = /*#__PURE__*/ new HTMLMaker("<!----><!--3abcdc-->");
+const $html_0 = /*#__PURE__*/ new HTMLMaker("<!----><!--3abcdc31-->");
 /*
 <root>
     <lu:cache />
@@ -7,8 +7,8 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<!----><!--3abcdc-->");
 */ const $template_0 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $locator = $html_0.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $node_1 = $locator.getMarker("3abcdc");
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 0, $locator.getNodes("3abcdc"));
+    let $node_1 = $locator.getMarker("3abcdc31");
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 0, $locator.getNodes("3abcdc31"));
     let $block_0 = new CacheBlock($slot_0);
     return {
         el: $locator.el,

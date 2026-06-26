@@ -213,7 +213,7 @@ const $html_6 = /*#__PURE__*/ new HTMLMaker("<div></div>");
         }
     };
 });
-const $html_12 = /*#__PURE__*/ new HTMLMaker("<div><!--bcba84--></div>");
+const $html_12 = /*#__PURE__*/ new HTMLMaker("<div><!--bcba8462--></div>");
 /*
 <root>
     <div @click=${(e: any) => value = e}>
@@ -224,8 +224,8 @@ const $html_12 = /*#__PURE__*/ new HTMLMaker("<div><!--bcba84--></div>");
     let $latest_0, $latest_1;
     let $locator = $html_12.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $node_1 = $locator.getMarker("bcba84");
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), null, $locator.getNodes("bcba84"));
+    let $node_1 = $locator.getMarker("bcba8462");
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), null, $locator.getNodes("bcba8462"));
     $node_0.addEventListener("click", (...args) => {
         $latest_0.call($context, ...args);
     });
