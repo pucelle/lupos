@@ -2,6 +2,7 @@ import {InternalPairKeysCounter, InternalSetMap} from '../structs/map'
 import {DependencyMap} from './dependency-map'
 import {Updatable} from '../types'
 import {UpdateQueue} from '../queue'
+import {IN_DEV} from '../utils'
 
 
 /** Caches `Dependency <=> Updatable`. */
@@ -43,7 +44,9 @@ export function endTrack(meetsError: boolean) {
 		currentTracker!.apply()
 	}
 
-	debug_on_track_end(currentTracker!)
+	if (IN_DEV) {
+		debug_on_track_end(currentTracker!)
+	}
 
 	if (trackerStack.length > 0) {
 		currentTracker = trackerStack.pop()!
@@ -60,7 +63,9 @@ export function endTrack(meetsError: boolean) {
  * Note if one property is not empty string, you must ensure it's the key of `obj`.
  */
 export function trackGet(obj: object, ...properties: PropertyKey[]) {
-	debug_on_track_get(obj)
+	if (IN_DEV) {
+		debug_on_track_get(obj)
+	}
 
 	if (!currentTracker) {
 		return
@@ -76,7 +81,9 @@ export function trackGet(obj: object, ...properties: PropertyKey[]) {
  * Note that compiler will not generate statements to call this, you must call it manually.
  */
 export function trackGetDeeply(obj: object, maxDepth = 10) {
-	debug_on_track_get(obj)
+	if (IN_DEV) {
+		debug_on_track_get(obj)
+	}
 
 	if (!currentTracker) {
 		return
@@ -117,7 +124,9 @@ export function trackGetDeeply(obj: object, maxDepth = 10) {
  * Note if one property is not empty string, you must ensure it's the existing key of `obj`.
  */
 export function trackSet(obj: object, ...properties: PropertyKey[]) {
-	debug_on_track_set(obj, properties)
+	if (IN_DEV) {
+		debug_on_track_set(obj, properties)
+	}
 
 	for (let prop of properties) {
 		if (prop === '') {
