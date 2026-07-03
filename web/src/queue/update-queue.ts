@@ -227,9 +227,9 @@ class UpdateQueueClass {
 		return Promise.race([
 			Promise.all(promises),
 			(async () => {
-				await Promise.resolve()
-				await Promise.resolve()
-				await Promise.resolve()
+				for (let i = 0; i < 3; i++) {
+					await Promise.resolve()
+				}
 			})(),
 		])
 	}
