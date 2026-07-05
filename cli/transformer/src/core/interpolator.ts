@@ -173,13 +173,15 @@ export namespace Interpolator {
 			)
 		}
 		else if (ts.isBlock(node)) {
-			return factory.updateBlock(
-				node, 
+
+			// updateBlock can't redeclare as `multiline`.
+			return factory.createBlock(
 				[
 					...Packer.toStatements(prependNodes),
 					...node.statements,
 					...Packer.toStatements(appendNodes),
-				]
+				],
+				true
 			)
 		}
 		else {

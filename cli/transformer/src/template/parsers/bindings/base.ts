@@ -302,7 +302,7 @@ export class BindingBase {
 								]
 							))
 						],
-						false
+						true
 					)
 				)
 			}

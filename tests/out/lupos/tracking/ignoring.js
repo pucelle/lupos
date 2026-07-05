@@ -10,7 +10,10 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
     let $locator = $html_0.make($hydrates);
     let $node_0 = $locator.childAt(0);
     let $binding_0 = new RefBinding($node_0, $context, ["el"]);
-    $binding_0.update(function (refed) { this.ref = refed; trackSet(this, "ref"); });
+    $binding_0.update(function (refed) {
+        this.ref = refed;
+        trackSet(this, "ref");
+    });
     return {
         el: $locator.el,
         position: new SlotPosition(1, $node_0),

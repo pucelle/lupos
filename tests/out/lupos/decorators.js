@@ -104,7 +104,10 @@ export class TestWatchProperty extends Component {
     prop = 1;
     onCreated() {
         super.onCreated();
-        this.$onPropChange_watcher = new Watcher(function () { trackGet(this, 'prop'); return this.prop; }, this.onPropChange, this);
+        this.$onPropChange_watcher = new Watcher(function () {
+            trackGet(this, 'prop');
+            return this.prop;
+        }, this.onPropChange, this);
     }
     onConnected() {
         super.onConnected();
@@ -148,9 +151,14 @@ export class TestWatchCallbackDerived extends TestWatchCallback {
 }
 export class TestObservedImplemented {
     prop = 1;
-    constructor() {
+    onCreated() {
         this.$onPropChangeEffect_effector = new Effector(this.onPropChangeEffect, this);
+    }
+    onConnected() {
         this.$onPropChangeEffect_effector.connect();
+    }
+    onWillDisconnect() {
+        this.$onPropChangeEffect_effector.disconnect();
     }
     onPropChangeEffect() {
         console.log(this.prop);
@@ -159,11 +167,30 @@ export class TestObservedImplemented {
 }
 export class TestConnectable {
     prop = 1;
-    onCreated() { this.$onPropChangeEffect_effector = new Effector(this.onPropChangeEffect, this); }
-    onConnected() { this.$onPropChangeEffect_effector.connect(); }
-    onWillDisconnect() { this.$onPropChangeEffect_effector.disconnect(); }
+    onCreated() {
+        this.$onPropChangeEffect_effector = new Effector(this.onPropChangeEffect, this);
+    }
+    onConnected() {
+        this.$onPropChangeEffect_effector.connect();
+    }
+    onWillDisconnect() {
+        this.$onPropChangeEffect_effector.disconnect();
+    }
     onPropChangeEffect() {
         console.log(this.prop);
         trackGet(this, "prop");
+    }
+}
+export class TestConnectableAsProperty {
+    prop = new TestConnectable();
+    propNoInitializer;
+    onCreated() {
+        this.prop.onCreated();
+    }
+    onConnected() {
+        this.prop.onConnected();
+    }
+    onWillDisconnect() {
+        this.prop.onWillDisconnect();
     }
 }

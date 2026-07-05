@@ -95,9 +95,13 @@ export class TestWatchCallbackDerived extends TestWatchCallback {
 }
 
 
-export class TestObservedImplemented implements Observed {
+export class TestObservedImplemented implements Connectable, Observed {
 
 	prop: number = 1
+
+	onCreated() {}
+	onConnected() {}
+	onWillDisconnect() {}
 
 	@effect
 	onPropChangeEffect() {
@@ -117,4 +121,15 @@ export class TestConnectable implements Connectable, Observed {
 	onPropChangeEffect() {
 		console.log(this.prop)
 	}
+}
+
+
+export class TestConnectableAsProperty implements Connectable {
+
+	prop: TestConnectable = new TestConnectable()
+	propNoInitializer!: TestConnectable
+
+	onCreated() {}
+	onConnected() {}
+	onWillDisconnect() {}
 }

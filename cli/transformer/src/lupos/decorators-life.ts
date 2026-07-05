@@ -10,29 +10,60 @@ defineVisitor(function(node: ts.Node) {
 		return
 	}
 
-	let hasNeedToCompileMembers = hasLifeDecorators(node)
-	if (!hasNeedToCompileMembers) {
+	let lifeMembers = getLifeMembers(node)
+	if (lifeMembers.length === 0) {
 		return
 	}
 
-	let create: MethodOverwrite
-	let connect: MethodOverwrite | null = null
-	let disconnect: MethodOverwrite | null = null
+	// Class must implements `Connectable`.
+	if (!helper.class.isImplementedOf(node, 'Connectable', 'lupos')
+		&& !helper.objectLike.isDerivedOf(node, 'Component', 'lupos.html')
+	) {
+		return
+	}
+
+	let create = new MethodOverwrite(node, 'onCreated')
+	let connect = new MethodOverwrite(node, 'onConnected')
+	let disconnect = new MethodOverwrite(node, 'onWillDisconnect')
 	let hasDeletedContextVariables = false
 
-	// Be a `Connectable` or a `Component`.
-	if (helper.class.isImplementedOf(node, 'Connectable', 'lupos')
-		|| helper.objectLike.isDerivedOf(node, 'Component', 'lupos.html')
-	) {
-		create = new MethodOverwrite(node, 'onCreated')
-		connect = new MethodOverwrite(node, 'onConnected')
-		disconnect = new MethodOverwrite(node, 'onWillDisconnect')
-	}
-	else {
-		create = new MethodOverwrite(node, 'constructor')
+	for (let {deco, decoName, member} of lifeMembers) {
+		if (decoName && ['computed', 'asyncComputed', 'effect', 'watch', 'watchMulti'].includes(decoName)
+			&& (ts.isMethodDeclaration(member)
+				|| ts.isGetAccessorDeclaration(member)
+				|| ts.isPropertyDeclaration(member)
+			)
+		) {
+			compileComputedEffectWatchDecorator(deco!, decoName, member, create, connect, disconnect)
+		}
+		else if (decoName === 'setContext' && ts.isPropertyDeclaration(member)) {
+			compileSetContextDecorator(member, create, connect, disconnect, hasDeletedContextVariables)
+			Interpolator.remove(deco!)
+			hasDeletedContextVariables = true
+		}
+		else if (decoName === 'useContext' && ts.isPropertyDeclaration(member)) {
+			compileUseContextDecorator(member, create, connect, disconnect, hasDeletedContextVariables)
+			hasDeletedContextVariables = true
+		}
+		else {
+			compileConnectableProperty(member as ts.PropertyDeclaration, create, connect, disconnect)
+		}
 	}
 
-	for (let member of node.members) {
+	create.output()
+	connect.output()
+	disconnect.output()
+})
+
+
+function getLifeMembers(node: ts.ClassDeclaration) {
+	let members: {
+		member: ts.ClassElement
+		deco: ts.Decorator | null
+		decoName: string | null
+	}[] = []
+
+	for (let member of  node.members) {
 		if (!ts.isMethodDeclaration(member)
 			&& !ts.isPropertyDeclaration(member)
 			&& !ts.isGetAccessorDeclaration(member)
@@ -41,56 +72,36 @@ defineVisitor(function(node: ts.Node) {
 		}
 
 		let deco = helper.deco.getFirst(member)
-		if (!deco) {
-			continue
+		if (deco) {
+			let decoName = helper.deco.getName(deco)
+			if (decoName && ['computed', 'asyncComputed', 'effect', 'watch', 'watchMulti', 'useContext', 'setContext'].includes(decoName)) {
+				members.push({
+					member,
+					deco,
+					decoName,
+				})
+			}
 		}
 
-		let decoName = helper.deco.getName(deco)
-		if (!decoName) {
-			continue
-		}
-
-		if (['computed', 'asyncComputed', 'effect', 'watch', 'watchMulti'].includes(decoName)
-			&& (ts.isMethodDeclaration(member)
-				|| ts.isGetAccessorDeclaration(member)
-				|| ts.isPropertyDeclaration(member)
-			)
+		// `prop = new Connectable(...)`
+		else if (ts.isPropertyDeclaration(member)
+			&& member.initializer
+			&& ts.isNewExpression(member.initializer)
 		) {
-			compileComputedEffectWatchDecorator(deco, decoName, member, create, connect, disconnect)
-		}
-		else if (decoName === 'setContext' && ts.isPropertyDeclaration(member)) {
-			compileSetContextDecorator(member, create, connect, disconnect, hasDeletedContextVariables)
-			Interpolator.remove(deco)
-			hasDeletedContextVariables = true
-		}
-		else if (decoName === 'useContext' && ts.isPropertyDeclaration(member)) {
-			compileUseContextDecorator(member, create, connect, disconnect, hasDeletedContextVariables)
-			hasDeletedContextVariables = true
+			let classRef = member.initializer.expression
+			let classDecl = helper.symbol.resolveDeclaration(classRef, ts.isClassLike)
+
+			if (classDecl && helper.class.isImplementedOf(classDecl, 'Connectable', 'lupos')) {
+				members.push({
+					member,
+					deco: null,
+					decoName: null,
+				})
+			}
 		}
 	}
 
-	create.output()
-	connect?.output()
-	disconnect?.output()
-})
-
-
-function hasLifeDecorators(node: ts.ClassDeclaration) {
-	return node.members.some(member => {
-		if (!ts.isMethodDeclaration(member)
-			&& !ts.isPropertyDeclaration(member)
-			&& !ts.isGetAccessorDeclaration(member)
-		) {
-			return false
-		}
-
-		let decoName = helper.deco.getFirstName(member)
-		if (decoName && ['computed', 'asyncComputed', 'effect', 'watch', 'watchMulti', 'useContext', 'setContext'].includes(decoName)) {
-			return true
-		}
-
-		return false
-	})
+	return members
 }
 
 
@@ -127,8 +138,8 @@ function compileComputedEffectWatchDecorator(
 	decoName: string,
 	decl: ts.MethodDeclaration | ts.GetAccessorDeclaration | ts.PropertyDeclaration,
 	create: MethodOverwrite,
-	connect: MethodOverwrite | null,
-	disconnect: MethodOverwrite | null
+	connect: MethodOverwrite,
+	disconnect: MethodOverwrite
 ) {
 	let methodName = helper.getFullText(decl.name)
 	let superCls = helper.class.getSuper(decl.parent as ts.ClassDeclaration)
@@ -144,6 +155,7 @@ function compileComputedEffectWatchDecorator(
 
 	Modifier.addImport(processorClassName, 'lupos')
 
+	// Embedded into a callback so it can add tracking codes.
 	let createStatementGetter = () => factory.createExpressionStatement(factory.createBinaryExpression(
 		factory.createPropertyAccessExpression(
 			factory.createThis(),
@@ -168,23 +180,22 @@ function compileComputedEffectWatchDecorator(
 		),
 		undefined,
 		[]
-	));
+	))
 
-	(connect || create).insert(() => [connectStatement], 'end')
+	connect.insert(() => [connectStatement], 'end')
 	
 
-	if (disconnect) {
-		let disconnectStatement = factory.createExpressionStatement(factory.createCallExpression(
-			Packer.createAccessNode(
-				Packer.createAccessNode(factory.createThis(), processorPropName),
-				'disconnect'
-			),
-			undefined,
-			[]
-		))
-		
-		disconnect.insert(() => [disconnectStatement], 'end')
-	}
+	// this.$prop_computer.disconnect()
+	let disconnectStatement = factory.createExpressionStatement(factory.createCallExpression(
+		Packer.createAccessNode(
+			Packer.createAccessNode(factory.createThis(), processorPropName),
+			'disconnect'
+		),
+		undefined,
+		[]
+	))
+	
+	disconnect.insert(() => [disconnectStatement], 'end')
 }
 
 
@@ -317,7 +328,7 @@ function compileWatchGetters(deco: ts.Decorator, decoName: string): () => ts.Exp
 								factory.createIdentifier(arg.text)
 							))
 						],
-						false
+						true
 					)
 				))
 			}
@@ -351,6 +362,73 @@ function getWatchOptions(deco: ts.Decorator): ts.Expression | undefined {
 
 	return undefined
 }
+
+
+/*
+```ts
+Compile `prop = new Connectable()` to:
+
+onCreated() {
+	this.prop.onCreated()
+}
+
+onConnected() {
+	this.prop.onConnected()
+}
+
+onWillDisconnect() {
+	this.prop.onWillDisconnect()
+}
+```
+*/
+function compileConnectableProperty(
+	decl: ts.PropertyDeclaration,
+	create: MethodOverwrite,
+	connect: MethodOverwrite,
+	disconnect: MethodOverwrite
+) {
+	let propName = helper.getFullText(decl.name)
+
+
+	// this.prop.onCreated()
+	let createStatement = factory.createExpressionStatement(factory.createCallExpression(
+		Packer.createAccessNode(
+			Packer.createAccessNode(factory.createThis(), propName),
+			'onCreated'
+		),
+		undefined,
+		[]
+	))
+
+	create.insert(() => [createStatement], 'end')
+
+
+	// this.prop.onConnected()
+	let connectStatement = factory.createExpressionStatement(factory.createCallExpression(
+		Packer.createAccessNode(
+			Packer.createAccessNode(factory.createThis(), propName),
+			'onConnected'
+		),
+		undefined,
+		[]
+	))
+
+	connect.insert(() => [connectStatement], 'end')
+	
+
+	// this.prop.onWillDisconnect()
+	let disconnectStatement = factory.createExpressionStatement(factory.createCallExpression(
+		Packer.createAccessNode(
+			Packer.createAccessNode(factory.createThis(), propName),
+			'onWillDisconnect'
+		),
+		undefined,
+		[]
+	))
+	
+	disconnect.insert(() => [disconnectStatement], 'end')
+}
+
 
 
 /*

@@ -194,7 +194,7 @@ export class RefBinding extends BindingBase {
 						)),
 						...Packer.toStatements(TrackingPatch.outputIsolatedTracking(rawValueNode, 'set'))
 					],
-					false
+					true
 				)
 			)
 		}

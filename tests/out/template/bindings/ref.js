@@ -9,7 +9,10 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
     let $locator = $html_0.make($hydrates);
     let $node_0 = $locator.childAt(0);
     let $binding_0 = new RefBinding($node_0, $context, ["el"]);
-    $binding_0.update(function (refed) { this.refEl = refed; trackSet(this, "refEl"); });
+    $binding_0.update(function (refed) {
+        this.refEl = refed;
+        trackSet(this, "refEl");
+    });
     return {
         el: $locator.el,
         position: new SlotPosition(1, $node_0),
@@ -28,7 +31,10 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<div com></div>");
     let $node_0 = $locator.childAt(0);
     let $com_0 = new ChildComponent($node_0);
     let $binding_0 = new RefBinding($node_0, $context, ["com"]);
-    $binding_0.update(function (refed) { this.refCom = refed; trackSet(this, "refCom"); });
+    $binding_0.update(function (refed) {
+        this.refCom = refed;
+        trackSet(this, "refCom");
+    });
     return {
         el: $locator.el,
         position: new SlotPosition(1, $node_0),
@@ -47,7 +53,10 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<div com></div>");
     let $node_0 = $locator.childAt(0);
     let $com_0 = new ChildComponent($node_0);
     let $binding_0 = new RefBinding($node_0, $context, ["el"]);
-    $binding_0.update(function (refed) { this.refEl = refed; trackSet(this, "refEl"); });
+    $binding_0.update(function (refed) {
+        this.refEl = refed;
+        trackSet(this, "refEl");
+    });
     return {
         el: $locator.el,
         position: new SlotPosition(1, $node_0),
@@ -66,7 +75,10 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<div com></div>");
     let $node_0 = $locator.childAt(0);
     let $com_0 = new ChildComponent($node_0);
     let $binding_0 = new RefBinding($node_0, $context, ["el"]);
-    $binding_0.update(function (refed) { this.refElByType = refed; trackSet(this, "refElByType"); });
+    $binding_0.update(function (refed) {
+        this.refElByType = refed;
+        trackSet(this, "refElByType");
+    });
     return {
         el: $locator.el,
         position: new SlotPosition(1, $node_0),
@@ -88,7 +100,10 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<div com></div>");
     let $binding_1 = new RefBinding($node_0, $context, ["binding"]);
     $binding_1.setRefValue($binding_0);
     $binding_0.updateString("className");
-    $binding_1.update(function (refed) { this.refBinding = refed; trackSet(this, "refBinding"); });
+    $binding_1.update(function (refed) {
+        this.refBinding = refed;
+        trackSet(this, "refBinding");
+    });
     return {
         el: $locator.el,
         position: new SlotPosition(1, $node_0),
@@ -184,9 +199,14 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<div com></div>");
     let $locator = $html_1.make($hydrates);
     let $node_0 = $locator.childAt(0);
     let $com_0 = new ChildComponent($node_0);
-    let $delegator_0 = new PartDelegator(() => new TransitionBinding($node_0, $context), binding => { $binding_0.setRefValue(binding); });
+    let $delegator_0 = new PartDelegator(() => new TransitionBinding($node_0, $context), binding => {
+        $binding_0.setRefValue(binding);
+    });
     let $binding_0 = new RefBinding($node_0, $context, ["binding"]);
-    $binding_0.update(function (refed) { this.refBinding = refed; trackSet(this, "refBinding"); });
+    $binding_0.update(function (refed) {
+        this.refBinding = refed;
+        trackSet(this, "refBinding");
+    });
     return {
         el: $locator.el,
         position: new SlotPosition(1, $node_0),
@@ -294,7 +314,9 @@ export class TestRefBinding extends Component {
     testRefAsLocal() {
         let value;
         return new CompiledTemplateResult($template_10, [
-            function (refed) { value = refed; }
+            function (refed) {
+                value = refed;
+            }
         ], this);
     }
     testForRefWithIndex() {

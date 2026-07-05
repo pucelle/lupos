@@ -1,4 +1,4 @@
-import { MethodsObserved, Observed, UnObserved, GetObserved, SetObserved } from '../../../../web/out';
+import { MethodsObserved, Observed, UnObserved, GetObserved, SetObserved, Connectable } from '../../../../web/out';
 import { Component } from 'lupos.html';
 import { Effector, trackGet, trackSet } from "lupos";
 export class TestObservedVariableType {
@@ -220,9 +220,14 @@ class ListMap {
 }
 export class TestPropertyOfMethodsObserved {
     data = new AnyMethodsObserved();
-    constructor() {
+    onCreated() {
         this.$setOverlapSetKeys_effector = new Effector(this.setOverlapSetKeys, this);
+    }
+    onConnected() {
         this.$setOverlapSetKeys_effector.connect();
+    }
+    onWillDisconnect() {
+        this.$setOverlapSetKeys_effector.disconnect();
     }
     getItem() {
         trackGet(this.data, "");

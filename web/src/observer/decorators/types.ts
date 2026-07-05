@@ -2,7 +2,7 @@ import {WatchOptions} from './watch'
 
 
 /** 
- * `@computed` decorates a class getter to make it compute value when required.
+ * `@computed` decorates a `Connectable` class getter to make it compute value when required.
  * Compare with `get property() {...}`, computed property value will be cached,
  * and refresh only when required.
  * 
@@ -21,7 +21,7 @@ import {WatchOptions} from './watch'
 export declare function computed(originalGetter: any, context: ClassGetterDecoratorContext): any
 
 /** 
- * `@asyncComputed` decorates a class method to compute current
+ * `@asyncComputed` decorates a `Connectable` class method to compute current
  * property value by an async computer function.
  * and it automatically request for new value after any dependency change.
  * 
@@ -50,7 +50,7 @@ export declare function asyncComputed<T, V>(getter: (this: T) => Promise<V> | V,
 
 
 /** 
- * `@effect` decorates a class method, it execute this method,
+ * `@effect` decorates a `Connectable` class method, it execute this method,
  * and if any dependency it used get changed, re-execute this method.
  * 
  * The effect action will be activated after instance initialized, in declaration order,
@@ -67,7 +67,7 @@ export declare function effect(originalMethod: any, context: ClassMethodDecorato
 
 
 /** 
- * `@watch` decorates a class method to watch value of a property,
+ * `@watch` decorates a `Connectable` class method to watch value of a property,
  * or returned value of a getter function,
  * and calls current method after this value changed.
  * 
@@ -105,7 +105,7 @@ type InferPropertyType<T, P extends ((() => any) | keyof T)>
 
 
 /** 
- * `@watchMulti` decorates a class method to watch several properties,
+ * `@watchMulti` decorates a `Connectable` class method to watch several properties,
  * or returned values of a function list,
  * and calls current method after any value becomes changed.
  * 

@@ -1,4 +1,4 @@
-import {effect, MethodsObserved, Observed, UnObserved, GetObserved, SetObserved} from '../../../../web/out'
+import {effect, MethodsObserved, Observed, UnObserved, GetObserved, SetObserved, Connectable} from '../../../../web/out'
 import {Component} from 'lupos.html'
 
 
@@ -240,9 +240,13 @@ class ListMap implements MethodsObserved<'get', 'set'> {
 }
 
 
-export class TestPropertyOfMethodsObserved {
+export class TestPropertyOfMethodsObserved implements Connectable {
 
 	data: Observed<AnyMethodsObserved> = new AnyMethodsObserved()
+
+	onCreated() {}
+	onConnected() {}
+	onWillDisconnect() {}
 
 	getItem() {
 		return this.data.get()
