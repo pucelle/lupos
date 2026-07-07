@@ -4,6 +4,7 @@ import {FlowControlBase} from './base'
 import {SlotContentType} from '../../../enums'
 import {ObservedStateMask, ObservedChecker, TrackingPatch} from '../../../lupos'
 import {TemplatePartType} from '../../../lupos-ts-module'
+import {PartType} from '../tree'
 
 
 export class ForFlowControl extends FlowControlBase {
@@ -87,6 +88,9 @@ export class ForFlowControl extends FlowControlBase {
 
 		// Remove child slot.
 		this.node.empty()
+
+		// `ForBlock` can track data.
+		this.tree.addPart(this.blockVariableName, this.node, PartType.Block)
 	}
 
 	private outputFnUpdate() {

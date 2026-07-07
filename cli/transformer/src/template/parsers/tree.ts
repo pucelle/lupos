@@ -18,13 +18,14 @@ export interface Part {
 
 /** 
  * Type of part.
- * `Binding` must in the preceding of `Component`.
+ * `Binding` and `Block` must in the preceding of `Component`.
  */
 export enum PartType {
 	Binding,
 	Component,
 	Delegator,
 	Slot,
+	Block,
 }
 
 

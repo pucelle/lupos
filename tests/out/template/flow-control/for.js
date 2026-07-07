@@ -35,7 +35,8 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<!----><!--98012245-->");
         el: $locator.el,
         position: new SlotPosition(1, $node_0),
         parts: [
-            [$slot_0, 1]
+            [$slot_0, 1],
+            [$block_0, 1]
         ]
     };
 });
@@ -58,7 +59,8 @@ const $html_2 = /*#__PURE__*/ new HTMLMaker("<!----><!--b19a8393-->");
         el: $locator.el,
         position: new SlotPosition(1, $node_0),
         parts: [
-            [$slot_0, 1]
+            [$slot_0, 1],
+            [$block_0, 1]
         ]
     };
 });
@@ -102,7 +104,8 @@ const $html_4 = /*#__PURE__*/ new HTMLMaker("<!----><!--8f1d3490-->");
             $latest_0 = $values[0];
         },
         parts: [
-            [$slot_0, 1]
+            [$slot_0, 1],
+            [$block_0, 1]
         ]
     };
 });
@@ -147,7 +150,8 @@ const $html_6 = /*#__PURE__*/ new HTMLMaker("<!----><!--355e9d9c-->");
             $block_0.updateData($values[0]);
         },
         parts: [
-            [$slot_0, 1]
+            [$slot_0, 1],
+            [$block_0, 1]
         ]
     };
 });
@@ -192,7 +196,8 @@ const $html_8 = /*#__PURE__*/ new HTMLMaker("<!----><!--89087358-->");
             $block_0.updateData($values[0]);
         },
         parts: [
-            [$slot_0, 1]
+            [$slot_0, 1],
+            [$block_0, 1]
         ]
     };
 });
@@ -237,7 +242,8 @@ const $html_10 = /*#__PURE__*/ new HTMLMaker("<!----><!--102be637-->");
             $block_0.updateData($values[0]);
         },
         parts: [
-            [$slot_0, 1]
+            [$slot_0, 1],
+            [$block_0, 1]
         ]
     };
 });
@@ -282,7 +288,8 @@ const $html_12 = /*#__PURE__*/ new HTMLMaker("<!----><!--de4594b6-->");
             $block_0.updateData($context.readonlyItems);
         },
         parts: [
-            [$slot_0, 1]
+            [$slot_0, 1],
+            [$block_0, 1]
         ]
     };
 });
@@ -327,7 +334,8 @@ const $html_14 = /*#__PURE__*/ new HTMLMaker("<!----><!--a9ef2eaf-->");
             $block_0.updateData($values[0]);
         },
         parts: [
-            [$slot_0, 1]
+            [$slot_0, 1],
+            [$block_0, 1]
         ]
     };
 });
@@ -367,7 +375,8 @@ const $html_16 = /*#__PURE__*/ new HTMLMaker("<!----><!--a26b45c4-->");
         el: $locator.el,
         position: new SlotPosition(1, $node_0),
         parts: [
-            [$slot_0, 1]
+            [$slot_0, 1],
+            [$block_0, 1]
         ]
     };
 });
@@ -409,7 +418,8 @@ const $html_18 = /*#__PURE__*/ new HTMLMaker("<!----><!--490faa64-->");
             $block_0.updateData($values[0]);
         },
         parts: [
-            [$slot_0, 1]
+            [$slot_0, 1],
+            [$block_0, 1]
         ]
     };
 });
