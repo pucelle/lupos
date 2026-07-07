@@ -34,7 +34,7 @@ export class BindingBase {
 	/** `?:binding=value`, detach binding if value is `null` or `undefined`. */
 	protected withQueryToken: boolean = false
 
-	/** Binding constructor parameter count. */
+	/** Whether should output as a part. */
 	protected implementsPart: boolean = false
 
 	/** Binding constructor parameter count. */

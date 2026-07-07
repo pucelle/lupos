@@ -3,6 +3,7 @@ import {SlotParserBase} from './base'
 import {factory, Modifier, helper} from '../../../core'
 import {VariableNames} from '../variable-names'
 import {TemplateSlotPlaceholder} from '../../../lupos-ts-module'
+import {PartType} from '../tree'
 
 
 export class EventSlotParser extends SlotParserBase {
@@ -18,6 +19,9 @@ export class EventSlotParser extends SlotParserBase {
 
 	/** $latest_0 */
 	private latestVariableNames: (string | null)[] | null = null
+
+	/** $binding_0 */
+	private bindingVariableName: string | null = null
 
 	/** Indicates whether attach to target component or element. */
 	private targetType: 'component' | 'element' = 'element'
@@ -36,6 +40,10 @@ export class EventSlotParser extends SlotParserBase {
 
 		if (this.targetType === 'component') {
 			this.refAsComponent()
+		}
+		else if (this.latestVariableNames || this.isAnyValueInitializedClosure()) {
+			this.bindingVariableName = this.tree.makeUniqueBindingName()
+			this.tree.addPart(this.bindingVariableName, this.node, PartType.Binding)
 		}
 	}
 
@@ -72,7 +80,10 @@ export class EventSlotParser extends SlotParserBase {
 		if (this.targetType === 'component') {
 			return this.outputComponentInit()
 		}
-		else if (this.modifiers!.length > 0) {
+		else if (this.bindingVariableName) {
+			return this.outputOnBindingInit()
+		}
+		else if (this.modifiers && this.modifiers.length > 0) {
 			return this.outputModifiableInit()
 		}
 		else {
@@ -148,6 +159,40 @@ export class EventSlotParser extends SlotParserBase {
 		)
 	}
 
+	private outputOnBindingInit() {
+		Modifier.addImport('on', 'lupos.html')
+
+		let node = factory.createIdentifier(this.getRefedNodeName())
+		let type = factory.createStringLiteral(this.name)
+		let handler = this.latestVariableNames ? this.outputLatestHandler() : this.outputValue().joint
+
+		let modifiers = this.modifiers && this.modifiers.length > 0
+			? factory.createArrayLiteralExpression(
+				this.modifiers.map(m => factory.createStringLiteral(m)),
+				false
+			)
+			: null
+
+		// new on($node_0, type, handler, undefined, ?modifiers)
+		let newBinding = factory.createNewExpression(
+			factory.createIdentifier('on'),
+			undefined,
+			[
+				node,
+				type,
+				handler,
+				...(modifiers ? [factory.createIdentifier('undefined'), modifiers] : [])
+			]
+		)
+
+		let bindingInit = this.createVariableAssignment(
+			this.bindingVariableName!,
+			newBinding
+		)
+
+		return bindingInit
+	}
+
 	private outputModifiableInit() {
 		Modifier.addImport('DOMModifiableEvents', 'lupos')
 
@@ -170,7 +215,7 @@ export class EventSlotParser extends SlotParserBase {
 					factory.createIdentifier(nodeName),
 					factory.createStringLiteral(this.name),
 					modifiers,
-					this.outputLatestHandler()
+					this.outputLatestHandler(),
 				]
 			)
 		}
@@ -188,7 +233,7 @@ export class EventSlotParser extends SlotParserBase {
 					factory.createStringLiteral(this.name),
 					modifiers,
 					this.outputValue().joint,
-					factory.createIdentifier(VariableNames.context)
+					factory.createIdentifier(VariableNames.context),
 				]
 			)
 		}

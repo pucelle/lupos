@@ -1,4 +1,4 @@
-import { Component, TemplateSlot, SlotPosition, CompiledTemplateResult, TemplateMaker, HTMLMaker, DynamicComponentBlock } from 'lupos.html';
+import { Component, TemplateSlot, SlotPosition, CompiledTemplateResult, TemplateMaker, HTMLMaker, DynamicComponentBlock, on } from 'lupos.html';
 import { trackGet, trackSet, DOMModifiableEvents } from "lupos";
 const $html_0 = /*#__PURE__*/ new HTMLMaker("<div com></div>");
 /*
@@ -159,7 +159,7 @@ const $html_6 = /*#__PURE__*/ new HTMLMaker("<div></div>");
     let $latest_0;
     let $locator = $html_6.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    $node_0.addEventListener("click", (...args) => {
+    let $binding_0 = new on($node_0, "click", (...args) => {
         $latest_0.call($context, ...args);
     });
     return {
@@ -167,7 +167,10 @@ const $html_6 = /*#__PURE__*/ new HTMLMaker("<div></div>");
         position: new SlotPosition(1, $node_0),
         update($values) {
             $latest_0 = $values[0];
-        }
+        },
+        parts: [
+            [$binding_0, 1]
+        ]
     };
 });
 /*
@@ -177,10 +180,13 @@ const $html_6 = /*#__PURE__*/ new HTMLMaker("<div></div>");
 */ const $template_9 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
     let $locator = $html_6.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    $node_0.addEventListener("click", () => { $context.booleanValue = true; trackSet($context, "booleanValue"); });
+    let $binding_0 = new on($node_0, "click", () => { $context.booleanValue = true; trackSet($context, "booleanValue"); });
     return {
         el: $locator.el,
-        position: new SlotPosition(1, $node_0)
+        position: new SlotPosition(1, $node_0),
+        parts: [
+            [$binding_0, 1]
+        ]
     };
 });
 /*
@@ -190,10 +196,13 @@ const $html_6 = /*#__PURE__*/ new HTMLMaker("<div></div>");
 */ const $template_10 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
     let $locator = $html_6.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    $node_0.addEventListener("click", () => $context.handleEventWithParameter($context.booleanValue));
+    let $binding_0 = new on($node_0, "click", () => $context.handleEventWithParameter($context.booleanValue));
     return {
         el: $locator.el,
-        position: new SlotPosition(1, $node_0)
+        position: new SlotPosition(1, $node_0),
+        parts: [
+            [$binding_0, 1]
+        ]
     };
 });
 /*
@@ -204,13 +213,16 @@ const $html_6 = /*#__PURE__*/ new HTMLMaker("<div></div>");
     let $latest_0;
     let $locator = $html_6.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    $node_0.addEventListener("click", () => $latest_0);
+    let $binding_0 = new on($node_0, "click", () => $latest_0);
     return {
         el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
             $latest_0 = $values[0];
-        }
+        },
+        parts: [
+            [$binding_0, 1]
+        ]
     };
 });
 const $html_12 = /*#__PURE__*/ new HTMLMaker("<div><!--bcba8462--></div>");
@@ -226,7 +238,7 @@ const $html_12 = /*#__PURE__*/ new HTMLMaker("<div><!--bcba8462--></div>");
     let $node_0 = $locator.childAt(0);
     let $node_1 = $locator.getMarker("bcba8462");
     let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), null, $locator.getNodes("bcba8462"));
-    $node_0.addEventListener("click", (...args) => {
+    let $binding_0 = new on($node_0, "click", (...args) => {
         $latest_0.call($context, ...args);
     });
     return {
@@ -240,6 +252,7 @@ const $html_12 = /*#__PURE__*/ new HTMLMaker("<div><!--bcba8462--></div>");
             }
         },
         parts: [
+            [$binding_0, 1],
             [$slot_0, 0]
         ]
     };
@@ -265,7 +278,7 @@ const $html_12 = /*#__PURE__*/ new HTMLMaker("<div><!--bcba8462--></div>");
     let $latest_0;
     let $locator = $html_6.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    $node_0.addEventListener("click", (...args) => {
+    let $binding_0 = new on($node_0, "click", (...args) => {
         $latest_0.call($context, ...args);
     });
     return {
@@ -273,7 +286,10 @@ const $html_12 = /*#__PURE__*/ new HTMLMaker("<div><!--bcba8462--></div>");
         position: new SlotPosition(1, $node_0),
         update($values) {
             $latest_0 = $values[0];
-        }
+        },
+        parts: [
+            [$binding_0, 1]
+        ]
     };
 });
 export class TestEvent extends Component {

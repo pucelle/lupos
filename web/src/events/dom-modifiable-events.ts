@@ -40,7 +40,7 @@ type EventModifiers = {
 type MouseEventModifiers = (typeof GlobalEventModifiers)[number] | keyof typeof ButtonNameModifiers | ControlKeyCode
 
 /** Get event modifiers by event type. */
-type EventModifierByType<T extends string> = T extends keyof EventModifiers
+export type EventModifierByType<T extends string> = T extends keyof EventModifiers
 	? EventModifiers[T]
 	: (typeof GlobalEventModifiers)[number]
 

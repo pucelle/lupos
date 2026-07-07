@@ -1,7 +1,7 @@
 import ts from 'typescript'
 import {generateFingerPrint, HTMLAttribute, HTMLNode, HTMLNodeType, TemplatePart, TemplatePartType, TemplateSlotPlaceholder} from '../../../lupos-ts-module'
 import {PartType, TreeParser} from '../tree'
-import {factory, Modifier, DeclarationScopeTree, Packer, Hashing} from '../../../core'
+import {factory, Modifier, DeclarationScopeTree, Packer, Hashing, helper} from '../../../core'
 import {TemplateParser} from '../template'
 import {SlotPositionType} from '../../../enums'
 import {HTMLNodeHelper, PrecedingPositionStability} from '../../html-syntax'
@@ -89,6 +89,15 @@ export abstract class SlotParserBase {
 	isAllValuesCanTransfer(): boolean {
 		return this.valueIndices !== null
 			&& this.valueIndices.every(index => this.template.values.isIndexCanTransfer(index, this.asLazyCallback))
+	}
+
+	/** Returns whether any values initialize a closure/function. */
+	isAnyValueInitializedClosure(): boolean {
+		return this.valueIndices !== null
+			&& this.valueIndices.some(index => {
+				let node = this.template.values.valueNodes[index]
+				return helper.findInward(node, n => helper.isFunctionLike(n))
+			})
 	}
 
 	/** Returns whether current value has been outputted as non-transferred. */

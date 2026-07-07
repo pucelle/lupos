@@ -1,4 +1,8 @@
-/** That updatable. */
+/** 
+ * That updatable.
+ * Note normally an updatable should also have full life-cycle,
+ * so it should support connecting and disconnecting.
+ */
 export interface Updatable {
 
 	/** Incremental id. */
