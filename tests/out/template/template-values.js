@@ -85,7 +85,8 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
 */ const $template_5 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
     let $locator = $html_0.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $binding_0 = new on($node_0, "click", () => $context.handleEvent($context.prop));
+    let $binding_0 = new on($node_0, $context);
+    $binding_0.update("click", () => $context.handleEvent($context.prop));
     return {
         el: $locator.el,
         position: new SlotPosition(1, $node_0),
@@ -101,7 +102,8 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
 */ const $template_6 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
     let $locator = $html_0.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $binding_0 = new on($node_0, "click", () => $context.handleEvent(globalVariable));
+    let $binding_0 = new on($node_0, $context);
+    $binding_0.update("click", () => $context.handleEvent(globalVariable));
     return {
         el: $locator.el,
         position: new SlotPosition(1, $node_0),
@@ -117,10 +119,14 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
 */ const $template_7 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
     let $locator = $html_0.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    $node_0.addEventListener("click", $context.handleEvent.bind($context));
+    let $binding_0 = new on($node_0, $context);
+    $binding_0.update("click", $context.handleEvent.bind($context));
     return {
         el: $locator.el,
-        position: new SlotPosition(1, $node_0)
+        position: new SlotPosition(1, $node_0),
+        parts: [
+            [$binding_0, 1]
+        ]
     };
 });
 /*
@@ -130,7 +136,8 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
 */ const $template_8 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
     let $locator = $html_0.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $binding_0 = new on($node_0, "click", () => $context.handleEvent(Math.PI));
+    let $binding_0 = new on($node_0, $context);
+    $binding_0.update("click", () => $context.handleEvent(Math.PI));
     return {
         el: $locator.el,
         position: new SlotPosition(1, $node_0),

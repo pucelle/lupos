@@ -41,7 +41,7 @@ export class EventSlotParser extends SlotParserBase {
 		if (this.targetType === 'component') {
 			this.refAsComponent()
 		}
-		else if (this.latestVariableNames || this.isAnyValueInitializedClosure()) {
+		else {
 			this.bindingVariableName = this.tree.makeUniqueBindingName()
 			this.tree.addPart(this.bindingVariableName, this.node, PartType.Binding)
 		}
@@ -80,14 +80,8 @@ export class EventSlotParser extends SlotParserBase {
 		if (this.targetType === 'component') {
 			return this.outputComponentInit()
 		}
-		else if (this.bindingVariableName) {
-			return this.outputOnBindingInit()
-		}
-		else if (this.modifiers && this.modifiers.length > 0) {
-			return this.outputModifiableInit()
-		}
 		else {
-			return this.outputElementInit()
+			return this.outputOnBindingInit()
 		}
 	}
 
@@ -173,15 +167,13 @@ export class EventSlotParser extends SlotParserBase {
 			)
 			: null
 
-		// new on($node_0, type, handler, undefined, ?modifiers)
+		// new on($node_0, $context)
 		let newBinding = factory.createNewExpression(
 			factory.createIdentifier('on'),
 			undefined,
 			[
 				node,
-				type,
-				handler,
-				...(modifiers ? [factory.createIdentifier('undefined'), modifiers] : [])
+				factory.createIdentifier(VariableNames.context),
 			]
 		)
 
@@ -190,123 +182,23 @@ export class EventSlotParser extends SlotParserBase {
 			newBinding
 		)
 
-		return bindingInit
-	}
-
-	private outputModifiableInit() {
-		Modifier.addImport('DOMModifiableEvents', 'lupos')
-
-		let nodeName = this.getRefedNodeName()
-
-		let modifiers = factory.createArrayLiteralExpression(
-			this.modifiers!.map(m => factory.createStringLiteral(m)),
-			false
+		let bindingUpdate = factory.createCallExpression(
+			factory.createPropertyAccessExpression(
+				factory.createIdentifier(this.bindingVariableName!),
+				factory.createIdentifier('update')
+			),
+			undefined,
+			[
+				type,
+				handler,
+				...(modifiers ? [factory.createIdentifier('undefined'), modifiers] : [])
+			]
 		)
 
-		// DOMModifiableEvents.on($node_0, 'eventName', modifiers, (...args) => {$latest_0.call($context, ...args)})
-		if (this.latestVariableNames) {
-			return factory.createCallExpression(
-				factory.createPropertyAccessExpression(
-					factory.createIdentifier('DOMModifiableEvents'),
-					factory.createIdentifier('on')
-				),
-				undefined,
-				[
-					factory.createIdentifier(nodeName),
-					factory.createStringLiteral(this.name),
-					modifiers,
-					this.outputLatestHandler(),
-				]
-			)
-		}
-
-		// DOMModifiableEvents.on($node_0, 'eventName', modifiers, eventHandler, $context)
-		else {
-			return factory.createCallExpression(
-				factory.createPropertyAccessExpression(
-					factory.createIdentifier('DOMModifiableEvents'),
-					factory.createIdentifier('on')
-				),
-				undefined,
-				[
-					factory.createIdentifier(nodeName),
-					factory.createStringLiteral(this.name),
-					modifiers,
-					this.outputValue().joint,
-					factory.createIdentifier(VariableNames.context),
-				]
-			)
-		}
-	}
-
-	private outputElementInit() {
-		let nodeName = this.getRefedNodeName()
-
-		// $node_0.addEventListener('comEventName', (...args) => {$latest_0.call($context, ...args)})
-		if (this.latestVariableNames) {
-			return factory.createCallExpression(
-				factory.createPropertyAccessExpression(
-					factory.createIdentifier(nodeName),
-					factory.createIdentifier('addEventListener')
-				),
-				undefined,
-				[
-					factory.createStringLiteral(this.name),
-					this.outputLatestHandler()
-				]
-			)
-		}
-
-		// $node_0.addEventListener('comEventName', eventHandler.bind($context))
-		else {
-			let eventHandler = this.outputValue().joint
-			let shouldBindContext = this.shouldBindEventHandler(eventHandler)
-
-			// bind with current context.
-			if (shouldBindContext) {
-				eventHandler = factory.createCallExpression(
-					factory.createPropertyAccessExpression(
-						this.outputValue().joint,
-						factory.createIdentifier('bind')
-					),
-					undefined,
-					[factory.createIdentifier(VariableNames.context)]
-				)
-			}
-
-			return factory.createCallExpression(
-				factory.createPropertyAccessExpression(
-					factory.createIdentifier(nodeName),
-					factory.createIdentifier('addEventListener')
-				),
-				undefined,
-				[
-					factory.createStringLiteral(this.name),
-					eventHandler
-				]
-			)
-		}
-	}
-
-	private shouldBindEventHandler(event: ts.Expression): boolean {
-
-		// Already a function declaration, `this` will be replaced to `$context`.
-		if (helper.isFunctionLike(event)) {
-			return false
-		}
-
-		// `a.bind(xxx)`
-		let hasBound = ts.isCallExpression(event)
-			&& ts.isPropertyAccessExpression(event.expression)
-			&& helper.getText(event.expression.name) === 'bind'
-
-		
-		if (hasBound) {
-			return false
-		}
-
-		// Otherwise must bind.
-		return true
+		return [
+			bindingInit,
+			bindingUpdate,
+		]
 	}
 
 	override outputUpdate() {
