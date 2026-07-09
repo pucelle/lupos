@@ -152,14 +152,32 @@ type InferMultiMethodParameters<T, PS extends ((() => any) | keyof T)[]>
 export interface Connectable {
 
 	/** 
-	 * After created.
-	 * Provide it for overwriting before calling super.
+	 * After class initialized, and before connected.
+	 * 
+	 * Note normally you should manually call it,
+	 * but if one Connectable to be property as another Connectable,
+	 * and initialize like `prop = new ...`, it's life-cycle callbacks
+	 * will be automatically called.
 	 */
 	onCreated(): void
 
-	/** Will re-connect all dependencies after connected. */
+	/** 
+	 * Will re-connect all dependencies after connected.
+	 * 
+	 * Note normally you should manually call it,
+	 * but if one Connectable to be property as another Connectable,
+	 * and initialize like `prop = new ...`, it's life-cycle callbacks
+	 * will be automatically called.
+	 */
 	onConnected(): void
 
-	/** Will disconnect all dependencies before will disconnect. */
+	/** 
+	 * Will disconnect all dependencies before will disconnect.
+	 * 
+	 * Note normally you should manually call it,
+	 * but if one Connectable to be property as another Connectable,
+	 * and initialize like `prop = new ...`, it's life-cycle callbacks
+	 * will be automatically called.
+	 */
 	onWillDisconnect() : void
 }
