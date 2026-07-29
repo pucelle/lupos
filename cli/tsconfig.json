@@ -1,7 +1,5 @@
 {
     "compilerOptions": {
-		"preserveSymlinks": true,
-		"skipLibCheck": true,
 		"ignoreDeprecations": "6.0",
         "module": "CommonJS",
 		"moduleResolution": "Node",
@@ -15,7 +13,9 @@
 		"noFallthroughCasesInSwitch": true,
 		"noImplicitAny": true,
 		"noImplicitThis": true,
-		"noImplicitOverride": true
+		"noImplicitOverride": true,
+		"preserveSymlinks": true,
+		"skipLibCheck": true
     },
     "exclude": [
 		"compiler",
