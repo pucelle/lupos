@@ -39,7 +39,7 @@ export function beginTrack(updatable: Updatable): DependencyTracker {
  * End capturing dependencies.
  * You must ensure to end each begun capturing, or fatal error will happen.
  */
-export function endTrack(meetsError: boolean) {
+export function endTrack(meetsError: boolean = false) {
 	if (!meetsError) {
 		currentTracker!.apply()
 	}

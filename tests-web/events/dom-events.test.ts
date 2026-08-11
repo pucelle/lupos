@@ -30,6 +30,18 @@ describe('Test EventFirer', () => {
 		expect(fn).toHaveBeenCalledTimes(1)
 	})
 
+	it('once is removed even when its handler throws', () => {
+		let div = document.createElement('div')
+		let fn = vi.fn(() => {
+			throw new Error('failed')
+		})
+
+		DOMEvents.once(div, 'click', fn)
+		expect(() => div.click()).toThrow('failed')
+		expect(() => div.click()).not.toThrow()
+		expect(fn).toHaveBeenCalledTimes(1)
+	})
+
 	
 	it('mouseenter & mouseleave', () => {
 		let div = document.createElement('div')

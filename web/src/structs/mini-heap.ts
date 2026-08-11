@@ -78,7 +78,16 @@ export class MiniHeap<T> {
 
 	/** Remove element at specified index. */
 	removeAt(index: number) {
-		this.list[index] = this.list.pop()!
+		if (index < 0 || index >= this.list.length) {
+			return
+		}
+
+		let tail = this.list.pop()!
+		if (index === this.list.length) {
+			return
+		}
+
+		this.list[index] = tail
 		this.shiftUp(index)
 		this.shiftDown(index)
 	}

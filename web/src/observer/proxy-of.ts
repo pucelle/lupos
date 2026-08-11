@@ -7,6 +7,9 @@ type ProxyOf<T> = T extends object ? T & {ProxySymbol: T} : T
 /** To find the proxy of an object. */
 const ProxyMap: WeakMap<object | ProxyOf<any>, ProxyOf<any>> = /*#__PURE__*/new WeakMap()
 
+/** To recover the original object from one of our proxies. */
+const ProxySourceMap: WeakMap<object, object> = /*#__PURE__*/new WeakMap()
+
 
 /** 
  * Proxy an object or an array, map or set (not weak map or weak set), 
@@ -58,6 +61,7 @@ function proxyObject<T extends object>(o: T | ProxyOf<T>): ProxyOf<T> {
 
 	ProxyMap.set(o, proxy)
 	ProxyMap.set(proxy, proxy)
+	ProxySourceMap.set(proxy, o)
 
 	return proxy
 }
@@ -107,8 +111,9 @@ const PlainObjectProxyHandler = {
 	},
 
 	deleteProperty(o: any, key: PropertyKey): boolean {
+		let hadKey = Object.prototype.hasOwnProperty.call(o, key)
 		let result = delete o[key]
-		if (result) {
+		if (result && hadKey) {
 			trackSet(o, key)
 		}
 
@@ -125,14 +130,15 @@ const ArrayProxyHandler = {
 		let type = typeof value
 
 		// Proxy returned element in array.
-		if (typeof key === 'number') {
+		if (typeof key === 'string' && /^\d+$/.test(key)) {
 			trackGet(a, key)
 			return proxyOf(value)
 		}
 
 		// Proxy array methods.
 		else if (type === 'function') {
-			return ArrayProxyMethods[key] ?? a[key]
+			let proxyMethod = ArrayProxyMethods[key]
+			return proxyMethod ? proxyMethod.bind(a) : value
 		}
 
 		// Other properties, like `length`.
@@ -151,6 +157,16 @@ const ArrayProxyHandler = {
 		}
 
 		return true
+	},
+
+	deleteProperty(a: any, key: PropertyKey): boolean {
+		let hadKey = Object.prototype.hasOwnProperty.call(a, key)
+		let result = delete a[key]
+		if (result && hadKey) {
+			trackSet(a, '')
+		}
+
+		return result
 	},
 }
 
@@ -179,42 +195,42 @@ const ArrayProxyMethods: any = {
 	},
 
 	pop(this: any[]) {
-		let count = length
+		let count = this.length
 		let result = Array.prototype.pop.call(this)
 
 		if (count > 0) {
 			trackSet(this, '')
 		}
 
-		return result
+		return proxyOf(result)
 	},
 
 	shift(this: any[]) {
-		let count = length
+		let count = this.length
 		let result = Array.prototype.shift.call(this)
 
 		if (count > 0) {
 			trackSet(this, '')
 		}
 
-		return result
+		return proxyOf(result)
 	},
 
-	splice(this: any[], fromIndex: number, removeCount: number, ...insertValues: any[]) {
-		let result = Array.prototype.splice.call(this, fromIndex, removeCount, insertValues)
+	splice(this: any[], ...args: any[]) {
+		let result = Array.prototype.splice.apply(this, args as [number, number, ...any[]])
 
-		if (removeCount > 0 || insertValues.length > 0) {
+		if (result.length > 0 || args.length > 2) {
 			trackSet(this, '')
 		}
 
-		return result
+		return proxyOf(result)
 	},
 
 	reverse(this: any[]) {
-		let result = Array.prototype.reverse.call(this)
+		Array.prototype.reverse.call(this)
 		trackSet(this, '')
 		
-		return result
+		return ProxyMap.get(this)!
 	},
 }
 
@@ -224,19 +240,62 @@ const ArrayProxyMethods: any = {
 const MapProxyHandler = {
 
 	get(a: any, key: PropertyKey): ProxyOf<any> {
-		let value = a[key]
+		if (key === 'size') {
+			trackGet(a, '')
+			return a.size
+		}
 
-		// Proxy get type.
-		if (key === 'has' || key === 'get' || key === 'size') {
+		if (key === 'get') {
+			return ((mapKey: any) => {
+				trackGet(a, '')
+				return proxyOf(a.get(unwrapProxy(mapKey)))
+			}) as any
+		}
+
+		if (key === 'has') {
+			return ((mapKey: any) => {
+				trackGet(a, '')
+				return a.has(unwrapProxy(mapKey))
+			}) as any
+		}
+
+		if (key === 'set') {
+			return ((mapKey: any, value: any) => {
+				mapKey = unwrapProxy(mapKey)
+				value = unwrapProxy(value)
+				let changed = !a.has(mapKey) || a.get(mapKey) !== value
+				a.set(mapKey, value)
+				if (changed) {
+					trackSet(a, '')
+				}
+				return ProxyMap.get(a)
+			}) as any
+		}
+
+		if (key === 'delete') {
+			return ((mapKey: any) => {
+				let deleted = a.delete(unwrapProxy(mapKey))
+				if (deleted) {
+					trackSet(a, '')
+				}
+				return deleted
+			}) as any
+		}
+
+		if (key === 'clear') {
+			return (() => {
+				if (a.size > 0) {
+					a.clear()
+					trackSet(a, '')
+				}
+			}) as any
+		}
+
+		let value = a[key]
+		if (typeof value === 'function') {
 			trackGet(a, '')
 		}
-
-		// Proxy set type.
-		else if (key === 'set' || key === 'delete' || key === 'clear') {
-			trackSet(a, '')
-		}
-
-		return value
+		return typeof value === 'function' ? value.bind(a) : value
 	},
 }
 
@@ -245,18 +304,63 @@ const MapProxyHandler = {
 const SetProxyHandler = {
 
 	get(a: any, key: PropertyKey): ProxyOf<any> {
-		let value = a[key]
+		if (key === 'size') {
+			trackGet(a, '')
+			return a.size
+		}
 
-		// Proxy get type.
-		if (key === 'has' || key === 'size') {
+		if (key === 'has') {
+			return ((value: any) => {
+				trackGet(a, '')
+				return a.has(unwrapProxy(value))
+			}) as any
+		}
+
+		if (key === 'add') {
+			return ((value: any) => {
+				value = unwrapProxy(value)
+				let changed = !a.has(value)
+				a.add(value)
+				if (changed) {
+					trackSet(a, '')
+				}
+				return ProxyMap.get(a)
+			}) as any
+		}
+
+		if (key === 'delete') {
+			return ((value: any) => {
+				let deleted = a.delete(unwrapProxy(value))
+				if (deleted) {
+					trackSet(a, '')
+				}
+				return deleted
+			}) as any
+		}
+		
+		if (key === 'clear') {
+			return (() => {
+				if (a.size > 0) {
+					a.clear()
+					trackSet(a, '')
+				}
+			}) as any
+		}
+
+		let value = a[key]
+		if (typeof value === 'function') {
 			trackGet(a, '')
 		}
-
-		// Proxy set type.
-		else if (key === 'add' || key === 'delete' || key === 'clear') {
-			trackSet(a, '')
-		}
-
-		return value
+		return typeof value === 'function' ? value.bind(a) : value
 	},
+}
+
+
+/** Get the original value when `value` is one of our proxies. */
+function unwrapProxy<T>(value: T): T {
+	if (value && typeof value === 'object') {
+		return (ProxySourceMap.get(value) ?? value) as T
+	}
+
+	return value
 }

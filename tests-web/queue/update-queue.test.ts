@@ -27,6 +27,29 @@ describe('Test UpdateQueue', () => {
 		UpdateQueue.enqueue(u1)
 		UpdateQueue.enqueue(u2)
 
-		await UpdateQueue.untilAllComplete()
+		await UpdateQueue.untilComplete()
+	})
+
+	it('remains usable after a completion callback throws', async () => {
+		let errors: unknown[] = []
+		let oldConsoleError = console.error
+		console.error = err => errors.push(err)
+
+		try {
+			UpdateQueue.whenComplete(() => {
+				throw new Error('completion failed')
+			})
+			await UpdateQueue.untilComplete()
+
+			let completed = false
+			UpdateQueue.whenComplete(() => completed = true)
+			await UpdateQueue.untilComplete()
+
+			expect(completed).toBe(true)
+			expect(errors).toHaveLength(1)
+		}
+		finally {
+			console.error = oldConsoleError
+		}
 	})
 })

@@ -23,7 +23,6 @@ export class DependencyMap {
 
 			// Must after previous step.
 			this.dependencyMap.setSecond(updatable, deps)
-			
 		}
 		else {
 			this.dependencyMap.deleteSecondOf(updatable)

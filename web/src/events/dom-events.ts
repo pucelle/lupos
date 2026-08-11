@@ -47,8 +47,7 @@ export function once<T extends EventType>(
 	scope: any = null,
 	options: AddEventListenerOptions = {}
 ) {
-	options.once = true
-	on(el, type, handler, scope, options)
+	on(el, type, handler, scope, {...options, once: true})
 }
 
 
@@ -61,11 +60,18 @@ export function bindEvent(
 	boundHandler: InferEventHandler<any>,
 	options: AddEventListenerOptions
 ) {
+	let eventListener: EventListener
+
 	if (options.once) {
-		boundHandler = bindOnce(el, type, handler, scope, boundHandler)
+		let originalBoundHandler = boundHandler
+		
+		boundHandler = function(e: Event) {
+			unbindEvent(el, eventListener)
+			originalBoundHandler(e)
+		}
 	}
 
-	let eventListener = {
+	eventListener = {
 		type,
 		handler,
 		boundHandler,
@@ -77,12 +83,10 @@ export function bindEvent(
 	el.addEventListener(type, boundHandler, options)
 }
 
-
-function bindOnce(el: EventTarget, type: EventType, handler: EventHandler, scope: any, boundHandler: EventHandler) {
-	return function(e: Event) {
-		boundHandler(e)
-		off(el, type, handler, scope)
-	}
+/** Unbind one exact cached listener. */
+function unbindEvent(el: EventTarget, listener: EventListener) {
+	el.removeEventListener(listener.type, listener.boundHandler, listener.capture)
+	EventListenerMap.delete(el, listener.type, listener)
 }
 
 
@@ -103,8 +107,7 @@ export function off<T extends EventType>(el: EventTarget, type: T, handler: Infe
 			&& (!scope || listener.scope === scope)
 			&& listener.capture === capture
 		) {
-			el.removeEventListener(type, listener.boundHandler, capture)
-			EventListenerMap.delete(el, type, listener)
+			unbindEvent(el, listener)
 		}
 	}
 }

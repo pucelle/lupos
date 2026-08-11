@@ -97,7 +97,7 @@ function changeEventFilter(e: Event, [modifier]: string[]) {
 	let checked = (e.target as HTMLInputElement).checked
 
 	return checked && modifier === 'check'
-		|| checked && modifier === 'uncheck'
+		|| !checked && modifier === 'uncheck'
 }
 
 /** Filter wheel event by wheel delta value. */
@@ -174,7 +174,8 @@ function wrapHandler(el: EventTarget, type: string, modifiers: string[] | null, 
 		}
 
 		if (modifiers && modifiers.includes('once')) {
-			DOMEvents.off(el, type as EventType, handler)
+			let capture = modifiers.includes('capture')
+			DOMEvents.off(el, type as EventType, handler, scope, capture)
 		}
 
 		handler.call(scope, e)

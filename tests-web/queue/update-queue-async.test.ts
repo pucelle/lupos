@@ -26,12 +26,12 @@ describe('UpdateQueue async and sub-process', () => {
 		})
 
 		UpdateQueue.enqueue(u1)
-		await UpdateQueue.untilAllComplete()
+		await UpdateQueue.untilComplete()
 
 		expect(logs).toEqual(['u1-updated'])
 	})
 
-	it('runs sub-process updates enqueued during waiting', async () => {
+	it('runs updates enqueued while awaiting an async update', async () => {
 		let logs: string[] = []
 
 		let u1 = mkUpd(1, async () => {
@@ -39,9 +39,7 @@ describe('UpdateQueue async and sub-process', () => {
 			UpdateQueue.enqueue(u2)
 			await delay(0)
 
-			UpdateQueue.whenChildComplete(u1, () => {
-				logs.push('u1-ended')
-			})
+			logs.push('u1-ended')
 		})
 
 		let u2 = mkUpd(2, () => {
@@ -49,24 +47,20 @@ describe('UpdateQueue async and sub-process', () => {
 		})
 
 		UpdateQueue.enqueue(u1)
-		await UpdateQueue.untilAllComplete()
+		await UpdateQueue.untilComplete()
 		expect(logs.join(', ')).toBe(['u1-started', 'u2', 'u1-ended'].join(', '))
 	})
 
-	it('runs sub-process updates enqueued during waiting and using sync APIs', async () => {
+	it('deduplicates an update enqueued repeatedly while awaiting', async () => {
 		let logs: string[] = []
 
 		let u1 = mkUpd(1, async () => {
 			logs.push('u1-started')
 			await delay(0)
 
-			UpdateQueue.onSyncUpdateStart(u1)
 			UpdateQueue.enqueue(u2)
-			UpdateQueue.onSyncUpdateEnd()
-			
-			UpdateQueue.whenChildComplete(u1, () => {
-				logs.push('u1-ended')
-			})
+			UpdateQueue.enqueue(u2)
+			logs.push('u1-ended')
 		})
 
 		let u2 = mkUpd(2, () => {
@@ -74,7 +68,7 @@ describe('UpdateQueue async and sub-process', () => {
 		})
 
 		UpdateQueue.enqueue(u1)
-		await UpdateQueue.untilAllComplete()
-		expect(logs.join(', ')).toBe(['u1-started', 'u2', 'u1-ended'].join(', '))
+		await UpdateQueue.untilComplete()
+		expect(logs.join(', ')).toBe(['u1-started', 'u1-ended', 'u2'].join(', '))
 	})
 })

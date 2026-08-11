@@ -203,7 +203,12 @@ class UpdateQueueClass {
 
 			// Calls callbacks, all components and watchers become stable now.
 			for (let callback of callbacks) {
-				callback()
+				try {
+					callback()
+				}
+				catch (err) {
+					console.error(err)
+				}
 			}
 
 			// Also wait for all barriers complete.

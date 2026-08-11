@@ -41,4 +41,13 @@ describe('Test MiniHeap', () => {
 			expectMiniHeap(m)
 		}
 	})
+
+	it('removes the tail without changing heap size incorrectly', () => {
+		let m = new MiniHeap<number>((a, b) => a - b, [1, 2, 3])
+
+		m.removeAt(2)
+
+		expect(m.size).toBe(2)
+		expect(m.getItems()).toEqual([1, 2])
+	})
 })

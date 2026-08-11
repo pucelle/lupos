@@ -14,30 +14,30 @@ describe('Test effect', () => {
 			fn()
 		})
 		effect.connect()
-		await UpdateQueue.untilAllComplete()
+		await UpdateQueue.untilComplete()
 		expect(fn).toHaveBeenCalledTimes(1)
 
 		a.b = 2
 		trackSet(a, 'b')
-		await UpdateQueue.untilAllComplete()
+		await UpdateQueue.untilComplete()
 		expect(fn).toHaveBeenCalledTimes(2)
 
 		effect.disconnect()
 		a.b = 3
 		trackSet(a, 'b')
-		await UpdateQueue.untilAllComplete()
+		await UpdateQueue.untilComplete()
 		expect(fn).toHaveBeenCalledTimes(2)
 
 		// Refresh after re-connected
 		effect.connect()
-		await UpdateQueue.untilAllComplete()
+		await UpdateQueue.untilComplete()
 		expect(fn).toHaveBeenCalledTimes(3)
 
 		// No need to refresh since no dependency has changed
 		effect.disconnect()
 		a.b = 3
 		effect.connect()
-		await UpdateQueue.untilAllComplete()
+		await UpdateQueue.untilComplete()
 		expect(fn).toHaveBeenCalledTimes(3)
 	})
 })
