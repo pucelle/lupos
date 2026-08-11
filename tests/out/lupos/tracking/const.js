@@ -6,4 +6,8 @@ export class TestAsConst extends Component {
     render() {
         return this.prop1.value + this.prop2[0].value;
     }
+    getAsConstProp() {
+        let a = { value: 'Text' };
+        return a.value;
+    }
 }

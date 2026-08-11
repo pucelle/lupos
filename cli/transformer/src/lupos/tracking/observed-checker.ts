@@ -176,21 +176,18 @@ export namespace ObservedChecker {
 			}
 
 			// `[...] as const`, all child element immutable.
-			if (ts.isTypeReferenceNode(typeNode)) {
-				if (ts.isIdentifier(typeNode.typeName)
-					&& helper.getText(typeNode.typeName) === 'const'
-				) {
-					return false
-				}
+			if (ts.isTypeReferenceNode(typeNode)
+				&& ts.isIdentifier(typeNode.typeName)
+				&& helper.getText(typeNode.typeName) === 'const'
+			) {
+				return false
 			}
-			else {
 
-				// If `this.prop as Prop`, this is observed but prop not,
-				// will still analyze for this.
-				let result = getTypeNodeObserved(typeNode)
-				if (result !== null) {
-					return result
-				}
+			// If `this.prop as Prop`, this is observed but prop not,
+			// will still analyze for this.
+			let result = getTypeNodeObserved(typeNode)
+			if (result !== null) {
+				return result
 			}
 
 			return getElementsObserved(rawNode.expression)

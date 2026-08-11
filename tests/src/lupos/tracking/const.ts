@@ -1,4 +1,5 @@
 import {Component} from 'lupos.html'
+import {Observed} from '../../../../web/out'
 
 
 export class TestAsConst extends Component {
@@ -8,5 +9,10 @@ export class TestAsConst extends Component {
 
 	render() {
 		return this.prop1.value + this.prop2[0].value
+	}
+
+	getAsConstProp() {
+		let a: Observed<{value: string}> = {value: 'Text'} as const
+		return a.value
 	}
 }
