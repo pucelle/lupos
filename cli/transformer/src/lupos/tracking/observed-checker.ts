@@ -168,17 +168,29 @@ export namespace ObservedChecker {
 		}
 
 		// `(a as Observed<{b: number}>).b`
+		// `[...] as const`
 		else if (ts.isAsExpression(rawNode)) {
 			let typeNode = rawNode.type
 			if (!typeNode) {
 				return null
 			}
 
-			// If `this.prop as Prop`, this is observed but prop not,
-			// will still analyze for this.
-			let result = getTypeNodeObserved(typeNode)
-			if (result !== null) {
-				return result
+			// `[...] as const`, all child element immutable.
+			if (ts.isTypeReferenceNode(typeNode)) {
+				if (ts.isIdentifier(typeNode.typeName)
+					&& helper.getText(typeNode.typeName) === 'const'
+				) {
+					return false
+				}
+			}
+			else {
+
+				// If `this.prop as Prop`, this is observed but prop not,
+				// will still analyze for this.
+				let result = getTypeNodeObserved(typeNode)
+				if (result !== null) {
+					return result
+				}
 			}
 
 			return getElementsObserved(rawNode.expression)
@@ -417,14 +429,27 @@ export namespace ObservedChecker {
 			}
 		}
 
-		// `class A{p = {} as Observed}`, must not specified property type.
-		if (!typeNode
-			&& ts.isPropertyDeclaration(decl)
+		if (ts.isPropertyDeclaration(decl)
 			&& decl.initializer
 		) {
-			result = getElementsObserved(decl.initializer)
-			if (result !== null) {
-				return result
+			// `readonly prop: XXX = [...] as const`, all child element immutable.
+			if (ts.isAsExpression(decl.initializer)) {
+				let readonly = !!decl.modifiers?.find(m => m.kind === ts.SyntaxKind.ReadonlyKeyword)
+				if (readonly
+					&& ts.isTypeReferenceNode(decl.initializer.type)
+					&& ts.isIdentifier(decl.initializer.type.typeName)
+					&& helper.getText(decl.initializer.type.typeName) === 'const'
+				) {
+					return false
+				}
+			}
+
+			// `class A{p = {} as Observed}`, must not specified property type.
+			if (!typeNode) {
+				result = getElementsObserved(decl.initializer)
+				if (result !== null) {
+					return result
+				}
 			}
 		}
 

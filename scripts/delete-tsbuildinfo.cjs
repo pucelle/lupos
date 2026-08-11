@@ -2,7 +2,7 @@ const fs = require('node:fs')
 
 
 try {
-	fs.unlinkSync(__dirname + '/../tests/tsconfig.tsbuildinfo')
+	fs.unlinkSync(__dirname + '/../tests/out/tsconfig.tsbuildinfo')
 	console.log('Deleted "tsconfig.tsbuildinfo".')
 }
 catch (err) {

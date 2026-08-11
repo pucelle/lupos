@@ -15,7 +15,8 @@
 		"noImplicitReturns": true,
 		"noFallthroughCasesInSwitch": true,
 		"noImplicitAny": true,
-		"noImplicitThis": true
+		"noImplicitThis": true,
+		"tsBuildInfoFile": "out/tsconfig.tsbuildinfo"
 	},
 	"include": ["src/**/*.ts"],
 }
