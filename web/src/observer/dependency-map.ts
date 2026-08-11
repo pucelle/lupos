@@ -31,28 +31,24 @@ export class DependencyMap {
 	}
 	
 	/** Update Updatable Map by a Dependency Map item. */
-	private updateUpdatableMap(u: Updatable, deps: InternalSetMap<object, PropertyKey>) {
+	private updateUpdatableMap(u: Updatable, newDeps: InternalSetMap<object, PropertyKey>) {
 		let oldDep = this.dependencyMap.getSecond(u)
 
 		// Clean not existed.
 		if (oldDep) {
-			for (let [dep, props] of deps.entries()) {
-				let oldProps = oldDep.get(dep)
+			for (let [dep, oldProps] of oldDep.entries()) {
+				let newProps = newDeps.get(dep)
 
-				if (!oldProps) {
-					continue
-				}
-
-				for (let prop of oldProps) {
-					if (!props.has(prop)) {
-						this.updatableMap.delete(dep, prop, u)
+				for (let oldProp of oldProps) {
+					if (!newProps?.has(oldProp)) {
+						this.updatableMap.delete(dep, oldProp, u)
 					}
 				}
 			}
 		}
 
 		// Add or replace.
-		for (let [dep, props] of deps.entries()) {
+		for (let [dep, props] of newDeps.entries()) {
 			this.updatableMap.addByGroupOfSecondKeys(dep, props, u)
 		}
 	}
