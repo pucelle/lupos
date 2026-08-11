@@ -129,24 +129,6 @@ class UpdateQueueClass {
 		return promisify(this.whenComplete, this)
 	}
 
-	/** 
-	 * Some times we need to wait for deep micro tasks completed.
-	 * So here we specifies how many micro task ticks to wait
-	 * after previous all update completed.
-	 */
-	async untilDeepComplete(depth: number = 1): Promise<void> {
-		await this.untilComplete()
-
-		for (let i = 0; i < depth; i++) {
-			await Promise.resolve()
-
-			// Wait for a new loop.
-			if (this.phase !== QueueUpdatePhase.NotStarted) {
-				i = 0
-			}
-		}
-	}
-
 	/** Enqueue a update task if not have. */
 	willUpdate() {
 		if (this.phase === QueueUpdatePhase.NotStarted) {

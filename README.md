@@ -117,43 +117,77 @@ class Example {
 	- `@useContext`: decorates a component property to reference a context variable defined in any ancestral component. Target component must extend `ContextVariableConstructor`.
 
 - **Events**:
-	- `DOMEvents`: bind document events, especially when scope needs to bind.
-	- `DomModifiableEvents`: bind document events with modifiers, like `prevent`, `stop`, `Enter`...
-	- `EventFirer`: help to bind and fire event.
-	- `EventKeys`: help to get event key and code of an key events.
+	- `DOMEvents`: bind and unbind DOM events with optional scopes, listener options, and one-time listeners.
+	- `DOMModifiableEvents`: bind DOM events with modifiers such as `prevent`, `stop`, `once`, `self`, keyboard shortcuts, mouse buttons, checkbox states, and wheel directions.
+	- `EventFirer`: register, remove, and fire typed application events.
+	- `EventKeys`: inspect keyboard events and normalize key, code, and shortcut names.
 
 - **Observer**:
 	- **Decorators**: note these decorators get updated in their declaration order.
 		- `@computed`: decorates a class getter to make it compute value when required, and refresh result when required.
+		- `@asyncComputed(getter, continuous?)`: decorates a class property whose value is produced by a synchronous or asynchronous getter and refreshed when its dependencies change.
 		- `@effect`: decorates a class method, it execute this method, and if any dependency it used get changed, re-execute.
 		- `@watch(publicProperty / getterFn)`: decorates a class method to watch value of a property or returned value of a getter function, and calls current method after this value changed.
 		- `@watchMulti(...)`: same as `@watch`, except it watches several properties or getter functions.
 
+	- **Observer classes**:
+		- `Computed`: lazily compute and cache a synchronous value while tracking its dependencies.
+		- `AsyncComputed`: compute an asynchronous value and refresh it when its dependencies change.
+		- `Effector`: run an effect and re-run it after a tracked dependency changes.
+		- `Watcher`: watch one derived value and call a callback when it changes.
+		- `MultiWatcher`: watch several derived values together.
+
 	- **Tracking functions**:
-		- `beginTrack(callback)`: begin to capture dependencies. refresh `callback` get called when any dependencies get changed.
-		- `endTrack`: end capturing dependencies.
-		- `untrack(callback)`: remove all dependencies of a refresh callback.
-		- `trackGet`: when doing property getting, add a dependency.
-		- `trackSet`: when doing setting property, notify the dependency get changed.
-		- `trackGetDeeply`: when need to track all properties and descendant properties of an object recursively of an object as dependency. Like `JSON.stringify(...)`.
-		- `proxyOf`: proxy an object or an array, map or set (not weak map or weak set), and all the descendant properties of them. It's the final way of observing when other ways fail.
+		- `beginTrack(updatable)`: begin capturing dependencies for an `Updatable` object. Its `willUpdate` method is called after a captured dependency changes.
+		- `endTrack(meetsError?)`: finish the current capture. Pass `true` to discard dependencies captured by a failed operation.
+		- `untrack(updatable)`: remove every dependency associated with an `Updatable` object.
+		- `trackGet(object, ...properties)`: add object properties to the current dependency capture.
+		- `trackSet(object, ...properties)`: notify observers that object properties changed.
+		- `trackGetDeeply(object, maxDepth?)`: recursively track an object's properties and descendants, for operations such as `JSON.stringify`.
+		- `proxyOf(value)`: observe an object, array, `Map`, or `Set` at runtime. Object and array descendants, plus values returned by `Map.get`, are proxied lazily. Collection reads and iteration are tracked, and actual mutations notify observers. `WeakMap` and `WeakSet` are not supported.
 
-	- **Queue**
-		- `enqueueUpdate`: enqueue a callback with a scope, will call it before the next animate frame.
-		- `enqueueAfterDataApplied`: enqueue a callback with a scope, will call it before all watchers / effectors / computers to be called, and after all components update callbacks.
-		- `untilUpdateComplete`: returns a promise which will be resolved after all the enqueued callbacks were called.
-		- `untilFirstPaintCompleted`: Returns a promise, which will be resolved after the first time update complete, and browser paint completed.
+	- **Queue**:
+		- `UpdateQueue.enqueue(updatable)`: enqueue an `Updatable`; queued items run in ascending `iid` order before the next animation frame.
+		- `UpdateQueue.hasEnqueued(updatable)`: test whether an item is currently queued.
+		- `UpdateQueue.whenComplete(callback)`: call a function after queued synchronous and asynchronous updates complete.
+		- `UpdateQueue.untilComplete()`: return a promise that resolves after the current update cycle completes.
+		- `UpdateQueue.untilDeepComplete(depth?)`: wait for an update cycle and additional microtask turns, including update cycles started by them.
+		- `barrierDOMReading()` / `barrierDOMWriting()`: group DOM reads before DOM writes to reduce layout thrashing.
+		- `untilBarriersComplete()`: wait until all pending DOM barriers complete.
 
-	- **Utils**
-		- `AnimationFrame`: request to call `callback` in current or before next animation frame.
-		- `bindCallback`: bind callback with scope.
-		- `promiseWithResolves`: returns a promise, with it's resolve and reject.
+	- **Utils**:
+		- `AnimationFrame.requestCurrent(callback)`: request a callback in the current frame when possible, otherwise in the next frame.
+		- `AnimationFrame.requestNext(callback)`: request a callback in the next animation frame.
+		- `AnimationFrame.cancel(id)`: cancel a callback requested through `AnimationFrame`.
+		- `bindCallback(callback, scope)`: bind and cache a callback for a scope, returning the same bound function for the same pair.
+		- `promisify(fn, scope?)`: convert a callback-taking function into a promise.
+
+- **Structs**:
+	- `MiniHeap`: a small generic minimum heap used to keep values ordered by a comparer.
+
+- **Types**:
+	- `Updatable`: the queue contract containing an `iid`, `willUpdate`, and synchronous or asynchronous `update` method.
+
+
+## Development
+
+Run the web runtime tests:
+
+```bash
+npm run test-web -- --run
+```
+
+Build the web runtime:
+
+```bash
+npm run build-web
+```
 
 
 
 ## Production
 
-You should config your bundle tool to eliminate function calls `debug_on_track_get`, `debug_on_track_set`, `debug_on_track_end`, `debug_tracking_count`, `debug_circular_tracking`, `debug_infinite_tracking`.
+You should config your bundle tool to eliminate `IN_DEV` by replacing it to `false`.
 
 
 
