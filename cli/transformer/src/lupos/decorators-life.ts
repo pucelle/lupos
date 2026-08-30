@@ -1,5 +1,6 @@
 import ts from 'typescript'
-import {defineVisitor, factory, Interpolator, MethodOverwrite, Modifier, helper} from '../core'
+import {defineVisitor, factory, Interpolator, MethodOverwrite, Modifier, SourceFileDiagnosticModifier, helper} from '../core'
+import {DiagnosticCode} from '../lupos-ts-module'
 import {ProcessorClassNameMap, ProcessorPropNameMap} from './decorators-shared'
 import {Packer} from '../core/packer'
 
@@ -19,6 +20,18 @@ defineVisitor(function(node: ts.Node) {
 	if (!helper.class.isImplementedOf(node, 'Connectable', 'lupos')
 		&& !helper.objectLike.isDerivedOf(node, 'Component', 'lupos.html')
 	) {
+		let hasObservableDecorator = lifeMembers.some(({deco}) =>deco)
+		if (hasObservableDecorator) {
+			let diagnosticNode = node.name ?? node
+			
+			SourceFileDiagnosticModifier.add(
+				diagnosticNode.getStart(),
+				diagnosticNode.getWidth(),
+				DiagnosticCode.NotAssignable,
+				`Observable decorators can only work in classes that implement 'Connectable'.`
+			)
+		}
+
 		return
 	}
 
@@ -63,7 +76,7 @@ function getLifeMembers(node: ts.ClassDeclaration) {
 		decoName: string | null
 	}[] = []
 
-	for (let member of  node.members) {
+	for (let member of node.members) {
 		if (!ts.isMethodDeclaration(member)
 			&& !ts.isPropertyDeclaration(member)
 			&& !ts.isGetAccessorDeclaration(member)
