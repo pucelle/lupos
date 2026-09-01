@@ -1,5 +1,5 @@
 import ts from 'typescript'
-import {factory, Interpolator} from '../../../core'
+import {Interpolator, transformContext} from '../../../core'
 import {IfFlowControl} from './if'
 
 
@@ -37,18 +37,18 @@ export class SwitchFlowControl extends IfFlowControl {
 	protected override outputConditionsExps() {
 		let switchValue = this.switchValueIndex !== null
 			? this.template.values.getRawValue(this.switchValueIndex)
-			: factory.createNull()
+			: transformContext.factory.createNull()
 
 		let conditions = this.conditionIndices.map(index => {
 			if (index === null) {
-				return factory.createNull()
+				return transformContext.factory.createNull()
 			}
 			else {
 				let rawNode = this.template.values.getRawValue(index)
 
-				return factory.createBinaryExpression(
+				return transformContext.factory.createBinaryExpression(
 					switchValue,
-					factory.createToken(ts.SyntaxKind.EqualsEqualsEqualsToken),
+					transformContext.factory.createToken(ts.SyntaxKind.EqualsEqualsEqualsToken),
 					Interpolator.outputSelfUnique(rawNode) as ts.Expression
 				)
 			}

@@ -1,4 +1,4 @@
-import {DeclarationScope, Hashing, helper} from '../../core'
+import {DeclarationScope, Hashing, transformContext} from '../../core'
 import {AccessNode, ListMap} from '../../lupos-ts-module'
 import {CapturedItem, TrackingCapturer} from './capturer'
 
@@ -210,7 +210,7 @@ export namespace CapturedHashing {
 		}
 		else {
 			let exp = (item.node as AccessNode).expression
-			let key = helper.access.getPropertyNode(item.node as AccessNode)
+			let key = transformContext.helper.access.getPropertyNode(item.node as AccessNode)
 			let expHash = Hashing.hashMayNewNode(exp, item.node)
 			let keyHash = Hashing.hashMayNewNode(key, item.node)
 

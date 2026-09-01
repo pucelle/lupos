@@ -1,5 +1,5 @@
 import ts from 'typescript'
-import {factory, Modifier, Packer, helper, transformContext} from '../../core'
+import {Modifier, Packer, transformContext} from '../../core'
 import {groupBy} from '../../utils'
 import {AccessNode} from '../../lupos-ts-module'
 
@@ -47,7 +47,7 @@ export namespace AccessGrouper {
 			return simplify(node.left)
 		}
 
-		return ts.visitEachChild(node, simplify as any, transformContext)
+		return ts.visitEachChild(node, simplify as any, transformContext.transformationContext)
 	}
 
 	
@@ -64,7 +64,7 @@ export namespace AccessGrouper {
 	/** Make a key by a property accessing node. */
 	function getExpressionKey(node: AccessNode) {
 		let exp = node.expression
-		let key = helper.getFullText(exp).trim()
+		let key = transformContext.helper.getFullText(exp).trim()
 
 		if (node.questionDotToken) {
 			key += '?.'
@@ -79,20 +79,20 @@ export namespace AccessGrouper {
 		let node = nodes[0]
 		let parameters = createNameParameter(nodes)
 		
-		let trackGet = factory.createCallExpression(
-			factory.createIdentifier(type === 'get' ? 'trackGet' : 'trackSet'),
+		let trackGet = transformContext.factory.createCallExpression(
+			transformContext.factory.createIdentifier(type === 'get' ? 'trackGet' : 'trackSet'),
 			undefined,
 			parameters
 		)
 
-		let optionalChainingExp = helper.access.getOptionalChainingExp(node)
+		let optionalChainingExp = transformContext.helper.access.getOptionalChainingExp(node)
 
 		// `a?.b` -> `a && trackGet(a, 'b')`
 		// `a?.b.c` -> `a && trackGet(a?.b, 'c')`
 		if (optionalChainingExp) {
-			return factory.createBinaryExpression(
+			return transformContext.factory.createBinaryExpression(
 				Packer.removeAccessComments(optionalChainingExp),
-				factory.createToken(ts.SyntaxKind.AmpersandAmpersandToken),
+				transformContext.factory.createToken(ts.SyntaxKind.AmpersandAmpersandToken),
 				trackGet
 			)
 		}
@@ -136,7 +136,7 @@ export namespace AccessGrouper {
 			return `"${name.text}"`
 		}
 
-		return helper.getFullText(name)
+		return transformContext.helper.getFullText(name)
 	}
 
 
@@ -145,7 +145,7 @@ export namespace AccessGrouper {
 		let name: ts.Expression
 
 		if (ts.isPropertyAccessExpression(node)) {
-			name = factory.createStringLiteral(helper.getFullText(node.name))
+			name = transformContext.factory.createStringLiteral(transformContext.helper.getFullText(node.name))
 		}
 		else {
 			name = Packer.removeAccessComments(node.argumentExpression)

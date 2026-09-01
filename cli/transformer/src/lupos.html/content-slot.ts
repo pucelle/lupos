@@ -1,5 +1,5 @@
 import ts from 'typescript'
-import {defineVisitor, Modifier, factory, helper} from '../core'
+import {defineVisitor, Modifier, transformContext} from '../core'
 import {SlotContentType} from '../enums'
 
 
@@ -9,28 +9,28 @@ defineVisitor(function(node: ts.Node) {
 	}
 
 	// Be a component.
-	if (!helper.objectLike.isDerivedOf(node, 'Component', 'lupos.html')) {
+	if (!transformContext.helper.objectLike.isDerivedOf(node, 'Component', 'lupos.html')) {
 		return
 	}
 
 	// Must not specify `ContentSlotType: ...` itself.
-	let contentSlotProperty = helper.class.getProperty(node, 'ContentSlotType', false)
+	let contentSlotProperty = transformContext.helper.class.getProperty(node, 'ContentSlotType', false)
 	if (contentSlotProperty && contentSlotProperty.modifiers?.some(m => m.kind === ts.SyntaxKind.StaticKeyword)) {
 		return
 	}
 
 	// Must specify `render(): ...`
-	let renderMethod = helper.class.getMethod(node, 'render', false)
+	let renderMethod = transformContext.helper.class.getMethod(node, 'render', false)
 	if (!renderMethod) {
 		return
 	}
 
-	let renderType = helper.types.getReturnTypeOfSignature(renderMethod)
+	let renderType = transformContext.helper.types.getReturnTypeOfSignature(renderMethod)
 	if (!renderType) {
 		return
 	}
 
-	let typeText = helper.types.getTypeFullText(renderType)
+	let typeText = transformContext.helper.types.getTypeFullText(renderType)
 	let slotType: SlotContentType | null = null
 
 	// Check Slot Type.
@@ -41,7 +41,7 @@ defineVisitor(function(node: ts.Node) {
 		slotType = SlotContentType.TemplateResultList
 	}
 	else if (typeText === 'string' || typeText === 'number'
-		|| helper.types.isNonNullableValueType(renderType)
+		|| transformContext.helper.types.isNonNullableValueType(renderType)
 	) {
 		slotType = SlotContentType.Text
 	}
@@ -51,14 +51,14 @@ defineVisitor(function(node: ts.Node) {
 
 	// Add a property `static SlotContentType = SlotContentType.xxx`.
 	if (slotType !== null) {
-		let property = factory.createPropertyDeclaration(
+		let property = transformContext.factory.createPropertyDeclaration(
 			[
-				factory.createToken(ts.SyntaxKind.StaticKeyword)
+				transformContext.factory.createToken(ts.SyntaxKind.StaticKeyword)
 			],
-			factory.createIdentifier('SlotContentType'),
+			transformContext.factory.createIdentifier('SlotContentType'),
 			undefined,
 			undefined,
-			factory.createNumericLiteral(slotType)
+			transformContext.factory.createNumericLiteral(slotType)
 		)
 
 		Modifier.addClassMember(node, property, true)

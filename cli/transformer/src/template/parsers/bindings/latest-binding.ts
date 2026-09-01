@@ -1,4 +1,5 @@
 import {HTMLNode} from '../../../lupos-ts-module'
+import {createTransformSessionStateKey, transformSession} from '../../../core'
 
 
 export interface LatestBindingInfo {
@@ -8,7 +9,11 @@ export interface LatestBindingInfo {
 }
 
 
-let latest: LatestBindingInfo | null = null
+const StateKey = createTransformSessionStateKey<{latest: LatestBindingInfo | null}>('LatestBinding')
+
+function getState() {
+	return transformSession.getState(StateKey, () => ({latest: null}))
+}
 
 
 /** Can only set when doing `preInit`. */
@@ -17,7 +22,7 @@ export function setLatestBindingInfo(
 	name: string,
 	setRefBindingName: (refBindName: string) => void,
 ) {
-	latest = {
+	getState().latest = {
 		node,
 		name,
 		setRefBindingName,
@@ -27,6 +32,7 @@ export function setLatestBindingInfo(
 
 /** Can only get when doing `preInit`. */
 export function getLatestBindingInfo(node: HTMLNode): LatestBindingInfo | null {
+	let latest = getState().latest
 	if (!latest || latest.node !== node) {
 		return null
 	}

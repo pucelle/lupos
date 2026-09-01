@@ -1,4 +1,11 @@
 import {PairKeysMap} from '../../lupos-ts-module'
+import {createTransformSessionStateKey, transformSession} from '../../core'
+
+
+interface VariableNameState {
+	areaIndexMap: Map<any, number>
+	areaDoublyIndexMap: PairKeysMap<any, string, number>
+}
 
 
 export namespace VariableNames {
@@ -17,20 +24,20 @@ export namespace VariableNames {
 	export const delegator = '$delegator'
 	export const block = '$block'
 
-	const AreaIndexMap: Map<any, number> = new Map()
-	const AreaDoublyIndexMap: PairKeysMap<any, string, number> = new PairKeysMap()
+	const StateKey = createTransformSessionStateKey<VariableNameState>('VariableNames')
 
-
-	/** Initialize before loading a new source file. */
-	export function init() {
-		AreaIndexMap.clear()
-		AreaDoublyIndexMap.clear()
+	function getState(): VariableNameState {
+		return transformSession.getState(StateKey, () => ({
+			areaIndexMap: new Map(),
+			areaDoublyIndexMap: new PairKeysMap(),
+		}))
 	}
 
 	export function getUniqueIndex(area: any) {
-		let index = AreaIndexMap.get(area) ?? -1
+		let areaIndexMap = getState().areaIndexMap
+		let index = areaIndexMap.get(area) ?? -1
 		index++
-		AreaIndexMap.set(area, index)
+		areaIndexMap.set(area, index)
 
 		return index
 	}
@@ -44,9 +51,10 @@ export namespace VariableNames {
 	}
 
 	export function getDoublyUniqueIndex(innerArea: string, outerArea: any) {
-		let index = AreaDoublyIndexMap.get(outerArea, innerArea) ?? -1
+		let areaDoublyIndexMap = getState().areaDoublyIndexMap
+		let index = areaDoublyIndexMap.get(outerArea, innerArea) ?? -1
 		index++
-		AreaDoublyIndexMap.set(outerArea, innerArea, index)
+		areaDoublyIndexMap.set(outerArea, innerArea, index)
 
 		return index
 	}

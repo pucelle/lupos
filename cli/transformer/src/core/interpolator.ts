@@ -1,9 +1,9 @@
 import ts from 'typescript'
 import {ListMap} from '../lupos-ts-module'
-import {factory, transformContext, helper} from './global'
+import {transformSession, transformContext} from './global'
 import {VisitTree} from './visit-tree'
-import {definePreVisitCallback} from './visitor-callbacks'
 import {Packer} from './packer'
+import {createTransformSessionStateKey} from './transform-session'
 
 
 export interface InterpolationItem {
@@ -86,13 +86,11 @@ export interface OutputOptions {
  */
 export namespace Interpolator {
 
-	/** Interpolated expressions, and where to interpolate. */
-	const Interpolations: ListMap<ts.Node, InterpolationItem> = new ListMap()
+	const StateKey = createTransformSessionStateKey<ListMap<ts.Node, InterpolationItem>>('Interpolator')
 
-
-	/** Initialize after enter a new source file */
-	export function initialize() {
-		Interpolations.clear()
+	/** Interpolated expressions for the current source file. */
+	function getInterpolations() {
+		return transformSession.getState(StateKey, () => new ListMap())
 	}
 
 
@@ -124,7 +122,7 @@ export namespace Interpolator {
 			}
 		}
 
-		Interpolations.add(toNode, item)
+		getInterpolations().add(toNode, item)
 	}
 
 	/** Get sibling nodes array for prepending and appending. */
@@ -152,21 +150,21 @@ export namespace Interpolator {
 	 */
 	function updatePending(node: ts.Node, prependNodes: ts.Node[], appendNodes: ts.Node[]): ts.Node {
 		if (ts.isNamedImports(node)) {
-			return factory.updateNamedImports(node, [
+			return transformContext.factory.updateNamedImports(node, [
 				...prependNodes as ts.ImportSpecifier[],
 				...node.elements,
 				...appendNodes as ts.ImportSpecifier[],
 			])
 		}
 		else if (ts.isVariableDeclarationList(node)) {
-			return factory.updateVariableDeclarationList(node, [
+			return transformContext.factory.updateVariableDeclarationList(node, [
 				...prependNodes as ts.VariableDeclaration[],
 				...node.declarations,
 				...appendNodes as ts.VariableDeclaration[],
 			])
 		}
 		else if (ts.isClassDeclaration(node)) {
-			return factory.updateClassDeclaration(
+			return transformContext.factory.updateClassDeclaration(
 				node, 
 				node.modifiers,
 				node.name,
@@ -182,7 +180,7 @@ export namespace Interpolator {
 		else if (ts.isBlock(node)) {
 
 			// updateBlock can't redeclare as `multiline`.
-			return factory.createBlock(
+			return transformContext.factory.createBlock(
 				[
 					...Packer.toStatements(prependNodes),
 					...node.statements,
@@ -192,7 +190,7 @@ export namespace Interpolator {
 			)
 		}
 		else {
-			throw new Error(`Don't know how to add child nodes for "${helper.getFullText(node)}"!`)
+			throw new Error(`Don't know how to add child nodes for "${transformContext.helper.getFullText(node)}"!`)
 		}
 	}
 
@@ -308,7 +306,7 @@ export namespace Interpolator {
 	export function outputChildren(atNode: ts.Node): ts.Node {
 		return ts.visitEachChild(atNode, (child: ts.Node) => {
 			return outputSelf(child)
-		}, transformContext)
+		}, transformContext.transformationContext)
 	}
 
 	/** 
@@ -324,7 +322,7 @@ export namespace Interpolator {
 
 		let replace = items.filter(item => item.position === InterpolationPosition.Replace)
 		if (replace.length > 1) {
-			throw new Error(`Only one replace is allowed, happen at "${helper.getFullText(atNode)}"!`)
+			throw new Error(`Only one replace is allowed, happen at "${transformContext.helper.getFullText(atNode)}"!`)
 		}
 
 		if (replace.length > 0) {
@@ -359,7 +357,7 @@ export namespace Interpolator {
 
 		let replace = items.filter(item => item.position === InterpolationPosition.Replace)
 		if (canReplace && replace.length > 1) {
-			throw new Error(`Only one replace is allowed, happen at "${helper.getFullText(atNode)}"!`)
+			throw new Error(`Only one replace is allowed, happen at "${transformContext.helper.getFullText(atNode)}"!`)
 		}
 
 		let remove = items.find(item => item.position === InterpolationPosition.Remove)
@@ -373,7 +371,7 @@ export namespace Interpolator {
 
 			if (prependNodes.length > 0 || appendNodes.length > 0) {
 				let childNodes = [...prependNodes, ...appendNodes]
-				console.warn(`Child nodes "${childNodes.map(n => helper.getFullText(n)).join(', ')}" have been dropped!`)
+				console.warn(`Child nodes "${childNodes.map(n => transformContext.helper.getFullText(n)).join(', ')}" have been dropped!`)
 			}
 		}
 		else {
@@ -415,11 +413,11 @@ export namespace Interpolator {
 		}
 
 		if (!node) {
-			throw new Error(`"${helper.getFullText(atNode)}" has been removed!`)
+			throw new Error(`"${transformContext.helper.getFullText(atNode)}" has been removed!`)
 		}
 
 		if (Array.isArray(node)) {
-			throw new Error(`"${helper.getFullText(atNode)}" has been replaced to several!`)
+			throw new Error(`"${transformContext.helper.getFullText(atNode)}" has been replaced to several!`)
 		}
 
 		return node
@@ -427,7 +425,7 @@ export namespace Interpolator {
 
 	/** Get ordered interpolation items.*/
 	function getOrderedItems(atNode: ts.Node) {
-		let items = Interpolations.get(atNode)
+		let items = getInterpolations().get(atNode)
 		if (!items) {
 			return undefined
 		}
@@ -466,11 +464,11 @@ export namespace Interpolator {
 		// Extend to block and insert statements.
 		else if (Packer.canExtendToPutStatements(atNode)) {
 			if (ts.isArrowFunction(rawParent)) {
-				node = factory.createReturnStatement(node as ts.Expression)
+				node = transformContext.factory.createReturnStatement(node as ts.Expression)
 			}
 			let list = arrangeNeighborNodes(node, beforeNodes, afterNodes)
 
-			return factory.createBlock(
+			return transformContext.factory.createBlock(
 				Packer.toStatements(list),
 				true
 			)
@@ -533,6 +531,3 @@ export namespace Interpolator {
 		return list
 	}
 }
-
-
-definePreVisitCallback(Interpolator.initialize)

@@ -1,4 +1,4 @@
-import {DeclarationScope, helper} from '../../core'
+import {DeclarationScope, transformContext} from '../../core'
 import {PartPositionType} from '../../enums'
 import {HTMLNodeHelper, HTMLNodeReferences} from '../html-syntax'
 import {HTMLNode, HTMLNodeType, HTMLRoot, TemplatePartParser, TemplatePart, TemplatePartType, TemplateSlotPlaceholder} from '../../lupos-ts-module'
@@ -119,7 +119,7 @@ export class TreeParser {
 	/** Parse after initialized all the things. */
 	parse() {
 		let canModify = true
-		let partParser = new TemplatePartParser(this.root, this.template.values.valueNodes, canModify, this.onTemplatePart.bind(this), helper)
+		let partParser = new TemplatePartParser(this.root, this.template.values.valueNodes, canModify, this.onTemplatePart.bind(this), transformContext.helper)
 		partParser.parse()
 
 		// Must after nodes parsed.

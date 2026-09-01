@@ -1,5 +1,5 @@
 import ts from 'typescript'
-import {factory, helper} from './global'
+import {transformContext} from './global'
 import {InterpolationContentType, Interpolator} from './interpolator'
 
 
@@ -28,15 +28,15 @@ export class MethodOverwrite {
 		this.name = name
 
 		if (name === 'constructor') {
-			this.rawNode = helper.class.getConstructorDeclaration(classNode, false) ?? null
+			this.rawNode = transformContext.helper.class.getConstructorDeclaration(classNode, false) ?? null
 		}
 		else {
-			this.rawNode = helper.class.getMethodDeclaration(classNode, name, false) ?? null
+			this.rawNode = transformContext.helper.class.getMethodDeclaration(classNode, name, false) ?? null
 		}
 
 		if (this.rawNode) {
 			this.superIndex = this.rawNode!.body!.statements.findIndex(s => {
-				helper.getFullText(s).startsWith('super')
+				transformContext.helper.getFullText(s).startsWith('super')
 			})
 
 			this.endIndex = this.findEndIndexBeforeAwait()
@@ -58,7 +58,7 @@ export class MethodOverwrite {
 		for (let i = 0; i < statements.length; i++) {
 			let statement = statements[i]
 
-			if (helper.findInstantlyRunInward(statement, (node) => ts.isAwaitExpression(node))) {
+			if (transformContext.helper.findInstantlyRunInward(statement, (node) => ts.isAwaitExpression(node))) {
 				return i
 			}
 		}
@@ -68,13 +68,13 @@ export class MethodOverwrite {
 
 	/** Create a constructor function. */
 	private createConstructor(): ts.ConstructorDeclaration {
-		let parameters = helper.class.getConstructorParameters(this.classNode, true) ?? []
+		let parameters = transformContext.helper.class.getConstructorParameters(this.classNode, true) ?? []
 		let statements: ts.Statement[] = []
-		let superClass = helper.class.getSuper(this.classNode)
+		let superClass = transformContext.helper.class.getSuper(this.classNode)
 
 		if (superClass) {
-			let callSuper = factory.createExpressionStatement(factory.createCallExpression(
-				factory.createSuper(),
+			let callSuper = transformContext.factory.createExpressionStatement(transformContext.factory.createCallExpression(
+				transformContext.factory.createSuper(),
 				undefined,
 				parameters.map(p => p.name as ts.Identifier)
 			))
@@ -82,10 +82,10 @@ export class MethodOverwrite {
 			statements = [callSuper]
 		}
 
-		return factory.createConstructorDeclaration(
+		return transformContext.factory.createConstructorDeclaration(
 			undefined,
 			parameters,
-			factory.createBlock(
+			transformContext.factory.createBlock(
 				statements,
 				true
 			)
@@ -94,20 +94,20 @@ export class MethodOverwrite {
 
 	/** Create a method, which will call super method without parameters. */
 	private createMethod(): ts.MethodDeclaration {
-		return factory.createMethodDeclaration(
+		return transformContext.factory.createMethodDeclaration(
 			undefined,
 			undefined,
-			factory.createIdentifier(this.name),
+			transformContext.factory.createIdentifier(this.name),
 			undefined,
 			undefined,
 			[],
 			undefined,
-			factory.createBlock(
+			transformContext.factory.createBlock(
 				[
-					factory.createExpressionStatement(factory.createCallExpression(
-						factory.createPropertyAccessExpression(
-							factory.createSuper(),
-							factory.createIdentifier(this.name)
+					transformContext.factory.createExpressionStatement(transformContext.factory.createCallExpression(
+						transformContext.factory.createPropertyAccessExpression(
+							transformContext.factory.createSuper(),
+							transformContext.factory.createIdentifier(this.name)
 						),
 						undefined,
 						[]
@@ -223,15 +223,15 @@ export class MethodOverwrite {
 		}
 
 		if (ts.isConstructorDeclaration(newNode)) {
-			this.newNode = factory.updateConstructorDeclaration(
+			this.newNode = transformContext.factory.updateConstructorDeclaration(
 				newNode,
 				newNode.modifiers,
 				newNode.parameters,
-				factory.createBlock(newStatements, true)
+				transformContext.factory.createBlock(newStatements, true)
 			)
 		}
 		else {
-			this.newNode = factory.updateMethodDeclaration(
+			this.newNode = transformContext.factory.updateMethodDeclaration(
 				newNode,
 				newNode.modifiers,
 				newNode.asteriskToken,
@@ -240,7 +240,7 @@ export class MethodOverwrite {
 				newNode.typeParameters,
 				newNode.parameters,
 				newNode.type,
-				factory.createBlock(newStatements, true)
+				transformContext.factory.createBlock(newStatements, true)
 			)
 		}
 	}

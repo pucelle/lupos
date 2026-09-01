@@ -1,6 +1,6 @@
 import ts from 'typescript'
 import {AccessNode} from '../../lupos-ts-module'
-import {typeChecker, helper} from '../../core'
+import {transformContext} from '../../core'
 import {GenericType} from 'typescript'
 import {TrackingPatch} from './patch'
 import {ObservedStateMask} from '../decorators/types'
@@ -19,7 +19,7 @@ export namespace ObservedChecker {
 	export function getSelfObserved(rawNode: ts.Node): boolean | null {
 
 		// Must be access node.
-		if (!helper.access.isAccess(rawNode)) {
+		if (!transformContext.helper.access.isAccess(rawNode)) {
 			return false
 		}
 
@@ -32,28 +32,28 @@ export namespace ObservedChecker {
 		// `(a ? b : c).d`
 		// `(a ?? b).b`
 		// Declared in Typescript lib, like `Date.getTime`
-		if (helper.symbol.isOfTypescriptLib(rawNode)) {
+		if (transformContext.helper.symbol.isOfTypescriptLib(rawNode)) {
 			return false
 		}
 
 		// Will not observe properties for those starts with '$' like `a.$b`, `a.$b.c`.
-		if (helper.access.getPropertyText(rawNode).startsWith('$')) {
+		if (transformContext.helper.access.getPropertyText(rawNode).startsWith('$')) {
 			return false
 		}
 
 
 		// As readonly property, not mutable.
-		let readonly = helper.types.isReadonly(rawNode)
+		let readonly = transformContext.helper.types.isReadonly(rawNode)
 		if (readonly) {
 			return false
 		}
 
 
 		// Test declaration.
-		let decl = helper.symbol.resolveDeclaration(rawNode)
+		let decl = transformContext.helper.symbol.resolveDeclaration(rawNode)
 
 		// Method declarations will always not mutable.
-		if (decl && helper.isMethodLike(decl)) {
+		if (decl && transformContext.helper.isMethodLike(decl)) {
 			return false
 		}
 
@@ -62,7 +62,7 @@ export namespace ObservedChecker {
 		// But `@computed` decorated will continue, because it's
 		// content get cached after get computed.
 		if (decl && ts.isAccessor(decl)) {
-			let decoNameBeComputed = helper.deco.getFirstName(decl) === 'computed'
+			let decoNameBeComputed = transformContext.helper.deco.getFirstName(decl) === 'computed'
 			if (!decoNameBeComputed) {
 				return false
 			}
@@ -71,10 +71,10 @@ export namespace ObservedChecker {
 		
 		// Take `node = string[0]` as example, exp is `string`.
 		let exp = rawNode.expression
-		let expType = typeChecker.getTypeAtLocation(exp)
+		let expType = transformContext.typeChecker.getTypeAtLocation(exp)
 
 		// Visiting like string index will not get observed.
-		if (helper.types.isValueType(expType)) {
+		if (transformContext.helper.types.isValueType(expType)) {
 			return false
 		}
 
@@ -92,7 +92,7 @@ export namespace ObservedChecker {
 		// because it may search at a returned generic type.
 		// Should re-search at access declaration resolved.
 		if (decl
-			&& helper.isPropertyLike(decl)
+			&& transformContext.helper.isPropertyLike(decl)
 			&& ts.isClassLike(decl.parent)
 		) {
 			let declParentClassObserved = getDeclarationObserved(decl.parent)
@@ -129,12 +129,12 @@ export namespace ObservedChecker {
 		// `a.b`
 		// `(a ? b : c).d`
 		// `(a ?? b).b`
-		if (helper.access.isAccess(rawNode)) {
+		if (transformContext.helper.access.isAccess(rawNode)) {
 			return getAccessObserved(rawNode)
 		}
 
 		// `this`
-		else if (helper.isThis(rawNode)) {
+		else if (transformContext.helper.isThis(rawNode)) {
 			return getThisObserved(rawNode)
 		}
 		
@@ -178,7 +178,7 @@ export namespace ObservedChecker {
 			// `[...] as const`, all child element immutable.
 			if (ts.isTypeReferenceNode(typeNode)
 				&& ts.isIdentifier(typeNode.typeName)
-				&& helper.getText(typeNode.typeName) === 'const'
+				&& transformContext.helper.getText(typeNode.typeName) === 'const'
 			) {
 				return false
 			}
@@ -210,7 +210,7 @@ export namespace ObservedChecker {
 				|| ts.isClassExpression(rawNode.expression)
 			)
 		) {
-			let decl = helper.symbol.resolveDeclaration(rawNode.expression)
+			let decl = transformContext.helper.symbol.resolveDeclaration(rawNode.expression)
 			if (!decl) {
 				return null
 			}
@@ -258,12 +258,12 @@ export namespace ObservedChecker {
 		}
 
 		// `Observed<>`
-		else if (helper.symbol.isImportedFrom(typeNode, 'Observed', 'lupos')) {
+		else if (transformContext.helper.symbol.isImportedFrom(typeNode, 'Observed', 'lupos')) {
 			return true
 		}
 
 		// `UnObserved<>`
-		else if (helper.symbol.isImportedFrom(typeNode, 'UnObserved', 'lupos')) {
+		else if (transformContext.helper.symbol.isImportedFrom(typeNode, 'UnObserved', 'lupos')) {
 			return false
 		}
 
@@ -276,7 +276,7 @@ export namespace ObservedChecker {
 				resolveFrom = typeNode.typeName
 			}
 
-			let decl = helper.symbol.resolveDeclaration(resolveFrom)
+			let decl = transformContext.helper.symbol.resolveDeclaration(resolveFrom)
 			if (!decl) {
 				return null
 			}
@@ -305,7 +305,7 @@ export namespace ObservedChecker {
 		}
 
 		// `A[]`, check for `A`.
-		else if (typeChecker.isArrayType(type)) {
+		else if (transformContext.typeChecker.isArrayType(type)) {
 			let parameter = (type as GenericType).typeParameters?.[0]
 			if (parameter) {
 				return getTypeObserved(parameter)
@@ -321,7 +321,7 @@ export namespace ObservedChecker {
 				return null
 			}
 
-			let decl = helper.symbol.resolveDeclarationBySymbol(symbol)
+			let decl = transformContext.helper.symbol.resolveDeclarationBySymbol(symbol)
 			if (!decl) {
 				return null
 			}
@@ -344,7 +344,7 @@ export namespace ObservedChecker {
 		// Properties
 		// `class A{p: Observed}` -> `this.p` and `this['p']` is observed.
 		// `interface A{p: Observed}` -> `this.p` and `this['p']` is observed.
-		if (helper.isPropertyOrGetAccessor(decl)) {
+		if (transformContext.helper.isPropertyOrGetAccessor(decl)) {
 			return getPropertyDeclarationObserved(decl)
 		}
 
@@ -371,7 +371,7 @@ export namespace ObservedChecker {
 
 		// Observed interface.
 		else if (ts.isInterfaceDeclaration(decl)) {
-			let firstDerived = helper.objectLike.getFirstDerivedOf(decl, ['Observed', 'UnObserved'], 'lupos')
+			let firstDerived = transformContext.helper.objectLike.getFirstDerivedOf(decl, ['Observed', 'UnObserved'], 'lupos')
 			if (firstDerived === 'Observed') {
 				return true
 			}
@@ -384,7 +384,7 @@ export namespace ObservedChecker {
 
 		// Observed class.
 		else if (ts.isClassDeclaration(decl)) {
-			let firstImplemented = helper.class.getFirstImplementedOf(decl, ['Observed', 'UnObserved'], 'lupos')
+			let firstImplemented = transformContext.helper.class.getFirstImplementedOf(decl, ['Observed', 'UnObserved'], 'lupos')
 			if (firstImplemented === 'Observed') {
 				return true
 			}
@@ -417,7 +417,7 @@ export namespace ObservedChecker {
 
 		// Return type of declaration.
 		if (ts.isGetAccessorDeclaration(decl)) {
-			let returnType = helper.types.getReturnTypeOfSignature(decl)
+			let returnType = transformContext.helper.types.getReturnTypeOfSignature(decl)
 			if (returnType) {
 				result = getTypeObserved(returnType)
 				if (result !== null) {
@@ -435,7 +435,7 @@ export namespace ObservedChecker {
 				if (readonly
 					&& ts.isTypeReferenceNode(decl.initializer.type)
 					&& ts.isIdentifier(decl.initializer.type.typeName)
-					&& helper.getText(decl.initializer.type.typeName) === 'const'
+					&& transformContext.helper.getText(decl.initializer.type.typeName) === 'const'
 				) {
 					return false
 				}
@@ -500,12 +500,12 @@ export namespace ObservedChecker {
 
 		// `a.b.map`
 		let exp = calling.expression
-		if (!helper.access.isAccess(exp)) {
+		if (!transformContext.helper.access.isAccess(exp)) {
 			return null
 		}
 
 		// `a.b` of `a.b.map`.
-		if (!helper.access.isOfElementsAccess(exp)) {
+		if (!transformContext.helper.access.isOfElementsAccess(exp)) {
 			return null
 		}
 
@@ -539,7 +539,7 @@ export namespace ObservedChecker {
 			}
 		}
 
-		let type = helper.types.typeOf(rawNode)
+		let type = transformContext.helper.types.typeOf(rawNode)
 		if (type) {
 			result = getTypeObserved(type)
 			if (result !== null) {
@@ -562,7 +562,7 @@ export namespace ObservedChecker {
 	function getBindingElementObserved(rawNode: ts.BindingElement): boolean | null {
 		let result: boolean | null
 
-		let decl = helper.findOutward(rawNode, ts.isVariableDeclaration)
+		let decl = transformContext.helper.findOutward(rawNode, ts.isVariableDeclaration)
 		if (!decl) {
 			return null
 		}
@@ -575,7 +575,7 @@ export namespace ObservedChecker {
 		// Would better if we walk to variable declaration and collect keys,
 		// and then walk down follow keys at initializer.
 		// Here we simply assume there would be very few deconstructed assignment elements.
-		for (let item of helper.variable.walkDeconstructedDeclarationItems(decl)) {
+		for (let item of transformContext.helper.variable.walkDeconstructedDeclarationItems(decl)) {
 			if (item.node.parent === rawNode) {
 				if (item.initializer) {
 					result = getElementsObserved(item.initializer)
@@ -598,28 +598,28 @@ export namespace ObservedChecker {
 		let result: boolean | null
 
 		// Declared in Typescript lib, like `Date.getTime`
-		if (helper.symbol.isOfTypescriptLib(rawNode)) {
+		if (transformContext.helper.symbol.isOfTypescriptLib(rawNode)) {
 			return false
 		}
 
 		// Will not observe sub properties for those starts with '$' like `a.$b`, `a.$b.c`.
-		if (helper.access.getPropertyText(rawNode).startsWith('$')) {
+		if (transformContext.helper.access.getPropertyText(rawNode).startsWith('$')) {
 			return false
 		}
 
 		// Readonly elements are not observed.
-		let elementsReadonly = helper.types.isElementsReadonly(rawNode)
+		let elementsReadonly = transformContext.helper.types.isElementsReadonly(rawNode)
 		if (elementsReadonly) {
 			return false
 		}
 
 
 		// Test declaration.
-		let decl = helper.symbol.resolveDeclaration(rawNode)
+		let decl = transformContext.helper.symbol.resolveDeclaration(rawNode)
 		if (decl) {
 
 			// Always not observe method, it works like a value type.
-			if (helper.isMethodLike(decl)) {
+			if (transformContext.helper.isMethodLike(decl)) {
 				return false
 			}
 
@@ -632,10 +632,10 @@ export namespace ObservedChecker {
 
 		// Take type, e.g., for `node = a.b.c`, exp is `a.b`.
 		let exp = rawNode.expression
-		let expType = typeChecker.getTypeAtLocation(exp)
+		let expType = transformContext.typeChecker.getTypeAtLocation(exp)
 
 		// Visiting like string index will not get observed.
-		if (helper.types.isValueType(expType)) {
+		if (transformContext.helper.types.isValueType(expType)) {
 			return false
 		}
 
@@ -647,7 +647,7 @@ export namespace ObservedChecker {
 	function getThisObserved(rawNode: ts.ThisExpression): boolean | null {
 
 		// May resolve to this parameter, class declaration name.
-		let decl = helper.symbol.resolveDeclaration(rawNode)
+		let decl = transformContext.helper.symbol.resolveDeclaration(rawNode)
 		if (!decl) {
 			return null
 		}
@@ -660,7 +660,7 @@ export namespace ObservedChecker {
 	function getIdentifierObserved(rawNode: ts.Identifier): boolean | null {
 
 		// May resolve to variable declaration, parameter declaration.
-		let decl = helper.symbol.resolveDeclaration(rawNode)
+		let decl = transformContext.helper.symbol.resolveDeclaration(rawNode)
 		if (!decl) {
 			return null
 		}
@@ -674,7 +674,7 @@ export namespace ObservedChecker {
 		let result: boolean | null
 
 		let callExp = rawNode.expression
-		let decl = helper.symbol.resolveDeclaration(callExp, helper.isFunctionLike)
+		let decl = transformContext.helper.symbol.resolveDeclaration(callExp, transformContext.helper.isFunctionLike)
 		if (!decl) {
 			return null
 		}
@@ -689,7 +689,7 @@ export namespace ObservedChecker {
 		}
 
 		// Test call method returned type.
-		let returnType = helper.types.getReturnTypeOfSignature(decl)
+		let returnType = transformContext.helper.types.getReturnTypeOfSignature(decl)
 		if (returnType) {
 			result = getTypeObserved(returnType)
 			if (result !== null) {
@@ -699,8 +699,8 @@ export namespace ObservedChecker {
 
 		// `this.map.get` of `this.map.get(x)`.
 		// Result is observed.
-		if (helper.access.isAccess(callExp)
-			&& helper.access.isOfSingleElementReadAccess(callExp)
+		if (transformContext.helper.access.isAccess(callExp)
+			&& transformContext.helper.access.isOfSingleElementReadAccess(callExp)
 		) {
 			let result = getElementsObserved(callExp.expression)
 			if (result !== null) {

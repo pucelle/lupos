@@ -1,4 +1,4 @@
-import {factory, Packer, helper} from '../../../core'
+import {Packer, transformContext} from '../../../core'
 import {BindingBase, BindingUpdateCallWith} from './base'
 
 
@@ -10,8 +10,8 @@ export class ClassBinding extends BindingBase {
 		if (this.modifiers.length > 0) {
 			return {
 				method: 'updateObject',
-				values: [factory.createObjectLiteralExpression(
-					[factory.createPropertyAssignment(
+				values: [transformContext.factory.createObjectLiteralExpression(
+					[transformContext.factory.createPropertyAssignment(
 						Packer.createPropertyName(this.modifiers[0]),
 						value
 					)],
@@ -28,21 +28,21 @@ export class ClassBinding extends BindingBase {
 		}
 
 		let slotNode = this.slot.getFirstRawValueNode()
-		let slotNodeType = slotNode ? helper.types.typeOf(slotNode) : null
+		let slotNodeType = slotNode ? transformContext.helper.types.typeOf(slotNode) : null
 
-		if (this.slot.hasString() || helper.types.isValueType(slotNodeType!)) {
+		if (this.slot.hasString() || transformContext.helper.types.isValueType(slotNodeType!)) {
 			return {
 				method: 'updateString',
 				values: [value],
 			}
 		}
-		else if (helper.types.isArrayType(slotNodeType!)) {
+		else if (transformContext.helper.types.isArrayType(slotNodeType!)) {
 			return {
 				method: 'updateList',
 				values: [value],
 			}
 		}
-		else if (helper.types.isObjectType(slotNodeType!)) {
+		else if (transformContext.helper.types.isObjectType(slotNodeType!)) {
 			return {
 				method: 'updateObject',
 				values: [value],

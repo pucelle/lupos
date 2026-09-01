@@ -1,5 +1,5 @@
 import type ts from 'typescript'
-import {factory, Modifier, helper} from '../../../core'
+import {Modifier, transformContext} from '../../../core'
 import {FlowControlBase} from './base'
 import {SlotContentType} from '../../../enums'
 import {ObservedStateMask, ObservedChecker, TrackingPatch} from '../../../lupos'
@@ -53,7 +53,7 @@ export class ForFlowControl extends FlowControlBase {
 		if (fnValueIndex !== null) {
 			let fnValueNode = this.template.values.getRawValue(fnValueIndex)
 
-			if (helper.isFunctionLike(fnValueNode)) {
+			if (transformContext.helper.isFunctionLike(fnValueNode)) {
 
 				// Force broadcasting observed from list to item.
 				let firstParameter = fnValueNode.parameters[0]
@@ -102,14 +102,14 @@ export class ForFlowControl extends FlowControlBase {
 		//   $latest_0 = $values[0]
 		// }
 		if (this.fnLatestVariableName) {
-			return factory.createIfStatement(
+			return transformContext.factory.createIfStatement(
 				this.slot.outputLatestComparison([this.fnLatestVariableName], value.valueNodes),
-				factory.createBlock(
+				transformContext.factory.createBlock(
 					[
-						factory.createExpressionStatement(factory.createCallExpression(
-							factory.createPropertyAccessExpression(
-								factory.createIdentifier(this.blockVariableName),
-								factory.createIdentifier('updateRenderFn')
+						transformContext.factory.createExpressionStatement(transformContext.factory.createCallExpression(
+							transformContext.factory.createPropertyAccessExpression(
+								transformContext.factory.createIdentifier(this.blockVariableName),
+								transformContext.factory.createIdentifier('updateRenderFn')
 							),
 							undefined,
 							[
@@ -126,10 +126,10 @@ export class ForFlowControl extends FlowControlBase {
 		else {
 
 			// $block_0.updateRenderFn(data)
-			return factory.createCallExpression(
-				factory.createPropertyAccessExpression(
-					factory.createIdentifier(this.blockVariableName),
-					factory.createIdentifier('updateRenderFn')
+			return transformContext.factory.createCallExpression(
+				transformContext.factory.createPropertyAccessExpression(
+					transformContext.factory.createIdentifier(this.blockVariableName),
+					transformContext.factory.createIdentifier('updateRenderFn')
 				),
 				undefined,
 				[
@@ -145,10 +145,10 @@ export class ForFlowControl extends FlowControlBase {
 
 		// Not compare, update directly.
 		// $block_0.updateData(data)
-		return factory.createCallExpression(
-			factory.createPropertyAccessExpression(
-				factory.createIdentifier(this.blockVariableName),
-				factory.createIdentifier('updateData')
+		return transformContext.factory.createCallExpression(
+			transformContext.factory.createPropertyAccessExpression(
+				transformContext.factory.createIdentifier(this.blockVariableName),
+				transformContext.factory.createIdentifier('updateData')
 			),
 			undefined,
 			[
@@ -174,11 +174,11 @@ export class ForFlowControl extends FlowControlBase {
 
 		let forBlockInit = this.slot.createVariableAssignment(
 			this.blockVariableName,
-			factory.createNewExpression(
-				factory.createIdentifier('ForBlock'),
+			transformContext.factory.createNewExpression(
+				transformContext.factory.createIdentifier('ForBlock'),
 				undefined,
 				[
-					factory.createIdentifier(this.slotVariableName),
+					transformContext.factory.createIdentifier(this.slotVariableName),
 				]
 			)
 		)

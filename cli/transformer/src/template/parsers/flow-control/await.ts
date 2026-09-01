@@ -1,5 +1,5 @@
 import type ts from 'typescript'
-import {factory, Modifier} from '../../../core'
+import {Modifier, transformContext} from '../../../core'
 import {FlowControlBase} from './base'
 import {VariableNames} from '../variable-names'
 import {TemplatePartType} from '../../../lupos-ts-module'
@@ -67,13 +67,13 @@ export class AwaitFlowControl extends FlowControlBase {
 			slotInit,
 			this.slot.createVariableAssignment(
 				this.blockVariableName,
-				factory.createNewExpression(
-					factory.createIdentifier('AwaitBlock'),
+				transformContext.factory.createNewExpression(
+					transformContext.factory.createIdentifier('AwaitBlock'),
 					undefined,
 					[
 						maker,
-						factory.createIdentifier(this.slotVariableName),
-						factory.createIdentifier(VariableNames.context)
+						transformContext.factory.createIdentifier(this.slotVariableName),
+						transformContext.factory.createIdentifier(VariableNames.context)
 					]
 				)
 			)
@@ -86,15 +86,15 @@ export class AwaitFlowControl extends FlowControlBase {
 		let promiseNode = this.template.values.outputValue(null, valueIndices, this.tree, this.asLazyCallback, TemplatePartType.FlowControl).joint
 
 		// $block_0.update(promise, $values)
-		return factory.createCallExpression(
-			factory.createPropertyAccessExpression(
-				factory.createIdentifier(this.blockVariableName),
-				factory.createIdentifier('update')
+		return transformContext.factory.createCallExpression(
+			transformContext.factory.createPropertyAccessExpression(
+				transformContext.factory.createIdentifier(this.blockVariableName),
+				transformContext.factory.createIdentifier('update')
 			),
 			undefined,
 			[
 				promiseNode,
-				factory.createIdentifier(VariableNames.values)
+				transformContext.factory.createIdentifier(VariableNames.values)
 			]
 		)
 	}

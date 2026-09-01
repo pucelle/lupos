@@ -1,5 +1,5 @@
 import ts from 'typescript'
-import {factory, transformContext, helper, sourceFile} from './global'
+import {transformSession, transformContext} from './global'
 import {VisitTree} from './visit-tree'
 import {InterpolationContentType, Interpolator} from './interpolator'
 import {AccessNode, AssignmentNode, ListMap, ScopeTree} from '../lupos-ts-module'
@@ -51,7 +51,7 @@ class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 	private addedVariableNames: ListMap<DeclarationScope, string> = new ListMap()
 
 	constructor() {
-		super(helper, DeclarationScope)
+		super(transformContext.helper, DeclarationScope)
 	}
 
 	/** To parent. */
@@ -60,8 +60,8 @@ class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 
 		// Must after visited all descendant nodes.
 		// Assignment expressions like `a.b = c`
-		if (helper.assign.isAssignment(node)) {
-			let assignTo = helper.assign.getToExpressions(node)
+		if (transformContext.helper.assign.isAssignment(node)) {
+			let assignTo = transformContext.helper.assign.getToExpressions(node)
 			
 			for (let to of assignTo) {
 				let hash = Hashing.hashNode(to)
@@ -117,10 +117,10 @@ class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 		for (let [scope, names] of this.addedVariableNames.entries()) {
 			let toIndex = scope.getTargetNodeToAddStatements()
 
-			let exps = factory.createVariableDeclarationList(
+			let exps = transformContext.factory.createVariableDeclarationList(
 				names.map(name => 
-					factory.createVariableDeclaration(
-						factory.createIdentifier(name),
+					transformContext.factory.createVariableDeclaration(
+						transformContext.factory.createIdentifier(name),
 						undefined,
 						undefined,
 						undefined
@@ -250,18 +250,18 @@ class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 		let mutable: MutableMask | 0 = 0
 
 		// Inside of a function.
-		if (!topmostFunction && helper.isFunctionLike(rawNode)) {
+		if (!topmostFunction && transformContext.helper.isFunctionLike(rawNode)) {
 			topmostFunction = rawNode
 		}
 
 		// Com from typescript library.
-		if (helper.symbol.isOfTypescriptLib(rawNode)) {}
+		if (transformContext.helper.symbol.isOfTypescriptLib(rawNode)) {}
 
 		// `this.method.bind(this)`
 		else if (ts.isCallExpression(rawNode)
 			&& ts.isPropertyAccessExpression(rawNode.expression)
-			&& helper.getText(rawNode.expression.name) === 'bind'
-			&& helper.symbol.resolveDeclaration(rawNode.expression.expression, helper.isFunctionLike)
+			&& transformContext.helper.getText(rawNode.expression.name) === 'bind'
+			&& transformContext.helper.symbol.resolveDeclaration(rawNode.expression.expression, transformContext.helper.isFunctionLike)
 		) {
 			mutable |= this.testMutableRecursively(rawNode.expression.expression, topmostFunction)
 			
@@ -271,12 +271,12 @@ class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 		}
 
 		// `a.b` or `a`
-		else if (helper.isVariableIdentifier(rawNode)
-			|| helper.access.isAccess(rawNode)
+		else if (transformContext.helper.isVariableIdentifier(rawNode)
+			|| transformContext.helper.access.isAccess(rawNode)
 		) {
 			let declaredInTopmostScope = this.isDeclaredInTopmostScope(rawNode)
 			let asConst = this.isDeclaredAsConstLike(rawNode)
-			let asVariable = helper.isVariableIdentifier(rawNode)
+			let asVariable = transformContext.helper.isVariableIdentifier(rawNode)
 			let asLocalVariable = asVariable && !declaredInTopmostScope
 			let willBeAssigned = this.haveOrWillBeAssigned(rawNode)
 			let notMutable = asConst || asVariable && !willBeAssigned
@@ -320,13 +320,13 @@ class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 	testElementsPartMutable(rawNode: ts.Expression): boolean {
 
 		// Elements are readonly.
-		if (helper.types.isElementsReadonly(rawNode)) {
+		if (transformContext.helper.types.isElementsReadonly(rawNode)) {
 			return false
 		}
 
 		// `a.b` or `a`, can always append elements somewhere.
-		if (helper.isVariableIdentifier(rawNode)
-			|| helper.access.isAccess(rawNode)
+		if (transformContext.helper.isVariableIdentifier(rawNode)
+			|| transformContext.helper.access.isAccess(rawNode)
 		) {
 			return true
 		}
@@ -342,11 +342,11 @@ class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 		if (!VisitTree.hasNode(node)) {
 			return false
 		}
-		else if (helper.access.isAccess(node)) {
+		else if (transformContext.helper.access.isAccess(node)) {
 			let exp = node.expression
 			return this.isDeclaredInTopmostScope(exp as ts.Identifier | AccessNode | ts.ThisExpression)
 		}
-		else if (helper.isThis(node)) {
+		else if (transformContext.helper.isThis(node)) {
 			return false
 		}
 		else if (ts.isIdentifier(node)) {
@@ -360,9 +360,9 @@ class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 
 	/** Returns whether a variable node or an access node was declared as const. */
 	private isDeclaredAsConstLike(rawNode: ts.Identifier | AccessNode | ts.ThisExpression): boolean {
-		if (helper.access.isAccess(rawNode)) {
-			let readonly = helper.symbol.resolveDeclaration(rawNode, helper.isPropertyLike) && helper.types.isReadonly(rawNode)
-			let beMethod = helper.symbol.resolveDeclaration(rawNode, helper.isMethodLike) && !ts.isCallExpression(rawNode.parent)
+		if (transformContext.helper.access.isAccess(rawNode)) {
+			let readonly = transformContext.helper.symbol.resolveDeclaration(rawNode, transformContext.helper.isPropertyLike) && transformContext.helper.types.isReadonly(rawNode)
+			let beMethod = transformContext.helper.symbol.resolveDeclaration(rawNode, transformContext.helper.isMethodLike) && !ts.isCallExpression(rawNode.parent)
 
 			if (!readonly && !beMethod) {
 				return false
@@ -371,7 +371,7 @@ class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 			let exp = rawNode.expression
 			return this.isDeclaredAsConstLike(exp as ts.Identifier | AccessNode | ts.ThisExpression)
 		}
-		else if (helper.isThis(rawNode)) {
+		else if (transformContext.helper.isThis(rawNode)) {
 			return true
 		}
 		else if (ts.isIdentifier(rawNode)) {
@@ -425,11 +425,11 @@ class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 	): ts.Node {
 
 		// Inside of a function scope.
-		insideFunctionScope ||= helper.isFunctionLike(node)
+		insideFunctionScope ||= transformContext.helper.isFunctionLike(node)
 		
 		// Raw variable.
 		// Can't rightly checking whether be variable identifier for non-raw.
-		if (VisitTree.hasNode(node) && helper.isVariableIdentifier(node)) {
+		if (VisitTree.hasNode(node) && transformContext.helper.isVariableIdentifier(node)) {
 
 			// If declared in top scope, can still visit after transferred,
 			// no need to replace it.
@@ -458,12 +458,12 @@ class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 		}
 
 		// `this`.
-		else if (canReplaceThis && helper.isThis(node)) {
+		else if (canReplaceThis && transformContext.helper.isThis(node)) {
 			return replacer(node as ts.ThisExpression, closestRawNode, insideFunctionScope)
 		}
 
 		// If enters non-arrow function declaration, cause can't replace `this`, otherwise can.
-		canReplaceThis &&= !helper.isNonArrowFunctionLike(node)
+		canReplaceThis &&= !transformContext.helper.isNonArrowFunctionLike(node)
 
 		return ts.visitEachChild(node, (n: ts.Node) => {
 			return this.transferToTopmostScopeVisitor(
@@ -474,7 +474,7 @@ class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 				canReplaceThis,
 				insideFunctionScope
 			)
-		}, transformContext)
+		}, transformContext.transformationContext)
 	}
 }
 
@@ -483,7 +483,7 @@ export let DeclarationScopeTree: ExtendedScopeTree
 
 definePreVisitCallback(() => {
 	DeclarationScopeTree = new ExtendedScopeTree()
-	DeclarationScopeTree.visitSourceFile(sourceFile)
+	DeclarationScopeTree.visitSourceFile(transformSession.sourceFile)
 })
 
 definePostVisitCallback(() => DeclarationScopeTree.applyInterpolation())

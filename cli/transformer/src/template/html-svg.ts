@@ -1,20 +1,15 @@
 import ts from 'typescript'
-import {defineVisitor, Interpolator, InterpolationContentType, Modifier, onJustVisitedSourceFile, helper, definePostVisitCallback} from '../core'
-import {TemplateParser, VariableNames} from './parsers'
+import {createTransformSessionStateKey, defineVisitor, Interpolator, InterpolationContentType, Modifier, transformSession, transformContext} from '../core'
+import {TemplateParser} from './parsers'
 import {Analyzer, HTMLRoot, TemplateSlotPlaceholder} from '../lupos-ts-module'
 
 
 defineVisitor(function(node: ts.Node) {
-	if (ts.isSourceFile(node)) {
-		VariableNames.init()
-		return
-	}
-
 	if (!ts.isTaggedTemplateExpression(node)) {
 		return
 	}
 
-	let nm = helper.symbol.resolveImport(node.tag)
+	let nm = transformContext.helper.symbol.resolveImport(node.tag)
 	if (!nm) {
 		return
 	}
@@ -35,7 +30,7 @@ defineVisitor(function(node: ts.Node) {
 	// Must after all observable interpolation outputted.
 	// So internal html`...` can be replaced.
 	return () => {
-		onJustVisitedSourceFile(toOutput)
+		transformSession.onJustVisited(toOutput)
 	}
 })
 
@@ -61,21 +56,9 @@ function parseHTMLTemplate(node: ts.TaggedTemplateExpression, templateType: 'htm
 }
 
 
-/** Cached analyzer, for each source file. */
-let analyzer: Analyzer | null = null
+const AnalyzerStateKey = createTransformSessionStateKey<Analyzer>('TemplateAnalyzer')
 
 /** Get analyzer for current source file. */
 function getAnalyzerOfCurrentSourceFile() {
-	if (!analyzer) {
-		analyzer = new Analyzer(helper)
-	}
-
-	return analyzer
+	return transformSession.getState(AnalyzerStateKey, () => new Analyzer(transformContext.helper))
 }
-
-// Clean the analyzer after each time a source file parsed.
-definePostVisitCallback(() => {
-	if (analyzer) {
-		analyzer = null
-	}
-})

@@ -1,5 +1,5 @@
 import ts from 'typescript'
-import {Modifier, factory, Interpolator, InterpolationContentType, helper} from '../../core'
+import {Modifier, Interpolator, InterpolationContentType, transformContext} from '../../core'
 import {
 	DecoratedMemberAnalysis,
 	ObservableDecoratorName,
@@ -55,7 +55,7 @@ function compileComputedDecorator(
 	decl: ts.GetAccessorDeclaration,
 	isOverwritten: boolean
 ): () => ts.Node[] {
-	let propName = helper.getFullText(decl.name)
+	let propName = transformContext.helper.getFullText(decl.name)
 	let processorPropName = '$' + propName + '_' + ProcessorPropNameMap[decoName]
 	let overwrittenMethodName = '$compute_' + propName
 	let resetMethodName = '$reset_' + propName
@@ -69,10 +69,10 @@ function compileComputedDecorator(
 		let modifiers = decl.modifiers?.filter(m => !ts.isDecorator(m))
 
 		// `$compute_xxx() {...}`
-		let newMethod = factory.createMethodDeclaration(
+		let newMethod = transformContext.factory.createMethodDeclaration(
 			modifiers,
 			undefined,
-			factory.createIdentifier(overwrittenMethodName),
+			transformContext.factory.createIdentifier(overwrittenMethodName),
 			undefined,
 			undefined,
 			decl.parameters,
@@ -82,28 +82,28 @@ function compileComputedDecorator(
 
 		// `trackGet(this, 'prop')`
 		// `return this.$prop_computer.get()`
-		let getter = factory.createGetAccessorDeclaration(
+		let getter = transformContext.factory.createGetAccessorDeclaration(
 			undefined,
-			factory.createIdentifier(propName),
+			transformContext.factory.createIdentifier(propName),
 			[],
 			undefined,
-			factory.createBlock(
+			transformContext.factory.createBlock(
 				[
-					factory.createExpressionStatement(factory.createCallExpression(
-						factory.createIdentifier('trackGet'),
+					transformContext.factory.createExpressionStatement(transformContext.factory.createCallExpression(
+						transformContext.factory.createIdentifier('trackGet'),
 						undefined,
 						[
-							factory.createThis(),
-							factory.createStringLiteral(propName)
+							transformContext.factory.createThis(),
+							transformContext.factory.createStringLiteral(propName)
 						]
 					)),
-					factory.createReturnStatement(factory.createCallExpression(
-						factory.createPropertyAccessExpression(
-							factory.createPropertyAccessExpression(
-								factory.createThis(),
-								factory.createIdentifier(processorPropName)
+					transformContext.factory.createReturnStatement(transformContext.factory.createCallExpression(
+						transformContext.factory.createPropertyAccessExpression(
+							transformContext.factory.createPropertyAccessExpression(
+								transformContext.factory.createThis(),
+								transformContext.factory.createIdentifier(processorPropName)
 							),
-							factory.createIdentifier('get')
+							transformContext.factory.createIdentifier('get')
 						),
 						undefined,
 						[]
@@ -113,21 +113,21 @@ function compileComputedDecorator(
 			)
 		)
 
-		let onReset = factory.createMethodDeclaration(
+		let onReset = transformContext.factory.createMethodDeclaration(
 			undefined,
 			undefined,
-			factory.createIdentifier(resetMethodName),
+			transformContext.factory.createIdentifier(resetMethodName),
 			undefined,
 			undefined,
 			[],
 			undefined,
-			factory.createBlock(
-				[factory.createExpressionStatement(factory.createCallExpression(
-					factory.createIdentifier('trackSet'),
+			transformContext.factory.createBlock(
+				[transformContext.factory.createExpressionStatement(transformContext.factory.createCallExpression(
+					transformContext.factory.createIdentifier('trackSet'),
 					undefined,
 					[
-						factory.createThis(),
-						factory.createStringLiteral(propName)
+						transformContext.factory.createThis(),
+						transformContext.factory.createStringLiteral(propName)
 					]
 				))],
 				true
@@ -176,7 +176,7 @@ function compileAsyncComputedDecorator(
 	decl: ts.PropertyDeclaration,
 	isOverwritten: boolean
 ): () => ts.Node[] {
-	let propName = helper.getFullText(decl.name)
+	let propName = transformContext.helper.getFullText(decl.name)
 	let processorPropName = '$' + propName + '_' + ProcessorPropNameMap[decoName]
 	let overwrittenMethodName = '$compute_' + propName
 	let resetMethodName = '$reset_' + propName
@@ -204,10 +204,10 @@ function compileAsyncComputedDecorator(
 		let modifiers = computer?.modifiers?.filter(m => !ts.isDecorator(m))
 
 		// `$compute_xxx() {...}`
-		let newMethod = factory.createMethodDeclaration(
+		let newMethod = transformContext.factory.createMethodDeclaration(
 			modifiers,
 			undefined,
-			factory.createIdentifier(overwrittenMethodName),
+			transformContext.factory.createIdentifier(overwrittenMethodName),
 			undefined,
 			undefined,
 			[],
@@ -216,13 +216,13 @@ function compileAsyncComputedDecorator(
 		)
 
 		// `this.$prop_computer.get()`
-		let computerGet: ts.Expression = factory.createCallExpression(
-			factory.createPropertyAccessExpression(
-				factory.createPropertyAccessExpression(
-					factory.createThis(),
-					factory.createIdentifier(processorPropName)
+		let computerGet: ts.Expression = transformContext.factory.createCallExpression(
+			transformContext.factory.createPropertyAccessExpression(
+				transformContext.factory.createPropertyAccessExpression(
+					transformContext.factory.createThis(),
+					transformContext.factory.createIdentifier(processorPropName)
 				),
-				factory.createIdentifier('get')
+				transformContext.factory.createIdentifier('get')
 			),
 			undefined,
 			[]
@@ -232,54 +232,54 @@ function compileAsyncComputedDecorator(
 		if (decl.initializer
 			&& !(
 				ts.isIdentifier(decl.initializer)
-				&& helper.getText(decl.initializer) === 'undefined'
+				&& transformContext.helper.getText(decl.initializer) === 'undefined'
 			)
 		) {
-			computerGet = factory.createBinaryExpression(
+			computerGet = transformContext.factory.createBinaryExpression(
 				computerGet,
-				factory.createToken(ts.SyntaxKind.QuestionQuestionToken),
+				transformContext.factory.createToken(ts.SyntaxKind.QuestionQuestionToken),
 				decl.initializer
 			)
 		}
 
 		// `trackGet(this, 'prop')`
 		// `return this.$prop_computer.get()`
-		let getter = factory.createGetAccessorDeclaration(
+		let getter = transformContext.factory.createGetAccessorDeclaration(
 			undefined,
-			factory.createIdentifier(propName),
+			transformContext.factory.createIdentifier(propName),
 			[],
 			undefined,
-			factory.createBlock(
+			transformContext.factory.createBlock(
 				[
-					factory.createExpressionStatement(factory.createCallExpression(
-						factory.createIdentifier('trackGet'),
+					transformContext.factory.createExpressionStatement(transformContext.factory.createCallExpression(
+						transformContext.factory.createIdentifier('trackGet'),
 						undefined,
 						[
-							factory.createThis(),
-							factory.createStringLiteral(propName)
+							transformContext.factory.createThis(),
+							transformContext.factory.createStringLiteral(propName)
 						]
 					)),
-					factory.createReturnStatement(computerGet)
+					transformContext.factory.createReturnStatement(computerGet)
 				],
 				true
 			)
 		)
 
-		let onReset = factory.createMethodDeclaration(
+		let onReset = transformContext.factory.createMethodDeclaration(
 			undefined,
 			undefined,
-			factory.createIdentifier(resetMethodName),
+			transformContext.factory.createIdentifier(resetMethodName),
 			undefined,
 			undefined,
 			[],
 			undefined,
-			factory.createBlock(
-				[factory.createExpressionStatement(factory.createCallExpression(
-					factory.createIdentifier('trackSet'),
+			transformContext.factory.createBlock(
+				[transformContext.factory.createExpressionStatement(transformContext.factory.createCallExpression(
+					transformContext.factory.createIdentifier('trackSet'),
 					undefined,
 					[
-						factory.createThis(),
-						factory.createStringLiteral(propName)
+						transformContext.factory.createThis(),
+						transformContext.factory.createStringLiteral(propName)
 					]
 				))],
 				true
@@ -323,7 +323,7 @@ method() {...}
 function compileEffectWatchDecorator(
 	decl: ts.MethodDeclaration
 ): () => ts.Node[] {
-	let propName = helper.getFullText(decl.name)
+	let propName = transformContext.helper.getFullText(decl.name)
 	let overwrittenMethodName = propName
 
 	return () => {
@@ -331,10 +331,10 @@ function compileEffectWatchDecorator(
 
 		let modifiers = decl.modifiers?.filter(m => !ts.isDecorator(m))
 
-		let newMethod = factory.createMethodDeclaration(
+		let newMethod = transformContext.factory.createMethodDeclaration(
 			modifiers,
 			undefined,
-			factory.createIdentifier(overwrittenMethodName),
+			transformContext.factory.createIdentifier(overwrittenMethodName),
 			undefined,
 			undefined,
 			decl.parameters,

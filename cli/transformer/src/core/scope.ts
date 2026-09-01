@@ -1,6 +1,6 @@
 import ts from 'typescript'
 import {VisitTree} from './visit-tree'
-import {helper} from './global'
+import {transformContext} from './global'
 import {DeclarationScopeTree} from './scope-tree'
 import {InterpolationContentType, Interpolator} from './interpolator'
 import {Scope} from '../lupos-ts-module'
@@ -15,12 +15,12 @@ export class DeclarationScope extends Scope {
 	declare readonly parent: DeclarationScope | null
 
 	constructor(node: ScopeNode, parent: DeclarationScope | null) {
-		super(node, parent, helper)
+		super(node, parent, transformContext.helper)
 	}
 
 	/** Whether can add more statements inside. */
 	canAddStatements(): boolean {
-		return !helper.isFunctionLike(this.node)
+		return !transformContext.helper.isFunctionLike(this.node)
 			&& !ts.isForStatement(this.node)
 			&& !ts.isForOfStatement(this.node)
 			&& !ts.isForInStatement(this.node)

@@ -1,17 +1,15 @@
 import ts from 'typescript'
-import {definePreVisitCallback, factory, Modifier, DeclarationScopeTree} from '../../core'
+import {createTransformSessionStateKey, Modifier, DeclarationScopeTree, transformSession, transformContext} from '../../core'
 import {TreeParser} from './tree'
 import {PairKeysMap} from '../../lupos-ts-module'
 
 
 export namespace HTMLOutputHandler {
 
-	const Cache: PairKeysMap<string, boolean, string> = new PairKeysMap()
+	const StateKey = createTransformSessionStateKey<PairKeysMap<string, boolean, string>>('HTMLOutputHandler')
 
-
-	/** Initialize before loading each new source file. */
-	export function initialize() {
-		Cache.clear()
+	function getCache() {
+		return transformSession.getState(StateKey, () => new PairKeysMap())
 	}
 
 	
@@ -27,23 +25,24 @@ export namespace HTMLOutputHandler {
 		let htmlString = tree.root.getContentHTMLString(tree.template, tree.template.analyzer)
 
 		// Cache meet.
-		if (Cache.has(htmlString, wrapped)) {
+		let cache = getCache()
+		if (cache.has(htmlString, wrapped)) {
 			return {
-				name: Cache.get(htmlString, wrapped)!,
+				name: cache.get(htmlString, wrapped)!,
 				output: () => {},
 			}
 		}
 
 		// $html_0
-		let parameters: ts.Expression[] = [factory.createStringLiteral(htmlString)]
+		let parameters: ts.Expression[] = [transformContext.factory.createStringLiteral(htmlString)]
 
 		// Template get wrapped.
 		if (wrapped) {
-			parameters.push(factory.createTrue())
+			parameters.push(transformContext.factory.createTrue())
 		}
 
-		let htmlMaker = factory.createNewExpression(
-			factory.createIdentifier('HTMLMaker'),
+		let htmlMaker = transformContext.factory.createNewExpression(
+			transformContext.factory.createIdentifier('HTMLMaker'),
 			undefined,
 			parameters
 		)
@@ -60,11 +59,11 @@ export namespace HTMLOutputHandler {
 		])
 		
 		// const $html_0 = new HTMLMaker('...', wrapped)
-		let htmlNode = factory.createVariableStatement(
+		let htmlNode = transformContext.factory.createVariableStatement(
 			undefined,
-			factory.createVariableDeclarationList(
-				[factory.createVariableDeclaration(
-					factory.createIdentifier(htmlName),
+			transformContext.factory.createVariableDeclarationList(
+				[transformContext.factory.createVariableDeclaration(
+					transformContext.factory.createIdentifier(htmlName),
 					undefined,
 					undefined,
 					htmlMaker
@@ -73,7 +72,7 @@ export namespace HTMLOutputHandler {
 			)
 		)
 
-		Cache.set(htmlString, wrapped, htmlName)
+		cache.set(htmlString, wrapped, htmlName)
 
 		let output = () => {
 			DeclarationScopeTree.getTopmost().addStatements([htmlNode], tree.index)
@@ -85,6 +84,3 @@ export namespace HTMLOutputHandler {
 		}
 	}
 }
-
-
-definePreVisitCallback(HTMLOutputHandler.initialize)

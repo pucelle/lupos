@@ -2,7 +2,7 @@ import ts from 'typescript'
 import {HTMLNode, LuposKnownInternalBindings} from '../../../lupos-ts-module'
 import {PartType, TreeParser} from '../tree'
 import {BindingSlotParser} from '../slots'
-import {factory, Modifier, DeclarationScopeTree, helper} from '../../../core'
+import {Modifier, DeclarationScopeTree, transformContext} from '../../../core'
 import {TemplateParser} from '../template'
 import {VariableNames} from '../variable-names'
 import {setLatestBindingInfo} from './latest-binding'
@@ -165,17 +165,17 @@ export class BindingBase {
 					Modifier.persistImport(decl)
 				}
 
-				let bindingClass = helper.symbol.resolveDeclaration(decl, ts.isClassDeclaration)!
+				let bindingClass = transformContext.helper.symbol.resolveDeclaration(decl, ts.isClassDeclaration)!
 
 				this.template.addRefedDeclaration(decl)
 
 				if (bindingClass
-					&& helper.class.isImplementedOf(bindingClass, 'Part', 'lupos.html')
+					&& transformContext.helper.class.isImplementedOf(bindingClass, 'Part', 'lupos.html')
 				) {
 					this.implementsPart = true
 				}
 
-				let bindingClassParams = bindingClass ? helper.class.getConstructorParameters(bindingClass, true) : null
+				let bindingClassParams = bindingClass ? transformContext.helper.class.getConstructorParameters(bindingClass, true) : null
 				this.bindingClassParameterCount = bindingClassParams ? bindingClassParams.length : null
 			}
 		}
@@ -203,7 +203,7 @@ export class BindingBase {
 			rawValueNode = rawValueNode.expression
 		}
 
-		let rawValueNodes = helper.pack.unPackCommaBinaryExpressions(rawValueNode)
+		let rawValueNodes = transformContext.helper.pack.unPackCommaBinaryExpressions(rawValueNode)
 		return rawValueNodes
 	}
 
@@ -230,24 +230,24 @@ export class BindingBase {
 			? LuposKnownInternalBindings[this.name].name
 			: this.name
 
-		let bindingParams: ts.Expression[] = [factory.createIdentifier(nodeName)]
+		let bindingParams: ts.Expression[] = [transformContext.factory.createIdentifier(nodeName)]
 
 		// Need `context` parameter
 		if (bindingParamCount === null || bindingParamCount > 1) {
-			bindingParams.push(factory.createIdentifier(VariableNames.context))
+			bindingParams.push(transformContext.factory.createIdentifier(VariableNames.context))
 		}
 
 		// Need `modifiers` parameter
 		if (bindingParamCount === null || bindingParamCount > 2 && this.modifiers.length > 0) {
-			bindingParams.push(factory.createArrayLiteralExpression(
-				this.modifiers.map(m => factory.createStringLiteral(m)),
+			bindingParams.push(transformContext.factory.createArrayLiteralExpression(
+				this.modifiers.map(m => transformContext.factory.createStringLiteral(m)),
 				false
 			))
 		}
 
 		// new ClassBinding($node_0, ?context, ?modifiers)
-		let newBinding = factory.createNewExpression(
-			factory.createIdentifier(bindingClassName),
+		let newBinding = transformContext.factory.createNewExpression(
+			transformContext.factory.createIdentifier(bindingClassName),
 			undefined,
 			bindingParams
 		)
@@ -261,12 +261,12 @@ export class BindingBase {
 		if (this.withQueryToken) {
 
 			// `() => new ClassBinding($node_0, ?context, ?modifiers)` for `PartDelegator` param.
-			let bindingInitFn = factory.createArrowFunction(
+			let bindingInitFn = transformContext.factory.createArrowFunction(
 				undefined,
 				undefined,
 				[],
 				undefined,
-				factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
+				transformContext.factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
 				newBinding
 			)
 
@@ -276,29 +276,29 @@ export class BindingBase {
 			if (this.refBindingVariableName) {
 
 				// () => (binding) => {$ref_0.setRefValue(binding)}
-				refOnUpdated = factory.createArrowFunction(
+				refOnUpdated = transformContext.factory.createArrowFunction(
 					undefined,
 					undefined,
-					[factory.createParameterDeclaration(
+					[transformContext.factory.createParameterDeclaration(
 						undefined,
 						undefined,
-						factory.createIdentifier('binding'),
+						transformContext.factory.createIdentifier('binding'),
 						undefined,
 						undefined,
 						undefined
 					)],
 					undefined,
-					factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
-					factory.createBlock(
+					transformContext.factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
+					transformContext.factory.createBlock(
 						[
-							factory.createExpressionStatement(factory.createCallExpression(
-								factory.createPropertyAccessExpression(
-									factory.createIdentifier(this.refBindingVariableName!),
-									factory.createIdentifier('setRefValue')
+							transformContext.factory.createExpressionStatement(transformContext.factory.createCallExpression(
+								transformContext.factory.createPropertyAccessExpression(
+									transformContext.factory.createIdentifier(this.refBindingVariableName!),
+									transformContext.factory.createIdentifier('setRefValue')
 								),
 								undefined,
 								[
-									factory.createIdentifier('binding')
+									transformContext.factory.createIdentifier('binding')
 								]
 							))
 						],
@@ -310,8 +310,8 @@ export class BindingBase {
 			// let $delegator_0 = new PartDelegator(...)
 			let delegatorPart = this.slot.createVariableAssignment(
 				this.delegatorVariableName!,
-				factory.createNewExpression(
-					factory.createIdentifier('PartDelegator'),
+				transformContext.factory.createNewExpression(
+					transformContext.factory.createIdentifier('PartDelegator'),
 					undefined,
 					[
 						bindingInitFn,
@@ -352,14 +352,14 @@ export class BindingBase {
 		//   $latest_0 = $values[0]
 		// }
 		if (this.latestVariableNames) {
-			update = factory.createIfStatement(
+			update = transformContext.factory.createIfStatement(
 				this.slot.outputLatestComparison(this.latestVariableNames, values.valueNodes),
-				factory.createBlock(
+				transformContext.factory.createBlock(
 					[
-						factory.createExpressionStatement(factory.createCallExpression(
-							factory.createPropertyAccessExpression(
-								factory.createIdentifier(this.delegatorVariableName || this.bindingVariableName),
-								factory.createIdentifier(callMethod)
+						transformContext.factory.createExpressionStatement(transformContext.factory.createCallExpression(
+							transformContext.factory.createPropertyAccessExpression(
+								transformContext.factory.createIdentifier(this.delegatorVariableName || this.bindingVariableName),
+								transformContext.factory.createIdentifier(callMethod)
 							),
 							undefined,
 							callValues
@@ -374,10 +374,10 @@ export class BindingBase {
 
 		// ($delegator_0 or $binding_0).update($values[0])
 		else {
-			update = factory.createCallExpression(
-				factory.createPropertyAccessExpression(
-					factory.createIdentifier(this.delegatorVariableName || this.bindingVariableName),
-					factory.createIdentifier(callMethod)
+			update = transformContext.factory.createCallExpression(
+				transformContext.factory.createPropertyAccessExpression(
+					transformContext.factory.createIdentifier(this.delegatorVariableName || this.bindingVariableName),
+					transformContext.factory.createIdentifier(callMethod)
 				),
 				undefined,
 				callValues

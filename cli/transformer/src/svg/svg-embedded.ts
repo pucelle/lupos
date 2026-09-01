@@ -1,13 +1,13 @@
 import ts from 'typescript'
 import * as path from 'node:path'
-import {defineVisitor, embedSVG, sourceFile, Interpolator, InterpolationContentType} from '../core'
+import {defineVisitor, transformSession, Interpolator, InterpolationContentType, transformContext} from '../core'
 import {SVGInliner} from './svg-inliner'
 
 
 // `import Name from './a.svg'` -> `const Name = "..."`
 // `export {default as Name} from './a.svg'`
 defineVisitor(function(node: ts.Node) {
-	if (!embedSVG) {
+	if (!transformContext.embedSVG) {
 		return
 	}
 
@@ -41,7 +41,7 @@ defineVisitor(function(node: ts.Node) {
 		return
 	}
 
-	let svgPath = path.resolve(path.dirname(sourceFile.fileName), relativePath)
+	let svgPath = path.resolve(path.dirname(transformSession.sourceFile.fileName), relativePath)
 	let svgCode = new SVGInliner(svgPath, {compress: true, mainColor: '#000000'}).output()
 
 	Interpolator.replace(node, InterpolationContentType.Normal, () => {

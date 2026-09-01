@@ -2,7 +2,7 @@ import type ts from 'typescript'
 import {HTMLNode, HTMLNodeType, TemplateSlotPlaceholder} from '../../../lupos-ts-module'
 import {TreeParser} from '../tree'
 import {FlowControlSlotParser} from '../slots'
-import {factory} from '../../../core'
+import {transformContext} from '../../../core'
 import {TemplateParser} from '../template'
 
 
@@ -75,7 +75,7 @@ export abstract class FlowControlBase {
 
 	/** Make a maker array nodes by maker names. */
 	protected outputMakerNodes(templateNames: (string | null)[]): ts.ArrayLiteralExpression {
-		return factory.createArrayLiteralExpression(
+		return transformContext.factory.createArrayLiteralExpression(
 			templateNames.map(name => this.outputMakerNode(name)),
 			false
 		)
@@ -83,7 +83,7 @@ export abstract class FlowControlBase {
 
 	/** Make a maker node by a maker name. */
 	protected outputMakerNode(templateName: string | null): ts.Identifier | ts.NullLiteral {
-		return templateName ? factory.createIdentifier(templateName) : factory.createNull()
+		return templateName ? transformContext.factory.createIdentifier(templateName) : transformContext.factory.createNull()
 	}
 
 	preInit() {}

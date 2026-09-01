@@ -2,7 +2,7 @@ import ts from 'typescript'
 import {Analyzer, HTMLNode, HTMLRoot, PositionMapper, TemplateBasis, TemplateDiagnostics, TemplatePart, TemplatePartParser} from '../../lupos-ts-module'
 import {TreeParser} from './tree'
 import {TemplateValues} from './template-values'
-import {factory, helper, Modifier, SourceFileDiagnosticModifier, DeclarationScope, DeclarationScopeTree, VisitTree} from '../../core'
+import {Modifier, getSourceFileDiagnosticModifier, DeclarationScope, DeclarationScopeTree, VisitTree, transformContext} from '../../core'
 
 
 /**
@@ -33,7 +33,7 @@ export class TemplateParser extends TemplateBasis {
 		positionMapper: PositionMapper,
 		analyzer: Analyzer
 	) {
-		super(tagName, node, content, root, valueNodes, positionMapper, DeclarationScopeTree, helper)
+		super(tagName, node, content, root, valueNodes, positionMapper, DeclarationScopeTree, transformContext.helper)
 		this.values = new TemplateValues(valueNodes)
 		this.analyzer = analyzer
 	}
@@ -47,12 +47,12 @@ export class TemplateParser extends TemplateBasis {
 		let parts: TemplatePart[] = []
 		let onPart = (part: TemplatePart) => {parts.push(part)}
 		
-		let partParser = new TemplatePartParser(this.root, this.values.valueNodes, canModify, onPart, helper)
+		let partParser = new TemplatePartParser(this.root, this.values.valueNodes, canModify, onPart, transformContext.helper)
 		partParser.parse()
 
 		// Modify diagnostics.
-		let diagnostics = new TemplateDiagnostics(new Analyzer(helper))
-		diagnostics.diagnose(parts, this, SourceFileDiagnosticModifier)
+		let diagnostics = new TemplateDiagnostics(new Analyzer(transformContext.helper))
+		diagnostics.diagnose(parts, this, getSourceFileDiagnosticModifier())
 	}
 
 	/** Pase for tree parses. */
@@ -142,13 +142,13 @@ export class TemplateParser extends TemplateBasis {
 		let makerName = mainTreeParser.makeTemplateRefName()
 		let valuesNodes = this.values.output()
 
-		return factory.createNewExpression(
-			factory.createIdentifier('CompiledTemplateResult'),
+		return transformContext.factory.createNewExpression(
+			transformContext.factory.createIdentifier('CompiledTemplateResult'),
 			undefined,
 			[
-				factory.createIdentifier(makerName),
+				transformContext.factory.createIdentifier(makerName),
 				valuesNodes,
-				factory.createThis()
+				transformContext.factory.createThis()
 			]
 		)
 	}

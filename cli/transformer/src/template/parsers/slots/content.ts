@@ -1,6 +1,6 @@
 import type ts from 'typescript'
 import {SlotParserBase} from './base'
-import {factory} from '../../../core'
+import {transformContext} from '../../../core'
 import {SlotContentType} from '../../../enums'
 
 
@@ -62,14 +62,14 @@ export class ContentSlotParser extends SlotParserBase {
 		//   $latest_0 = $values[0]
 		// }
 		if (this.latestVariableNames) {
-			return factory.createIfStatement(
+			return transformContext.factory.createIfStatement(
 				this.outputLatestComparison(this.latestVariableNames, value.valueNodes),
-				factory.createBlock(
+				transformContext.factory.createBlock(
 					[
-						factory.createExpressionStatement(factory.createCallExpression(
-							factory.createPropertyAccessExpression(
-								factory.createIdentifier(this.slotVariableName),
-								factory.createIdentifier('update')
+						transformContext.factory.createExpressionStatement(transformContext.factory.createCallExpression(
+							transformContext.factory.createPropertyAccessExpression(
+								transformContext.factory.createIdentifier(this.slotVariableName),
+								transformContext.factory.createIdentifier('update')
 							),
 							undefined,
 							[
@@ -86,10 +86,10 @@ export class ContentSlotParser extends SlotParserBase {
 
 		// $slot_0.update($values[0])
 		else {
-			return factory.createCallExpression(
-				factory.createPropertyAccessExpression(
-					factory.createIdentifier(this.slotVariableName),
-					factory.createIdentifier('update')
+			return transformContext.factory.createCallExpression(
+				transformContext.factory.createPropertyAccessExpression(
+					transformContext.factory.createIdentifier(this.slotVariableName),
+					transformContext.factory.createIdentifier('update')
 				),
 				undefined,
 				[value.joint]

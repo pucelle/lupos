@@ -1,5 +1,5 @@
 import ts from 'typescript'
-import {defineVisitor, factory, Interpolator, InterpolationContentType, helper, Modifier} from '../core'
+import {defineVisitor, Interpolator, InterpolationContentType, Modifier, transformContext} from '../core'
 
 
 // Add `Com.ensureStyle()` after class declaration.
@@ -14,12 +14,12 @@ defineVisitor(function(node: ts.Node) {
 	}
 
 	// Be a component.
-	if (!helper.objectLike.isDerivedOf(node, 'Component', 'lupos.html')) {
+	if (!transformContext.helper.objectLike.isDerivedOf(node, 'Component', 'lupos.html')) {
 		return
 	}
 
 	// Must has own static style declared.
-	let style = helper.objectLike.getMember(node, 'style', false)
+	let style = transformContext.helper.objectLike.getMember(node, 'style', false)
 	if (!style
 		|| !ts.isPropertyDeclaration(style) && !ts.isMethodDeclaration(style)
 		|| !style.modifiers?.some(m => m.kind === ts.SyntaxKind.StaticKeyword)
@@ -31,7 +31,7 @@ defineVisitor(function(node: ts.Node) {
 
 	Modifier.addImport('addComponentStyle', 'lupos.html')
 
-	let className = node.name ? helper.getText(node.name) : ''
+	let className = node.name ? transformContext.helper.getText(node.name) : ''
 
 	// `style = css`...``
 	if (ts.isPropertyDeclaration(style)) {
@@ -43,12 +43,12 @@ defineVisitor(function(node: ts.Node) {
 			let newInitializer = Interpolator.outputSelfUnique(initializer, {canRemove: false, canInsert: false}) as ts.Expression
 
 			// `addComponentStyle(css`...`)`
-			let newValue = factory.createCallExpression(
-				factory.createIdentifier('addComponentStyle'),
+			let newValue = transformContext.factory.createCallExpression(
+				transformContext.factory.createIdentifier('addComponentStyle'),
 				undefined,
 				[
 					newInitializer,
-					factory.createStringLiteral(className)
+					transformContext.factory.createStringLiteral(className)
 				]
 			)
 
@@ -77,22 +77,22 @@ defineVisitor(function(node: ts.Node) {
 			let newBody = Interpolator.outputSelfUnique(body, {canRemove: false, canInsert: false}) as ts.Expression
 
 			// `() => {...}`
-			let initializer = factory.createArrowFunction(
+			let initializer = transformContext.factory.createArrowFunction(
 				undefined,
 				undefined,
 				[],
 				undefined,
-				factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
+				transformContext.factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
 				newBody
 			)
 			
 			// `addComponentStyle(() => {...})`
-			let newValue = factory.createCallExpression(
-				factory.createIdentifier('addComponentStyle'),
+			let newValue = transformContext.factory.createCallExpression(
+				transformContext.factory.createIdentifier('addComponentStyle'),
 				undefined,
 				[
 					initializer,
-					factory.createStringLiteral(className)
+					transformContext.factory.createStringLiteral(className)
 				]
 			)
 
@@ -107,9 +107,9 @@ defineVisitor(function(node: ts.Node) {
 				}
 			])
 
-			let property = factory.createPropertyDeclaration(
-				[factory.createToken(ts.SyntaxKind.StaticKeyword)],
-				factory.createIdentifier('style'),
+			let property = transformContext.factory.createPropertyDeclaration(
+				[transformContext.factory.createToken(ts.SyntaxKind.StaticKeyword)],
+				transformContext.factory.createIdentifier('style'),
 				undefined,
 				undefined,
 				newValue

@@ -1,5 +1,5 @@
 import ts from 'typescript'
-import {VisitTree, DeclarationScopeTree, helper} from '../../core'
+import {VisitTree, DeclarationScopeTree, transformContext} from '../../core'
 import {removeFromList} from '../../utils'
 import {CapturedItem, TrackingCapturer} from './capturer'
 import {TrackingArea} from './area'
@@ -240,7 +240,7 @@ export class TrackingCapturerOperator {
 			return undefined
 		}
 
-		let propDecls = helper.symbol.resolveDeclarations(node, helper.isPropertyOrGetSetAccessor)
+		let propDecls = transformContext.helper.symbol.resolveDeclarations(node, transformContext.helper.isPropertyOrGetSetAccessor)
 		if (!propDecls || propDecls.length === 0) {
 			return undefined
 		}
@@ -259,8 +259,8 @@ export class TrackingCapturerOperator {
 			return undefined
 		}
 
-		if (key === undefined && helper.access.isAccess(node)) {
-			key = helper.access.getPropertyText(node)
+		if (key === undefined && transformContext.helper.access.isAccess(node)) {
+			key = transformContext.helper.access.getPropertyText(node)
 		}
 
 		if (!key || typeof key === 'number') {

@@ -1,6 +1,6 @@
 import ts from 'typescript'
 import {SlotParserBase} from './base'
-import {factory, Modifier} from '../../../core'
+import {Modifier, transformContext} from '../../../core'
 import {HTMLNode, HTMLNodeType} from '../../../lupos-ts-module'
 import {SlotPositionType} from '../../../enums'
 import {HTMLNodeHelper, PrecedingPositionStability} from '../../html-syntax'
@@ -96,31 +96,31 @@ export class DynamicComponentSlotParser extends SlotParserBase {
 		//   new SlotRange() / null
 		// )
 
-		let binderFn = factory.createFunctionExpression(
+		let binderFn = transformContext.factory.createFunctionExpression(
 			undefined,
 			undefined,
-			factory.createIdentifier(''),
+			transformContext.factory.createIdentifier(''),
 			undefined,
-			[factory.createParameterDeclaration(
+			[transformContext.factory.createParameterDeclaration(
 				undefined,
 				undefined,
-				factory.createIdentifier('com'),
+				transformContext.factory.createIdentifier('com'),
 				undefined,
 				undefined,
 				undefined
 			)],
 			undefined,
-			factory.createBlock(
+			transformContext.factory.createBlock(
 				[
-					...(hasNodeRefed ? [factory.createExpressionStatement(factory.createBinaryExpression(
-						factory.createIdentifier(nodeName),
-						factory.createToken(ts.SyntaxKind.EqualsToken),
-						factory.createPropertyAccessExpression(factory.createIdentifier('com'), 'el')
+					...(hasNodeRefed ? [transformContext.factory.createExpressionStatement(transformContext.factory.createBinaryExpression(
+						transformContext.factory.createIdentifier(nodeName),
+						transformContext.factory.createToken(ts.SyntaxKind.EqualsToken),
+						transformContext.factory.createPropertyAccessExpression(transformContext.factory.createIdentifier('com'), 'el')
 					))] : []),
-					...(comName ? [factory.createExpressionStatement(factory.createBinaryExpression(
-						factory.createIdentifier(comName),
-						factory.createToken(ts.SyntaxKind.EqualsToken),
-						factory.createIdentifier('com')
+					...(comName ? [transformContext.factory.createExpressionStatement(transformContext.factory.createBinaryExpression(
+						transformContext.factory.createIdentifier(comName),
+						transformContext.factory.createToken(ts.SyntaxKind.EqualsToken),
+						transformContext.factory.createIdentifier('com')
 					))] : []),
 					...nodeAttrInits,
 				],
@@ -141,28 +141,28 @@ export class DynamicComponentSlotParser extends SlotParserBase {
 
 
 		// new SlotRange(...)
-		let contentRange = hasContentExisted ? [factory.createNewExpression(
-			factory.createIdentifier('SlotRange'),
+		let contentRange = hasContentExisted ? [transformContext.factory.createNewExpression(
+			transformContext.factory.createIdentifier('SlotRange'),
 			undefined,
 			this.slotRangeNodesGetter!()
 		)] : []
 		
 		return [
 			slotInit,
-			factory.createVariableStatement(
+			transformContext.factory.createVariableStatement(
 				undefined,
-				factory.createVariableDeclarationList(
-					[factory.createVariableDeclaration(
-						factory.createIdentifier(this.blockVariableName),
+				transformContext.factory.createVariableDeclarationList(
+					[transformContext.factory.createVariableDeclaration(
+						transformContext.factory.createIdentifier(this.blockVariableName),
 						undefined,
 						undefined,
-						factory.createNewExpression(
-							factory.createIdentifier('DynamicComponentBlock'),
+						transformContext.factory.createNewExpression(
+							transformContext.factory.createIdentifier('DynamicComponentBlock'),
 							undefined,
 							[
 								binderFn,
-								factory.createIdentifier(nodeName),
-								factory.createIdentifier(this.slotVariableName),
+								transformContext.factory.createIdentifier(nodeName),
+								transformContext.factory.createIdentifier(this.slotVariableName),
 								...contentRange
 							]
 						)
@@ -177,10 +177,10 @@ export class DynamicComponentSlotParser extends SlotParserBase {
 		let value = this.outputValue()
 
 		// $block_0.update($values[0])
-		return factory.createCallExpression(
-			factory.createPropertyAccessExpression(
-				factory.createIdentifier(this.blockVariableName),
-				factory.createIdentifier('update')
+		return transformContext.factory.createCallExpression(
+			transformContext.factory.createPropertyAccessExpression(
+				transformContext.factory.createIdentifier(this.blockVariableName),
+				transformContext.factory.createIdentifier('update')
 			),
 			undefined,
 			[value.joint]

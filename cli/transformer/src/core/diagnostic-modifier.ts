@@ -1,6 +1,7 @@
 import {definePostVisitCallback, definePreVisitCallback} from './visitor-callbacks'
-import {compilerDiagnosticModifier, sourceFile, helper, builderProgram} from './global'
+import {transformSession, transformContext} from './global'
 import {DiagnosticModifier} from '../lupos-ts-module'
+import {createTransformSessionStateKey} from './transform-session'
 
 
 // Diagnostic codes:
@@ -10,26 +11,35 @@ import {DiagnosticModifier} from '../lupos-ts-module'
 export class ExtendedDiagnosticModifier extends DiagnosticModifier {
 
 	constructor() {
-		super(helper)
+		super(transformContext.helper)
 	}
 
 	/** Output added and removed. */
 	output() {
-		compilerDiagnosticModifier.add(sourceFile.fileName, this.added, builderProgram)
-		compilerDiagnosticModifier.delete(sourceFile.fileName, this.deleted, builderProgram)
-		compilerDiagnosticModifier.setPotentialAllImportsUnUsed(sourceFile.fileName, this.potentialAllImportsUnUsed)
+		let fileName = transformSession.sourceFile.fileName
+		transformContext.compilerDiagnosticModifier.add(fileName, this.added, transformContext.builderProgram)
+		transformContext.compilerDiagnosticModifier.delete(fileName, this.deleted, transformContext.builderProgram)
+		transformContext.compilerDiagnosticModifier.setPotentialAllImportsUnUsed(fileName, this.potentialAllImportsUnUsed)
 	}
 }
 
 
-export let SourceFileDiagnosticModifier: ExtendedDiagnosticModifier
+const StateKey = createTransformSessionStateKey<ExtendedDiagnosticModifier>('DiagnosticModifier')
+
+export function getSourceFileDiagnosticModifier(): ExtendedDiagnosticModifier {
+	return transformSession.getState(StateKey, () => {
+		let modifier = new ExtendedDiagnosticModifier()
+		modifier.setSourceFile(transformSession.sourceFile)
+		return modifier
+	})
+}
 
 definePreVisitCallback(() => {
-	compilerDiagnosticModifier.beforeVisitSourceFile(sourceFile)
-	SourceFileDiagnosticModifier = new ExtendedDiagnosticModifier()
-	SourceFileDiagnosticModifier.setSourceFile(sourceFile)
+	let sourceFile = transformSession.sourceFile
+	transformContext.compilerDiagnosticModifier.beforeVisitSourceFile(sourceFile)
+	getSourceFileDiagnosticModifier()
 })
 
 definePostVisitCallback(() => {
-	SourceFileDiagnosticModifier.output()
+	getSourceFileDiagnosticModifier().output()
 })

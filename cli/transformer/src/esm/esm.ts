@@ -1,10 +1,10 @@
 import ts from 'typescript'
-import {defineVisitor, compileToESM, sourceFile, Interpolator, InterpolationContentType} from '../core'
+import {defineVisitor, transformSession, Interpolator, InterpolationContentType, transformContext} from '../core'
 
 
 // `import * from './a'` -> `import * from './a.js'`
 defineVisitor(function(node: ts.Node) {
-	if (!compileToESM) {
+	if (!transformContext.compileToESM) {
 		return
 	}
 		
@@ -25,12 +25,13 @@ defineVisitor(function(node: ts.Node) {
 		return
 	}
 
-	let modulePath = ts.resolveModuleName(relativePath, sourceFile.fileName, {}, ts.sys).resolvedModule?.resolvedFileName
+	let sourceFileName = transformSession.sourceFile.fileName
+	let modulePath = ts.resolveModuleName(relativePath, sourceFileName, {}, ts.sys).resolvedModule?.resolvedFileName
 	if (!modulePath) {
 		return
 	}
 
-	let relativeRealPath = pathRelative(sourceFile.fileName, modulePath)
+	let relativeRealPath = pathRelative(sourceFileName, modulePath)
 	if (!relativeRealPath) {
 		return
 	}

@@ -1,6 +1,6 @@
 import ts from 'typescript'
 import {HTMLNode, HTMLNodeType, TemplateSlotPlaceholder, trimText} from '../../lupos-ts-module'
-import {helper} from '../../core'
+import {transformContext} from '../../core'
 
 
 export enum PrecedingPositionStability {
@@ -71,9 +71,9 @@ export namespace HTMLNodeHelper {
 			// Next text node is not trimmed and splitted yet.
 			if (valueIndices && (!strings || !trimText(strings[0].text))) {
 				let firstRawNode = rawValueNodes[valueIndices[0].index]
-				let type = helper.types.typeOf(firstRawNode)
+				let type = transformContext.helper.types.typeOf(firstRawNode)
 
-				if (!helper.types.isValueType(type)) {
+				if (!transformContext.helper.types.isValueType(type)) {
 					return PrecedingPositionStability.WillInsertBefore
 				}
 			}
@@ -183,7 +183,7 @@ export namespace HTMLNodeHelper {
 			return tab
 				+ TemplateSlotPlaceholder.replaceTemplateContent(
 					`<${tagName}${node.toStringOfAttrs(false)}${children.length === 0 ? ' /' : ''}>`,
-					(index: number) => '${' + helper.getFullText(rawValueNodes[index]) + '}'
+					(index: number) => '${' + transformContext.helper.getFullText(rawValueNodes[index]) + '}'
 				)
 				+ children.map(child => toReadableString(child, rawValueNodes, wrap ? tab + '\t' : ''))
 					.map(v => wrap + v).join('')
@@ -196,7 +196,7 @@ export namespace HTMLNodeHelper {
 		else if (node.desc) {
 			return TemplateSlotPlaceholder.replaceTemplateContent(
 				tab + node.desc,
-				(index: number) => '${' + helper.getFullText(rawValueNodes[index]) + '}'
+				(index: number) => '${' + transformContext.helper.getFullText(rawValueNodes[index]) + '}'
 			)
 		}
 		else if (node.type === HTMLNodeType.Text) {

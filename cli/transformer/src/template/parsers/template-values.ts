@@ -1,5 +1,5 @@
 import ts from 'typescript'
-import {factory, Interpolator, MutableMask, Packer, DeclarationScopeTree, helper, Hashing} from '../../core'
+import {Interpolator, MutableMask, Packer, DeclarationScopeTree, Hashing, transformContext} from '../../core'
 import {VariableNames} from './variable-names'
 import {TreeParser} from './tree'
 import {TemplatePartType} from '../../lupos-ts-module'
@@ -57,8 +57,8 @@ export class TemplateValues {
 	/** To identify value content type at specified index. */
 	identifyValueContentType(valueIndex: number): SlotContentType | null {
 		let valueNode = this.getRawValue(valueIndex)
-		let valueType = valueNode ? helper.types.typeOf(valueNode) : null
-		let typeText = valueType ? helper.types.getTypeFullText(valueType) : null
+		let valueType = valueNode ? transformContext.helper.types.typeOf(valueNode) : null
+		let typeText = valueType ? transformContext.helper.types.getTypeFullText(valueType) : null
 		let slotContentType: number | null = null
 
 		if (typeText === 'TemplateResult') {
@@ -68,7 +68,7 @@ export class TemplateValues {
 			slotContentType = SlotContentType.TemplateResultList
 		}
 		else if (typeText === 'string' || typeText === 'number'
-			|| valueType && helper.types.isNonNullableValueType(valueType)
+			|| valueType && transformContext.helper.types.isNonNullableValueType(valueType)
 		) {
 			slotContentType = SlotContentType.Text
 		}
@@ -103,7 +103,7 @@ export class TemplateValues {
 			// Like `.booleanProp`.
 			if (partType === TemplatePartType.Property) {
 				return {
-					joint: factory.createTrue(),
+					joint: transformContext.factory.createTrue(),
 					valueNodes: [],
 				}
 			}
@@ -113,7 +113,7 @@ export class TemplateValues {
 				|| partType === TemplatePartType.UnSlottedAttribute
 			) {
 				return {
-					joint: factory.createStringLiteral(''),
+					joint: transformContext.factory.createStringLiteral(''),
 					valueNodes: [],
 				}
 			}
@@ -121,7 +121,7 @@ export class TemplateValues {
 			// Otherwise when no value specified.
 			else {
 				return {
-					joint: factory.createIdentifier('undefined'),
+					joint: transformContext.factory.createIdentifier('undefined'),
 					valueNodes: [],
 				}
 			}
@@ -129,7 +129,7 @@ export class TemplateValues {
 
 		if (valueIndices === null) {
 			return {
-				joint: factory.createStringLiteral(strings![0]),
+				joint: transformContext.factory.createStringLiteral(strings![0]),
 				valueNodes: [],
 			}
 		}
@@ -198,7 +198,7 @@ export class TemplateValues {
 
 		// Replace `this` to `$context`.
 		else {
-			return factory.createIdentifier(VariableNames.context)
+			return transformContext.factory.createIdentifier(VariableNames.context)
 		}
 	}
 
@@ -238,12 +238,12 @@ export class TemplateValues {
 				this.transferredValueIndexToLatestName.set(valueIndex, latestName)
 			}
 
-			return factory.createIdentifier(latestName)
+			return transformContext.factory.createIdentifier(latestName)
 		}
 		else {
-			return factory.createElementAccessExpression(
-				factory.createIdentifier(VariableNames.values),
-				factory.createNumericLiteral(valueIndex)
+			return transformContext.factory.createElementAccessExpression(
+				transformContext.factory.createIdentifier(VariableNames.values),
+				transformContext.factory.createNumericLiteral(valueIndex)
 			)
 		}
 	}
@@ -259,7 +259,7 @@ export class TemplateValues {
 		// string[0] + values[0] + strings[1] + ...
 		for (let i = 0; i < strings.length; i++) {
 			if (strings[i]) {
-				parts.push(factory.createStringLiteral(strings[i]))
+				parts.push(transformContext.factory.createStringLiteral(strings[i]))
 			}
 
 			if (i < strings.length - 1) {
@@ -272,9 +272,9 @@ export class TemplateValues {
 
 		// '' + ... if it's not a string type of value.
 		if (!ts.isStringLiteral(parts[0])
-			&& !helper.types.isStringType(helper.types.typeOf(firstRawNode))
+			&& !transformContext.helper.types.isStringType(transformContext.helper.types.typeOf(firstRawNode))
 		) {
-			parts.unshift(factory.createStringLiteral(''))
+			parts.unshift(transformContext.factory.createStringLiteral(''))
 		}
 
 		
@@ -291,9 +291,9 @@ export class TemplateValues {
 		this.outputNodes.push(node)
 		this.indicesNonTransferredOutputted.add(valueIndex)
 
-		return factory.createElementAccessExpression(
-			factory.createIdentifier(VariableNames.values),
-			factory.createNumericLiteral(valueIndex)
+		return transformContext.factory.createElementAccessExpression(
+			transformContext.factory.createIdentifier(VariableNames.values),
+			transformContext.factory.createNumericLiteral(valueIndex)
 		)
 	}
 
@@ -322,7 +322,7 @@ export class TemplateValues {
 
 	/** Output all values to an array. */
 	output(): ts.ArrayLiteralExpression {
-		return factory.createArrayLiteralExpression(
+		return transformContext.factory.createArrayLiteralExpression(
 			this.outputNodes,
 			true
 		)  

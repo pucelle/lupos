@@ -1,5 +1,5 @@
 import type ts from 'typescript'
-import {factory, Interpolator, Modifier, Packer} from '../../../core'
+import {Interpolator, Modifier, Packer, transformContext} from '../../../core'
 import {FlowControlBase} from './base'
 import {TemplateParser} from '../template'
 import {SlotContentType} from '../../../enums'
@@ -157,11 +157,11 @@ export class IfFlowControl extends FlowControlBase {
 			slotInit,
 			this.slot.createVariableAssignment(
 				this.blockVariableName,
-				factory.createNewExpression(
-					factory.createIdentifier(blockClassName),
+				transformContext.factory.createNewExpression(
+					transformContext.factory.createIdentifier(blockClassName),
 					undefined,
 					[
-						factory.createIdentifier(this.slotVariableName),
+						transformContext.factory.createIdentifier(this.slotVariableName),
 					]
 				)
 			)
@@ -172,10 +172,10 @@ export class IfFlowControl extends FlowControlBase {
 		let toValue = this.outputConditionalExp()
 
 		// $block_0.update($values[0])
-		return factory.createCallExpression(
-			factory.createPropertyAccessExpression(
-				factory.createIdentifier(this.blockVariableName),
-				factory.createIdentifier('update')
+		return transformContext.factory.createCallExpression(
+			transformContext.factory.createPropertyAccessExpression(
+				transformContext.factory.createIdentifier(this.blockVariableName),
+				transformContext.factory.createIdentifier('update')
 			),
 			undefined,
 			[toValue]
@@ -190,7 +190,7 @@ export class IfFlowControl extends FlowControlBase {
 		// so we need to output tracking codes for conditional nodes manually.
 		let contents = this.contentTemplates.map((template) => {
 			if (template === null) {
-				return factory.createNull()
+				return transformContext.factory.createNull()
 			}
 			else {
 				return template.outputReplaced()
@@ -209,7 +209,7 @@ export class IfFlowControl extends FlowControlBase {
 	protected outputConditionsExps() {
 		let conditions = this.conditionIndices.map(index => {
 			if (index === null) {
-				return factory.createNull()
+				return transformContext.factory.createNull()
 			}
 			else {
 				let rawNode = this.template.values.getRawValue(index)

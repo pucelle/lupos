@@ -1,5 +1,5 @@
 import ts from 'typescript'
-import {factory, Interpolator, MethodOverwrite, Modifier, SourceFileDiagnosticModifier, helper} from '../../core'
+import {Interpolator, MethodOverwrite, Modifier, getSourceFileDiagnosticModifier, transformContext} from '../../core'
 import {DiagnosticCode} from '../../lupos-ts-module'
 import {
 	DecoratorClassAnalysis,
@@ -18,14 +18,14 @@ export function compileDecoratorLife(node: ts.ClassDeclaration, analysis: Decora
 	}
 
 	// Class must implements `Connectable`.
-	if (!helper.class.isImplementedOf(node, 'Connectable', 'lupos')
-		&& !helper.objectLike.isDerivedOf(node, 'Component', 'lupos.html')
+	if (!transformContext.helper.class.isImplementedOf(node, 'Connectable', 'lupos')
+		&& !transformContext.helper.objectLike.isDerivedOf(node, 'Component', 'lupos.html')
 	) {
 		let hasDecorator = analysis.members.some(item => item.kind === 'decorator')
 		if (hasDecorator) {
 			let diagnosticNode = node.name ?? node
 			
-			SourceFileDiagnosticModifier.add(
+			getSourceFileDiagnosticModifier().add(
 				diagnosticNode.getStart(),
 				diagnosticNode.getWidth(),
 				DiagnosticCode.NotAssignable,
@@ -115,14 +115,14 @@ function compileComputedEffectWatchDecorator(
 	Modifier.addImport(processorClassName, 'lupos')
 
 	// Embedded into a callback so it can add tracking codes.
-	let createStatementGetter = () => factory.createExpressionStatement(factory.createBinaryExpression(
-		factory.createPropertyAccessExpression(
-			factory.createThis(),
-			factory.createIdentifier(processorPropName)
+	let createStatementGetter = () => transformContext.factory.createExpressionStatement(transformContext.factory.createBinaryExpression(
+		transformContext.factory.createPropertyAccessExpression(
+			transformContext.factory.createThis(),
+			transformContext.factory.createIdentifier(processorPropName)
 		),
-		factory.createToken(ts.SyntaxKind.EqualsToken),
-		factory.createNewExpression(
-			factory.createIdentifier(processorClassName),
+		transformContext.factory.createToken(ts.SyntaxKind.EqualsToken),
+		transformContext.factory.createNewExpression(
+			transformContext.factory.createIdentifier(processorClassName),
 			undefined,
 			makerParameters()
 		)
@@ -132,9 +132,9 @@ function compileComputedEffectWatchDecorator(
 
 
 	// this.$prop_computer.connect()
-	let connectStatement = factory.createExpressionStatement(factory.createCallExpression(
+	let connectStatement = transformContext.factory.createExpressionStatement(transformContext.factory.createCallExpression(
 		Packer.createAccessNode(
-			Packer.createAccessNode(factory.createThis(), processorPropName),
+			Packer.createAccessNode(transformContext.factory.createThis(), processorPropName),
 			'connect'
 		),
 		undefined,
@@ -145,9 +145,9 @@ function compileComputedEffectWatchDecorator(
 	
 
 	// this.$prop_computer.disconnect()
-	let disconnectStatement = factory.createExpressionStatement(factory.createCallExpression(
+	let disconnectStatement = transformContext.factory.createExpressionStatement(transformContext.factory.createCallExpression(
 		Packer.createAccessNode(
-			Packer.createAccessNode(factory.createThis(), processorPropName),
+			Packer.createAccessNode(transformContext.factory.createThis(), processorPropName),
 			'disconnect'
 		),
 		undefined,
@@ -163,20 +163,20 @@ function makeMakerParameters(
 	decoName: string,
 	decl: ts.MethodDeclaration | ts.GetAccessorDeclaration | ts.PropertyDeclaration
 ): () => ts.Expression[] {
-	let methodName = helper.getFullText(decl.name)
+	let methodName = transformContext.helper.getFullText(decl.name)
 
 	return () => {
 		if (decoName === 'computed' || decoName === 'asyncComputed') {
 			let params: ts.Expression[] = [
-				factory.createPropertyAccessExpression(
-					factory.createThis(),
-					factory.createIdentifier('$compute_' + methodName)
+				transformContext.factory.createPropertyAccessExpression(
+					transformContext.factory.createThis(),
+					transformContext.factory.createIdentifier('$compute_' + methodName)
 				),
-				factory.createPropertyAccessExpression(
-					factory.createThis(),
-					factory.createIdentifier('$reset_' + methodName)
+				transformContext.factory.createPropertyAccessExpression(
+					transformContext.factory.createThis(),
+					transformContext.factory.createIdentifier('$reset_' + methodName)
 				),
-				factory.createThis(),
+				transformContext.factory.createThis(),
 			]
 
 			if (decoName === 'asyncComputed'
@@ -190,11 +190,11 @@ function makeMakerParameters(
 		}
 		else if (decoName === 'effect') {
 			return [
-				factory.createPropertyAccessExpression(
-					factory.createThis(),
-					factory.createIdentifier(methodName)
+				transformContext.factory.createPropertyAccessExpression(
+					transformContext.factory.createThis(),
+					transformContext.factory.createIdentifier(methodName)
 				),
-				factory.createThis(),
+				transformContext.factory.createThis(),
 			]
 		}
 		else {
@@ -204,22 +204,22 @@ function makeMakerParameters(
 			if (decoName === 'watch') {
 				return [
 					watchGetters()[0],
-					factory.createPropertyAccessExpression(
-						factory.createThis(),
-						factory.createIdentifier(methodName)
+					transformContext.factory.createPropertyAccessExpression(
+						transformContext.factory.createThis(),
+						transformContext.factory.createIdentifier(methodName)
 					),
-					factory.createThis(),
+					transformContext.factory.createThis(),
 					...(watchOptions ? [watchOptions] : [])
 				]
 			}
 			else if (decoName === 'watchMulti') {
 				return [
-					factory.createArrayLiteralExpression(watchGetters(), true),
-					factory.createPropertyAccessExpression(
-						factory.createThis(),
-						factory.createIdentifier(methodName)
+					transformContext.factory.createArrayLiteralExpression(watchGetters(), true),
+					transformContext.factory.createPropertyAccessExpression(
+						transformContext.factory.createThis(),
+						transformContext.factory.createIdentifier(methodName)
 					),
-					factory.createThis(),
+					transformContext.factory.createThis(),
 					...(watchOptions ? [watchOptions] : [])
 				]
 			}
@@ -243,7 +243,7 @@ function compileWatchGetters(deco: ts.Decorator, decoName: string): () => ts.Exp
 			decoArgs.push(deco.expression.arguments[0])
 		}
 		else {
-			decoArgs.push(factory.createIdentifier('undefined'))
+			decoArgs.push(transformContext.factory.createIdentifier('undefined'))
 		}
 	}
 	else {
@@ -265,26 +265,26 @@ function compileWatchGetters(deco: ts.Decorator, decoName: string): () => ts.Exp
 			if (ts.isStringLiteral(arg)) {
 
 				// function(){trackGet(this, 'prop'); return this.prop}
-				getters.push(factory.createFunctionExpression(
+				getters.push(transformContext.factory.createFunctionExpression(
 					undefined,
 					undefined,
 					undefined,
 					undefined,
 					[],
 					undefined,
-					factory.createBlock(
+					transformContext.factory.createBlock(
 						[
-							factory.createExpressionStatement(factory.createCallExpression(
-								factory.createIdentifier('trackGet'),
+							transformContext.factory.createExpressionStatement(transformContext.factory.createCallExpression(
+								transformContext.factory.createIdentifier('trackGet'),
 								undefined,
 								[
-									factory.createThis(),
+									transformContext.factory.createThis(),
 									arg
 								]
 							)),
-							factory.createReturnStatement(factory.createPropertyAccessExpression(
-								factory.createThis(),
-								factory.createIdentifier(arg.text)
+							transformContext.factory.createReturnStatement(transformContext.factory.createPropertyAccessExpression(
+								transformContext.factory.createThis(),
+								transformContext.factory.createIdentifier(arg.text)
 							))
 						],
 						true
@@ -346,13 +346,13 @@ function compileConnectableProperty(
 	connect: MethodOverwrite,
 	disconnect: MethodOverwrite
 ) {
-	let propName = helper.getFullText(decl.name)
+	let propName = transformContext.helper.getFullText(decl.name)
 
 
 	// this.prop.onCreated()
-	let createStatement = factory.createExpressionStatement(factory.createCallExpression(
+	let createStatement = transformContext.factory.createExpressionStatement(transformContext.factory.createCallExpression(
 		Packer.createAccessNode(
-			Packer.createAccessNode(factory.createThis(), propName),
+			Packer.createAccessNode(transformContext.factory.createThis(), propName),
 			'onCreated'
 		),
 		undefined,
@@ -363,9 +363,9 @@ function compileConnectableProperty(
 
 
 	// this.prop.onConnected()
-	let connectStatement = factory.createExpressionStatement(factory.createCallExpression(
+	let connectStatement = transformContext.factory.createExpressionStatement(transformContext.factory.createCallExpression(
 		Packer.createAccessNode(
-			Packer.createAccessNode(factory.createThis(), propName),
+			Packer.createAccessNode(transformContext.factory.createThis(), propName),
 			'onConnected'
 		),
 		undefined,
@@ -376,9 +376,9 @@ function compileConnectableProperty(
 	
 
 	// this.prop.onWillDisconnect()
-	let disconnectStatement = factory.createExpressionStatement(factory.createCallExpression(
+	let disconnectStatement = transformContext.factory.createExpressionStatement(transformContext.factory.createCallExpression(
 		Packer.createAccessNode(
-			Packer.createAccessNode(factory.createThis(), propName),
+			Packer.createAccessNode(transformContext.factory.createThis(), propName),
 			'onWillDisconnect'
 		),
 		undefined,
@@ -414,31 +414,31 @@ function compileSetContextDecorator(
 ) {
 	Modifier.addImport('Component', 'lupos.html')
 
-	let propName = helper.getFullText(propDecl.name)
+	let propName = transformContext.helper.getFullText(propDecl.name)
 
-	let connectStatement = factory.createExpressionStatement(factory.createCallExpression(
-		factory.createPropertyAccessExpression(
-			factory.createIdentifier('Component'),
-			factory.createIdentifier('setContextVariable')
+	let connectStatement = transformContext.factory.createExpressionStatement(transformContext.factory.createCallExpression(
+		transformContext.factory.createPropertyAccessExpression(
+			transformContext.factory.createIdentifier('Component'),
+			transformContext.factory.createIdentifier('setContextVariable')
 		),
 		undefined,
 		[
-			factory.createThis(),
-			factory.createStringLiteral(propName)
+			transformContext.factory.createThis(),
+			transformContext.factory.createStringLiteral(propName)
 		]
 	));
 
 	(connect || create).insert(() => [connectStatement], 'end')
 	
 	if (disconnect && !hasDeletedContextVariables) {
-		let disconnectStatement = factory.createExpressionStatement(factory.createCallExpression(
-			factory.createPropertyAccessExpression(
-				factory.createIdentifier('Component'),
-				factory.createIdentifier('deleteContextVariables')
+		let disconnectStatement = transformContext.factory.createExpressionStatement(transformContext.factory.createCallExpression(
+			transformContext.factory.createPropertyAccessExpression(
+				transformContext.factory.createIdentifier('Component'),
+				transformContext.factory.createIdentifier('deleteContextVariables')
 			),
 			undefined,
 			[
-				factory.createThis()
+				transformContext.factory.createThis()
 			]
 		))
 		
@@ -473,23 +473,23 @@ function compileUseContextDecorator(
 ) {
 	Modifier.addImport('Component', 'lupos.html')
 
-	let propName = helper.getFullText(propDecl.name)
+	let propName = transformContext.helper.getFullText(propDecl.name)
 
-	let connectStatement = factory.createExpressionStatement(factory.createBinaryExpression(
-		factory.createPropertyAccessExpression(
-			factory.createThis(),
-			factory.createIdentifier('$' + propName + '_declared_by')
+	let connectStatement = transformContext.factory.createExpressionStatement(transformContext.factory.createBinaryExpression(
+		transformContext.factory.createPropertyAccessExpression(
+			transformContext.factory.createThis(),
+			transformContext.factory.createIdentifier('$' + propName + '_declared_by')
 		),
-		factory.createToken(ts.SyntaxKind.EqualsToken),
-		factory.createCallExpression(
-			factory.createPropertyAccessExpression(
-				factory.createIdentifier('Component'),
-				factory.createIdentifier('getContextVariableDeclared')
+		transformContext.factory.createToken(ts.SyntaxKind.EqualsToken),
+		transformContext.factory.createCallExpression(
+			transformContext.factory.createPropertyAccessExpression(
+				transformContext.factory.createIdentifier('Component'),
+				transformContext.factory.createIdentifier('getContextVariableDeclared')
 			),
 			undefined,
 			[
-				factory.createThis(),
-				factory.createStringLiteral(propName)
+				transformContext.factory.createThis(),
+				transformContext.factory.createStringLiteral(propName)
 			]
 		)
 	));
@@ -499,27 +499,27 @@ function compileUseContextDecorator(
 
 	if (disconnect && !hasDeletedContextVariables) {
 		let disconnectStatements = [
-			factory.createExpressionStatement(
-				factory.createBinaryExpression(
-					factory.createPropertyAccessExpression(
-						factory.createThis(),
-						factory.createIdentifier('$' + propName + '_declared_by')
+			transformContext.factory.createExpressionStatement(
+				transformContext.factory.createBinaryExpression(
+					transformContext.factory.createPropertyAccessExpression(
+						transformContext.factory.createThis(),
+						transformContext.factory.createIdentifier('$' + propName + '_declared_by')
 				),
-				factory.createToken(ts.SyntaxKind.EqualsToken),
-				factory.createIdentifier('undefined')
+				transformContext.factory.createToken(ts.SyntaxKind.EqualsToken),
+				transformContext.factory.createIdentifier('undefined')
 			))
 		]
 		  
 		if (!hasDeletedContextVariables) {
 			disconnectStatements.push(
-				factory.createExpressionStatement(factory.createCallExpression(
-					factory.createPropertyAccessExpression(
-						factory.createIdentifier('Component'),
-						factory.createIdentifier('deleteContextVariables')
+				transformContext.factory.createExpressionStatement(transformContext.factory.createCallExpression(
+					transformContext.factory.createPropertyAccessExpression(
+						transformContext.factory.createIdentifier('Component'),
+						transformContext.factory.createIdentifier('deleteContextVariables')
 					),
 					undefined,
 					[
-						factory.createThis()
+						transformContext.factory.createThis()
 					]
 				))
 			)

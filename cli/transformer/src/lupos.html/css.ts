@@ -1,5 +1,5 @@
 import ts from 'typescript'
-import {defineVisitor, factory, Interpolator, InterpolationContentType, helper} from '../core'
+import {defineVisitor, Interpolator, InterpolationContentType, transformContext} from '../core'
 import {TemplateSlotPlaceholder} from '../lupos-ts-module'
 
 
@@ -8,7 +8,7 @@ defineVisitor(function(node: ts.Node) {
 		return
 	}
 
-	if (!helper.symbol.isImportedFrom(node.tag, 'css', 'lupos.html')) {
+	if (!transformContext.helper.symbol.isImportedFrom(node.tag, 'css', 'lupos.html')) {
 		return
 	}
 
@@ -30,16 +30,16 @@ function parseCSSTemplate(node: ts.TaggedTemplateExpression) {
 		if (ts.isNoSubstitutionTemplateLiteral(template)) {
 			let text = strings![0].text
 
-			replaced = factory.createTaggedTemplateExpression(
+			replaced = transformContext.factory.createTaggedTemplateExpression(
 				node.tag,
 				undefined,
-				factory.createNoSubstitutionTemplateLiteral(
+				transformContext.factory.createNoSubstitutionTemplateLiteral(
 					text,
 					text
 				)
 			)
 			
-			factory.createStringLiteral(strings![0].text)
+			transformContext.factory.createStringLiteral(strings![0].text)
 		}
 
 		// Output as `css(...)` function call.
@@ -52,11 +52,11 @@ function parseCSSTemplate(node: ts.TaggedTemplateExpression) {
 				return Interpolator.outputSelfUnique(oldSpan.expression) as ts.Expression
 			})
 
-			replaced = factory.createCallExpression(
+			replaced = transformContext.factory.createCallExpression(
 				node.tag,
 				undefined,
 				[
-					factory.createArrayLiteralExpression(stringTexts.map(text => factory.createStringLiteral(text))),
+					transformContext.factory.createArrayLiteralExpression(stringTexts.map(text => transformContext.factory.createStringLiteral(text))),
 					...newValues,
 				]
 			)

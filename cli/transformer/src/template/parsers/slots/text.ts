@@ -1,5 +1,5 @@
 import {SlotParserBase} from './base'
-import {factory} from '../../../core'
+import {transformContext} from '../../../core'
 import ts = require('typescript')
 
 
@@ -26,16 +26,16 @@ export class TextSlotParser extends SlotParserBase {
 		//   $node_0.data = $latest_0 = $values[0]
 		// }
 		if (this.latestVariableNames) {
-			return factory.createIfStatement(
+			return transformContext.factory.createIfStatement(
 				this.outputLatestComparison(this.latestVariableNames, value.valueNodes),
-				factory.createBlock(
+				transformContext.factory.createBlock(
 					[
-						factory.createExpressionStatement(factory.createBinaryExpression(
-							factory.createPropertyAccessExpression(
-								factory.createIdentifier(nodeName),
-								factory.createIdentifier('data')
+						transformContext.factory.createExpressionStatement(transformContext.factory.createBinaryExpression(
+							transformContext.factory.createPropertyAccessExpression(
+								transformContext.factory.createIdentifier(nodeName),
+								transformContext.factory.createIdentifier('data')
 							),
-							factory.createToken(ts.SyntaxKind.EqualsToken),
+							transformContext.factory.createToken(ts.SyntaxKind.EqualsToken),
 							value.joint
 						)),
 						...this.outputLatestAssignments(this.latestVariableNames, value.valueNodes),
@@ -48,12 +48,12 @@ export class TextSlotParser extends SlotParserBase {
 
 		// $node_0.data = $values[0]
 		else {
-			return factory.createBinaryExpression(
-				factory.createPropertyAccessExpression(
-					factory.createIdentifier(nodeName),
-					factory.createIdentifier('data')
+			return transformContext.factory.createBinaryExpression(
+				transformContext.factory.createPropertyAccessExpression(
+					transformContext.factory.createIdentifier(nodeName),
+					transformContext.factory.createIdentifier('data')
 				),
-				factory.createToken(ts.SyntaxKind.EqualsToken),
+				transformContext.factory.createToken(ts.SyntaxKind.EqualsToken),
 				value.joint
 			)
 		}

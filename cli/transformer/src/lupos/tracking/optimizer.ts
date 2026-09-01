@@ -1,5 +1,5 @@
 import ts from 'typescript'
-import {InterpolationPosition, Modifier, helper} from '../../core'
+import {InterpolationPosition, Modifier, transformContext} from '../../core'
 import {TrackingArea} from './area'
 import {TrackingAreaTree, TrackingAreaTypeMask} from './area-tree'
 import {CapturedHashMap} from './captured-hashing'
@@ -427,14 +427,14 @@ export namespace Optimizer {
 				continue
 			}
 
-			let name = helper.getText(member.name)
+			let name = transformContext.helper.getText(member.name)
 			let nameMapItem = keyMap.get(name)
 			if (!nameMapItem) {
 				continue
 			}
 
-			let decorators = helper.deco.getDecorators(member)
-			let computed = decorators.find(deco => helper.deco.getName(deco) === 'computed')
+			let decorators = transformContext.helper.deco.getDecorators(member)
+			let computed = decorators.find(deco => transformContext.helper.deco.getName(deco) === 'computed')
 			if (!computed) {
 				continue
 			}

@@ -1,5 +1,5 @@
 import {SlotParserBase} from './base'
-import {factory} from '../../../core'
+import {transformContext} from '../../../core'
 import {VariableNames} from '../variable-names'
 
 
@@ -11,14 +11,14 @@ export class SlotTagSlotParser extends SlotParserBase {
 		let nodeName = this.getRefedNodeName()
 
 		// `$context.$applyRestSlotNodes($node_0)`
-		return factory.createCallExpression(
-			factory.createPropertyAccessExpression(
-				factory.createIdentifier(VariableNames.context),
-				factory.createIdentifier('$applyRestSlotNodes')
+		return transformContext.factory.createCallExpression(
+			transformContext.factory.createPropertyAccessExpression(
+				transformContext.factory.createIdentifier(VariableNames.context),
+				transformContext.factory.createIdentifier('$applyRestSlotNodes')
 			),
 			undefined,
 			[
-				factory.createIdentifier(nodeName)
+				transformContext.factory.createIdentifier(nodeName)
 			]
 		)
 	}

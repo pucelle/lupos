@@ -1,6 +1,6 @@
 import ts from 'typescript'
 import {SlotParserBase} from './base'
-import {factory, Modifier, Packer, helper} from '../../../core'
+import {Modifier, Packer, transformContext} from '../../../core'
 import {TemplateSlotPlaceholder} from '../../../lupos-ts-module'
 
 
@@ -45,7 +45,7 @@ export class PropertySlotParser extends SlotParserBase {
 		}
 
 		for (let classDecl of classDeclarations) {
-			let interfaceAndClassDecls = helper.symbol.resolveChainedObjectLike(classDecl)
+			let interfaceAndClassDecls = transformContext.helper.symbol.resolveChainedObjectLike(classDecl)
 
 			for (let decl of interfaceAndClassDecls) {
 				for (let member of decl.members) {
@@ -53,7 +53,7 @@ export class PropertySlotParser extends SlotParserBase {
 						continue
 					}
 
-					if (helper.getFullText(member.name) === this.name) {
+					if (transformContext.helper.getFullText(member.name) === this.name) {
 						return 'component'
 					}
 				}
@@ -74,12 +74,12 @@ export class PropertySlotParser extends SlotParserBase {
 
 		// $com_0
 		if (this.targetType === 'component') {
-			target = factory.createIdentifier(comVariableName)
+			target = transformContext.factory.createIdentifier(comVariableName)
 		}
 
 		// $node_0
 		else {
-			target = factory.createIdentifier(this.getRefedNodeName())
+			target = transformContext.factory.createIdentifier(this.getRefedNodeName())
 		}
 
 		// $values[0]
@@ -87,12 +87,12 @@ export class PropertySlotParser extends SlotParserBase {
 
 		// trackSet($com_0, property)
 		let setTracking = this.targetType === 'component' && this.latestVariableNames
-			? [factory.createCallExpression(
-				factory.createIdentifier("trackSet"),
+			? [transformContext.factory.createCallExpression(
+				transformContext.factory.createIdentifier("trackSet"),
 				undefined,
 				[
-					factory.createIdentifier(this.getRefedComponentName()!),
-					factory.createStringLiteral(this.name),
+					transformContext.factory.createIdentifier(this.getRefedComponentName()!),
+					transformContext.factory.createStringLiteral(this.name),
 				]
 			)]
 			: []
@@ -102,16 +102,16 @@ export class PropertySlotParser extends SlotParserBase {
 		//   $latest_0 = $values[0]
 		// }
 		if (this.latestVariableNames) {
-			return factory.createIfStatement(
+			return transformContext.factory.createIfStatement(
 				this.outputLatestComparison(this.latestVariableNames, value.valueNodes),
-				factory.createBlock(
+				transformContext.factory.createBlock(
 					[
-						factory.createExpressionStatement(factory.createBinaryExpression(
-							factory.createPropertyAccessExpression(
+						transformContext.factory.createExpressionStatement(transformContext.factory.createBinaryExpression(
+							transformContext.factory.createPropertyAccessExpression(
 								target,
-								factory.createIdentifier(this.name)
+								transformContext.factory.createIdentifier(this.name)
 							),
-							factory.createToken(ts.SyntaxKind.EqualsToken),
+							transformContext.factory.createToken(ts.SyntaxKind.EqualsToken),
 							value.joint
 						)),
 						...this.outputLatestAssignments(this.latestVariableNames, value.valueNodes),
@@ -125,12 +125,12 @@ export class PropertySlotParser extends SlotParserBase {
 
 		// target[propertyName] = $values[0]
 		else {
-			return factory.createBinaryExpression(
-				factory.createPropertyAccessExpression(
+			return transformContext.factory.createBinaryExpression(
+				transformContext.factory.createPropertyAccessExpression(
 					target,
-					factory.createIdentifier(this.name)
+					transformContext.factory.createIdentifier(this.name)
 				),
-				factory.createToken(ts.SyntaxKind.EqualsToken),
+				transformContext.factory.createToken(ts.SyntaxKind.EqualsToken),
 				value.joint
 			)
 		}

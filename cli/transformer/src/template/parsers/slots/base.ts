@@ -1,7 +1,7 @@
 import ts from 'typescript'
 import {generateFingerPrint, HTMLAttribute, HTMLNode, HTMLNodeType, TemplatePart, TemplatePartType, TemplateSlotPlaceholder} from '../../../lupos-ts-module'
 import {PartType, TreeParser} from '../tree'
-import {factory, Modifier, DeclarationScopeTree, Packer, Hashing, helper} from '../../../core'
+import {Modifier, DeclarationScopeTree, Packer, Hashing, transformContext} from '../../../core'
 import {TemplateParser} from '../template'
 import {SlotPositionType} from '../../../enums'
 import {HTMLNodeHelper, PrecedingPositionStability} from '../../html-syntax'
@@ -96,7 +96,7 @@ export abstract class SlotParserBase {
 		return this.valueIndices !== null
 			&& this.valueIndices.some(index => {
 				let node = this.template.values.valueNodes[index]
-				return helper.findInward(node, n => helper.isFunctionLike(n))
+				return transformContext.helper.findInward(node, n => transformContext.helper.isFunctionLike(n))
 			})
 	}
 
@@ -212,18 +212,18 @@ export abstract class SlotParserBase {
 		if (preDeclare) {
 			this.tree.addPreDeclaredVariableName(name)
 			
-			return factory.createBinaryExpression(
-				factory.createIdentifier(name),
-				factory.createToken(ts.SyntaxKind.EqualsToken),
+			return transformContext.factory.createBinaryExpression(
+				transformContext.factory.createIdentifier(name),
+				transformContext.factory.createToken(ts.SyntaxKind.EqualsToken),
 				exp
 			) 
 		}
 		else {
-			return factory.createVariableStatement(
+			return transformContext.factory.createVariableStatement(
 				undefined,
-				factory.createVariableDeclarationList(
-					[factory.createVariableDeclaration(
-						factory.createIdentifier(name),
+				transformContext.factory.createVariableDeclarationList(
+					[transformContext.factory.createVariableDeclaration(
+						transformContext.factory.createIdentifier(name),
 						undefined,
 						undefined,
 						exp
@@ -272,9 +272,9 @@ export abstract class SlotParserBase {
 				continue
 			}
 
-			exps.push(factory.createBinaryExpression(
-				factory.createIdentifier(name),
-				factory.createToken(ts.SyntaxKind.ExclamationEqualsEqualsToken),
+			exps.push(transformContext.factory.createBinaryExpression(
+				transformContext.factory.createIdentifier(name),
+				transformContext.factory.createToken(ts.SyntaxKind.ExclamationEqualsEqualsToken),
 				valueNode
 			))
 		}
@@ -294,9 +294,9 @@ export abstract class SlotParserBase {
 				continue
 			}
 
-			exps.push(factory.createBinaryExpression(
-				factory.createIdentifier(name),
-				factory.createToken(ts.SyntaxKind.EqualsToken),
+			exps.push(transformContext.factory.createBinaryExpression(
+				transformContext.factory.createIdentifier(name),
+				transformContext.factory.createToken(ts.SyntaxKind.EqualsToken),
 				valueNode
 			))
 		}
@@ -325,34 +325,34 @@ export abstract class SlotParserBase {
 
 			// Can omit if `fingerPrintId` is not exist.
 			let slotContentTypeParams = slotContentType !== null
-				? [factory.createNumericLiteral(slotContentType)]
+				? [transformContext.factory.createNumericLiteral(slotContentType)]
 				: fingerPrintId
-				? [factory.createNull()]
+				? [transformContext.factory.createNull()]
 				: []
 
 			let hydrateNodesParams: ts.Expression[] = fingerPrintId
 				? [
-					factory.createCallExpression(
-						factory.createPropertyAccessExpression(
-							factory.createIdentifier(VariableNames.locator),
-							factory.createIdentifier('getNodes')
+					transformContext.factory.createCallExpression(
+						transformContext.factory.createPropertyAccessExpression(
+							transformContext.factory.createIdentifier(VariableNames.locator),
+							transformContext.factory.createIdentifier('getNodes')
 						),
 						undefined,
-						[factory.createStringLiteral(fingerPrintId)]
+						[transformContext.factory.createStringLiteral(fingerPrintId)]
 					)
 				]
 				: []
 
-			return factory.createNewExpression(
-				factory.createIdentifier('TemplateSlot'),
+			return transformContext.factory.createNewExpression(
+				transformContext.factory.createIdentifier('TemplateSlot'),
 				undefined,
 				[
-					factory.createNewExpression(
-						factory.createIdentifier('SlotPosition'),
+					transformContext.factory.createNewExpression(
+						transformContext.factory.createIdentifier('SlotPosition'),
 						undefined,
 						[
-							factory.createNumericLiteral(position),
-							factory.createIdentifier(nodeName)
+							transformContext.factory.createNumericLiteral(position),
+							transformContext.factory.createIdentifier(nodeName)
 						]
 					),
 					...slotContentTypeParams,
@@ -433,8 +433,8 @@ export abstract class SlotParserBase {
 			let lastChildName = this.tree.references.getRefedName(lastChild)
 
 			return [
-				factory.createIdentifier(firstChildName),
-				factory.createIdentifier(lastChildName),
+				transformContext.factory.createIdentifier(firstChildName),
+				transformContext.factory.createIdentifier(lastChildName),
 			]
 		}
 	}

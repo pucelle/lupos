@@ -1,5 +1,5 @@
 import ts from 'typescript'
-import {factory, Interpolator, InterpolationContentType, Modifier, helper} from '../../core'
+import {Interpolator, InterpolationContentType, Modifier, transformContext} from '../../core'
 import {DecoratedMemberAnalysis} from './decorators'
 
 
@@ -30,7 +30,7 @@ prop: type = xxx
 ```
 */
 function compileSetContextDecorator(propDecl: ts.PropertyDeclaration): ts.Node[] {
-	let prop = factory.createPropertyDeclaration(
+	let prop = transformContext.factory.createPropertyDeclaration(
 		undefined,
 		propDecl.name,
 		undefined,
@@ -55,29 +55,29 @@ get prop(): any {
 ```
 */
 function compileUseContextDecorator(propDecl: ts.PropertyDeclaration): ts.Node[] {
-	let propName = helper.getFullText(propDecl.name)
+	let propName = transformContext.helper.getFullText(propDecl.name)
 
-	let propDeclaredBy = factory.createPropertyDeclaration(
+	let propDeclaredBy = transformContext.factory.createPropertyDeclaration(
 		undefined,
-		factory.createIdentifier('$' + propName + '_declared_by'),
+		transformContext.factory.createIdentifier('$' + propName + '_declared_by'),
 		undefined,
-		factory.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword),
-		factory.createIdentifier('undefined')
+		transformContext.factory.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword),
+		transformContext.factory.createIdentifier('undefined')
 	)
 
-	let getter = factory.createGetAccessorDeclaration(
+	let getter = transformContext.factory.createGetAccessorDeclaration(
 		undefined,
-		factory.createIdentifier(propName),
+		transformContext.factory.createIdentifier(propName),
 		[],
-		factory.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword),
-		factory.createBlock([
-			factory.createReturnStatement(factory.createElementAccessChain(
-				factory.createPropertyAccessExpression(
-			  		factory.createThis(),
-			  		factory.createIdentifier('$' + propName + '_declared_by')
+		transformContext.factory.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword),
+		transformContext.factory.createBlock([
+			transformContext.factory.createReturnStatement(transformContext.factory.createElementAccessChain(
+				transformContext.factory.createPropertyAccessExpression(
+			  		transformContext.factory.createThis(),
+			  		transformContext.factory.createIdentifier('$' + propName + '_declared_by')
 				),
-				factory.createToken(ts.SyntaxKind.QuestionDotToken),
-				factory.createStringLiteral(propName)
+				transformContext.factory.createToken(ts.SyntaxKind.QuestionDotToken),
+				transformContext.factory.createStringLiteral(propName)
 		 	))],
 		  	true
 		)

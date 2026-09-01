@@ -1,10 +1,18 @@
 import ts from 'typescript'
 import {ListMap} from '../lupos-ts-module'
-import {factory, sourceFile, helper} from './global'
+import {transformSession, transformContext} from './global'
 import {InterpolationContentType, Interpolator} from './interpolator'
-import {definePostVisitCallback, definePreVisitCallback} from './visitor-callbacks'
+import {definePostVisitCallback} from './visitor-callbacks'
 import {DeclarationScopeTree} from './scope-tree'
 import {Packer} from './packer'
+import {createTransformSessionStateKey} from './transform-session'
+
+
+interface ModifierState {
+	imports: ListMap<string, string>
+	removedNodes: Set<ts.Node>
+	persistedImportNodes: Set<ts.Node>
+}
 
 
 /** 
@@ -12,28 +20,21 @@ import {Packer} from './packer'
  * And provides detailed modifications compare with interpolator.
  */
 export namespace Modifier {
-	
-	/** All imports. */
-	const Imports: ListMap<string, string> = new ListMap()
 
-	/** The nodes that will be moved. */
-	const RemovedNodes: Set<ts.Node> = new Set()
+	const StateKey = createTransformSessionStateKey<ModifierState>('Modifier')
 
-	/** The nodes that have been persisted. */
-	const PersistedImportNodes: Set<ts.Node> = new Set()
-
-
-	/** Initialize before visiting a new source file. */
-	export function initialize() {
-		Imports.clear()
-		RemovedNodes.clear()
-		PersistedImportNodes.clear()
+	function getState(): ModifierState {
+		return transformSession.getState(StateKey, () => ({
+			imports: new ListMap(),
+			removedNodes: new Set(),
+			persistedImportNodes: new Set(),
+		}))
 	}
 
 
 	/** Remove import node of specified node. */
 	export function removeImportOf(fromNode: ts.Node) {
-		let importNode = helper.symbol.resolveDeclaration(fromNode, ts.isImportSpecifier, false)
+		let importNode = transformContext.helper.symbol.resolveDeclaration(fromNode, ts.isImportSpecifier, false)
 		if (importNode) {
 			removeOnce(importNode)
 		}
@@ -42,30 +43,32 @@ export namespace Modifier {
 
 	/** Remove node, only remove for once. */
 	export function removeOnce(fromNode: ts.Node) {
-		if (RemovedNodes.has(fromNode)) {
+		let removedNodes = getState().removedNodes
+		if (removedNodes.has(fromNode)) {
 			return
 		}
 
 		Interpolator.remove(fromNode)
-		RemovedNodes.add(fromNode)
+		removedNodes.add(fromNode)
 	}
 
 
 	/** Move node to another position, for each from index, only move for once. */
 	export function moveOnce(fromNode: ts.Node, toNode: ts.Node) {
-		if (RemovedNodes.has(fromNode)) {
+		let removedNodes = getState().removedNodes
+		if (removedNodes.has(fromNode)) {
 			return
 		}
 
 		Interpolator.move(fromNode, toNode)
-		RemovedNodes.add(fromNode)
+		removedNodes.add(fromNode)
 	}
 
 
 	/** Add or replace a member to a class declaration. */
 	export function addClassMember(classNode: ts.ClassDeclaration, member: ts.ClassElement, preferInsertToHead: boolean = false) {
-		let name = helper.objectLike.getMemberName(member)
-		let existing = classNode.members.find(m => helper.objectLike.getMemberName(m) === name)
+		let name = transformContext.helper.objectLike.getMemberName(member)
+		let existing = classNode.members.find(m => transformContext.helper.objectLike.getMemberName(m) === name)
 
 		if (existing) {
 			Interpolator.replace(existing, InterpolationContentType.Normal, () => member)
@@ -84,7 +87,7 @@ export namespace Modifier {
 	 * Repetitive adding will be eliminated.
 	 */
 	export function addImport(memberName: string, moduleName: string) {
-		Imports.addIf(moduleName, memberName)
+		getState().imports.addIf(moduleName, memberName)
 	}
 
 
@@ -93,18 +96,19 @@ export namespace Modifier {
 	 * Use this can persist it.
 	 */
 	export function persistImport(node: ts.ImportSpecifier) {
-		if (PersistedImportNodes.has(node)) {
+		let persistedImportNodes = getState().persistedImportNodes
+		if (persistedImportNodes.has(node)) {
 			return
 		}
 
-		PersistedImportNodes.add(node)
+		persistedImportNodes.add(node)
 		
 		// Here has a bug if we simply replace:
 		// If a module output a class and an interface with same name.
 		// only replace it can't prevent it from been removed in compiling step.
 
 		Interpolator.after(node, InterpolationContentType.Import, () => {
-			return factory.createImportSpecifier(false, node.propertyName, node.name)
+			return transformContext.factory.createImportSpecifier(false, node.propertyName, node.name)
 		})
 
 		Interpolator.remove(node)
@@ -120,8 +124,8 @@ export namespace Modifier {
 			let node = Interpolator.outputChildren(fromNode) as ts.Expression
 			node = Packer.normalize(node, false) as ts.Expression
 			
-			return factory.createVariableDeclaration(
-				factory.createIdentifier(varName),
+			return transformContext.factory.createVariableDeclaration(
+				transformContext.factory.createIdentifier(varName),
 				undefined,
 				undefined,
 				node
@@ -138,9 +142,9 @@ export namespace Modifier {
 			let node = Interpolator.outputChildren(fromNode) as ts.Expression
 			node = Packer.normalize(node, false) as ts.Expression
 			
-			return factory.createVariableDeclarationList(
-				[factory.createVariableDeclaration(
-					factory.createIdentifier(varName),
+			return transformContext.factory.createVariableDeclarationList(
+				[transformContext.factory.createVariableDeclaration(
+					transformContext.factory.createIdentifier(varName),
 					undefined,
 					undefined,
 					node
@@ -159,9 +163,9 @@ export namespace Modifier {
 			let node = Interpolator.outputChildren(fromNode) as ts.Expression
 			node = Packer.normalize(node, false) as ts.Expression
 
-			return factory.createBinaryExpression(
-				factory.createIdentifier(refName),
-				factory.createToken(ts.SyntaxKind.EqualsToken),
+			return transformContext.factory.createBinaryExpression(
+				transformContext.factory.createIdentifier(refName),
+				transformContext.factory.createToken(ts.SyntaxKind.EqualsToken),
 				node
 			)
 		})
@@ -176,9 +180,9 @@ export namespace Modifier {
 			let node = Interpolator.outputChildren(fromNode) as ts.Expression
 			node = Packer.normalize(node, false) as ts.Expression
 
-			return factory.createBinaryExpression(
-				factory.createIdentifier(refName),
-				factory.createToken(ts.SyntaxKind.EqualsToken),
+			return transformContext.factory.createBinaryExpression(
+				transformContext.factory.createIdentifier(refName),
+				transformContext.factory.createToken(ts.SyntaxKind.EqualsToken),
 				node
 			)
 		})
@@ -196,7 +200,7 @@ export namespace Modifier {
 		// will cause some not used type imports still there.
 		// Current process step is: leave them there and wait for package step to eliminate.
 
-		for (let [moduleName, names] of Imports.entries()) {
+		for (let [moduleName, names] of getState().imports.entries()) {
 			let existingImportDecl = getNamedImportDeclaration(moduleName)
 			let existingNames: Map<string, ts.ImportSpecifier> = new Map()
 
@@ -206,7 +210,7 @@ export namespace Modifier {
 					existingNames.set(element.name.text, element)
 
 					// Removes const enum imports, which will cause error in bun.
-					let resolved = helper.symbol.resolveDeclaration(element.name)
+					let resolved = transformContext.helper.symbol.resolveDeclaration(element.name)
 					if (resolved
 						&& ts.isEnumDeclaration(resolved)
 						&& resolved.modifiers?.find(m => m.kind === ts.SyntaxKind.ConstKeyword)
@@ -231,10 +235,10 @@ export namespace Modifier {
 				continue
 			}
 
-			let namedImports = names.map(name => factory.createImportSpecifier(
+			let namedImports = names.map(name => transformContext.factory.createImportSpecifier(
 				false,
 				undefined,
-				factory.createIdentifier(name)
+				transformContext.factory.createIdentifier(name)
 			))
 
 			// Add more imports.
@@ -246,14 +250,14 @@ export namespace Modifier {
 
 			// Add a new import statement.
 			else {
-				let newImportDecl = factory.createImportDeclaration(
+				let newImportDecl = transformContext.factory.createImportDeclaration(
 					undefined,
-					factory.createImportClause(
+					transformContext.factory.createImportClause(
 						undefined,
 						undefined,
-						factory.createNamedImports(namedImports)
+						transformContext.factory.createNamedImports(namedImports)
 					),
-					factory.createStringLiteral(moduleName),
+					transformContext.factory.createStringLiteral(moduleName),
 					undefined
 				)
 
@@ -261,7 +265,7 @@ export namespace Modifier {
 			}
 		}
 
-		for (let specifier of PersistedImportNodes) {
+		for (let specifier of getState().persistedImportNodes) {
 			let importDecl = specifier.parent.parent.parent
 
 			if (ts.isImportDeclaration(importDecl)) {
@@ -278,7 +282,7 @@ export namespace Modifier {
 
 	/** Get `import {...}` node by module name. */
 	function getNamedImportDeclaration(moduleName: string): ts.ImportDeclaration | undefined {
-		let importDecl = helper.imports.getImportFromModule(moduleName, sourceFile)
+		let importDecl = transformContext.helper.imports.getImportFromModule(moduleName, transformSession.sourceFile)
 		if (!importDecl) {
 			return undefined
 		}
@@ -306,7 +310,7 @@ export namespace Modifier {
 		}
 
 		for (let specifier of namedBindings.elements) {
-			let type = helper.symbol.resolveDeclaration(specifier, helper.isTypeDeclaration)
+			let type = transformContext.helper.symbol.resolveDeclaration(specifier, transformContext.helper.isTypeDeclaration)
 			if (type) {
 				removeOnce(specifier)
 			}
@@ -314,5 +318,4 @@ export namespace Modifier {
 	}
 }
 
-definePreVisitCallback(Modifier.initialize)
 definePostVisitCallback(Modifier.applyInterpolation)

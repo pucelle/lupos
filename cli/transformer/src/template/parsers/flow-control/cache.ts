@@ -1,5 +1,5 @@
 import type ts from 'typescript'
-import {factory, Modifier} from '../../../core'
+import {Modifier, transformContext} from '../../../core'
 import {FlowControlBase} from './base'
 import {TemplateParser} from '../template'
 import {SlotContentType} from '../../../enums'
@@ -65,11 +65,11 @@ export class CacheFlowControl extends FlowControlBase {
 			slotInit,
 			this.slot.createVariableAssignment(
 				this.blockVariableName,
-				factory.createNewExpression(
-					factory.createIdentifier(blockClassName),
+				transformContext.factory.createNewExpression(
+					transformContext.factory.createIdentifier(blockClassName),
 					undefined,
 					[
-						factory.createIdentifier(this.slotVariableName),
+						transformContext.factory.createIdentifier(this.slotVariableName),
 					]
 				)
 			)
@@ -88,17 +88,17 @@ export class CacheFlowControl extends FlowControlBase {
 			// Add it as a custom value into `render()`, and capture it's reference `$values[i]` to output.
 			resultValue = resultValue
 				? this.slot.outputCustomValue(resultValue)
-				: factory.createNull()
+				: transformContext.factory.createNull()
 		}
 		else {
-			resultValue = factory.createNull()
+			resultValue = transformContext.factory.createNull()
 		}
 
 		// $block_0.update(newKey, $values[i])
-		return factory.createCallExpression(
-			factory.createPropertyAccessExpression(
-				factory.createIdentifier(this.blockVariableName),
-				factory.createIdentifier('update')
+		return transformContext.factory.createCallExpression(
+			transformContext.factory.createPropertyAccessExpression(
+				transformContext.factory.createIdentifier(this.blockVariableName),
+				transformContext.factory.createIdentifier('update')
 			),
 			undefined,
 			[

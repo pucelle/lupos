@@ -1,5 +1,5 @@
 import {SlotParserBase} from './base'
-import {factory, Packer, helper} from '../../../core'
+import {Packer, transformContext} from '../../../core'
 import {cleanList} from '../../../utils'
 import ts from 'typescript'
 import {TemplateSlotPlaceholder} from '../../../lupos-ts-module'
@@ -42,7 +42,7 @@ export class AttributeSlotParser extends SlotParserBase {
 
 	override outputUpdate() {
 		let slotNode = this.getFirstRawValueNode()
-		let slotNodeType = slotNode ? helper.types.typeOf(slotNode) : null
+		let slotNodeType = slotNode ? transformContext.helper.types.typeOf(slotNode) : null
 
 		// `class="..."`, `class="${}"` has been upgraded to binding normally.
 		if (this.isSharedModification && this.hasString() && !this.hasValueIndex()) {
@@ -62,7 +62,7 @@ export class AttributeSlotParser extends SlotParserBase {
 		}
 
 		// `$values[0]` is not nullable
-		else if (this.hasString() || slotNodeType && helper.types.isNonNullableValueType(slotNodeType!)) {
+		else if (this.hasString() || slotNodeType && transformContext.helper.types.isNonNullableValueType(slotNodeType!)) {
 			return this.outputNonNullableValueUpdate()
 		}
 
@@ -77,16 +77,16 @@ export class AttributeSlotParser extends SlotParserBase {
 		let nodeName = this.getRefedNodeName()
 		let classNames = cleanList(string.split(/\s+/))
 
-		return factory.createCallExpression(
-			factory.createPropertyAccessExpression(
-				factory.createPropertyAccessExpression(
-					factory.createIdentifier(nodeName),
-					factory.createIdentifier('classList')
+		return transformContext.factory.createCallExpression(
+			transformContext.factory.createPropertyAccessExpression(
+				transformContext.factory.createPropertyAccessExpression(
+					transformContext.factory.createIdentifier(nodeName),
+					transformContext.factory.createIdentifier('classList')
 				),
-				factory.createIdentifier('add')
+				transformContext.factory.createIdentifier('add')
 			),
 			undefined,
-			classNames.map(n => factory.createStringLiteral(n))
+			classNames.map(n => transformContext.factory.createStringLiteral(n))
 		)
 	}
 
@@ -98,19 +98,19 @@ export class AttributeSlotParser extends SlotParserBase {
 			.map(v => v.split(/\s*:\s*/))
 			.filter(v => v[0])
 
-		let styleNode = factory.createPropertyAccessExpression(
-			factory.createIdentifier(nodeName),
-			factory.createIdentifier('style')
+		let styleNode = transformContext.factory.createPropertyAccessExpression(
+			transformContext.factory.createIdentifier(nodeName),
+			transformContext.factory.createIdentifier('style')
 		)
 		
 		return styles.map(([prop, value]) => {
-			return factory.createBinaryExpression(
+			return transformContext.factory.createBinaryExpression(
 				Packer.createAccessNode(
 					styleNode,
 					prop
 				),
-				factory.createToken(ts.SyntaxKind.EqualsToken),
-				factory.createStringLiteral(value || '')
+				transformContext.factory.createToken(ts.SyntaxKind.EqualsToken),
+				transformContext.factory.createStringLiteral(value || '')
 			)
 		})
 	}
@@ -128,32 +128,32 @@ export class AttributeSlotParser extends SlotParserBase {
 		//	 $latest_0 = $values[0]
 		// }
 		if (this.latestVariableNames) {
-			return factory.createIfStatement(
+			return transformContext.factory.createIfStatement(
 				this.outputLatestComparison(this.latestVariableNames, value.valueNodes),
-				factory.createBlock(
+				transformContext.factory.createBlock(
 					[
-						factory.createExpressionStatement(factory.createConditionalExpression(
+						transformContext.factory.createExpressionStatement(transformContext.factory.createConditionalExpression(
 							value.joint,
-							factory.createToken(ts.SyntaxKind.QuestionToken),
-							factory.createCallExpression(
-								factory.createPropertyAccessExpression(
-									factory.createIdentifier(nodeName),
-									factory.createIdentifier('setAttribute')
+							transformContext.factory.createToken(ts.SyntaxKind.QuestionToken),
+							transformContext.factory.createCallExpression(
+								transformContext.factory.createPropertyAccessExpression(
+									transformContext.factory.createIdentifier(nodeName),
+									transformContext.factory.createIdentifier('setAttribute')
 								),
 								undefined,
 								[
-									factory.createStringLiteral(this.name),
-									factory.createStringLiteral('')
+									transformContext.factory.createStringLiteral(this.name),
+									transformContext.factory.createStringLiteral('')
 								]
 							),
-							factory.createToken(ts.SyntaxKind.ColonToken),
-							factory.createCallExpression(
-								factory.createPropertyAccessExpression(
-									factory.createIdentifier(nodeName),
-									factory.createIdentifier('removeAttribute')
+							transformContext.factory.createToken(ts.SyntaxKind.ColonToken),
+							transformContext.factory.createCallExpression(
+								transformContext.factory.createPropertyAccessExpression(
+									transformContext.factory.createIdentifier(nodeName),
+									transformContext.factory.createIdentifier('removeAttribute')
 								),
 								undefined,
-								[factory.createStringLiteral(this.name)]
+								[transformContext.factory.createStringLiteral(this.name)]
 							)
 						)),
 						...this.outputLatestAssignments(this.latestVariableNames, value.valueNodes),
@@ -165,28 +165,28 @@ export class AttributeSlotParser extends SlotParserBase {
 
 		// $values[0] ? $node_0.setAttribute(attrName, $values[0]) : $node_0.removeAttribute(attrName)
 		else {
-			return factory.createConditionalExpression(
+			return transformContext.factory.createConditionalExpression(
 				value.joint,
-				factory.createToken(ts.SyntaxKind.QuestionToken),
-				factory.createCallExpression(
-					factory.createPropertyAccessExpression(
-						factory.createIdentifier(nodeName),
-						factory.createIdentifier('setAttribute')
+				transformContext.factory.createToken(ts.SyntaxKind.QuestionToken),
+				transformContext.factory.createCallExpression(
+					transformContext.factory.createPropertyAccessExpression(
+						transformContext.factory.createIdentifier(nodeName),
+						transformContext.factory.createIdentifier('setAttribute')
 					),
 					undefined,
 					[
-						factory.createStringLiteral(this.name),
-						factory.createStringLiteral('')
+						transformContext.factory.createStringLiteral(this.name),
+						transformContext.factory.createStringLiteral('')
 					]
 				),
-				factory.createToken(ts.SyntaxKind.ColonToken),
-				factory.createCallExpression(
-					factory.createPropertyAccessExpression(
-						factory.createIdentifier(nodeName),
-						factory.createIdentifier('removeAttribute')
+				transformContext.factory.createToken(ts.SyntaxKind.ColonToken),
+				transformContext.factory.createCallExpression(
+					transformContext.factory.createPropertyAccessExpression(
+						transformContext.factory.createIdentifier(nodeName),
+						transformContext.factory.createIdentifier('removeAttribute')
 					),
 					undefined,
-					[factory.createStringLiteral(this.name)]
+					[transformContext.factory.createStringLiteral(this.name)]
 				)
 			)
 		}
@@ -205,18 +205,18 @@ export class AttributeSlotParser extends SlotParserBase {
 		//   $latest_0 = $values[0]
 		// }
 		if (this.latestVariableNames) {
-			return factory.createIfStatement(
+			return transformContext.factory.createIfStatement(
 				this.outputLatestComparison(this.latestVariableNames, value.valueNodes),
-				factory.createBlock(
+				transformContext.factory.createBlock(
 					[
-						factory.createExpressionStatement(factory.createCallExpression(
-							factory.createPropertyAccessExpression(
-								factory.createIdentifier(nodeName),
-								factory.createIdentifier('setAttribute')
+						transformContext.factory.createExpressionStatement(transformContext.factory.createCallExpression(
+							transformContext.factory.createPropertyAccessExpression(
+								transformContext.factory.createIdentifier(nodeName),
+								transformContext.factory.createIdentifier('setAttribute')
 							),
 							undefined,
 							[
-								factory.createStringLiteral(this.name),
+								transformContext.factory.createStringLiteral(this.name),
 								value.joint
 							]
 						)),
@@ -230,14 +230,14 @@ export class AttributeSlotParser extends SlotParserBase {
 
 		// $node_0.setAttribute(attrName, $values[0])
 		else {
-			return factory.createCallExpression(
-				factory.createPropertyAccessExpression(
-					factory.createIdentifier(nodeName),
-					factory.createIdentifier('setAttribute')
+			return transformContext.factory.createCallExpression(
+				transformContext.factory.createPropertyAccessExpression(
+					transformContext.factory.createIdentifier(nodeName),
+					transformContext.factory.createIdentifier('setAttribute')
 				),
 				undefined,
 				[
-					factory.createStringLiteral(this.name),
+					transformContext.factory.createStringLiteral(this.name),
 					value.joint
 				]
 			)
@@ -257,34 +257,34 @@ export class AttributeSlotParser extends SlotParserBase {
 		//	 $latest_0 = $values[0]
 		// }
 		if (this.latestVariableNames) {
-			return factory.createIfStatement(
+			return transformContext.factory.createIfStatement(
 				this.outputLatestComparison(this.latestVariableNames, value.valueNodes),
-				factory.createBlock(
+				transformContext.factory.createBlock(
 					[
-						factory.createExpressionStatement(factory.createConditionalExpression(
-							factory.createBinaryExpression(
+						transformContext.factory.createExpressionStatement(transformContext.factory.createConditionalExpression(
+							transformContext.factory.createBinaryExpression(
 								value.joint,
-								factory.createToken(ts.SyntaxKind.EqualsEqualsEqualsToken),
-								factory.createNull()
+								transformContext.factory.createToken(ts.SyntaxKind.EqualsEqualsEqualsToken),
+								transformContext.factory.createNull()
 							),
-							factory.createToken(ts.SyntaxKind.QuestionToken),
-							factory.createCallExpression(
-								factory.createPropertyAccessExpression(
-									factory.createIdentifier(nodeName),
-									factory.createIdentifier('removeAttribute')
+							transformContext.factory.createToken(ts.SyntaxKind.QuestionToken),
+							transformContext.factory.createCallExpression(
+								transformContext.factory.createPropertyAccessExpression(
+									transformContext.factory.createIdentifier(nodeName),
+									transformContext.factory.createIdentifier('removeAttribute')
 								),
 								undefined,
-								[factory.createStringLiteral(this.name)]
+								[transformContext.factory.createStringLiteral(this.name)]
 							),
-							factory.createToken(ts.SyntaxKind.ColonToken),
-							factory.createCallExpression(
-								factory.createPropertyAccessExpression(
-									factory.createIdentifier(nodeName),
-									factory.createIdentifier('setAttribute')
+							transformContext.factory.createToken(ts.SyntaxKind.ColonToken),
+							transformContext.factory.createCallExpression(
+								transformContext.factory.createPropertyAccessExpression(
+									transformContext.factory.createIdentifier(nodeName),
+									transformContext.factory.createIdentifier('setAttribute')
 								),
 								undefined,
 								[
-									factory.createStringLiteral(this.name),
+									transformContext.factory.createStringLiteral(this.name),
 									value.joint
 								]
 							)
@@ -300,56 +300,56 @@ export class AttributeSlotParser extends SlotParserBase {
 		else {
 
 			// Like `autofocus`
-			if (helper.isLiteralLike(value.joint)) {
+			if (transformContext.helper.isLiteralLike(value.joint)) {
 				if (value.joint.kind !== ts.SyntaxKind.NullKeyword) {
-					return factory.createCallExpression(
-						factory.createPropertyAccessExpression(
-							factory.createIdentifier(nodeName),
-							factory.createIdentifier('setAttribute')
+					return transformContext.factory.createCallExpression(
+						transformContext.factory.createPropertyAccessExpression(
+							transformContext.factory.createIdentifier(nodeName),
+							transformContext.factory.createIdentifier('setAttribute')
 						),
 						undefined,
 						[
-							factory.createStringLiteral(this.name),
+							transformContext.factory.createStringLiteral(this.name),
 							value.joint
 						]
 					)
 				}
 				else {
-					return factory.createCallExpression(
-						factory.createPropertyAccessExpression(
-							factory.createIdentifier(nodeName),
-							factory.createIdentifier('removeAttribute')
+					return transformContext.factory.createCallExpression(
+						transformContext.factory.createPropertyAccessExpression(
+							transformContext.factory.createIdentifier(nodeName),
+							transformContext.factory.createIdentifier('removeAttribute')
 						),
 						undefined,
-						[factory.createStringLiteral(this.name)]
+						[transformContext.factory.createStringLiteral(this.name)]
 					)
 				}
 			}
 			else {
-				return factory.createConditionalExpression(
-					factory.createBinaryExpression(
+				return transformContext.factory.createConditionalExpression(
+					transformContext.factory.createBinaryExpression(
 						value.joint,
-						factory.createToken(ts.SyntaxKind.EqualsEqualsEqualsToken),
-						factory.createNull()
+						transformContext.factory.createToken(ts.SyntaxKind.EqualsEqualsEqualsToken),
+						transformContext.factory.createNull()
 					),
-					factory.createToken(ts.SyntaxKind.QuestionToken),
-					factory.createCallExpression(
-						factory.createPropertyAccessExpression(
-							factory.createIdentifier(nodeName),
-							factory.createIdentifier('removeAttribute')
+					transformContext.factory.createToken(ts.SyntaxKind.QuestionToken),
+					transformContext.factory.createCallExpression(
+						transformContext.factory.createPropertyAccessExpression(
+							transformContext.factory.createIdentifier(nodeName),
+							transformContext.factory.createIdentifier('removeAttribute')
 						),
 						undefined,
-						[factory.createStringLiteral(this.name)]
+						[transformContext.factory.createStringLiteral(this.name)]
 					),
-					factory.createToken(ts.SyntaxKind.ColonToken),
-					factory.createCallExpression(
-						factory.createPropertyAccessExpression(
-							factory.createIdentifier(nodeName),
-							factory.createIdentifier('setAttribute')
+					transformContext.factory.createToken(ts.SyntaxKind.ColonToken),
+					transformContext.factory.createCallExpression(
+						transformContext.factory.createPropertyAccessExpression(
+							transformContext.factory.createIdentifier(nodeName),
+							transformContext.factory.createIdentifier('setAttribute')
 						),
 						undefined,
 						[
-							factory.createStringLiteral(this.name),
+							transformContext.factory.createStringLiteral(this.name),
 							value.joint
 						]
 					)

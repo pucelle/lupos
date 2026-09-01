@@ -1,5 +1,5 @@
 import ts from 'typescript'
-import {helper} from '../../core'
+import {transformContext} from '../../core'
 
 
 export const ObservableDecoratorNames = ['computed', 'asyncComputed', 'effect', 'watch', 'watchMulti'] as const
@@ -62,20 +62,20 @@ export function analyzeDecoratorClass(node: ts.ClassDeclaration): DecoratorClass
 			continue
 		}
 
-		let decorator = helper.deco.getFirst(member)
+		let decorator = transformContext.helper.deco.getFirst(member)
 		if (decorator) {
-			let decoratorName = helper.deco.getName(decorator)
+			let decoratorName = transformContext.helper.deco.getName(decorator)
 			if (isDecoratorName(decoratorName) && canDecorateMember(decoratorName, member)) {
-				let memberName = helper.getFullText(member.name)
+				let memberName = transformContext.helper.getFullText(member.name)
 				let isOverwritten = false
 
 				if (isObservableDecoratorName(decoratorName)) {
 					if (!hasResolvedSuperClass) {
-						superClass = helper.class.getSuper(node)
+						superClass = transformContext.helper.class.getSuper(node)
 						hasResolvedSuperClass = true
 					}
 
-					isOverwritten = !!superClass && !!helper.objectLike.getMember(superClass, memberName, true)
+					isOverwritten = !!superClass && !!transformContext.helper.objectLike.getMember(superClass, memberName, true)
 				}
 
 				members.push({
@@ -94,9 +94,9 @@ export function analyzeDecoratorClass(node: ts.ClassDeclaration): DecoratorClass
 			&& member.initializer
 			&& ts.isNewExpression(member.initializer)
 		) {
-			let classDeclaration = helper.symbol.resolveDeclaration(member.initializer.expression, ts.isClassLike)
+			let classDeclaration = transformContext.helper.symbol.resolveDeclaration(member.initializer.expression, ts.isClassLike)
 
-			if (classDeclaration && helper.class.isImplementedOf(classDeclaration, 'Connectable', 'lupos')) {
+			if (classDeclaration && transformContext.helper.class.isImplementedOf(classDeclaration, 'Connectable', 'lupos')) {
 				members.push({kind: 'connectable-property', member})
 			}
 		}

@@ -1,7 +1,7 @@
 import ts from 'typescript'
 import {Part, TreeParser} from './tree'
 import {HTMLNodeType, HTMLRoot, TemplateSlotPlaceholder} from '../../lupos-ts-module'
-import {factory, Modifier, Packer, DeclarationScope, helper} from '../../core'
+import {Modifier, Packer, DeclarationScope, transformContext} from '../../core'
 import {SlotParserBase} from './slots'
 import {VariableNames} from './variable-names'
 import {SlotPositionType} from '../../enums'
@@ -92,20 +92,20 @@ export class TreeOutputHandler {
 		//     parts,
 		//	 }
 		// })
-		let templateBlock = factory.createBlock(
+		let templateBlock = transformContext.factory.createBlock(
 			[
 				...initStatements,
-				factory.createReturnStatement(initResult)
+				transformContext.factory.createReturnStatement(initResult)
 			],
 			true
 		)
 
 		let templateInitParams = this.outputTemplateInitParameters(templateBlock)
 
-		let templateMaker = factory.createNewExpression(
-			factory.createIdentifier('TemplateMaker'),
+		let templateMaker = transformContext.factory.createNewExpression(
+			transformContext.factory.createIdentifier('TemplateMaker'),
 			undefined,
-			[factory.createFunctionExpression(
+			[transformContext.factory.createFunctionExpression(
 				undefined,
 				undefined,
 				undefined,
@@ -127,11 +127,11 @@ export class TreeOutputHandler {
 			}
 		])
 
-		let templateNode = factory.createVariableStatement(
+		let templateNode = transformContext.factory.createVariableStatement(
 			undefined,
-			factory.createVariableDeclarationList(
-				[factory.createVariableDeclaration(
-					factory.createIdentifier(templateName),
+			transformContext.factory.createVariableDeclarationList(
+				[transformContext.factory.createVariableDeclaration(
+					transformContext.factory.createIdentifier(templateName),
 					undefined,
 					undefined,
 					templateMaker
@@ -235,12 +235,12 @@ export class TreeOutputHandler {
 
 		// Output `$latest_value_i = $values[i]`
 		for (let [valueIndex, latestName] of this.template.values.outputTransferredLatestNames()) {
-			update.unshift(factory.createBinaryExpression(
-				factory.createIdentifier(latestName),
-				factory.createToken(ts.SyntaxKind.EqualsToken),
-				factory.createElementAccessExpression(
-					factory.createIdentifier(VariableNames.values),
-					factory.createNumericLiteral(valueIndex)
+			update.unshift(transformContext.factory.createBinaryExpression(
+				transformContext.factory.createIdentifier(latestName),
+				transformContext.factory.createToken(ts.SyntaxKind.EqualsToken),
+				transformContext.factory.createElementAccessExpression(
+					transformContext.factory.createIdentifier(VariableNames.values),
+					transformContext.factory.createNumericLiteral(valueIndex)
 				)
 			))
 		}
@@ -267,12 +267,12 @@ export class TreeOutputHandler {
 		}
 
 		// new SlotPosition(SlotPositionType.Before, $context),
-		return factory.createNewExpression(
-			factory.createIdentifier('SlotPosition'),
+		return transformContext.factory.createNewExpression(
+			transformContext.factory.createIdentifier('SlotPosition'),
 			undefined,
 			[
-				factory.createNumericLiteral(position),
-				factory.createIdentifier(nodeName)
+				transformContext.factory.createNumericLiteral(position),
+				transformContext.factory.createIdentifier(nodeName)
 			]
 		)
 	}
@@ -286,21 +286,21 @@ export class TreeOutputHandler {
 		let locatorName = VariableNames.locator
 
 		// $locator = $html_0.make()
-		let node = factory.createVariableStatement(
+		let node = transformContext.factory.createVariableStatement(
 			undefined,
-			factory.createVariableDeclarationList(
-				[factory.createVariableDeclaration(
-					factory.createIdentifier(locatorName),
+			transformContext.factory.createVariableDeclarationList(
+				[transformContext.factory.createVariableDeclaration(
+					transformContext.factory.createIdentifier(locatorName),
 					undefined,
 					undefined,
-					factory.createCallExpression(
-						factory.createPropertyAccessExpression(
-							factory.createIdentifier(htmlName),
-							factory.createIdentifier('make')
+					transformContext.factory.createCallExpression(
+						transformContext.factory.createPropertyAccessExpression(
+							transformContext.factory.createIdentifier(htmlName),
+							transformContext.factory.createIdentifier('make')
 						),
 						undefined,
 						[
-							factory.createIdentifier(VariableNames.hydrates)
+							transformContext.factory.createIdentifier(VariableNames.hydrates)
 						]
 					)
 				)],
@@ -328,8 +328,8 @@ export class TreeOutputHandler {
 			// When visiting template.content.firstChild,
 			// uses `$context.el` to represent it.
 			if (!visitSteps) {
-				fromExp = factory.createPropertyAccessExpression(
-					factory.createIdentifier(VariableNames.context),
+				fromExp = transformContext.factory.createPropertyAccessExpression(
+					transformContext.factory.createIdentifier(VariableNames.context),
 					'el'
 				)
 
@@ -338,13 +338,13 @@ export class TreeOutputHandler {
 
 			// From root, use `$locator`.
 			else if (visitFromNode === this.root) {
-				fromExp = factory.createIdentifier(VariableNames.locator)
+				fromExp = transformContext.factory.createIdentifier(VariableNames.locator)
 			}
 
 			// $node_0
 			else {
 				let fromNodeName = this.tree.references.getRefedName(visitFromNode)
-				fromExp = factory.createIdentifier(fromNodeName)
+				fromExp = transformContext.factory.createIdentifier(fromNodeName)
 			}
 
 			// $locator.childAt(0).firstChild.lastChild.childNodes[0]
@@ -356,54 +356,54 @@ export class TreeOutputHandler {
 
 					// $locator.childAt(0)
 					if (i === 0 && visitFromNode === this.root) {
-						fromExp = factory.createCallExpression(
-							factory.createPropertyAccessExpression(
+						fromExp = transformContext.factory.createCallExpression(
+							transformContext.factory.createPropertyAccessExpression(
 								fromExp,
-								factory.createIdentifier('childAt')
+								transformContext.factory.createIdentifier('childAt')
 							),
 							undefined,
-							[factory.createNumericLiteral(index)]
+							[transformContext.factory.createNumericLiteral(index)]
 						)
 					}
 					else if (index === 0) {
-						fromExp = factory.createPropertyAccessExpression(
+						fromExp = transformContext.factory.createPropertyAccessExpression(
 							fromExp,
 							'firstChild'
 						)
 					}
 					else if (index === -1) {
-						fromExp = factory.createPropertyAccessExpression(
+						fromExp = transformContext.factory.createPropertyAccessExpression(
 							fromExp,
 							'lastChild'
 						)
 					}
 					else {
-						fromExp = factory.createElementAccessExpression(
-							factory.createPropertyAccessExpression(
+						fromExp = transformContext.factory.createElementAccessExpression(
+							transformContext.factory.createPropertyAccessExpression(
 								fromExp,
-								factory.createIdentifier('childNodes')
+								transformContext.factory.createIdentifier('childNodes')
 							),
-							factory.createNumericLiteral(index)
+							transformContext.factory.createNumericLiteral(index)
 						)
 					}
 				}
 
 				// Visit next siblings from `$locator.getMarker('abcdef')`.
 				else if (type === VisitStepType.Marker) {
-					fromExp = factory.createCallExpression(
-						factory.createPropertyAccessExpression(
-							factory.createIdentifier(VariableNames.locator),
-							factory.createIdentifier('getMarker')
+					fromExp = transformContext.factory.createCallExpression(
+						transformContext.factory.createPropertyAccessExpression(
+							transformContext.factory.createIdentifier(VariableNames.locator),
+							transformContext.factory.createIdentifier('getMarker')
 						),
 						undefined,
-						[factory.createStringLiteral(node.markerId!)]
+						[transformContext.factory.createStringLiteral(node.markerId!)]
 					)
 				}
 
 				// Visit next siblings from `$locator.getMarker('abcdef')`.
 				else {
 					for (let j = 0; j < index; j++) {
-						fromExp = factory.createPropertyAccessExpression(
+						fromExp = transformContext.factory.createPropertyAccessExpression(
 							fromExp,
 							'nextSibling'
 						)
@@ -412,17 +412,17 @@ export class TreeOutputHandler {
 				
 				// Access `template.content` for element in <lu:portal>.
 				if (node.tagName === 'template' || node.tagName === 'lu:portal') {
-					fromExp = factory.createPropertyAccessExpression(
+					fromExp = transformContext.factory.createPropertyAccessExpression(
 						fromExp,
 						'content'
 					)
 				}
 			}
 
-			list.push(factory.createVariableStatement(
+			list.push(transformContext.factory.createVariableStatement(
 				undefined,
-				factory.createVariableDeclarationList(
-						[factory.createVariableDeclaration(
+				transformContext.factory.createVariableDeclarationList(
+						[transformContext.factory.createVariableDeclaration(
 						nodeName,
 						undefined,
 						undefined,
@@ -441,11 +441,11 @@ export class TreeOutputHandler {
 			return []
 		}
 
-		return factory.createVariableStatement(
+		return transformContext.factory.createVariableStatement(
 			undefined,
-			factory.createVariableDeclarationList(
-				varNames.map(name => factory.createVariableDeclaration(
-					factory.createIdentifier(name),
+			transformContext.factory.createVariableDeclarationList(
+				varNames.map(name => transformContext.factory.createVariableDeclaration(
+					transformContext.factory.createIdentifier(name),
 					undefined,
 					undefined,
 					undefined
@@ -465,13 +465,13 @@ export class TreeOutputHandler {
 		// position part.
 		let positionNode: ts.PropertyAssignment | null = null
 		if (position) {
-			positionNode = factory.createPropertyAssignment(
-				factory.createIdentifier('position'),
+			positionNode = transformContext.factory.createPropertyAssignment(
+				transformContext.factory.createIdentifier('position'),
 				position
 			)
 		}
 
-		let updateBlock = factory.createBlock(
+		let updateBlock = transformContext.factory.createBlock(
 			Packer.toStatements(update),
 			true
 		)
@@ -481,10 +481,10 @@ export class TreeOutputHandler {
 		// `update` part.
 		let updateNode: ts.MethodDeclaration | null = null
 		if (update.length > 0) {
-			updateNode = factory.createMethodDeclaration(
+			updateNode = transformContext.factory.createMethodDeclaration(
 				undefined,
 				undefined,
-				factory.createIdentifier('update'),
+				transformContext.factory.createIdentifier('update'),
 				undefined,
 				undefined,
 				updateParameters,
@@ -496,26 +496,26 @@ export class TreeOutputHandler {
 		// `parts` part, list of all parts.
 		let partsNode: ts.PropertyAssignment | null = null
 		if (parts.length > 0) {
-			let partExp: ts.Expression = factory.createArrayLiteralExpression(
-				parts.map(part => factory.createArrayLiteralExpression([
-					factory.createIdentifier(part.name),
-					factory.createNumericLiteral(part.position)
+			let partExp: ts.Expression = transformContext.factory.createArrayLiteralExpression(
+				parts.map(part => transformContext.factory.createArrayLiteralExpression([
+					transformContext.factory.createIdentifier(part.name),
+					transformContext.factory.createNumericLiteral(part.position)
 				], false)),
 				true
 			)
 
-			partsNode = factory.createPropertyAssignment(
-				factory.createIdentifier('parts'),
+			partsNode = transformContext.factory.createPropertyAssignment(
+				transformContext.factory.createIdentifier('parts'),
 				partExp
 			)
 		}
 
-		return factory.createObjectLiteralExpression(
+		return transformContext.factory.createObjectLiteralExpression(
 			[
-				factory.createPropertyAssignment(
-					factory.createIdentifier('el'),
-					factory.createPropertyAccessExpression(
-						factory.createIdentifier(VariableNames.locator),
+				transformContext.factory.createPropertyAssignment(
+					transformContext.factory.createIdentifier('el'),
+					transformContext.factory.createPropertyAccessExpression(
+						transformContext.factory.createIdentifier(VariableNames.locator),
 						'el'
 					)
 				),
@@ -530,14 +530,14 @@ export class TreeOutputHandler {
 	/** Output parameters `(?$values)` of update function. */
 	private outputUpdateParameters(block: ts.Block): ts.ParameterDeclaration[] {
 		let test = (node => ts.isIdentifier(node) && node.text === VariableNames.values) as (node: ts.Node) => node is ts.Node
-		let hasValuesRef = !!helper.findInward(block, test)
+		let hasValuesRef = !!transformContext.helper.findInward(block, test)
 		let params: ts.ParameterDeclaration[] = []
 
 		if (hasValuesRef) {
-			params.push(factory.createParameterDeclaration(
+			params.push(transformContext.factory.createParameterDeclaration(
 				undefined,
 				undefined,
-				factory.createIdentifier(VariableNames.values),
+				transformContext.factory.createIdentifier(VariableNames.values),
 				undefined,
 				undefined,
 				undefined
@@ -550,21 +550,21 @@ export class TreeOutputHandler {
 	/** Output parameters `($context, $hydrates)` of template maker init function. */
 	private outputTemplateInitParameters(block: ts.Block): ts.ParameterDeclaration[] {
 		let test = (node => ts.isIdentifier(node) && node.text === VariableNames.context) as (node: ts.Node) => node is ts.Node
-		let hasContextRef = !!helper.findInward(block, test)
+		let hasContextRef = !!transformContext.helper.findInward(block, test)
 
 		let params: ts.ParameterDeclaration[] = [
-			factory.createParameterDeclaration(
+			transformContext.factory.createParameterDeclaration(
 				undefined,
 				undefined,
-				factory.createIdentifier(hasContextRef ? VariableNames.context : '_' + VariableNames.context),
+				transformContext.factory.createIdentifier(hasContextRef ? VariableNames.context : '_' + VariableNames.context),
 				undefined,
 				undefined,
 				undefined
 			),
-			factory.createParameterDeclaration(
+			transformContext.factory.createParameterDeclaration(
 				undefined,
 				undefined,
-				factory.createIdentifier(VariableNames.hydrates),
+				transformContext.factory.createIdentifier(VariableNames.hydrates),
 				undefined,
 				undefined,
 				undefined

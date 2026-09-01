@@ -2,9 +2,10 @@ import ts from 'typescript'
 import {VisitTree} from './visit-tree'
 import {DeclarationScope} from './scope'
 import {Packer} from './packer'
-import {factory, helper, transformContext} from './global'
+import {transformSession, transformContext} from './global'
 import {addToList} from '../utils'
 import {DeclarationScopeTree} from './scope-tree'
+import {createTransformSessionStateKey} from './transform-session'
 
 
 export interface HashItem {
@@ -22,8 +23,12 @@ export interface HashItem {
 
 export namespace Hashing {
 
-	/** Visit node -> node hash result. */
-	const HashMap: Map<ts.Node, HashItem> = new Map()
+	const StateKey = createTransformSessionStateKey<Map<ts.Node, HashItem>>('Hashing')
+
+	/** Visit node -> node hash result for the current source file. */
+	function getHashMap() {
+		return transformSession.getState(StateKey, () => new Map())
+	}
 
 	/** 
 	 * Get hash result of raw node.
@@ -31,12 +36,13 @@ export namespace Hashing {
 	 * String will be encode to use double quotes: `'a'` -> `"a"`.
 	 */
 	export function hashNode(rawNode: ts.Node): HashItem {
-		if (HashMap.has(rawNode)) {
-			return HashMap.get(rawNode)!
+		let hashMap = getHashMap()
+		if (hashMap.has(rawNode)) {
+			return hashMap.get(rawNode)!
 		}
 
 		let hashed = doHashing(rawNode, rawNode)
-		HashMap.set(rawNode, hashed)
+		hashMap.set(rawNode, hashed)
 
 		return hashed
 	}
@@ -47,12 +53,13 @@ export namespace Hashing {
 	 * String will be encode to use double quotes: `'a'` -> `"a"`.
 	 */
 	export function hashMayNewNode(node: ts.Node, closestRawNode: ts.Node): HashItem {
-		if (HashMap.has(node)) {
-			return HashMap.get(node)!
+		let hashMap = getHashMap()
+		if (hashMap.has(node)) {
+			return hashMap.get(node)!
 		}
 
 		let hashed = doHashing(node, closestRawNode)
-		HashMap.set(node, hashed)
+		hashMap.set(node, hashed)
 
 		return hashed
 	}
@@ -69,7 +76,7 @@ export namespace Hashing {
 		let normalized = Packer.normalize(hashVisited, true)
 
 		return {
-			name: helper.getFullText(normalized),
+			name: transformContext.helper.getFullText(normalized),
 			usedScopes,
 			usedDeclarations: usedDeclarations,
 		}
@@ -78,7 +85,7 @@ export namespace Hashing {
 	function hashNodeVisitor(node: ts.Node, closestRawNode: ts.Node, usedScopes: DeclarationScope[], usedDeclarations: ts.Node[]): ts.Node | undefined {
 
 		// a -> a_123
-		if (helper.isVariableIdentifier(node)) {
+		if (transformContext.helper.isVariableIdentifier(node)) {
 			let {name, scope} = hashVariableName(node, closestRawNode)
 			let declNode = scope.getVariableDeclaredOrReferenced(node.text)
 
@@ -88,15 +95,15 @@ export namespace Hashing {
 				usedDeclarations.push(declNode)
 			}
 
-			return factory.createIdentifier(name)
+			return transformContext.factory.createIdentifier(name)
 		}
 
 		// this -> this_123
-		else if (helper.isThis(node)) {
+		else if (transformContext.helper.isThis(node)) {
 			let {name, scope} = hashVariableName(node as ts.ThisExpression, closestRawNode)
 			addToList(usedScopes, scope)
 
-			return factory.createIdentifier(name)
+			return transformContext.factory.createIdentifier(name)
 		}
 
 		// `a?.b` -> `a.b`
@@ -107,7 +114,7 @@ export namespace Hashing {
 		return ts.visitEachChild(
 			node,
 			(n: ts.Node) => hashNodeVisitor(n, VisitTree.hasNode(n) ? n : closestRawNode, usedScopes, usedDeclarations),
-			transformContext
+			transformContext.transformationContext
 		)
 	}
 
@@ -119,7 +126,7 @@ export namespace Hashing {
 	function hashVariableName(node: ts.Identifier | ts.ThisExpression, closestRawNode: ts.Node): {name: string, scope: DeclarationScope} {
 		let closest = DeclarationScopeTree.findClosest(closestRawNode)
 		let scope = DeclarationScopeTree.findDeclared(node, closest) || closest
-		let name = helper.getFullText(node)
+		let name = transformContext.helper.getFullText(node)
 		let suffix = VisitTree.getIndex(scope.node)
 
 		return {

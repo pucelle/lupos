@@ -1,5 +1,5 @@
 import ts from 'typescript'
-import {InterpolationPosition, Packer, helper} from '../../core'
+import {InterpolationPosition, Packer, transformContext} from '../../core'
 import {TrackingArea} from './area'
 import {TrackingRange, TrackingRanges} from './ranges'
 import {ListMap} from '../../lupos-ts-module'
@@ -145,10 +145,10 @@ export namespace TrackingAreaTree {
 		}
 
 		// Function like
-		else if (helper.isFunctionLike(node)) {
+		else if (transformContext.helper.isFunctionLike(node)) {
 			type |= TrackingAreaTypeMask.FunctionLike
 
-			if (helper.isInstantlyRunFunction(node) || TrackingPatch.isForceInstantlyRun(node)) {
+			if (transformContext.helper.isInstantlyRunFunction(node) || TrackingPatch.isForceInstantlyRun(node)) {
 				type |= TrackingAreaTypeMask.InstantlyRunFunction
 			}
 		}

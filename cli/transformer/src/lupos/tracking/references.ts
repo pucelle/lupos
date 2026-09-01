@@ -1,4 +1,4 @@
-import {factory, InterpolationContentType, Interpolator, Modifier, VisitTree, DeclarationScopeTree, helper, InterpolationPosition} from '../../core'
+import {InterpolationContentType, Interpolator, Modifier, VisitTree, DeclarationScopeTree, InterpolationPosition, transformContext} from '../../core'
 import ts from 'typescript'
 import {TrackingAreaTree} from './area-tree'
 import {TrackingArea} from './area'
@@ -53,12 +53,12 @@ export namespace TrackingReferences {
 
 	/** Reference exp and name part of an access node if needed. */
 	export function mayReferenceAccess(accessNode: ts.Expression, toNode: ts.Node, area: TrackingArea) {
-		if (!helper.access.isAccess(accessNode)) {
+		if (!transformContext.helper.access.isAccess(accessNode)) {
 			return
 		}
 
 		let expNode = accessNode.expression
-		let nameNode = helper.access.getPropertyNode(accessNode)
+		let nameNode = transformContext.helper.access.getPropertyNode(accessNode)
 
 		// Use a reference variable to replace expression.
 		if (shouldReference(expNode, toNode)) {
@@ -97,13 +97,13 @@ export namespace TrackingReferences {
 			return false
 		}
 
-		for (let descendant of helper.walkInward(node)) {
+		for (let descendant of transformContext.helper.walkInward(node)) {
 			if (ReferencedNodes.has(descendant)) {
 				continue
 			}
 
 			// Not stop, child may be raw node.
-			if (!helper.isRaw(descendant)) {
+			if (!transformContext.helper.isRaw(descendant)) {
 				continue
 			}
 
@@ -111,7 +111,7 @@ export namespace TrackingReferences {
 				return true
 			}
 
-			if (helper.access.isAccess(descendant) || helper.isVariableIdentifier(descendant)) {
+			if (transformContext.helper.access.isAccess(descendant) || transformContext.helper.isVariableIdentifier(descendant)) {
 
 				// To reference only when output after earliest assign place.
 				let assignableNode = DeclarationScopeTree.whereWillBeAssignedBefore(descendant, toNode)
@@ -173,7 +173,7 @@ export namespace TrackingReferences {
 	 *     `a[b++]` -> `$ref_0 = b++; ... a[$ref_0]`
 	 */
 	function reference(node: ts.Node, area: TrackingArea) {
-		let varDeclListNode = helper.findOutwardUntil(node, area.node, ts.isVariableDeclaration)
+		let varDeclListNode = transformContext.helper.findOutwardUntil(node, area.node, ts.isVariableDeclaration)
 		let varScope = DeclarationScopeTree.findClosest(node).findClosestToAddStatements()
 		let refName = varScope.makeUniqueVariable('$ref_')
 
@@ -184,7 +184,7 @@ export namespace TrackingReferences {
 			Modifier.addVariableAssignmentToList(node, varDeclListNode, refName)
 
 			// replace `a.b()` -> `$ref_0`.
-			Interpolator.replace(node, InterpolationContentType.Reference, () => factory.createIdentifier(refName))
+			Interpolator.replace(node, InterpolationContentType.Reference, () => transformContext.factory.createIdentifier(refName))
 		}
 
 		// Insert two: `var $ref_0`, and `$ref_0 = ...`
@@ -206,7 +206,7 @@ export namespace TrackingReferences {
 				Modifier.addVariableAssignment(node, refPosition.toNode, refName)
 
 				// replace `a.b()` -> `$ref_0`.
-				Interpolator.replace(node, InterpolationContentType.Reference, () => factory.createIdentifier(refName))
+				Interpolator.replace(node, InterpolationContentType.Reference, () => transformContext.factory.createIdentifier(refName))
 			}
 			else {
 				
@@ -217,7 +217,7 @@ export namespace TrackingReferences {
 				Modifier.addReferenceAssignment(node, refPosition.toNode, refName)
 
 				// replace `a.b()` -> `$ref_0`.
-				Interpolator.replace(node, InterpolationContentType.Reference, () => factory.createIdentifier(refName))
+				Interpolator.replace(node, InterpolationContentType.Reference, () => transformContext.factory.createIdentifier(refName))
 			}
 		}
 	}

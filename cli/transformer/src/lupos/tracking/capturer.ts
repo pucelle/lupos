@@ -1,5 +1,5 @@
 import ts from 'typescript'
-import {InterpolationContentType, Interpolator, InterpolationPosition, VisitTree, Packer, helper, sourceFile, Hashing} from '../../core'
+import {InterpolationContentType, Interpolator, InterpolationPosition, VisitTree, Packer, transformSession, Hashing, transformContext} from '../../core'
 import {AccessNode} from '../../lupos-ts-module'
 import {TrackingArea} from './area'
 import {TrackingAreaTargetPosition, TrackingAreaTree, TrackingAreaTypeMask} from './area-tree'
@@ -86,7 +86,7 @@ export class TrackingCapturer {
 		this.initCaptureType(state)
 
 		// Broadcast `preventGettingAfterAwait` to child capturers, but not to function.
-		if (area.parent && area.parent.capturer.preventGettingAfterAwait && !helper.isFunctionLike(area.node)) {
+		if (area.parent && area.parent.capturer.preventGettingAfterAwait && !transformContext.helper.isFunctionLike(area.node)) {
 			this.preventGettingAfterAwait = true
 		}
 	}
@@ -95,7 +95,7 @@ export class TrackingCapturer {
 		this.latestCaptured = {
 			position: InterpolationPosition.Before,
 			items: [],
-			toNode: sourceFile,
+			toNode: transformSession.sourceFile,
 			breakByAsync: false,
 		}
 	}
@@ -595,7 +595,7 @@ export class TrackingCapturer {
 			let nodes: AccessNode[] = []
 			let node = Interpolator.outputReplaceableChildren(item.exp) as ts.Expression
 			let key = item.key!
-			let queryDot = helper.access.isAccess(item.node) && !!item.node.questionDotToken
+			let queryDot = transformContext.helper.access.isAccess(item.node) && !!item.node.questionDotToken
 
 			node = Packer.createAccessNode(node, key, queryDot)
 			nodes.push(node as AccessNode)

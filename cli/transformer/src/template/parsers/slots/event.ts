@@ -1,6 +1,6 @@
 import ts from 'typescript'
 import {SlotParserBase} from './base'
-import {factory, Modifier, helper} from '../../../core'
+import {Modifier, transformContext} from '../../../core'
 import {VariableNames} from '../variable-names'
 import {TemplateSlotPlaceholder} from '../../../lupos-ts-module'
 import {PartType} from '../tree'
@@ -58,7 +58,7 @@ export class EventSlotParser extends SlotParserBase {
 		}
 
 		for (let classDecl of classDeclarations) {
-			let interfaceDecls = helper.symbol.resolveSpecifiedTypeParameter(classDecl, 'EventFirer', 0)
+			let interfaceDecls = transformContext.helper.symbol.resolveSpecifiedTypeParameter(classDecl, 'EventFirer', 0)
 			
 			for (let decl of interfaceDecls) {
 				for (let member of decl.members) {
@@ -66,7 +66,7 @@ export class EventSlotParser extends SlotParserBase {
 						continue
 					}
 
-					if (helper.getText(member.name) === this.name) {
+					if (transformContext.helper.getText(member.name) === this.name) {
 						return 'component'
 					}
 				}
@@ -90,14 +90,14 @@ export class EventSlotParser extends SlotParserBase {
 
 		// $com_0.on('comEventName', (...args) => {$latest_0.call($context, ...args)})
 		if (this.latestVariableNames) {
-			return factory.createCallExpression(
-				factory.createPropertyAccessExpression(
-					factory.createIdentifier(comVariableName),
-					factory.createIdentifier('on')
+			return transformContext.factory.createCallExpression(
+				transformContext.factory.createPropertyAccessExpression(
+					transformContext.factory.createIdentifier(comVariableName),
+					transformContext.factory.createIdentifier('on')
 				),
 				undefined,
 				[
-					factory.createStringLiteral(this.name),
+					transformContext.factory.createStringLiteral(this.name),
 					this.outputLatestHandler()
 				]
 			)
@@ -105,16 +105,16 @@ export class EventSlotParser extends SlotParserBase {
 
 		// $com_0.on('comEventName', eventHandler, $context)
 		else {
-			return factory.createCallExpression(
-				factory.createPropertyAccessExpression(
-					factory.createIdentifier(comVariableName),
-					factory.createIdentifier('on')
+			return transformContext.factory.createCallExpression(
+				transformContext.factory.createPropertyAccessExpression(
+					transformContext.factory.createIdentifier(comVariableName),
+					transformContext.factory.createIdentifier('on')
 				),
 				undefined,
 				[
-					factory.createStringLiteral(this.name),
+					transformContext.factory.createStringLiteral(this.name),
 					this.outputValue().joint,
-					factory.createIdentifier(VariableNames.context)
+					transformContext.factory.createIdentifier(VariableNames.context)
 				]
 			)
 		}
@@ -123,29 +123,29 @@ export class EventSlotParser extends SlotParserBase {
 	private outputLatestHandler(): ts.ArrowFunction {
 
 		// (...args) => {$latest_0.call($context, ...args)}
-		return factory.createArrowFunction(
+		return transformContext.factory.createArrowFunction(
 			undefined,
 			undefined,
-			[factory.createParameterDeclaration(
+			[transformContext.factory.createParameterDeclaration(
 				undefined,
-				factory.createToken(ts.SyntaxKind.DotDotDotToken),
-				factory.createIdentifier('args'),
+				transformContext.factory.createToken(ts.SyntaxKind.DotDotDotToken),
+				transformContext.factory.createIdentifier('args'),
 				undefined,
 				undefined,
 				undefined
 			)],
 			undefined,
-			factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
-			factory.createBlock(
-				[factory.createExpressionStatement(factory.createCallExpression(
-					factory.createPropertyAccessExpression(
-						factory.createIdentifier(this.latestVariableNames![0]!),
-						factory.createIdentifier('call')
+			transformContext.factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
+			transformContext.factory.createBlock(
+				[transformContext.factory.createExpressionStatement(transformContext.factory.createCallExpression(
+					transformContext.factory.createPropertyAccessExpression(
+						transformContext.factory.createIdentifier(this.latestVariableNames![0]!),
+						transformContext.factory.createIdentifier('call')
 					),
 					undefined,
 					[
-						factory.createIdentifier(VariableNames.context),
-						factory.createSpreadElement(factory.createIdentifier('args'))
+						transformContext.factory.createIdentifier(VariableNames.context),
+						transformContext.factory.createSpreadElement(transformContext.factory.createIdentifier('args'))
 					]
 				))],
 				true
@@ -156,24 +156,24 @@ export class EventSlotParser extends SlotParserBase {
 	private outputOnBindingInit() {
 		Modifier.addImport('on', 'lupos.html')
 
-		let node = factory.createIdentifier(this.getRefedNodeName())
-		let type = factory.createStringLiteral(this.name)
+		let node = transformContext.factory.createIdentifier(this.getRefedNodeName())
+		let type = transformContext.factory.createStringLiteral(this.name)
 		let handler = this.latestVariableNames ? this.outputLatestHandler() : this.outputValue().joint
 
 		let modifiers = this.modifiers && this.modifiers.length > 0
-			? factory.createArrayLiteralExpression(
-				this.modifiers.map(m => factory.createStringLiteral(m)),
+			? transformContext.factory.createArrayLiteralExpression(
+				this.modifiers.map(m => transformContext.factory.createStringLiteral(m)),
 				false
 			)
 			: null
 
 		// new on($node_0, $context)
-		let newBinding = factory.createNewExpression(
-			factory.createIdentifier('on'),
+		let newBinding = transformContext.factory.createNewExpression(
+			transformContext.factory.createIdentifier('on'),
 			undefined,
 			[
 				node,
-				factory.createIdentifier(VariableNames.context),
+				transformContext.factory.createIdentifier(VariableNames.context),
 			]
 		)
 
@@ -182,16 +182,16 @@ export class EventSlotParser extends SlotParserBase {
 			newBinding
 		)
 
-		let bindingUpdate = factory.createCallExpression(
-			factory.createPropertyAccessExpression(
-				factory.createIdentifier(this.bindingVariableName!),
-				factory.createIdentifier('update')
+		let bindingUpdate = transformContext.factory.createCallExpression(
+			transformContext.factory.createPropertyAccessExpression(
+				transformContext.factory.createIdentifier(this.bindingVariableName!),
+				transformContext.factory.createIdentifier('update')
 			),
 			undefined,
 			[
 				type,
 				handler,
-				...(modifiers ? [factory.createIdentifier('undefined'), modifiers] : [])
+				...(modifiers ? [transformContext.factory.createIdentifier('undefined'), modifiers] : [])
 			]
 		)
 
@@ -203,9 +203,9 @@ export class EventSlotParser extends SlotParserBase {
 
 	override outputUpdate() {
 		if (this.latestVariableNames) {
-			return factory.createBinaryExpression(
-				factory.createIdentifier(this.latestVariableNames[0]!),
-				factory.createToken(ts.SyntaxKind.EqualsToken),
+			return transformContext.factory.createBinaryExpression(
+				transformContext.factory.createIdentifier(this.latestVariableNames[0]!),
+				transformContext.factory.createToken(ts.SyntaxKind.EqualsToken),
 				this.outputValue().joint
 			)
 		}

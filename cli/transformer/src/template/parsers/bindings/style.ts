@@ -1,5 +1,5 @@
 import ts = require('typescript')
-import {factory, Packer, helper} from '../../../core'
+import {Packer, transformContext} from '../../../core'
 import {BindingBase, BindingUpdateCallWith} from './base'
 
 
@@ -13,40 +13,40 @@ export class StyleBinding extends BindingBase {
 
 				// `.url` -> `url(...)`
 				if (this.modifiers[1] === 'url') {
-					value = factory.createBinaryExpression(
-						factory.createBinaryExpression(
-							factory.createStringLiteral('url('),
-							factory.createToken(ts.SyntaxKind.PlusToken),
+					value = transformContext.factory.createBinaryExpression(
+						transformContext.factory.createBinaryExpression(
+							transformContext.factory.createStringLiteral('url('),
+							transformContext.factory.createToken(ts.SyntaxKind.PlusToken),
 							value
 						),
-						factory.createToken(ts.SyntaxKind.PlusToken),
-						factory.createStringLiteral(')')
+						transformContext.factory.createToken(ts.SyntaxKind.PlusToken),
+						transformContext.factory.createStringLiteral(')')
 					)
 				}
 
 				// `.percent`
 				else if (this.modifiers[1] === 'percent') {
-					value = factory.createBinaryExpression(
+					value = transformContext.factory.createBinaryExpression(
 						value,
-						factory.createToken(ts.SyntaxKind.PlusToken),
-						factory.createStringLiteral('%')
+						transformContext.factory.createToken(ts.SyntaxKind.PlusToken),
+						transformContext.factory.createStringLiteral('%')
 					)
 				}
 
 				// `.px`, `.rem`, ...
 				else if (/^\w+$/.test(this.modifiers[1])) {
-					value = factory.createBinaryExpression(
+					value = transformContext.factory.createBinaryExpression(
 						value,
-						factory.createToken(ts.SyntaxKind.PlusToken),
-						factory.createStringLiteral(this.modifiers[1])
+						transformContext.factory.createToken(ts.SyntaxKind.PlusToken),
+						transformContext.factory.createStringLiteral(this.modifiers[1])
 					)
 				}
 			}
 
 			return {
 				method: 'updateObject',
-				values: [factory.createObjectLiteralExpression(
-					[factory.createPropertyAssignment(
+				values: [transformContext.factory.createObjectLiteralExpression(
+					[transformContext.factory.createPropertyAssignment(
 						Packer.createPropertyName(this.modifiers[0]),
 						value
 					)],
@@ -63,15 +63,15 @@ export class StyleBinding extends BindingBase {
 		}
 
 		let slotNode = this.slot.getFirstRawValueNode()
-		let slotNodeType = slotNode ? helper.types.typeOf(slotNode) : null
+		let slotNodeType = slotNode ? transformContext.helper.types.typeOf(slotNode) : null
 
-		if (this.slot.hasString() || helper.types.isValueType(slotNodeType!)) {
+		if (this.slot.hasString() || transformContext.helper.types.isValueType(slotNodeType!)) {
 			return {
 				method: 'updateString',
 				values: [value],
 			}
 		}
-		else if (helper.types.isObjectType(slotNodeType!)) {
+		else if (transformContext.helper.types.isObjectType(slotNodeType!)) {
 			return {
 				method: 'updateObject',
 				values: [value],

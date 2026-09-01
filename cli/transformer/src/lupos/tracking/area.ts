@@ -1,6 +1,6 @@
 import ts from 'typescript'
 import {ObservedChecker} from './observed-checker'
-import {DeclarationScope, DeclarationScopeTree, helper} from '../../core'
+import {DeclarationScope, DeclarationScopeTree, transformContext} from '../../core'
 import {TrackingAreaState} from './area-state'
 import {TrackingAreaTypeMask} from './area-tree'
 import {TrackingCapturer} from './capturer'
@@ -61,14 +61,14 @@ export class TrackingArea {
 	 * For function area, it returns the scope of function body.
 	 */
 	getDeclarationScope(resolveFromFnToBody: boolean): DeclarationScope {
-		if (resolveFromFnToBody && helper.isFunctionLike(this.node) && this.node.body) {
+		if (resolveFromFnToBody && transformContext.helper.isFunctionLike(this.node) && this.node.body) {
 			return DeclarationScopeTree.findClosest(this.node.body)
 		}
 		else {
 
 			// Found may be also a function.
 			let closest = DeclarationScopeTree.findClosest(this.node)
-			if (resolveFromFnToBody && helper.isFunctionLike(closest.node) && closest.node.body) {
+			if (resolveFromFnToBody && transformContext.helper.isFunctionLike(closest.node) && closest.node.body) {
 				return DeclarationScopeTree.findClosest(closest.node.body)
 			}
 			else {
@@ -114,7 +114,7 @@ export class TrackingArea {
 
 			// `let {a} = b`, track `b.a`.
 			if (rawNode.initializer) {
-				for (let {node, initializer, keys} of helper.variable.walkDeconstructedDeclarationItems(rawNode)) {
+				for (let {node, initializer, keys} of transformContext.helper.variable.walkDeconstructedDeclarationItems(rawNode)) {
 
 					// Skips let `a = b`.
 					if (initializer && keys.length > 0) {
@@ -125,31 +125,31 @@ export class TrackingArea {
 		}
 
 		// Test and add property access nodes.
-		else if (helper.access.isAccess(rawNode)) {
+		else if (transformContext.helper.access.isAccess(rawNode)) {
 
 			// `a[0]`, `map.get`, `set.get`.
 			// If match call expression like `map.get(...)` should by better.
-			if (helper.access.isOfElementsReadAccess(rawNode)) {
+			if (transformContext.helper.access.isOfElementsReadAccess(rawNode)) {
 				this.mayAddGetTracking(rawNode, rawNode.expression, [''])
 			}
 
 			// `[].push`, `map.set`, `set.set`.
-			else if (helper.access.isOfElementsWriteAccess(rawNode)) {
+			else if (transformContext.helper.access.isOfElementsWriteAccess(rawNode)) {
 				this.mayAddSetTracking(rawNode, rawNode.expression, [''])
 			}
 
 			// `a.b`, but not `a.b` of `a.b = c`.
-			else if (!helper.assign.isWithinAssignmentTo(rawNode)) {
+			else if (!transformContext.helper.assign.isWithinAssignmentTo(rawNode)) {
 				this.mayAddGetTracking(rawNode)
 			}
 		}
 
 		// Test and add property assignment nodes.
-		else if (helper.assign.isAssignment(rawNode)) {
-			let assignTo = helper.assign.getToExpressions(rawNode)
+		else if (transformContext.helper.assign.isAssignment(rawNode)) {
+			let assignTo = transformContext.helper.assign.getToExpressions(rawNode)
 			
 			for (let to of assignTo) {
-				if (helper.access.isAccess(to)) {
+				if (transformContext.helper.access.isAccess(to)) {
 					this.mayAddSetTracking(to)
 				}
 			}
@@ -175,11 +175,11 @@ export class TrackingArea {
 		else if (ts.isCallExpression(rawNode) || ts.isNewExpression(rawNode)) {
 			let args = rawNode.arguments
 			if (args && args.length > 0) {
-				let parameters = helper.parameter.getCallParameters(rawNode)
+				let parameters = transformContext.helper.parameter.getCallParameters(rawNode)
 				if (parameters && parameters.length > 0) {
-					for (let {arg, typeNode} of helper.parameter.walkDeconstructedArgumentTypeItems(args, parameters)) {
-						if (typeNode && (ts.isIdentifier(arg) || helper.access.isAccess(arg))) {
-							let resolved = helper.symbol.resolveImport(typeNode)
+					for (let {arg, typeNode} of transformContext.helper.parameter.walkDeconstructedArgumentTypeItems(args, parameters)) {
+						if (typeNode && (ts.isIdentifier(arg) || transformContext.helper.access.isAccess(arg))) {
+							let resolved = transformContext.helper.symbol.resolveImport(typeNode)
 							if (resolved?.moduleName === 'lupos') {
 								if (resolved.memberName === 'GetObserved') {
 									this.mayAddGetTracking(arg, arg, [''])
@@ -196,12 +196,12 @@ export class TrackingArea {
 
 		
 		// `[...a]`, `{...o}`, `Object.keys(a)`
-		if (helper.access.isAllElementsReadAccess(rawNode)) {
+		if (transformContext.helper.access.isAllElementsReadAccess(rawNode)) {
 			this.mayAddGetTracking(rawNode, rawNode, [''])
 		}
 
 		// `Object.assign(a, ...)`
-		else if (helper.access.isAllElementsWriteAccess(rawNode)) {
+		else if (transformContext.helper.access.isAllElementsWriteAccess(rawNode)) {
 			this.mayAddSetTracking(rawNode, rawNode, [''])
 		}
 		

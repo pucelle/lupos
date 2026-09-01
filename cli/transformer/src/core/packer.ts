@@ -1,5 +1,5 @@
 import ts from 'typescript'
-import {factory, transformContext, helper} from './global'
+import {transformContext} from './global'
 import {AccessNode} from '../lupos-ts-module'
 
 
@@ -16,29 +16,29 @@ export namespace Packer {
 	 */
 	export function createPropertyName(name: string | number): ts.PropertyName {
 		if (typeof name === 'string' && /^[\w$]+$/.test(name)) {
-			return factory.createIdentifier(name)
+			return transformContext.factory.createIdentifier(name)
 		}
 		else if (typeof name === 'string' && /^#[\w$]+$/.test(name)) {
-			return factory.createPrivateIdentifier(name)
+			return transformContext.factory.createPrivateIdentifier(name)
 		}
 		else if (typeof name === 'string') {
-			return factory.createStringLiteral(name)
+			return transformContext.factory.createStringLiteral(name)
 		}
 		else {
-			return factory.createNumericLiteral(name)
+			return transformContext.factory.createNumericLiteral(name)
 		}
 	}
 
 	/** Make a numeric literal or expression by number. */
 	export function createNumeric(number: number): ts.PrefixUnaryExpression | ts.NumericLiteral {
 		if (number < 0) {
-			return factory.createPrefixUnaryExpression(
+			return transformContext.factory.createPrefixUnaryExpression(
 				ts.SyntaxKind.MinusToken,
-				factory.createNumericLiteral(-number)
+				transformContext.factory.createNumericLiteral(-number)
 			)
 		}
 		else {
-			return factory.createNumericLiteral(number)
+			return transformContext.factory.createNumericLiteral(number)
 		}
 	}
 
@@ -46,14 +46,14 @@ export namespace Packer {
 	export function createAccessNode(exp: ts.Expression, name: string | number, queryDot: boolean = false): AccessNode {
 		if (typeof name === 'string' && (/^[\w$]+$/.test(name) || /^#[\w$]+$/.test(name))) {
 			if (queryDot) {
-				return factory.createPropertyAccessChain(
+				return transformContext.factory.createPropertyAccessChain(
 					exp,
-					factory.createToken(ts.SyntaxKind.QuestionDotToken),
+					transformContext.factory.createToken(ts.SyntaxKind.QuestionDotToken),
 					name
 				)
 			}
 			else {
-				return factory.createPropertyAccessExpression(
+				return transformContext.factory.createPropertyAccessExpression(
 					exp,
 					name
 				)
@@ -63,21 +63,21 @@ export namespace Packer {
 			let prop: ts.StringLiteral | ts.NumericLiteral
 
 			if (typeof name === 'string') {
-				prop = factory.createStringLiteral(name)
+				prop = transformContext.factory.createStringLiteral(name)
 			}
 			else {
 				prop = createNumeric(name) as ts.NumericLiteral
 			}
 
 			if (queryDot) {
-				return factory.createElementAccessChain(
+				return transformContext.factory.createElementAccessChain(
 					exp,
-					factory.createToken(ts.SyntaxKind.QuestionDotToken),
+					transformContext.factory.createToken(ts.SyntaxKind.QuestionDotToken),
 					prop
 				)
 			}
 			else {
-				return factory.createElementAccessExpression(
+				return transformContext.factory.createElementAccessExpression(
 					exp,
 					prop
 				)
@@ -248,7 +248,7 @@ export namespace Packer {
 		}
 
 		let exp = bundleBinaryExpressions(exps, ts.SyntaxKind.CommaToken)
-		return factory.createParenthesizedExpression(exp)
+		return transformContext.factory.createParenthesizedExpression(exp)
 	}
 
 	/** 
@@ -265,7 +265,7 @@ export namespace Packer {
 		let exp = exps[0]
 
 		for (let i = 1; i < exps.length; i++) {
-			exp = factory.createBinaryExpression(
+			exp = transformContext.factory.createBinaryExpression(
 				exp,
 				operator,
 				exps[i]
@@ -282,7 +282,7 @@ export namespace Packer {
 
 			// `a?.b`
 			if (node.questionDotToken) {
-				return factory.createPropertyAccessChain(
+				return transformContext.factory.createPropertyAccessChain(
 					removeAccessComments(node.expression),
 					node.questionDotToken,
 					removeAccessComments(node.name),
@@ -291,7 +291,7 @@ export namespace Packer {
 
 			// `a.b`
 			else {
-				return factory.createPropertyAccessExpression(
+				return transformContext.factory.createPropertyAccessExpression(
 					removeAccessComments(node.expression),
 					removeAccessComments(node.name)
 				) as ts.Node as T
@@ -301,7 +301,7 @@ export namespace Packer {
 			
 			// `a?.[b]`
 			if (node.questionDotToken) {
-				return factory.createElementAccessChain(
+				return transformContext.factory.createElementAccessChain(
 					removeAccessComments(node.expression),
 					node.questionDotToken,
 					removeAccessComments(node.argumentExpression),
@@ -310,17 +310,17 @@ export namespace Packer {
 
 			// `a[b]`
 			else {
-				return factory.createElementAccessExpression(
+				return transformContext.factory.createElementAccessExpression(
 					removeAccessComments(node.expression),
 					removeAccessComments(node.argumentExpression)
 				) as ts.Node as T
 			}
 		}
 		else if (ts.isIdentifier(node)) {
-			return factory.createIdentifier(helper.getFullText(node)) as ts.Node as T
+			return transformContext.factory.createIdentifier(transformContext.helper.getFullText(node)) as ts.Node as T
 		}
-		else if (helper.isThis(node)) {
-			return factory.createThis() as ts.Node as T
+		else if (transformContext.helper.isThis(node)) {
+			return transformContext.factory.createThis() as ts.Node as T
 		}
 
 		return node
@@ -333,13 +333,13 @@ export namespace Packer {
 			return node
 		}
 		else if (ts.isVariableDeclarationList(node)) {
-			return factory.createVariableStatement(undefined, node)
+			return transformContext.factory.createVariableStatement(undefined, node)
 		}
 		else if (ts.isExpression(node)) {
-			return factory.createExpressionStatement(node)
+			return transformContext.factory.createExpressionStatement(node)
 		}
 		else {
-			throw new Error(`Don't know how to pack "${helper.getFullText(node)}" to a statement!`)
+			throw new Error(`Don't know how to pack "${transformContext.helper.getFullText(node)}" to a statement!`)
 		}
 	}
 
@@ -370,29 +370,29 @@ export namespace Packer {
 
 			// `a?.b`
 			if (node.questionDotToken) {
-				return factory.createPropertyAccessChain(
+				return transformContext.factory.createPropertyAccessChain(
 					normalize(node.expression, deeply) as ts.Expression,
 					node.questionDotToken,
-					factory.createIdentifier(node.argumentExpression.text)
+					transformContext.factory.createIdentifier(node.argumentExpression.text)
 				)
 			}
 
 			// `a.b`
 			else {
-				return factory.createPropertyAccessExpression(
+				return transformContext.factory.createPropertyAccessExpression(
 					normalize(node.expression, deeply) as ts.Expression,
-					factory.createIdentifier(node.argumentExpression.text)
+					transformContext.factory.createIdentifier(node.argumentExpression.text)
 				)
 			}
 		}
 
 		// '...' -> "..."
 		else if (ts.isStringLiteral(node)) {
-			return factory.createStringLiteral(node.text)
+			return transformContext.factory.createStringLiteral(node.text)
 		}
 
 		else if (deeply) {
-			return ts.visitEachChild(node, (node: ts.Node) => normalize(node, true), transformContext)
+			return ts.visitEachChild(node, (node: ts.Node) => normalize(node, true), transformContext.transformationContext)
 		}
 		else {
 			return node
@@ -404,8 +404,8 @@ export namespace Packer {
 	export function toIfElseStatement(condExps: ts.Expression[], exps: ts.Expression[]): ts.Statement {
 
 		// Last branch.
-		let last: ts.Statement = factory.createBlock(
-			[factory.createReturnStatement(
+		let last: ts.Statement = transformContext.factory.createBlock(
+			[transformContext.factory.createReturnStatement(
 				exps[exps.length - 1]
 			)],
 			true
@@ -414,12 +414,12 @@ export namespace Packer {
 		for (let i = exps.length - 2; i >= 0; i--) {
 			let conditionNode = condExps[i]
 
-			let thenNode = factory.createBlock(
-				[factory.createReturnStatement(exps[i])],
+			let thenNode = transformContext.factory.createBlock(
+				[transformContext.factory.createReturnStatement(exps[i])],
 				true
 			)
 
-			last = factory.createIfStatement(
+			last = transformContext.factory.createIfStatement(
 				conditionNode,
 				thenNode,
 				last
@@ -440,11 +440,11 @@ export namespace Packer {
 			let conditionNode = condExps[i]
 			let thenNode = exps[i]
 
-			last = factory.createConditionalExpression(
+			last = transformContext.factory.createConditionalExpression(
 				conditionNode,
-				factory.createToken(ts.SyntaxKind.QuestionToken),
+				transformContext.factory.createToken(ts.SyntaxKind.QuestionToken),
 				thenNode,
-				factory.createToken(ts.SyntaxKind.ColonToken),
+				transformContext.factory.createToken(ts.SyntaxKind.ColonToken),
 				last
 			)
 

@@ -1,7 +1,7 @@
 import ts from 'typescript'
 import {TrackingArea} from './area'
 import {TrackingAreaTree, TrackingAreaTypeMask} from './area-tree'
-import {helper} from '../../core'
+import {transformContext} from '../../core'
 import {FlowInterruptionTypeMask, TrackingHelper} from './helper'
 
 
@@ -72,11 +72,11 @@ export class TrackingAreaState {
 			return false
 		}
 
-		if (!helper.objectLike.isDerivedOf(classNode, 'Component', 'lupos.html')) {
+		if (!transformContext.helper.objectLike.isDerivedOf(classNode, 'Component', 'lupos.html')) {
 			return false
 		}
 
-		let methodName = helper.getText(node.name)
+		let methodName = transformContext.helper.getText(node.name)
 		return ['onCreated', 'onConnected', 'onWillDisconnect'].includes(methodName)
 	}
 
@@ -94,7 +94,7 @@ export class TrackingAreaState {
 		}
 
 		// If current area was included by a decorator, treat parent as global area.
-		let decorator = helper.findOutwardUntil(
+		let decorator = transformContext.helper.findOutwardUntil(
 			this.area.node,
 			parent.node,
 			ts.isDecorator
@@ -104,7 +104,7 @@ export class TrackingAreaState {
 			return false
 		}
 
-		let isVoidReturning = helper.isVoidReturning(node as ts.FunctionLikeDeclaration)
+		let isVoidReturning = transformContext.helper.isVoidReturning(node as ts.FunctionLikeDeclaration)
 
 		// An instantly run function should inherit whether stop get tracking.
 		if (this.area.type & TrackingAreaTypeMask.InstantlyRunFunction) {
@@ -128,13 +128,13 @@ export class TrackingAreaState {
 			return parent.state.stopAnyTracking ?? false
 		}
 
-		for (let descendant of helper.walkInward(node)) {
+		for (let descendant of transformContext.helper.walkInward(node)) {
 			if (!ts.isCallExpression(descendant)) {
 				continue
 			}
 
 			// Should have no need to test whether import from `@pucelle/ff`.
-			let fnName = helper.getFullText(descendant.expression)
+			let fnName = transformContext.helper.getFullText(descendant.expression)
 			if (fnName === 'trackGet'
 				|| fnName === 'trackGetDeeply'
 				|| fnName === 'trackSet'
@@ -154,7 +154,7 @@ export class TrackingAreaState {
 			return this.area.parent?.state.effectDecorated ?? false
 		}
 
-		let decoName = helper.deco.getFirstName(node)
+		let decoName = transformContext.helper.deco.getFirstName(node)
 		return decoName === 'effect'
 	}
 
@@ -241,8 +241,8 @@ export class TrackingAreaState {
 		if (this.withinLifeFunction
 			&& (this.flowInterruptionType & (FlowInterruptionTypeMask.Await | FlowInterruptionTypeMask.ConditionalAwait)) === 0
 		) {
-			if (helper.access.isAccess(node)
-				&& helper.isThis(node.expression)
+			if (transformContext.helper.access.isAccess(node)
+				&& transformContext.helper.isThis(node.expression)
 			) {
 				return true
 			}

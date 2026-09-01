@@ -1,12 +1,23 @@
 import ts from 'typescript'
 import {ListMap} from '../lupos-ts-module'
 import {definePreVisitCallback} from './visitor-callbacks'
-import {helper, sourceFile} from './global'
+import {transformSession, transformContext} from './global'
+import {createTransformSessionStateKey} from './transform-session'
 
 
 interface VisitItem {
 	node: ts.Node
 	index: number
+}
+
+interface VisitTreeState {
+	stack: VisitItem[]
+	current: VisitItem | null
+	indexSeed: number
+	childMap: ListMap<ts.Node, ts.Node>
+	parentMap: Map<ts.Node, ts.Node>
+	nodeMap: Map<number, ts.Node>
+	indexMap: Map<ts.Node, number>
 }
 
 
@@ -18,30 +29,21 @@ interface VisitItem {
  */
 export namespace VisitTree {
 
-	let stack: VisitItem[] = []
+	const StateKey = createTransformSessionStateKey<VisitTreeState>('VisitTree')
 
-	/** Current not in stack. */
-	let current: VisitItem | null = null
-
-	let indexSeed: number = -1
-
-	/** Parent -> child. */
-	const ChildMap: ListMap<ts.Node, ts.Node> = new ListMap()
-
-	/** Child -> parent. */
-	const ParentMap: Map<ts.Node, ts.Node> = new Map()
-
-	/** Node visit index -> Node. */
-	const NodeMap: Map<number, ts.Node> = new Map()
-
-	/** Node -> Node visit index. */
-	const IndexMap: Map<ts.Node, number> = new Map()
-
-	
+	function getState(): VisitTreeState {
+		return transformSession.getState(StateKey, () => ({
+			stack: [],
+			current: null,
+			indexSeed: -1,
+			childMap: new ListMap(),
+			parentMap: new Map(),
+			nodeMap: new Map(),
+			indexMap: new Map(),
+		}))
+	}
 
 	export function visitSourceFile(sourceFile: ts.SourceFile) {
-		initialize()
-		
 		// In the first visiting initialize visit and scope tree.
 		function visitor(node: ts.Node) {
 			VisitTree.toChild(node)
@@ -53,37 +55,28 @@ export namespace VisitTree {
 	}
 	
 	
-	/** Initialize before start a new source file. */
-	function initialize() {
-		stack = []
-		current = null
-		indexSeed = -1
-		ChildMap.clear()
-		ParentMap.clear()
-		NodeMap.clear()
-		IndexMap.clear()
-	}
-
 	/** Before entering child nodes. */
 	export function toChild(node: ts.Node) {
-		let index = ++indexSeed
-		let parent = current
+		let state = getState()
+		let index = ++state.indexSeed
+		let parent = state.current
 
-		current = {node, index}
+		state.current = {node, index}
 
 		if (parent) {
-			stack.push(parent)
-			ChildMap.add(parent.node, node)
-			ParentMap.set(node, parent.node)
+			state.stack.push(parent)
+			state.childMap.add(parent.node, node)
+			state.parentMap.set(node, parent.node)
 		}
 
-		NodeMap.set(index, node)
-		IndexMap.set(node, index)
+		state.nodeMap.set(index, node)
+		state.indexMap.set(node, index)
 	}
 
 	/** Exit self and enter parent node. */
 	export function toParent() {
-		current = stack.pop()!
+		let state = getState()
+		state.current = state.stack.pop()!
 	}
 
 
@@ -113,7 +106,7 @@ export namespace VisitTree {
 
 	/** Get all child nodes. */
 	export function getChildNodes(rawParent: ts.Node): ts.Node[] | undefined {
-		return ChildMap.get(rawParent)
+		return getState().childMap.get(rawParent)
 	}
 
 	/** 
@@ -121,7 +114,7 @@ export namespace VisitTree {
 	 * Equals `node.parent`.
 	 */
 	export function getParent(rawNode: ts.Node): ts.Node | undefined {
-		return ParentMap.get(rawNode)
+		return getState().parentMap.get(rawNode)
 	}
 
 	/** Get previous node by sibling node. */
@@ -131,7 +124,7 @@ export namespace VisitTree {
 			return undefined
 		}
 
-		let siblings = ChildMap.get(parent)!
+		let siblings = getState().childMap.get(parent)!
 		let index = siblings.indexOf(rawSiblingNode)
 
 		if (index > 0) {
@@ -148,7 +141,7 @@ export namespace VisitTree {
 			return undefined
 		}
 
-		let siblings = ChildMap.get(parent)!
+		let siblings = getState().childMap.get(parent)!
 		let index = siblings.indexOf(rawSiblingNode)
 
 		if (index < siblings.length - 1) {
@@ -160,17 +153,17 @@ export namespace VisitTree {
 
 	/** Test whether have raw node. */
 	export function hasNode(anyNode: ts.Node): boolean {
-		return IndexMap.has(anyNode)
+		return getState().indexMap.has(anyNode)
 	}
 
 	/** Get raw node by visit index. */
 	export function getNode(index: number): ts.Node {
-		return NodeMap.get(index)!
+		return getState().nodeMap.get(index)!
 	}
 
 	/** Get visit index by a raw node. */
 	export function getIndex(rawNode: ts.Node): number {
-		return IndexMap.get(rawNode)!
+		return getState().indexMap.get(rawNode)!
 	}
 
 
@@ -270,7 +263,7 @@ export namespace VisitTree {
 		}
 
 		// `for (;;i++){}`, increment `i++` will be moved to after statement `{}`.
-		let closestFor = helper.findOutward(rawNode1, ts.isForStatement)
+		let closestFor = transformContext.helper.findOutward(rawNode1, ts.isForStatement)
 		if (closestFor
 			&& closestFor.incrementor
 			&& isAncestorOf(closestFor, rawNode1)
@@ -304,4 +297,4 @@ export namespace VisitTree {
 	}
 }
 
-definePreVisitCallback(() => VisitTree.visitSourceFile(sourceFile))
+definePreVisitCallback(() => VisitTree.visitSourceFile(transformSession.sourceFile))

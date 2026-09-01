@@ -1,5 +1,5 @@
 import ts from 'typescript'
-import {factory, Packer, helper} from '../../../core'
+import {Packer, transformContext} from '../../../core'
 import {BindingBase, BindingUpdateCallWith} from './base'
 import {ObservedChecker, TrackingPatch} from '../../../lupos'
 import {getLatestBindingInfo, LatestBindingInfo} from './latest-binding'
@@ -28,7 +28,7 @@ export class RefBinding extends BindingBase {
 		// Ignore original ref value output and avoid output original access node.
 		if (this.usePropAccess) {
 			return {
-				joint: factory.createNull(),
+				joint: transformContext.factory.createNull(),
 				valueNodes: [],
 			}
 		}
@@ -69,8 +69,8 @@ export class RefBinding extends BindingBase {
 
 		// If declare property as `XXXElement`, force ref element.
 		if (rawValueNode && beComponent) {
-			let type = helper.types.typeOf(rawValueNode)
-			let typeText = helper.types.getTypeFullText(type)
+			let type = transformContext.helper.types.typeOf(rawValueNode)
+			let typeText = transformContext.helper.types.getTypeFullText(type)
 
 			if (/^\w*?Element$/.test(typeText)) {
 				this.modifiers = ['el']
@@ -92,7 +92,7 @@ export class RefBinding extends BindingBase {
 			this.initAccessUsing(rawValueNode)
 			
 			if (this.usePropAccess
-				&& helper.access.isAccess(rawValueNode)
+				&& transformContext.helper.access.isAccess(rawValueNode)
 				&& ObservedChecker.getSelfObserved(rawValueNode)
 			) {
 				TrackingPatch.ignore(rawValueNode)
@@ -108,19 +108,19 @@ export class RefBinding extends BindingBase {
 			return
 		}
 
-		let bePropertyOrVariable = helper.access.isAccess(rawValueNode)
-				&& !!helper.symbol.resolveDeclaration(rawValueNode, helper.isPropertyLike)
-			|| helper.isVariableIdentifier(rawValueNode)
-				&& !!helper.symbol.resolveDeclaration(rawValueNode, ts.isVariableDeclaration)
+		let bePropertyOrVariable = transformContext.helper.access.isAccess(rawValueNode)
+				&& !!transformContext.helper.symbol.resolveDeclaration(rawValueNode, transformContext.helper.isPropertyLike)
+			|| transformContext.helper.isVariableIdentifier(rawValueNode)
+				&& !!transformContext.helper.symbol.resolveDeclaration(rawValueNode, ts.isVariableDeclaration)
 
 		if (bePropertyOrVariable) {
 			this.usePropAccess = true
 
-			if (helper.access.isAccess(rawValueNode)) {
-				let topmost = helper.access.getTopmost(rawValueNode)
+			if (transformContext.helper.access.isAccess(rawValueNode)) {
+				let topmost = transformContext.helper.access.getTopmost(rawValueNode)
 
 				// `this.xxx.xxx`
-				this.useContextPropAccess = helper.isThis(topmost)
+				this.useContextPropAccess = transformContext.helper.isThis(topmost)
 			}
 	
 			this.useLocalPropAccess = !this.useContextPropAccess
@@ -147,14 +147,14 @@ export class RefBinding extends BindingBase {
 
 		// $ref_0.setRefValue(binding)
 		if (this.previousBindingInfo && this.previousBindingInfo.name) {
-			let setRefValue = factory.createExpressionStatement(factory.createCallExpression(
-				factory.createPropertyAccessExpression(
-					factory.createIdentifier(this.bindingVariableName),
-					factory.createIdentifier('setRefValue')
+			let setRefValue = transformContext.factory.createExpressionStatement(transformContext.factory.createCallExpression(
+				transformContext.factory.createPropertyAccessExpression(
+					transformContext.factory.createIdentifier(this.bindingVariableName),
+					transformContext.factory.createIdentifier('setRefValue')
 				),
 				undefined,
 				[
-					factory.createIdentifier(this.previousBindingInfo.name)
+					transformContext.factory.createIdentifier(this.previousBindingInfo.name)
 				]
 			))
 
@@ -171,26 +171,26 @@ export class RefBinding extends BindingBase {
 		// this.refName ->
 		// function(refed){ this.refName = refed }
 		if (this.usePropAccess) {
-			callValue = factory.createFunctionExpression(
+			callValue = transformContext.factory.createFunctionExpression(
 				undefined,
 				undefined,
-				factory.createIdentifier(''),
+				transformContext.factory.createIdentifier(''),
 				undefined,
-				[factory.createParameterDeclaration(
+				[transformContext.factory.createParameterDeclaration(
 					undefined,
 					undefined,
-					factory.createIdentifier('refed'),
+					transformContext.factory.createIdentifier('refed'),
 					undefined,
 					undefined,
 					undefined
 				)],
 				undefined,
-				factory.createBlock(
+				transformContext.factory.createBlock(
 					[
-						factory.createExpressionStatement(factory.createBinaryExpression(
+						transformContext.factory.createExpressionStatement(transformContext.factory.createBinaryExpression(
 							rawValueNode,
-							factory.createToken(ts.SyntaxKind.EqualsToken),
-							factory.createIdentifier('refed')
+							transformContext.factory.createToken(ts.SyntaxKind.EqualsToken),
+							transformContext.factory.createIdentifier('refed')
 						)),
 						...Packer.toStatements(TrackingPatch.outputIsolatedTracking(rawValueNode, 'set'))
 					],

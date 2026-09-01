@@ -1,6 +1,6 @@
 import ts from 'typescript'
 import {SlotParserBase} from './base'
-import {factory, Modifier, DeclarationScopeTree} from '../../../core'
+import {Modifier, DeclarationScopeTree, transformContext} from '../../../core'
 
 
 export class ComponentSlotParser extends SlotParserBase {
@@ -41,11 +41,11 @@ export class ComponentSlotParser extends SlotParserBase {
 		// `let $com_0 = new Com($node_0)`, after component node has been referenced.
 		let comInit = this.createVariableAssignment(
 			comVariableName,
-			factory.createNewExpression(
-				factory.createIdentifier(comName),
+			transformContext.factory.createNewExpression(
+				transformContext.factory.createIdentifier(comName),
 				undefined,
 				[
-					factory.createIdentifier(nodeName)
+					transformContext.factory.createIdentifier(nodeName)
 				]
 			)
 		)
@@ -61,10 +61,10 @@ export class ComponentSlotParser extends SlotParserBase {
 			let comVariableName = this.getRefedComponentName()!
 			let contentRangeNodes = this.slotRangeNodesGetter!()
 
-			return factory.createCallExpression(
-				factory.createPropertyAccessExpression(
-					factory.createIdentifier(comVariableName),
-					factory.createIdentifier('$setRestSlotRangeNodes')
+			return transformContext.factory.createCallExpression(
+				transformContext.factory.createPropertyAccessExpression(
+					transformContext.factory.createIdentifier(comVariableName),
+					transformContext.factory.createIdentifier('$setRestSlotRangeNodes')
 				),
 				undefined,
 				contentRangeNodes
