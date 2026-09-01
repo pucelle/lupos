@@ -1,7 +1,7 @@
 import ts from 'typescript'
 import {ObservedChecker} from './observed-checker'
 import {AccessGrouper} from './access-grouper'
-import {ObservedStateMask} from './types'
+import {ObservedStateMask} from '../decorators/types'
 import {CapturedItem} from './capturer'
 import {AccessNode, ListMap} from '../../lupos-ts-module'
 

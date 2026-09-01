@@ -1,47 +1,29 @@
 import ts from 'typescript'
-import {defineVisitor, Modifier, factory, Interpolator, InterpolationContentType, helper} from '../core'
-import {ProcessorPropNameMap} from './decorators-shared'
+import {Modifier, factory, Interpolator, InterpolationContentType, helper} from '../../core'
+import {
+	DecoratedMemberAnalysis,
+	ObservableDecoratorName,
+	ProcessorPropNameMap,
+} from './decorators'
 
-
-defineVisitor(function(node: ts.Node) {
-		
-	// Method or getter and decorated.
-	if (!ts.isMethodDeclaration(node)
-		&& !ts.isGetAccessorDeclaration(node)
-		&& !ts.isPropertyDeclaration(node)
-	) {
-		return
-	}
-
-	let decorator = helper.deco.getFirst(node)!
-	if (!decorator) {
-		return
-	}
-
-	let decoName = helper.deco.getName(decorator)
-	if (!decoName || !['computed', 'asyncComputed', 'effect', 'watch', 'watchMulti'].includes(decoName)) {
-		return
-	}
-
-	let memberName = helper.getFullText(node.name)
-	let superCls = helper.class.getSuper(node.parent as ts.ClassDeclaration)
-	let isOverwritten = !!superCls && !!helper.objectLike.getMember(superCls, memberName, true)
-
-	Modifier.removeImportOf(decorator)
+export function compileObservableDecorator(analysis: DecoratedMemberAnalysis) {
+	let {decorator, decoratorName, member, isOverwritten} = analysis
 	let replace: () => ts.Node[]
 
-	if (decoName === 'computed') {
-		replace = compileComputedDecorator(decoName, node as ts.GetAccessorDeclaration, isOverwritten)
+	Modifier.removeImportOf(decorator)
+
+	if (decoratorName === 'computed') {
+		replace = compileComputedDecorator(decoratorName, member as ts.GetAccessorDeclaration, isOverwritten)
 	}
-	else if (decoName === 'asyncComputed') {
-		replace = compileAsyncComputedDecorator(decoName, decorator, node as ts.PropertyDeclaration, isOverwritten)
+	else if (decoratorName === 'asyncComputed') {
+		replace = compileAsyncComputedDecorator(decoratorName, decorator, member as ts.PropertyDeclaration, isOverwritten)
 	}
 	else {
-		replace = compileEffectWatchDecorator(node as ts.MethodDeclaration)
+		replace = compileEffectWatchDecorator(member as ts.MethodDeclaration)
 	}
 
-	Interpolator.replace(node, InterpolationContentType.Normal, replace)
-})
+	Interpolator.replace(member, InterpolationContentType.Normal, replace)
+}
 
 
 
@@ -67,7 +49,7 @@ $compute_prop() {...}
 ```
 */
 function compileComputedDecorator(
-	decoName: string,
+	decoName: ObservableDecoratorName,
 	decl: ts.GetAccessorDeclaration,
 	isOverwritten: boolean
 ): () => ts.Node[] {
@@ -187,7 +169,7 @@ $compute_prop() {...}
 ```
 */
 function compileAsyncComputedDecorator(
-	decoName: string,
+	decoName: ObservableDecoratorName,
 	deco: ts.Decorator,
 	decl: ts.PropertyDeclaration,
 	isOverwritten: boolean

@@ -1,4 +1,2 @@
-import './decorators'
-import './decorators-life'
-import './context-variable'
+import './decorators/observable'
 export * from './tracking'

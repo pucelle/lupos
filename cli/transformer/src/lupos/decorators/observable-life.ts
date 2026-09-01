@@ -1,18 +1,19 @@
 import ts from 'typescript'
-import {defineVisitor, factory, Interpolator, MethodOverwrite, Modifier, SourceFileDiagnosticModifier, helper} from '../core'
-import {DiagnosticCode} from '../lupos-ts-module'
-import {ProcessorClassNameMap, ProcessorPropNameMap} from './decorators-shared'
-import {Packer} from '../core/packer'
+import {factory, Interpolator, MethodOverwrite, Modifier, SourceFileDiagnosticModifier, helper} from '../../core'
+import {DiagnosticCode} from '../../lupos-ts-module'
+import {
+	DecoratorClassAnalysis,
+	DecoratedMemberAnalysis,
+	isObservableDecoratorName,
+	ProcessorClassNameMap,
+	ProcessorPropNameMap,
+} from './decorators'
+import {Packer} from '../../core/packer'
 
 
 // Add some decorator compiled part to `constructor` or `onConnected` and `onWillDisconnect`.
-defineVisitor(function(node: ts.Node) {
-	if (!ts.isClassDeclaration(node)) {
-		return
-	}
-
-	let lifeMembers = getLifeMembers(node)
-	if (lifeMembers.length === 0) {
+export function compileDecoratorLife(node: ts.ClassDeclaration, analysis: DecoratorClassAnalysis) {
+	if (analysis.members.length === 0) {
 		return
 	}
 
@@ -20,8 +21,8 @@ defineVisitor(function(node: ts.Node) {
 	if (!helper.class.isImplementedOf(node, 'Connectable', 'lupos')
 		&& !helper.objectLike.isDerivedOf(node, 'Component', 'lupos.html')
 	) {
-		let hasObservableDecorator = lifeMembers.some(({deco}) =>deco)
-		if (hasObservableDecorator) {
+		let hasDecorator = analysis.members.some(item => item.kind === 'decorator')
+		if (hasDecorator) {
 			let diagnosticNode = node.name ?? node
 			
 			SourceFileDiagnosticModifier.add(
@@ -40,81 +41,27 @@ defineVisitor(function(node: ts.Node) {
 	let disconnect = new MethodOverwrite(node, 'onWillDisconnect')
 	let hasDeletedContextVariables = false
 
-	for (let {deco, decoName, member} of lifeMembers) {
-		if (decoName && ['computed', 'asyncComputed', 'effect', 'watch', 'watchMulti'].includes(decoName)
-			&& (ts.isMethodDeclaration(member)
-				|| ts.isGetAccessorDeclaration(member)
-				|| ts.isPropertyDeclaration(member)
-			)
-		) {
-			compileComputedEffectWatchDecorator(deco!, decoName, member, create, connect, disconnect)
+	for (let item of analysis.members) {
+		if (item.kind === 'connectable-property') {
+			compileConnectableProperty(item.member, create, connect, disconnect)
 		}
-		else if (decoName === 'setContext' && ts.isPropertyDeclaration(member)) {
-			compileSetContextDecorator(member, create, connect, disconnect, hasDeletedContextVariables)
-			Interpolator.remove(deco!)
+		else if (isObservableDecoratorName(item.decoratorName)) {
+			compileComputedEffectWatchDecorator(item, create, connect, disconnect)
+		}
+		else if (item.decoratorName === 'setContext') {
+			compileSetContextDecorator(item.member as ts.PropertyDeclaration, create, connect, disconnect, hasDeletedContextVariables)
+			Interpolator.remove(item.decorator)
 			hasDeletedContextVariables = true
 		}
-		else if (decoName === 'useContext' && ts.isPropertyDeclaration(member)) {
-			compileUseContextDecorator(member, create, connect, disconnect, hasDeletedContextVariables)
+		else if (item.decoratorName === 'useContext') {
+			compileUseContextDecorator(item.member as ts.PropertyDeclaration, create, connect, disconnect, hasDeletedContextVariables)
 			hasDeletedContextVariables = true
-		}
-		else {
-			compileConnectableProperty(member as ts.PropertyDeclaration, create, connect, disconnect)
 		}
 	}
 
 	create.output()
 	connect.output()
 	disconnect.output()
-})
-
-
-function getLifeMembers(node: ts.ClassDeclaration) {
-	let members: {
-		member: ts.ClassElement
-		deco: ts.Decorator | null
-		decoName: string | null
-	}[] = []
-
-	for (let member of node.members) {
-		if (!ts.isMethodDeclaration(member)
-			&& !ts.isPropertyDeclaration(member)
-			&& !ts.isGetAccessorDeclaration(member)
-		) {
-			continue
-		}
-
-		let deco = helper.deco.getFirst(member)
-		if (deco) {
-			let decoName = helper.deco.getName(deco)
-			if (decoName && ['computed', 'asyncComputed', 'effect', 'watch', 'watchMulti', 'useContext', 'setContext'].includes(decoName)) {
-				members.push({
-					member,
-					deco,
-					decoName,
-				})
-			}
-		}
-
-		// `prop = new Connectable(...)`
-		else if (ts.isPropertyDeclaration(member)
-			&& member.initializer
-			&& ts.isNewExpression(member.initializer)
-		) {
-			let classRef = member.initializer.expression
-			let classDecl = helper.symbol.resolveDeclaration(classRef, ts.isClassLike)
-
-			if (classDecl && helper.class.isImplementedOf(classDecl, 'Connectable', 'lupos')) {
-				members.push({
-					member,
-					deco: null,
-					decoName: null,
-				})
-			}
-		}
-	}
-
-	return members
 }
 
 
@@ -147,16 +94,15 @@ onWillDisconnect() {
 ```
 */
 function compileComputedEffectWatchDecorator(
-	deco: ts.Decorator,
-	decoName: string,
-	decl: ts.MethodDeclaration | ts.GetAccessorDeclaration | ts.PropertyDeclaration,
+	analysis: DecoratedMemberAnalysis,
 	create: MethodOverwrite,
 	connect: MethodOverwrite,
 	disconnect: MethodOverwrite
 ) {
-	let methodName = helper.getFullText(decl.name)
-	let superCls = helper.class.getSuper(decl.parent as ts.ClassDeclaration)
-	let isOverwritten = !!superCls && !!helper.objectLike.getMember(superCls, methodName, true)
+	let {decorator: deco, decoratorName: decoName, member: decl, memberName: methodName, isOverwritten} = analysis
+	if (!isObservableDecoratorName(decoName)) {
+		return
+	}
 
 	if (isOverwritten) {
 		return

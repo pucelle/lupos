@@ -1,4 +1,4 @@
-import {Observed, computed, effect, watch, Connectable, asyncComputed} from '../../../web/out'
+import {Observed, computed, effect, watch, watchMulti, Connectable, asyncComputed} from '../../../web/out'
 import {Component} from 'lupos.html'
 
 
@@ -91,6 +91,21 @@ export class TestWatchCallbackDerived extends TestWatchCallback {
 	@watch(function(this: TestWatchCallback){return this.prop})
 	onPropChange(prop: number) {
 		console.log(prop + 1)
+	}
+}
+
+
+export class TestWatchMulti extends Component {
+
+	prop1: number = 1
+	prop2: number = 2
+
+	@watchMulti([
+		'prop1',
+		function(this: TestWatchMulti) {return this.prop2},
+	], {immediate: true})
+	onPropsChange([prop1, prop2]: [number, number]) {
+		console.log(prop1, prop2)
 	}
 }
 

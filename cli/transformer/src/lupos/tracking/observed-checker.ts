@@ -3,7 +3,7 @@ import {AccessNode} from '../../lupos-ts-module'
 import {typeChecker, helper} from '../../core'
 import {GenericType} from 'typescript'
 import {TrackingPatch} from './patch'
-import {ObservedStateMask} from './types'
+import {ObservedStateMask} from '../decorators/types'
 
 
 /** 

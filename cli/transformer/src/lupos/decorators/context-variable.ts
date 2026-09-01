@@ -1,35 +1,24 @@
 import ts from 'typescript'
-import {defineVisitor, factory, Interpolator, InterpolationContentType, Modifier, helper} from '../core'
+import {factory, Interpolator, InterpolationContentType, Modifier, helper} from '../../core'
+import {DecoratedMemberAnalysis} from './decorators'
 
 
-defineVisitor(function(node: ts.Node) {
-		
-	// Property and decorated.
-	if (!ts.isPropertyDeclaration(node)) {
-		return
-	}
-
-	let decorator = helper.deco.getFirst(node)!
-	if (!decorator) {
-		return
-	}
-
-	let decoName = helper.deco.getName(decorator)
-	if (!decoName || !['setContext', 'useContext'].includes(decoName)) {
-		return
-	}
+/** To compile `@useContext` and `@setContext`. */
+export function compileContextVariableDecorator(analysis: DecoratedMemberAnalysis) {
+	let {decorator, decoratorName, member} = analysis
+	let property = member as ts.PropertyDeclaration
 
 	Modifier.removeImportOf(decorator)
 
-	Interpolator.replace(node, InterpolationContentType.Normal, () => {
-		if (decoName === 'setContext') {
-			return compileSetContextDecorator(node)
+	Interpolator.replace(property, InterpolationContentType.Normal, () => {
+		if (decoratorName === 'setContext') {
+			return compileSetContextDecorator(property)
 		}
 		else {
-			return compileUseContextDecorator(node)
+			return compileUseContextDecorator(property)
 		}
 	})
-})
+}
 
 
 

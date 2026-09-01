@@ -1,6 +1,6 @@
 import { Observed, Connectable } from '../../../web/out';
 import { Component } from 'lupos.html';
-import { Computed, trackGet, trackSet, AsyncComputed, Effector, Watcher } from "lupos";
+import { Computed, trackGet, trackSet, AsyncComputed, Effector, Watcher, MultiWatcher } from "lupos";
 export class TestComputed extends Component {
     prop = 1;
     $compute_prop2() {
@@ -147,6 +147,31 @@ export class TestWatchCallback extends Component {
 export class TestWatchCallbackDerived extends TestWatchCallback {
     onPropChange(prop) {
         console.log(prop + 1);
+    }
+}
+export class TestWatchMulti extends Component {
+    prop1 = 1;
+    prop2 = 2;
+    onCreated() {
+        super.onCreated();
+        this.$onPropsChange_multiWatcher = new MultiWatcher([
+            function () {
+                trackGet(this, 'prop1');
+                return this.prop1;
+            },
+            function () { trackGet(this, "prop2"); return this.prop2; }
+        ], this.onPropsChange, this, { immediate: true });
+    }
+    onConnected() {
+        super.onConnected();
+        this.$onPropsChange_multiWatcher.connect();
+    }
+    onWillDisconnect() {
+        super.onWillDisconnect();
+        this.$onPropsChange_multiWatcher.disconnect();
+    }
+    onPropsChange([prop1, prop2]) {
+        console.log(prop1, prop2);
     }
 }
 export class TestObservedImplemented {
