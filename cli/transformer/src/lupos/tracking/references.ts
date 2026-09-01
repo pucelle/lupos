@@ -13,25 +13,37 @@ export namespace TrackingReferences {
 	/** Nodes have been referenced. */
 	const ReferencedNodes: Set<ts.Node> = new Set()
 
+	/** Cached results of whether a node contains any referenced node. */
+	const InternalReferencedCache: Map<ts.Node, boolean> = new Map()
+
 
 	/** Initialize after enter a new source file. */
 	export function init() {
 		ReferencedNodes.clear()
+		InternalReferencedCache.clear()
 	}
 
 
-	/** Whether any descendant node has been referenced. */
+	/** Whether any descendant node has been referenced like `$ref_0 = xxx`. */
 	export function hasInternalReferenced(node: ts.Node): boolean {
-		if (ReferencedNodes.has(node)) {
-			return true
+		let cached = InternalReferencedCache.get(node)
+		if (cached !== undefined) {
+			return cached
 		}
 
-		let childNodes = VisitTree.getChildNodes(node)
-		if (!childNodes) {
-			return false
+		let hasReferenced = ReferencedNodes.has(node)
+		if (!hasReferenced) {
+			let childNodes = VisitTree.getChildNodes(node)
+			hasReferenced = !!childNodes?.some(n => hasInternalReferenced(n))
 		}
 
-		return childNodes.some(n => hasInternalReferenced(n))
+		InternalReferencedCache.set(node, hasReferenced)
+		return hasReferenced
+	}
+
+	/** Mark a node as referenced and invalidate cached ancestral results. */
+	function markReferenced(node: ts.Node) {
+		ReferencedNodes.add(node)
 	}
 
 	/** Reference exp and name part of an access node if needed. */
@@ -46,13 +58,13 @@ export namespace TrackingReferences {
 		// Use a reference variable to replace expression.
 		if (shouldReference(expNode, toNode)) {
 			reference(expNode, area)
-			ReferencedNodes.add(expNode)
+			markReferenced(expNode)
 		}
 
 		// Use a reference variable to replace name.
 		if (shouldReference(nameNode, toNode)) {
 			reference(nameNode, area)
-			ReferencedNodes.add(nameNode)
+			markReferenced(nameNode)
 		}
 	}
 
@@ -66,7 +78,7 @@ export namespace TrackingReferences {
 		// Use a reference variable to replace expression.
 		if (shouldReference(expNode, toNode)) {
 			reference(expNode, area)
-			ReferencedNodes.add(expNode)
+			markReferenced(expNode)
 		}
 	}
 
