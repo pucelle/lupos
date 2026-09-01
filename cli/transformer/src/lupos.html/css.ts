@@ -3,11 +3,7 @@ import {defineVisitor, Interpolator, InterpolationContentType, transformContext}
 import {TemplateSlotPlaceholder} from '../lupos-ts-module'
 
 
-defineVisitor(function(node: ts.Node) {
-	if (!ts.isTaggedTemplateExpression(node)) {
-		return
-	}
-
+defineVisitor(ts.SyntaxKind.TaggedTemplateExpression, function(node: ts.TaggedTemplateExpression) {
 	if (!transformContext.helper.symbol.isImportedFrom(node.tag, 'css', 'lupos.html')) {
 		return
 	}

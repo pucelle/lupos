@@ -1,6 +1,5 @@
 import ts from 'typescript'
 import {Interpolator, MutableMask, Packer, DeclarationScopeTree, Hashing, transformContext} from '../../core'
-import {VariableNames} from './variable-names'
 import {TreeParser} from './tree'
 import {TemplatePartType} from '../../lupos-ts-module'
 import {SlotContentType} from '../../enums'
@@ -198,7 +197,7 @@ export class TemplateValues {
 
 		// Replace `this` to `$context`.
 		else {
-			return transformContext.factory.createIdentifier(VariableNames.context)
+			return tree.createContextIdentifier()
 		}
 	}
 
@@ -242,7 +241,7 @@ export class TemplateValues {
 		}
 		else {
 			return transformContext.factory.createElementAccessExpression(
-				transformContext.factory.createIdentifier(VariableNames.values),
+				tree.createValuesIdentifier(),
 				transformContext.factory.createNumericLiteral(valueIndex)
 			)
 		}
@@ -286,13 +285,13 @@ export class TemplateValues {
 	 * and return reference of this value.
 	 * Normal `node` is not raw type of node.
 	 */
-	outputCustomValue(node: ts.Expression): ts.Expression {
+	outputCustomValue(node: ts.Expression, tree: TreeParser): ts.Expression {
 		let valueIndex = this.outputNodes.length
 		this.outputNodes.push(node)
 		this.indicesNonTransferredOutputted.add(valueIndex)
 
 		return transformContext.factory.createElementAccessExpression(
-			transformContext.factory.createIdentifier(VariableNames.values),
+			tree.createValuesIdentifier(),
 			transformContext.factory.createNumericLiteral(valueIndex)
 		)
 	}

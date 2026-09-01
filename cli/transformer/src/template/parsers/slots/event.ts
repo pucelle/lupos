@@ -1,7 +1,6 @@
 import ts from 'typescript'
 import {SlotParserBase} from './base'
 import {Modifier, transformContext} from '../../../core'
-import {VariableNames} from '../variable-names'
 import {TemplateSlotPlaceholder} from '../../../lupos-ts-module'
 import {PartType} from '../tree'
 
@@ -114,7 +113,7 @@ export class EventSlotParser extends SlotParserBase {
 				[
 					transformContext.factory.createStringLiteral(this.name),
 					this.outputValue().joint,
-					transformContext.factory.createIdentifier(VariableNames.context)
+					this.tree.createContextIdentifier()
 				]
 			)
 		}
@@ -144,7 +143,7 @@ export class EventSlotParser extends SlotParserBase {
 					),
 					undefined,
 					[
-						transformContext.factory.createIdentifier(VariableNames.context),
+						this.tree.createContextIdentifier(),
 						transformContext.factory.createSpreadElement(transformContext.factory.createIdentifier('args'))
 					]
 				))],
@@ -173,7 +172,7 @@ export class EventSlotParser extends SlotParserBase {
 			undefined,
 			[
 				node,
-				transformContext.factory.createIdentifier(VariableNames.context),
+				this.tree.createContextIdentifier(),
 			]
 		)
 

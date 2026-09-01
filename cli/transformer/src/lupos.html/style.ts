@@ -3,10 +3,7 @@ import {defineVisitor, Interpolator, InterpolationContentType, Modifier, transfo
 
 
 // Add `Com.ensureStyle()` after class declaration.
-defineVisitor(function(node: ts.Node) {
-	if (!ts.isClassDeclaration(node)) {
-		return
-	}
+defineVisitor(ts.SyntaxKind.ClassDeclaration, function(node: ts.ClassDeclaration) {
 
 	// Must have name.
 	if (!node.name) {

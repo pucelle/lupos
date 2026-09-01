@@ -1,6 +1,5 @@
 import {SlotParserBase} from './base'
 import {transformContext} from '../../../core'
-import {VariableNames} from '../variable-names'
 
 
 export class SlotTagSlotParser extends SlotParserBase {
@@ -13,7 +12,7 @@ export class SlotTagSlotParser extends SlotParserBase {
 		// `$context.$applyRestSlotNodes($node_0)`
 		return transformContext.factory.createCallExpression(
 			transformContext.factory.createPropertyAccessExpression(
-				transformContext.factory.createIdentifier(VariableNames.context),
+				this.tree.createContextIdentifier(),
 				transformContext.factory.createIdentifier('$applyRestSlotNodes')
 			),
 			undefined,

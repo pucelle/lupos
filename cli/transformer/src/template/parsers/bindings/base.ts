@@ -4,7 +4,6 @@ import {PartType, TreeParser} from '../tree'
 import {BindingSlotParser} from '../slots'
 import {Modifier, DeclarationScopeTree, transformContext} from '../../../core'
 import {TemplateParser} from '../template'
-import {VariableNames} from '../variable-names'
 import {setLatestBindingInfo} from './latest-binding'
 
 
@@ -234,7 +233,7 @@ export class BindingBase {
 
 		// Need `context` parameter
 		if (bindingParamCount === null || bindingParamCount > 1) {
-			bindingParams.push(transformContext.factory.createIdentifier(VariableNames.context))
+			bindingParams.push(this.slot.tree.createContextIdentifier())
 		}
 
 		// Need `modifiers` parameter

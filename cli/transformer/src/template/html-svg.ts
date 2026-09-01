@@ -4,11 +4,7 @@ import {TemplateParser} from './parsers'
 import {Analyzer, HTMLRoot, TemplateSlotPlaceholder} from '../lupos-ts-module'
 
 
-defineVisitor(function(node: ts.Node) {
-	if (!ts.isTaggedTemplateExpression(node)) {
-		return
-	}
-
+defineVisitor(ts.SyntaxKind.TaggedTemplateExpression, function(node: ts.TaggedTemplateExpression) {
 	let nm = transformContext.helper.symbol.resolveImport(node.tag)
 	if (!nm) {
 		return

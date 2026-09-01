@@ -6,7 +6,7 @@ import {compileContextVariableDecorator} from './context-variable'
 import {compileObservableDecorator} from './observable'
 
 
-defineVisitor(function(node: ts.Node) {
+defineVisitor(ts.SyntaxKind.ClassDeclaration, function(node: ts.Node) {
 	if (!ts.isClassDeclaration(node)) {
 		return
 	}

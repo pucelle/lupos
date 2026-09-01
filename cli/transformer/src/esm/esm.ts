@@ -3,12 +3,8 @@ import {defineVisitor, transformSession, Interpolator, InterpolationContentType,
 
 
 // `import * from './a'` -> `import * from './a.js'`
-defineVisitor(function(node: ts.Node) {
+defineVisitor([ts.SyntaxKind.ImportDeclaration, ts.SyntaxKind.ExportDeclaration], function(node: ts.ImportDeclaration | ts.ExportDeclaration) {
 	if (!transformContext.compileToESM) {
-		return
-	}
-		
-	if (!ts.isImportDeclaration(node) && !ts.isExportDeclaration(node)) {
 		return
 	}
 

@@ -68,6 +68,8 @@ export class TreeParser {
 	private outputHandler: TreeOutputHandler
 	private slotParsers: SlotParserBase[] = []
 	private preDeclaredVariableNames: string[] = []
+	private valuesReferenced: boolean = false
+	private contextReferenced: boolean = false
 
 	/** All parts included. */
 	private parts: Part[] = []
@@ -228,6 +230,28 @@ export class TreeParser {
 		let name = VariableNames.getDoublyUniqueName(VariableNames.latest, this)
 		this.addPreDeclaredVariableName(name)
 		return name
+	}
+
+	/** Reference `$values` and remember that the update parameter is required. */
+	createValuesIdentifier() {
+		this.valuesReferenced = true
+		return transformContext.factory.createIdentifier(VariableNames.values)
+	}
+
+	/** Reference `$context` and remember that the template parameter is required. */
+	createContextIdentifier() {
+		this.contextReferenced = true
+		return transformContext.factory.createIdentifier(VariableNames.context)
+	}
+
+	/** Whether generated output references `$values`. */
+	usesValues(): boolean {
+		return this.valuesReferenced
+	}
+
+	/** Whether generated output references `$context`. */
+	usesContext(): boolean {
+		return this.contextReferenced
 	}
 
 	/** Add a variable name to `parts`. */

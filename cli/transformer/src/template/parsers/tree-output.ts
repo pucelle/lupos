@@ -100,7 +100,7 @@ export class TreeOutputHandler {
 			true
 		)
 
-		let templateInitParams = this.outputTemplateInitParameters(templateBlock)
+		let templateInitParams = this.outputTemplateInitParameters()
 
 		let templateMaker = transformContext.factory.createNewExpression(
 			transformContext.factory.createIdentifier('TemplateMaker'),
@@ -234,16 +234,18 @@ export class TreeOutputHandler {
 	private outputTransferredLatestValues(update: OutputNodeList) {
 
 		// Output `$latest_value_i = $values[i]`
-		for (let [valueIndex, latestName] of this.template.values.outputTransferredLatestNames()) {
-			update.unshift(transformContext.factory.createBinaryExpression(
+		let assignments = [...this.template.values.outputTransferredLatestNames()].map(([valueIndex, latestName]) => {
+			return transformContext.factory.createBinaryExpression(
 				transformContext.factory.createIdentifier(latestName),
 				transformContext.factory.createToken(ts.SyntaxKind.EqualsToken),
 				transformContext.factory.createElementAccessExpression(
-					transformContext.factory.createIdentifier(VariableNames.values),
+					this.tree.createValuesIdentifier(),
 					transformContext.factory.createNumericLiteral(valueIndex)
 				)
-			))
-		}
+			)
+		})
+
+		update.unshift(...assignments.reverse())
 	}
 
 	/** Make `new SlotPosition(...)` to indicate the start inner position of template. */
@@ -329,7 +331,7 @@ export class TreeOutputHandler {
 			// uses `$context.el` to represent it.
 			if (!visitSteps) {
 				fromExp = transformContext.factory.createPropertyAccessExpression(
-					transformContext.factory.createIdentifier(VariableNames.context),
+					this.tree.createContextIdentifier(),
 					'el'
 				)
 
@@ -476,7 +478,7 @@ export class TreeOutputHandler {
 			true
 		)
 
-		let updateParameters = this.outputUpdateParameters(updateBlock)
+		let updateParameters = this.outputUpdateParameters()
 
 		// `update` part.
 		let updateNode: ts.MethodDeclaration | null = null
@@ -528,12 +530,10 @@ export class TreeOutputHandler {
 	}
 
 	/** Output parameters `(?$values)` of update function. */
-	private outputUpdateParameters(block: ts.Block): ts.ParameterDeclaration[] {
-		let test = (node => ts.isIdentifier(node) && node.text === VariableNames.values) as (node: ts.Node) => node is ts.Node
-		let hasValuesRef = !!transformContext.helper.findInward(block, test)
+	private outputUpdateParameters(): ts.ParameterDeclaration[] {
 		let params: ts.ParameterDeclaration[] = []
 
-		if (hasValuesRef) {
+		if (this.tree.usesValues()) {
 			params.push(transformContext.factory.createParameterDeclaration(
 				undefined,
 				undefined,
@@ -548,15 +548,12 @@ export class TreeOutputHandler {
 	}
 
 	/** Output parameters `($context, $hydrates)` of template maker init function. */
-	private outputTemplateInitParameters(block: ts.Block): ts.ParameterDeclaration[] {
-		let test = (node => ts.isIdentifier(node) && node.text === VariableNames.context) as (node: ts.Node) => node is ts.Node
-		let hasContextRef = !!transformContext.helper.findInward(block, test)
-
+	private outputTemplateInitParameters(): ts.ParameterDeclaration[] {
 		let params: ts.ParameterDeclaration[] = [
 			transformContext.factory.createParameterDeclaration(
 				undefined,
 				undefined,
-				transformContext.factory.createIdentifier(hasContextRef ? VariableNames.context : '_' + VariableNames.context),
+				transformContext.factory.createIdentifier(this.tree.usesContext() ? VariableNames.context : '_' + VariableNames.context),
 				undefined,
 				undefined,
 				undefined

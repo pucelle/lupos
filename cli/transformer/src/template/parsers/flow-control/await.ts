@@ -1,7 +1,6 @@
 import type ts from 'typescript'
 import {Modifier, transformContext} from '../../../core'
 import {FlowControlBase} from './base'
-import {VariableNames} from '../variable-names'
 import {TemplatePartType} from '../../../lupos-ts-module'
 
 
@@ -73,7 +72,7 @@ export class AwaitFlowControl extends FlowControlBase {
 					[
 						maker,
 						transformContext.factory.createIdentifier(this.slotVariableName),
-						transformContext.factory.createIdentifier(VariableNames.context)
+						this.tree.createContextIdentifier()
 					]
 				)
 			)
@@ -94,7 +93,7 @@ export class AwaitFlowControl extends FlowControlBase {
 			undefined,
 			[
 				promiseNode,
-				transformContext.factory.createIdentifier(VariableNames.values)
+				this.tree.createValuesIdentifier()
 			]
 		)
 	}

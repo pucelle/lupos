@@ -6,7 +6,7 @@ import {SVGInliner} from './svg-inliner'
 
 // `import Name from './a.svg'` -> `const Name = "..."`
 // `export {default as Name} from './a.svg'`
-defineVisitor(function(node: ts.Node) {
+defineVisitor([ts.SyntaxKind.ImportDeclaration, ts.SyntaxKind.ExportDeclaration], function(node: ts.ImportDeclaration | ts.ExportDeclaration) {
 	if (!transformContext.embedSVG) {
 		return
 	}

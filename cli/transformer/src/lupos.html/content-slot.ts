@@ -3,10 +3,7 @@ import {defineVisitor, Modifier, transformContext} from '../core'
 import {SlotContentType} from '../enums'
 
 
-defineVisitor(function(node: ts.Node) {
-	if (!ts.isClassDeclaration(node)) {
-		return
-	}
+defineVisitor(ts.SyntaxKind.ClassDeclaration, function(node: ts.ClassDeclaration) {
 
 	// Be a component.
 	if (!transformContext.helper.objectLike.isDerivedOf(node, 'Component', 'lupos.html')) {

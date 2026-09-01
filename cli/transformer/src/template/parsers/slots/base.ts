@@ -257,7 +257,7 @@ export abstract class SlotParserBase {
 	 */
 	outputCustomValue(node: ts.Expression) {
 		this.customValueOutputted = true
-		return this.template.values.outputCustomValue(node)
+		return this.template.values.outputCustomValue(node, this.tree)
 	}
 
 	/** `$latest_0 !== $values[0], ...` */
