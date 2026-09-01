@@ -30,15 +30,19 @@ export class TransformContext {
 	}
 }
 
+
 export let transformContext: TransformContext
 export let transformSession: TransformSession
 
 
+/** After enter the transformer. */
 export function setTransformContext(context: ts.TransformationContext, extras: TransformerExtras) {
 	transformContext = new TransformContext(context, extras)
 	TemplateSlotPlaceholder.initialize(ts)
 }
 
+
+/** After entering each source file. */
 export function createTransformSession(file: ts.SourceFile): TransformSession {
 	transformSession = new TransformSession(file)
 	setFingerPrintSalt(file.fileName)

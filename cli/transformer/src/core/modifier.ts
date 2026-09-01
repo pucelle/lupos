@@ -213,7 +213,7 @@ export namespace Modifier {
 					let resolved = transformContext.helper.symbol.resolveDeclaration(element.name)
 					if (resolved
 						&& ts.isEnumDeclaration(resolved)
-						&& resolved.modifiers?.find(m => m.kind === ts.SyntaxKind.ConstKeyword)
+						&& resolved.modifiers?.some(m => m.kind === ts.SyntaxKind.ConstKeyword)
 					) {
 						Interpolator.remove(element)
 					}

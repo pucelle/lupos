@@ -33,7 +33,7 @@ export class AttributeSlotParser extends SlotParserBase {
 
 		this.isSharedModification = this.node.tagName === 'template'
 			|| TemplateSlotPlaceholder.isComponent(this.node.tagName!)
-			|| (this.name === 'class' || this.name === 'style') && !!this.node.attrs?.find(attr => attr.name.startsWith(':' + this.name))
+			|| (this.name === 'class' || this.name === 'style') && !!this.node.attrs?.some(attr => attr.name.startsWith(':' + this.name))
 
 		if (this.isAnyValueCantTransfer()) {
 			this.latestVariableNames = this.makeGroupOfLatestNames()

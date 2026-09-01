@@ -510,20 +510,18 @@ function compileUseContextDecorator(
 			))
 		]
 		  
-		if (!hasDeletedContextVariables) {
-			disconnectStatements.push(
-				transformContext.factory.createExpressionStatement(transformContext.factory.createCallExpression(
-					transformContext.factory.createPropertyAccessExpression(
-						transformContext.factory.createIdentifier('Component'),
-						transformContext.factory.createIdentifier('deleteContextVariables')
-					),
-					undefined,
-					[
-						transformContext.factory.createThis()
-					]
-				))
-			)
-		}
+		disconnectStatements.push(
+			transformContext.factory.createExpressionStatement(transformContext.factory.createCallExpression(
+				transformContext.factory.createPropertyAccessExpression(
+					transformContext.factory.createIdentifier('Component'),
+					transformContext.factory.createIdentifier('deleteContextVariables')
+				),
+				undefined,
+				[
+					transformContext.factory.createThis()
+				]
+			))
+		)
 		
 		disconnect.insert(() => disconnectStatements, 'end')
 	}

@@ -176,7 +176,7 @@ export class MethodOverwrite {
 				return null
 			}
 
-			let hasStatic = member.modifiers?.find((n: ts.ModifierLike) => n.kind === ts.SyntaxKind.StaticKeyword)
+			let hasStatic = member.modifiers?.some((n: ts.ModifierLike) => n.kind === ts.SyntaxKind.StaticKeyword)
 			if (hasStatic) {
 				return null
 			}
@@ -246,4 +246,3 @@ export class MethodOverwrite {
 	}
 
 }
-

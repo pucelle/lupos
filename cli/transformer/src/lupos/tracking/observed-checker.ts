@@ -431,7 +431,7 @@ export namespace ObservedChecker {
 		) {
 			// `readonly prop: XXX = [...] as const`, all child element immutable.
 			if (ts.isAsExpression(decl.initializer)) {
-				let readonly = !!decl.modifiers?.find(m => m.kind === ts.SyntaxKind.ReadonlyKeyword)
+				let readonly = !!decl.modifiers?.some(m => m.kind === ts.SyntaxKind.ReadonlyKeyword)
 				if (readonly
 					&& ts.isTypeReferenceNode(decl.initializer.type)
 					&& ts.isIdentifier(decl.initializer.type.typeName)

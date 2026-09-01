@@ -46,7 +46,7 @@ export abstract class FlowControlBase {
 
 	/** Returns whether has specified attribute name. */
 	protected hasAttrValue(node: HTMLNode, name: string): boolean {
-		return !!node.attrs?.find(attr => attr.name === name)
+		return !!node.attrs?.some(attr => attr.name === name)
 	}
 
 	/** Get value index of slot `<lu:xx ${...}>`. */

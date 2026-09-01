@@ -132,7 +132,7 @@ export abstract class SlotParserBase {
 			return null
 		}
 
-		let hashes: string[] = []
+		let hashes: Set<string> = new Set()
 
 		let names = this.valueIndices.map(valueIndex => {
 			if (this.template.values.isIndexCanTransfer(valueIndex, asLazyCallback)) {
@@ -140,11 +140,11 @@ export abstract class SlotParserBase {
 			}
 
 			let hash = Hashing.hashNode(this.template.values.getRawValue(valueIndex)).name
-			if (hashes.includes(hash)) {
+			if (hashes.has(hash)) {
 				return null
 			}
 
-			hashes.push(hash)
+			hashes.add(hash)
 
 			return this.tree.makeUniqueLatestName()
 		})
@@ -154,7 +154,7 @@ export abstract class SlotParserBase {
 
 	/** Get a group of latest names by an expression list. */
 	makeCustomGroupOfLatestNames(exps: ts.Expression[]): (string | null)[] {
-		let hashes: string[] = []
+		let hashes: Set<string> = new Set()
 
 		let names = exps.map((exp) => {
 			let mask = DeclarationScopeTree.checkMutableMask(exp)
@@ -163,11 +163,11 @@ export abstract class SlotParserBase {
 			}
 
 			let hash = Hashing.hashNode(exp).name
-			if (hashes.includes(hash)) {
+			if (hashes.has(hash)) {
 				return null
 			}
 
-			hashes.push(hash)
+			hashes.add(hash)
 
 			return this.tree.makeUniqueLatestName()
 		})

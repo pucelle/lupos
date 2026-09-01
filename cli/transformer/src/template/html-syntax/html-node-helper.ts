@@ -58,7 +58,7 @@ export namespace HTMLNodeHelper {
 
 		// Named slot target will be removed, can safely skip it.
 		if (node.type === HTMLNodeType.Tag
-			&& node.attrs!.find(attr => attr.name === ':slot')
+			&& node.attrs!.some(attr => attr.name === ':slot')
 		) {
 			return PrecedingPositionStability.WillBeRemoved
 		}
@@ -91,7 +91,7 @@ export namespace HTMLNodeHelper {
 
 		// Named slot target will be moved.
 		if (node.type === HTMLNodeType.Tag
-			&& node.attrs!.find(attr => attr.name === ':slot')
+			&& node.attrs!.some(attr => attr.name === ':slot')
 		) {
 			return FollowingPositionStability.WillBeRemoved
 		}

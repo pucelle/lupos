@@ -254,7 +254,8 @@ class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 			topmostFunction = rawNode
 		}
 
-		// Com from typescript library.
+		// Skip checking the library-owned node itself, but still recurse into its
+		// children below. The receiver may be mutable, such as `getValues().length`.
 		if (transformContext.helper.symbol.isOfTypescriptLib(rawNode)) {}
 
 		// `this.method.bind(this)`
