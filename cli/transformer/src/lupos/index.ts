@@ -1,2 +1,2 @@
-import './decorators/observable'
+import './decorators'
 export * from './tracking'

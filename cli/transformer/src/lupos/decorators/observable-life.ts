@@ -11,7 +11,7 @@ import {
 import {Packer} from '../../core/packer'
 
 
-// Add some decorator compiled part to `constructor` or `onConnected` and `onWillDisconnect`.
+/** Add some decorator compiled part to `constructor` or `onConnected` and `onWillDisconnect`. */
 export function compileDecoratorLife(node: ts.ClassDeclaration, analysis: DecoratorClassAnalysis) {
 	if (analysis.members.length === 0) {
 		return

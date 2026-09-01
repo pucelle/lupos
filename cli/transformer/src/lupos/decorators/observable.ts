@@ -6,6 +6,8 @@ import {
 	ProcessorPropNameMap,
 } from './decorators'
 
+
+/** Compile a observable decorator. */
 export function compileObservableDecorator(analysis: DecoratedMemberAnalysis) {
 	let {decorator, decoratorName, member, isOverwritten} = analysis
 	let replace: () => ts.Node[]
