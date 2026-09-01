@@ -24,7 +24,11 @@ export namespace TrackingReferences {
 	}
 
 
-	/** Whether any descendant node has been referenced like `$ref_0 = xxx`. */
+	/** 
+	 * Whether any descendant node has been referenced like `$ref_0 = xxx`.
+	 * The referenced or internal referenced state is very like `FlowInterruption`,
+	 * but it gets prepared only after tracking nodes captured.
+	 */
 	export function hasInternalReferenced(node: ts.Node): boolean {
 		let cached = InternalReferencedCache.get(node)
 		if (cached !== undefined) {
@@ -40,6 +44,7 @@ export namespace TrackingReferences {
 		InternalReferencedCache.set(node, hasReferenced)
 		return hasReferenced
 	}
+
 
 	/** Mark a node as referenced and invalidate cached ancestral results. */
 	function markReferenced(node: ts.Node) {
@@ -204,6 +209,7 @@ export namespace TrackingReferences {
 				Interpolator.replace(node, InterpolationContentType.Reference, () => factory.createIdentifier(refName))
 			}
 			else {
+				
 				// let $ref_0 
 				varScope.addVariable(refName)
 				

@@ -3,30 +3,11 @@ import {factory, transformContext, helper} from './global'
 import {AccessNode} from '../lupos-ts-module'
 
 
-/** How the flow was interrupted. */
-export enum FlowInterruptionTypeMask {
 
-	/** Currently be or after which return. */
-	Return = 1,
-
-	/** Currently be or after which break or continue. */
-	BreakLike = 2,
-
-	/** Currently be or after which yield. */
-	Yield = 4,
-
-	/** Currently be or after which stops synchronous execution. */
-	Await = 8,
-
-	/** 
-	 * Currently be or after which may stop synchronous execution.
-	 * Like `if (xxx) {await ...}`.
-	 */
-	ConditionalAwait = 16,
-}
-
-
-/** Works like ts.factory, help to re-pack nodes to get new nodes. */
+/** 
+ * Works like ts.factory, help to test code pack range, breaking,
+ * and re-pack nodes to get new nodes.
+ */
 export namespace Packer {
 
 	/** 
@@ -102,38 +83,6 @@ export namespace Packer {
 				)
 			}
 		}
-	}
-
-	
-	/** 
-	 * Get flow interruption type,
-	 * it represents whether flow was interrupted be `return` with content,
-	 * `yield`, `await`, or arrow function with implicit returning.
-	 */
-	export function getFlowInterruptionType(node: ts.Node): FlowInterruptionTypeMask {
-		let type = 0
-
-		if (ts.isReturnStatement(node)
-			|| node.parent
-				&& ts.isArrowFunction(node.parent)
-				&& node === node.parent.body && !ts.isBlock(node)
-		) {
-			type |= FlowInterruptionTypeMask.Return
-		}
-		
-		else if (ts.isBreakOrContinueStatement(node)) {
-			type |= FlowInterruptionTypeMask.BreakLike
-		}
-		
-		else if (ts.isYieldExpression(node)) {
-			type |= FlowInterruptionTypeMask.Yield
-		}
-
-		else if (ts.isAwaitExpression(node)) {
-			type |= FlowInterruptionTypeMask.Await
-		}
-
-		return type
 	}
 
 
@@ -481,11 +430,8 @@ export namespace Packer {
 	}
 
 
-	/**
-	 * Create `cond1 ? exp1 : cond2 ? exp2 ...`.
-	 * Must ensure `condExps.length` and `trackingExps.length` equals `exps.length - 1`
-	 */
-	export function toConditionalExpression(condExps: ts.Expression[], exps: ts.Expression[], trackingExps: ts.Expression[][]): ts.Expression {
+	/** Create `cond1 ? exp1 : cond2 ? exp2 ...`. */
+	export function toConditionalExpression(condExps: ts.Expression[], exps: ts.Expression[]): ts.Expression {
 
 		// Last expression.
 		let last: ts.Expression = exps[exps.length - 1]
@@ -493,7 +439,6 @@ export namespace Packer {
 		for (let i = exps.length - 2; i >= 0; i--) {
 			let conditionNode = condExps[i]
 			let thenNode = exps[i]
-			let trackingExp = trackingExps[i]
 
 			last = factory.createConditionalExpression(
 				conditionNode,
@@ -503,7 +448,7 @@ export namespace Packer {
 				last
 			)
 
-			last = parenthesizeExpressions(...trackingExp, last)
+			last = parenthesizeExpressions(last)
 		}
 
 		return last

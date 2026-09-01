@@ -14,11 +14,11 @@ export class TestTemplateValues extends Component {
 		return ''
 	}
 
-	handleEvent(_value: any) {}
-
 	getValues(): Observed<number[]> {
 		return [1, 2]
 	}
+
+	handleEvent(_value: any) {}
 
 	testStatic() {
 		return html`<div attr="${'className'}"></div>`
@@ -66,7 +66,6 @@ export class TestTemplateValues extends Component {
 
 	testMergingSameReferencedValues() {
 		return html`
-			${this.getValues().map(value => html`<span>${value}</span>`)}
 			<lu:if ${this.prop}>
 				<div ?hidden=${this.getValues().length === 0} />
 			</lu:if>

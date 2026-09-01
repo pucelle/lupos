@@ -349,9 +349,9 @@ export class TestIf extends Component {
     testDynamicIfContent() {
         trackGet(this, "prop");
         return new CompiledTemplateResult($template_4, [
-            this.prop ? (trackGet(this, "content"), new CompiledTemplateResult($template_5, [
-                this.content
-            ], this)) : null
+            this.prop ? new CompiledTemplateResult($template_5, [
+                (trackGet(this, "content"), this.content)
+            ], this) : null
         ], this);
     }
     testIfElse() {
@@ -369,13 +369,13 @@ export class TestIf extends Component {
     testIfContentTracking() {
         trackGet(this, "item");
         return new CompiledTemplateResult($template_14, [
-            this.item && (trackGet(this.item, "value"), this.item.value) ? (trackGet(this.item.value, ""), new CompiledTemplateResult($template_15, [
-                this.item.value.map(v => new CompiledTemplateResult($template_17, [
+            this.item && (trackGet(this.item, "value"), this.item.value) ? new CompiledTemplateResult($template_15, [
+                (trackGet(this.item.value, ""), this.item.value.map(v => new CompiledTemplateResult($template_17, [
                     v
-                ], this))
-            ], this)) : (trackGet(this, "content"), this.content ? new CompiledTemplateResult($template_16, [
+                ], this)))
+            ], this) : (trackGet(this, "content"), this.content) ? new CompiledTemplateResult($template_16, [
                 this.content
-            ], this) : null)
+            ], this) : null
         ], this);
     }
     testIfWithMultipleChildren() {

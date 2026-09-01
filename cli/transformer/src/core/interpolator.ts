@@ -98,6 +98,7 @@ export namespace Interpolator {
 
 	/** Add an interpolation item. */
 	export function add(toNode: ts.Node, item: InterpolationItem) {
+		// console.log(helper.getFullText(toNode), item)
 		
 		// Not fully replace it.
 		if (item.position === InterpolationPosition.Prepend) {

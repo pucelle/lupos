@@ -3,7 +3,7 @@ import {factory, Interpolator, Modifier, Packer} from '../../../core'
 import {FlowControlBase} from './base'
 import {TemplateParser} from '../template'
 import {SlotContentType} from '../../../enums'
-import {CapturedOutputWay, TrackingPatch, TrackingRanges, TrackingAreaTree, TrackingAreaTypeMask} from '../../../lupos'
+import {TrackingRanges, TrackingAreaTree, TrackingAreaTypeMask} from '../../../lupos'
 import {HTMLNode, TemplateSlotPlaceholder} from '../../../lupos-ts-module'
 
 
@@ -104,7 +104,6 @@ export class IfFlowControl extends FlowControlBase {
 					rawValueNodes[contentIndices[0]].parent,
 					rawValueNodes[contentIndices[contentIndices.length - 1]].parent,
 					TrackingAreaTypeMask.ConditionalContent,
-					CapturedOutputWay.Custom
 				)
 
 				this.contentRangeIds.push(contentRangeId)
@@ -126,7 +125,6 @@ export class IfFlowControl extends FlowControlBase {
 					rawValueNodes[conditionIndex].parent,
 					rawValueNodes[endContentIndex!].parent,
 					type,
-					CapturedOutputWay.Custom
 				)
 
 				this.conditionalRangeIds.push(conditionalRangeId)
@@ -188,25 +186,19 @@ export class IfFlowControl extends FlowControlBase {
 	protected outputConditionalExp(): ts.Expression {
 		let conditions = this.outputConditionsExps()
 
-		let contents = this.contentTemplates.map((template, index) => {
-			let rangeId = this.contentRangeIds[index]
-			let contentTrackingExps = rangeId ? TrackingPatch.outputCustomRangeTracking(rangeId) : []
-
+		// The conditional parts are plain in template, but becomes flow when generating,
+		// so we need to output tracking codes for conditional nodes manually.
+		let contents = this.contentTemplates.map((template) => {
 			if (template === null) {
 				return factory.createNull()
 			}
 			else {
-				let output = template.outputReplaced()
-				return Packer.parenthesizeExpressions(...contentTrackingExps, output)
+				return template.outputReplaced()
 			}
 		})
 
-		let conditionalTrackings = this.conditionalRangeIds.map(rangeId => {
-			return rangeId ? TrackingPatch.outputCustomRangeTracking(rangeId) : []
-		})
-
 		// Make a new expression: `(track1, cond1 ? content1 : (track2, cond2 ? content2 : ...))`
-		let value = Packer.toConditionalExpression(conditions, contents, conditionalTrackings)
+		let value = Packer.toConditionalExpression(conditions, contents)
 
 		// Add it as a value item to original template, and returned it's reference.
 		let toValue = this.slot.outputCustomValue(value)

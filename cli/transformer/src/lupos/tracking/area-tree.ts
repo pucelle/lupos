@@ -1,9 +1,10 @@
 import ts from 'typescript'
 import {InterpolationPosition, Packer, helper} from '../../core'
 import {TrackingArea} from './area'
-import {CapturedOutputWay, TrackingRange, TrackingRanges} from './ranges'
+import {TrackingRange, TrackingRanges} from './ranges'
 import {ListMap} from '../../lupos-ts-module'
 import {TrackingPatch} from './patch'
+import {TrackingHelper} from './helper'
 
 
 export enum TrackingAreaTypeMask {
@@ -88,6 +89,9 @@ export enum TrackingAreaTypeMask {
 	 * () => content, content also have this flag.
 	 */
 	FlowInterruption = 2 ** 19,
+
+	/** Be the expression of template span. */
+	TemplateExpression = 2 ** 20,
 }
 
 /** Tracking area and node position. */
@@ -193,7 +197,7 @@ export namespace TrackingAreaTree {
 		// Flow stop, and has content.
 		// `break` and `continue` contains no expressions, so should not be a area type.
 		// Or default-returned content of arrow function `() => content`
-		if (Packer.getFlowInterruptionType(node) > 0) {
+		if (TrackingHelper.getFlowInterruptionType(node) > 0) {
 			type |= TrackingAreaTypeMask.FlowInterruption
 		}
 
@@ -294,6 +298,13 @@ export namespace TrackingAreaTree {
 			}
 		}
 
+		// `${...}`
+		else if (ts.isTemplateSpan(parent)) {
+			if (node === parent.expression) {
+				type |= TrackingAreaTypeMask.TemplateExpression
+			}
+		}
+
 		// Add specified type.
 		type |= (SpecifiedAdditionalAreaType.get(node) || 0)
 
@@ -319,8 +330,7 @@ export namespace TrackingAreaTree {
 					node,
 					statements[0],
 					statements[statements.length - 1],
-					TrackingAreaTypeMask.CaseDefaultContent,
-					CapturedOutputWay.FollowNode
+					TrackingAreaTypeMask.CaseDefaultContent
 				)
 			}
 		}
@@ -491,7 +501,7 @@ export namespace TrackingAreaTree {
 
 		// A template span is only a syntax wrapper and will be replaced by template compiling.
 		// Insert beside its outputted expression instead.
-		if (position === InterpolationPosition.Before && ts.isTemplateSpan(toNode)) {
+		if (ts.isTemplateSpan(toNode)) {
 			toNode = toNode.expression
 		}
 

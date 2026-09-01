@@ -1,5 +1,5 @@
 import ts from 'typescript'
-import {InterpolationContentType, Interpolator, InterpolationPosition, VisitTree, FlowInterruptionTypeMask, Packer, helper, sourceFile, Hashing} from '../../core'
+import {InterpolationContentType, Interpolator, InterpolationPosition, VisitTree, Packer, helper, sourceFile, Hashing} from '../../core'
 import {AccessNode} from '../../lupos-ts-module'
 import {TrackingArea} from './area'
 import {TrackingAreaTargetPosition, TrackingAreaTree, TrackingAreaTypeMask} from './area-tree'
@@ -9,8 +9,8 @@ import {Optimizer} from './optimizer'
 import {TrackingAreaState} from './area-state'
 import {TrackingCapturerOperator} from './capturer-operator'
 import {TrackingPatch} from './patch'
-import {CapturedOutputWay} from './ranges'
 import {CapturedHashing} from './captured-hashing'
+import {FlowInterruptionTypeMask} from './helper'
 
 
 /** Captured item, will be inserted to a position. */
@@ -56,10 +56,11 @@ export interface CapturedItem {
  * Captures get and set expressions, and remember reference variables.
  */
 export class TrackingCapturer {
+	/** Captured items grouped by their final interpolation position. */
+	private static pendingOutput: Map<ts.Node, Map<InterpolationPosition, CapturedItem[]>> = new Map()
 
 	readonly area: TrackingArea
 	readonly operator: TrackingCapturerOperator
-	readonly outputWay: CapturedOutputWay
 
 	/** These properties can only be visited outside by `TrackingCapturerOperator`. */
 	captured: CapturedGroup[]
@@ -72,10 +73,13 @@ export class TrackingCapturer {
 	 */
 	preventGettingAfterAwait: boolean = false
 
-	constructor(area: TrackingArea, state: TrackingAreaState, outputWay: CapturedOutputWay) {
+	constructor(area: TrackingArea, state: TrackingAreaState) {
+		if (!area.parent) {
+			TrackingCapturer.pendingOutput.clear()
+		}
+
 		this.area = area
 		this.operator = new TrackingCapturerOperator(this)
-		this.outputWay = outputWay
 
 		this.resetLatestCaptured()
 		this.captured = [this.latestCaptured]
@@ -247,6 +251,7 @@ export class TrackingCapturer {
 
 	/** Insert captured nodes to specified position. */
 	breakCaptured(atNode: ts.Node, flowInterruptedBy: FlowInterruptionTypeMask | 0) {
+
 		// Even no nodes captured, still break.
 		// Later may append nodes to this item.
 
@@ -334,6 +339,7 @@ export class TrackingCapturer {
 		else if (area.type & TrackingAreaTypeMask.FlowInterruption
 			|| area.type & TrackingAreaTypeMask.Conditional
 			|| area.type & TrackingAreaTypeMask.Switch
+			|| area.type & TrackingAreaTypeMask.TemplateExpression
 		) {
 			item.position = InterpolationPosition.Before
 		}
@@ -407,12 +413,6 @@ export class TrackingCapturer {
 	 * Previous step may move captured forward or backward.
 	 */
 	private postProcessCaptured() {
-
-		// Output customized.
-		if (this.outputWay === CapturedOutputWay.Custom) {
-			return
-		}
-
 		this.outputCaptured()
 	}
 	
@@ -479,19 +479,15 @@ export class TrackingCapturer {
 		}
 
 		if (itemsInsertToNewPosition.length > 0) {
-			Interpolator.add(newPosition!.toNode, {
-				position: newPosition!.position,
-				contentType: InterpolationContentType.Tracking,
-				exps: () => this.makeCapturedExps(itemsInsertToNewPosition),
-			})
+			this.addPendingOutput(
+				newPosition!.toNode,
+				newPosition!.position,
+				itemsInsertToNewPosition
+			)
 		}
 
 		if (itemsInsertToOldPosition.length > 0) {
-			Interpolator.add(oldToNode, {
-				position: group.position,
-				contentType: InterpolationContentType.Tracking,
-				exps: () => this.makeCapturedExps(itemsInsertToOldPosition),
-			})
+			this.addPendingOutput(oldToNode, group.position, itemsInsertToOldPosition)
 		}
 
 		if (items.some(index => index.type === 'get')) {
@@ -503,7 +499,38 @@ export class TrackingCapturer {
 		}
 	}
 
-	/** Try to find a better position to insert captured. */
+	/** 
+	 * Batch captured items that will be emitted at the same position.
+	 * E.g., all `${...}` should be inserted before the first.
+	 */
+	private addPendingOutput(
+		toNode: ts.Node,
+		position: InterpolationPosition,
+		items: CapturedItem[]
+	) {
+		let positionMap = TrackingCapturer.pendingOutput.get(toNode)
+		if (!positionMap) {
+			positionMap = new Map()
+			TrackingCapturer.pendingOutput.set(toNode, positionMap)
+		}
+
+		let pendingItems = positionMap.get(position)
+		if (pendingItems) {
+			pendingItems.push(...items)
+			return
+		}
+
+		pendingItems = [...items]
+		positionMap.set(position, pendingItems)
+
+		Interpolator.add(toNode, {
+			position,
+			contentType: InterpolationContentType.Tracking,
+			exps: () => this.makeCapturedExps(pendingItems!),
+		})
+	}
+
+	/** Try to find a better position to insert captured, normally the closest statement container. */
 	private findBetterInsertPosition(toNode: ts.Node, position: InterpolationPosition): TrackingAreaTargetPosition | null {
 		let newPosition = TrackingAreaTree.findClosestPositionToAddStatements(toNode, position, this.area, true)
 		if (!newPosition) {
@@ -579,24 +606,5 @@ export class TrackingCapturer {
 			let node = Interpolator.outputChildren(item.node) as AccessNode
 			return [node]
 		}
-	}
-
-	/** Output captured as tracking expressions. */
-	outputCustomCaptured(): ts.Expression[] {
-		if (this.outputWay !== CapturedOutputWay.Custom) {
-			throw new Error(`Only capturer in "Custom" output way can output custom captured!`)
-		}
-
-		let exps: ts.Expression[] = []
-
-		for (let group of this.captured) {
-			if (group.items.length === 0) {
-				continue
-			}
-
-			exps.push(...this.makeCapturedExps(group.items))
-		}
-
-		return exps
 	}
 }

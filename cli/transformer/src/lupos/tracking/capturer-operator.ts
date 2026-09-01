@@ -1,10 +1,11 @@
 import ts from 'typescript'
-import {VisitTree, DeclarationScopeTree, helper, FlowInterruptionTypeMask} from '../../core'
+import {VisitTree, DeclarationScopeTree, helper} from '../../core'
 import {removeFromList} from '../../utils'
 import {CapturedItem, TrackingCapturer} from './capturer'
 import {TrackingArea} from './area'
 import {TrackingAreaTree, TrackingAreaTypeMask} from './area-tree'
 import {CapturedHash, CapturedHashing, CapturedHashMap} from './captured-hashing'
+import {FlowInterruptionTypeMask} from './helper'
 
 
 /** 
@@ -148,7 +149,7 @@ export class TrackingCapturerOperator {
 		this.safelyMoveCapturedItemsOutwardTo(dynamicIndexed, toCapturer)
 	}
 
-	/** Eliminate repetitive captured with an outer hash. */
+	/** Eliminate repetitive captured with an outer hash, and return the resulting hash map. */
 	eliminateRepetitiveRecursively(hashMap: CapturedHashMap) {
 		let ownHashMap = hashMap.clone()
 		let startChildIndex = 0
@@ -189,7 +190,13 @@ export class TrackingCapturerOperator {
 					break
 				}
 
-				child.capturer.operator.eliminateRepetitiveRecursively(ownHashMap)
+				let childHashMap = child.capturer.operator.eliminateRepetitiveRecursively(ownHashMap)
+
+				// Template expressions run sequentially from left to right.
+				// Let following expressions eliminate captures already made by preceding ones.
+				if (child.type & TrackingAreaTypeMask.TemplateExpression) {
+					ownHashMap = childHashMap
+				}
 			}
 			
 			// Break by yield or await, clear hash map.
@@ -207,9 +214,17 @@ export class TrackingCapturerOperator {
 			if ((child.type & TrackingAreaTypeMask.FunctionLike) === 0
 				|| (child.type & TrackingAreaTypeMask.InstantlyRunFunction)
 			) {
-				child.capturer.operator.eliminateRepetitiveRecursively(ownHashMap)
+				let childHashMap = child.capturer.operator.eliminateRepetitiveRecursively(ownHashMap)
+
+				// Template expressions run sequentially from left to right.
+				// Let following expressions eliminate captures already made by preceding ones.
+				if (child.type & TrackingAreaTypeMask.TemplateExpression) {
+					ownHashMap = childHashMap
+				}
 			}
 		}
+
+		return ownHashMap
 	}
 
 	/** Get private captured of captured item. */

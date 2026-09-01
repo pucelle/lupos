@@ -1,11 +1,12 @@
 import ts from 'typescript'
 import {ObservedChecker} from './observed-checker'
-import {FlowInterruptionTypeMask, DeclarationScope, DeclarationScopeTree, helper} from '../../core'
+import {DeclarationScope, DeclarationScopeTree, helper} from '../../core'
 import {TrackingAreaState} from './area-state'
 import {TrackingAreaTypeMask} from './area-tree'
 import {TrackingCapturer} from './capturer'
-import {CapturedOutputWay, TrackingRange} from './ranges'
+import {TrackingRange} from './ranges'
 import {TrackingPatch} from './patch'
+import {FlowInterruptionTypeMask} from './helper'
 
 
 /** 
@@ -41,7 +42,7 @@ export class TrackingArea {
 		this.range = range
 
 		this.state = new TrackingAreaState(this)
-		this.capturer = new TrackingCapturer(this, this.state, range?.outputWay ?? CapturedOutputWay.FollowNode)
+		this.capturer = new TrackingCapturer(this, this.state)
 
 		let beNonInstantlyRunFunction = (type & TrackingAreaTypeMask.FunctionLike)
 			&& (type & TrackingAreaTypeMask.InstantlyRunFunction) === 0

@@ -15,13 +15,6 @@ export interface TrackingRange {
 	startNode: ts.Node
 	endNode: ts.Node
 	areaType: TrackingAreaTypeMask
-	outputWay: CapturedOutputWay
-}
-
-/** How to output captured. */
-export enum CapturedOutputWay {
-	FollowNode,
-	Custom,
 }
 
 
@@ -52,15 +45,13 @@ export namespace TrackingRanges {
 		container: ts.Node,
 		startNode: ts.Node,
 		endNode: ts.Node,
-		areaType: 0 | TrackingAreaTypeMask,
-		outputWay: CapturedOutputWay
+		areaType: 0 | TrackingAreaTypeMask
 	): number {
 		let existed = RangesByStartNode.get(startNode)
 
 		let sameRange = existed?.find(r => r.startNode === startNode && r.endNode === endNode)
 		if (sameRange) {
 			sameRange.areaType |= areaType
-			sameRange.outputWay = outputWay
 			return sameRange.id
 		}
 
@@ -72,7 +63,6 @@ export namespace TrackingRanges {
 			startNode,
 			endNode,
 			areaType: areaType | TrackingAreaTypeMask.Range,
-			outputWay
 		})
 
 		if (existed) {

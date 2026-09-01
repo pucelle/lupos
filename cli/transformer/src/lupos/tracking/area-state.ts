@@ -1,7 +1,8 @@
 import ts from 'typescript'
 import {TrackingArea} from './area'
 import {TrackingAreaTree, TrackingAreaTypeMask} from './area-tree'
-import {FlowInterruptionTypeMask, Packer, helper} from '../../core'
+import {helper} from '../../core'
+import {FlowInterruptionTypeMask, TrackingHelper} from './helper'
 
 
 export class TrackingAreaState {
@@ -46,7 +47,7 @@ export class TrackingAreaState {
 		this.effectDecorated = this.checkEffectDecorated()
 
 		if (area.type & TrackingAreaTypeMask.FlowInterruption) {
-			this.flowInterruptionType = Packer.getFlowInterruptionType(area.node)
+			this.flowInterruptionType = TrackingHelper.getFlowInterruptionType(area.node)
 		}
 	}
 

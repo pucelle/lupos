@@ -1,7 +1,6 @@
 import ts from 'typescript'
 import {ObservedChecker} from './observed-checker'
 import {AccessGrouper} from './access-grouper'
-import {TrackingRanges} from './ranges'
 import {ObservedStateMask} from './types'
 import {CapturedItem} from './capturer'
 import {AccessNode, ListMap} from '../../lupos-ts-module'
@@ -101,15 +100,6 @@ export namespace TrackingPatch {
 		return AccessGrouper.makeExpressions([rawNode as AccessNode], type)
 	}
 
-	/** Output custom range tracking expressions by. */
-	export function outputCustomRangeTracking(rangeId: number): ts.Expression[] {
-		let area = TrackingRanges.getAreaByRangeId(rangeId)
-		if (!area) {
-			return []
-		}
-
-		return area.capturer.outputCustomCaptured()
-	}
 
 	/** 
 	 * Knows that this function should instantly run,
