@@ -4,6 +4,19 @@ import {AwaitFlowControl, FlowControlBase, ForFlowControl, IfFlowControl, KeyedF
 import {CacheFlowControl} from '../flow-control/cache'
 
 
+type FlowControlConstructor = new (slot: FlowControlSlotParser) => FlowControlBase
+
+/** Flow-control parser selected by its template tag. */
+const FlowControlByTagName: Record<string, FlowControlConstructor> = {
+	'lu:await': AwaitFlowControl,
+	'lu:for': ForFlowControl,
+	'lu:if': IfFlowControl,
+	'lu:keyed': KeyedFlowControl,
+	'lu:cache': CacheFlowControl,
+	'lu:switch': SwitchFlowControl,
+}
+
+
 export class FlowControlSlotParser extends SlotParserBase {
 
 	private control!: FlowControlBase
@@ -17,39 +30,16 @@ export class FlowControlSlotParser extends SlotParserBase {
 	}
 
 	override preInit() {
-		let control: FlowControlBase | null = null
-
-		switch (this.node.tagName) {
-			case 'lu:await':
-				control = new AwaitFlowControl(this)
-				break
-
-			case 'lu:for':
-				control = new ForFlowControl(this)
-				break
-
-			case 'lu:if':
-				control = new IfFlowControl(this)
-				break
-
-			case 'lu:keyed':
-				control = new KeyedFlowControl(this)
-				break
-
-			case 'lu:cache':
-				control = new CacheFlowControl(this)
-				break
-
-			case 'lu:switch':
-				control = new SwitchFlowControl(this)
-				break
+		let tagName = this.node.tagName!
+		let Control = FlowControlByTagName[tagName]
+		if (!Control) {
+			throw new Error(`Unsupported flow-control tag '<${tagName}>'.`)
 		}
 
-		if (control) {
-			this.control = control
-			this.asLazyCallback = control.asLazyCallback
-			control.preInit()
-		}
+		let control = new Control(this)
+		this.control = control
+		this.asLazyCallback = control.asLazyCallback
+		control.preInit()
 	}
 
 	override postInit() {

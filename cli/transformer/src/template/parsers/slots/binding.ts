@@ -3,6 +3,16 @@ import {BindingBase, ClassBinding, RefBinding, StyleBinding} from '../bindings'
 import {HTMLAttribute} from '../../../lupos-ts-module'
 
 
+type BindingConstructor = new (slot: BindingSlotParser) => BindingBase
+
+/** Specialized binding parsers, falling back to the custom binding parser. */
+const BindingByName: Record<string, BindingConstructor> = {
+	ref: RefBinding,
+	class: ClassBinding,
+	style: StyleBinding,
+}
+
+
 export class BindingSlotParser extends SlotParserBase {
 
 	declare attr: HTMLAttribute
@@ -14,24 +24,8 @@ export class BindingSlotParser extends SlotParserBase {
 	private binding!: BindingBase
 
 	override preInit() {
-		let binding: BindingBase
-
-		switch (this.name) {
-			case 'ref':
-				binding = new RefBinding(this)
-				break
-
-			case 'class':
-				binding = new ClassBinding(this)
-				break
-
-			case 'style':
-				binding = new StyleBinding(this)
-				break
-
-			default:
-				binding = new BindingBase(this)
-		}
+		let Binding = BindingByName[this.name] ?? BindingBase
+		let binding = new Binding(this)
 
 		this.asLazyCallback = binding.asLazyCallback
 		this.binding = binding

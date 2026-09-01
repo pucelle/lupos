@@ -8,6 +8,24 @@ import {TreeOutputHandler} from './tree-output'
 import {VariableNames} from './variable-names'
 
 
+type SlotParserConstructor = new (part: TemplatePart, tree: TreeParser) => SlotParserBase
+
+/** Slot parser selected for each compilable template part type. */
+const SlotParserByPartType: Partial<Record<TemplatePartType, SlotParserConstructor>> = {
+	[TemplatePartType.SlotTag]: SlotTagSlotParser,
+	[TemplatePartType.Component]: ComponentSlotParser,
+	[TemplatePartType.DynamicComponent]: DynamicComponentSlotParser,
+	[TemplatePartType.FlowControl]: FlowControlSlotParser,
+	[TemplatePartType.Property]: PropertySlotParser,
+	[TemplatePartType.Binding]: BindingSlotParser,
+	[TemplatePartType.Event]: EventSlotParser,
+	[TemplatePartType.SlottedAttribute]: AttributeSlotParser,
+	[TemplatePartType.QueryAttribute]: AttributeSlotParser,
+	[TemplatePartType.SlottedText]: TextSlotParser,
+	[TemplatePartType.Content]: ContentSlotParser,
+}
+
+
 /** Parts can be connected or disconnected. */
 export interface Part {
 	type: PartType
@@ -116,54 +134,12 @@ export class TreeParser {
 	 * It returns a callback to do more init after all children initialized.
 	 */
 	private onTemplatePart(part: TemplatePart) {
-		let parser: SlotParserBase | null = null
-
-		switch (part.type) {
-			case TemplatePartType.SlotTag:
-				parser = new SlotTagSlotParser(part, this)
-				break
-
-			case TemplatePartType.Component:
-				parser = new ComponentSlotParser(part, this)
-				break
-
-			case TemplatePartType.DynamicComponent:
-				parser = new DynamicComponentSlotParser(part, this)
-				break
-
-			case TemplatePartType.FlowControl:
-				parser = new FlowControlSlotParser(part, this)
-				break
-
-			case TemplatePartType.Property:
-				parser = new PropertySlotParser(part, this)
-				break
-
-			case TemplatePartType.Binding:
-				parser = new BindingSlotParser(part, this)
-				break
-
-			case TemplatePartType.Event:
-				parser = new EventSlotParser(part, this)
-				break
-
-			case TemplatePartType.SlottedAttribute:
-			case TemplatePartType.QueryAttribute:
-				parser = new AttributeSlotParser(part, this)
-				break
-
-			case TemplatePartType.SlottedText:
-				parser = new TextSlotParser(part, this)
-				break
-
-			case TemplatePartType.Content:
-				parser = new ContentSlotParser(part, this)
-				break
-		}
-
-		if (!parser) {
+		let Parser = SlotParserByPartType[part.type]
+		if (!Parser) {
 			return undefined
 		}
+
+		let parser = new Parser(part, this)
 
 		parser.preInit()
 
@@ -354,4 +330,3 @@ export class TreeParser {
 		)
 	}
 }
-
