@@ -8,8 +8,8 @@ import {AccessNode, ListMap} from '../../lupos-ts-module'
 
 
 /** 
- * Ignore some tracking additional,
- * or build a single tracking node.
+ * Ignores or adds some tracking additional or build a single tracking node
+ * out of normal tracking process,
  */
 export namespace TrackingPatch {
 

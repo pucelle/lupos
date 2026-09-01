@@ -24,6 +24,7 @@ export class DeclarationScope extends Scope {
 			&& !ts.isForStatement(this.node)
 			&& !ts.isForOfStatement(this.node)
 			&& !ts.isForInStatement(this.node)
+			&& !ts.isTemplateSpan(this.node)
 	}
 
 	/** Whether declared local variable as const. */

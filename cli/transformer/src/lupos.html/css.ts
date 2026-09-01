@@ -49,7 +49,7 @@ function parseCSSTemplate(node: ts.TaggedTemplateExpression) {
 
 			let newValues = valueIndices!.map(({index: spanIndex}) => {
 				let oldSpan = oldSpans[spanIndex]
-				return Interpolator.outputUniqueSelf(oldSpan.expression) as ts.Expression
+				return Interpolator.outputSelfUnique(oldSpan.expression) as ts.Expression
 			})
 
 			replaced = factory.createCallExpression(

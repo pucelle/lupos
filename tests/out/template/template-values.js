@@ -1,4 +1,4 @@
-import { Component, CompiledTemplateResult, TemplateMaker, SlotPosition, HTMLMaker, on } from 'lupos.html';
+import { Component, TemplateSlot, SlotPosition, CompiledTemplateResult, TemplateMaker, HTMLMaker, on, IfBlock } from 'lupos.html';
 import { trackGet } from "lupos";
 const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
 /*
@@ -188,6 +188,73 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
         }
     };
 });
+const $html_11 = /*#__PURE__*/ new HTMLMaker("<!----><!--48b816f7--><!--8124be9a-->");
+/*
+<root>
+    ${this.getValues().map(value => html`<span>${value}</span>`)}
+    <lu:if ${this.prop} />
+</root>
+*/ const $template_11 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $locator = $html_11.make($hydrates);
+    let $node_0 = $locator.childAt(0);
+    let $node_1 = $locator.getMarker("48b816f7");
+    let $node_2 = $locator.getMarker("8124be9a");
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1, $locator.getNodes("48b816f7"));
+    let $slot_1 = new TemplateSlot(new SlotPosition(1, $node_2), null, $locator.getNodes("8124be9a"));
+    let $block_0 = new IfBlock($slot_1);
+    return {
+        el: $locator.el,
+        position: new SlotPosition(1, $node_0),
+        update($values) {
+            $slot_0.update($values[0]);
+            $block_0.update($values[1]);
+        },
+        parts: [
+            [$slot_0, 1],
+            [$slot_1, 1]
+        ]
+    };
+});
+/*
+<root>
+    <div ?hidden=${this.getValues().length === 0} />
+</root>
+*/ const $template_12 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $latest_0;
+    let $locator = $html_0.make($hydrates);
+    let $node_0 = $locator.childAt(0);
+    return {
+        el: $locator.el,
+        position: new SlotPosition(1, $node_0),
+        update($values) {
+            if ($latest_0 !== $values[0]) {
+                $values[0] ? $node_0.setAttribute("hidden", "") : $node_0.removeAttribute("hidden");
+                $latest_0 = $values[0];
+            }
+        }
+    };
+});
+const $html_13 = /*#__PURE__*/ new HTMLMaker("<span> </span>");
+/*
+<root>
+    <span>${value}</span>
+</root>
+*/ const $template_13 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $latest_0;
+    let $locator = $html_13.make($hydrates);
+    let $node_0 = $locator.childAt(0);
+    let $node_1 = $node_0.firstChild;
+    return {
+        el: $locator.el,
+        position: new SlotPosition(1, $node_0),
+        update($values) {
+            if ($latest_0 !== $values[0]) {
+                $node_1.data = $values[0];
+                $latest_0 = $values[0];
+            }
+        }
+    };
+});
 let globalVariable = 1;
 export class TestTemplateValues extends Component {
     prop = 1;
@@ -196,6 +263,9 @@ export class TestTemplateValues extends Component {
         return '';
     }
     handleEvent(_value) { }
+    getValues() {
+        return [1, 2];
+    }
     testStatic() {
         return new CompiledTemplateResult($template_0, [], this);
     }
@@ -238,6 +308,20 @@ export class TestTemplateValues extends Component {
         trackGet(this, "prop");
         return new CompiledTemplateResult($template_10, [
             this.prop
+        ], this);
+    }
+    testMergingSameReferencedValues() {
+        let $ref_0, $ref_1;
+        $ref_1 = this.getValues();
+        trackGet($ref_1, "");
+        trackGet(this, "prop");
+        return new CompiledTemplateResult($template_11, [
+            $ref_1.map(value => new CompiledTemplateResult($template_13, [
+                value
+            ], this)),
+            this.prop ? ($ref_0 = this.getValues(), trackGet($ref_0, ""), new CompiledTemplateResult($template_12, [
+                $ref_0.length === 0
+            ], this)) : null
         ], this);
     }
 }

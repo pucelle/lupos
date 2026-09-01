@@ -221,7 +221,7 @@ export class IfFlowControl extends FlowControlBase {
 			}
 			else {
 				let rawNode = this.template.values.getRawValue(index)
-				return Interpolator.outputUniqueSelf(rawNode) as ts.Expression
+				return Interpolator.outputSelfUnique(rawNode) as ts.Expression
 			}
 		})
 

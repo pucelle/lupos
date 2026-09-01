@@ -48,7 +48,6 @@ export class TreeParser {
 	private wrappedByTemplate: boolean = false
 	private inSVG: boolean = false
 	private outputHandler: TreeOutputHandler
-	private templateParts: TemplatePart[] = []
 	private slotParsers: SlotParserBase[] = []
 	private preDeclaredVariableNames: string[] = []
 
@@ -168,7 +167,6 @@ export class TreeParser {
 
 		parser.preInit()
 
-		this.templateParts.push(part)
 		this.slotParsers.push(parser)
 		this.references.needRef(part.node)
 

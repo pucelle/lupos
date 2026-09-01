@@ -489,6 +489,12 @@ export namespace TrackingAreaTree {
 			position = InterpolationPosition.Before
 		}
 
+		// A template span is only a syntax wrapper and will be replaced by template compiling.
+		// Insert beside its outputted expression instead.
+		if (position === InterpolationPosition.Before && ts.isTemplateSpan(toNode)) {
+			toNode = toNode.expression
+		}
+
 		return {
 			area,
 			toNode,

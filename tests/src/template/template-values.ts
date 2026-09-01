@@ -1,4 +1,5 @@
 import {Component, html} from 'lupos.html'
+import {Observed} from '../../../web/out'
 
 
 let globalVariable: number = 1
@@ -14,6 +15,10 @@ export class TestTemplateValues extends Component {
 	}
 
 	handleEvent(_value: any) {}
+
+	getValues(): Observed<number[]> {
+		return [1, 2]
+	}
 
 	testStatic() {
 		return html`<div attr="${'className'}"></div>`
@@ -57,5 +62,14 @@ export class TestTemplateValues extends Component {
 
 	testMergingSameValues() {
 		return html`<div attr="${this.prop}" attr2=${this.prop}></div>`
+	}
+
+	testMergingSameReferencedValues() {
+		return html`
+			${this.getValues().map(value => html`<span>${value}</span>`)}
+			<lu:if ${this.prop}>
+				<div ?hidden=${this.getValues().length === 0} />
+			</lu:if>
+		`
 	}
 }

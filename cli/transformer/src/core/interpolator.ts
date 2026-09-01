@@ -67,8 +67,14 @@ export enum InterpolationContentType {
 
 /** Output options, default values of all items are `true`. */
 export interface OutputOptions {
+
+	/** Can replace current node to another. */
 	canReplace?: boolean
+
+	/** Can remove current node. */
 	canRemove?: boolean
+
+	/** Can insert sibling nodes. */
 	canInsert?: boolean
 }
 
@@ -397,14 +403,15 @@ export namespace Interpolator {
 	}
 
 	/** 
-	 * Output an unique node.
+	 * Output node and inserted siblings as an unique node.
 	 * It requires to output an unique node.
 	 * `canInsert` of `options` will be forced to `false`.
 	 */
-	export function outputUniqueSelf(atNode: ts.Node, options: OutputOptions = {}): ts.Node {
-		options.canInsert = false
-
+	export function outputSelfUnique(atNode: ts.Node, options: OutputOptions = {}): ts.Node {
 		let node = Interpolator.outputSelf(atNode, options)
+		if (Array.isArray(node)) {
+			node = Packer.parenthesizeExpressions(...node as ts.Expression[])
+		}
 
 		if (!node) {
 			throw new Error(`"${helper.getFullText(atNode)}" has been removed!`)
@@ -416,7 +423,6 @@ export namespace Interpolator {
 
 		return node
 	}
-
 
 	/** Get ordered interpolation items.*/
 	function getOrderedItems(atNode: ts.Node) {

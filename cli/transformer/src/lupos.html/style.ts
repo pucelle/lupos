@@ -40,7 +40,7 @@ defineVisitor(function(node: ts.Node) {
 		Interpolator.after(initializer, InterpolationContentType.Normal, () => {
 
 			// Old initializer will be remove, here output here without removing.
-			let newInitializer = Interpolator.outputUniqueSelf(initializer, {canRemove: false}) as ts.Expression
+			let newInitializer = Interpolator.outputSelfUnique(initializer, {canRemove: false, canInsert: false}) as ts.Expression
 
 			// `addComponentStyle(css`...`)`
 			let newValue = factory.createCallExpression(
@@ -74,7 +74,7 @@ defineVisitor(function(node: ts.Node) {
 		let body = style.body!
 
 		Interpolator.replace(style, InterpolationContentType.Normal, () => {
-			let newBody = Interpolator.outputUniqueSelf(body, {canRemove: false}) as ts.Expression
+			let newBody = Interpolator.outputSelfUnique(body, {canRemove: false, canInsert: false}) as ts.Expression
 
 			// `() => {...}`
 			let initializer = factory.createArrowFunction(
