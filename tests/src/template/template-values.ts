@@ -71,4 +71,18 @@ export class TestTemplateValues extends Component {
 			</lu:if>
 		`
 	}
+
+	testCommonExpressionSyntax() {
+		return html`
+			<div
+				data-arithmetic=${this.prop + 1}
+				data-conditional=${this.prop > 0 ? this.prop : 0}
+				data-optional=${this.getValues()?.[0] ?? this.prop}
+				data-array=${[this.prop, ...this.getValues()]}
+				data-object=${{value: this.prop}}
+				data-template=${`value-${this.prop}`}
+				data-satisfies=${this.prop satisfies number}
+			></div>
+		`
+	}
 }

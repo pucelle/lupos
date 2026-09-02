@@ -229,6 +229,49 @@ const $html_11 = /*#__PURE__*/ new HTMLMaker("<!----><!--8124be9a-->");
         }
     };
 });
+/*
+<root>
+    <div data-arithmetic=${this.prop + 1} data-conditional=${this.prop > 0 ? this.prop : 0} data-optional=${this.getValues()?.[0] ?? this.prop} data-array=${[this.prop, ...this.getValues()]} data-object=${{value: this.prop}} data-template=${`value-${this.prop}`} data-satisfies=${this.prop satisfies number} />
+</root>
+*/ const $template_13 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $latest_0, $latest_1, $latest_2, $latest_3, $latest_4, $latest_5, $latest_6;
+    let $locator = $html_0.make($hydrates);
+    let $node_0 = $locator.childAt(0);
+    return {
+        el: $locator.el,
+        position: new SlotPosition(1, $node_0),
+        update($values) {
+            if ($latest_0 !== $values[0]) {
+                $node_0.setAttribute("data-arithmetic", $values[0]);
+                $latest_0 = $values[0];
+            }
+            if ($latest_1 !== $values[1]) {
+                $node_0.setAttribute("data-conditional", $values[1]);
+                $latest_1 = $values[1];
+            }
+            if ($latest_2 !== $values[2]) {
+                $node_0.setAttribute("data-optional", $values[2]);
+                $latest_2 = $values[2];
+            }
+            if ($latest_3 !== $values[3]) {
+                $values[3] === null ? $node_0.removeAttribute("data-array") : $node_0.setAttribute("data-array", $values[3]);
+                $latest_3 = $values[3];
+            }
+            if ($latest_4 !== $values[4]) {
+                $values[4] === null ? $node_0.removeAttribute("data-object") : $node_0.setAttribute("data-object", $values[4]);
+                $latest_4 = $values[4];
+            }
+            if ($latest_5 !== $values[5]) {
+                $node_0.setAttribute("data-template", $values[5]);
+                $latest_5 = $values[5];
+            }
+            if ($latest_6 !== $values[6]) {
+                $node_0.setAttribute("data-satisfies", $values[6]);
+                $latest_6 = $values[6];
+            }
+        }
+    };
+});
 let globalVariable = 1;
 export class TestTemplateValues extends Component {
     prop = 1;
@@ -291,6 +334,23 @@ export class TestTemplateValues extends Component {
             this.prop ? new CompiledTemplateResult($template_12, [
                 ($ref_0 = this.getValues(), trackGet($ref_0, ""), $ref_0.length === 0)
             ], this) : null
+        ], this);
+    }
+    testCommonExpressionSyntax() {
+        let $ref_0, $ref_1;
+        $ref_0 = this.getValues();
+        $ref_1 = this.getValues();
+        trackGet(this, "prop");
+        $ref_0 && trackGet($ref_0, 0);
+        trackGet($ref_1, "");
+        return new CompiledTemplateResult($template_13, [
+            this.prop + 1,
+            this.prop > 0 ? this.prop : 0,
+            $ref_0?.[0] ?? this.prop,
+            [this.prop, ...$ref_1],
+            { value: this.prop },
+            `value-${this.prop}`,
+            this.prop
         ], this);
     }
 }
