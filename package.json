@@ -30,7 +30,8 @@
 		"watch-cli": "cd cli && tsc -b -w",
 		"watch-web": "cd web && node ../cli/bin/luc -e -w",
 		"prepublish": "npm run build",
-		"test": "cd tests && node ../cli/bin/luc && echo Compare git changes to get test result && node ../scripts/delete-tsbuildinfo.cjs",
+		"test": "cd tests && node ../cli/bin/luc && echo Compare git changes to get test result && node ../scripts/delete-tsbuildinfo.cjs && cd .. && node --test tests-compiler/*.node-test.cjs",
+		"test-compiler": "npm run build-cli && node --test tests-compiler/*.node-test.cjs",
 		"test-web": "vitest"
 	},
 	"bin": {

@@ -17,8 +17,8 @@ export class ExtendedDiagnosticModifier extends DiagnosticModifier {
 	/** Output added and removed. */
 	output() {
 		let fileName = transformSession.sourceFile.fileName
-		transformContext.compilerDiagnosticModifier.add(fileName, this.added, transformContext.builderProgram)
-		transformContext.compilerDiagnosticModifier.delete(fileName, this.deleted, transformContext.builderProgram)
+		transformContext.compilerDiagnosticModifier.add(fileName, this.added)
+		transformContext.compilerDiagnosticModifier.delete(fileName, this.deleted)
 		transformContext.compilerDiagnosticModifier.setPotentialAllImportsUnUsed(fileName, this.potentialAllImportsUnUsed)
 	}
 }

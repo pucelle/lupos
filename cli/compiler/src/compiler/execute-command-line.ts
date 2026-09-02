@@ -26,8 +26,7 @@ export function executeCommandLine(
 	let commandLine = ts.parseCommandLine(commandLineArgs)
 	let pretty = shouldBePretty(system, commandLine.options)
 	let diagModifier = new CompilerDiagnosticModifier()
-	let rawReportDiagnostic = createDiagnosticReporter(system, pretty)
-	let reportDiagnostic = diagModifier.patchDiagnosticReporter(rawReportDiagnostic)
+	let reportDiagnostic = createDiagnosticReporter(system, pretty)
 
 	// If there are any errors due to command line parsing and/or
 	// setting up localization, report them and quit.
@@ -74,7 +73,7 @@ export function executeCommandLine(
 		)
 	}
 	else {
-		return performCompilation(
+		let exitStatus = performCompilation(
 			system,
 			reportDiagnostic,
 			diagModifier,
@@ -85,6 +84,8 @@ export function executeCommandLine(
 			toESM,
 			embedSVG
 		)
+
+		return system.exit(exitStatus)
 	}
 }
 
@@ -123,7 +124,7 @@ function performWatchCompilation(
 		undefined,
 		reportDiagnostic,
 		undefined,
-		createWatchReporter(system, compilerOptions, diagModifier),
+		createWatchReporter(system, compilerOptions),
 	)
 
 	patchHost(watchBuildHost, transformer, toESM, embedSVG, diagModifier)
@@ -141,16 +142,10 @@ function performWatchCompilation(
 
 function createWatchReporter(
 	system: ts.System,
-	options: ts.CompilerOptions | ts.BuildOptions,
-	diagModifier: CompilerDiagnosticModifier
+	options: ts.CompilerOptions | ts.BuildOptions
 ): ts.WatchStatusReporter {
 	let pretty = shouldBePretty(system, options)
-	let rawReporter = createWatchStatusReporter(system, pretty)
-	let patchedReporter = diagModifier.patchWatchStatusReporter(rawReporter)
-
-	return (diagnostic: ts.Diagnostic, newLine: string, options: ts.CompilerOptions, errorCount?: number) => {
-		patchedReporter(diagnostic, newLine, options, errorCount)
-	}
+	return createWatchStatusReporter(system, pretty)
 }
 
 function shouldBePretty(system: ts.System, options: ts.CompilerOptions | ts.BuildOptions) {

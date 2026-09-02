@@ -27,7 +27,7 @@ export function patchHost(
 	embedSVG: boolean,
 	diagModifier: CompilerDiagnosticModifier
 ) {
-	let originalHostCreateProgram = host.createProgram
+	let originalHostCreateProgram = host.createProgram.bind(host)
 
 	// Note program may update here.
 	host.createProgram = (rootNames: readonly string[] | undefined, options, host, oldProgram) => {
@@ -58,24 +58,47 @@ export function patchProgram(
 		return extended(context, extras)
 	}
 
-	let originalEmit = program.emit
+	let deferredSemanticDiagnostics: ts.Diagnostic[] = []
+	let emitting = false
+	let originalGetSemanticDiagnostics = program.getSemanticDiagnostics.bind(program)
+	let originalEmit = program.emit.bind(program)
 
-	program.emit = (targetSourceFile, writeFile, cancellationToken, emitOnlyDtsFiles, existingTransformers): ts.EmitResult => {
-		let transformers = existingTransformers ?? { before: [] }
-
-		if (!transformers.before) {
-			transformers.before = []
+	// `emitFilesAndReportErrors` asks for semantic diagnostics before emitting.
+	// Defer those diagnostics until emit finishes, when the transformer has
+	// supplied its additions and deletions. Both methods are public BuilderProgram
+	// APIs, so this does not depend on TypeScript's internal builder state.
+	program.getSemanticDiagnostics = (sourceFile, cancellationToken) => {
+		let diagnostics = originalGetSemanticDiagnostics(sourceFile, cancellationToken)
+		if (emitting || program.getCompilerOptions().listFilesOnly) {
+			return diagnostics
 		}
 
-		// Add our transformer.
-		transformers.before.push(standardTransformer)
+		deferredSemanticDiagnostics.push(...diagnostics)
+		return []
+	}
 
-		let emitResult = originalEmit(targetSourceFile, writeFile, cancellationToken, emitOnlyDtsFiles, transformers)
+	program.emit = (targetSourceFile, writeFile, cancellationToken, emitOnlyDtsFiles, existingTransformers): ts.EmitResult => {
+		let transformers: ts.CustomTransformers = {
+			...existingTransformers,
+			before: [...existingTransformers?.before ?? [], standardTransformer],
+		}
 
-		// Report added diagnostics.
-		diagModifier.reportAdded()
+		emitting = true
+		let emitResult: ts.EmitResult
+		try {
+			emitResult = originalEmit(targetSourceFile, writeFile, cancellationToken, emitOnlyDtsFiles, transformers)
+		}
+		finally {
+			emitting = false
+		}
 
-		return emitResult
+		let diagnostics = diagModifier.modifyDiagnostics(
+			program,
+			[...deferredSemanticDiagnostics, ...emitResult.diagnostics]
+		)
+		deferredSemanticDiagnostics = []
+
+		return {...emitResult, diagnostics}
 	}
 }
 
@@ -88,11 +111,6 @@ interface DiagnosticLike {
 
 
 export class CompilerDiagnosticModifier {
-
-	private reporter: ts.DiagnosticReporter | null = null
-
-	/** Don't know why reporting for twice in watch mode, use this to avoid it. */
-	private reportedDiags: Set<ts.Diagnostic> = new Set()
 
 	/** They are not using source file as key, because source files may be updated without re-compiling. */
 	private added: Map<string, ts.Diagnostic[]> = new Map()
@@ -118,57 +136,19 @@ export class CompilerDiagnosticModifier {
 		return !!list.find(d => d.start === diag.start && d.code === diag.code)
 	}
 
-	/** Get added diagnostic count. */
-	getAddedCount(): number {
-		let count = 0
-		for (let diags of this.added.values()) {
-			count += diags.length
-		}
-		return count
-	}
-
 	/** Add custom diagnostics. */
-	add(fileName: string, diags: ts.Diagnostic[], program: ts.BuilderProgram) {
+	add(fileName: string, diags: ts.Diagnostic[]) {
 		if (diags.length === 0) {
 			return
-		}
-
-		// A dirty hack.
-		let state = (program as any).state
-		if (state && state.semanticDiagnosticsPerFile) {
-
-			// State use lower key
-			let lowerFileName = fileName.toLowerCase()
-
-			let diagsOfFile = state.semanticDiagnosticsPerFile.get(lowerFileName) as ts.Diagnostic[] | undefined
-			if (diagsOfFile) {
-				diagsOfFile.push(...diags)
-			}
 		}
 
 		this.added.set(fileName, diags)
 	}
 
 	/** Delete diagnostics. */
-	delete(fileName: string, diags: DiagnosticLike[], program: ts.BuilderProgram) {
+	delete(fileName: string, diags: DiagnosticLike[]) {
 		if (diags.length === 0) {
 			return
-		}
-
-		// A dirty hack.
-		let state = (program as any).state
-		if (state && state.semanticDiagnosticsPerFile) {
-
-			// State use lower key
-			let lowerFileName = fileName.toLowerCase()
-
-			let diagsOfFile = state.semanticDiagnosticsPerFile.get(lowerFileName) as ts.Diagnostic[] | undefined
-			if (diagsOfFile && diagsOfFile.length > 0) {
-				let newDiagsOfFile = diagsOfFile.filter(diagOfFile => this.testExistingIn(diagOfFile, diags))
-				if (newDiagsOfFile.length !== diagsOfFile.length) {
-					state.semanticDiagnosticsPerFile.set(lowerFileName, newDiagsOfFile)
-				}
-			}
 		}
 
 		this.deleted.set(fileName, diags)
@@ -179,26 +159,27 @@ export class CompilerDiagnosticModifier {
 		this.potentialAllImportsUnUsed.set(fileName, decls)
 	}
 
-	/** Patch diagnostic reporter to do filtering. */
-	patchDiagnosticReporter(reporter: ts.DiagnosticReporter): ts.DiagnosticReporter {
-		this.reporter = reporter
+	/** Apply transformer additions and deletions to diagnostics through public APIs. */
+	modifyDiagnostics(program: ts.BuilderProgram, diagnostics: readonly ts.Diagnostic[]): ts.Diagnostic[] {
+		let sourceFileNames = new Set(program.getSourceFiles().map(file => file.fileName))
+		let modified: ts.Diagnostic[] = []
 
-		// The ts internal logic `emitFilesAndReportErrors` get semantic diags firstly,
-		// then run transformer, and join with program diagnostics.
-		// So here we must exclude
-		return (diag: ts.Diagnostic) => {
-			if (!this.hasDeleted(diag) && !this.reportedDiags.has(diag)) {
-				reporter(diag)
-				this.reportedDiags.add(diag)
+		for (let diag of diagnostics) {
+			if (!this.hasDeleted(diag)) {
+				modified.push(diag)
 			}
-			else if (diag.file) {
-				let usUsedSiblingImportDiags = this.getUnUsedSiblingImportDiags(diag.file, diag.start!)
-
-				for(let diag of usUsedSiblingImportDiags) {
-					this.reporter!(diag)
-				}
+			else if (diag.file && diag.start !== undefined) {
+				modified.push(...this.getUnUsedSiblingImportDiags(diag.file, diag.start))
 			}
 		}
+
+		for (let [fileName, added] of this.added) {
+			if (sourceFileNames.has(fileName)) {
+				modified.push(...added)
+			}
+		}
+
+		return modified
 	}
 
 	private getUnUsedSiblingImportDiags(sourceFile: ts.SourceFile, start: number): ts.Diagnostic[] {
@@ -235,38 +216,10 @@ export class CompilerDiagnosticModifier {
 		return unImported
 	}
 
-	/** 
-	 * Patch watch status reporter to do filtering.
-	 * When update in watch mode, this will be called for multiple times.
-	 */
-	patchWatchStatusReporter(reporter: ts.WatchStatusReporter): ts.WatchStatusReporter {
-		return (diagnostic: ts.Diagnostic, newLine: string, options: ts.CompilerOptions, errorCount?: number) => {
-			let countAfterModified = this.reportedDiags.size + this.getAddedCount()
-
-			if (typeof diagnostic.messageText === 'string') {
-				diagnostic.messageText = diagnostic.messageText.replace(/\d+/, countAfterModified.toString())
-			}
-			else {
-				diagnostic.messageText.messageText = diagnostic.messageText.messageText.replace(/\d+/, countAfterModified.toString())
-			}
-
-			reporter(diagnostic, newLine, options, errorCount)
-			this.reportedDiags.clear()
-		}
-	}
-
 	/** Before visit a source file, clean all the modification of it. */
 	beforeVisitSourceFile(file: ts.SourceFile) {
 		this.added.delete(file.fileName)
 		this.deleted.delete(file.fileName)
-	}
-
-	/** Report all added diagnostics. */
-	reportAdded() {
-		for (let diags of this.added.values()) {
-			for (let diag of diags) {
-				this.reporter!(diag)
-			}
-		}
+		this.potentialAllImportsUnUsed.delete(file.fileName)
 	}
 }
