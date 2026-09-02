@@ -1,5 +1,5 @@
 import ts from 'typescript'
-import {Interpolator, MutableMask, Packer, DeclarationScopeTree, Hashing, transformContext} from '../../core'
+import {Interpolator, MutableMask, Packer, DeclarationScopeTree, Hashing, HashKey, transformContext} from '../../core'
 import {TreeParser} from './tree'
 import {TemplatePartType} from '../../lupos-ts-module'
 import {SlotContentType} from '../../enums'
@@ -10,7 +10,7 @@ export class TemplateValues {
 
 	readonly valueNodes: ts.Expression[]
 
-	private valueIndexHash: Map<string, number> = new Map()
+	private valueIndexHash: Map<HashKey, number> = new Map()
 	private outputNodes: ts.Expression[] = []
 	private indicesMutableMask: Map<number, MutableMask | 0> = new Map()
 	private indicesNonTransferredOutputted: Set<number> = new Set()
@@ -212,7 +212,7 @@ export class TemplateValues {
 		tree: TreeParser,
 		transferWithinFunction: boolean
 	): ts.Expression {
-		let hash = Hashing.hashMayNewNode(node, rawValueNode).name
+		let hash = Hashing.hashMayNewNode(node, rawValueNode).key
 		let valueIndex: number
 
 		if (this.valueIndexHash.has(hash)) {

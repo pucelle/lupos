@@ -1,7 +1,7 @@
 import ts from 'typescript'
 import {generateFingerPrint, HTMLAttribute, HTMLNode, HTMLNodeType, TemplatePart, TemplatePartType, TemplateSlotPlaceholder} from '../../../lupos-ts-module'
 import {PartType, TreeParser} from '../tree'
-import {Modifier, DeclarationScopeTree, Packer, Hashing, transformContext} from '../../../core'
+import {Modifier, DeclarationScopeTree, Packer, Hashing, HashKey, transformContext} from '../../../core'
 import {TemplateParser} from '../template'
 import {SlotPositionType} from '../../../enums'
 import {HTMLNodeHelper, PrecedingPositionStability} from '../../html-syntax'
@@ -132,14 +132,14 @@ export abstract class SlotParserBase {
 			return null
 		}
 
-		let hashes: Set<string> = new Set()
+		let hashes: Set<HashKey> = new Set()
 
 		let names = this.valueIndices.map(valueIndex => {
 			if (this.template.values.isIndexCanTransfer(valueIndex, asLazyCallback)) {
 				return null
 			}
 
-			let hash = Hashing.hashNode(this.template.values.getRawValue(valueIndex)).name
+			let hash = Hashing.hashNode(this.template.values.getRawValue(valueIndex)).key
 			if (hashes.has(hash)) {
 				return null
 			}
@@ -154,7 +154,7 @@ export abstract class SlotParserBase {
 
 	/** Get a group of latest names by an expression list. */
 	makeCustomGroupOfLatestNames(exps: ts.Expression[]): (string | null)[] {
-		let hashes: Set<string> = new Set()
+		let hashes: Set<HashKey> = new Set()
 
 		let names = exps.map((exp) => {
 			let mask = DeclarationScopeTree.checkMutableMask(exp)
@@ -162,7 +162,7 @@ export abstract class SlotParserBase {
 				return null
 			}
 
-			let hash = Hashing.hashNode(exp).name
+			let hash = Hashing.hashNode(exp).key
 			if (hashes.has(hash)) {
 				return null
 			}

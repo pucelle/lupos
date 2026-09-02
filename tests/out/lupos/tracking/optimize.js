@@ -156,6 +156,24 @@ export class TestOptimizing extends Component {
         trackGet(prop, "value");
         return 0;
     }
+    eliminateEquivalentNormalizedAccesses() {
+        this.prop.value;
+        this['prop'].value;
+        this["prop"].value;
+        (this.prop).value;
+        this.prop.value;
+        this.prop.value;
+        trackGet(this, "prop");
+        trackGet(this.prop, "value");
+        return 0;
+    }
+    preserveOptionalChainIdentity() {
+        this.prop?.value;
+        this.prop.value;
+        trackGet(this, "prop");
+        this.prop && trackGet(this.prop, "value");
+        return 0;
+    }
     moveIterationInitializerOutward() {
         let i = this.prop.value;
         for (; i < 1; i++) { }

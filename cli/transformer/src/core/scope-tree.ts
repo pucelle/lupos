@@ -6,7 +6,7 @@ import {AccessNode, AssignmentNode, ListMap, ScopeTree} from '../lupos-ts-module
 import {definePostVisitCallback} from './visitor-callbacks'
 import {defineSourceFilePrepass} from './source-file-prepass'
 import {DeclarationScope} from './scope'
-import {Hashing} from './hashing'
+import {Hashing, HashKey} from './hashing'
 
 
 /** Whether a expression be mutable, and whether it can turn. */
@@ -46,7 +46,7 @@ class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 	private nodeMutableMaskCache: Map<ts.Node, number> = new Map()
 
 	/** Cache assign to hash name -> assignment expression. */
-	private assignmentMap: ListMap<string, AssignmentNode> = new ListMap()
+	private assignmentMap: ListMap<HashKey, AssignmentNode> = new ListMap()
 
 	/** All added variable names, via scope. */
 	private addedVariableNames: ListMap<DeclarationScope, string> = new ListMap()
@@ -77,7 +77,7 @@ class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 				let hash = Hashing.hashNode(to)
 
 				// Cache all assignment node position.
-				this.assignmentMap.add(hash.name, node)
+				this.assignmentMap.add(hash.key, node)
 			}
 		}
 	}
@@ -148,8 +148,8 @@ class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 	 * Return the earliest assignment place.
 	 */
 	whereWillBeAssignedBefore(rawNode: AccessNode | ts.Identifier, beforeNode: ts.Node): AssignmentNode | undefined {
-		let hashName = Hashing.hashNode(rawNode).name
-		let assignments = this.assignmentMap.get(hashName)
+		let hashKey = Hashing.hashNode(rawNode).key
+		let assignments = this.assignmentMap.get(hashKey)
 
 		if (!assignments) {
 			return undefined
@@ -176,8 +176,8 @@ class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 
 	/** Test whether have assignment within a range. */
 	hasAssignedWithinNodeRange(rawNode: AccessNode | ts.Identifier | ts.ThisExpression, withinNode: ts.Node): boolean {
-		let hashName = Hashing.hashNode(rawNode).name
-		let assignments = this.assignmentMap.get(hashName)
+		let hashKey = Hashing.hashNode(rawNode).key
+		let assignments = this.assignmentMap.get(hashKey)
 
 		if (!assignments) {
 			return false
@@ -196,8 +196,8 @@ class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 
 	/** Where before or after `rawNode`, it has or will be assigned. */
 	haveOrWillBeAssigned(rawNode: AccessNode | ts.Identifier | ts.ThisExpression): boolean {
-		let hashName = Hashing.hashNode(rawNode).name
-		return this.assignmentMap.hasKey(hashName)
+		let hashKey = Hashing.hashNode(rawNode).key
+		return this.assignmentMap.hasKey(hashKey)
 	}
 
 	/** Get mutable musk from an expression represented value. */

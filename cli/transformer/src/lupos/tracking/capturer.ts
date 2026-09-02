@@ -555,7 +555,7 @@ export class TrackingCapturer {
 
 		for (let item of items) {
 			let hash = CapturedHashing.hash(item)
-			let hashString = hash.expHashName + '[' + hash.keyHashName + ']'
+			let hashString = hash.expHashKey + '[' + (hash.keyHashKey ?? '*') + ']'
 
 			hashStrings.push(hashString)
 

@@ -184,6 +184,24 @@ export class TestOptimizing extends Component {
 		return 0
 	}
 
+	eliminateEquivalentNormalizedAccesses() {
+		this.prop.value
+		this['prop'].value
+		this["prop"].value;
+		(this.prop).value;
+		(this.prop as {value: number}).value;
+		this.prop!.value
+
+		return 0
+	}
+
+	preserveOptionalChainIdentity() {
+		this.prop?.value
+		this.prop.value
+
+		return 0
+	}
+
 	moveIterationInitializerOutward() {
 		for (let i = this.prop.value; i < 1; i++) {}
 

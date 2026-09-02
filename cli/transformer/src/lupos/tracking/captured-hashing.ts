@@ -1,4 +1,4 @@
-import {DeclarationScope, Hashing, transformContext} from '../../core'
+import {DeclarationScope, Hashing, HashKey, transformContext} from '../../core'
 import {AccessNode, ListMap} from '../../lupos-ts-module'
 import {CapturedItem, TrackingCapturer} from './capturer'
 
@@ -8,11 +8,11 @@ export interface CapturedHash {
 	/** Captured item. */
 	item: CapturedItem
 
-	/** Exp or raw node hash string. */
-	expHashName: string
+	/** Exp or raw node structural key. */
+	expHashKey: HashKey
 
-	/** Key hash string. */
-	keyHashName: string
+	/** Property structural key, or `null` when all properties are captured. */
+	keyHashKey: HashKey | null
 
 	/** The variable declaration scopes that current node used. */
 	usedScopes: DeclarationScope[]
@@ -71,7 +71,7 @@ export class CapturedHashMap {
 
 
 	/** `expHash` -> `CapturerHashItem`. */
-	private map: ListMap<string, CapturedHash> = new ListMap();
+	private map: ListMap<HashKey, CapturedHash> = new ListMap();
 
 	/** Get all captured items. */
 	*items(): Iterable<CapturedItem> {
@@ -85,7 +85,7 @@ export class CapturedHashMap {
 	 * E.g., `a['']` covers `a.b`.
 	 */
 	covers(hash: CapturedHash) {
-		let existingItems = this.map.get(hash.expHashName)
+		let existingItems = this.map.get(hash.expHashKey)
 		if (!existingItems) {
 			return false
 		}
@@ -93,7 +93,7 @@ export class CapturedHashMap {
 		for (let ei of existingItems) {
 
 			// Key equals, or '' key exists.
-			let keyMatch = ei.keyHashName === '""' || ei.keyHashName === hash.keyHashName
+			let keyMatch = ei.keyHashKey === null || ei.keyHashKey === hash.keyHashKey
 			if (!keyMatch) {
 				continue
 			}
@@ -112,13 +112,13 @@ export class CapturedHashMap {
 
 	/** Test whether have existing hash items that nearly equals hash. */
 	hasSame(hash: CapturedHash) {
-		let existingItems = this.map.get(hash.expHashName)
+		let existingItems = this.map.get(hash.expHashKey)
 		if (!existingItems) {
 			return false
 		}
 
 		for (let ei of existingItems) {
-			if (ei.keyHashName === hash.keyHashName && ei.item.type === hash.item.type) {
+			if (ei.keyHashKey === hash.keyHashKey && ei.item.type === hash.item.type) {
 				return true
 			}
 		}
@@ -128,7 +128,7 @@ export class CapturedHashMap {
 
 	/** Test whether has specified hash by compare their `item` value. */
 	has(hash: CapturedHash) {
-		let existingItems = this.map.get(hash.expHashName)
+		let existingItems = this.map.get(hash.expHashKey)
 		if (!existingItems) {
 			return false
 		}
@@ -143,18 +143,18 @@ export class CapturedHashMap {
 	add(item: CapturedHash) {
 
 		// Delete all others if have empty key captured.
-		if (item.keyHashName === '""') {
-			this.map.deleteOf(item.expHashName)
+		if (item.keyHashKey === null) {
+			this.map.deleteOf(item.expHashKey)
 		}
 
-		this.map.add(item.expHashName, item)
+		this.map.add(item.expHashKey, item)
 	}
 
 	/** Intersect with another captured hash map. */
 	intersect(map: CapturedHashMap) {
 		for (let item of [...this.map.values()]) {
 			if (!map.hasSame(item)) {
-				this.map.delete(item.expHashName, item)
+				this.map.delete(item.expHashKey, item)
 			}
 		}
 	}
@@ -199,12 +199,14 @@ export namespace CapturedHashing {
 	export function hash(item: CapturedItem): CapturedHash {
 		if (item.exp !== undefined) {
 			let expHash = Hashing.hashMayNewNode(item.exp, item.node)
-			let keyHashName = typeof item.key === 'string' ? `"${item.key}"` : '""'
+			let keyHashKey = typeof item.key === 'string' && item.key !== ''
+				? Hashing.hashString(item.key)
+				: null
 
 			return {
 				item,
-				expHashName: expHash.name,
-				keyHashName: keyHashName,
+				expHashKey: expHash.key,
+				keyHashKey,
 				usedScopes: expHash.usedScopes,
 			}
 		}
@@ -216,8 +218,8 @@ export namespace CapturedHashing {
 
 			return {
 				item,
-				expHashName: expHash.name,
-				keyHashName: keyHash.name,
+				expHashKey: expHash.key,
+				keyHashKey: keyHash.key,
 				usedScopes: [...expHash.usedScopes, ...keyHash.usedScopes],
 			}
 		}
