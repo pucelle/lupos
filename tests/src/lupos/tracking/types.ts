@@ -306,7 +306,6 @@ export class TestEffectDecorator extends Component {
 
 	value: number = 1
 
-	// Recently not support exclude get when set existing.
 	@effect onChange() {
 		this.value = this.value + 1
 	}
