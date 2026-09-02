@@ -26,7 +26,7 @@ export class TestMap extends Component {
 export class TestObservingOfMapMember extends Component {
 
 	map: Map<number, {value: number}> = new Map()
-	list: {value: number}[] = []
+	list: {value: number, visible: boolean}[] = []
 
 	getValue() {
 		return this.map.get(0)!.value
@@ -76,26 +76,54 @@ export class TestObservingOfMapMember extends Component {
 		return sum
 	}
 
-	// /** Not supported yet. */
-	// filterList() {
-	// 	let items = this.list.filter(v => v.value === 0)!
-	//  items.push({value: 1})
-	// 	return items.map(v => v.value)
-	// }
+	filterList() {
+		let items = this.list.filter(v => v.value === 0)!
+		items.push({value: 1, visible: true})
+		return items.map(v => v.value)
+	}
 
-	// /** Not supported yet. */
-	// sortList() {
-	// 	let items = this.list
-	// 	let items2 = items.sort()
-	// 	return items2.map(v => v.value)
-	// }
+	filterListWithDifferentRead() {
+		let items = this.list.filter(v => v.visible)
+		return items.map(v => v.value)
+	}
 
-	// /** Not supported yet. */
-	// sortFilteredListWithoutAnyReference() {
-	// 	this.list.filter(v => v.value === 0)!
-	// 		.sort()
-	// 		.map(v => v.value)
-	// }
+	filterListIndex() {
+		let item = this.list.filter(v => v.visible)[0]
+		return item.value
+	}
+
+	filterListForOf() {
+		let total = 0
+		for (let item of this.list.filter(v => v.visible)) {
+			total += item.value
+		}
+		return total
+	}
+
+	filterListDestructuring() {
+		let [item] = this.list.filter(v => v.visible)
+		return item.value
+	}
+
+	sortFilteredListWithoutAnyReference() {
+		return this.list
+			.filter(v => v.visible)
+			.sort((a, b) => a.value - b.value)
+			.map(v => v.value)
+	}
+
+	copyingMethodsPreserveElements() {
+		let item1 = this.list.slice().at(0)!
+		let item2 = this.list.toReversed().findLast(v => v.visible)!
+		let item3 = this.list.concat([])[0]
+		return item1.value + item2.value + item3.value
+	}
+
+	spreadAndConditionalCopies(useFilter: boolean) {
+		let filtered = this.list.filter(v => v.visible)
+		let items = useFilter ? [...filtered] : this.list.slice()
+		return items.map(v => v.value)
+	}
 }
 
 

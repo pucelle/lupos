@@ -86,6 +86,109 @@ export class TestObservingOfMapMember extends Component {
         trackGet(this.map, "");
         return sum;
     }
+    filterList() {
+        let items = this.list.filter(v => {
+            trackGet(v, "value");
+            return v.value === 0;
+        });
+        items.push({ value: 1, visible: true });
+        trackGet(this, "list");
+        trackGet(this.list, "");
+        return items.map(v => {
+            trackGet(v, "value");
+            return v.value;
+        });
+    }
+    filterListWithDifferentRead() {
+        let items = this.list.filter(v => {
+            trackGet(v, "visible");
+            return v.visible;
+        });
+        trackGet(this, "list");
+        trackGet(this.list, "");
+        return items.map(v => {
+            trackGet(v, "value");
+            return v.value;
+        });
+    }
+    filterListIndex() {
+        let item = this.list.filter(v => {
+            trackGet(v, "visible");
+            return v.visible;
+        })[0];
+        trackGet(this, "list");
+        trackGet(this.list, "");
+        trackGet(item, "value");
+        return item.value;
+    }
+    filterListForOf() {
+        let total = 0;
+        for (let item of this.list.filter(v => {
+            trackGet(v, "visible");
+            return v.visible;
+        })) {
+            total += item.value;
+            trackGet(item, "value");
+        }
+        trackGet(this, "list");
+        trackGet(this.list, "");
+        return total;
+    }
+    filterListDestructuring() {
+        let [item] = this.list.filter(v => {
+            trackGet(v, "visible");
+            return v.visible;
+        });
+        trackGet(this, "list");
+        trackGet(this.list, "");
+        trackGet(item, "value");
+        return item.value;
+    }
+    sortFilteredListWithoutAnyReference() {
+        trackGet(this, "list");
+        trackGet(this.list, "");
+        return this.list
+            .filter(v => {
+            trackGet(v, "visible");
+            return v.visible;
+        })
+            .sort((a, b) => {
+            trackGet(a, "value");
+            trackGet(b, "value");
+            return a.value - b.value;
+        })
+            .map(v => {
+            trackGet(v, "value");
+            return v.value;
+        });
+    }
+    copyingMethodsPreserveElements() {
+        let item1 = this.list.slice().at(0);
+        let item2 = this.list.toReversed().findLast(v => {
+            trackGet(v, "visible");
+            return v.visible;
+        });
+        let item3 = this.list.concat([])[0];
+        trackGet(this, "list");
+        trackGet(this.list, "");
+        trackGet(item1, "value");
+        trackGet(item2, "value");
+        trackGet(item3, "value");
+        return item1.value + item2.value + item3.value;
+    }
+    spreadAndConditionalCopies(useFilter) {
+        let filtered = this.list.filter(v => {
+            trackGet(v, "visible");
+            return v.visible;
+        });
+        let items = useFilter ? [...filtered] : this.list.slice();
+        trackGet(this, "list");
+        trackGet(this.list, "");
+        return items.map(v => {
+            trackGet(v, "value");
+            return v.value;
+        });
+    }
 }
 export class TestSet extends Component {
     set = new Set();

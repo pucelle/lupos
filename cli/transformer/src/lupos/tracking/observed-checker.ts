@@ -11,6 +11,7 @@ type ObservedState = boolean | null
 interface ObservedCheckerState {
 	self: WeakMap<ts.Node, ObservedState>
 	elements: WeakMap<ts.Expression, ObservedState>
+	iteratedElements: WeakMap<ts.Expression, ObservedState>
 	declarations: WeakMap<ts.Declaration, ObservedState>
 }
 
@@ -20,9 +21,23 @@ function getState(): ObservedCheckerState {
 	return transformSession.getState(StateKey, () => ({
 		self: new WeakMap(),
 		elements: new WeakMap(),
+		iteratedElements: new WeakMap(),
 		declarations: new WeakMap(),
 	}))
 }
+
+const ShallowArrayCopyMethodNames = new Set([
+	'filter',
+	'slice',
+	'toReversed',
+	'toSorted',
+	'toSpliced',
+])
+
+const SameArrayMethodNames = new Set([
+	'reverse',
+	'sort',
+])
 
 
 /** 
@@ -166,6 +181,156 @@ export namespace ObservedChecker {
 		cache.set(rawNode, observed)
 
 		return observed
+	}
+
+	/**
+	 * Returns whether values yielded from a collection have observed properties.
+	 *
+	 * This is intentionally independent from `getElementsObserved`: a shallow
+	 * copy such as `observedList.filter(...)` is a new, unobserved array, while
+	 * the objects retained in that array are still observed.
+	 */
+	export function getIteratedElementsObserved(rawNode: ts.Expression): boolean | null {
+		let cache = getState().iteratedElements
+		let cached = cache.get(rawNode)
+		if (cached !== undefined) {
+			return cached
+		}
+
+		cache.set(rawNode, null)
+		let observed = computeIteratedElementsObserved(rawNode)
+		cache.set(rawNode, observed)
+
+		return observed
+	}
+
+	function computeIteratedElementsObserved(rawNode: ts.Expression): boolean | null {
+		// Normal observation always broadcasts from a collection to its children.
+		let directlyObserved = getElementsObserved(rawNode)
+		if (directlyObserved !== null) {
+			return directlyObserved
+		}
+
+		if (ts.isParenthesizedExpression(rawNode)
+			|| ts.isNonNullExpression(rawNode)
+			|| ts.isAsExpression(rawNode)
+		) {
+			return getIteratedElementsObserved(rawNode.expression)
+		}
+
+		if (ts.isIdentifier(rawNode)) {
+			let decl = transformContext.helper.symbol.resolveDeclaration(rawNode)
+			if (decl) {
+				return getDeclarationIteratedElementsObserved(decl)
+			}
+		}
+
+		if (ts.isCallExpression(rawNode)) {
+			let arrayMethod = getArrayMethod(rawNode)
+			if (arrayMethod) {
+				let {name, receiver} = arrayMethod
+
+				if (ShallowArrayCopyMethodNames.has(name) || SameArrayMethodNames.has(name)) {
+					return getIteratedElementsObserved(receiver)
+				}
+
+				if (name === 'concat') {
+					let states = [
+						getIteratedElementsObserved(receiver),
+						...rawNode.arguments.map(getConcatArgumentElementsObserved),
+					]
+					return mergeObservedStates(states)
+				}
+			}
+		}
+
+		if (ts.isArrayLiteralExpression(rawNode)) {
+			let states = rawNode.elements.map(element => {
+				return ts.isSpreadElement(element)
+					? getIteratedElementsObserved(element.expression)
+					: getElementsObserved(element)
+			})
+			return mergeObservedStates(states)
+		}
+
+		if (ts.isConditionalExpression(rawNode)) {
+			return mergeObservedStates([
+				getIteratedElementsObserved(rawNode.whenTrue),
+				getIteratedElementsObserved(rawNode.whenFalse),
+			])
+		}
+
+		if (ts.isBinaryExpression(rawNode)
+			&& (rawNode.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken
+				|| rawNode.operatorToken.kind === ts.SyntaxKind.BarBarToken
+				|| rawNode.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken
+			)
+		) {
+			return mergeObservedStates([
+				getIteratedElementsObserved(rawNode.left),
+				getIteratedElementsObserved(rawNode.right),
+			])
+		}
+
+		return null
+	}
+
+	function getDeclarationIteratedElementsObserved(decl: ts.Declaration): boolean | null {
+		if (ts.isVariableDeclaration(decl) && decl.initializer) {
+			return getIteratedElementsObserved(decl.initializer)
+		}
+
+		if (ts.isBindingElement(decl)) {
+			let variableDecl = transformContext.helper.findOutward(decl, ts.isVariableDeclaration)
+			if (variableDecl?.initializer) {
+				for (let current: ts.Node = decl; current !== variableDecl; current = current.parent) {
+					if (ts.isArrayBindingPattern(current.parent)) {
+						return getIteratedElementsObserved(variableDecl.initializer)
+					}
+				}
+			}
+		}
+
+		return null
+	}
+
+	function getConcatArgumentElementsObserved(rawNode: ts.Expression): boolean | null {
+		let type = transformContext.typeChecker.getTypeAtLocation(rawNode)
+		return transformContext.typeChecker.isArrayType(type)
+			? getIteratedElementsObserved(rawNode)
+			: getElementsObserved(rawNode)
+	}
+
+	function mergeObservedStates(states: ObservedState[]): ObservedState {
+		if (states.some(state => state === true)) {
+			return true
+		}
+
+		return states.length > 0 && states.every(state => state === false)
+			? false
+			: null
+	}
+
+	function getArrayMethod(rawNode: ts.CallExpression): {name: string, receiver: ts.Expression} | null {
+		let callExp = rawNode.expression
+		if (!transformContext.helper.access.isAccess(callExp)) {
+			return null
+		}
+
+		let decl = transformContext.helper.symbol.resolveDeclaration(callExp, transformContext.helper.isMethodLike)
+		if (!decl || !ts.isClassLike(decl.parent) && !ts.isInterfaceDeclaration(decl.parent)) {
+			return null
+		}
+
+		let className = decl.parent.name && transformContext.helper.getText(decl.parent.name)
+		if (className !== 'Array' && className !== 'ReadonlyArray') {
+			return null
+		}
+
+		return {
+			name: transformContext.helper.getText(decl.name),
+			receiver: callExp.expression,
+		}
 	}
 
 	function computeElementsObserved(rawNode: ts.Expression): boolean | null {
@@ -570,6 +735,20 @@ export namespace ObservedChecker {
 			return null
 		}
 
+		let arrayMethod = getArrayMethod(calling)
+		if (arrayMethod) {
+			let parameterIndex = fn.parameters.indexOf(rawNode)
+			let elementParameterIndices = arrayMethod.name === 'reduce' || arrayMethod.name === 'reduceRight'
+				? [1]
+				: arrayMethod.name === 'sort' || arrayMethod.name === 'toSorted'
+					? [0, 1]
+					: [0]
+
+			if (elementParameterIndices.includes(parameterIndex)) {
+				return getIteratedElementsObserved(arrayMethod.receiver)
+			}
+		}
+
 		// Must use parent scope.
 		return getElementsObserved(exp.expression)
 	}
@@ -613,7 +792,7 @@ export namespace ObservedChecker {
 			&& ts.isVariableDeclarationList(rawNode.parent)
 			&& ts.isForOfStatement(rawNode.parent.parent)
 		) {
-			return getElementsObserved(rawNode.parent.parent.expression)
+			return getIteratedElementsObserved(rawNode.parent.parent.expression)
 		}
 
 		return null
@@ -639,7 +818,9 @@ export namespace ObservedChecker {
 		for (let item of transformContext.helper.variable.walkDeconstructedDeclarationItems(decl)) {
 			if (item.node.parent === rawNode) {
 				if (item.initializer) {
-					result = getElementsObserved(item.initializer)
+					result = typeof item.keys[0] === 'number'
+						? getIteratedElementsObserved(item.initializer)
+						: getElementsObserved(item.initializer)
 					if (result !== null) {
 						return result
 					}
@@ -698,6 +879,15 @@ export namespace ObservedChecker {
 		// Visiting like string index will not get observed.
 		if (transformContext.helper.types.isValueType(expType)) {
 			return false
+		}
+
+		// `items[0]` returns a child value. A derived collection may itself be
+		// unobserved while still retaining observed child objects.
+		if (ts.isElementAccessExpression(rawNode)) {
+			result = getIteratedElementsObserved(exp)
+			if (result !== null) {
+				return result
+			}
 		}
 
 		return getElementsObserved(exp)
@@ -763,18 +953,16 @@ export namespace ObservedChecker {
 		if (transformContext.helper.access.isAccess(callExp)
 			&& transformContext.helper.access.isOfSingleElementReadAccess(callExp)
 		) {
-			let result = getElementsObserved(callExp.expression)
+			let result = getIteratedElementsObserved(callExp.expression)
 			if (result !== null) {
 				return result
 			}
 		}
 
-		// Here we plan to support more features like `Array.filter(...)`,
-		// It's returned result is not observed, but it's elements is observed.
-		// This breaks the normal observed state broadcasting mechanism,
-		// so we have to separate observed state to several like:
-		// `Itself-Observed` / `Itself-Not-Observed-But-Elements-Are`.
-		// This brings two much complexity.
+		let arrayMethod = getArrayMethod(rawNode)
+		if (arrayMethod && SameArrayMethodNames.has(arrayMethod.name)) {
+			return getElementsObserved(arrayMethod.receiver)
+		}
 
 		return null
 	}

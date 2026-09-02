@@ -57,6 +57,7 @@ Normally observed state of an object will broadcast to it's properties:
 
 - `readonly property`: readonly property get or set action is not tracked, but still broadcast observed state to property value.
 - `list.map(item => ...)`: if `list` is observed, broadcast to `item`.
+- Shallow array copies such as `list.filter(...)` and `list.slice(...)` are not themselves observed, but retain the observed state of their source elements.
 - `UnObserved<...>`: which's resolved type is `UnObserved` become not observed.
 - `$variable / $property / $parameter`: which's name starts with `$` become not observed.
 
