@@ -2,6 +2,7 @@ import ts from 'typescript'
 import {Interpolator} from './interpolator'
 import {createTransformSession, setTransformContext} from './global'
 import {runPostVisitCallbacks, runPreVisitCallbacks} from './visitor-callbacks'
+import {runSourceFilePrepass} from './source-file-prepass'
 import {TransformerExtras} from '../../../compiler/out/patch'
 
 
@@ -105,7 +106,12 @@ export function transformer(context: ts.TransformationContext, extras: Transform
 
 	return (sourceFile: ts.SourceFile) => {
 		let session = createTransformSession(sourceFile)
+
+		// Before visiting a source file.
 		runPreVisitCallbacks()
+
+		// Pre pass the source file for initializing some scope tree and visit tree.
+		runSourceFilePrepass(sourceFile)
 
 		function visitor(node: ts.Node): ts.Node {
 			let doMoreAfterVisitedChildren = applyVisitors(node)
@@ -115,6 +121,7 @@ export function transformer(context: ts.TransformationContext, extras: Transform
 			return node
 		}
 
+		// Now handle compiling.
 		try {
 			ts.visitNode(sourceFile, visitor)
 			session.callJustVisitedCallbacks()

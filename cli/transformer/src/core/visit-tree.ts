@@ -1,8 +1,8 @@
 import ts from 'typescript'
 import {ListMap} from '../lupos-ts-module'
-import {definePreVisitCallback} from './visitor-callbacks'
 import {transformSession, transformContext} from './global'
 import {createTransformSessionStateKey} from './transform-session'
+import {defineSourceFilePrepass} from './source-file-prepass'
 
 
 interface VisitItem {
@@ -308,4 +308,7 @@ export namespace VisitTree {
 	}
 }
 
-definePreVisitCallback(() => VisitTree.visitSourceFile(transformSession.sourceFile))
+defineSourceFilePrepass({
+	enter: node => VisitTree.toChild(node),
+	leave: () => VisitTree.toParent(),
+})

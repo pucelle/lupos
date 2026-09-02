@@ -1,9 +1,10 @@
 import ts from 'typescript'
-import {transformSession, transformContext} from './global'
+import {transformContext} from './global'
 import {VisitTree} from './visit-tree'
 import {InterpolationContentType, Interpolator} from './interpolator'
 import {AccessNode, AssignmentNode, ListMap, ScopeTree} from '../lupos-ts-module'
-import {definePostVisitCallback, definePreVisitCallback} from './visitor-callbacks'
+import {definePostVisitCallback} from './visitor-callbacks'
+import {defineSourceFilePrepass} from './source-file-prepass'
 import {DeclarationScope} from './scope'
 import {Hashing} from './hashing'
 
@@ -50,17 +51,26 @@ class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 	/** All added variable names, via scope. */
 	private addedVariableNames: ListMap<DeclarationScope, string> = new ListMap()
 
+	/** Assignment nodes are hashed after both shared prepass indexes are complete. */
+	private assignmentsToIndex: AssignmentNode[] = []
+
 	constructor() {
 		super(transformContext.helper, DeclarationScope)
 	}
 
 	/** To parent. */
-	protected override toParent(node: ts.Node) {
+	override toParent(node: ts.Node) {
 		super.toParent(node)
 
 		// Must after visited all descendant nodes.
 		// Assignment expressions like `a.b = c`
 		if (transformContext.helper.assign.isAssignment(node)) {
+			this.assignmentsToIndex.push(node)
+		}
+	}
+
+	override complete() {
+		for (let node of this.assignmentsToIndex) {
 			let assignTo = transformContext.helper.assign.getToExpressions(node)
 			
 			for (let to of assignTo) {
@@ -482,9 +492,14 @@ class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 
 export let DeclarationScopeTree: ExtendedScopeTree
 
-definePreVisitCallback(() => {
-	DeclarationScopeTree = new ExtendedScopeTree()
-	DeclarationScopeTree.visitSourceFile(transformSession.sourceFile)
+defineSourceFilePrepass({
+	initialize: sourceFile => {
+		DeclarationScopeTree = new ExtendedScopeTree()
+		DeclarationScopeTree.initialize(sourceFile)
+	},
+	enter: node => DeclarationScopeTree.toChild(node),
+	leave: node => DeclarationScopeTree.toParent(node),
+	complete: () => DeclarationScopeTree.complete(),
 })
 
 definePostVisitCallback(() => DeclarationScopeTree.applyInterpolation())
