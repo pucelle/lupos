@@ -199,6 +199,7 @@ export namespace CapturedHashing {
 	export function hash(item: CapturedItem): CapturedHash {
 		if (item.exp !== undefined) {
 			let expHash = Hashing.hashMayNewNode(item.exp, item.node)
+			
 			let keyHashKey = typeof item.key === 'string' && item.key !== ''
 				? Hashing.hashString(item.key)
 				: null

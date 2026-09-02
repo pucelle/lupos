@@ -1,9 +1,7 @@
 import ts from 'typescript'
 import {VisitTree} from './visit-tree'
 import {DeclarationScope} from './scope'
-import {Packer} from './packer'
 import {transformSession, transformContext} from './global'
-import {addToList} from '../utils'
 import {DeclarationScopeTree} from './scope-tree'
 import {createTransformSessionStateKey} from './transform-session'
 
@@ -28,8 +26,6 @@ interface HashingState {
 	syntheticCache: WeakMap<ts.Node, WeakMap<ts.Node, HashItem>>
 	signatureToKey: Map<string, HashKey>
 	keySeed: number
-	legacyToStructural: Map<string, HashKey>
-	structuralToLegacy: Map<HashKey, string>
 }
 
 interface DependencyCollector {
@@ -38,7 +34,6 @@ interface DependencyCollector {
 	declarations: ts.Node[]
 }
 
-const ValidateStructuralHashing = process.env.LUPOS_VALIDATE_STRUCTURAL_HASHING === '1'
 const ValidPropertyNamePattern = /^[a-z_$][\w$_]*$/i
 
 
@@ -67,7 +62,6 @@ export namespace Hashing {
 
 		let hashed = doStructuralHashing(rawNode, rawNode)
 		state.rawCache.set(rawNode, hashed)
-		validateAgainstLegacy(rawNode, rawNode, hashed)
 
 		return hashed
 	}
@@ -95,7 +89,6 @@ export namespace Hashing {
 			state.syntheticCache.set(node, contextualCache)
 		}
 		contextualCache.set(closestRawNode, hashed)
-		validateAgainstLegacy(node, closestRawNode, hashed)
 
 		return hashed
 	}
@@ -105,6 +98,7 @@ export namespace Hashing {
 		return intern('node', `${ts.SyntaxKind.StringLiteral}:0:${value}`, [])
 	}
 
+	/** The `node` may be a newly created node. */
 	function doStructuralHashing(node: ts.Node, closestRawNode: ts.Node): HashItem {
 		let collector: DependencyCollector = {
 			scopes: [],
@@ -186,6 +180,7 @@ export namespace Hashing {
 		return intern('node', `${node.kind}:${getNodePayload(node)}`, childKeys)
 	}
 
+	/** The node data different with others. */
 	function getNodePayload(node: ts.Node): string {
 		let optional = node.flags & ts.NodeFlags.OptionalChain ? '1:' : '0:'
 
@@ -237,6 +232,7 @@ export namespace Hashing {
 		return optional
 	}
 
+	/** Add scopes crossed. */
 	function addScopeDependency(scope: DeclarationScope, collector: DependencyCollector) {
 		if (!collector.scopeSet.has(scope)) {
 			collector.scopeSet.add(scope)
@@ -261,6 +257,7 @@ export namespace Hashing {
 		}
 	}
 
+	/** Hash tag, payload, children to a key. */
 	function intern(tag: string, payload: string, children: HashKey[]): HashKey {
 		let state = getState()
 		let signature = `${tag.length}:${tag}${payload.length}:${payload}${children.length}:${children.join(',')}`
@@ -273,122 +270,5 @@ export namespace Hashing {
 		state.signatureToKey.set(signature, key)
 
 		return key
-	}
-
-	function validateAgainstLegacy(node: ts.Node, closestRawNode: ts.Node, structural: HashItem) {
-		if (!ValidateStructuralHashing) {
-			return
-		}
-
-		let legacy = doLegacyHashing(node, closestRawNode)
-		let state = getState()
-		let structuralForLegacy = state.legacyToStructural.get(legacy.name)
-		let legacyForStructural = state.structuralToLegacy.get(structural.key)
-
-		if (structuralForLegacy !== undefined && structuralForLegacy !== structural.key) {
-			throwHashValidationError(node, legacy.name, structural.key, 'legacy-equivalent nodes received different structural keys')
-		}
-
-		if (legacyForStructural !== undefined && legacyForStructural !== legacy.name) {
-			throwHashValidationError(
-				node,
-				legacy.name,
-				structural.key,
-				`structurally-equivalent nodes had different legacy hashes; first legacy hash: ${legacyForStructural}`
-			)
-		}
-
-		if (!sameItems(legacy.usedScopes, structural.usedScopes)
-			|| !sameItems(legacy.usedDeclarations, structural.usedDeclarations)
-		) {
-			throwHashValidationError(node, legacy.name, structural.key, 'dependency lists differ')
-		}
-
-		state.legacyToStructural.set(legacy.name, structural.key)
-		state.structuralToLegacy.set(structural.key, legacy.name)
-	}
-
-	function sameItems<T>(items1: T[], items2: T[]): boolean {
-		return items1.length === items2.length && items1.every((item, index) => item === items2[index])
-	}
-
-	function throwHashValidationError(node: ts.Node, legacyName: string, structuralKey: HashKey, reason: string): never {
-		let sourceFile = node.getSourceFile()
-		let nodeText: string
-		try {
-			nodeText = transformContext.helper.getFullText(node)
-		}
-		catch {
-			nodeText = ts.SyntaxKind[node.kind]
-		}
-
-		throw new Error(
-			`Structural hashing mismatch (${reason}) in "${sourceFile?.fileName ?? 'synthetic node'}". `
-			+ `Node: ${nodeText}; legacy: ${legacyName}; structural: ${structuralKey}.`
-		)
-	}
-
-	/** Printer-based implementation retained only as a validation oracle. */
-	function doLegacyHashing(node: ts.Node, closestRawNode: ts.Node): {name: string, usedScopes: DeclarationScope[], usedDeclarations: ts.Node[]} {
-		let usedScopes: DeclarationScope[] = []
-		let usedDeclarations: ts.Node[] = []
-	
-		let hashVisited = ts.visitNode(node, (child: ts.Node) => {
-			return legacyHashNodeVisitor(
-				child,
-				VisitTree.hasNode(child) ? child : closestRawNode,
-				usedScopes,
-				usedDeclarations
-			)
-		})!
-
-		let normalized = Packer.normalize(hashVisited, true)
-
-		return {
-			name: transformContext.helper.getFullText(normalized),
-			usedScopes,
-			usedDeclarations,
-		}
-	}
-
-	function legacyHashNodeVisitor(
-		node: ts.Node,
-		closestRawNode: ts.Node,
-		usedScopes: DeclarationScope[],
-		usedDeclarations: ts.Node[]
-	): ts.Node | undefined {
-		if (transformContext.helper.isVariableIdentifier(node)) {
-			let {name, scope} = resolveVariableName(node, closestRawNode)
-			let declaration = scope.getVariableDeclaredOrReferenced(node.text)
-
-			addToList(usedScopes, scope)
-			if (declaration) {
-				usedDeclarations.push(declaration)
-			}
-
-			return transformContext.factory.createIdentifier(name)
-		}
-
-		if (transformContext.helper.isThis(node)) {
-			let {name, scope} = resolveVariableName(node as ts.ThisExpression, closestRawNode)
-			addToList(usedScopes, scope)
-
-			return transformContext.factory.createIdentifier(name)
-		}
-
-		if (node.kind === ts.SyntaxKind.QuestionDotToken) {
-			return undefined
-		}
-
-		return ts.visitEachChild(
-			node,
-			child => legacyHashNodeVisitor(
-				child,
-				VisitTree.hasNode(child) ? child : closestRawNode,
-				usedScopes,
-				usedDeclarations
-			),
-			transformContext.transformationContext
-		)
 	}
 }
