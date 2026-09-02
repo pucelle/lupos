@@ -17,7 +17,18 @@ interface VisitTreeState {
 	childMap: ListMap<ts.Node, ts.Node>
 	parentMap: Map<ts.Node, ts.Node>
 	nodeMap: Map<number, ts.Node>
-	indexMap: Map<ts.Node, number>
+
+	/** Index in siblings. */
+	siblingIndexMap: Map<ts.Node, number>
+
+	/** Index of visit order. */
+	startIndexMap: Map<ts.Node, number>
+
+	/** 
+	 * Index of last child visit order.
+	 * Thus can easily test containing.
+	 */
+	endIndexMap: Map<ts.Node, number>
 }
 
 
@@ -39,7 +50,9 @@ export namespace VisitTree {
 			childMap: new ListMap(),
 			parentMap: new Map(),
 			nodeMap: new Map(),
-			indexMap: new Map(),
+			siblingIndexMap: new Map(),
+			startIndexMap: new Map(),
+			endIndexMap: new Map(),
 		}))
 	}
 
@@ -65,18 +78,22 @@ export namespace VisitTree {
 
 		if (parent) {
 			state.stack.push(parent)
+			state.siblingIndexMap.set(node, state.childMap.get(parent.node)?.length ?? 0)
 			state.childMap.add(parent.node, node)
 			state.parentMap.set(node, parent.node)
 		}
 
 		state.nodeMap.set(index, node)
-		state.indexMap.set(node, index)
+		state.startIndexMap.set(node, index)
 	}
 
 	/** Exit self and enter parent node. */
 	export function toParent() {
 		let state = getState()
-		state.current = state.stack.pop()!
+		if (state.current) {
+			state.endIndexMap.set(state.current.node, state.indexSeed)
+		}
+		state.current = state.stack.pop() ?? null
 	}
 
 
@@ -124,10 +141,11 @@ export namespace VisitTree {
 			return undefined
 		}
 
-		let siblings = getState().childMap.get(parent)!
-		let index = siblings.indexOf(rawSiblingNode)
+		let state = getState()
+		let siblings = state.childMap.get(parent)!
+		let index = state.siblingIndexMap.get(rawSiblingNode)
 
-		if (index > 0) {
+		if (index !== undefined && index > 0) {
 			return siblings[index - 1]
 		}
 
@@ -141,10 +159,11 @@ export namespace VisitTree {
 			return undefined
 		}
 
-		let siblings = getState().childMap.get(parent)!
-		let index = siblings.indexOf(rawSiblingNode)
+		let state = getState()
+		let siblings = state.childMap.get(parent)!
+		let index = state.siblingIndexMap.get(rawSiblingNode)
 
-		if (index < siblings.length - 1) {
+		if (index !== undefined && index < siblings.length - 1) {
 			return siblings[index + 1]
 		}
 
@@ -153,7 +172,7 @@ export namespace VisitTree {
 
 	/** Test whether have raw node. */
 	export function hasNode(anyNode: ts.Node): boolean {
-		return getState().indexMap.has(anyNode)
+		return getState().startIndexMap.has(anyNode)
 	}
 
 	/** Get raw node by visit index. */
@@ -163,31 +182,23 @@ export namespace VisitTree {
 
 	/** Get visit index by a raw node. */
 	export function getIndex(rawNode: ts.Node): number {
-		return getState().indexMap.get(rawNode)!
+		return getState().startIndexMap.get(rawNode)!
+	}
+
+	/** Get the final preorder index included in a raw node's subtree. */
+	function getEndIndex(rawNode: ts.Node): number {
+		return getState().endIndexMap.get(rawNode)!
 	}
 
 
 	/** Returns whether `node1` is ancestor of `node2`. */
 	export function isAncestorOf(rawNode1: ts.Node, rawNode2: ts.Node): boolean {
-		let index1 = getIndex(rawNode1)
-		let index2 = getIndex(rawNode2)
+		let start1 = getIndex(rawNode1)
+		let start2 = getIndex(rawNode2)
+		let end1 = getEndIndex(rawNode1)
+		let end2 = getEndIndex(rawNode2)
 
-		if (index1 >= index2) {
-			return false
-		}
-
-		let parent = getParent(rawNode2)
-
-		// Look ancestors.
-		while (parent) {
-			if (parent === rawNode1) {
-				return true
-			}
-
-			parent = getParent(parent)
-		}
-
-		return false
+		return start1 < start2 && end2 <= end1
 	}
 
 	/** Returns whether `node1` is ancestor of `node2`, or equals `node2`. */

@@ -136,6 +136,8 @@ export class TreeParser {
 	 * It returns a callback to do more init after all children initialized.
 	 */
 	private onTemplatePart(part: TemplatePart) {
+		this.template.diagnosePart(part)
+
 		let Parser = SlotParserByPartType[part.type]
 		if (!Parser) {
 			return undefined

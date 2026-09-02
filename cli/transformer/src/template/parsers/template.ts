@@ -1,5 +1,5 @@
 import ts from 'typescript'
-import {Analyzer, HTMLNode, HTMLRoot, PositionMapper, TemplateBasis, TemplateDiagnostics, TemplatePart, TemplatePartParser} from '../../lupos-ts-module'
+import {Analyzer, HTMLNode, HTMLRoot, PositionMapper, TemplateBasis, TemplateDiagnostics, TemplatePart} from '../../lupos-ts-module'
 import {TreeParser} from './tree'
 import {TemplateValues} from './template-values'
 import {Modifier, getSourceFileDiagnosticModifier, DeclarationScope, DeclarationScopeTree, VisitTree, transformContext} from '../../core'
@@ -18,6 +18,8 @@ export class TemplateParser extends TemplateBasis {
 	/** For diagnostic, and query for component tag name. */
 	readonly analyzer: Analyzer
 
+	private readonly diagnostics: TemplateDiagnostics
+	private readonly diagnosticModifier = getSourceFileDiagnosticModifier()
 	private readonly treeParsers: TreeParser[] = []
 	private readonly subTemplates: TemplateParser[] = []
 
@@ -36,23 +38,12 @@ export class TemplateParser extends TemplateBasis {
 		super(tagName, node, content, root, valueNodes, positionMapper, DeclarationScopeTree, transformContext.helper)
 		this.values = new TemplateValues(valueNodes)
 		this.analyzer = analyzer
+		this.diagnostics = new TemplateDiagnostics(analyzer)
 	}
 
-	/** 
-	 * Diagnose whole template.
-	 * It make an independent part parser and diagnose it.
-	 */
-	diagnose() {
-		let canModify = false
-		let parts: TemplatePart[] = []
-		let onPart = (part: TemplatePart) => {parts.push(part)}
-		
-		let partParser = new TemplatePartParser(this.root, this.values.valueNodes, canModify, onPart, transformContext.helper)
-		partParser.parse()
-
-		// Modify diagnostics.
-		let diagnostics = new TemplateDiagnostics(new Analyzer(transformContext.helper))
-		diagnostics.diagnose(parts, this, getSourceFileDiagnosticModifier())
+	/** Diagnose a parsed part before compilation modifies it. */
+	diagnosePart(part: TemplatePart) {
+		this.diagnostics.diagnosePart(part, this, this.diagnosticModifier)
 	}
 
 	/** Pase for tree parses. */

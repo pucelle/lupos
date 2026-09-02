@@ -47,7 +47,10 @@ export namespace TrackingPatch {
 	 */
 	export function forceTrackType(rawNode: ts.Expression | ts.Declaration, type: ObservedStateMask) {
 		let currentType = ForceTrackedTypeMask.get(rawNode) ?? 0
-		ForceTrackedTypeMask.set(rawNode, currentType | type)
+		let nextType = currentType | type
+		if (nextType !== currentType) {
+			ForceTrackedTypeMask.set(rawNode, nextType)
+		}
 	}
 
 	/** 

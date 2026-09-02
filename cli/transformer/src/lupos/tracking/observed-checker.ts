@@ -1,9 +1,28 @@
 import ts from 'typescript'
 import {AccessNode} from '../../lupos-ts-module'
-import {transformContext} from '../../core'
+import {createTransformSessionStateKey, transformContext, transformSession} from '../../core'
 import {GenericType} from 'typescript'
 import {TrackingPatch} from './patch'
 import {ObservedStateMask} from '../decorators/types'
+
+
+type ObservedState = boolean | null
+
+interface ObservedCheckerState {
+	self: WeakMap<ts.Node, ObservedState>
+	elements: WeakMap<ts.Expression, ObservedState>
+	declarations: WeakMap<ts.Declaration, ObservedState>
+}
+
+const StateKey = createTransformSessionStateKey<ObservedCheckerState>('ObservedChecker')
+
+function getState(): ObservedCheckerState {
+	return transformSession.getState(StateKey, () => ({
+		self: new WeakMap(),
+		elements: new WeakMap(),
+		declarations: new WeakMap(),
+	}))
+}
 
 
 /** 
@@ -17,6 +36,21 @@ export namespace ObservedChecker {
 
 	/** Test whether value of current access node is mutable, like `a.b`. */
 	export function getSelfObserved(rawNode: ts.Node): boolean | null {
+		let cache = getState().self
+		let cached = cache.get(rawNode)
+		if (cached !== undefined) {
+			return cached
+		}
+
+		// Break recursive query cycles while computing this node.
+		cache.set(rawNode, null)
+		let observed = computeSelfObserved(rawNode)
+		cache.set(rawNode, observed)
+
+		return observed
+	}
+
+	function computeSelfObserved(rawNode: ts.Node): boolean | null {
 
 		// Must be access node.
 		if (!transformContext.helper.access.isAccess(rawNode)) {
@@ -120,6 +154,21 @@ export namespace ObservedChecker {
 	 * - an as expression
 	 */
 	export function getElementsObserved(rawNode: ts.Expression): boolean | null {
+		let cache = getState().elements
+		let cached = cache.get(rawNode)
+		if (cached !== undefined) {
+			return cached
+		}
+
+		// Break recursive query cycles while computing this node.
+		cache.set(rawNode, null)
+		let observed = computeElementsObserved(rawNode)
+		cache.set(rawNode, observed)
+
+		return observed
+	}
+
+	function computeElementsObserved(rawNode: ts.Expression): boolean | null {
 
 		// Force track.
 		if (TrackingPatch.isForceTrackedAs(rawNode, ObservedStateMask.Elements)) {
@@ -332,9 +381,21 @@ export namespace ObservedChecker {
 
 	/** Whether resolved declaration should be observed. */
 	function getDeclarationObserved(decl: ts.Declaration): boolean | null {
-		if (!decl) {
-			return null
+		let cache = getState().declarations
+		let cached = cache.get(decl)
+		if (cached !== undefined) {
+			return cached
 		}
+
+		// Break recursive declaration/type query cycles while computing this node.
+		cache.set(decl, null)
+		let observed = computeDeclarationObserved(decl)
+		cache.set(decl, observed)
+
+		return observed
+	}
+
+	function computeDeclarationObserved(decl: ts.Declaration): boolean | null {
 				
 		// Force track.
 		if (TrackingPatch.isForceTrackedAs(decl, ObservedStateMask.Elements)) {
