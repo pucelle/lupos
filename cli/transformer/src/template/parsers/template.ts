@@ -46,9 +46,14 @@ export class TemplateParser extends TemplateBasis {
 		this.diagnostics.diagnosePart(part, this, this.diagnosticModifier)
 	}
 
+	/** Diagnose the original root before compilation can separate it into sub-templates. */
+	diagnoseRoot() {
+		this.diagnostics.diagnoseHTMLSyntax(this, this.diagnosticModifier)
+		this.diagnostics.diagnoseFunctionContextTemplate(this, this.diagnosticModifier)
+	}
+
 	/** Pase for tree parses. */
 	parse() {
-		this.diagnostics.diagnoseHTMLSyntax(this, this.diagnosticModifier)
 		let tree = this.addTreeParser(this.root, null, null)
 		tree.parse()
 	}

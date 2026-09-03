@@ -41,6 +41,7 @@ function parseHTMLTemplate(node: ts.TaggedTemplateExpression, templateType: 'htm
 	let analyzer = getAnalyzerOfCurrentSourceFile()
 	let parser = new TemplateParser(templateType, node.template, string, root, values, mapper, analyzer)
 
+	parser.diagnoseRoot()
 	parser.parse()
 
 	return () => {
