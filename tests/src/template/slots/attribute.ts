@@ -36,7 +36,7 @@ class Com extends Component {
 
 	render() {
 		return html`
-			<template class="classNameSelf">
+			<template class="classNameSelf" />
 		`
 	}
 }

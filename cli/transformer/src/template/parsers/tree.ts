@@ -157,7 +157,7 @@ export class TreeParser {
 
 	/** Prepare node for `new SlotPosition(...)` to indicate the start inner position of template. */
 	private prepareSlotPositionNode() {
-		let container = this.root
+		let container: HTMLNode = this.root
 		let firstNode: HTMLNode | null = container.firstChild!
 
 		// Being wrapped.

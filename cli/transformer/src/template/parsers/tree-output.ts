@@ -1,6 +1,6 @@
 import ts from 'typescript'
 import {Part, TreeParser} from './tree'
-import {HTMLNodeType, HTMLRoot, TemplateSlotPlaceholder} from '../../lupos-ts-module'
+import {HTMLNode, HTMLNodeType, HTMLRoot, TemplateSlotPlaceholder} from '../../lupos-ts-module'
 import {Modifier, Packer, DeclarationScope, transformContext} from '../../core'
 import {SlotParserBase} from './slots'
 import {VariableNames} from './variable-names'
@@ -253,7 +253,7 @@ export class TreeOutputHandler {
 		Modifier.addImport('SlotPosition', 'lupos.html')
 
 		let position = SlotPositionType.Before
-		let container = this.root
+		let container: HTMLNode = this.root
 		let firstNode = this.root.firstChild
 
 		// Being wrapped.

@@ -48,6 +48,7 @@ export class TemplateParser extends TemplateBasis {
 
 	/** Pase for tree parses. */
 	parse() {
+		this.diagnostics.diagnoseHTMLSyntax(this, this.diagnosticModifier)
 		let tree = this.addTreeParser(this.root, null, null)
 		tree.parse()
 	}

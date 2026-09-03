@@ -78,3 +78,49 @@ test('adds transformer diagnostics and deletes superseded TypeScript diagnostics
 		fs.rmSync(projectDirectory, {recursive: true, force: true})
 	}
 })
+
+test('reports malformed HTML tag structure in templates', () => {
+	let projectDirectory = fs.mkdtempSync(path.join(repositoryRoot, '.compiler-html-diagnostics-'))
+
+	try {
+		fs.writeFileSync(path.join(projectDirectory, 'tsconfig.json'), JSON.stringify({
+			compilerOptions: {
+				module: 'ESNext',
+				moduleResolution: 'Bundler',
+				target: 'ES2024',
+				strict: true,
+				skipLibCheck: true,
+				outDir: 'out',
+			},
+			include: ['src.ts'],
+		}, null, '\t'))
+
+		let writeSource = template => fs.writeFileSync(
+			path.join(projectDirectory, 'src.ts'),
+			`import {html} from 'lupos.html'\nexport const result = html\`${template}\`\n`
+		)
+
+		writeSource('<div><span></div>')
+		let mismatched = compile(projectDirectory)
+		assert.notEqual(mismatched.status, 0)
+		assert.match(mismatched.output, /warning TS30005: Closing tag '<\/div>' does not match opening tag '<span>'\./)
+
+		writeSource('<section><div></div>')
+		let unclosed = compile(projectDirectory)
+		assert.notEqual(unclosed.status, 0)
+		assert.match(unclosed.output, /warning TS30006: Tag '<section>' is not closed\./)
+
+		writeSource('</aside>')
+		let unmatched = compile(projectDirectory)
+		assert.notEqual(unmatched.status, 0)
+		assert.match(unmatched.output, /warning TS30005: Closing tag '<\/aside>' has no matching opening tag\./)
+
+		writeSource('<div><img><input /></div>')
+		let valid = compile(projectDirectory)
+		assert.equal(valid.status, 0, valid.output)
+		assert.equal(valid.output, '')
+	}
+	finally {
+		fs.rmSync(projectDirectory, {recursive: true, force: true})
+	}
+})
