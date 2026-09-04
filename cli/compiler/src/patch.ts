@@ -4,6 +4,17 @@ import ts from 'typescript'
 /** Extend of TransformerFactory */
 export type ExtendedTransformerFactory = (context: ts.TransformationContext, extras: TransformerExtras) => ts.Transformer<ts.SourceFile>;
 
+/** Supplies replacement semantic diagnostics without coupling the compiler to Lupos syntax. */
+export interface CompilerDiagnosticProvider {
+	/** Return `null` when this source has no mirror and native diagnostics should be used. */
+	getSemanticDiagnostics(sourceFile: ts.SourceFile, cancellationToken?: ts.CancellationToken): readonly ts.Diagnostic[] | null
+}
+
+export type CompilerDiagnosticProviderFactory = (
+	program: ts.Program,
+	host: ts.CompilerHost
+) => CompilerDiagnosticProvider
+
 /** Extra parameter for compiler transformer. */
 export interface TransformerExtras {
 
@@ -25,14 +36,20 @@ export function patchHost(
 	extended: ExtendedTransformerFactory,
 	compileToESM: boolean,
 	embedSVG: boolean,
-	diagModifier: CompilerDiagnosticModifier
+	diagModifier: CompilerDiagnosticModifier,
+	diagnosticProviderFactory?: CompilerDiagnosticProviderFactory
 ) {
 	let originalHostCreateProgram = host.createProgram.bind(host)
 
 	// Note program may update here.
-	host.createProgram = (rootNames: readonly string[] | undefined, options, host, oldProgram) => {
-		let program = originalHostCreateProgram(rootNames, options, host, oldProgram)
-		patchProgram(program, extended, compileToESM, embedSVG, diagModifier)
+	host.createProgram = (rootNames: readonly string[] | undefined, options, compilerHost, oldProgram) => {
+		let program = originalHostCreateProgram(rootNames, options, compilerHost, oldProgram)
+
+		let diagnosticProvider = compilerHost
+			? diagnosticProviderFactory?.(program.getProgram(), compilerHost)
+			: undefined
+
+		patchProgram(program, extended, compileToESM, embedSVG, diagModifier, diagnosticProvider)
 
 		return program
 	}
@@ -45,7 +62,8 @@ export function patchProgram(
 	extended: ExtendedTransformerFactory,
 	compileToESM: boolean,
 	embedSVG: boolean,
-	diagModifier: CompilerDiagnosticModifier
+	diagModifier: CompilerDiagnosticModifier,
+	diagnosticProvider?: CompilerDiagnosticProvider
 ) {
 	let standardTransformer: ts.TransformerFactory<ts.SourceFile> = (context: ts.TransformationContext) => {
 		let extras: TransformerExtras = {
@@ -58,7 +76,7 @@ export function patchProgram(
 		return extended(context, extras)
 	}
 
-	let deferredSemanticDiagnostics: ts.Diagnostic[] = []
+	let deferredSemanticDiagnostics: Map<string, readonly ts.Diagnostic[]> = new Map()
 	let emitting = false
 	let originalGetSemanticDiagnostics = program.getSemanticDiagnostics.bind(program)
 	let originalEmit = program.emit.bind(program)
@@ -68,12 +86,21 @@ export function patchProgram(
 	// supplied its additions and deletions. Both methods are public BuilderProgram
 	// APIs, so this does not depend on TypeScript's internal builder state.
 	program.getSemanticDiagnostics = (sourceFile, cancellationToken) => {
-		let diagnostics = originalGetSemanticDiagnostics(sourceFile, cancellationToken)
 		if (emitting || program.getCompilerOptions().listFilesOnly) {
-			return diagnostics
+			return originalGetSemanticDiagnostics(sourceFile, cancellationToken)
 		}
 
-		deferredSemanticDiagnostics.push(...diagnostics)
+		let diagnostics = sourceFile
+			? diagnosticProvider?.getSemanticDiagnostics(sourceFile, cancellationToken)
+				?? originalGetSemanticDiagnostics(sourceFile, cancellationToken)
+			: replaceMirroredDiagnostics(
+				program,
+				originalGetSemanticDiagnostics(undefined, cancellationToken),
+				diagnosticProvider,
+				cancellationToken
+			)
+
+		deferredSemanticDiagnostics.set(sourceFile?.fileName ?? '', diagnostics)
 		return []
 	}
 
@@ -94,12 +121,38 @@ export function patchProgram(
 
 		let diagnostics = diagModifier.modifyDiagnostics(
 			program,
-			[...deferredSemanticDiagnostics, ...emitResult.diagnostics]
+			[...deferredSemanticDiagnostics.values()].flat().concat(emitResult.diagnostics)
 		)
-		deferredSemanticDiagnostics = []
+
+		deferredSemanticDiagnostics.clear()
 
 		return {...emitResult, diagnostics}
 	}
+}
+
+/** We will totally replace original diagnostics per source file. */
+function replaceMirroredDiagnostics(
+	program: ts.BuilderProgram,
+	nativeDiagnostics: readonly ts.Diagnostic[],
+	provider: CompilerDiagnosticProvider | undefined,
+	cancellationToken?: ts.CancellationToken
+): readonly ts.Diagnostic[] {
+	if (!provider) {
+		return nativeDiagnostics
+	}
+
+	let replacements: Map<string, readonly ts.Diagnostic[]> = new Map()
+
+	for (let sourceFile of program.getSourceFiles()) {
+		let diagnostics = provider.getSemanticDiagnostics(sourceFile, cancellationToken)
+		if (diagnostics !== null) {
+			replacements.set(sourceFile.fileName, diagnostics)
+		}
+	}
+
+	return nativeDiagnostics
+		.filter(diagnostic => !diagnostic.file || !replacements.has(diagnostic.file.fileName))
+		.concat(...replacements.values())
 }
 
 
@@ -115,7 +168,6 @@ export class CompilerDiagnosticModifier {
 	/** They are not using source file as key, because source files may be updated without re-compiling. */
 	private added: Map<string, ts.Diagnostic[]> = new Map()
 	private deleted: Map<string, DiagnosticLike[]> = new Map()
-	private potentialAllImportsUnUsed: Map<string, ts.ImportDeclaration[]> = new Map()
 
 	/** Check whether diagnostic has been deleted. */
 	hasDeleted(diag: DiagnosticLike): boolean {
@@ -154,11 +206,6 @@ export class CompilerDiagnosticModifier {
 		this.deleted.set(fileName, diags)
 	}
 
-	/** Set potential all imports which . */
-	setPotentialAllImportsUnUsed(fileName: string, decls: ts.ImportDeclaration[]) {
-		this.potentialAllImportsUnUsed.set(fileName, decls)
-	}
-
 	/** Apply transformer additions and deletions to diagnostics through public APIs. */
 	modifyDiagnostics(program: ts.BuilderProgram, diagnostics: readonly ts.Diagnostic[]): ts.Diagnostic[] {
 		let sourceFileNames = new Set(program.getSourceFiles().map(file => file.fileName))
@@ -168,9 +215,6 @@ export class CompilerDiagnosticModifier {
 			if (!this.hasDeleted(diag)) {
 				modified.push(diag)
 			}
-			else if (diag.file && diag.start !== undefined) {
-				modified.push(...this.getUnUsedSiblingImportDiags(diag.file, diag.start))
-			}
 		}
 
 		for (let [fileName, added] of this.added) {
@@ -179,47 +223,38 @@ export class CompilerDiagnosticModifier {
 			}
 		}
 
-		return modified
-	}
-
-	private getUnUsedSiblingImportDiags(sourceFile: ts.SourceFile, start: number): ts.Diagnostic[] {
-		let unUsedDecls = this.potentialAllImportsUnUsed.get(sourceFile.fileName)
-		if (!unUsedDecls) {
-			return []
-		}
-
-		let importDecl = unUsedDecls.find(decl => decl.getStart() === start)
-		if (!importDecl) {
-			return []
-		}
-
-		let unImported: ts.Diagnostic[] = []
-
-		for (let element of (importDecl.importClause!.namedBindings! as ts.NamedImports).elements) {
-			if (!this.hasDeleted({file: sourceFile, start: element.name.getStart(), code: 6133})) {
-				let start = element.name.getStart()
-				let length = element.name.getEnd() - start
-
-				let diag: ts.Diagnostic = {
-					category: ts.DiagnosticCategory.Error,
-					code: 6133,
-					messageText: `'${element.name.text}' is declared but its value is never read.`,
-					file: sourceFile,
-					start,
-					length,
-				}
-
-				unImported.push(diag)
-			}
-		}
-		
-		return unImported
+		return deduplicateDiagnostics(modified)
 	}
 
 	/** Before visit a source file, clean all the modification of it. */
 	beforeVisitSourceFile(file: ts.SourceFile) {
 		this.added.delete(file.fileName)
 		this.deleted.delete(file.fileName)
-		this.potentialAllImportsUnUsed.delete(file.fileName)
 	}
+}
+
+
+/** Help function to remove duplicate diagnostics. */
+function deduplicateDiagnostics(diagnostics: ts.Diagnostic[]): ts.Diagnostic[] {
+	let seen: Set<string> = new Set()
+	let deduplicated: ts.Diagnostic[] = []
+
+	for (let diagnostic of diagnostics) {
+		let key = [
+			diagnostic.file?.fileName ?? '',
+			diagnostic.start ?? -1,
+			diagnostic.length ?? -1,
+			diagnostic.category,
+			diagnostic.code,
+			ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n'),
+		].join(':')
+
+		if (!seen.has(key)) {
+			seen.add(key)
+			deduplicated.push(diagnostic)
+		}
+
+	}
+
+	return deduplicated
 }

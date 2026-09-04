@@ -159,6 +159,7 @@ test('requires a function context template to be the only return value', () => {
 				'export function fn() { return html`<template><span /></template>` }',
 			].join('\n')
 		)
+
 		let validFunctions = compile(projectDirectory)
 		assert.equal(validFunctions.status, 0, validFunctions.output)
 		assert.equal(validFunctions.output, '')
@@ -167,6 +168,7 @@ test('requires a function context template to be the only return value', () => {
 			'\t\tif (Math.random() > 0.5) return html`<template><div /></template>`',
 			'\t\treturn html`<div />`',
 		].join('\n'))
+
 		let withOtherReturn = compile(projectDirectory)
 		assert.notEqual(withOtherReturn.status, 0)
 		assert.match(withOtherReturn.output, /error TS30007: A function that returns '<template>' must use it as its only return value\./)
@@ -175,6 +177,7 @@ test('requires a function context template to be the only return value', () => {
 			'\t\tif (Math.random() > 0.5) return html`<template><div /></template>`',
 			'\t\treturn html`<template><span /></template>`',
 		].join('\n'))
+
 		let withSecondContextTemplate = compile(projectDirectory)
 		assert.notEqual(withSecondContextTemplate.status, 0)
 		assert.equal(
@@ -198,6 +201,186 @@ test('requires a function context template to be the only return value', () => {
 		let mixedArrow = compile(projectDirectory)
 		assert.notEqual(mixedArrow.status, 0)
 		assert.match(mixedArrow.output, /error TS30007:/)
+	}
+	finally {
+		fs.rmSync(projectDirectory, {recursive: true, force: true})
+	}
+})
+
+test('uses a TypeScript mirror for component property diagnostics', () => {
+	let projectDirectory = fs.mkdtempSync(path.join(repositoryRoot, '.compiler-mirror-diagnostics-'))
+
+	try {
+		fs.writeFileSync(path.join(projectDirectory, 'tsconfig.json'), JSON.stringify({
+			compilerOptions: {
+				module: 'ESNext',
+				moduleResolution: 'Bundler',
+				target: 'ES2024',
+				strict: true,
+				skipLibCheck: true,
+				outDir: 'out',
+			},
+			include: ['src.ts'],
+		}, null, '\t'))
+
+		fs.writeFileSync(path.join(projectDirectory, 'card.ts'), [
+			"import {Component} from 'lupos.html'",
+			'export class Card<T> extends Component { value!: T }',
+			'export class NumberCard extends Card<number> {}',
+		].join('\n'))
+
+		fs.writeFileSync(path.join(projectDirectory, 'src.ts'), [
+			"import {Component, html} from 'lupos.html'",
+			"import {NumberCard as NumericCard} from './card'",
+			'class Card extends Component {',
+			'\tcount: number = 0',
+			'\tenabled: boolean = false',
+			'\tnumeric: number = 0',
+			'\treadonly locked: number = 0',
+			'\tlabel: string = ""',
+			"\tresize: 'both' | 'horizontal' | 'vertical' | 'none' = 'none'",
+			'}',
+			'export const first = html`<Card .count=${"wrong"} .enabled .missing=${1} .resize="diagonal" /><NumericCard .value=${"wrong"} />`',
+			'export const second = html`<Card .numeric .locked=${2} .label="value ${1}" />`',
+		].join('\n'))
+
+		let invalid = compile(projectDirectory)
+		assert.notEqual(invalid.status, 0)
+		assert.equal((invalid.output.match(/error TS2322:/g) ?? []).length, 4, invalid.output)
+		assert.match(invalid.output, /Type 'string' is not assignable to type 'number'\./)
+		assert.match(invalid.output, /Type 'boolean' is not assignable to type 'number'\./)
+		assert.match(invalid.output, /Type '"diagonal"' is not assignable to type '"both" \| "horizontal" \| "vertical" \| "none"'\./)
+		assert.match(invalid.output, /error TS2540: Cannot assign to 'locked' because it is a read-only property\./)
+		assert.match(invalid.output, /error TS2339: Property 'missing' is not exist on '<Card>'\./)
+		assert.doesNotMatch(invalid.output, /Value type 'string'/)
+
+		fs.writeFileSync(path.join(projectDirectory, 'src.ts'), [
+			"import {Component, html} from 'lupos.html'",
+			"import {NumberCard as NumericCard} from './card'",
+			"class Card extends Component { count: number = 0; enabled: boolean = false; label: string = ''; resize: 'both' | 'horizontal' | 'vertical' | 'none' = 'none' }",
+			'export const result = html`<Card .count=${1} .enabled .label="value ${1}" .resize="vertical" /><NumericCard .value=${1} />`',
+		].join('\n'))
+
+		let valid = compile(projectDirectory)
+		assert.equal(valid.status, 0, valid.output)
+		assert.equal(valid.output, '')
+	}
+	finally {
+		fs.rmSync(projectDirectory, {recursive: true, force: true})
+	}
+})
+
+test('does not duplicate native TypeScript diagnostics through the mirror', () => {
+	let projectDirectory = fs.mkdtempSync(path.join(repositoryRoot, '.compiler-mirror-filtering-'))
+
+	try {
+		fs.writeFileSync(path.join(projectDirectory, 'tsconfig.json'), JSON.stringify({
+			compilerOptions: {
+				module: 'ESNext',
+				moduleResolution: 'Bundler',
+				target: 'ES2024',
+				strict: true,
+				skipLibCheck: true,
+				outDir: 'out',
+			},
+			include: ['src.ts'],
+		}, null, '\t'))
+
+		fs.writeFileSync(path.join(projectDirectory, 'src.ts'), [
+			"import {Component, html} from 'lupos.html'",
+			'class Card extends Component { count: number = 0 }',
+			'const nativeError: number = "wrong"',
+			'export const result = html`<Card .count=${1} />`',
+			'export const nativeAfter = ({value: 1}).missing',
+		].join('\n'))
+
+		let invalid = compile(projectDirectory)
+		assert.notEqual(invalid.status, 0)
+		assert.equal((invalid.output.match(/error TS2322:/g) ?? []).length, 1, invalid.output)
+		assert.match(invalid.output, /Type 'string' is not assignable to type 'number'\./)
+		assert.equal((invalid.output.match(/error TS2339:/g) ?? []).length, 1, invalid.output)
+		assert.match(invalid.output, /Property 'missing' does not exist on type '\{ value: number; \}'\./)
+	}
+	finally {
+		fs.rmSync(projectDirectory, {recursive: true, force: true})
+	}
+})
+
+test('uses mirror symbol anchors for template-only component imports', () => {
+	let projectDirectory = fs.mkdtempSync(path.join(repositoryRoot, '.compiler-mirror-imports-'))
+
+	try {
+		fs.writeFileSync(path.join(projectDirectory, 'tsconfig.json'), JSON.stringify({
+			compilerOptions: {
+				module: 'ESNext',
+				moduleResolution: 'Bundler',
+				target: 'ES2024',
+				strict: true,
+				noUnusedLocals: true,
+				skipLibCheck: true,
+				outDir: 'out',
+			},
+			include: ['*.ts'],
+		}, null, '\t'))
+		fs.writeFileSync(path.join(projectDirectory, 'cards.ts'), [
+			"import {Component} from 'lupos.html'",
+			'export class Card extends Component { constructor(_value: string) { super() } }',
+			'export class UnusedCard extends Component {}',
+		].join('\n'))
+
+		let writeSource = imports => fs.writeFileSync(path.join(projectDirectory, 'src.ts'), [
+			"import {html} from 'lupos.html'",
+			`import {${imports}} from './cards'`,
+			'export const result = html`<Card />`',
+		].join('\n'))
+
+		writeSource('Card, UnusedCard')
+		let invalid = compile(projectDirectory)
+		assert.notEqual(invalid.status, 0)
+		assert.match(invalid.output, /'UnusedCard' is declared but its value is never read\./)
+		assert.doesNotMatch(invalid.output, /'Card' is declared but its value is never read\./)
+
+		writeSource('Card')
+		let valid = compile(projectDirectory)
+		assert.equal(valid.status, 0, valid.output)
+		assert.equal(valid.output, '')
+	}
+	finally {
+		fs.rmSync(projectDirectory, {recursive: true, force: true})
+	}
+})
+
+test('uses mirror symbol anchors for template-only binding imports', () => {
+	let projectDirectory = fs.mkdtempSync(path.join(repositoryRoot, '.compiler-mirror-binding-imports-'))
+
+	try {
+		fs.writeFileSync(path.join(projectDirectory, 'tsconfig.json'), JSON.stringify({
+			compilerOptions: {
+				module: 'ESNext',
+				moduleResolution: 'Bundler',
+				target: 'ES2024',
+				strict: true,
+				noUnusedLocals: true,
+				skipLibCheck: true,
+				outDir: 'out',
+			},
+			include: ['*.ts'],
+		}, null, '\t'))
+		fs.writeFileSync(path.join(projectDirectory, 'bindings.ts'), [
+			"import {Binding} from 'lupos.html'",
+			'export class Show implements Binding { update(_value: unknown) {} }',
+			'export class UnusedShow implements Binding { update(_value: unknown) {} }',
+		].join('\n'))
+		fs.writeFileSync(path.join(projectDirectory, 'src.ts'), [
+			"import {html} from 'lupos.html'",
+			"import {Show, UnusedShow} from './bindings'",
+			'export const result = html`<div :Show=${true} />`',
+		].join('\n'))
+
+		let invalid = compile(projectDirectory)
+		assert.notEqual(invalid.status, 0)
+		assert.match(invalid.output, /'UnusedShow' is declared but its value is never read\./)
+		assert.doesNotMatch(invalid.output, /'Show' is declared but its value is never read\./)
 	}
 	finally {
 		fs.rmSync(projectDirectory, {recursive: true, force: true})

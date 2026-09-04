@@ -2,6 +2,7 @@ node_modules
 /cli/compiler/out
 /cli/transformer/out
 /web/out
+/.compiler-*
 .VSCodeCounter
 *.tsbuildinfo
 **/.DS_STORE
