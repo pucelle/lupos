@@ -30,7 +30,7 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<!----><!--98012245-->");
     let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1, $locator.getNodes("98012245"));
     let $block_0 = new ForBlock($slot_0);
     $block_0.updateRenderFn(function (n) {
-        return $context.renderItem(n);
+        return $context.renderItem($values[0]);
     });
     $block_0.updateData([1, 2, 3]);
     return {
@@ -106,6 +106,7 @@ const $html_4 = /*#__PURE__*/ new HTMLMaker("<!----><!--355e9d9c-->");
     let $block_0 = new ForBlock($slot_0);
     $block_0.updateRenderFn(function (item, index) {
         return new CompiledTemplateResult($template_5, [
+            (trackGet(item, "value"), index),
             item.value
         ], this);
     });
@@ -131,22 +132,28 @@ const $html_5 = /*#__PURE__*/ new HTMLMaker("<div><!--89087358-->: <!--102be637-
     </div>
 </root>
 */ const $template_5 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
-    let $latest_0;
+    let $latest_0, $latest_1, $latest_2;
     let $locator = $html_5.make($hydrates);
     let $node_0 = $locator.childAt(0);
     let $node_1 = $locator.getMarker("89087358");
     let $node_2 = $locator.getMarker("102be637");
     let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), null, $locator.getNodes("89087358"));
     let $slot_1 = new TemplateSlot(new SlotPosition(1, $node_2), null, $locator.getNodes("102be637"));
-    $node_0.title = (trackGet(item, "value"), index);
-    $slot_1.update(index);
     return {
         el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {
-                $slot_0.update($values[0]);
+                $node_0.title = $values[0];
                 $latest_0 = $values[0];
+            }
+            if ($latest_1 !== $values[1]) {
+                $slot_0.update($values[1]);
+                $latest_1 = $values[1];
+            }
+            if ($latest_2 !== $values[0]) {
+                $slot_1.update($values[0]);
+                $latest_2 = $values[0];
             }
         },
         parts: [
@@ -219,7 +226,10 @@ const $html_8 = /*#__PURE__*/ new HTMLMaker("<!----><!--a26b45c4-->");
     let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1, $locator.getNodes("a26b45c4"));
     let $block_0 = new ForBlock($slot_0);
     $block_0.updateRenderFn(function (value, index) {
-        return new CompiledTemplateResult($template_9, [], this);
+        return new CompiledTemplateResult($template_9, [
+            index,
+            value
+        ], this);
     });
     return {
         el: $locator.el,
@@ -241,17 +251,26 @@ const $html_9 = /*#__PURE__*/ new HTMLMaker("<!----><!--490faa64-->: <!--093286a
     ${value}
 </root>
 */ const $template_9 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $latest_0, $latest_1;
     let $locator = $html_9.make($hydrates);
     let $node_0 = $locator.childAt(0);
     let $node_1 = $locator.getMarker("490faa64");
     let $node_2 = $locator.getMarker("093286a7");
     let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), null, $locator.getNodes("490faa64"));
     let $slot_1 = new TemplateSlot(new SlotPosition(1, $node_2), null, $locator.getNodes("093286a7"));
-    $slot_0.update(index);
-    $slot_1.update(value);
     return {
         el: $locator.el,
         position: new SlotPosition(1, $node_0),
+        update($values) {
+            if ($latest_0 !== $values[0]) {
+                $slot_0.update($values[0]);
+                $latest_0 = $values[0];
+            }
+            if ($latest_1 !== $values[1]) {
+                $slot_1.update($values[1]);
+                $latest_1 = $values[1];
+            }
+        },
         parts: [
             [$slot_0, 1],
             [$slot_1, 1]
@@ -694,7 +713,9 @@ export class TestFor extends Component {
         ], this);
     }
     testForRenderMethod() {
-        return new CompiledTemplateResult($template_1, [], this);
+        return new CompiledTemplateResult($template_1, [
+            n
+        ], this);
     }
     testForInlineBody() {
         return new CompiledTemplateResult($template_2, [], this);

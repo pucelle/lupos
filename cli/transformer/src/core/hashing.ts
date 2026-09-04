@@ -246,9 +246,11 @@ export namespace Hashing {
 	): {name: string, scope: DeclarationScope} {
 		let closest = DeclarationScopeTree.findClosest(closestRawNode)
 		let scope = DeclarationScopeTree.findDeclared(node, closest) || closest
+
 		let name = VisitTree.hasNode(node)
 			? transformContext.helper.getFullText(node)
 			: ts.isIdentifier(node) ? node.text : 'this'
+			
 		let suffix = VisitTree.getIndex(scope.node)
 
 		return {
