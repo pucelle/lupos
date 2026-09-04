@@ -80,6 +80,6 @@ export class TestStaticStyleBinding extends Component {
 	}
 
 	testModifier() {
-		return html`<div :style.title=${'title'} />`
+		return html`<div :style.color=${'red'} />`
 	}
 }
