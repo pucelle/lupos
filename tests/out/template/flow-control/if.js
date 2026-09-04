@@ -216,7 +216,7 @@ const $html_13 = /*#__PURE__*/ new HTMLMaker("Then Content");
 const $html_14 = /*#__PURE__*/ new HTMLMaker("<!----><!--e58d5939-->");
 /*
 <root>
-    <lu:if ${this.item && this.item.value} />
+    <lu:if ${this.item} />
 </root>
 */ const $template_14 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $locator = $html_14.make($hydrates);
@@ -369,8 +369,8 @@ export class TestIf extends Component {
     testIfContentTracking() {
         trackGet(this, "item");
         return new CompiledTemplateResult($template_14, [
-            this.item && (trackGet(this.item, "value"), this.item.value) ? new CompiledTemplateResult($template_15, [
-                (trackGet(this.item.value, ""), this.item.value.map(v => new CompiledTemplateResult($template_17, [
+            this.item ? new CompiledTemplateResult($template_15, [
+                (trackGet(this.item, "value"), trackGet(this.item.value, ""), this.item.value.map(v => new CompiledTemplateResult($template_17, [
                     v
                 ], this)))
             ], this) : (trackGet(this, "content"), this.content) ? new CompiledTemplateResult($template_16, [
