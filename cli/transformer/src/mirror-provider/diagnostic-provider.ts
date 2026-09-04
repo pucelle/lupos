@@ -4,7 +4,7 @@ import {
 	buildTypeScriptMirror,
 	mapMirrorSpanToOriginal,
 	MirrorDocument,
-} from '../lupos-ts-module'
+} from '../lupos-ts-module/ts-mirror'
 import {createMirrorProgram} from './mirror-program'
 
 

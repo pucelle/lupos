@@ -5,7 +5,7 @@ const test = require('node:test')
 const ts = require('typescript')
 
 
-const repositoryRoot = path.resolve(__dirname, '..')
+const {repositoryRoot, compile} = require('./compiler-test-helpers.cjs')
 const {
 	buildTypeScriptMirror,
 	mapMirrorSpanToOriginal,
@@ -80,6 +80,86 @@ test('builds a side-effect-free mirror with bidirectional language-service mappi
 			mapMirrorSpanToOriginal(document, {start: copiedValue.mirrorStart, length: 7}, 'diagnostic'),
 			{start: originalValue, length: 7}
 		)
+	}
+	finally {
+		fs.rmSync(projectDirectory, {recursive: true, force: true})
+	}
+})
+
+test('does not duplicate native TypeScript diagnostics through the mirror', () => {
+	let projectDirectory = fs.mkdtempSync(path.join(repositoryRoot, '.compiler-mirror-filtering-'))
+
+	try {
+		fs.writeFileSync(path.join(projectDirectory, 'tsconfig.json'), JSON.stringify({
+			compilerOptions: {
+				module: 'ESNext',
+				moduleResolution: 'Bundler',
+				target: 'ES2024',
+				strict: true,
+				skipLibCheck: true,
+				outDir: 'out',
+			},
+			include: ['src.ts'],
+		}, null, '\t'))
+
+		fs.writeFileSync(path.join(projectDirectory, 'src.ts'), [
+			"import {Component, html} from 'lupos.html'",
+			'class Card extends Component { count: number = 0 }',
+			'const nativeError: number = "wrong"',
+			'export const result = html`<Card .count=${1} />`',
+			'export const nativeAfter = ({value: 1}).missing',
+		].join('\n'))
+
+		let invalid = compile(projectDirectory)
+		assert.notEqual(invalid.status, 0)
+		assert.equal((invalid.output.match(/error TS2322:/g) ?? []).length, 1, invalid.output)
+		assert.match(invalid.output, /Type 'string' is not assignable to type 'number'\./)
+		assert.equal((invalid.output.match(/error TS2339:/g) ?? []).length, 1, invalid.output)
+		assert.match(invalid.output, /Property 'missing' does not exist on type '\{ value: number; \}'\./)
+	}
+	finally {
+		fs.rmSync(projectDirectory, {recursive: true, force: true})
+	}
+})
+
+test('uses mirror symbol anchors for template-only component imports', () => {
+	let projectDirectory = fs.mkdtempSync(path.join(repositoryRoot, '.compiler-mirror-imports-'))
+
+	try {
+		fs.writeFileSync(path.join(projectDirectory, 'tsconfig.json'), JSON.stringify({
+			compilerOptions: {
+				module: 'ESNext',
+				moduleResolution: 'Bundler',
+				target: 'ES2024',
+				strict: true,
+				noUnusedLocals: true,
+				skipLibCheck: true,
+				outDir: 'out',
+			},
+			include: ['*.ts'],
+		}, null, '\t'))
+		fs.writeFileSync(path.join(projectDirectory, 'cards.ts'), [
+			"import {Component} from 'lupos.html'",
+			'export class Card extends Component { constructor(_value: string) { super() } }',
+			'export class UnusedCard extends Component {}',
+		].join('\n'))
+
+		let writeSource = imports => fs.writeFileSync(path.join(projectDirectory, 'src.ts'), [
+			"import {html} from 'lupos.html'",
+			`import {${imports}} from './cards'`,
+			'export const result = html`<Card />`',
+		].join('\n'))
+
+		writeSource('Card, UnusedCard')
+		let invalid = compile(projectDirectory)
+		assert.notEqual(invalid.status, 0)
+		assert.match(invalid.output, /'UnusedCard' is declared but its value is never read\./)
+		assert.doesNotMatch(invalid.output, /'Card' is declared but its value is never read\./)
+
+		writeSource('Card')
+		let valid = compile(projectDirectory)
+		assert.equal(valid.status, 0, valid.output)
+		assert.equal(valid.output, '')
 	}
 	finally {
 		fs.rmSync(projectDirectory, {recursive: true, force: true})
