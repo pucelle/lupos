@@ -43,7 +43,7 @@ type NodeReplacer = (
 class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 
 	/** Cache for faster visiting. */
-	private nodeMutableMaskCache: Map<ts.Node, number> = new Map()
+	private nodeMutableMaskCache: WeakMap<ts.Node, number> = new WeakMap()
 
 	/** Cache assign to hash name -> assignment expression. */
 	private assignmentMap: ListMap<HashKey, AssignmentNode> = new ListMap()
@@ -201,7 +201,7 @@ class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 	}
 
 	/** Get mutable musk from an expression represented value. */
-	checkMutableMask(rawNode: ts.Expression): MutableMask | 0 {
+	checkMask(rawNode: ts.Expression): MutableMask | 0 {
 		if (this.nodeMutableMaskCache.has(rawNode)) {
 			return this.nodeMutableMaskCache.get(rawNode)!
 		}
@@ -212,8 +212,22 @@ class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 		return mask
 	}
 
+	/** Overwrite mask for node, after know it will to be compiled into a callback. */
+	overwriteMaskAsWithinCallback(rawNode: ts.Expression) {
+		let mask = this.checkMask(rawNode)
+		mask &= ~MutableMask.Mutable
+
+		if (mask & MutableMask.HasLocalReferenceOutsideFunction) {
+			mask &= ~MutableMask.HasLocalReferenceOutsideFunction
+			mask |= MutableMask.HasLocalReferenceInsideFunction
+		}
+
+		this.nodeMutableMaskCache.set(rawNode, mask)
+	}
+
 	/** Test whether expression represented value is mutable. */
-	testMutable(mask: MutableMask | 0): boolean {
+	testMutable(rawNode: ts.Expression): boolean {
+		let mask = this.checkMask(rawNode)
 		return (mask & MutableMask.Mutable) > 0
 	}
 
@@ -221,10 +235,11 @@ class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 	 * Test whether can re-declare as static content to avoid updating each time.
 	 * `asLazyCallback` means will be treated as a callback and will not be called immediately.
 	 */
-	testCanTransfer(mask: MutableMask | 0, asLazyCallback: boolean): boolean {
+	testCanTransfer(rawNode: ts.Expression, asLazyCallback: boolean): boolean {
+		let mask = this.checkMask(rawNode)
 		let mutable = (mask & MutableMask.Mutable) > 0
 
-		// If mutable, can't transfer.
+		// If mutable, always can't transfer.
 		if (mutable) {
 			return false
 		}
@@ -238,7 +253,7 @@ class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 				return false
 			}
 
-			// Will visit the reference immediately, normally the callback references local.
+			// Will visit the reference immediately, out of callback.
 			let hasImmediateReference = (mask & MutableMask.HasLocalReferenceOutsideFunction) > 0
 			if (hasImmediateReference) {
 				return false
@@ -247,7 +262,7 @@ class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 			return true
 		}
 
-		// If have local reference, can't transfer.
+		// If have local reference, either inside or outside, can't transfer.
 		let hasLocalReference = (mask & (MutableMask.HasLocalReferenceOutsideFunction | MutableMask.HasLocalReferenceInsideFunction)) > 0
 		if (hasLocalReference) {
 			return false
@@ -328,7 +343,7 @@ class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 	 * Test whether elements of expression represented value are mutable.
 	 * Note it ignores testing whether `rawNode` itself is mutable.
 	 */
-	testElementsPartMutable(rawNode: ts.Expression): boolean {
+	testElementsMutable(rawNode: ts.Expression): boolean {
 
 		// Elements are readonly.
 		if (transformContext.helper.types.isElementsReadonly(rawNode)) {

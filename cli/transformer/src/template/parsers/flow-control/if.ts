@@ -212,7 +212,7 @@ export class IfFlowControl extends FlowControlBase {
 				return transformContext.factory.createNull()
 			}
 			else {
-				let rawNode = this.template.values.getRawValue(index)
+				let rawNode = this.template.values.valueNodeAt(index)
 				return Interpolator.outputSelfUnique(rawNode) as ts.Expression
 			}
 		})

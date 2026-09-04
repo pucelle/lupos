@@ -196,7 +196,7 @@ export class BindingBase {
 	 * `valueIndices` must exist to call this.
 	 */
 	private splitToParameters(): ts.Expression[] {
-		let rawValueNode = this.template.values.getRawValue(this.slot.valueIndices![0])
+		let rawValueNode = this.template.values.valueNodeAt(this.slot.valueIndices![0])
 
 		if (ts.isParenthesizedExpression(rawValueNode)) {
 			rawValueNode = rawValueNode.expression

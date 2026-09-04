@@ -88,7 +88,7 @@ export abstract class SlotParserBase {
 	/** Returns whether any of current values can transfer to outer scope. */
 	isAllValuesCanTransfer(): boolean {
 		return this.valueIndices !== null
-			&& this.valueIndices.every(index => this.template.values.isIndexCanTransfer(index, this.asLazyCallback))
+			&& this.valueIndices.every(index => this.template.values.isCanTransferAt(index, this.asLazyCallback))
 	}
 
 	/** Returns whether any values initialize a closure/function. */
@@ -103,7 +103,7 @@ export abstract class SlotParserBase {
 	/** Returns whether current value has been outputted as non-transferred. */
 	shouldUpdateDynamically(): boolean {
 		return this.valueIndices !== null
-			&& this.valueIndices.some(index => this.template.values.isIndexNonTransferredOutputted(index))
+			&& this.valueIndices.some(index => this.template.values.isNonTransferredOutputtedAt(index))
 			|| this.customValueOutputted
 	}
 
@@ -112,7 +112,7 @@ export abstract class SlotParserBase {
 	 * can only use returned node to identify type, cant output.
 	 */
 	getFirstRawValueNode(): ts.Expression | undefined {
-		return this.valueIndices ? this.template.values.getRawValue(this.valueIndices[0]) : undefined
+		return this.valueIndices ? this.template.values.valueNodeAt(this.valueIndices[0]) : undefined
 	}
 
 	/** 
@@ -135,11 +135,11 @@ export abstract class SlotParserBase {
 		let hashes: Set<HashKey> = new Set()
 
 		let names = this.valueIndices.map(valueIndex => {
-			if (this.template.values.isIndexCanTransfer(valueIndex, asLazyCallback)) {
+			if (this.template.values.isCanTransferAt(valueIndex, asLazyCallback)) {
 				return null
 			}
 
-			let hash = Hashing.hashNode(this.template.values.getRawValue(valueIndex)).key
+			let hash = Hashing.hashNode(this.template.values.valueNodeAt(valueIndex)).key
 			if (hashes.has(hash)) {
 				return null
 			}
@@ -157,8 +157,7 @@ export abstract class SlotParserBase {
 		let hashes: Set<HashKey> = new Set()
 
 		let names = exps.map((exp) => {
-			let mask = DeclarationScopeTree.checkMutableMask(exp)
-			if (DeclarationScopeTree.testCanTransfer(mask, this.asLazyCallback)) {
+			if (DeclarationScopeTree.testCanTransfer(exp, this.asLazyCallback)) {
 				return null
 			}
 

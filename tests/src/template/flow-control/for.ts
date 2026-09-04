@@ -17,19 +17,39 @@ export class TestFor extends Component {
 		return html`${n + this.prop}`
 	}
 
-	testForMapFn() {
+	testForRenderMethod() {
 		return html`
-			<lu:for ${[1,2,3]}>
-				${this.renderItem}
+			<lu:for ${n} of ${[1,2,3]}>
+				${this.renderItem(n)}
 			</lu:for>
 		`
 	}
 
-	testForLocalMapFn() {
+	testForInlineBody() {
 		return html`
-			<lu:for ${[1,2,3]}>${(n: number) => html`
+			<lu:for ${n} of ${[1,2,3]}>
 				${n + this.prop}
-			`}</lu:for>
+			</lu:for>
+		`
+	}
+
+	testForIndex() {
+		return html`
+			<lu:for ${item, index} of ${this.items}>
+				<div .title=${index}>${item.value}: ${index}</div>
+			</lu:for>
+		`
+	}
+
+	testForNestedIf() {
+		return html`
+			<lu:for ${item} of ${this.items}>
+				<lu:if ${item.value > 0}>
+					<lu:for ${value, index} of ${[item.value]}>
+						${index}: ${value}
+					</lu:for>
+				</lu:if>
+			</lu:for>
 		`
 	}
 
@@ -37,25 +57,25 @@ export class TestFor extends Component {
 		let prop = this.prop
 
 		return html`
-			<lu:for ${[1,2,3]}>${(n: number) => html`
+			<lu:for ${n} of ${[1,2,3]}>
 				${n + prop}
-			`}</lu:for>
+			</lu:for>
 		`
 	}
 
 	testForTracking() {
 		return html`
-			<lu:for ${this.items}>${(item: {value: number}) => html`
+			<lu:for ${item} of ${this.items}>
 				${item.value}
-			`}</lu:for>
+			</lu:for>
 		`
 	}
 
 	testForMethodGetTracking() {
 		return html`
-			<lu:for ${this.getItems()}>${(item: {value: number}) => html`
+			<lu:for ${item} of ${this.getItems()}>
 				${item.value}
-			`}</lu:for>
+			</lu:for>
 		`
 	}
 
@@ -63,17 +83,17 @@ export class TestFor extends Component {
 		let items = this.items
 
 		return html`
-			<lu:for ${items}>${(item: {value: number}) => html`
+			<lu:for ${item} of ${items}>
 				${item.value}
-			`}</lu:for>
+			</lu:for>
 		`
 	}
 
 	testReadonlyTracking() {
 		return html`
-			<lu:for ${this.readonlyItems}>${(item: {value: number}) => html`
+			<lu:for ${item} of ${this.readonlyItems}>
 				${item.value}
-			`}</lu:for>
+			</lu:for>
 		`
 	}
 
@@ -81,17 +101,17 @@ export class TestFor extends Component {
 		let items = this.readonlyItems
 
 		return html`
-			<lu:for ${items}>${(item: {value: number}) => html`
+			<lu:for ${item} of ${items}>
 				${item.value}
-			`}</lu:for>
+			</lu:for>
 		`
 	}
 
 	testDeepReadonlyTracking() {
 		return html`
-			<lu:for ${this.deepReadonlyItems}>${(item: {value: number}) => html`
+			<lu:for ${item} of ${this.deepReadonlyItems}>
 				${item.value}
-			`}</lu:for>
+			</lu:for>
 		`
 	}
 
@@ -99,9 +119,9 @@ export class TestFor extends Component {
 		let items = this.deepReadonlyItems
 
 		return html`
-			<lu:for ${items}>${(item: {value: number}) => html`
+			<lu:for ${item} of ${items}>
 				${item.value}
-			`}</lu:for>
+			</lu:for>
 		`
 	}
 }

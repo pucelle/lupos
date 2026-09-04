@@ -92,6 +92,9 @@ export enum TrackingAreaTypeMask {
 
 	/** Be the expression of template span. */
 	TemplateExpression = 2 ** 20,
+
+	/** A template body invoked later by ForBlock, with its own tracking owner. */
+	TemplateLoop = 2 ** 21,
 }
 
 /** Tracking area and node position. */
@@ -440,6 +443,10 @@ export namespace TrackingAreaTree {
 		let area = fromArea
 		let toNode = fromNode
 		let position = fromPosition
+		let loopBoundary: TrackingArea | null = fromArea
+		while (loopBoundary && !(loopBoundary.type & TrackingAreaTypeMask.TemplateLoop)) {
+			loopBoundary = loopBoundary.parent
+		}
 
 		while (true) {
 
@@ -495,6 +502,12 @@ export namespace TrackingAreaTree {
 				area = area.parent!
 			}
 
+			if (loopBoundary?.range && toNode.parent === loopBoundary.range.container) {
+				toNode = loopBoundary.range.startNode
+				area = loopBoundary
+				position = InterpolationPosition.Before
+				break
+			}
 			toNode = toNode.parent
 			position = InterpolationPosition.Before
 		}

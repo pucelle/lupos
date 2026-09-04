@@ -99,6 +99,17 @@ class Example {
 - compile `html` and `svg` template of [lupos.html](https://github.com/pucelle/lupos.html), and `paint` template of [lupos.paint](https://github.com/pucelle/lupos.paint) to vanilla codes, and hoist codes to optimize.
 - compile `css` template of [lupos.html](https://github.com/pucelle/lupos.html) to compress it.
 
+Use `lu:for` to render an inline subtemplate for each item of an iterable:
+
+```ts
+html`<lu:for ${item, index} of ${this.items}>
+	<div .title=${item.name}>${index}: ${item.name}</div>
+</lu:for>`
+```
+
+The index is optional: `<lu:for ${item} of ${this.items}>...</lu:for>`.
+Loop variables are scoped to the body. Loops can nest and contain other control tags such as `lu:if`.
+
 
 
 ## APIs

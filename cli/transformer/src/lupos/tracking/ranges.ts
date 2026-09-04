@@ -83,6 +83,16 @@ export namespace TrackingRanges {
 		return ranges
 	}
 
+	/** Whether a node belongs to an already marked range of the given kind. */
+	export function isInsideRange(node: ts.Node, type: TrackingAreaTypeMask): boolean {
+		for (let range of RangesByStartNode.values()) {
+			if (range.areaType & type && node.pos >= range.startNode.pos && node.end <= range.endNode.end) {
+				return true
+			}
+		}
+		return false
+	}
+
 	/** Get tracking area by range id. */
 	export function setAreaByRangeId(id: number, area: TrackingArea) {
 		return AreaByRangeIdMap.set(id, area)

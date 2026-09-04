@@ -36,7 +36,7 @@ export class SwitchFlowControl extends IfFlowControl {
 
 	protected override outputConditionsExps() {
 		let switchValue = this.switchValueIndex !== null
-			? this.template.values.getRawValue(this.switchValueIndex)
+			? this.template.values.valueNodeAt(this.switchValueIndex)
 			: transformContext.factory.createNull()
 
 		let conditions = this.conditionIndices.map(index => {
@@ -44,7 +44,7 @@ export class SwitchFlowControl extends IfFlowControl {
 				return transformContext.factory.createNull()
 			}
 			else {
-				let rawNode = this.template.values.getRawValue(index)
+				let rawNode = this.template.values.valueNodeAt(index)
 
 				return transformContext.factory.createBinaryExpression(
 					switchValue,

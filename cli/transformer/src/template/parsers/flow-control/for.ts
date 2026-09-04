@@ -1,10 +1,11 @@
-import type ts from 'typescript'
-import {Modifier, transformContext} from '../../../core'
+import ts from 'typescript'
+import {DeclarationScopeTree, Modifier, transformContext} from '../../../core'
 import {FlowControlBase} from './base'
 import {SlotContentType} from '../../../enums'
-import {ObservedStateMask, ObservedChecker, TrackingPatch} from '../../../lupos'
-import {TemplatePartType} from '../../../lupos-ts-module'
+import {ObservedStateMask, ObservedChecker, TrackingPatch, TrackingRanges, TrackingAreaTypeMask} from '../../../lupos'
+import {ForHeader, parseForHeader, TemplatePartType, TemplateSlotPlaceholder} from '../../../lupos-ts-module'
 import {PartType} from '../tree'
+import {TemplateParser} from '../template'
 
 
 export class ForFlowControl extends FlowControlBase {
@@ -28,44 +29,51 @@ export class ForFlowControl extends FlowControlBase {
 	private fnValueIndexMutable: boolean = false
 
 	private fnLatestVariableName: string | null = null
+	
+	/** Parsed for header. */
+	private header: ForHeader | null = null
+
+	/** For content template. */
+	private contentTemplate: TemplateParser | null = null
 
 	override preInit() {
 		this.blockVariableName = this.tree.makeUniqueBlockName()
 		this.slotVariableName = this.slot.makeSlotName()
 		this.templateSlotGetter = this.slot.prepareAsTemplateSlot(SlotContentType.TemplateResultList)
+		this.header = parseForHeader(this.node, this.template.valueNodes, transformContext.helper)
 
-		let ofValueIndex = this.getAttrValueIndex(this.node)
-		let fnValueIndex = this.getUniqueChildValueIndex(this.node)
-		let shouldObserve: boolean | null = false
+		let ofValueIndex = this.header?.iterableIndex ?? null
+		let content = this.node.getContentString().trim()
+		let fnValueIndex = TemplateSlotPlaceholder.getUniqueSlotIndex(content)
 
-		// Force tracking members of array.
-		// When parsing template, all descendant nodes have not been visited by tracking module.
-		if (ofValueIndex !== null) {
-			let ofValueNode = this.template.values.getRawValue(ofValueIndex)
-
-			shouldObserve = ObservedChecker.getElementsObserved(ofValueNode)
-			if (shouldObserve) {
-				TrackingPatch.forceTrackType(ofValueNode, ObservedStateMask.Elements)
-				TrackingPatch.addCustomTracking(ofValueNode, 'get', ofValueNode, '')
-			}
+		// Only a TemplateResult can be returned directly; other content needs a sub-template.
+		if (fnValueIndex !== null && this.template.values.identifyValueContentType(fnValueIndex) !== SlotContentType.TemplateResult) {
+			fnValueIndex = null
 		}
 
-		if (fnValueIndex !== null) {
-			let fnValueNode = this.template.values.getRawValue(fnValueIndex)
+		let contentIndices = TemplateSlotPlaceholder.getSlotIndices(this.node.getContentString()) ?? []
 
-			if (transformContext.helper.isFunctionLike(fnValueNode)) {
+		if (this.header) {
 
-				// Force broadcasting observed from list to item.
-				let firstParameter = fnValueNode.parameters[0]
-				if (firstParameter) {
-					if (shouldObserve) {
-						TrackingPatch.forceTrackType(firstParameter, ObservedStateMask.Elements)
+			// Force tracking members of array.
+			// When parsing template, all descendant nodes have not been visited by tracking module.
+			let iterable = this.template.values.valueNodeAt(this.header.iterableIndex)
+			if (ObservedChecker.getElementsObserved(iterable)) {
+				TrackingPatch.forceTrackType(iterable, ObservedStateMask.Elements)
+				TrackingPatch.addCustomTracking(iterable, 'get', iterable, '')
+
+				let itemName = this.header.names[0].text
+
+				let visit = (node: ts.Node) => {
+					if (transformContext.helper.isVariableIdentifier(node) && node.text === itemName) {
+						TrackingPatch.forceTrackType(node, ObservedStateMask.Elements)
 					}
+					ts.forEachChild(node, visit)
 				}
 
-				// For tracking optimization.
-				TrackingPatch.forceInstantlyRun(fnValueNode)
+				for (let index of contentIndices) visit(this.template.valueNodes[index])
 			}
+
 		}
 
 		this.ofValueIndex = ofValueIndex
@@ -73,29 +81,101 @@ export class ForFlowControl extends FlowControlBase {
 
 		this.ofValueIndexElementsMutable = ofValueIndex !== null
 			&& (
-				!this.template.values.isIndexCanTransfer(ofValueIndex, this.ofAsLazyCallback)
+				!this.template.values.isCanTransferAt(ofValueIndex, this.ofAsLazyCallback)
 
-				// E.g., `<lu:for ${aReadonlyProperty}>`, it must get updated every time.
-				|| this.template.values.isElementsPartMutable(ofValueIndex)
+				// Readonly list properties may still have mutable elements.
+				|| this.template.values.isElementsMutableAt(ofValueIndex)
 		)
 
-		this.fnValueIndexMutable = fnValueIndex !== null
-			&& !this.template.values.isIndexCanTransfer(fnValueIndex, this.fnAsLazyCallback)
+		if (fnValueIndex !== null) {
+			let valueNode = this.template.values.valueNodeAt(fnValueIndex)
+
+			// Treat it as within a callback
+			DeclarationScopeTree.overwriteMaskAsWithinCallback(valueNode)
+			this.fnValueIndexMutable = !this.template.values.isCanTransferAt(fnValueIndex, true)
+		}
 
 		if (this.fnValueIndexMutable) {
 			this.fnLatestVariableName = this.tree.makeUniqueLatestName()
 		}
 
-		// Remove child slot.
-		this.node.empty()
+		// Like conditional sub-templates, a loop body owns its tracking captures.
+		// Its expressions run inside the generated per-item callback.
+		if (contentIndices.length) {
+			TrackingRanges.markRange(this.template.node,
+				this.template.valueNodes[contentIndices[0]].parent,
+				this.template.valueNodes[contentIndices[contentIndices.length - 1]].parent,
+				TrackingAreaTypeMask.ConditionalContent | TrackingAreaTypeMask.TemplateLoop
+			)
+		}
 
-		// `ForBlock` can track data.
+		// `<lu:for ${item} of ${list}><...></>`
+		// Have inner template content.
+		if (fnValueIndex === null) {
+			this.contentTemplate = this.template.separateChildrenAsTemplate(this.node)
+		}
+		else {
+			this.node.empty()
+		}
+
 		this.tree.addPart(this.blockVariableName, this.node, PartType.Block)
 	}
 
-	private outputFnUpdate() {
-		let fnValueIndices = this.fnValueIndex !== null ? [this.fnValueIndex] : null
-		let value = this.template.values.outputValue(null, fnValueIndices, this.tree, this.fnAsLazyCallback, TemplatePartType.FlowControl)
+	private outputOfUpdate(): ts.Expression | ts.Statement {
+		let ofValueIndices = this.ofValueIndex !== null ? [this.ofValueIndex] : null
+		let value = this.template.values.outputValue(null, ofValueIndices, this.tree, this.ofAsLazyCallback, TemplatePartType.FlowControl)
+
+		// Not compare, update directly.
+		// $block_0.updateData(data)
+		return transformContext.factory.createCallExpression(
+			transformContext.factory.createPropertyAccessExpression(
+				transformContext.factory.createIdentifier(this.blockVariableName),
+				transformContext.factory.createIdentifier('updateData')
+			),
+			undefined,
+			[
+				value.joint,
+			]
+		)
+	}
+
+	private outputFnUpdate(): ts.Expression | ts.Statement {
+		let value: {joint: ts.Expression, valueNodes: ts.Expression[]}
+
+		// `<lu:for ${item} of ${list}><...></>`
+		if (this.contentTemplate) {
+			value = {
+				joint: this.contentTemplate.outputReplaced(),
+				valueNodes: [],
+			}
+		}
+
+		// `<lu:for ${item} of ${list}>${renderItem(item)}</>`
+		else {
+			let fnValueIndices = this.fnValueIndex !== null ? [this.fnValueIndex] : null
+			value = this.template.values.outputValue(null, fnValueIndices, this.tree, this.fnAsLazyCallback, TemplatePartType.FlowControl)
+		}
+
+		let factory = transformContext.factory
+
+		// function(item, ?index) {return ...}
+		let forFn = factory.createFunctionExpression(
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			this.header?.names.map(name =>
+				factory.createParameterDeclaration(
+					undefined,
+					undefined,
+					factory.createIdentifier(name.text),
+				)
+			),
+			undefined,
+			factory.createBlock([
+				factory.createReturnStatement(value.joint)
+			], true)
+		)
 
 		// if ($latest_0 !== $values[0]) {
 		//   $block_0.updateRenderFn($values[0])
@@ -113,7 +193,7 @@ export class ForFlowControl extends FlowControlBase {
 							),
 							undefined,
 							[
-								value.joint
+								forFn
 							]
 						)),
 						...this.slot.outputLatestAssignments([this.fnLatestVariableName], value.valueNodes),
@@ -133,28 +213,10 @@ export class ForFlowControl extends FlowControlBase {
 				),
 				undefined,
 				[
-					value.joint,
+					forFn,
 				]
 			)
 		}
-	}
-
-	private outputOfUpdate() {
-		let ofValueIndices = this.ofValueIndex !== null ? [this.ofValueIndex] : null
-		let value = this.template.values.outputValue(null, ofValueIndices, this.tree, this.ofAsLazyCallback, TemplatePartType.FlowControl)
-
-		// Not compare, update directly.
-		// $block_0.updateData(data)
-		return transformContext.factory.createCallExpression(
-			transformContext.factory.createPropertyAccessExpression(
-				transformContext.factory.createIdentifier(this.blockVariableName),
-				transformContext.factory.createIdentifier('updateData')
-			),
-			undefined,
-			[
-				value.joint,
-			]
-		)
 	}
 
 	override outputInit() {

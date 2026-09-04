@@ -1,5 +1,5 @@
 import ts from 'typescript'
-import {Interpolator, MutableMask, Packer, DeclarationScopeTree, Hashing, HashKey, transformContext} from '../../core'
+import {Interpolator, Packer, DeclarationScopeTree, Hashing, HashKey, transformContext} from '../../core'
 import {TreeParser} from './tree'
 import {TemplatePartType} from '../../lupos-ts-module'
 import {SlotContentType} from '../../enums'
@@ -12,50 +12,40 @@ export class TemplateValues {
 
 	private valueIndexHash: Map<HashKey, number> = new Map()
 	private outputNodes: ts.Expression[] = []
-	private indicesMutableMask: Map<number, MutableMask | 0> = new Map()
 	private indicesNonTransferredOutputted: Set<number> = new Set()
 	private transferredValueIndexToLatestName: Map<number, string> = new Map()
 
 	constructor(valueNodes: ts.Expression[]) {
 		this.valueNodes = valueNodes
-		this.checkIndicesMutable()
 	}
 	
-	/** Removes all static values and remap value indices. */
-	private checkIndicesMutable() {
-		for (let i = 0; i < this.valueNodes.length; i++) {
-			let node = this.valueNodes[i]
-			this.indicesMutableMask.set(i, DeclarationScopeTree.checkMutableMask(node))
-		}
-	}
-
 	/** Returns whether the element of the value at specified index are mutable. */
-	isElementsPartMutable(valueIndex: number): boolean {
-		return DeclarationScopeTree.testElementsPartMutable(this.valueNodes[valueIndex])
+	isElementsMutableAt(valueIndex: number): boolean {
+		return DeclarationScopeTree.testElementsMutable(this.valueNodes[valueIndex])
 	}
 
 	/** 
 	 * Returns whether the value at specified index can transfer.
 	 * It's narrower than mutable, some static may can't transfer.
 	 */
-	isIndexCanTransfer(valueIndex: number, asLazyCallback: boolean): boolean {
-		let mask = this.indicesMutableMask.get(valueIndex)!
-		return DeclarationScopeTree.testCanTransfer(mask, asLazyCallback)
+	isCanTransferAt(valueIndex: number, asLazyCallback: boolean): boolean {
+		let node = this.valueNodes[valueIndex]
+		return DeclarationScopeTree.testCanTransfer(node, asLazyCallback)
 	}
 
 	/** Returns whether the value at specified index has been outputted as non-transferred. */
-	isIndexNonTransferredOutputted(valueIndex: number): boolean {
+	isNonTransferredOutputtedAt(valueIndex: number): boolean {
 		return this.indicesNonTransferredOutputted.has(valueIndex)
 	}
 
 	/** Get raw value node at index. */
-	getRawValue(valueIndex: number): ts.Expression {
+	valueNodeAt(valueIndex: number): ts.Expression {
 		return this.valueNodes[valueIndex]
 	}
 
 	/** To identify value content type at specified index. */
 	identifyValueContentType(valueIndex: number): SlotContentType | null {
-		let valueNode = this.getRawValue(valueIndex)
+		let valueNode = this.valueNodeAt(valueIndex)
 		let valueType = valueNode ? transformContext.helper.types.typeOf(valueNode) : null
 		let typeText = valueType ? transformContext.helper.types.getTypeFullText(valueType) : null
 		let slotContentType: number | null = null
@@ -135,7 +125,7 @@ export class TemplateValues {
 		
 		let valueNodes = valueIndices.map(valueIndex => {
 			let rawValueNode = this.valueNodes[valueIndex]
-			let canTransfer = this.isIndexCanTransfer(valueIndex, asLazyCallback)
+			let canTransfer = this.isCanTransferAt(valueIndex, asLazyCallback)
 
 			return this.doOutputValueOfIndex(rawValueNode, valueIndex, tree, canTransfer)
 		})
@@ -267,7 +257,7 @@ export class TemplateValues {
 		}
 
 		
-		let firstRawNode = this.getRawValue(valueIndices[0])
+		let firstRawNode = this.valueNodeAt(valueIndices[0])
 
 		// '' + ... if it's not a string type of value.
 		if (!ts.isStringLiteral(parts[0])
@@ -298,8 +288,7 @@ export class TemplateValues {
 
 	/** Output a single value from a raw node. */
 	outputValueOfIndex(rawNode: ts.Expression, valueIndex: number, tree: TreeParser, asLazyCallback: boolean): ts.Expression {
-		let mutableMask = DeclarationScopeTree.checkMutableMask(rawNode)
-		let canTransfer = DeclarationScopeTree.testCanTransfer(mutableMask, asLazyCallback)
+		let canTransfer = DeclarationScopeTree.testCanTransfer(rawNode, asLazyCallback)
 
 		return this.doOutputValueOfIndex(rawNode, valueIndex, tree, canTransfer)
 	}
