@@ -39,6 +39,38 @@ test('checks switch branches and preserves errors on invalid iterable expression
 	})
 })
 
+test('infers shorthand loop render parameters and checks iterable and callback types', () => {
+	checkMirror([
+		"import {html} from 'lupos.html'",
+		'declare const items: readonly {name: string}[]',
+		'const render = (item: {name: string}, index: number) => html`${item.name}: ${index}`',
+		'export const result = html`<lu:for ${items}>${render}</lu:for>',
+		'<lu:for ${new Set([1])}>${(item, index) => html`${item.toFixed()}: ${index.toFixed()}`}</lu:for>',
+		'<lu:for ${items}>${(item, index) => html`<img .src=${item.name} .width=${index} />`}</lu:for>',
+		'<lu:for ${items}>${(item: number) => html`${item}`}</lu:for>',
+		'<lu:for ${items}>${(item, index: string) => html`${item.name}: ${index}`}</lu:for>',
+		'<lu:for ${items}>${123}</lu:for>',
+		'<lu:for ${123}>${() => html``}</lu:for>`',
+	], errors => {
+		assert.equal(errors.length, 4, JSON.stringify(errors))
+		assert.equal(errors.filter(error => error.code === 2345).length, 3)
+		assert.equal(errors.filter(error => error.code === 2488).length, 1)
+	})
+})
+
+test('checks shorthand renderers inside narrowed loop scopes', () => {
+	checkMirror([
+		"import {html} from 'lupos.html'",
+		'declare const rows: {items: string[] | null}[]',
+		'export const result = html`<lu:for ${row} of ${rows}><lu:if ${row.items}>',
+		'<lu:for ${row.items}>${(item, index) => html`${item.toUpperCase()} ${index.toFixed()} ${item.missing}`}</lu:for>',
+		'</lu:if></lu:for>`',
+	], errors => {
+		assert.equal(errors.length, 1, JSON.stringify(errors))
+		assert.equal(errors[0].text, 'missing')
+	})
+})
+
 test('requires await parameters to be promises in their enclosing control scope', () => {
 	checkMirror([
 		"import {html} from 'lupos.html'",

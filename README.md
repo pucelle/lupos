@@ -108,6 +108,16 @@ html`<lu:for ${item, index} of ${this.items}>
 ```
 
 The index is optional: `<lu:for ${item} of ${this.items}>...</lu:for>`.
+
+Alternatively, supply a render callback that receives the item and its index:
+
+```ts
+html`<lu:for ${this.items}>
+    ${renderWithItemAndIndex}
+</lu:for>`
+```
+
+Inline callbacks infer both parameter types from the iterable. The body must contain only the callback interpolation and optional whitespace.
 Loop variables are scoped to the body. Loops can nest and contain other control tags such as `lu:if`.
 
 

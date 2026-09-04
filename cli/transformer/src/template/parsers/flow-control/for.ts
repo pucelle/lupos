@@ -3,7 +3,7 @@ import {DeclarationScopeTree, Modifier, transformContext} from '../../../core'
 import {FlowControlBase} from './base'
 import {SlotContentType} from '../../../enums'
 import {ObservedStateMask, ObservedChecker, TrackingPatch, TrackingRanges, TrackingAreaTypeMask} from '../../../lupos'
-import {ForHeader, parseForHeader, TemplatePartType, TemplateSlotPlaceholder} from '../../../lupos-ts-module'
+import {ForHeader, parseForHeader, parseForRenderer, TemplatePartType, TemplateSlotPlaceholder} from '../../../lupos-ts-module'
 import {PartType} from '../tree'
 import {TemplateParser} from '../template'
 
@@ -33,6 +33,9 @@ export class ForFlowControl extends FlowControlBase {
 	/** Parsed for header. */
 	private header: ForHeader | null = null
 
+	/** Whether the body supplies a render callback directly. */
+	private hasRenderer: boolean = false
+
 	/** For content template. */
 	private contentTemplate: TemplateParser | null = null
 
@@ -41,6 +44,9 @@ export class ForFlowControl extends FlowControlBase {
 		this.slotVariableName = this.slot.makeSlotName()
 		this.templateSlotGetter = this.slot.prepareAsTemplateSlot(SlotContentType.TemplateResultList)
 		this.header = parseForHeader(this.node, this.template.valueNodes, transformContext.helper)
+		
+		let renderer = parseForRenderer(this.node)
+		this.hasRenderer = renderer !== null
 
 		// Register generated parameters only in the transformer's declaration scopes.
 		if (this.header) {
@@ -52,27 +58,29 @@ export class ForFlowControl extends FlowControlBase {
 			}
 		}
 
-		let ofValueIndex = this.header?.iterableIndex ?? null
+		let ofValueIndex = this.header?.iterableIndex ?? renderer?.iterableIndex ?? null
 		let content = this.node.getContentString().trim()
-		let fnValueIndex = TemplateSlotPlaceholder.getUniqueSlotIndex(content)
+		let fnValueIndex = renderer?.rendererIndex ?? TemplateSlotPlaceholder.getUniqueSlotIndex(content)
 
 		// Only a TemplateResult can be returned directly; other content needs a sub-template.
-		if (fnValueIndex !== null && this.template.values.identifyValueContentType(fnValueIndex) !== SlotContentType.TemplateResult) {
+		if (!renderer && fnValueIndex !== null
+			&& this.template.values.identifyValueContentType(fnValueIndex) !== SlotContentType.TemplateResult
+		) {
 			fnValueIndex = null
 		}
 
 		let contentIndices = TemplateSlotPlaceholder.getSlotIndices(this.node.getContentString()) ?? []
 
-		if (this.header) {
+		if (ofValueIndex !== null) {
 
 			// Force tracking members of array.
 			// When parsing template, all descendant nodes have not been visited by tracking module.
-			let iterable = this.template.values.valueNodeAt(this.header.iterableIndex)
+			let iterable = this.template.values.valueNodeAt(ofValueIndex)
 			if (ObservedChecker.getElementsObserved(iterable)) {
 				TrackingPatch.forceTrackType(iterable, ObservedStateMask.Elements)
 				TrackingPatch.addCustomTracking(iterable, 'get', iterable, '')
 
-				let itemName = this.header.names[0].text
+				let itemName = this.header?.names[0].text
 
 				let visit = (node: ts.Node) => {
 					if (transformContext.helper.isVariableIdentifier(node) && node.text === itemName) {
@@ -100,9 +108,13 @@ export class ForFlowControl extends FlowControlBase {
 		if (fnValueIndex !== null) {
 			let valueNode = this.template.values.valueNodeAt(fnValueIndex)
 
-			// Treat it as within a callback
-			DeclarationScopeTree.overwriteMaskAsWithinCallback(valueNode)
-			this.fnValueIndexMutable = !this.template.values.isCanTransferAt(fnValueIndex, true)
+			// Only inline bodies run inside a generated callback. The shorthand
+			// callback expression itself must be reevaluated when its value changes.
+			if (!this.hasRenderer) {
+				DeclarationScopeTree.overwriteMaskAsWithinCallback(valueNode)
+			}
+
+			this.fnValueIndexMutable = !this.template.values.isCanTransferAt(fnValueIndex, this.fnAsLazyCallback)
 		}
 
 		if (this.fnValueIndexMutable) {
@@ -169,7 +181,7 @@ export class ForFlowControl extends FlowControlBase {
 		let factory = transformContext.factory
 
 		// function(item, ?index) {return ...}
-		let forFn = factory.createFunctionExpression(
+		let forFn = this.hasRenderer ? value.joint : factory.createFunctionExpression(
 			undefined,
 			undefined,
 			undefined,

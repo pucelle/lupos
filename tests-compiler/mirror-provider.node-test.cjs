@@ -122,6 +122,46 @@ test('does not duplicate native TypeScript diagnostics through the mirror', () =
 	}
 })
 
+test('resolves destructured dynamic imports used only as component tags', () => {
+	let directory = fs.mkdtempSync(path.join(repositoryRoot, '.compiler-mirror-dynamic-import-'))
+
+	try {
+		fs.writeFileSync(path.join(directory, 'tsconfig.json'), JSON.stringify({
+			compilerOptions: {module: 'ESNext', moduleResolution: 'Bundler', target: 'ES2024',
+				strict: true, noUnusedLocals: true, skipLibCheck: true, outDir: 'out'},
+			include: ['*.ts'],
+		}))
+		
+		fs.writeFileSync(path.join(directory, 'card.ts'), [
+			"import {Component} from 'lupos.html'",
+			'export class Card extends Component { count = 0 }',
+			'export class Unused extends Component {}',
+		].join('\n'))
+
+		let writeSource = (unused, value) => fs.writeFileSync(path.join(directory, 'src.ts'), [
+			"import {html} from 'lupos.html'",
+			'export async function render() {',
+			`const {Card: LocalCard${unused ? ', Unused' : ''}} = await import('./card')`,
+			`return html\`<div>\${true ? html\`<LocalCard .count=\${${value}} />\` : null}</div>\``,
+			'}',
+		].join('\n'))
+
+		writeSource(true, '"bad"')
+		let invalid = compile(directory)
+		assert.notEqual(invalid.status, 0)
+		assert.match(invalid.output, /'Unused' is declared but its value is never read/)
+		assert.doesNotMatch(invalid.output, /'LocalCard' is declared but its value is never read/)
+		assert.match(invalid.output, /Type 'string' is not assignable to type 'number'/)
+
+		writeSource(false, '1')
+		let valid = compile(directory)
+		assert.equal(valid.status, 0, valid.output)
+	}
+	finally {
+		fs.rmSync(directory, {recursive: true, force: true})
+	}
+})
+
 test('uses mirror symbol anchors for template-only component imports', () => {
 	let projectDirectory = fs.mkdtempSync(path.join(repositoryRoot, '.compiler-mirror-imports-'))
 

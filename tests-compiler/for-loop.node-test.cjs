@@ -38,7 +38,7 @@ test('checks iterable types and permits empty loop bodies', () => {
 	})
 })
 
-test('rejects the old renderer syntax and malformed loop declarations', () => {
+test('rejects missing render callbacks and malformed loop declarations', () => {
 	const directory = fs.mkdtempSync(path.join(repositoryRoot, '.compiler-for-invalid-'))
 	try {
 		fs.writeFileSync(path.join(directory, 'tsconfig.json'), JSON.stringify({compilerOptions: {
@@ -47,7 +47,7 @@ test('rejects the old renderer syntax and malformed loop declarations', () => {
 		}, include: ['src.ts']}))
 		fs.writeFileSync(path.join(directory, 'src.ts'), [
 			"import {html} from 'lupos.html'",
-			'export const old = html`<lu:for ${[1]}>${(item: number) => html`${item}`}</lu:for>`',
+			'export const missingRenderer = html`<lu:for ${[1]}><div></div></lu:for>`',
 			'export const missingOf = html`<lu:for ${item} ${[1]}>${item}</lu:for>`',
 			'export const extra = html`<lu:for ${item, index, extra} of ${[1]}>${item}</lu:for>`',
 			'export const duplicate = html`<lu:for ${item, item} of ${[1]}>${item}</lu:for>`',

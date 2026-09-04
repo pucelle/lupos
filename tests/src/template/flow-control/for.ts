@@ -17,7 +17,35 @@ export class TestFor extends Component {
 		return html`${n + this.prop}`
 	}
 
-	testForRenderMethod() {
+	renderItemWithIndex(n: number, index: number) {
+		return html`${n + index + this.prop}`
+	}
+
+	testForRenderer() {
+		return html`
+			<lu:for ${[1,2,3]}>
+				${this.renderItem}
+			</lu:for>
+		`
+	}
+
+	testForRendererWithParameter() {
+		return html`
+			<lu:for ${[1,2,3]}>
+				${(n) => this.renderItem(n)}
+			</lu:for>
+		`
+	}
+
+	testForRendererWithParameters() {
+		return html`
+			<lu:for ${[1,2,3]}>
+				${(n, index) => this.renderItemWithIndex(n, index)}
+			</lu:for>
+		`
+	}
+
+	testForOfRenderMethod() {
 		return html`
 			<lu:for ${n} of ${[1,2,3]}>
 				${this.renderItem(n)}
@@ -25,7 +53,7 @@ export class TestFor extends Component {
 		`
 	}
 
-	testForInlineBody() {
+	testForOfInlineBody() {
 		return html`
 			<lu:for ${n} of ${[1,2,3]}>
 				${n + this.prop}
@@ -33,7 +61,7 @@ export class TestFor extends Component {
 		`
 	}
 
-	testForIndex() {
+	testForOfIndex() {
 		return html`
 			<lu:for ${item, index} of ${this.items}>
 				<div .title=${index + ''}>${item.value}: ${index}</div>
@@ -41,7 +69,7 @@ export class TestFor extends Component {
 		`
 	}
 
-	testForNestedIf() {
+	testForOfNestedIf() {
 		return html`
 			<lu:for ${item} of ${this.items}>
 				<lu:if ${item.value > 0}>
@@ -53,7 +81,7 @@ export class TestFor extends Component {
 		`
 	}
 
-	testForLocalVariableTransferring() {
+	testForOfLocalVariableTransferring() {
 		let prop = this.prop
 
 		return html`
@@ -63,7 +91,7 @@ export class TestFor extends Component {
 		`
 	}
 
-	testForTracking() {
+	testForOfTracking() {
 		return html`
 			<lu:for ${item} of ${this.items}>
 				${item.value}
@@ -71,7 +99,7 @@ export class TestFor extends Component {
 		`
 	}
 
-	testForMethodGetTracking() {
+	testForOfMethodGetTracking() {
 		return html`
 			<lu:for ${item} of ${this.getItems()}>
 				${item.value}
@@ -79,7 +107,7 @@ export class TestFor extends Component {
 		`
 	}
 
-	testForVariableTracking() {
+	testForOfVariableTracking() {
 		let items = this.items
 
 		return html`
