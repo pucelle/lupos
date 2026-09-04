@@ -2,16 +2,15 @@ import ts from 'typescript'
 import {CompilerDiagnosticModifier, TransformerExtras} from '../../../compiler/out/patch'
 import {helperOfContext, TemplateSlotPlaceholder, setFingerPrintSalt} from '../lupos-ts-module'
 import {TransformSession} from './transform-session'
+import {createTemplateTypeQuery} from '../mirror-provider/template-type-query'
 
 
 /** Mutable state shared by every source file in one transformer invocation. */
 export class TransformContext {
 
-	readonly builderProgram: ts.BuilderProgram
 	readonly program: ts.Program
 	readonly compileToESM: boolean
 	readonly embedSVG: boolean
-	readonly typeChecker: ts.TypeChecker
 	readonly compilerDiagnosticModifier: CompilerDiagnosticModifier
 	readonly factory: ts.NodeFactory
 	readonly transformationContext: ts.TransformationContext
@@ -22,11 +21,11 @@ export class TransformContext {
 		this.factory = context.factory
 		this.compileToESM = extras.compileToESM
 		this.embedSVG = extras.embedSVG
-		this.builderProgram = extras.program
 		this.program = extras.program.getProgram()
-		this.typeChecker = this.program.getTypeChecker()
 		this.compilerDiagnosticModifier = extras.compilerDiagnosticModifier
-		this.helper = helperOfContext(ts, () => this.typeChecker)
+
+		this.helper = helperOfContext(ts, this.program)
+		this.helper.types.setTemplateTypeQuery(createTemplateTypeQuery(this.program))
 	}
 }
 

@@ -256,13 +256,13 @@ const $html_9 = /*#__PURE__*/ new HTMLMaker("<div> </div>");
 });
 /*
 <root>
-    <div :style.prop=${true} />
+    <div :style.title=${'title'} />
 </root>
 */ const $template_13 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $locator = $html_0.make($hydrates);
     let $node_0 = $locator.childAt(0);
     let $binding_0 = new StyleBinding($node_0);
-    $binding_0.updateObject({ prop: true });
+    $binding_0.updateObject({ title: 'title' });
     return {
         el: $locator.el,
         position: new SlotPosition(1, $node_0)

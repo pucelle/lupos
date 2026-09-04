@@ -1,4 +1,4 @@
-import { fade, ClassBinding, Component, RefBinding, TransitionBinding, PartDelegator, CompiledTemplateResult, TemplateMaker, SlotPosition, HTMLMaker } from 'lupos.html';
+import { fade, ClassBinding, Component, TransitionBinding, RefBinding, PartDelegator, CompiledTemplateResult, TemplateMaker, SlotPosition, HTMLMaker } from 'lupos.html';
 import { trackGet, trackSet } from "lupos";
 const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
 /*
@@ -90,7 +90,7 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<div com></div>");
 });
 /*
 <root>
-    <ChildComponent :class="className" :ref.binding=${this.refBinding} />
+    <ChildComponent :class="className" :ref.binding=${this.refBinding1} />
 </root>
 */ const $template_4 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
     let $locator = $html_1.make($hydrates);
@@ -101,8 +101,8 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<div com></div>");
     $binding_1.setRefValue($binding_0);
     $binding_0.updateString("className");
     $binding_1.update(function (refed) {
-        this.refBinding = refed;
-        trackSet(this, "refBinding");
+        this.refBinding1 = refed;
+        trackSet(this, "refBinding1");
     });
     return {
         el: $locator.el,
@@ -192,7 +192,7 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<div com></div>");
 });
 /*
 <root>
-    <ChildComponent ?:transition=${this.shouldTransition, fade()} :ref.binding=${this.refBinding} />
+    <ChildComponent ?:transition=${this.shouldTransition, fade()} :ref.binding=${this.refBinding2} />
 </root>
 */ const $template_9 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
     let $latest_0;
@@ -204,8 +204,8 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<div com></div>");
     });
     let $binding_0 = new RefBinding($node_0, $context, ["binding"]);
     $binding_0.update(function (refed) {
-        this.refBinding = refed;
-        trackSet(this, "refBinding");
+        this.refBinding2 = refed;
+        trackSet(this, "refBinding2");
     });
     return {
         el: $locator.el,
@@ -270,7 +270,8 @@ export class TestRefBinding extends Component {
     refEl;
     refCom;
     refElByType;
-    refBinding;
+    refBinding1;
+    refBinding2;
     testRefEl() {
         return new CompiledTemplateResult($template_0, [], this);
     }

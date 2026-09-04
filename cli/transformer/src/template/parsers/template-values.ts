@@ -45,9 +45,11 @@ export class TemplateValues {
 
 	/** To identify value content type at specified index. */
 	identifyValueContentType(valueIndex: number): SlotContentType | null {
+		let helper = transformContext.helper
 		let valueNode = this.valueNodeAt(valueIndex)
-		let valueType = valueNode ? transformContext.helper.types.typeOf(valueNode) : null
-		let typeText = valueType ? transformContext.helper.types.getTypeFullText(valueType) : null
+		let type = valueNode ? helper.types.getMirroredType(valueNode) : null
+		let checker = valueNode ? helper.types.getMirroredTypeChecker(valueNode) : null
+		let typeText = checker ? helper.types.getTypeFullText(type!, checker) : null
 		let slotContentType: number | null = null
 
 		if (typeText === 'TemplateResult') {
@@ -57,7 +59,7 @@ export class TemplateValues {
 			slotContentType = SlotContentType.TemplateResultList
 		}
 		else if (typeText === 'string' || typeText === 'number'
-			|| valueType && transformContext.helper.types.isNonNullableValueType(valueType)
+			|| type && helper.types.isNonNullableValueType(type)
 		) {
 			slotContentType = SlotContentType.Text
 		}
@@ -261,7 +263,7 @@ export class TemplateValues {
 
 		// '' + ... if it's not a string type of value.
 		if (!ts.isStringLiteral(parts[0])
-			&& !transformContext.helper.types.isStringType(transformContext.helper.types.typeOf(firstRawNode))
+			&& !transformContext.helper.types.isStringType(transformContext.helper.types.getMirroredType(firstRawNode))
 		) {
 			parts.unshift(transformContext.factory.createStringLiteral(''))
 		}

@@ -27,7 +27,7 @@ export class TestProperty extends Component {
 	}
 
 	testElementProperty() {
-		return html`<div .elProp=${1} />`
+		return html`<div .title=${'title'} />`
 	}
 }
 

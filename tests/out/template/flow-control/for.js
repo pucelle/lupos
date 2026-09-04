@@ -68,32 +68,24 @@ const $html_2 = /*#__PURE__*/ new HTMLMaker("<!----><!--b19a8393-->");
         ]
     };
 });
-const $html_3 = /*#__PURE__*/ new HTMLMaker("<!----><!--8f1d3490-->");
 /*
-<root>
-    ${n + this.prop}
-</root>
+<root>${n + this.prop}</root>
 */ const $template_3 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $latest_0;
-    let $locator = $html_3.make($hydrates);
+    let $locator = $html_0.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $node_1 = $locator.getMarker("8f1d3490");
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), null, $locator.getNodes("8f1d3490"));
     return {
         el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {
-                $slot_0.update($values[0]);
+                $node_0.data = $values[0];
                 $latest_0 = $values[0];
             }
-        },
-        parts: [
-            [$slot_0, 1]
-        ]
+        }
     };
 });
-const $html_4 = /*#__PURE__*/ new HTMLMaker("<!----><!--355e9d9c-->");
+const $html_4 = /*#__PURE__*/ new HTMLMaker("<!----><!--8f1d3490-->");
 /*
 <root>
     <lu:for ${item, index} of ${this.items} />
@@ -101,13 +93,14 @@ const $html_4 = /*#__PURE__*/ new HTMLMaker("<!----><!--355e9d9c-->");
 */ const $template_4 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $locator = $html_4.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $node_1 = $locator.getMarker("355e9d9c");
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1, $locator.getNodes("355e9d9c"));
+    let $node_1 = $locator.getMarker("8f1d3490");
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1, $locator.getNodes("8f1d3490"));
     let $block_0 = new ForBlock($slot_0);
     $block_0.updateRenderFn(function (item, index) {
         return new CompiledTemplateResult($template_5, [
-            (trackGet(item, "value"), index),
-            item.value
+            (trackGet(item, "value"), index + ''),
+            item.value,
+            index
         ], this);
     });
     return {
@@ -122,23 +115,16 @@ const $html_4 = /*#__PURE__*/ new HTMLMaker("<!----><!--355e9d9c-->");
         ]
     };
 });
-const $html_5 = /*#__PURE__*/ new HTMLMaker("<div><!--89087358-->: <!--102be637--></div>");
+const $html_5 = /*#__PURE__*/ new HTMLMaker("<div> </div>");
 /*
 <root>
-    <div .title=${index}>
-        ${item.value}
-        :
-        ${index}
-    </div>
+    <div .title=${index + ''}>${item.value}: ${index}</div>
 </root>
 */ const $template_5 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $latest_0, $latest_1, $latest_2;
     let $locator = $html_5.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $node_1 = $locator.getMarker("89087358");
-    let $node_2 = $locator.getMarker("102be637");
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), null, $locator.getNodes("89087358"));
-    let $slot_1 = new TemplateSlot(new SlotPosition(1, $node_2), null, $locator.getNodes("102be637"));
+    let $node_1 = $node_0.firstChild;
     return {
         el: $locator.el,
         position: new SlotPosition(1, $node_0),
@@ -147,22 +133,15 @@ const $html_5 = /*#__PURE__*/ new HTMLMaker("<div><!--89087358-->: <!--102be637-
                 $node_0.title = $values[0];
                 $latest_0 = $values[0];
             }
-            if ($latest_1 !== $values[1]) {
-                $slot_0.update($values[1]);
+            if ($latest_1 !== $values[1] || $latest_2 !== $values[2]) {
+                $node_1.data = "" + $values[1] + ": " + $values[2];
                 $latest_1 = $values[1];
+                $latest_2 = $values[2];
             }
-            if ($latest_2 !== $values[0]) {
-                $slot_1.update($values[0]);
-                $latest_2 = $values[0];
-            }
-        },
-        parts: [
-            [$slot_0, 0],
-            [$slot_1, 0]
-        ]
+        }
     };
 });
-const $html_6 = /*#__PURE__*/ new HTMLMaker("<!----><!--de4594b6-->");
+const $html_6 = /*#__PURE__*/ new HTMLMaker("<!----><!--355e9d9c-->");
 /*
 <root>
     <lu:for ${item} of ${this.items} />
@@ -170,8 +149,8 @@ const $html_6 = /*#__PURE__*/ new HTMLMaker("<!----><!--de4594b6-->");
 */ const $template_6 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $locator = $html_6.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $node_1 = $locator.getMarker("de4594b6");
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1, $locator.getNodes("de4594b6"));
+    let $node_1 = $locator.getMarker("355e9d9c");
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1, $locator.getNodes("355e9d9c"));
     let $block_0 = new ForBlock($slot_0);
     $block_0.updateRenderFn(function (item) {
         return new CompiledTemplateResult($template_7, [
@@ -192,7 +171,7 @@ const $html_6 = /*#__PURE__*/ new HTMLMaker("<!----><!--de4594b6-->");
         ]
     };
 });
-const $html_7 = /*#__PURE__*/ new HTMLMaker("<!----><!--a9ef2eaf-->");
+const $html_7 = /*#__PURE__*/ new HTMLMaker("<!----><!--89087358-->");
 /*
 <root>
     <lu:if ${item.value > 0} />
@@ -200,8 +179,8 @@ const $html_7 = /*#__PURE__*/ new HTMLMaker("<!----><!--a9ef2eaf-->");
 */ const $template_7 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $locator = $html_7.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $node_1 = $locator.getMarker("a9ef2eaf");
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), null, $locator.getNodes("a9ef2eaf"));
+    let $node_1 = $locator.getMarker("89087358");
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), null, $locator.getNodes("89087358"));
     let $block_0 = new IfBlock($slot_0);
     return {
         el: $locator.el,
@@ -214,7 +193,7 @@ const $html_7 = /*#__PURE__*/ new HTMLMaker("<!----><!--a9ef2eaf-->");
         ]
     };
 });
-const $html_8 = /*#__PURE__*/ new HTMLMaker("<!----><!--a26b45c4-->");
+const $html_8 = /*#__PURE__*/ new HTMLMaker("<!----><!--102be637-->");
 /*
 <root>
     <lu:for ${value, index} of ${[item.value]} />
@@ -222,8 +201,8 @@ const $html_8 = /*#__PURE__*/ new HTMLMaker("<!----><!--a26b45c4-->");
 */ const $template_8 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $locator = $html_8.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $node_1 = $locator.getMarker("a26b45c4");
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1, $locator.getNodes("a26b45c4"));
+    let $node_1 = $locator.getMarker("102be637");
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1, $locator.getNodes("102be637"));
     let $block_0 = new ForBlock($slot_0);
     $block_0.updateRenderFn(function (value, index) {
         return new CompiledTemplateResult($template_9, [
@@ -243,41 +222,25 @@ const $html_8 = /*#__PURE__*/ new HTMLMaker("<!----><!--a26b45c4-->");
         ]
     };
 });
-const $html_9 = /*#__PURE__*/ new HTMLMaker("<!----><!--490faa64-->: <!--093286a7-->");
 /*
-<root>
-    ${index}
-    :
-    ${value}
-</root>
+<root>${index}: ${value}</root>
 */ const $template_9 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $latest_0, $latest_1;
-    let $locator = $html_9.make($hydrates);
+    let $locator = $html_0.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $node_1 = $locator.getMarker("490faa64");
-    let $node_2 = $locator.getMarker("093286a7");
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), null, $locator.getNodes("490faa64"));
-    let $slot_1 = new TemplateSlot(new SlotPosition(1, $node_2), null, $locator.getNodes("093286a7"));
     return {
         el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
-            if ($latest_0 !== $values[0]) {
-                $slot_0.update($values[0]);
+            if ($latest_0 !== $values[0] || $latest_1 !== $values[1]) {
+                $node_0.data = "" + $values[0] + ": " + $values[1];
                 $latest_0 = $values[0];
-            }
-            if ($latest_1 !== $values[1]) {
-                $slot_1.update($values[1]);
                 $latest_1 = $values[1];
             }
-        },
-        parts: [
-            [$slot_0, 1],
-            [$slot_1, 1]
-        ]
+        }
     };
 });
-const $html_10 = /*#__PURE__*/ new HTMLMaker("<!----><!--ae9f17c7-->");
+const $html_10 = /*#__PURE__*/ new HTMLMaker("<!----><!--de4594b6-->");
 /*
 <root>
     <lu:for ${n} of ${[1,2,3]} />
@@ -285,8 +248,8 @@ const $html_10 = /*#__PURE__*/ new HTMLMaker("<!----><!--ae9f17c7-->");
 */ const $template_10 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $locator = $html_10.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $node_1 = $locator.getMarker("ae9f17c7");
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1, $locator.getNodes("ae9f17c7"));
+    let $node_1 = $locator.getMarker("de4594b6");
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1, $locator.getNodes("de4594b6"));
     let $block_0 = new ForBlock($slot_0);
     $block_0.updateRenderFn(function (n) {
         return new CompiledTemplateResult($template_11, [
@@ -303,32 +266,24 @@ const $html_10 = /*#__PURE__*/ new HTMLMaker("<!----><!--ae9f17c7-->");
         ]
     };
 });
-const $html_11 = /*#__PURE__*/ new HTMLMaker("<!----><!--4ee39b27-->");
 /*
-<root>
-    ${n + prop}
-</root>
+<root>${n + prop}</root>
 */ const $template_11 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $latest_0;
-    let $locator = $html_11.make($hydrates);
+    let $locator = $html_0.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $node_1 = $locator.getMarker("4ee39b27");
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), null, $locator.getNodes("4ee39b27"));
     return {
         el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {
-                $slot_0.update($values[0]);
+                $node_0.data = $values[0];
                 $latest_0 = $values[0];
             }
-        },
-        parts: [
-            [$slot_0, 1]
-        ]
+        }
     };
 });
-const $html_12 = /*#__PURE__*/ new HTMLMaker("<!----><!--4eacf5ff-->");
+const $html_12 = /*#__PURE__*/ new HTMLMaker("<!----><!--a9ef2eaf-->");
 /*
 <root>
     <lu:for ${item} of ${this.items} />
@@ -336,8 +291,8 @@ const $html_12 = /*#__PURE__*/ new HTMLMaker("<!----><!--4eacf5ff-->");
 */ const $template_12 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $locator = $html_12.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $node_1 = $locator.getMarker("4eacf5ff");
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1, $locator.getNodes("4eacf5ff"));
+    let $node_1 = $locator.getMarker("a9ef2eaf");
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1, $locator.getNodes("a9ef2eaf"));
     let $block_0 = new ForBlock($slot_0);
     $block_0.updateRenderFn(function (item) {
         return new CompiledTemplateResult($template_13, [
@@ -356,32 +311,24 @@ const $html_12 = /*#__PURE__*/ new HTMLMaker("<!----><!--4eacf5ff-->");
         ]
     };
 });
-const $html_13 = /*#__PURE__*/ new HTMLMaker("<!----><!--dc90d5bb-->");
 /*
-<root>
-    ${item.value}
-</root>
+<root>${item.value}</root>
 */ const $template_13 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $latest_0;
-    let $locator = $html_13.make($hydrates);
+    let $locator = $html_0.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $node_1 = $locator.getMarker("dc90d5bb");
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), null, $locator.getNodes("dc90d5bb"));
     return {
         el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {
-                $slot_0.update($values[0]);
+                $node_0.data = $values[0];
                 $latest_0 = $values[0];
             }
-        },
-        parts: [
-            [$slot_0, 1]
-        ]
+        }
     };
 });
-const $html_14 = /*#__PURE__*/ new HTMLMaker("<!----><!--9833c7d6-->");
+const $html_14 = /*#__PURE__*/ new HTMLMaker("<!----><!--a26b45c4-->");
 /*
 <root>
     <lu:for ${item} of ${this.getItems()} />
@@ -389,8 +336,8 @@ const $html_14 = /*#__PURE__*/ new HTMLMaker("<!----><!--9833c7d6-->");
 */ const $template_14 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $locator = $html_14.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $node_1 = $locator.getMarker("9833c7d6");
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1, $locator.getNodes("9833c7d6"));
+    let $node_1 = $locator.getMarker("a26b45c4");
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1, $locator.getNodes("a26b45c4"));
     let $block_0 = new ForBlock($slot_0);
     $block_0.updateRenderFn(function (item) {
         return new CompiledTemplateResult($template_15, [
@@ -409,32 +356,24 @@ const $html_14 = /*#__PURE__*/ new HTMLMaker("<!----><!--9833c7d6-->");
         ]
     };
 });
-const $html_15 = /*#__PURE__*/ new HTMLMaker("<!----><!--8fbaa5e6-->");
 /*
-<root>
-    ${item.value}
-</root>
+<root>${item.value}</root>
 */ const $template_15 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $latest_0;
-    let $locator = $html_15.make($hydrates);
+    let $locator = $html_0.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $node_1 = $locator.getMarker("8fbaa5e6");
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), null, $locator.getNodes("8fbaa5e6"));
     return {
         el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {
-                $slot_0.update($values[0]);
+                $node_0.data = $values[0];
                 $latest_0 = $values[0];
             }
-        },
-        parts: [
-            [$slot_0, 1]
-        ]
+        }
     };
 });
-const $html_16 = /*#__PURE__*/ new HTMLMaker("<!----><!--b5a57327-->");
+const $html_16 = /*#__PURE__*/ new HTMLMaker("<!----><!--490faa64-->");
 /*
 <root>
     <lu:for ${item} of ${items} />
@@ -442,8 +381,8 @@ const $html_16 = /*#__PURE__*/ new HTMLMaker("<!----><!--b5a57327-->");
 */ const $template_16 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $locator = $html_16.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $node_1 = $locator.getMarker("b5a57327");
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1, $locator.getNodes("b5a57327"));
+    let $node_1 = $locator.getMarker("490faa64");
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1, $locator.getNodes("490faa64"));
     let $block_0 = new ForBlock($slot_0);
     $block_0.updateRenderFn(function (item) {
         return new CompiledTemplateResult($template_17, [
@@ -462,32 +401,24 @@ const $html_16 = /*#__PURE__*/ new HTMLMaker("<!----><!--b5a57327-->");
         ]
     };
 });
-const $html_17 = /*#__PURE__*/ new HTMLMaker("<!----><!--1fd0947a-->");
 /*
-<root>
-    ${item.value}
-</root>
+<root>${item.value}</root>
 */ const $template_17 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $latest_0;
-    let $locator = $html_17.make($hydrates);
+    let $locator = $html_0.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $node_1 = $locator.getMarker("1fd0947a");
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), null, $locator.getNodes("1fd0947a"));
     return {
         el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {
-                $slot_0.update($values[0]);
+                $node_0.data = $values[0];
                 $latest_0 = $values[0];
             }
-        },
-        parts: [
-            [$slot_0, 1]
-        ]
+        }
     };
 });
-const $html_18 = /*#__PURE__*/ new HTMLMaker("<!----><!--1a6cc7bc-->");
+const $html_18 = /*#__PURE__*/ new HTMLMaker("<!----><!--093286a7-->");
 /*
 <root>
     <lu:for ${item} of ${this.readonlyItems} />
@@ -495,8 +426,8 @@ const $html_18 = /*#__PURE__*/ new HTMLMaker("<!----><!--1a6cc7bc-->");
 */ const $template_18 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
     let $locator = $html_18.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $node_1 = $locator.getMarker("1a6cc7bc");
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1, $locator.getNodes("1a6cc7bc"));
+    let $node_1 = $locator.getMarker("093286a7");
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1, $locator.getNodes("093286a7"));
     let $block_0 = new ForBlock($slot_0);
     $block_0.updateRenderFn(function (item) {
         return new CompiledTemplateResult($template_19, [
@@ -515,32 +446,24 @@ const $html_18 = /*#__PURE__*/ new HTMLMaker("<!----><!--1a6cc7bc-->");
         ]
     };
 });
-const $html_19 = /*#__PURE__*/ new HTMLMaker("<!----><!--76b759e1-->");
 /*
-<root>
-    ${item.value}
-</root>
+<root>${item.value}</root>
 */ const $template_19 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $latest_0;
-    let $locator = $html_19.make($hydrates);
+    let $locator = $html_0.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $node_1 = $locator.getMarker("76b759e1");
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), null, $locator.getNodes("76b759e1"));
     return {
         el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {
-                $slot_0.update($values[0]);
+                $node_0.data = $values[0];
                 $latest_0 = $values[0];
             }
-        },
-        parts: [
-            [$slot_0, 1]
-        ]
+        }
     };
 });
-const $html_20 = /*#__PURE__*/ new HTMLMaker("<!----><!--55bf6f30-->");
+const $html_20 = /*#__PURE__*/ new HTMLMaker("<!----><!--ae9f17c7-->");
 /*
 <root>
     <lu:for ${item} of ${items} />
@@ -548,8 +471,8 @@ const $html_20 = /*#__PURE__*/ new HTMLMaker("<!----><!--55bf6f30-->");
 */ const $template_20 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $locator = $html_20.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $node_1 = $locator.getMarker("55bf6f30");
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1, $locator.getNodes("55bf6f30"));
+    let $node_1 = $locator.getMarker("ae9f17c7");
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1, $locator.getNodes("ae9f17c7"));
     let $block_0 = new ForBlock($slot_0);
     $block_0.updateRenderFn(function (item) {
         return new CompiledTemplateResult($template_21, [
@@ -568,32 +491,24 @@ const $html_20 = /*#__PURE__*/ new HTMLMaker("<!----><!--55bf6f30-->");
         ]
     };
 });
-const $html_21 = /*#__PURE__*/ new HTMLMaker("<!----><!--8caac47e-->");
 /*
-<root>
-    ${item.value}
-</root>
+<root>${item.value}</root>
 */ const $template_21 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $latest_0;
-    let $locator = $html_21.make($hydrates);
+    let $locator = $html_0.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $node_1 = $locator.getMarker("8caac47e");
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), null, $locator.getNodes("8caac47e"));
     return {
         el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {
-                $slot_0.update($values[0]);
+                $node_0.data = $values[0];
                 $latest_0 = $values[0];
             }
-        },
-        parts: [
-            [$slot_0, 1]
-        ]
+        }
     };
 });
-const $html_22 = /*#__PURE__*/ new HTMLMaker("<!----><!--a43edfea-->");
+const $html_22 = /*#__PURE__*/ new HTMLMaker("<!----><!--4ee39b27-->");
 /*
 <root>
     <lu:for ${item} of ${this.deepReadonlyItems} />
@@ -601,8 +516,8 @@ const $html_22 = /*#__PURE__*/ new HTMLMaker("<!----><!--a43edfea-->");
 */ const $template_22 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
     let $locator = $html_22.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $node_1 = $locator.getMarker("a43edfea");
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1, $locator.getNodes("a43edfea"));
+    let $node_1 = $locator.getMarker("4ee39b27");
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1, $locator.getNodes("4ee39b27"));
     let $block_0 = new ForBlock($slot_0);
     $block_0.updateRenderFn(function (item) {
         return new CompiledTemplateResult($template_23, [
@@ -619,32 +534,24 @@ const $html_22 = /*#__PURE__*/ new HTMLMaker("<!----><!--a43edfea-->");
         ]
     };
 });
-const $html_23 = /*#__PURE__*/ new HTMLMaker("<!----><!--f3a2b731-->");
 /*
-<root>
-    ${item.value}
-</root>
+<root>${item.value}</root>
 */ const $template_23 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $latest_0;
-    let $locator = $html_23.make($hydrates);
+    let $locator = $html_0.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $node_1 = $locator.getMarker("f3a2b731");
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), null, $locator.getNodes("f3a2b731"));
     return {
         el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {
-                $slot_0.update($values[0]);
+                $node_0.data = $values[0];
                 $latest_0 = $values[0];
             }
-        },
-        parts: [
-            [$slot_0, 1]
-        ]
+        }
     };
 });
-const $html_24 = /*#__PURE__*/ new HTMLMaker("<!----><!--20b590b4-->");
+const $html_24 = /*#__PURE__*/ new HTMLMaker("<!----><!--4eacf5ff-->");
 /*
 <root>
     <lu:for ${item} of ${items} />
@@ -652,8 +559,8 @@ const $html_24 = /*#__PURE__*/ new HTMLMaker("<!----><!--20b590b4-->");
 */ const $template_24 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $locator = $html_24.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $node_1 = $locator.getMarker("20b590b4");
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1, $locator.getNodes("20b590b4"));
+    let $node_1 = $locator.getMarker("4eacf5ff");
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1, $locator.getNodes("4eacf5ff"));
     let $block_0 = new ForBlock($slot_0);
     $block_0.updateRenderFn(function (item) {
         return new CompiledTemplateResult($template_25, [
@@ -672,29 +579,21 @@ const $html_24 = /*#__PURE__*/ new HTMLMaker("<!----><!--20b590b4-->");
         ]
     };
 });
-const $html_25 = /*#__PURE__*/ new HTMLMaker("<!----><!--5e0d0d01-->");
 /*
-<root>
-    ${item.value}
-</root>
+<root>${item.value}</root>
 */ const $template_25 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $latest_0;
-    let $locator = $html_25.make($hydrates);
+    let $locator = $html_0.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    let $node_1 = $locator.getMarker("5e0d0d01");
-    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), null, $locator.getNodes("5e0d0d01"));
     return {
         el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
             if ($latest_0 !== $values[0]) {
-                $slot_0.update($values[0]);
+                $node_0.data = $values[0];
                 $latest_0 = $values[0];
             }
-        },
-        parts: [
-            [$slot_0, 1]
-        ]
+        }
     };
 });
 export class TestFor extends Component {

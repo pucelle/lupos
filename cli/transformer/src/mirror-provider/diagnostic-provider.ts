@@ -1,11 +1,10 @@
 import ts from 'typescript'
 import type {CompilerDiagnosticProvider, CompilerDiagnosticProviderFactory} from '../../../compiler/out/patch'
 import {
-	buildTypeScriptMirror,
 	mapMirrorSpanToOriginal,
 	MirrorDocument,
 } from '../lupos-ts-module/ts-mirror'
-import {createMirrorProgram} from './mirror-program'
+import {getMirrorSemanticService, MirrorSemanticService} from './semantic-service'
 
 
 /** Create one cached mirror diagnostic service for a real Program. */
@@ -16,13 +15,11 @@ export const createLuposMirrorDiagnosticProvider: CompilerDiagnosticProviderFact
 /** To mirror original typescript program diagnostics. */
 class LuposMirrorDiagnosticProvider implements CompilerDiagnosticProvider {
 
-	private readonly program: ts.Program
-	private readonly host: ts.CompilerHost
+	private readonly service: MirrorSemanticService
 	private readonly diagnosticsCache: WeakMap<ts.SourceFile, readonly ts.Diagnostic[] | null> = new WeakMap()
 
 	constructor(program: ts.Program, host: ts.CompilerHost) {
-		this.program = program
-		this.host = host
+		this.service = getMirrorSemanticService(program, host)
 	}
 
 	getSemanticDiagnostics(sourceFile: ts.SourceFile, cancellationToken?: ts.CancellationToken): readonly ts.Diagnostic[] | null {
@@ -38,14 +35,13 @@ class LuposMirrorDiagnosticProvider implements CompilerDiagnosticProvider {
 
 		cancellationToken?.throwIfCancellationRequested()
 
-		let document = buildTypeScriptMirror(ts, this.program, sourceFile)
-		if (!document) {
+		let context = this.service.getContext(sourceFile)
+		if (!context) {
 			this.diagnosticsCache.set(sourceFile, null)
 			return null
 		}
 
-		let mirrorProgram = createMirrorProgram(this.program, this.host, document)
-		let mirrorSourceFile = mirrorProgram.getSourceFile(sourceFile.fileName)!
+		let {document, program: mirrorProgram, sourceFile: mirrorSourceFile} = context
 		
 		let diagnostics = mirrorProgram.getSemanticDiagnostics(mirrorSourceFile, cancellationToken)
 			.map(diagnostic => mapDiagnostic(diagnostic, document, sourceFile, mirrorSourceFile))

@@ -1,5 +1,5 @@
 import ts from 'typescript'
-import {createTransformSessionStateKey, defineVisitor, Interpolator, InterpolationContentType, Modifier, transformSession, transformContext} from '../core'
+import {defineVisitor, Interpolator, InterpolationContentType, Modifier, transformSession, transformContext} from '../core'
 import {TemplateParser} from './parsers'
 import {Analyzer, HTMLRoot, TemplateSlotPlaceholder} from '../lupos-ts-module'
 
@@ -38,7 +38,7 @@ function parseHTMLTemplate(node: ts.TaggedTemplateExpression, templateType: 'htm
 	let values = TemplateSlotPlaceholder.extractTemplateValues(node.template)
 	let root = HTMLRoot.fromString(string)
 
-	let analyzer = getAnalyzerOfCurrentSourceFile()
+	let analyzer = Analyzer.ofContext(ts, transformContext.program)
 	let parser = new TemplateParser(templateType, node.template, string, root, values, mapper, analyzer)
 
 	parser.diagnoseRoot()
@@ -49,12 +49,4 @@ function parseHTMLTemplate(node: ts.TaggedTemplateExpression, templateType: 'htm
 		let outputted = parser.outputReplaced()
 		Interpolator.replace(node, InterpolationContentType.Normal, () => outputted)
 	}
-}
-
-
-const AnalyzerStateKey = createTransformSessionStateKey<Analyzer>('TemplateAnalyzer')
-
-/** Get analyzer for current source file. */
-function getAnalyzerOfCurrentSourceFile() {
-	return transformSession.getState(AnalyzerStateKey, () => new Analyzer(transformContext.helper))
 }

@@ -33,7 +33,7 @@ export class TestTemplateValues extends Component {
 	}
 
 	testMutableOfMethod() {
-		return html`<div .prop=${this.getValue}></div>`
+		return html`<div .title=${this.getValue()}></div>`
 	}
 
 	testMutableOfCallingMethod() {

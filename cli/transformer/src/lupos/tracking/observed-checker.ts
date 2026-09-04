@@ -120,7 +120,7 @@ export namespace ObservedChecker {
 		
 		// Take `node = string[0]` as example, exp is `string`.
 		let exp = rawNode.expression
-		let expType = transformContext.typeChecker.getTypeAtLocation(exp)
+		let expType = transformContext.helper.types.typeChecker.getTypeAtLocation(exp)
 
 		// Visiting like string index will not get observed.
 		if (transformContext.helper.types.isValueType(expType)) {
@@ -295,8 +295,8 @@ export namespace ObservedChecker {
 	}
 
 	function getConcatArgumentElementsObserved(rawNode: ts.Expression): boolean | null {
-		let type = transformContext.typeChecker.getTypeAtLocation(rawNode)
-		return transformContext.typeChecker.isArrayType(type)
+		let type = transformContext.helper.types.typeChecker.getTypeAtLocation(rawNode)
+		return transformContext.helper.types.typeChecker.isArrayType(type)
 			? getIteratedElementsObserved(rawNode)
 			: getElementsObserved(rawNode)
 	}
@@ -519,7 +519,7 @@ export namespace ObservedChecker {
 		}
 
 		// `A[]`, check for `A`.
-		else if (transformContext.typeChecker.isArrayType(type)) {
+		else if (transformContext.helper.types.typeChecker.isArrayType(type)) {
 			let parameter = (type as GenericType).typeParameters?.[0]
 			if (parameter) {
 				return getTypeObserved(parameter)
@@ -874,7 +874,7 @@ export namespace ObservedChecker {
 
 		// Take type, e.g., for `node = a.b.c`, exp is `a.b`.
 		let exp = rawNode.expression
-		let expType = transformContext.typeChecker.getTypeAtLocation(exp)
+		let expType = transformContext.helper.types.typeChecker.getTypeAtLocation(exp)
 
 		// Visiting like string index will not get observed.
 		if (transformContext.helper.types.isValueType(expType)) {

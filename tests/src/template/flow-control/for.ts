@@ -36,7 +36,7 @@ export class TestFor extends Component {
 	testForIndex() {
 		return html`
 			<lu:for ${item, index} of ${this.items}>
-				<div .title=${index}>${item.value}: ${index}</div>
+				<div .title=${index + ''}>${item.value}: ${index}</div>
 			</lu:for>
 		`
 	}

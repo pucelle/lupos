@@ -110,12 +110,12 @@ const $html_1 = /*#__PURE__*/ new HTMLMaker("<!----><div com></div><!---->");
 const $html_5 = /*#__PURE__*/ new HTMLMaker("<div></div>");
 /*
 <root>
-    <div .elProp=${1} />
+    <div .title=${'title'} />
 </root>
 */ const $template_5 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $locator = $html_5.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    $node_0.elProp = 1;
+    $node_0.title = 'title';
     return {
         el: $locator.el,
         position: new SlotPosition(1, $node_0)

@@ -48,15 +48,21 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
 });
 /*
 <root>
-    <div .prop=${this.getValue} />
+    <div .title=${this.getValue()} />
 </root>
-*/ const $template_3 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
+*/ const $template_3 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $latest_0;
     let $locator = $html_0.make($hydrates);
     let $node_0 = $locator.childAt(0);
-    $node_0.prop = $context.getValue;
     return {
         el: $locator.el,
-        position: new SlotPosition(1, $node_0)
+        position: new SlotPosition(1, $node_0),
+        update($values) {
+            if ($latest_0 !== $values[0]) {
+                $node_0.title = $values[0];
+                $latest_0 = $values[0];
+            }
+        }
     };
 });
 /*
@@ -296,7 +302,9 @@ export class TestTemplateValues extends Component {
         return new CompiledTemplateResult($template_2, [], this);
     }
     testMutableOfMethod() {
-        return new CompiledTemplateResult($template_3, [], this);
+        return new CompiledTemplateResult($template_3, [
+            this.getValue()
+        ], this);
     }
     testMutableOfCallingMethod() {
         return new CompiledTemplateResult($template_4, [

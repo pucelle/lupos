@@ -42,6 +42,16 @@ export class ForFlowControl extends FlowControlBase {
 		this.templateSlotGetter = this.slot.prepareAsTemplateSlot(SlotContentType.TemplateResultList)
 		this.header = parseForHeader(this.node, this.template.valueNodes, transformContext.helper)
 
+		// Register generated parameters only in the transformer's declaration scopes.
+		if (this.header) {
+			let declaration = this.template.valueNodes[this.header.declarationIndex]
+			let scope = DeclarationScopeTree.findClosest(declaration)
+
+			for (let name of this.header.names) {
+				scope.setLocalVariable(name.text, name)
+			}
+		}
+
 		let ofValueIndex = this.header?.iterableIndex ?? null
 		let content = this.node.getContentString().trim()
 		let fnValueIndex = TemplateSlotPlaceholder.getUniqueSlotIndex(content)

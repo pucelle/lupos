@@ -1,4 +1,4 @@
-import {fade, ClassBinding, Component, html} from 'lupos.html'
+import {fade, ClassBinding, Component, html, TransitionBinding} from 'lupos.html'
 
 
 export class TestRefBinding extends Component {
@@ -6,7 +6,8 @@ export class TestRefBinding extends Component {
 	refEl: any
 	refCom: any
 	refElByType!: HTMLElement
-	refBinding!: ClassBinding
+	refBinding1!: ClassBinding
+	refBinding2!: TransitionBinding
 
 	testRefEl() {
 		return html`<div :ref=${this.refEl} />`
@@ -25,7 +26,7 @@ export class TestRefBinding extends Component {
 	}
 
 	testRefBinding() {
-		return html`<ChildComponent :class="className" :ref.binding=${this.refBinding} />`
+		return html`<ChildComponent :class="className" :ref.binding=${this.refBinding1} />`
 	}
 
 
@@ -59,7 +60,7 @@ export class TestRefBinding extends Component {
 	testRefOptionalBinding() {
 		return html`<ChildComponent
 			?:transition=${this.shouldTransition, fade()}
-			:ref.binding=${this.refBinding}
+			:ref.binding=${this.refBinding2}
 		/>`
 	}
 
