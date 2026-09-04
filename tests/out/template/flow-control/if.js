@@ -238,7 +238,7 @@ const $html_14 = /*#__PURE__*/ new HTMLMaker("<!----><!--e58d5939-->");
 const $html_15 = /*#__PURE__*/ new HTMLMaker("<!----><!--6df6a279-->");
 /*
 <root>
-    ${this.item!.value.map(v => html`<div>${v}</div>`)}
+    ${this.item.value.map(v => html`<div>${v}</div>`)}
 </root>
 */ const $template_15 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
     let $locator = $html_15.make($hydrates);

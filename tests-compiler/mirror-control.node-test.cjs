@@ -39,6 +39,23 @@ test('checks switch branches and preserves errors on invalid iterable expression
 	})
 })
 
+test('requires await parameters to be promises in their enclosing control scope', () => {
+	checkMirror([
+		"import {html} from 'lupos.html'",
+		'declare const pending: Promise<string> | undefined',
+		'declare const thenable: PromiseLike<string>',
+		'export const result = html`<lu:await ${Promise.resolve(1)}></lu:await>',
+		'<lu:await ${123}></lu:await><lu:await ${"text"}></lu:await>',
+		'<lu:await ${null}></lu:await><lu:await ${pending}></lu:await>',
+		'<lu:await ${thenable}></lu:await>',
+		'<lu:if ${pending}><lu:await ${pending}></lu:await></lu:if>',
+		'<lu:for ${promise} of ${[Promise.resolve("ok")]}><lu:await ${promise}></lu:await></lu:for>`',
+	], errors => {
+		assert.equal(errors.length, 5, JSON.stringify(errors))
+		assert.deepEqual(errors.map(error => error.text).sort(), ['123', '"text"', 'null', 'pending', 'thenable'].sort())
+	})
+})
+
 test('shares diagnostic programs with mapped type queries and invalidates per original program', () => {
 	let directory = fs.mkdtempSync(path.join(__dirname, '../.mirror-service-'))
 
@@ -73,7 +90,7 @@ test('shares diagnostic programs with mapped type queries and invalidates per or
 		assert.equal(getProgramAnalysis(ts, program).getAnalyzer(source), analyzer)
 		assert.equal(analyzer.helper, analysis.helper)
 
-		analysis.helper.types.getTemplateValueInfo(source.statements[1].declarationList.declarations[0].name)
+		analysis.helper.types.getMirroredType(source.statements[1].declarationList.declarations[0].name)
 		assert.equal(queries, 1)
 		let provider = createLuposMirrorDiagnosticProvider(program, host)
 		let diagnosticCalls = 0
