@@ -12,7 +12,8 @@ export interface CompilerDiagnosticProvider {
 
 export type CompilerDiagnosticProviderFactory = (
 	program: ts.Program,
-	host: ts.CompilerHost
+	host: ts.CompilerHost,
+	previousProgram?: ts.Program
 ) => CompilerDiagnosticProvider
 
 /** Extra parameter for compiler transformer. */
@@ -40,13 +41,17 @@ export function patchHost(
 	diagnosticProviderFactory?: CompilerDiagnosticProviderFactory
 ) {
 	let originalHostCreateProgram = host.createProgram.bind(host)
+	let programs = new WeakMap<ts.EmitAndSemanticDiagnosticsBuilderProgram, ts.Program>()
 
 	// Note program may update here.
 	host.createProgram = (rootNames: readonly string[] | undefined, options, compilerHost, oldProgram) => {
+		let previousProgram = oldProgram ? programs.get(oldProgram) : undefined
 		let program = originalHostCreateProgram(rootNames, options, compilerHost, oldProgram)
+		let realProgram = program.getProgram()
+		programs.set(program, realProgram)
 
 		let diagnosticProvider = compilerHost
-			? diagnosticProviderFactory?.(program.getProgram(), compilerHost)
+			? diagnosticProviderFactory?.(realProgram, compilerHost, previousProgram)
 			: undefined
 
 		patchProgram(program, extended, compileToESM, embedSVG, diagModifier, diagnosticProvider)

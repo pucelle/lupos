@@ -10,7 +10,8 @@ export type MirrorDocumentProvider = (sourceFile: ts.SourceFile) => MirrorDocume
 export function createMirrorProgram(
 	realProgram: ts.Program,
 	realHost: ts.CompilerHost,
-	documents: MirrorDocument | Iterable<MirrorDocument> | MirrorDocumentProvider
+	documents: MirrorDocument | Iterable<MirrorDocument> | MirrorDocumentProvider,
+	oldProgram?: ts.Program
 ): ts.Program {
 	let options = realProgram.getCompilerOptions()
 	let provider = typeof documents === 'function' ? documents : null
@@ -49,6 +50,11 @@ export function createMirrorProgram(
 		getSourceFile(fileName, languageVersion, onError, shouldCreateNewSourceFile) {
 			let document = getDocument(fileName)
 			if (document) {
+				let oldSourceFile = oldProgram?.getSourceFile(fileName)
+				if (!shouldCreateNewSourceFile && oldSourceFile?.text === document.mirrorText) {
+					return oldSourceFile
+				}
+
 				return ts.createSourceFile(fileName, document.mirrorText, languageVersion, true)
 			}
 
@@ -77,6 +83,7 @@ export function createMirrorProgram(
 		rootNames: realProgram.getRootFileNames(),
 		options,
 		host,
+		oldProgram,
 		projectReferences: realProgram.getProjectReferences(),
 	})
 }

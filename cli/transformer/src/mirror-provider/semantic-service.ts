@@ -20,16 +20,25 @@ export interface MappedSemanticNode {
 }
 
 
-/** Services expire with the original program, including incremental rebuilds. */
+/** Services are keyed by original Program revision. */
 const Services = new WeakMap<ts.Program, MirrorSemanticService>()
 
 
 /** Get the program-wide service shared by diagnostics and transformation. */
-export function getMirrorSemanticService(program: ts.Program, host?: ts.CompilerHost): MirrorSemanticService {
+export function getMirrorSemanticService(
+	program: ts.Program,
+	host?: ts.CompilerHost,
+	previousProgram?: ts.Program
+): MirrorSemanticService {
 	let service = Services.get(program)
 
 	if (!service) {
-		service = new MirrorSemanticService(program, host ?? ts.createCompilerHost(program.getCompilerOptions()))
+		let previousService = previousProgram ? Services.get(previousProgram) : undefined
+		service = new MirrorSemanticService(
+			program,
+			host ?? ts.createCompilerHost(program.getCompilerOptions()),
+			previousService
+		)
 		Services.set(program, service)
 	}
 
@@ -42,14 +51,18 @@ export class MirrorSemanticService {
 
 	/** All contexts share one mirror program for this original program revision. */
 	private contexts = new WeakMap<ts.SourceFile, MirrorSemanticContext | null>()
+	private documents = new WeakMap<ts.SourceFile, MirrorDocument | null>()
 	private initialized: boolean = false
+	private mirrorProgram: ts.Program | null = null
 	private originalChecker: ts.TypeChecker | null = null
 	private program: ts.Program
 	private host: ts.CompilerHost
+	private previousService: MirrorSemanticService | null
 
-	constructor(program: ts.Program, host: ts.CompilerHost) {
+	constructor(program: ts.Program, host: ts.CompilerHost, previousService?: MirrorSemanticService) {
 		this.program = program
 		this.host = host
+		this.previousService = previousService ?? null
 	}
 
 	/** Get the same mirror context for both diagnostics and mapped queries. */
@@ -63,24 +76,34 @@ export class MirrorSemanticService {
 
 	/** Create the shared Program and build mirrors as its host requests sources. */
 	private initialize() {
-		let documents = new Map<ts.SourceFile, MirrorDocument>()
+		let oldMirrorProgram = this.previousService?.initialized
+			? this.previousService.mirrorProgram ?? undefined
+			: undefined
+
 		let program = createMirrorProgram(this.program, this.host, source => {
-			if (source.isDeclarationFile) {
-				return null
+			let previousDocument = this.getPreviousDocument(source)
+			if (previousDocument !== undefined) {
+				this.documents.set(source, previousDocument)
+				return previousDocument
 			}
 
-			let document = buildTypeScriptMirror(ts, this.program, source)
-			if (document) {
-				documents.set(source, document)
-			}
+			let document = source.isDeclarationFile
+				? null
+				: buildTypeScriptMirror(ts, this.program, source)
 
+			this.documents.set(source, document)
 			return document
-		})
+		}, oldMirrorProgram)
 		
 		let checker = program.getTypeChecker()
 
 		for (let source of this.program.getSourceFiles()) {
-			let document = documents.get(source)
+			let document = this.documents.has(source)
+				? this.documents.get(source)!
+				: this.getPreviousDocument(source) ?? null
+
+			this.documents.set(source, document)
+
 			if (document) {
 				let sourceFile = program.getSourceFile(source.fileName)!
 				this.contexts.set(source, {document, program, sourceFile, checker, nodes: null})
@@ -90,7 +113,27 @@ export class MirrorSemanticService {
 			}
 		}
 		
+		this.mirrorProgram = program
+		this.previousService = null
 		this.initialized = true
+	}
+
+	/** Get a document cached for the same unchanged source in the previous revision. */
+	private getPreviousDocument(source: ts.SourceFile): MirrorDocument | null | undefined {
+		let previous = this.previousService
+		if (!previous?.initialized) {
+			return undefined
+		}
+
+		let previousSource = previous.program.getSourceFile(source.fileName)
+		if (!previousSource
+			|| previousSource.text !== source.text
+			|| !previous.documents.has(previousSource)
+		) {
+			return undefined
+		}
+
+		return previous.documents.get(previousSource)!
 	}
 
 	/** Resolve a complete node span; ordinary nodes retain their original checker. */

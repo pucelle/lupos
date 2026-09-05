@@ -196,3 +196,99 @@ test('initializes a program without mirrors only once', () => {
 		fs.rmSync(directory, {recursive: true, force: true})
 	}
 })
+
+
+test('reuses unchanged mirrors across watch program revisions', () => {
+	let directory = fs.mkdtempSync(path.join(__dirname, '../.mirror-watch-service-'))
+
+	try {
+		let firstName = path.join(directory, 'first.ts')
+		let secondName = path.join(directory, 'second.ts')
+		let addedName = path.join(directory, 'added.ts')
+		let template = value => `import {html} from 'lupos.html'; export const view = html\`<img .width=\${${value}} />\``
+
+		fs.writeFileSync(firstName, template('"bad"'))
+		fs.writeFileSync(secondName, template('"bad"'))
+
+		let options = {target: ts.ScriptTarget.ES2024, module: ts.ModuleKind.ESNext,
+			moduleResolution: ts.ModuleResolutionKind.Bundler, strict: true, skipLibCheck: true}
+		let baseHost = ts.createCompilerHost(options)
+		let sourceCache = new Map()
+		let host = {
+			...baseHost,
+
+			getSourceFile(fileName, languageVersion, onError, shouldCreateNewSourceFile) {
+				let text = baseHost.readFile(fileName)
+				if (text === undefined) {
+					onError?.(`Cannot read ${fileName}`)
+					return undefined
+				}
+
+				let canonicalName = baseHost.getCanonicalFileName(ts.sys.resolvePath(fileName))
+				let cached = sourceCache.get(canonicalName)
+				if (!shouldCreateNewSourceFile && cached?.text === text) {
+					return cached.source
+				}
+
+				let source = ts.createSourceFile(fileName, text, languageVersion, true)
+				sourceCache.set(canonicalName, {text, source})
+				return source
+			},
+		}
+
+		let firstProgram = ts.createProgram([firstName, secondName], options, host)
+		let firstSource = firstProgram.getSourceFile(firstName)
+		let secondSource = firstProgram.getSourceFile(secondName)
+		let firstService = getMirrorSemanticService(firstProgram, host)
+		let firstContext = firstService.getContext(firstSource)
+		let secondContext = firstService.getContext(secondSource)
+
+		fs.writeFileSync(firstName, template('1'))
+		sourceCache.clear()
+
+		let nextProgram = ts.createProgram({
+			rootNames: [firstName, secondName],
+			options,
+			host,
+			oldProgram: firstProgram,
+		})
+		let nextFirstSource = nextProgram.getSourceFile(firstName)
+		let nextSecondSource = nextProgram.getSourceFile(secondName)
+		let nextService = getMirrorSemanticService(nextProgram, host, firstProgram)
+		let nextFirstContext = nextService.getContext(nextFirstSource)
+		let nextSecondContext = nextService.getContext(nextSecondSource)
+
+		assert.notEqual(nextFirstSource, firstSource)
+		assert.notEqual(nextSecondSource, secondSource)
+		assert.notEqual(nextFirstContext.document, firstContext.document)
+		assert.equal(nextSecondContext.document, secondContext.document)
+		assert.notEqual(nextFirstContext.sourceFile, firstContext.sourceFile)
+		assert.equal(nextSecondContext.sourceFile, secondContext.sourceFile)
+
+		fs.writeFileSync(addedName, template('2'))
+		sourceCache.clear()
+
+		let addedProgram = ts.createProgram({
+			rootNames: [firstName, secondName, addedName],
+			options,
+			host,
+			oldProgram: nextProgram,
+		})
+		let addedFirstSource = addedProgram.getSourceFile(firstName)
+		let addedSecondSource = addedProgram.getSourceFile(secondName)
+		let addedSource = addedProgram.getSourceFile(addedName)
+		let addedService = getMirrorSemanticService(addedProgram, host, nextProgram)
+		let addedFirstContext = addedService.getContext(addedFirstSource)
+		let addedSecondContext = addedService.getContext(addedSecondSource)
+		let addedContext = addedService.getContext(addedSource)
+
+		assert.notEqual(addedFirstSource, nextFirstSource)
+		assert.notEqual(addedSecondSource, nextSecondSource)
+		assert.equal(addedFirstContext.document, nextFirstContext.document)
+		assert.equal(addedSecondContext.document, nextSecondContext.document)
+		assert.ok(addedContext)
+	}
+	finally {
+		fs.rmSync(directory, {recursive: true, force: true})
+	}
+})

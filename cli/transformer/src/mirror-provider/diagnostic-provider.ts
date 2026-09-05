@@ -8,8 +8,8 @@ import {getMirrorSemanticService, MirrorSemanticService} from './semantic-servic
 
 
 /** Create one cached mirror diagnostic service for a real Program. */
-export const createLuposMirrorDiagnosticProvider: CompilerDiagnosticProviderFactory = (program, host) => {
-	return new LuposMirrorDiagnosticProvider(program, host)
+export const createLuposMirrorDiagnosticProvider: CompilerDiagnosticProviderFactory = (program, host, previousProgram) => {
+	return new LuposMirrorDiagnosticProvider(program, host, previousProgram)
 }
 
 /** To mirror original typescript program diagnostics. */
@@ -18,8 +18,8 @@ class LuposMirrorDiagnosticProvider implements CompilerDiagnosticProvider {
 	private readonly service: MirrorSemanticService
 	private readonly diagnosticsCache: WeakMap<ts.SourceFile, readonly ts.Diagnostic[] | null> = new WeakMap()
 
-	constructor(program: ts.Program, host: ts.CompilerHost) {
-		this.service = getMirrorSemanticService(program, host)
+	constructor(program: ts.Program, host: ts.CompilerHost, previousProgram?: ts.Program) {
+		this.service = getMirrorSemanticService(program, host, previousProgram)
 	}
 
 	getSemanticDiagnostics(sourceFile: ts.SourceFile, cancellationToken?: ts.CancellationToken): readonly ts.Diagnostic[] | null {
