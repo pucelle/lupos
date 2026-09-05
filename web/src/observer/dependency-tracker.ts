@@ -286,7 +286,10 @@ function debug_on_track_set(obj: object, properties: PropertyKey[]) {
 		console.warn(`'trackSet' source object must exist`, obj)
 	}
 
-	debug_circular_tracking(obj, properties)
+	// Get old and modify, and later set is very common.
+	// Comment it because it brings many warnings.
+	//debug_circular_tracking(obj, properties)
+
 	debug_infinite_tracking(obj, properties)
 }
 
@@ -312,31 +315,31 @@ function debug_tracking_count(tracker: DependencyTracker) {
  *   set same property
  * `
  */
-function debug_circular_tracking(obj: object, properties: PropertyKey[]) {
-	if (!currentTracker) {
-		return
-	}
+// function debug_circular_tracking(obj: object, properties: PropertyKey[]) {
+// 	if (!currentTracker) {
+// 		return
+// 	}
 
-	for (let prop of properties) {
-		if (prop === '') {
-			if (currentTracker.dependencies.hasKey(obj)) {
-				console.warn(`Getting any property and setting property '' in one tracking loop`, obj)
-			}
-		}
-		else {
-			if (currentTracker.dependencies.has(obj, prop)) {
-				console.warn(`Getting and setting property '${prop as string}' in one tracking loop`, obj)
-			}
-		}	
-	}
+// 	for (let prop of properties) {
+// 		if (prop === '') {
+// 			if (currentTracker.dependencies.hasKey(obj)) {
+// 				console.warn(`Getting any property and setting property '' in one tracking loop`, obj)
+// 			}
+// 		}
+// 		else {
+// 			if (currentTracker.dependencies.has(obj, prop)) {
+// 				console.warn(`Getting and setting property '${prop as string}' in one tracking loop`, obj)
+// 			}
+// 		}	
+// 	}
 
-	// Should also calls elements updatable, low frequency.
-	if (!properties.includes('')) {
-		if (currentTracker.dependencies.has(obj, '')) {
-			console.warn(`Getting property '' and setting any property in one tracking loop`, obj)
-		}
-	}
-}
+// 	// Should also calls elements updatable, low frequency.
+// 	if (!properties.includes('')) {
+// 		if (currentTracker.dependencies.has(obj, '')) {
+// 			console.warn(`Getting property '' and setting any property in one tracking loop`, obj)
+// 		}
+// 	}
+// }
 
 /** 
  * Call it to debug after each time update completed.

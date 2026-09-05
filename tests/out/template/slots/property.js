@@ -1,5 +1,5 @@
 import { Component, TemplateSlot, SlotPosition, CompiledTemplateResult, TemplateMaker, HTMLMaker, DynamicComponentBlock } from 'lupos.html';
-import { trackGet } from "lupos";
+import { trackGet, trackSet } from "lupos";
 const $html_0 = /*#__PURE__*/ new HTMLMaker("<div com></div>");
 /*
 <root>
@@ -121,6 +121,26 @@ const $html_5 = /*#__PURE__*/ new HTMLMaker("<div></div>");
         position: new SlotPosition(1, $node_0)
     };
 });
+/*
+<root>
+    <Com1 .templateResult=${this.templateResult} .templateResults=${this.templateResults} />
+</root>
+*/ const $template_6 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $locator = $html_0.make($hydrates);
+    let $node_0 = $locator.childAt(0);
+    let $com_0 = new Com1($node_0);
+    return {
+        el: $locator.el,
+        position: new SlotPosition(1, $node_0),
+        update($values) {
+            $com_0.templateResult = $values[0], trackSet($com_0, "templateResult");
+            $com_0.templateResults = $values[1], trackSet($com_0, "templateResults");
+        },
+        parts: [
+            [$com_0, 1]
+        ]
+    };
+});
 export class TestProperty extends Component {
     UnionedCom = Com1;
     ConstructedCom = Com1;
@@ -148,9 +168,20 @@ export class TestProperty extends Component {
     testElementProperty() {
         return new CompiledTemplateResult($template_5, [], this);
     }
+    templateResult;
+    templateResults;
+    testAlwaysChangeableComponentProperty() {
+        trackGet(this, "templateResult", "templateResults");
+        return new CompiledTemplateResult($template_6, [
+            this.templateResult,
+            this.templateResults
+        ], this);
+    }
 }
 class Com1 extends Component {
     comProp = 1;
+    templateResult;
+    templateResults;
 }
 class Com2 extends Component {
     comProp = 1;

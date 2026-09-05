@@ -1,4 +1,5 @@
 import {Component, html, Binding, Part} from 'lupos.html'
+import type {TemplateResult} from 'lupos.html'
 
 
 export class TestCustomBinding extends Component {
@@ -9,6 +10,13 @@ export class TestCustomBinding extends Component {
 
 	testPartialCustom() {
 		return html`<div ?:custom=${true, 1} />`
+	}
+
+	changeable: boolean = true
+	templateResult!: TemplateResult
+
+	testAlwaysChangeableParameter() {
+		return html`<div :custom=${this.changeable, this.templateResult} />`
 	}
 }
 
@@ -23,5 +31,5 @@ class custom implements Part, Binding {
 		
 	}
 
-	update(_value: any) {}
+	update(_value: any, _result?: TemplateResult) {}
 }

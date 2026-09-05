@@ -132,6 +132,10 @@ export abstract class SlotParserBase {
 			return null
 		}
 
+		if (this.valueIndices.some(index => this.template.values.isAlwaysChangeableAt(index))) {
+			return null
+		}
+
 		let hashes: Set<HashKey> = new Set()
 
 		let names = this.valueIndices.map(valueIndex => {
@@ -153,7 +157,11 @@ export abstract class SlotParserBase {
 	}
 
 	/** Get a group of latest names by an expression list. */
-	makeCustomGroupOfLatestNames(exps: ts.Expression[]): (string | null)[] {
+	makeCustomGroupOfLatestNames(exps: ts.Expression[]): (string | null)[] | null {
+		if (exps.some(exp => this.template.values.isAlwaysChangeable(exp))) {
+			return null
+		}
+
 		let hashes: Set<HashKey> = new Set()
 
 		let names = exps.map((exp) => {

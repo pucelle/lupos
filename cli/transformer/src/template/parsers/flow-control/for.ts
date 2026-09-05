@@ -122,10 +122,10 @@ export class ForFlowControl extends FlowControlBase {
 
 		if (fnValueIndex !== null) {
 			this.fnValueIndexMutable = !this.template.values.isTransferableAt(fnValueIndex, this.fnMutableConfig!)
-		}
 
-		if (this.fnValueIndexMutable) {
-			this.fnLatestVariableName = this.tree.makeUniqueLatestName()
+			if (this.fnValueIndexMutable) {
+				this.fnLatestVariableName = this.tree.makeUniqueLatestName()
+			}
 		}
 
 		// Like conditional sub-templates, a loop body owns its tracking captures.

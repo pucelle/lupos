@@ -1,4 +1,5 @@
 import {Component, html} from 'lupos.html'
+import type {TemplateResult} from 'lupos.html'
 
 
 export class TestProperty extends Component {
@@ -29,11 +30,23 @@ export class TestProperty extends Component {
 	testElementProperty() {
 		return html`<div .title=${'title'} />`
 	}
+
+	templateResult!: TemplateResult
+	templateResults!: TemplateResult[]
+
+	testAlwaysChangeableComponentProperty() {
+		return html`<Com1
+			.templateResult=${this.templateResult}
+			.templateResults=${this.templateResults}
+		/>`
+	}
 }
 
 
 class Com1 extends Component {
 	comProp: number = 1
+	templateResult!: TemplateResult
+	templateResults!: TemplateResult[]
 }
 
 class Com2 extends Component {

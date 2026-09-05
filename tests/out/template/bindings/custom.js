@@ -1,4 +1,5 @@
 import { Component, PartDelegator, CompiledTemplateResult, TemplateMaker, SlotPosition, HTMLMaker } from 'lupos.html';
+import { trackGet } from "lupos";
 const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
 /*
 <root>
@@ -34,6 +35,25 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
         ]
     };
 });
+/*
+<root>
+    <div :custom=${this.changeable, this.templateResult} />
+</root>
+*/ const $template_2 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
+    let $locator = $html_0.make($hydrates);
+    let $node_0 = $locator.childAt(0);
+    let $binding_0 = new custom($node_0, $context, []);
+    return {
+        el: $locator.el,
+        position: new SlotPosition(1, $node_0),
+        update($values) {
+            $binding_0.update($values[0], $values[1]);
+        },
+        parts: [
+            [$binding_0, 1]
+        ]
+    };
+});
 export class TestCustomBinding extends Component {
     testCustom() {
         return new CompiledTemplateResult($template_0, [], this);
@@ -41,11 +61,19 @@ export class TestCustomBinding extends Component {
     testPartialCustom() {
         return new CompiledTemplateResult($template_1, [], this);
     }
+    changeable = true;
+    templateResult;
+    testAlwaysChangeableParameter() {
+        trackGet(this, "changeable", "templateResult");
+        return new CompiledTemplateResult($template_2, [
+            this.changeable, this.templateResult
+        ], this);
+    }
 }
 class custom {
     afterConnectCallback() {
     }
     beforeDisconnectCallback() {
     }
-    update(_value) { }
+    update(_value, _result) { }
 }

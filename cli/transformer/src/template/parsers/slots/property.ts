@@ -67,11 +67,6 @@ export class PropertySlotParser extends SlotParserBase {
 		let target: ts.Identifier
 		let comVariableName = this.getRefedComponentName()!
 
-		// trackSet
-		if (this.targetType === 'component' && this.latestVariableNames) {
-			Modifier.addImport('trackSet', 'lupos')
-		}
-
 		// $com_0
 		if (this.targetType === 'component') {
 			target = transformContext.factory.createIdentifier(comVariableName)
@@ -84,9 +79,14 @@ export class PropertySlotParser extends SlotParserBase {
 
 		// $values[0]
 		let value = this.outputValue()
+		let shouldTrackSet = this.targetType === 'component' && this.shouldUpdateDynamically()
+
+		if (shouldTrackSet) {
+			Modifier.addImport('trackSet', 'lupos')
+		}
 
 		// trackSet($com_0, property)
-		let setTracking = this.targetType === 'component' && this.latestVariableNames
+		let setTracking = shouldTrackSet
 			? [transformContext.factory.createCallExpression(
 				transformContext.factory.createIdentifier("trackSet"),
 				undefined,
@@ -125,7 +125,7 @@ export class PropertySlotParser extends SlotParserBase {
 
 		// target[propertyName] = $values[0]
 		else {
-			return transformContext.factory.createBinaryExpression(
+			let assignment = transformContext.factory.createBinaryExpression(
 				transformContext.factory.createPropertyAccessExpression(
 					target,
 					transformContext.factory.createIdentifier(this.name)
@@ -133,6 +133,10 @@ export class PropertySlotParser extends SlotParserBase {
 				transformContext.factory.createToken(ts.SyntaxKind.EqualsToken),
 				value.joint
 			)
+
+			return setTracking.length > 0
+				? Packer.bundleBinaryExpressions([assignment, ...setTracking], ts.SyntaxKind.CommaToken)
+				: assignment
 		}
 	}
 

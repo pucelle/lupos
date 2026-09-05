@@ -46,10 +46,27 @@ export class TemplateValues {
 
 	/** To identify value content type at specified index. */
 	identifyValueContentType(valueIndex: number): SlotContentType | null {
-		let helper = transformContext.helper
 		let valueNode = this.valueNodeAt(valueIndex)
-		let type = valueNode ? helper.types.getMirroredType(valueNode) : null
-		let checker = valueNode ? helper.types.getMirroredTypeChecker(valueNode) : null
+		return this.identifyContentType(valueNode)
+	}
+
+	/** Whether the value should trigger an update without an identity comparison. */
+	isAlwaysChangeableAt(valueIndex: number): boolean {
+		return this.isAlwaysChangeable(this.valueNodeAt(valueIndex))
+	}
+
+	/** Whether an expression should trigger an update without an identity comparison. */
+	isAlwaysChangeable(valueNode: ts.Expression): boolean {
+		let contentType = this.identifyContentType(valueNode)
+		return contentType === SlotContentType.TemplateResult
+			|| contentType === SlotContentType.TemplateResultList
+	}
+
+	/** Identify the content type represented by an expression. */
+	private identifyContentType(valueNode: ts.Expression): SlotContentType | null {
+		let helper = transformContext.helper
+		let type = helper.types.getMirroredType(valueNode)
+		let checker = helper.types.getMirroredTypeChecker(valueNode)
 		let typeText = checker ? helper.types.getTypeFullText(type!, checker) : null
 		let slotContentType: number | null = null
 

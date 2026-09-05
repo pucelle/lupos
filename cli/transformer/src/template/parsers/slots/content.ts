@@ -21,12 +21,8 @@ export class ContentSlotParser extends SlotParserBase {
 
 		if (this.isAnyValueCantTransfer()) {
 
-			// Assume for `TemplateResult` or `TemplateResult[]`, it regenerates every time.
-			// And for node, slot itself will compare value.
-			if (slotContentType !== SlotContentType.TemplateResult
-				&& slotContentType !== SlotContentType.TemplateResultList
-				&& slotContentType !== SlotContentType.Node
-			) {
+			// For node, slot itself will compare value.
+			if (slotContentType !== SlotContentType.Node) {
 				this.latestVariableNames = this.makeGroupOfLatestNames()
 			}
 		}
