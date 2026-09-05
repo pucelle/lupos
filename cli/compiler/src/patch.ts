@@ -32,8 +32,7 @@ export interface TransformerExtras {
 
 /** Patch program host and bundle with extended transformer. */
 export function patchHost(
-	host: ts.SolutionBuilderHostBase<ts.EmitAndSemanticDiagnosticsBuilderProgram>
-		| ts.SolutionBuilderWithWatchHost<ts.EmitAndSemanticDiagnosticsBuilderProgram>,
+	host: ts.ProgramHost<ts.EmitAndSemanticDiagnosticsBuilderProgram>,
 	extended: ExtendedTransformerFactory,
 	compileToESM: boolean,
 	embedSVG: boolean,

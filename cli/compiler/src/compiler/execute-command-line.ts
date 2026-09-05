@@ -64,9 +64,8 @@ export function executeCommandLine(
 			system,
 			reportDiagnostic,
 			diagModifier,
-			projects,
+			configFileName,
 			compilerOptions,
-			buildOptions,
 			watchOptions,
 			transformer,
 			toESM,
@@ -112,9 +111,8 @@ function performWatchCompilation(
 	system: ts.System,
 	reportDiagnostic: ts.DiagnosticReporter,
 	diagModifier: CompilerDiagnosticModifier,
-	projects: string[],
+	configFileName: string,
 	compilerOptions: ts.CompilerOptions,
-	buildOptions: ts.BuildOptions,
 	watchOptions: ts.WatchOptions | undefined,
 	transformer: ExtendedTransformerFactory,
 	toESM: boolean,
@@ -123,25 +121,21 @@ function performWatchCompilation(
 ) {
 
 	// Inspired by https://stackoverflow.com/questions/62026189/typescript-custom-transformers-with-ts-createwatchprogram/62132983
-	let watchBuildHost = ts.createSolutionBuilderWithWatchHost(
+	let watchHost = ts.createWatchCompilerHost(
+		configFileName,
+		compilerOptions,
 		system,
-		undefined,
+		ts.createEmitAndSemanticDiagnosticsBuilderProgram,
 		reportDiagnostic,
-		undefined,
 		createWatchReporter(system, compilerOptions),
+		watchOptions
 	)
 
-	patchHost(watchBuildHost, transformer, toESM, embedSVG, diagModifier, diagnosticProviderFactory)
+	patchHost(watchHost, transformer, toESM, embedSVG, diagModifier, diagnosticProviderFactory)
 	
-	let builder: ts.SolutionBuilder<ts.EmitAndSemanticDiagnosticsBuilderProgram> =
-		ts.createSolutionBuilderWithWatch(
-			watchBuildHost,
-			projects,
-			buildOptions,
-			watchOptions
-		)
+	ts.createWatchProgram(watchHost)
 
-	return builder.build()
+	return ts.ExitStatus.Success
 }
 
 function createWatchReporter(

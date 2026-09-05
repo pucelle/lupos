@@ -41,9 +41,9 @@ class LuposMirrorDiagnosticProvider implements CompilerDiagnosticProvider {
 			return null
 		}
 
-		let {document, program: mirrorProgram, sourceFile: mirrorSourceFile} = context
+		let {document, sourceFile: mirrorSourceFile} = context
 		
-		let diagnostics = mirrorProgram.getSemanticDiagnostics(mirrorSourceFile, cancellationToken)
+		let diagnostics = this.service.getSemanticDiagnostics(context, cancellationToken)
 			.map(diagnostic => mapDiagnostic(diagnostic, document, sourceFile, mirrorSourceFile))
 			.filter((diagnostic): diagnostic is ts.Diagnostic => diagnostic !== null)
 

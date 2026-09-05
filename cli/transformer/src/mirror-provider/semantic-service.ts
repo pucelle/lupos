@@ -1,7 +1,7 @@
 import ts from 'typescript'
 import {buildTypeScriptMirror} from '../lupos-ts-module/ts-mirror/mirror-builder'
 import {MirrorDocument} from '../lupos-ts-module/ts-mirror/types'
-import {createMirrorProgram} from './mirror-program'
+import {createMirrorBuilderProgram} from './mirror-program'
 
 
 /** The semantic program and source mappings for one original source file. */
@@ -52,8 +52,9 @@ export class MirrorSemanticService {
 	/** All contexts share one mirror program for this original program revision. */
 	private contexts = new WeakMap<ts.SourceFile, MirrorSemanticContext | null>()
 	private documents = new WeakMap<ts.SourceFile, MirrorDocument | null>()
+	private diagnosticsInitialized: boolean = false
 	private initialized: boolean = false
-	private mirrorProgram: ts.Program | null = null
+	private mirrorBuilder: ts.SemanticDiagnosticsBuilderProgram | null = null
 	private originalChecker: ts.TypeChecker | null = null
 	private program: ts.Program
 	private host: ts.CompilerHost
@@ -76,11 +77,11 @@ export class MirrorSemanticService {
 
 	/** Create the shared Program and build mirrors as its host requests sources. */
 	private initialize() {
-		let oldMirrorProgram = this.previousService?.initialized
-			? this.previousService.mirrorProgram ?? undefined
+		let oldMirrorBuilder = this.previousService?.initialized
+			? this.previousService.mirrorBuilder ?? undefined
 			: undefined
 
-		let program = createMirrorProgram(this.program, this.host, source => {
+		let mirrorBuilder = createMirrorBuilderProgram(this.program, this.host, source => {
 			let previousDocument = this.getPreviousDocument(source)
 			if (previousDocument !== undefined) {
 				this.documents.set(source, previousDocument)
@@ -93,8 +94,9 @@ export class MirrorSemanticService {
 
 			this.documents.set(source, document)
 			return document
-		}, oldMirrorProgram)
-		
+		}, oldMirrorBuilder)
+
+		let program = mirrorBuilder.getProgram()
 		let checker = program.getTypeChecker()
 
 		for (let source of this.program.getSourceFiles()) {
@@ -113,9 +115,22 @@ export class MirrorSemanticService {
 			}
 		}
 		
-		this.mirrorProgram = program
+		this.mirrorBuilder = mirrorBuilder
 		this.previousService = null
 		this.initialized = true
+	}
+
+	/** Get cached or affected semantic diagnostics from the shared mirror builder. */
+	getSemanticDiagnostics(
+		context: MirrorSemanticContext,
+		cancellationToken?: ts.CancellationToken
+	): readonly ts.Diagnostic[] {
+		if (!this.diagnosticsInitialized) {
+			this.mirrorBuilder!.getSemanticDiagnostics(undefined, cancellationToken)
+			this.diagnosticsInitialized = true
+		}
+
+		return this.mirrorBuilder!.getSemanticDiagnostics(context.sourceFile, cancellationToken)
 	}
 
 	/** Get a document cached for the same unchanged source in the previous revision. */

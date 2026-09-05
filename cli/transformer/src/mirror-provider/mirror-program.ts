@@ -5,6 +5,19 @@ import {MirrorDocument} from '../lupos-ts-module'
 /** Create a mirror document when the secondary Program requests its source. */
 export type MirrorDocumentProvider = (sourceFile: ts.SourceFile) => MirrorDocument | null
 
+/** Program inputs using a host that supplies mirrored source files lazily. */
+interface MirrorProgramSetup {
+	rootNames: readonly string[]
+	options: ts.CompilerOptions
+	host: ts.CompilerHost
+	projectReferences: readonly ts.ProjectReference[] | undefined
+}
+
+/** Builder programs require a stable version on every source file. */
+interface VersionedSourceFile extends ts.SourceFile {
+	version?: string
+}
+
 
 /** Create a secondary Program with mirrored sources replacing their originals. */
 export function createMirrorProgram(
@@ -13,6 +26,39 @@ export function createMirrorProgram(
 	documents: MirrorDocument | Iterable<MirrorDocument> | MirrorDocumentProvider,
 	oldProgram?: ts.Program
 ): ts.Program {
+	let setup = createMirrorProgramSetup(realProgram, realHost, documents, oldProgram, false)
+
+	return ts.createProgram({...setup, oldProgram})
+}
+
+/** Create an incremental semantic builder with mirrored sources replacing their originals. */
+export function createMirrorBuilderProgram(
+	realProgram: ts.Program,
+	realHost: ts.CompilerHost,
+	documents: MirrorDocument | Iterable<MirrorDocument> | MirrorDocumentProvider,
+	oldProgram?: ts.SemanticDiagnosticsBuilderProgram
+): ts.SemanticDiagnosticsBuilderProgram {
+	let oldSourceProgram = oldProgram?.getProgram()
+	let setup = createMirrorProgramSetup(realProgram, realHost, documents, oldSourceProgram, true)
+
+	return ts.createSemanticDiagnosticsBuilderProgram(
+		setup.rootNames,
+		setup.options,
+		setup.host,
+		oldProgram,
+		undefined,
+		setup.projectReferences
+	)
+}
+
+/** Create the shared mirror host and compiler inputs. */
+function createMirrorProgramSetup(
+	realProgram: ts.Program,
+	realHost: ts.CompilerHost,
+	documents: MirrorDocument | Iterable<MirrorDocument> | MirrorDocumentProvider,
+	oldProgram: ts.Program | undefined,
+	requireSourceVersions: boolean
+): MirrorProgramSetup {
 	let options = realProgram.getCompilerOptions()
 	let provider = typeof documents === 'function' ? documents : null
 	let documentList: MirrorDocument[]
@@ -55,11 +101,22 @@ export function createMirrorProgram(
 					return oldSourceFile
 				}
 
-				return ts.createSourceFile(fileName, document.mirrorText, languageVersion, true)
+				let sourceFile = ts.createSourceFile(fileName, document.mirrorText, languageVersion, true)
+				if (requireSourceVersions) {
+					setSourceVersion(sourceFile, document.mirrorText)
+				}
+
+				return sourceFile
 			}
 
-			return realProgram.getSourceFile(fileName)
+			let sourceFile = realProgram.getSourceFile(fileName)
 				?? realHost.getSourceFile(fileName, languageVersion, onError, shouldCreateNewSourceFile)
+
+			if (requireSourceVersions && sourceFile) {
+				setSourceVersion(sourceFile, sourceFile.text)
+			}
+
+			return sourceFile
 		},
 	}
 
@@ -79,13 +136,18 @@ export function createMirrorProgram(
 		return document
 	}
 
-	return ts.createProgram({
+	return {
 		rootNames: realProgram.getRootFileNames(),
 		options,
 		host,
-		oldProgram,
 		projectReferences: realProgram.getProjectReferences(),
-	})
+	}
+}
+
+/** Add the internal version consumed by TypeScript builder programs. */
+function setSourceVersion(sourceFile: ts.SourceFile, version: string) {
+	let versionedSource = sourceFile as VersionedSourceFile
+	versionedSource.version ??= version
 }
 
 function canonicalize(fileName: string, host: ts.CompilerHost): string {

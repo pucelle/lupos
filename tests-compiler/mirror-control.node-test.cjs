@@ -126,9 +126,9 @@ test('shares diagnostic programs with mapped type queries and invalidates per or
 		assert.equal(queries, 1)
 		let provider = createLuposMirrorDiagnosticProvider(program, host)
 		let diagnosticCalls = 0
-		let getDiagnostics = context.program.getSemanticDiagnostics.bind(context.program)
+		let getDiagnostics = service.getSemanticDiagnostics.bind(service)
 
-		context.program.getSemanticDiagnostics = (...args) => {
+		service.getSemanticDiagnostics = (...args) => {
 			diagnosticCalls++
 			return getDiagnostics(...args)
 		}
@@ -287,6 +287,59 @@ test('reuses unchanged mirrors across watch program revisions', () => {
 		assert.equal(addedFirstContext.document, nextFirstContext.document)
 		assert.equal(addedSecondContext.document, nextSecondContext.document)
 		assert.ok(addedContext)
+	}
+	finally {
+		fs.rmSync(directory, {recursive: true, force: true})
+	}
+})
+
+
+test('invalidates cached mirror diagnostics through changed dependencies', () => {
+	let directory = fs.mkdtempSync(path.join(__dirname, '../.mirror-watch-dependency-'))
+
+	try {
+		let componentName = path.join(directory, 'card.ts')
+		let viewName = path.join(directory, 'view.ts')
+		let writeComponent = type => fs.writeFileSync(componentName, [
+			"import {Component} from 'lupos.html'",
+			`export class Card extends Component { value!: ${type} }`,
+		].join('\n'))
+
+		writeComponent('string')
+		fs.writeFileSync(viewName, [
+			"import {html} from 'lupos.html'",
+			"import {Card} from './card'",
+			'export const view = html`<Card .value=${"text"} />`',
+		].join('\n'))
+
+		let options = {target: ts.ScriptTarget.ES2024, module: ts.ModuleKind.ESNext,
+			moduleResolution: ts.ModuleResolutionKind.Bundler, strict: true, skipLibCheck: true}
+		let host = ts.createCompilerHost(options)
+		let firstProgram = ts.createProgram([componentName, viewName], options, host)
+		let firstSource = firstProgram.getSourceFile(viewName)
+		let firstService = getMirrorSemanticService(firstProgram, host)
+		let firstContext = firstService.getContext(firstSource)
+		let firstProvider = createLuposMirrorDiagnosticProvider(firstProgram, host)
+
+		assert.deepEqual(firstProvider.getSemanticDiagnostics(firstSource), [])
+
+		writeComponent('number')
+
+		let nextProgram = ts.createProgram({
+			rootNames: [componentName, viewName],
+			options,
+			host,
+			oldProgram: firstProgram,
+		})
+		let nextSource = nextProgram.getSourceFile(viewName)
+		let nextService = getMirrorSemanticService(nextProgram, host, firstProgram)
+		let nextContext = nextService.getContext(nextSource)
+		let nextProvider = createLuposMirrorDiagnosticProvider(nextProgram, host, firstProgram)
+		let diagnostics = nextProvider.getSemanticDiagnostics(nextSource)
+
+		assert.equal(nextContext.document, firstContext.document)
+		assert.equal(diagnostics.length, 1)
+		assert.equal(diagnostics[0].code, 2322)
 	}
 	finally {
 		fs.rmSync(directory, {recursive: true, force: true})
