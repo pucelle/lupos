@@ -1,17 +1,15 @@
 import ts from 'typescript'
-import {DeclarationScopeTree, Modifier, transformContext} from '../../../core'
+import {DeclarationScopeTree, Hashing, Modifier, transformContext} from '../../../core'
 import {FlowControlBase} from './base'
 import {SlotContentType} from '../../../enums'
 import {ObservedStateMask, ObservedChecker, TrackingPatch, TrackingRanges, TrackingAreaTypeMask} from '../../../lupos'
 import {ForHeader, parseForHeader, parseForRenderer, TemplatePartType, TemplateSlotPlaceholder} from '../../../lupos-ts-module'
 import {PartType} from '../tree'
 import {TemplateParser} from '../template'
+import {MutableConfig} from '../../../core/helpers/mutable-state'
 
 
 export class ForFlowControl extends FlowControlBase {
-
-	readonly fnAsLazyCallback: boolean = true
-	readonly ofAsLazyCallback: boolean = false
 
 	/** $block_0 */
 	private blockVariableName: string = ''
@@ -35,6 +33,9 @@ export class ForFlowControl extends FlowControlBase {
 
 	/** Whether the body supplies a render callback directly. */
 	private hasRenderer: boolean = false
+
+	private ofMutableConfig!: MutableConfig 
+	private fnMutableConfig!: MutableConfig 
 
 	/** For content template. */
 	private contentTemplate: TemplateParser | null = null
@@ -97,24 +98,30 @@ export class ForFlowControl extends FlowControlBase {
 		this.ofValueIndex = ofValueIndex
 		this.fnValueIndex = fnValueIndex
 
+		let skipHashes = this.header?.names.map(name => Hashing.hashNode(name).key)
+
+		this.ofMutableConfig! = {
+			skipHashes,
+		}
+
+		this.fnMutableConfig! = {
+			withinFunction: true,
+			asLazyCallback: true,
+			skipHashes,
+		}
+
 		this.ofValueIndexElementsMutable = ofValueIndex !== null
 			&& (
-				!this.template.values.isCanTransferAt(ofValueIndex, this.ofAsLazyCallback)
+				!this.template.values.isTransferableAt(ofValueIndex, {
+					skipHashes,
+				})
 
 				// Readonly list properties may still have mutable elements.
 				|| this.template.values.isElementsMutableAt(ofValueIndex)
 		)
 
 		if (fnValueIndex !== null) {
-			let valueNode = this.template.values.valueNodeAt(fnValueIndex)
-
-			// Only inline bodies run inside a generated callback. The shorthand
-			// callback expression itself must be reevaluated when its value changes.
-			if (!this.hasRenderer) {
-				DeclarationScopeTree.overwriteMaskAsWithinCallback(valueNode)
-			}
-
-			this.fnValueIndexMutable = !this.template.values.isCanTransferAt(fnValueIndex, this.fnAsLazyCallback)
+			this.fnValueIndexMutable = !this.template.values.isTransferableAt(fnValueIndex, this.fnMutableConfig!)
 		}
 
 		if (this.fnValueIndexMutable) {
@@ -145,7 +152,7 @@ export class ForFlowControl extends FlowControlBase {
 
 	private outputOfUpdate(): ts.Expression | ts.Statement {
 		let ofValueIndices = this.ofValueIndex !== null ? [this.ofValueIndex] : null
-		let value = this.template.values.outputValue(null, ofValueIndices, this.tree, this.ofAsLazyCallback, TemplatePartType.FlowControl)
+		let value = this.template.values.outputValue(null, ofValueIndices, this.tree, TemplatePartType.FlowControl, this.ofMutableConfig)
 
 		// Not compare, update directly.
 		// $block_0.updateData(data)
@@ -166,16 +173,19 @@ export class ForFlowControl extends FlowControlBase {
 
 		// `<lu:for ${item} of ${list}><...></>`
 		if (this.contentTemplate) {
+			let templateOutput = this.contentTemplate.outputReplaced()
+			let transferred = this.template.values.transferOutputted(templateOutput, this.template.node, this.tree, this.fnMutableConfig)
+
 			value = {
-				joint: this.contentTemplate.outputReplaced(),
 				valueNodes: [],
+				joint: transferred,
 			}
 		}
 
 		// `<lu:for ${item} of ${list}>${renderItem(item)}</>`
 		else {
 			let fnValueIndices = this.fnValueIndex !== null ? [this.fnValueIndex] : null
-			value = this.template.values.outputValue(null, fnValueIndices, this.tree, this.fnAsLazyCallback, TemplatePartType.FlowControl)
+			value = this.template.values.outputValue(null, fnValueIndices, this.tree, TemplatePartType.FlowControl, this.fnMutableConfig)
 		}
 
 		let factory = transformContext.factory
@@ -190,7 +200,7 @@ export class ForFlowControl extends FlowControlBase {
 				factory.createParameterDeclaration(
 					undefined,
 					undefined,
-					factory.createIdentifier(name.text),
+					name,
 				)
 			),
 			undefined,
@@ -198,6 +208,7 @@ export class ForFlowControl extends FlowControlBase {
 				factory.createReturnStatement(value.joint)
 			], true)
 		)
+
 
 		// if ($latest_0 !== $values[0]) {
 		//   $block_0.updateRenderFn($values[0])

@@ -80,7 +80,7 @@ export class CacheFlowControl extends FlowControlBase {
 		let resultValue: ts.Expression | null = null
 			
 		if (this.contentValueIndex !== null) {
-			resultValue = this.template.values.outputValue(null, [this.contentValueIndex], this.tree, false, TemplatePartType.FlowControl).joint
+			resultValue = this.template.values.outputValue(null, [this.contentValueIndex], this.tree, TemplatePartType.FlowControl).joint
 		}
 		else if (this.contentTemplate) {
 			resultValue = this.contentTemplate.outputReplaced()

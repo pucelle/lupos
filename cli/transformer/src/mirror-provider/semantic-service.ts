@@ -61,35 +61,33 @@ export class MirrorSemanticService {
 		return this.contexts.get(source) ?? null
 	}
 
-	/** Build every document before creating the shared semantic program. */
+	/** Create the shared Program and build mirrors as its host requests sources. */
 	private initialize() {
-		let entries: {source: ts.SourceFile, document: MirrorDocument}[] = []
-
-		for (let source of this.program.getSourceFiles()) {
+		let documents = new Map<ts.SourceFile, MirrorDocument>()
+		let program = createMirrorProgram(this.program, this.host, source => {
 			if (source.isDeclarationFile) {
-				this.contexts.set(source, null)
-				continue
+				return null
 			}
 
 			let document = buildTypeScriptMirror(ts, this.program, source)
 			if (document) {
-				entries.push({source, document})
+				documents.set(source, document)
+			}
+
+			return document
+		})
+		
+		let checker = program.getTypeChecker()
+
+		for (let source of this.program.getSourceFiles()) {
+			let document = documents.get(source)
+			if (document) {
+				let sourceFile = program.getSourceFile(source.fileName)!
+				this.contexts.set(source, {document, program, sourceFile, checker, nodes: null})
 			}
 			else {
 				this.contexts.set(source, null)
 			}
-		}
-
-		if (entries.length === 0) {
-			return
-		}
-
-		let program = createMirrorProgram(this.program, this.host, entries.map(entry => entry.document))
-		let checker = program.getTypeChecker()
-
-		for (let {source, document} of entries) {
-			let sourceFile = program.getSourceFile(source.fileName)!
-			this.contexts.set(source, {document, program, sourceFile, checker, nodes: null})
 		}
 		
 		this.initialized = true

@@ -3,6 +3,7 @@ import {Interpolator, Packer, DeclarationScopeTree, Hashing, HashKey, transformC
 import {TreeParser} from './tree'
 import {TemplatePartType} from '../../lupos-ts-module'
 import {SlotContentType} from '../../enums'
+import {MutableConfig} from '../../core/helpers/mutable-state'
 
 
 /** Help to manage all value nodes. */
@@ -28,9 +29,9 @@ export class TemplateValues {
 	 * Returns whether the value at specified index can transfer.
 	 * It's narrower than mutable, some static may can't transfer.
 	 */
-	isCanTransferAt(valueIndex: number, asLazyCallback: boolean): boolean {
+	isTransferableAt(valueIndex: number, config?: MutableConfig): boolean {
 		let node = this.valueNodes[valueIndex]
-		return DeclarationScopeTree.testCanTransfer(node, asLazyCallback)
+		return DeclarationScopeTree.testTransferable(node, config)
 	}
 
 	/** Returns whether the value at specified index has been outputted as non-transferred. */
@@ -74,7 +75,12 @@ export class TemplateValues {
 	}
 
 	/** 
-	 * Use value node at index, either `$values[0]`, or static raw node.
+	 * Output a part value from a template slot / part.
+	 * 
+	 * Use each value node at index, or output `$values[i]`
+	 * to reference a local value,
+	 * or skip value node if it is static.
+	 * 
 	 * Can only use it when outputting update.
 	 * must check `isIndexCanTurnStatic()` firstly and ensure it can.
 	 */
@@ -82,8 +88,8 @@ export class TemplateValues {
 		strings: string[] | null = null,
 		valueIndices: number[] | null,
 		tree: TreeParser,
-		asLazyCallback: boolean,
-		partType: TemplatePartType
+		partType: TemplatePartType,
+		config?: MutableConfig
 	): {
 		joint: ts.Expression,
 		valueNodes: ts.Expression[],
@@ -127,9 +133,7 @@ export class TemplateValues {
 		
 		let valueNodes = valueIndices.map(valueIndex => {
 			let rawValueNode = this.valueNodes[valueIndex]
-			let canTransfer = this.isCanTransferAt(valueIndex, asLazyCallback)
-
-			return this.doOutputValueOfIndex(rawValueNode, valueIndex, tree, canTransfer)
+			return this.doOutputValueOf(rawValueNode, valueIndex, tree, config)
 		})
 
 		let joint: ts.Expression
@@ -148,26 +152,43 @@ export class TemplateValues {
 	}
 
 	/** Output a raw node of full or partial specified index. */
-	private doOutputValueOfIndex(rawValueNode: ts.Expression, valueIndex: number, tree: TreeParser, toTransfer: boolean): ts.Expression {
+	private doOutputValueOf(
+		rawValueNode: ts.Expression,
+		valueIndex: number,
+		tree: TreeParser,
+		config?: MutableConfig
+	): ts.Expression {
+		let canTransfer = DeclarationScopeTree.testTransferable(rawValueNode, config)
 
-		// Output static node.
-		if (toTransfer) {
+		// Output static node, and may push local reference to list.
+		if (canTransfer) {
 			let interpolated = Interpolator.outputSelfUnique(rawValueNode) as ts.Expression
-
-			let transferred = DeclarationScopeTree.transferToTopmostScope(
-				interpolated,
-				rawValueNode,
-				this.transferNodeToTopmostScope.bind(this, tree)
-			)
-
+			let transferred = this.transferOutputted(interpolated, rawValueNode, tree, config)
 			return transferred
 		}
 
-		// Output from value list.
+		// Output from value list as `$values[0]`.
 		else {
 			this.indicesNonTransferredOutputted.add(valueIndex)
 			return this.outputNodeAsValue(rawValueNode, rawValueNode, tree, false)
 		}
+	}
+
+	/** Transfer an outputted node by transfer local reference as appended value nodes. */
+	transferOutputted(
+		outputted: ts.Expression,
+		rawValueNode: ts.Node,
+		tree: TreeParser,
+		config?: MutableConfig
+	) {
+		let transferred = DeclarationScopeTree.transferToTopmostScope(
+			outputted,
+			rawValueNode,
+			config,
+			this.transferNodeToTopmostScope.bind(this, tree)
+		)
+
+		return transferred
 	}
 
 	/** 
@@ -178,13 +199,13 @@ export class TemplateValues {
 	private transferNodeToTopmostScope(
 		tree: TreeParser,
 		node: ts.Identifier | ts.ThisExpression,
-		closestRawNode: ts.Node,
+		rawNode: ts.Node,
 		insideFunction: boolean
 	): ts.Expression {
 
 		// Move variable name as an item to output value list.
 		if (ts.isIdentifier(node)) {
-			return this.outputNodeAsValue(node, closestRawNode, tree, insideFunction)
+			return this.outputNodeAsValue(node, rawNode, tree, insideFunction)
 		}
 
 		// Replace `this` to `$context`.
@@ -200,11 +221,11 @@ export class TemplateValues {
 	 */
 	private outputNodeAsValue(
 		node: ts.Expression,
-		rawValueNode: ts.Node,
+		rawNode: ts.Node,
 		tree: TreeParser,
 		transferWithinFunction: boolean
 	): ts.Expression {
-		let hash = Hashing.hashMayNewNode(node, rawValueNode).key
+		let hash = Hashing.hashMayNewNode(node, rawNode).key
 		let valueIndex: number
 
 		if (this.valueIndexHash.has(hash)) {
@@ -273,7 +294,7 @@ export class TemplateValues {
 	}
 
 	/** 
-	 * Add a custom value to value list,
+	 * Add a custom value to value list as `$values[i]`,
 	 * and return reference of this value.
 	 * Normal `node` is not raw type of node.
 	 */
@@ -289,10 +310,8 @@ export class TemplateValues {
 	}
 
 	/** Output a single value from a raw node. */
-	outputValueOfIndex(rawNode: ts.Expression, valueIndex: number, tree: TreeParser, asLazyCallback: boolean): ts.Expression {
-		let canTransfer = DeclarationScopeTree.testCanTransfer(rawNode, asLazyCallback)
-
-		return this.doOutputValueOfIndex(rawNode, valueIndex, tree, canTransfer)
+	outputValueOfIndex(rawNode: ts.Expression, valueIndex: number, tree: TreeParser, config?: MutableConfig): ts.Expression {
+		return this.doOutputValueOf(rawNode, valueIndex, tree, config)
 	}
 
 	/** 
@@ -300,8 +319,8 @@ export class TemplateValues {
 	 * Use for passing several parameters to a binding,
 	 * like `:binding=${value1, value2}`, or `:binding=${(value1, value2)}`.
 	 */
-	outputValueListOfIndex(rawNodes: ts.Expression[], valueIndex: number, tree: TreeParser, asLazyCallback: boolean): ts.Expression[] {
-		let valueNodes = rawNodes.map(rawNode => this.outputValueOfIndex(rawNode, valueIndex, tree, asLazyCallback))
+	outputValueListOfIndex(rawNodes: ts.Expression[], valueIndex: number, tree: TreeParser, config?: MutableConfig): ts.Expression[] {
+		let valueNodes = rawNodes.map(rawNode => this.outputValueOfIndex(rawNode, valueIndex, tree, config))
 		return valueNodes
 	}
 

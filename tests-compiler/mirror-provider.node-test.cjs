@@ -9,6 +9,7 @@ const {repositoryRoot, compile} = require('./compiler-test-helpers.cjs')
 const {
 	buildTypeScriptMirror,
 	createLuposMirrorDiagnosticProvider,
+	createMirrorProgram,
 	getMirrorSemanticService,
 	mapMirrorSpanToOriginal,
 	mapOriginalPositionToMirror,
@@ -47,6 +48,32 @@ test('shares one mirror program and checker across source files', () => {
 		assert.equal(secondDiagnostics.length, 1)
 		assert.equal(firstDiagnostics[0].code, 2322)
 		assert.equal(secondDiagnostics[0].code, 2322)
+	}
+	finally {
+		fs.rmSync(directory, {recursive: true, force: true})
+	}
+})
+
+
+test('creates mirror documents through the secondary host on demand', () => {
+	let directory = fs.mkdtempSync(path.join(repositoryRoot, '.mirror-lazy-program-'))
+
+	try {
+		let fileName = path.join(directory, 'src.ts')
+		fs.writeFileSync(fileName, "import {html} from 'lupos.html'; export const view = html`<img .width=${\"bad\"} />`")
+
+		let options = {module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler,
+			target: ts.ScriptTarget.ES2024, strict: true, skipLibCheck: true}
+		let host = ts.createCompilerHost(options)
+		let program = ts.createProgram([fileName], options, host)
+		let requests = []
+		let mirrorProgram = createMirrorProgram(program, host, source => {
+			requests.push(source.fileName)
+			return source.isDeclarationFile ? null : buildTypeScriptMirror(ts, program, source)
+		})
+
+		assert.equal(requests.filter(name => path.resolve(name) === path.resolve(fileName)).length, 1)
+		assert.equal(mirrorProgram.getSemanticDiagnostics(mirrorProgram.getSourceFile(fileName)).length, 1)
 	}
 	finally {
 		fs.rmSync(directory, {recursive: true, force: true})

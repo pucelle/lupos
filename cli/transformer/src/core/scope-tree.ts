@@ -7,35 +7,15 @@ import {definePostVisitCallback} from './visitor-callbacks'
 import {defineSourceFilePrepass} from './source-file-prepass'
 import {DeclarationScope} from './scope'
 import {Hashing, HashKey} from './hashing'
+import {mergeSubMutableState, MutableMask, MutableState, MutableConfig, testTransferable, testMutable, canTransferNode} from './helpers/mutable-state'
 
 
-/** Whether a expression be mutable, and whether it can turn. */
-export enum MutableMask {
-
-	/** If referenced variable value is assignable, and need to update for multiple times. */
-	Mutable = 1,
-
-	/** 
-	 * Whether have any local variable referenced outside function,
-	 * so it will be visited immediately.
-	 */
-	HasLocalReferenceOutsideFunction = 2,
-
-	/** 
-	 * Whether have any local variable referenced within a function body,
-	 * so it will be visited later.
-	 */
-	HasLocalReferenceInsideFunction = 4,
-
-	/** Whether have any local variable assignment. */
-	HasLocalAssignment = 8,
-}
 
 /** Replace an identifier or this keyword. */
 type NodeReplacer = (
 	node: ts.Identifier | ts.ThisExpression,
 	closestRawNode: ts.Node,
-	insideFunctionScope: boolean
+	withinFunction: boolean
 ) => ts.Expression
 
 
@@ -43,7 +23,7 @@ type NodeReplacer = (
 class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 
 	/** Cache for faster visiting. */
-	private nodeMutableMaskCache: WeakMap<ts.Node, number> = new WeakMap()
+	private nodeMutableMaskCache: WeakMap<ts.Node, MutableState> = new WeakMap()
 
 	/** Cache assign to hash name -> assignment expression. */
 	private assignmentMap: ListMap<HashKey, AssignmentNode> = new ListMap()
@@ -201,78 +181,35 @@ class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 	}
 
 	/** Get mutable musk from an expression represented value. */
-	checkMask(rawNode: ts.Expression): MutableMask | 0 {
+	getMutableState(rawNode: ts.Expression): MutableState {
 		if (this.nodeMutableMaskCache.has(rawNode)) {
 			return this.nodeMutableMaskCache.get(rawNode)!
 		}
 
-		let mask = this.testMutableRecursively(rawNode, null)
+		let mask = this.testMutableStateRecursively(rawNode, null)
 		this.nodeMutableMaskCache.set(rawNode, mask)
 		
 		return mask
 	}
 
-	/** Overwrite mask for node, after know it will to be compiled into a callback. */
-	overwriteMaskAsWithinCallback(rawNode: ts.Expression) {
-		let mask = this.checkMask(rawNode)
-		mask &= ~MutableMask.Mutable
-
-		if (mask & MutableMask.HasLocalReferenceOutsideFunction) {
-			mask &= ~MutableMask.HasLocalReferenceOutsideFunction
-			mask |= MutableMask.HasLocalReferenceInsideFunction
-		}
-
-		this.nodeMutableMaskCache.set(rawNode, mask)
-	}
-
 	/** Test whether expression represented value is mutable. */
-	testMutable(rawNode: ts.Expression): boolean {
-		let mask = this.checkMask(rawNode)
-		return (mask & MutableMask.Mutable) > 0
+	testMutable(rawNode: ts.Expression, config?: MutableConfig): boolean {
+		let state = this.getMutableState(rawNode)
+		return testMutable(state, config)
 	}
 
-	/** 
-	 * Test whether can re-declare as static content to avoid updating each time.
-	 * `asLazyCallback` means will be treated as a callback and will not be called immediately.
-	 */
-	testCanTransfer(rawNode: ts.Expression, asLazyCallback: boolean): boolean {
-		let mask = this.checkMask(rawNode)
-		let mutable = (mask & MutableMask.Mutable) > 0
-
-		// If mutable, always can't transfer.
-		if (mutable) {
-			return false
-		}
-
-		// Can transfer as a callback, and local variable reference will be passed by `$latest_x`.
-		// But if has local assignment, should replace it to a handler.
-		// If have local reference, should replace it to a handler.
-		if (asLazyCallback) {
-			let hasLocalAssignment = (mask & MutableMask.HasLocalAssignment) > 0
-			if (hasLocalAssignment) {
-				return false
-			}
-
-			// Will visit the reference immediately, out of callback.
-			let hasImmediateReference = (mask & MutableMask.HasLocalReferenceOutsideFunction) > 0
-			if (hasImmediateReference) {
-				return false
-			}
-
-			return true
-		}
-
-		// If have local reference, either inside or outside, can't transfer.
-		let hasLocalReference = (mask & (MutableMask.HasLocalReferenceOutsideFunction | MutableMask.HasLocalReferenceInsideFunction)) > 0
-		if (hasLocalReference) {
-			return false
-		}
-
-		return true
+	/** Test whether can re-declare as static content to avoid updating each time. */
+	testTransferable(rawNode: ts.Expression, config?: MutableConfig): boolean {
+		let state = this.getMutableState(rawNode)
+		return testTransferable(state, config)
 	}
 
-	private testMutableRecursively(rawNode: ts.Node, topmostFunction: ts.Node | null): MutableMask | 0{
-		let mutable: MutableMask | 0 = 0
+	private testMutableStateRecursively(rawNode: ts.Node, topmostFunction: ts.Node | null): MutableState {
+		let state: MutableState = {
+			mask: 0,
+			hashesInsideFunction: [],
+			hashesOutsideFunction: [],
+		}
 
 		// Inside of a function.
 		if (!topmostFunction && transformContext.helper.isFunctionLike(rawNode)) {
@@ -289,10 +226,10 @@ class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 			&& transformContext.helper.getText(rawNode.expression.name) === 'bind'
 			&& transformContext.helper.symbol.resolveDeclaration(rawNode.expression.expression, transformContext.helper.isFunctionLike)
 		) {
-			mutable |= this.testMutableRecursively(rawNode.expression.expression, topmostFunction)
+			mergeSubMutableState(state, this.testMutableStateRecursively(rawNode.expression.expression, topmostFunction))
 			
 			for (let arg of rawNode.arguments) {
-				mutable |= this.testMutableRecursively(arg, topmostFunction)
+				mergeSubMutableState(state, this.testMutableStateRecursively(arg, topmostFunction))
 			}
 		}
 
@@ -309,7 +246,7 @@ class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 
 			// Mutable, here ignores situations that inside of a function.
 			if (!notMutable && !topmostFunction) {
-				mutable |= MutableMask.Mutable
+				state.mask |= MutableMask.HasLocalMutable
 			}
 
 			// Have referenced local variable within range,
@@ -319,24 +256,24 @@ class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 					|| !this.isDeclaredWithinNodeRange(rawNode as ts.Identifier, rawNode, topmostFunction))
 			) {
 				if (topmostFunction) {
-					mutable |= MutableMask.HasLocalReferenceInsideFunction
+					state.hashesInsideFunction.push(Hashing.hashNode(rawNode).key)
 				}
 				else {
-					mutable |= MutableMask.HasLocalReferenceOutsideFunction
+					state.hashesOutsideFunction.push(Hashing.hashNode(rawNode).key)
 				}
 
 				// If will be assigned within a handler.
 				if (topmostFunction && this.hasAssignedWithinNodeRange(rawNode, topmostFunction)) {
-					mutable |= MutableMask.HasLocalAssignment
+					state.mask |= MutableMask.HasLocalAssignment
 				}
 			}
 		}
 
 		ts.forEachChild(rawNode, (node: ts.Node) => {
-			mutable |= this.testMutableRecursively(node, topmostFunction)
+			mergeSubMutableState(state, this.testMutableStateRecursively(node, topmostFunction))
 		})
 
-		return mutable
+		return state
 	}
 
 	/** 
@@ -423,21 +360,27 @@ class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 	/** 
 	 * Transfer a raw or replaced node to top scope,
 	 * output a new node, and a referenced variable list.
+	 * 
+	 * The `rawNode` mainly for searching scope.
+	 * Normally the raw of `node` before interpolator outputted.
+	 * 
 	 * `replacer` can help to modify node when doing transfer,
 	 * it replace local variables and `this` to some parameters.
 	 */
 	transferToTopmostScope<T extends ts.Node>(
 		node: T,
 		rawNode: ts.Node,
+		config: MutableConfig = {},
 		replacer: NodeReplacer
 	): T {
 		return this.transferToTopmostScopeVisitor(
 			node,
 			VisitTree.hasNode(node) ? node : rawNode,
 			rawNode,
+			config,
 			replacer,
 			true,
-			false
+			config.withinFunction ?? false
 		) as T
 	}
 
@@ -445,13 +388,14 @@ class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 		node: ts.Node,
 		closestRawNode: ts.Node,
 		topRawNode: ts.Node,
+		config: MutableConfig,
 		replacer: NodeReplacer,
 		canReplaceThis: boolean,
-		insideFunctionScope: boolean
+		withinFunction: boolean
 	): ts.Node {
 
 		// Inside of a function scope.
-		insideFunctionScope ||= transformContext.helper.isFunctionLike(node)
+		withinFunction ||= transformContext.helper.isFunctionLike(node)
 		
 		// Raw variable.
 		// Can't rightly checking whether be variable identifier for non-raw.
@@ -466,8 +410,10 @@ class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 
 			let isDeclaredWithinTransferring = this.isDeclaredWithinNodeRange(node, node, topRawNode)
 			let shouldNotReplace = this.isDeclaredInTopmostScope(node) || isDeclaredWithinTransferring
-			if (!shouldNotReplace) {
-				return replacer(node, closestRawNode, insideFunctionScope)
+			if (!shouldNotReplace
+				&& canTransferNode(node, config)
+			) {
+				return replacer(node, closestRawNode, withinFunction)
 			}
 		}
 
@@ -477,15 +423,20 @@ class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 			if (declaredIn) {
 				let isDeclaredWithinTransferring = VisitTree.isContains(topRawNode, declaredIn.node)
 				let shouldNotReplace = isDeclaredWithinTransferring
-				if (!shouldNotReplace) {
-					return replacer(node, closestRawNode, insideFunctionScope)
+				if (!shouldNotReplace
+					&& canTransferNode(node, config)
+				) {
+					return replacer(node, closestRawNode, withinFunction)
 				}
 			}
 		}
 
 		// `this`.
-		else if (canReplaceThis && transformContext.helper.isThis(node)) {
-			return replacer(node as ts.ThisExpression, closestRawNode, insideFunctionScope)
+		else if (canReplaceThis
+			&& transformContext.helper.isThis(node)
+			&& canTransferNode(node, config)
+		) {
+			return replacer(node as ts.ThisExpression, closestRawNode, withinFunction)
 		}
 
 		// If enters non-arrow function declaration, cause can't replace `this`, otherwise can.
@@ -496,9 +447,10 @@ class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 				n,
 				VisitTree.hasNode(n) ? n : closestRawNode,
 				topRawNode,
+				config,
 				replacer,
 				canReplaceThis,
-				insideFunctionScope
+				withinFunction
 			)
 		}, transformContext.transformationContext)
 	}

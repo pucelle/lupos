@@ -83,7 +83,13 @@ export class BindingBase {
 
 		// Output values from parameter list.
 		if (this.parameterList) {
-			let valueNodes = this.template.values.outputValueListOfIndex(this.parameterList, this.slot.valueIndices![0], this.tree, this.asLazyCallback)
+			let valueNodes = this.template.values.outputValueListOfIndex(
+				this.parameterList,
+				this.slot.valueIndices![0],
+				this.tree,
+				{asLazyCallback: this.asLazyCallback}
+			)
+			
 			let joint = valueNodes[0]
 
 			return {

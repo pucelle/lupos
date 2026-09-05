@@ -163,3 +163,36 @@ test('shares diagnostic programs with mapped type queries and invalidates per or
 		fs.rmSync(directory, {recursive: true, force: true})
 	}
 })
+
+
+test('initializes a program without mirrors only once', () => {
+	let directory = fs.mkdtempSync(path.join(__dirname, '../.mirror-empty-service-'))
+
+	try {
+		let fileName = path.join(directory, 'src.ts')
+		fs.writeFileSync(fileName, 'export const value = 1')
+
+		let options = {target: ts.ScriptTarget.ES2024, module: ts.ModuleKind.ESNext}
+		let host = ts.createCompilerHost(options)
+		let program = ts.createProgram([fileName], options, host)
+		let source = program.getSourceFile(fileName)
+		let getSourceFiles = program.getSourceFiles.bind(program)
+		let calls = 0
+
+		program.getSourceFiles = () => {
+			calls++
+			return getSourceFiles()
+		}
+
+		let service = getMirrorSemanticService(program, host)
+		assert.equal(service.getContext(source), null)
+		let initializedCalls = calls
+
+		assert.equal(service.getContext(source), null)
+		assert.ok(initializedCalls > 0)
+		assert.equal(calls, initializedCalls)
+	}
+	finally {
+		fs.rmSync(directory, {recursive: true, force: true})
+	}
+})

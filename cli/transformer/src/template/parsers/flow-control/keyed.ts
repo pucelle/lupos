@@ -86,12 +86,12 @@ export class KeyedFlowControl extends FlowControlBase {
 
 	override outputUpdate() {
 		let keyedValueIndices = this.keyValueIndex !== null ? [this.keyValueIndex] : null
-		let keyedValue = this.template.values.outputValue(null, keyedValueIndices, this.tree, false, TemplatePartType.FlowControl).joint
+		let keyedValue = this.template.values.outputValue(null, keyedValueIndices, this.tree, TemplatePartType.FlowControl).joint
 		
 		let resultValue: ts.Expression | null = null
 		
 		if (this.contentValueIndex !== null) {
-			resultValue = this.template.values.outputValue(null, [this.contentValueIndex], this.tree, false, TemplatePartType.FlowControl).joint
+			resultValue = this.template.values.outputValue(null, [this.contentValueIndex], this.tree, TemplatePartType.FlowControl).joint
 		
 		}
 		else if (this.contentTemplate) {

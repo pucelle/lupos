@@ -88,7 +88,7 @@ export abstract class SlotParserBase {
 	/** Returns whether any of current values can transfer to outer scope. */
 	isAllValuesCanTransfer(): boolean {
 		return this.valueIndices !== null
-			&& this.valueIndices.every(index => this.template.values.isCanTransferAt(index, this.asLazyCallback))
+			&& this.valueIndices.every(index => this.template.values.isTransferableAt(index, {asLazyCallback: this.asLazyCallback}))
 	}
 
 	/** Returns whether any values initialize a closure/function. */
@@ -127,7 +127,7 @@ export abstract class SlotParserBase {
 	}	
 
 	/** Get a group of latest names. */
-	makeGroupOfLatestNames(asLazyCallback: boolean = this.asLazyCallback): (string | null)[] | null {
+	makeGroupOfLatestNames(): (string | null)[] | null {
 		if (!this.valueIndices) {
 			return null
 		}
@@ -135,7 +135,7 @@ export abstract class SlotParserBase {
 		let hashes: Set<HashKey> = new Set()
 
 		let names = this.valueIndices.map(valueIndex => {
-			if (this.template.values.isCanTransferAt(valueIndex, asLazyCallback)) {
+			if (this.template.values.isTransferableAt(valueIndex, {asLazyCallback: this.asLazyCallback})) {
 				return null
 			}
 
@@ -157,7 +157,7 @@ export abstract class SlotParserBase {
 		let hashes: Set<HashKey> = new Set()
 
 		let names = exps.map((exp) => {
-			if (DeclarationScopeTree.testCanTransfer(exp, this.asLazyCallback)) {
+			if (DeclarationScopeTree.testTransferable(exp, {asLazyCallback: this.asLazyCallback})) {
 				return null
 			}
 
@@ -245,8 +245,8 @@ export abstract class SlotParserBase {
 			this.strings,
 			this.valueIndices,
 			this.tree,
-			this.asLazyCallback,
-			this.type
+			this.type,
+			{asLazyCallback: this.asLazyCallback}
 		)
 	}
 
