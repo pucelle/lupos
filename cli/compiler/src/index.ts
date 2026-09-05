@@ -4,4 +4,4 @@ const transformer = require('../../transformer/out/index');
 const mirrorProvider = require('../../transformer/out/mirror-provider');
 
 
-executeCommandLine(ts.sys, process.argv.slice(2), transformer.default, mirrorProvider.createLuposMirrorDiagnosticProvider);
+executeCommandLine(ts.sys, process.argv.slice(2), transformer.default, mirrorProvider.createLuposMirrorDiagnosticProvider)

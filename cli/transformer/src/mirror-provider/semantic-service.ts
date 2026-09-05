@@ -10,7 +10,7 @@ export interface MirrorSemanticContext {
 	program: ts.Program
 	sourceFile: ts.SourceFile
 	checker: ts.TypeChecker
-	nodes: Map<string, ts.Node>
+	nodes: Map<string, ts.Node> | null
 }
 
 /** A resolved node must always be queried with its owning checker. */
@@ -40,43 +40,59 @@ export function getMirrorSemanticService(program: ts.Program, host?: ts.Compiler
 /** Builds mirrors once and resolves original nodes in their semantic copies. */
 export class MirrorSemanticService {
 
-	/** Source identity changes invalidate the corresponding mirror. */
+	/** All contexts share one mirror program for this original program revision. */
 	private contexts = new WeakMap<ts.SourceFile, MirrorSemanticContext | null>()
+	private initialized: boolean = false
+	private originalChecker: ts.TypeChecker | null = null
+	private program: ts.Program
+	private host: ts.CompilerHost
 
-	constructor(private program: ts.Program, private host: ts.CompilerHost) {}
+	constructor(program: ts.Program, host: ts.CompilerHost) {
+		this.program = program
+		this.host = host
+	}
 
 	/** Get the same mirror context for both diagnostics and mapped queries. */
 	getContext(source: ts.SourceFile): MirrorSemanticContext | null {
-		if (!this.contexts.has(source)) {
-			this.contexts.set(source, this.buildContext(source))
+		if (!this.initialized) {
+			this.initialize()
 		}
 
-		return this.contexts.get(source)!
+		return this.contexts.get(source) ?? null
 	}
 
-	/** Build a source mirror without disturbing the transformer's active scope. */
-	private buildContext(source: ts.SourceFile): MirrorSemanticContext | null {
-		if (source.isDeclarationFile) {
-			return null
+	/** Build every document before creating the shared semantic program. */
+	private initialize() {
+		let entries: {source: ts.SourceFile, document: MirrorDocument}[] = []
+
+		for (let source of this.program.getSourceFiles()) {
+			if (source.isDeclarationFile) {
+				this.contexts.set(source, null)
+				continue
+			}
+
+			let document = buildTypeScriptMirror(ts, this.program, source)
+			if (document) {
+				entries.push({source, document})
+			}
+			else {
+				this.contexts.set(source, null)
+			}
 		}
 
-		let document = buildTypeScriptMirror(ts, this.program, source)
-		if (!document) {
-			return null
+		if (entries.length === 0) {
+			return
 		}
 
-		let program = createMirrorProgram(this.program, this.host, document)
-		let sourceFile = program.getSourceFile(source.fileName)!
+		let program = createMirrorProgram(this.program, this.host, entries.map(entry => entry.document))
 		let checker = program.getTypeChecker()
-		let nodes = new Map<string, ts.Node>()
 
-		let visit = (node: ts.Node) => {
-			nodes.set(nodeKey(node.getStart(sourceFile), node.end, node.kind), node)
-			ts.forEachChild(node, visit)
+		for (let {source, document} of entries) {
+			let sourceFile = program.getSourceFile(source.fileName)!
+			this.contexts.set(source, {document, program, sourceFile, checker, nodes: null})
 		}
-
-		visit(sourceFile)
-		return {document, program, sourceFile, checker, nodes}
+		
+		this.initialized = true
 	}
 
 	/** Resolve a complete node span; ordinary nodes retain their original checker. */
@@ -86,16 +102,18 @@ export class MirrorSemanticService {
 
 		if (context) {
 			let start = node.getStart(source)
+			let nodes = this.getNodes(context)
 
 			let mappings = context.document.mappings.filter(mapping =>
 				mapping.kind === 'copied-expression'
-				&& mapping.originalStart <= start && mapping.originalEnd >= node.end
+				&& mapping.originalStart <= start
+				&& mapping.originalEnd >= node.end
 				&& mapping.mirrorEnd - mapping.mirrorStart === mapping.originalEnd - mapping.originalStart
 			).sort((a, b) => a.originalEnd - a.originalStart - (b.originalEnd - b.originalStart))
 
 			for (let mapping of mappings) {
 				let offset = mapping.mirrorStart - mapping.originalStart
-				let mirrored = context.nodes.get(nodeKey(start + offset, node.end + offset, node.kind))
+				let mirrored = nodes.get(nodeKey(start + offset, node.end + offset, node.kind))
 
 				if (mirrored) {
 					return {node: mirrored, checker: context.checker}
@@ -103,7 +121,25 @@ export class MirrorSemanticService {
 			}
 		}
 
-		return {node, checker: this.program.getTypeChecker()}
+		this.originalChecker ??= this.program.getTypeChecker()
+		return {node, checker: this.originalChecker}
+	}
+
+	/** Build the exact-node index only when a mapped type query needs it. */
+	private getNodes(context: MirrorSemanticContext): Map<string, ts.Node> {
+		if (context.nodes) {
+			return context.nodes
+		}
+
+		let nodes = new Map<string, ts.Node>()
+		let visit = (node: ts.Node) => {
+			nodes.set(nodeKey(node.getStart(context.sourceFile), node.end, node.kind), node)
+			ts.forEachChild(node, visit)
+		}
+
+		visit(context.sourceFile)
+		context.nodes = nodes
+		return nodes
 	}
 
 	/** Query a mapped type without mixing types from different checkers. */

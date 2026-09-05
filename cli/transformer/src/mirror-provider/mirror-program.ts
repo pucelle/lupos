@@ -2,25 +2,31 @@ import ts from 'typescript'
 import {MirrorDocument} from '../lupos-ts-module'
 
 
-/** Create a secondary Program with only the active source replaced by its insertion-only mirror. */
+/** Create a secondary Program with mirrored sources replacing their originals. */
 export function createMirrorProgram(
 	realProgram: ts.Program,
 	realHost: ts.CompilerHost,
-	document: MirrorDocument
+	documents: MirrorDocument | Iterable<MirrorDocument>
 ): ts.Program {
 	let options = realProgram.getCompilerOptions()
-	let canonicalTarget = canonicalize(document.fileName, realHost)
+
+	let documentList = 'mirrorText' in documents
+		? [documents]
+		: [...documents]
+
+	let documentsByFile = new Map(documentList.map(document => [canonicalize(document.fileName, realHost), document]))
 	let host: ts.CompilerHost = {
 		...realHost,
 
 		fileExists(fileName) {
-			return canonicalize(fileName, realHost) === canonicalTarget
+			return documentsByFile.has(canonicalize(fileName, realHost))
 				|| !!realProgram.getSourceFile(fileName)
 				|| realHost.fileExists(fileName)
 		},
 
 		readFile(fileName) {
-			if (canonicalize(fileName, realHost) === canonicalTarget) {
+			let document = documentsByFile.get(canonicalize(fileName, realHost))
+			if (document) {
 				return document.mirrorText
 			}
 
@@ -28,7 +34,8 @@ export function createMirrorProgram(
 		},
 
 		getSourceFile(fileName, languageVersion, onError, shouldCreateNewSourceFile) {
-			if (canonicalize(fileName, realHost) === canonicalTarget) {
+			let document = documentsByFile.get(canonicalize(fileName, realHost))
+			if (document) {
 				return ts.createSourceFile(fileName, document.mirrorText, languageVersion, true)
 			}
 

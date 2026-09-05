@@ -8,9 +8,50 @@ const ts = require('typescript')
 const {repositoryRoot, compile} = require('./compiler-test-helpers.cjs')
 const {
 	buildTypeScriptMirror,
+	createLuposMirrorDiagnosticProvider,
+	getMirrorSemanticService,
 	mapMirrorSpanToOriginal,
 	mapOriginalPositionToMirror,
 } = require('lupos/mirror-provider')
+
+
+test('shares one mirror program and checker across source files', () => {
+	let directory = fs.mkdtempSync(path.join(repositoryRoot, '.mirror-shared-program-'))
+
+	try {
+		let firstName = path.join(directory, 'first.ts')
+		let secondName = path.join(directory, 'second.ts')
+		fs.writeFileSync(firstName, "import {html} from 'lupos.html'; export const first = html`<img .width=${\"bad\"} />`")
+		fs.writeFileSync(secondName, "import {html} from 'lupos.html'; export const second = html`<input .checked=${1} />`")
+
+		let options = {module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler,
+			target: ts.ScriptTarget.ES2024, strict: true, skipLibCheck: true}
+		let host = ts.createCompilerHost(options)
+		let program = ts.createProgram([firstName, secondName], options, host)
+		let service = getMirrorSemanticService(program, host)
+		let first = service.getContext(program.getSourceFile(firstName))
+		let second = service.getContext(program.getSourceFile(secondName))
+
+		assert.ok(first)
+		assert.ok(second)
+		assert.equal(first.program, second.program)
+		assert.equal(first.checker, second.checker)
+		assert.equal(first.nodes, null)
+		assert.equal(second.nodes, null)
+
+		let provider = createLuposMirrorDiagnosticProvider(program, host)
+		let firstDiagnostics = provider.getSemanticDiagnostics(program.getSourceFile(firstName))
+		let secondDiagnostics = provider.getSemanticDiagnostics(program.getSourceFile(secondName))
+
+		assert.equal(firstDiagnostics.length, 1)
+		assert.equal(secondDiagnostics.length, 1)
+		assert.equal(firstDiagnostics[0].code, 2322)
+		assert.equal(secondDiagnostics[0].code, 2322)
+	}
+	finally {
+		fs.rmSync(directory, {recursive: true, force: true})
+	}
+})
 
 
 test('builds a side-effect-free mirror with bidirectional language-service mappings', () => {
