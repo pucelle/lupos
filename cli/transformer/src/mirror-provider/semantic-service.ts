@@ -20,7 +20,13 @@ export interface MappedSemanticNode {
 }
 
 
-/** Services are keyed by original Program revision. */
+/**
+ * Services are keyed by original Program revision.
+ *
+ * A Program is immutable, so everything cached by its service remains valid for
+ * that complete revision. Weak keys let TypeScript release an old Program and
+ * its mirror service together after watch mode advances to a newer revision.
+ */
 const Services = new WeakMap<ts.Program, MirrorSemanticService>()
 
 
@@ -49,15 +55,41 @@ export function getMirrorSemanticService(
 /** Builds mirrors once and resolves original nodes in their semantic copies. */
 export class MirrorSemanticService {
 
-	/** All contexts share one mirror program for this original program revision. */
+	/**
+	 * Resolved mirror contexts keyed by SourceFile identity in the current Program.
+	 * `null` is a cached result: the source has no mirror and must use native types.
+	 */
 	private contexts = new WeakMap<ts.SourceFile, MirrorSemanticContext | null>()
+
+	/**
+	 * Lazily built documents keyed by current SourceFile identity.
+	 * Keeping this separate from contexts lets the compiler host request documents
+	 * while the shared mirror Program is still being constructed.
+	 */
 	private documents = new WeakMap<ts.SourceFile, MirrorDocument | null>()
+
+	/** Whether the builder's affected-file diagnostics queue has been drained. */
 	private diagnosticsInitialized: boolean = false
+
+	/** Whether the shared mirror builder and all current source contexts exist. */
 	private initialized: boolean = false
+
+	/** One incremental mirror Program shared by all files in this revision. */
 	private mirrorBuilder: ts.SemanticDiagnosticsBuilderProgram | null = null
+
+	/** Original checker, created only when a node has no semantic mirror copy. */
 	private originalChecker: ts.TypeChecker | null = null
+
+	/** Immutable original Program represented by this service. */
 	private program: ts.Program
+
+	/** Original host reused as the base of the secondary mirror host. */
 	private host: ts.CompilerHost
+
+	/**
+	 * Previous revision retained only until initialization can reuse its builder
+	 * and unchanged documents, then released to avoid extending its cache lifetime.
+	 */
 	private previousService: MirrorSemanticService | null
 
 	constructor(program: ts.Program, host: ts.CompilerHost, previousService?: MirrorSemanticService) {
@@ -77,11 +109,18 @@ export class MirrorSemanticService {
 
 	/** Create the shared Program and build mirrors as its host requests sources. */
 	private initialize() {
+
+		// Passing the previous builder lets TypeScript reuse unchanged parsed files,
+		// module resolution, and semantic dependency state across watch revisions.
 		let oldMirrorBuilder = this.previousService?.initialized
 			? this.previousService.mirrorBuilder ?? undefined
 			: undefined
 
 		let mirrorBuilder = createMirrorBuilderProgram(this.program, this.host, source => {
+
+			// SourceFile objects change between Program revisions. Reuse therefore
+			// compares the canonical file lookup and source text in the old Program,
+			// rather than relying on object identity.
 			let previousDocument = this.getPreviousDocument(source)
 			if (previousDocument !== undefined) {
 				this.documents.set(source, previousDocument)
@@ -99,6 +138,9 @@ export class MirrorSemanticService {
 		let program = mirrorBuilder.getProgram()
 		let checker = program.getTypeChecker()
 
+		// The mirror host is lazy, so TypeScript may not request every source while
+		// constructing the Program. Complete both caches here; an absent document is
+		// deliberately stored as `null` so later queries do not rebuild it.
 		for (let source of this.program.getSourceFiles()) {
 			let document = this.documents.has(source)
 				? this.documents.get(source)!
@@ -126,6 +168,10 @@ export class MirrorSemanticService {
 		cancellationToken?: ts.CancellationToken
 	): readonly ts.Diagnostic[] {
 		if (!this.diagnosticsInitialized) {
+
+			// A builder tracks an affected-file queue independently of direct per-file
+			// queries. Advance it once so subsequent queries observe the current graph
+			// and can use TypeScript's cached diagnostics for unaffected files.
 			this.mirrorBuilder!.getSemanticDiagnostics(undefined, cancellationToken)
 			this.diagnosticsInitialized = true
 		}
@@ -133,7 +179,11 @@ export class MirrorSemanticService {
 		return this.mirrorBuilder!.getSemanticDiagnostics(context.sourceFile, cancellationToken)
 	}
 
-	/** Get a document cached for the same unchanged source in the previous revision. */
+	/**
+	 * Get a document cached for the same unchanged source in the previous revision.
+	 * `undefined` means it must be rebuilt; `null` means the previous build already
+	 * proved that this source needs no mirror and that result can also be reused.
+	 */
 	private getPreviousDocument(source: ts.SourceFile): MirrorDocument | null | undefined {
 		let previous = this.previousService
 		if (!previous?.initialized) {
@@ -187,6 +237,8 @@ export class MirrorSemanticService {
 			return context.nodes
 		}
 
+		// Indexing every mirror AST node is unnecessary for diagnostics. Delay the
+		// traversal until transformation asks for a type from a copied expression.
 		let nodes = new Map<string, ts.Node>()
 		let visit = (node: ts.Node) => {
 			nodes.set(nodeKey(node.getStart(context.sourceFile), node.end, node.kind), node)

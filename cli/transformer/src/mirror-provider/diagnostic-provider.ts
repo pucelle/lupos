@@ -12,10 +12,16 @@ export const createLuposMirrorDiagnosticProvider: CompilerDiagnosticProviderFact
 	return new LuposMirrorDiagnosticProvider(program, host, previousProgram)
 }
 
-/** To mirror original typescript program diagnostics. */
+/** Map shared mirror diagnostics back to one original TypeScript Program. */
 class LuposMirrorDiagnosticProvider implements CompilerDiagnosticProvider {
 
+	/** Program-wide semantic service shared with transformer type queries. */
 	private readonly service: MirrorSemanticService
+
+	/**
+	 * Final mapped diagnostics keyed by SourceFile identity in this Program revision.
+	 * `null` is a cached instruction to retain native TypeScript diagnostics.
+	 */
 	private readonly diagnosticsCache: WeakMap<ts.SourceFile, readonly ts.Diagnostic[] | null> = new WeakMap()
 
 	constructor(program: ts.Program, host: ts.CompilerHost, previousProgram?: ts.Program) {
@@ -23,6 +29,9 @@ class LuposMirrorDiagnosticProvider implements CompilerDiagnosticProvider {
 	}
 
 	getSemanticDiagnostics(sourceFile: ts.SourceFile, cancellationToken?: ts.CancellationToken): readonly ts.Diagnostic[] | null {
+
+		// Arrays and `null` are both terminal cached values; `undefined` alone means
+		// this provider has not processed the source yet.
 		let cached = this.diagnosticsCache.get(sourceFile)
 		if (cached !== undefined) {
 			return cached
@@ -37,6 +46,9 @@ class LuposMirrorDiagnosticProvider implements CompilerDiagnosticProvider {
 
 		let context = this.service.getContext(sourceFile)
 		if (!context) {
+
+			// The compiler patch interprets `null` as "use native diagnostics". An
+			// empty array instead means a mirrored file was checked and has no errors.
 			this.diagnosticsCache.set(sourceFile, null)
 			return null
 		}
