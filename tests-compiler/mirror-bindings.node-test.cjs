@@ -75,6 +75,34 @@ test('checks special class, style, ref and internal constructor signatures witho
 	})
 })
 
+test('attaches concrete element types to transition bindings', () => {
+	checkMirror([
+		"import {Component, html, TransitionBinding} from 'lupos.html'",
+		"class LinkBase extends Component { declare static tagName: 'a' }",
+		"class Link extends LinkBase { tagName = 'ignored' }",
+		'class Plain extends Component {}',
+		'class InvalidBase extends Component { declare static tagName: string }',
+		'class Invalid extends InvalidBase {}',
+		'export class View extends Component {',
+		' image!: TransitionBinding<HTMLImageElement>;',
+		' link!: TransitionBinding<HTMLAnchorElement>;',
+		' plain!: TransitionBinding<HTMLDivElement>;',
+		' invalid!: TransitionBinding<HTMLDivElement>;',
+		' render() { return html`',
+		' <img :transition=${null} :ref.binding=${this.image} />',
+		' <Link :transition=${null} :ref.binding=${this.link} />',
+		' <Plain :transition=${null} :ref.binding=${this.plain} />',
+		' <Invalid :transition=${null} :ref.binding=${this.invalid} />',
+		' ` }',
+		'}',
+	], (errors, document) => {
+		assert.deepEqual(errors, [])
+		assert.match(document.mirrorText, /TransitionBinding\)<\(HTMLElementTagNameMap & Record<string, HTMLElement>\)\["img"\]>/)
+		assert.match(document.mirrorText, /TransitionBinding\)<\(HTMLElementTagNameMap & Record<string, HTMLElement>\)\["a"\]>/)
+		assert.equal((document.mirrorText.match(/TransitionBinding\)<\(HTMLElementTagNameMap & Record<string, HTMLElement>\)\["div"\]>/g) ?? []).length, 2)
+	})
+})
+
 test('uses mirror symbol anchors for template-only binding imports', () => {
 	let projectDirectory = fs.mkdtempSync(path.join(repositoryRoot, '.compiler-mirror-binding-imports-'))
 

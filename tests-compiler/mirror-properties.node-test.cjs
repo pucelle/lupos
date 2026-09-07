@@ -130,7 +130,7 @@ test('uses a TypeScript mirror for component property diagnostics', () => {
 		assert.match(invalid.output, /Type 'boolean' is not assignable to type 'number'\./)
 		assert.match(invalid.output, /Type '"diagonal"' is not assignable to type '"both" \| "horizontal" \| "vertical" \| "none"'\./)
 		assert.match(invalid.output, /error TS2540: Cannot assign to 'locked' because it is a read-only property\./)
-		assert.match(invalid.output, /error TS2339: Property 'missing' does not exist on type 'HTMLElement'\./)
+		assert.match(invalid.output, /error TS2339: Property 'missing' does not exist on type 'HTMLDivElement'\./)
 		assert.doesNotMatch(invalid.output, /Value type 'string'/)
 
 		fs.writeFileSync(path.join(projectDirectory, 'src.ts'), [
