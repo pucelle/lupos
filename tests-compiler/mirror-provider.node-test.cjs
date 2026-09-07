@@ -81,6 +81,37 @@ test('creates mirror documents through the secondary host on demand', () => {
 })
 
 
+test('ignores interpolations inside HTML comments', () => {
+	let directory = fs.mkdtempSync(path.join(repositoryRoot, '.mirror-comment-interpolation-'))
+
+	try {
+		let fileName = path.join(directory, 'src.ts')
+		let source = [
+			"import {Component, html} from 'lupos.html'",
+			'export class View extends Component {',
+			' render() { return html`<!-- ${this.renderPreloadControl()} -->` }',
+			'}',
+		].join('\n')
+
+		fs.writeFileSync(fileName, source)
+
+		let options = {module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler,
+			target: ts.ScriptTarget.ES2024, strict: true, skipLibCheck: true}
+		let host = ts.createCompilerHost(options)
+		let program = ts.createProgram([fileName], options, host)
+		let sourceFile = program.getSourceFile(fileName)
+		let document = buildTypeScriptMirror(ts, program, sourceFile)
+
+		assert.ok(document)
+		assert.equal(document.sourceDiagnosticExclusions.length, 1)
+		assert.deepEqual(createLuposMirrorDiagnosticProvider(program, host).getSemanticDiagnostics(sourceFile), [])
+	}
+	finally {
+		fs.rmSync(directory, {recursive: true, force: true})
+	}
+})
+
+
 test('builds a side-effect-free mirror with bidirectional language-service mappings', () => {
 	let projectDirectory = fs.mkdtempSync(path.join(repositoryRoot, '.mirror-api-test-'))
 	let fileName = path.join(projectDirectory, 'src.ts')
