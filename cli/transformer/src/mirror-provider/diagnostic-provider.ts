@@ -4,6 +4,7 @@ import {
 	mapMirrorSpanToOriginal,
 	MirrorDocument,
 } from '../lupos-ts-module/ts-mirror'
+import {isMirrorableSourceFile} from './mirror-program'
 import {getMirrorSemanticService, MirrorSemanticService} from './semantic-service'
 
 
@@ -15,6 +16,9 @@ export const createLuposMirrorDiagnosticProvider: CompilerDiagnosticProviderFact
 /** Map shared mirror diagnostics back to one original TypeScript Program. */
 class LuposMirrorDiagnosticProvider implements CompilerDiagnosticProvider {
 
+	/** Original Program used to classify application and library sources. */
+	private readonly program: ts.Program
+
 	/** Program-wide semantic service shared with transformer type queries. */
 	private readonly service: MirrorSemanticService
 
@@ -25,6 +29,7 @@ class LuposMirrorDiagnosticProvider implements CompilerDiagnosticProvider {
 	private readonly diagnosticsCache: WeakMap<ts.SourceFile, readonly ts.Diagnostic[] | null> = new WeakMap()
 
 	constructor(program: ts.Program, host: ts.CompilerHost, previousProgram?: ts.Program) {
+		this.program = program
 		this.service = getMirrorSemanticService(program, host, previousProgram)
 	}
 
@@ -37,7 +42,7 @@ class LuposMirrorDiagnosticProvider implements CompilerDiagnosticProvider {
 			return cached
 		}
 
-		if (sourceFile.isDeclarationFile) {
+		if (!isMirrorableSourceFile(this.program, sourceFile)) {
 			this.diagnosticsCache.set(sourceFile, null)
 			return null
 		}

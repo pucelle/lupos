@@ -54,6 +54,13 @@ export function createMirrorBuilderProgram(
 	)
 }
 
+/** Whether a source belongs to the application and may require a mirror. */
+export function isMirrorableSourceFile(program: ts.Program, sourceFile: ts.SourceFile): boolean {
+	return !sourceFile.isDeclarationFile
+		&& !program.isSourceFileDefaultLibrary(sourceFile)
+		&& !program.isSourceFileFromExternalLibrary(sourceFile)
+}
+
 /** Create the shared mirror host and compiler inputs. */
 function createMirrorProgramSetup(
 	realProgram: ts.Program,
@@ -151,7 +158,7 @@ function createMirrorProgramSetup(
 		}
 
 		let sourceFile = realProgram.getSourceFile(fileName)
-		let document = sourceFile && provider
+		let document = sourceFile && provider && isMirrorableSourceFile(realProgram, sourceFile)
 			? provider(sourceFile)
 			: null
 

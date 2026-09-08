@@ -60,19 +60,43 @@ test('creates mirror documents through the secondary host on demand', () => {
 
 	try {
 		let fileName = path.join(directory, 'src.ts')
-		fs.writeFileSync(fileName, "import {html} from 'lupos.html'; export const view = html`<img .width=${\"bad\"} />`")
+		let externalDirectory = path.join(directory, 'node_modules', 'external-source')
+
+		fs.mkdirSync(externalDirectory, {recursive: true})
+		fs.writeFileSync(path.join(externalDirectory, 'package.json'), JSON.stringify({
+			name: 'external-source',
+			version: '1.0.0',
+			types: 'index.ts',
+		}))
+		fs.writeFileSync(path.join(externalDirectory, 'index.ts'),
+			"import {html} from 'lupos.html'; export const externalView = html`<img .width=${\"bad\"} />`"
+		)
+		fs.writeFileSync(fileName, [
+			"import {html} from 'lupos.html'",
+			"import {externalView} from 'external-source'",
+			'void externalView',
+			'export const view = html`<img .width=${"bad"} />`',
+		].join('\n'))
 
 		let options = {module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler,
 			target: ts.ScriptTarget.ES2024, strict: true, skipLibCheck: true}
 		let host = ts.createCompilerHost(options)
 		let program = ts.createProgram([fileName], options, host)
+		let externalSource = program.getSourceFile(path.join(externalDirectory, 'index.ts'))
+
+		assert.ok(externalSource)
+		assert.equal(program.isSourceFileFromExternalLibrary(externalSource), true)
+
 		let requests = []
 		let mirrorProgram = createMirrorProgram(program, host, source => {
-			requests.push(source.fileName)
-			return source.isDeclarationFile ? null : buildTypeScriptMirror(ts, program, source)
+			requests.push(source)
+			return buildTypeScriptMirror(ts, program, source)
 		})
 
-		assert.equal(requests.filter(name => path.resolve(name) === path.resolve(fileName)).length, 1)
+		assert.equal(requests.filter(source => path.resolve(source.fileName) === path.resolve(fileName)).length, 1)
+		assert.equal(requests.some(source => source.isDeclarationFile), false)
+		assert.equal(requests.some(source => program.isSourceFileDefaultLibrary(source)), false)
+		assert.equal(requests.some(source => program.isSourceFileFromExternalLibrary(source)), false)
 		assert.equal(mirrorProgram.getSemanticDiagnostics(mirrorProgram.getSourceFile(fileName)).length, 1)
 	}
 	finally {
