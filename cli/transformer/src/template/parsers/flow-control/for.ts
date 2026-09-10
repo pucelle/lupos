@@ -134,7 +134,7 @@ export class ForFlowControl extends FlowControlBase {
 			TrackingRanges.markRange(this.template.node,
 				this.template.valueNodes[contentIndices[0]].parent,
 				this.template.valueNodes[contentIndices[contentIndices.length - 1]].parent,
-				TrackingAreaTypeMask.ConditionalContent | TrackingAreaTypeMask.TemplateLoop
+				TrackingAreaTypeMask.ConditionalContent | TrackingAreaTypeMask.TemplateFor
 			)
 		}
 

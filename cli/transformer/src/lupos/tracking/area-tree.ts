@@ -93,8 +93,8 @@ export enum TrackingAreaTypeMask {
 	/** Be the expression of template span. */
 	TemplateExpression = 2 ** 20,
 
-	/** A template body invoked later by ForBlock, with its own tracking owner. */
-	TemplateLoop = 2 ** 21,
+	/** A template body invoked by <lu:for>, which has its own tracking area. */
+	TemplateFor = 2 ** 21,
 }
 
 /** Tracking area and node position. */
@@ -444,11 +444,6 @@ export namespace TrackingAreaTree {
 		let toNode = fromNode
 		let position = fromPosition
 
-		let loopBoundary: TrackingArea | null = fromArea
-		while (loopBoundary && !(loopBoundary.type & TrackingAreaTypeMask.TemplateLoop)) {
-			loopBoundary = loopBoundary.parent
-		}
-
 		while (true) {
 
 			// Can put statements, insert into it.
@@ -496,21 +491,12 @@ export namespace TrackingAreaTree {
 
 				area = area.parent!
 
-				// Range areas are visitor scopes, not syntax ancestors. Entering one from
-				// any contained node must target its first node instead of walking past it.
+				// If new area is if or for range, stay at it's start.
 				if (area.range && preventsMovingCapturedOutward(area)) {
 					toNode = area.range.startNode
 					position = InterpolationPosition.Before
 					break
 				}
-			}
-
-			// Can't cross loop boundary.
-			if (loopBoundary?.range && toNode.parent === loopBoundary.range.container) {
-				toNode = loopBoundary.range.startNode
-				area = loopBoundary
-				position = InterpolationPosition.Before
-				break
 			}
 
 			toNode = toNode.parent
@@ -538,7 +524,7 @@ export namespace TrackingAreaTree {
 			| TrackingAreaTypeMask.IterationIncreasement
 			| TrackingAreaTypeMask.IterationExpression
 			| TrackingAreaTypeMask.IterationContent
-			//| TrackingAreaTypeMask.TemplateLoop
+			| TrackingAreaTypeMask.TemplateFor
 		)) > 0
 	}
 }

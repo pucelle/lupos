@@ -340,7 +340,7 @@ export class TrackingCapturer {
 			|| area.type & TrackingAreaTypeMask.Conditional
 			|| area.type & TrackingAreaTypeMask.Switch
 			|| area.type & TrackingAreaTypeMask.TemplateExpression
-			|| area.type & TrackingAreaTypeMask.TemplateLoop
+			|| area.type & TrackingAreaTypeMask.TemplateFor
 		) {
 			item.position = InterpolationPosition.Before
 		}

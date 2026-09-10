@@ -55,7 +55,7 @@ export class TrackingCapturerOperator {
 	 */
 	safelyMoveCapturedItemsOutwardTo(items: Iterable<CapturedItem>, toCapturer: TrackingCapturer): CapturedItem[] {
 		for (let area: TrackingArea | null = this.area; area && area !== toCapturer.area; area = area.parent) {
-			if (area.type & TrackingAreaTypeMask.TemplateLoop) return [...items]
+			if (area.type & TrackingAreaTypeMask.TemplateFor) return [...items]
 		}
 
 		// Note these are declaration scopes, not tracking scopes.
@@ -154,7 +154,7 @@ export class TrackingCapturerOperator {
 
 	/** Eliminate repetitive captured with an outer hash, and return the resulting hash map. */
 	eliminateRepetitiveRecursively(hashMap: CapturedHashMap) {
-		if (this.area.type & TrackingAreaTypeMask.TemplateLoop) hashMap = new CapturedHashMap()
+		if (this.area.type & TrackingAreaTypeMask.TemplateFor) hashMap = new CapturedHashMap()
 		let ownHashMap = hashMap.clone()
 		let startChildIndex = 0
 
