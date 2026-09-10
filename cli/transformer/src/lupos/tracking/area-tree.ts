@@ -518,7 +518,7 @@ export namespace TrackingAreaTree {
 
 	/** Whether captured expressions must stay inside an area and can't cross it's edges. */
 	function preventsMovingCapturedOutward(area: TrackingArea): boolean {
-		return (area.type & (
+		let preventedByType = (area.type & (
 			TrackingAreaTypeMask.ConditionalContent
 			| TrackingAreaTypeMask.IterationCondition
 			| TrackingAreaTypeMask.IterationIncreasement
@@ -526,5 +526,13 @@ export namespace TrackingAreaTree {
 			| TrackingAreaTypeMask.IterationContent
 			| TrackingAreaTypeMask.TemplateFor
 		)) > 0
+
+		// <lu:if><lu:if ${...}>..., not move outside of first if.
+		let beConditionalRangeConditionWithinAnother = (area.type & TrackingAreaTypeMask.ConditionalCondition) > 0
+			&& area.parent !== null
+			&& area.parent.range !== null
+			&& (area.parent.type & TrackingAreaTypeMask.ConditionalContent) > 0
+
+		return preventedByType || beConditionalRangeConditionWithinAnother
 	}
 }

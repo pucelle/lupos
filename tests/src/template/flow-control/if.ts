@@ -90,4 +90,20 @@ export class TestIf extends Component {
 			</lu:if>
 		`
 	}
+
+	testNestedIfConditionAfterStaticValue() {
+		return html`
+			<lu:if ${this.prop}>
+				<span>${getLabel()}</span>
+				<lu:if ${this.item?.value}>
+					Content
+				</lu:if>
+			</lu:if>
+		`
+	}
+}
+
+/** Return static content placed before a nested conditional. */
+function getLabel(): string {
+	return 'Label'
 }

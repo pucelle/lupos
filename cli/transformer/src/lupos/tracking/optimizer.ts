@@ -143,6 +143,12 @@ export namespace Optimizer {
 		if (conditionArea.parent!.type & TrackingAreaTypeMask.ConditionalContent) {
 			targetArea = conditionArea.parent!
 		}
+		
+		// A sub conditional condition like `<lu:if><lu:if ${...}></>` must retain
+		// its tracking until the template parser creates the real condition.
+		if (targetArea.range && (targetArea.type & TrackingAreaTypeMask.ConditionalContent) > 0) {
+			return
+		}
 
 		area.capturer.operator.safelyMoveCapturedOutwardTo(targetArea.capturer)
 	}

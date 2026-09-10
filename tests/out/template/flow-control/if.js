@@ -371,6 +371,64 @@ const $html_20 = /*#__PURE__*/ new HTMLMaker("<!----><!--74ba3c34-->");
         }
     };
 });
+const $html_22 = /*#__PURE__*/ new HTMLMaker("<!----><!--985cf4d1-->");
+/*
+<root>
+    <lu:if ${this.prop} />
+</root>
+*/ const $template_22 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $locator = $html_22.make($hydrates);
+    let $node_0 = $locator.childAt(0);
+    let $node_1 = $locator.getMarker("985cf4d1");
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), null, $locator.getNodes("985cf4d1"));
+    let $block_0 = new IfBlock($slot_0);
+    return {
+        el: $locator.el,
+        position: new SlotPosition(1, $node_0),
+        update($values) {
+            $block_0.update($values[0]);
+        },
+        parts: [
+            [$slot_0, 1]
+        ]
+    };
+});
+const $html_23 = /*#__PURE__*/ new HTMLMaker("<span> </span><!--0ae1b5d6-->");
+/*
+<root>
+    <span>${getLabel()}</span>
+    <lu:if ${this.item?.value} />
+</root>
+*/ const $template_23 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $locator = $html_23.make($hydrates);
+    let $node_0 = $locator.childAt(0);
+    let $node_1 = $node_0.firstChild;
+    let $node_2 = $locator.getMarker("0ae1b5d6");
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_2), null, $locator.getNodes("0ae1b5d6"));
+    let $block_0 = new IfBlock($slot_0);
+    $node_1.data = getLabel();
+    return {
+        el: $locator.el,
+        position: new SlotPosition(1, $node_0),
+        update($values) {
+            $block_0.update($values[0]);
+        },
+        parts: [
+            [$slot_0, 1]
+        ]
+    };
+});
+const $html_24 = /*#__PURE__*/ new HTMLMaker("Content");
+/*
+<root>Content</root>
+*/ const $template_24 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $locator = $html_24.make($hydrates);
+    let $node_0 = $locator.childAt(0);
+    return {
+        el: $locator.el,
+        position: new SlotPosition(1, $node_0)
+    };
+});
 export class TestIf extends Component {
     prop = 1;
     content = '';
@@ -437,4 +495,16 @@ export class TestIf extends Component {
             ], this) : null
         ], this);
     }
+    testNestedIfConditionAfterStaticValue() {
+        trackGet(this, "prop");
+        return new CompiledTemplateResult($template_22, [
+            this.prop ? new CompiledTemplateResult($template_23, [
+                (trackGet(this, "item"), this.item && trackGet(this.item, "value"), this.item?.value) ? new CompiledTemplateResult($template_24, [], this) : null
+            ], this) : null
+        ], this);
+    }
+}
+/** Return static content placed before a nested conditional. */
+function getLabel() {
+    return 'Label';
 }
