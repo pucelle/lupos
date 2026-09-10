@@ -527,7 +527,7 @@ export namespace TrackingAreaTree {
 			| TrackingAreaTypeMask.TemplateFor
 		)) > 0
 
-		// <lu:if><lu:if ${...}>..., not move outside of first if.
+		// `<lu:if><lu:if ${...}>...`, not move outside of first `lu:if`.
 		let beConditionalRangeConditionWithinAnother = (area.type & TrackingAreaTypeMask.ConditionalCondition) > 0
 			&& area.parent !== null
 			&& area.parent.range !== null
