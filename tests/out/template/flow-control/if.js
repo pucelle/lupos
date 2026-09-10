@@ -429,6 +429,64 @@ const $html_24 = /*#__PURE__*/ new HTMLMaker("Content");
         position: new SlotPosition(1, $node_0)
     };
 });
+const $html_25 = /*#__PURE__*/ new HTMLMaker("<!----><!--b0a951af-->");
+/*
+<root>
+    <lu:if ${this.prop} />
+</root>
+*/ const $template_25 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $locator = $html_25.make($hydrates);
+    let $node_0 = $locator.childAt(0);
+    let $node_1 = $locator.getMarker("b0a951af");
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), null, $locator.getNodes("b0a951af"));
+    let $block_0 = new IfBlock($slot_0);
+    return {
+        el: $locator.el,
+        position: new SlotPosition(1, $node_0),
+        update($values) {
+            $block_0.update($values[0]);
+        },
+        parts: [
+            [$slot_0, 1]
+        ]
+    };
+});
+const $html_26 = /*#__PURE__*/ new HTMLMaker("<span> </span><!--91440d91-->");
+/*
+<root>
+    <span>${getLabel()}</span>
+    <lu:if ${this.item?.value} />
+</root>
+*/ const $template_26 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $locator = $html_26.make($hydrates);
+    let $node_0 = $locator.childAt(0);
+    let $node_1 = $node_0.firstChild;
+    let $node_2 = $locator.getMarker("91440d91");
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_2), null, $locator.getNodes("91440d91"));
+    let $block_0 = new IfBlock($slot_0);
+    $node_1.data = getLabel();
+    return {
+        el: $locator.el,
+        position: new SlotPosition(1, $node_0),
+        update($values) {
+            $block_0.update($values[0]);
+        },
+        parts: [
+            [$slot_0, 1]
+        ]
+    };
+});
+/*
+<root>${getLabel()}</root>
+*/ const $template_27 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $locator = $html_5.make($hydrates);
+    let $node_0 = $locator.childAt(0);
+    $node_0.data = getLabel();
+    return {
+        el: $locator.el,
+        position: new SlotPosition(1, $node_0)
+    };
+});
 export class TestIf extends Component {
     prop = 1;
     content = '';
@@ -500,6 +558,14 @@ export class TestIf extends Component {
         return new CompiledTemplateResult($template_22, [
             this.prop ? new CompiledTemplateResult($template_23, [
                 (trackGet(this, "item"), this.item && trackGet(this.item, "value"), this.item?.value) ? new CompiledTemplateResult($template_24, [], this) : null
+            ], this) : null
+        ], this);
+    }
+    testNestedIfWithDynamicContentAfterStaticValue() {
+        trackGet(this, "prop");
+        return new CompiledTemplateResult($template_25, [
+            this.prop ? new CompiledTemplateResult($template_26, [
+                (trackGet(this, "item"), this.item && trackGet(this.item, "value"), this.item?.value) ? new CompiledTemplateResult($template_27, [], this) : null
             ], this) : null
         ], this);
     }

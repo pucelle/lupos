@@ -101,6 +101,17 @@ export class TestIf extends Component {
 			</lu:if>
 		`
 	}
+
+	testNestedIfWithDynamicContentAfterStaticValue() {
+		return html`
+			<lu:if ${this.prop}>
+				<span>${getLabel()}</span>
+				<lu:if ${this.item?.value}>
+					${getLabel()}
+				</lu:if>
+			</lu:if>
+		`
+	}
 }
 
 /** Return static content placed before a nested conditional. */

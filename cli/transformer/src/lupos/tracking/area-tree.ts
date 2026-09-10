@@ -527,12 +527,17 @@ export namespace TrackingAreaTree {
 			| TrackingAreaTypeMask.TemplateFor
 		)) > 0
 
-		// `<lu:if><lu:if ${...}>...`, not move outside of first `lu:if`.
+		// Not move tracking content outside because it will be compiled to another template.
+		let beConditionalRange = area.range !== null
+			&& (area.type & TrackingAreaTypeMask.Conditional) > 0
+
+		// `<lu:if>${...}<lu:if ${...}>...`, if allow tracking codes cross the second `lu:if`,
+		// It moves into the first conditional content.
 		let beConditionalRangeConditionWithinAnother = (area.type & TrackingAreaTypeMask.ConditionalCondition) > 0
 			&& area.parent !== null
 			&& area.parent.range !== null
 			&& (area.parent.type & TrackingAreaTypeMask.ConditionalContent) > 0
 
-		return preventedByType || beConditionalRangeConditionWithinAnother
+		return preventedByType || beConditionalRange || beConditionalRangeConditionWithinAnother
 	}
 }
