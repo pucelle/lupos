@@ -8,6 +8,7 @@ export class TestFor extends Component {
 	items: {value: number}[] = [{value: 1}]
 	readonly readonlyItems: {value: number}[] = [{value: 1}]
 	readonly deepReadonlyItems: ReadonlyArray<{value: number}> = [{value: 1}]
+	renderer = this.renderItemWithIndex
 
 	getItems(): Observed<{value: number}[]> {
 		return this.items
@@ -150,6 +151,20 @@ export class TestFor extends Component {
 			<lu:for ${item} of ${items}>
 				${item.value}
 			</lu:for>
+		`
+	}
+
+	testForDynamicRenderer() {
+		return html`
+			<lu:for ${[1,2,3]}>
+				${this.renderer}
+			</lu:for>
+		`
+	}
+
+	testForOfEmptyBody() {
+		return html`
+			<lu:for ${item, index} of ${new Set<string>()}></lu:for>
 		`
 	}
 }

@@ -330,6 +330,47 @@ const $html_19 = /*#__PURE__*/ new HTMLMaker("<div>Content 1</div><div>Content 2
         position: new SlotPosition(1, $node_0)
     };
 });
+const $html_20 = /*#__PURE__*/ new HTMLMaker("<!----><!--74ba3c34-->");
+/*
+<root>
+    <lu:if ${this.data} />
+</root>
+*/ const $template_20 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $locator = $html_20.make($hydrates);
+    let $node_0 = $locator.childAt(0);
+    let $node_1 = $locator.getMarker("74ba3c34");
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), null, $locator.getNodes("74ba3c34"));
+    let $block_0 = new IfBlock($slot_0);
+    return {
+        el: $locator.el,
+        position: new SlotPosition(1, $node_0),
+        update($values) {
+            $block_0.update($values[0]);
+        },
+        parts: [
+            [$slot_0, 1]
+        ]
+    };
+});
+/*
+<root>${this.renderItem(this.data.metrics.users)}${this.renderItem(this.data.metrics.subscriptions)}${this.renderItem(this.data.metrics.founders)}</root>
+*/ const $template_21 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $latest_0, $latest_1, $latest_2;
+    let $locator = $html_5.make($hydrates);
+    let $node_0 = $locator.childAt(0);
+    return {
+        el: $locator.el,
+        position: new SlotPosition(1, $node_0),
+        update($values) {
+            if ($latest_0 !== $values[0] || $latest_1 !== $values[1] || $latest_2 !== $values[2]) {
+                $node_0.data = "" + $values[0] + $values[1] + $values[2];
+                $latest_0 = $values[0];
+                $latest_1 = $values[1];
+                $latest_2 = $values[2];
+            }
+        }
+    };
+});
 export class TestIf extends Component {
     prop = 1;
     content = '';
@@ -382,6 +423,18 @@ export class TestIf extends Component {
         trackGet(this, "item");
         return new CompiledTemplateResult($template_18, [
             this.item && (trackGet(this.item, "value"), this.item.value) ? new CompiledTemplateResult($template_19, [], this) : null
+        ], this);
+    }
+    data = null;
+    renderItem(value) { return value; }
+    renderMultiItemsInIf() {
+        trackGet(this, "data");
+        return new CompiledTemplateResult($template_20, [
+            this.data ? new CompiledTemplateResult($template_21, [
+                (trackGet(this.data, "metrics"), trackGet(this.data.metrics, "users", "subscriptions", "founders"), this.renderItem(this.data.metrics.users)),
+                this.renderItem(this.data.metrics.subscriptions),
+                this.renderItem(this.data.metrics.founders)
+            ], this) : null
         ], this);
     }
 }

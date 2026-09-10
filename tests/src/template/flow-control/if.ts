@@ -78,4 +78,16 @@ export class TestIf extends Component {
 			</lu:if>
 		`
 	}
+
+	data: {metrics: {users: number, subscriptions: number, founders: number}} | null = null;
+	renderItem(value: number) { return value }
+	renderMultiItemsInIf() {
+		return html`
+			<lu:if ${this.data}>
+				${this.renderItem(this.data.metrics.users)}
+				${this.renderItem(this.data.metrics.subscriptions)}
+				${this.renderItem(this.data.metrics.founders)}
+			</lu:if>
+		`
+	}
 }

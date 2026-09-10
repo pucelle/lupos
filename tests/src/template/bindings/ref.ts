@@ -7,7 +7,7 @@ export class TestRefBinding extends Component {
 	refCom: any
 	refElByType!: HTMLElement
 	refBinding1!: ClassBinding
-	refBinding2!: TransitionBinding
+	refBinding2!: TransitionBinding<HTMLDivElement>
 
 	testRefEl() {
 		return html`<div :ref=${this.refEl} />`

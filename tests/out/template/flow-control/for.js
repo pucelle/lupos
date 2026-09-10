@@ -697,11 +697,69 @@ const $html_28 = /*#__PURE__*/ new HTMLMaker("<!----><!--8fbaa5e6-->");
         }
     };
 });
+const $html_30 = /*#__PURE__*/ new HTMLMaker("<!----><!--b5a57327-->");
+/*
+<root>
+    <lu:for ${[1,2,3]} />
+</root>
+*/ const $template_30 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
+    let $locator = $html_30.make($hydrates);
+    let $node_0 = $locator.childAt(0);
+    let $node_1 = $locator.getMarker("b5a57327");
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1, $locator.getNodes("b5a57327"));
+    let $block_0 = new ForBlock($slot_0);
+    $block_0.updateRenderFn((trackGet($context, "renderer"), $context.renderer));
+    $block_0.updateData([1, 2, 3]);
+    return {
+        el: $locator.el,
+        position: new SlotPosition(1, $node_0),
+        parts: [
+            [$slot_0, 1],
+            [$block_0, 1]
+        ]
+    };
+});
+const $html_31 = /*#__PURE__*/ new HTMLMaker("<!----><!--1fd0947a-->");
+/*
+<root>
+    <lu:for ${item, index} of ${new Set<string>()} />
+</root>
+*/ const $template_31 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
+    let $locator = $html_31.make($hydrates);
+    let $node_0 = $locator.childAt(0);
+    let $node_1 = $locator.getMarker("1fd0947a");
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 1, $locator.getNodes("1fd0947a"));
+    let $block_0 = new ForBlock($slot_0);
+    $block_0.updateRenderFn(function (item, index) {
+        return new CompiledTemplateResult($template_32, [], $context);
+    });
+    $block_0.updateData(new Set());
+    return {
+        el: $locator.el,
+        position: new SlotPosition(1, $node_0),
+        parts: [
+            [$slot_0, 1],
+            [$block_0, 1]
+        ]
+    };
+});
+const $html_32 = /*#__PURE__*/ new HTMLMaker("");
+/*
+<root />
+*/ const $template_32 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $locator = $html_32.make($hydrates);
+    let $node_0 = $locator;
+    return {
+        el: $locator.el,
+        position: new SlotPosition(0, $node_0)
+    };
+});
 export class TestFor extends Component {
     prop = 1;
     items = [{ value: 1 }];
     readonlyItems = [{ value: 1 }];
     deepReadonlyItems = [{ value: 1 }];
+    renderer = this.renderItemWithIndex;
     getItems() {
         trackGet(this, "items");
         return this.items;
@@ -804,5 +862,11 @@ export class TestFor extends Component {
         return new CompiledTemplateResult($template_28, [
             items
         ], this);
+    }
+    testForDynamicRenderer() {
+        return new CompiledTemplateResult($template_30, [], this);
+    }
+    testForOfEmptyBody() {
+        return new CompiledTemplateResult($template_31, [], this);
     }
 }

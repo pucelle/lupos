@@ -443,6 +443,7 @@ export namespace TrackingAreaTree {
 		let area = fromArea
 		let toNode = fromNode
 		let position = fromPosition
+
 		let loopBoundary: TrackingArea | null = fromArea
 		while (loopBoundary && !(loopBoundary.type & TrackingAreaTypeMask.TemplateLoop)) {
 			loopBoundary = loopBoundary.parent
@@ -488,26 +489,30 @@ export namespace TrackingAreaTree {
 					}
 				}
 				
-				// Can't cross these types of areas, will end at the inner start of them.
-				if (area.type & (
-					TrackingAreaTypeMask.ConditionalContent
-					| TrackingAreaTypeMask.IterationCondition
-					| TrackingAreaTypeMask.IterationIncreasement
-					| TrackingAreaTypeMask.IterationExpression
-					| TrackingAreaTypeMask.IterationContent
-				)) {
+				// Can't cross these types of areas, will stay at the inner start of them.
+				if (preventsMovingCapturedOutward(area)) {
 					break
 				}
 
 				area = area.parent!
+
+				// Range areas are visitor scopes, not syntax ancestors. Entering one from
+				// any contained node must target its first node instead of walking past it.
+				if (area.range && preventsMovingCapturedOutward(area)) {
+					toNode = area.range.startNode
+					position = InterpolationPosition.Before
+					break
+				}
 			}
 
+			// Can't cross loop boundary.
 			if (loopBoundary?.range && toNode.parent === loopBoundary.range.container) {
 				toNode = loopBoundary.range.startNode
 				area = loopBoundary
 				position = InterpolationPosition.Before
 				break
 			}
+
 			toNode = toNode.parent
 			position = InterpolationPosition.Before
 		}
@@ -523,5 +528,17 @@ export namespace TrackingAreaTree {
 			toNode,
 			position,
 		}
+	}
+
+	/** Whether captured expressions must stay inside an area and can't cross it's edges. */
+	function preventsMovingCapturedOutward(area: TrackingArea): boolean {
+		return (area.type & (
+			TrackingAreaTypeMask.ConditionalContent
+			| TrackingAreaTypeMask.IterationCondition
+			| TrackingAreaTypeMask.IterationIncreasement
+			| TrackingAreaTypeMask.IterationExpression
+			| TrackingAreaTypeMask.IterationContent
+			//| TrackingAreaTypeMask.TemplateLoop
+		)) > 0
 	}
 }
