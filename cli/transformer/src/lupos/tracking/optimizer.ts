@@ -136,18 +136,19 @@ export namespace Optimizer {
 			conditionArea = conditionArea.parent!
 		}
 
-		// parent of conditional or switch.
-		let targetArea = conditionArea.parent!.parent!
+		let conditionalArea = conditionArea.parent!
+
+		// Parent of conditional or switch.
+		let targetArea = conditionalArea.parent!
+
+		// A generated template conditional owns both its condition and branch content.
+		if (conditionalArea.range && conditionalArea.type & TrackingAreaTypeMask.Conditional) {
+			targetArea = conditionalArea
+		}
 
 		// Can't across `ConditionalContent`, so move to Conditional.
-		if (conditionArea.parent!.type & TrackingAreaTypeMask.ConditionalContent) {
-			targetArea = conditionArea.parent!
-		}
-		
-		// A sub conditional condition like `<lu:if><lu:if ${...}></>` must retain
-		// its tracking until the template parser creates the real condition.
-		if (targetArea.range && (targetArea.type & TrackingAreaTypeMask.ConditionalContent) > 0) {
-			return
+		else if (conditionalArea.type & TrackingAreaTypeMask.ConditionalContent) {
+			targetArea = conditionalArea
 		}
 
 		area.capturer.operator.safelyMoveCapturedOutwardTo(targetArea.capturer)
@@ -155,11 +156,13 @@ export namespace Optimizer {
 
 
 	/** 
-	 * Eliminate capture from conditional content, when repetitive with binary and right part.
+	 * Eliminate capture from conditional contents,
+	 * when repetitive with binary and right part.
 	 * `if (a.b && a.c) {a.c}` -> Remove `track(a.c)` from content.
 	 */
 	function eliminateRepetitiveFromContentByCondition(area: TrackingArea) {
-		let condition = area.parent!.children.find(s => s.type & TrackingAreaTypeMask.ConditionalCondition)
+		let conditional = area.parent!
+		let condition = conditional.children.find(s => s.type & TrackingAreaTypeMask.ConditionalCondition)
 		let content = area
 
 		if (!condition || !content) {
@@ -171,7 +174,11 @@ export namespace Optimizer {
 			return
 		}
 
-		let conditionHashMap = CapturedHashMap.fromCapturersUnion(mustRunParts.map(part => part.capturer))
+		let conditionCapturers = [
+			...mustRunParts.map(part => part.capturer),
+		]
+		let conditionHashMap = CapturedHashMap.fromCapturersUnion(conditionCapturers)
+
 		content.capturer.operator.eliminateRepetitiveRecursively(conditionHashMap)
 	}
 

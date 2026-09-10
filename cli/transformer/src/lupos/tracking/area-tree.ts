@@ -518,26 +518,26 @@ export namespace TrackingAreaTree {
 
 	/** Whether captured expressions must stay inside an area and can't cross it's edges. */
 	function preventsMovingCapturedOutward(area: TrackingArea): boolean {
-		let preventedByType = (area.type & (
+		let preventedByType = area.type & (
 			TrackingAreaTypeMask.ConditionalContent
 			| TrackingAreaTypeMask.IterationCondition
 			| TrackingAreaTypeMask.IterationIncreasement
 			| TrackingAreaTypeMask.IterationExpression
 			| TrackingAreaTypeMask.IterationContent
 			| TrackingAreaTypeMask.TemplateFor
-		)) > 0
-
-		// Not move tracking content outside because it will be compiled to another template.
-		let beConditionalRange = area.range !== null
-			&& (area.type & TrackingAreaTypeMask.Conditional) > 0
+		)
 
 		// `<lu:if>${...}<lu:if ${...}>...`, if allow tracking codes cross the second `lu:if`,
 		// It moves into the first conditional content.
-		let beConditionalRangeConditionWithinAnother = (area.type & TrackingAreaTypeMask.ConditionalCondition) > 0
+		let beConditionalRangeConditionWithinAnother = (area.type & TrackingAreaTypeMask.Conditional) > 0
 			&& area.parent !== null
 			&& area.parent.range !== null
 			&& (area.parent.type & TrackingAreaTypeMask.ConditionalContent) > 0
 
-		return preventedByType || beConditionalRange || beConditionalRangeConditionWithinAnother
+		// A template conditional range owns its generated condition and branch content.
+		// let beTemplateConditional = area.range !== null
+		// 	&& (area.type & TrackingAreaTypeMask.Conditional) > 0
+
+		return preventedByType > 0 || beConditionalRangeConditionWithinAnother
 	}
 }

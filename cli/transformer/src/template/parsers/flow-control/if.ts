@@ -21,8 +21,6 @@ export class IfFlowControl extends FlowControlBase {
 	protected cacheable: boolean = false
 	protected conditionIndices: (number | null)[] = []
 	protected contentTemplates: (TemplateParser | null)[] = []
-	protected contentRangeIds: (number | null)[] = []
-	protected conditionalRangeIds: (number | null)[] = []
 
 	override preInit() {
 		let tags = ['lu:elseif', 'lu:else']
@@ -83,9 +81,18 @@ export class IfFlowControl extends FlowControlBase {
 		let flatContentIndices = contentIndicesList.flat()
 		let rawValueNodes = this.template.values.valueNodes
 		
-		let endContentIndex = flatContentIndices.length > 0
+		let conditionalEndIndex: number | null = flatContentIndices.length > 0
 			? flatContentIndices[flatContentIndices.length - 1]
 			: null
+
+		// Ensure the end index contains all the conditions.
+		for (let conditionIndex of conditionIndices) {
+			if (conditionIndex !== null
+				&& (conditionalEndIndex === null || conditionIndex > conditionalEndIndex)
+			) {
+				conditionalEndIndex = conditionIndex
+			}
+		}
 
 		for (let i = 0; i < conditionIndices.length; i++) {
 			let conditionIndex = conditionIndices[i]
@@ -99,38 +106,31 @@ export class IfFlowControl extends FlowControlBase {
 
 
 			if (contentIndices.length > 0) {
-				let contentRangeId = TrackingRanges.markRange(
+				TrackingRanges.markRange(
 					this.template.node,
 					rawValueNodes[contentIndices[0]].parent,
 					rawValueNodes[contentIndices[contentIndices.length - 1]].parent,
 					TrackingAreaTypeMask.ConditionalContent,
 				)
-
-				this.contentRangeIds.push(contentRangeId)
-			}
-			else {
-				this.contentRangeIds.push(null)
 			}
 
 
-			if (conditionIndex !== null && contentIndices.length > 0) {
+			if (conditionIndex !== null) {
 				let type = TrackingAreaTypeMask.Conditional
-				
+
+				// `elseif ...` is also a content branch.
 				if (i > 0) {
 					type |= TrackingAreaTypeMask.ConditionalContent
 				}
 
-				let conditionalRangeId = TrackingRanges.markRange(
+				let endIndex = conditionalEndIndex ?? conditionIndex
+	
+				TrackingRanges.markRange(
 					this.template.node,
 					rawValueNodes[conditionIndex].parent,
-					rawValueNodes[endContentIndex!].parent,
+					rawValueNodes[endIndex].parent,
 					type,
 				)
-
-				this.conditionalRangeIds.push(conditionalRangeId)
-			}
-			else {
-				this.conditionalRangeIds.push(null)
 			}
 		}
 	}
