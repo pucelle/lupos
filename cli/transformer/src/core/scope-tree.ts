@@ -411,7 +411,7 @@ class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 			let isDeclaredWithinTransferring = this.isDeclaredWithinNodeRange(node, node, topRawNode)
 			let shouldNotReplace = this.isDeclaredInTopmostScope(node) || isDeclaredWithinTransferring
 			if (!shouldNotReplace
-				&& canTransferNode(node, config)
+				&& canTransferNode(node, closestRawNode, config)
 			) {
 				return replacer(node, closestRawNode, withinFunction)
 			}
@@ -424,7 +424,7 @@ class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 				let isDeclaredWithinTransferring = VisitTree.isContains(topRawNode, declaredIn.node)
 				let shouldNotReplace = isDeclaredWithinTransferring
 				if (!shouldNotReplace
-					&& canTransferNode(node, config)
+					&& canTransferNode(node, closestRawNode, config)
 				) {
 					return replacer(node, closestRawNode, withinFunction)
 				}
@@ -434,7 +434,7 @@ class ExtendedScopeTree extends ScopeTree<DeclarationScope> {
 		// `this`.
 		else if (canReplaceThis
 			&& transformContext.helper.isThis(node)
-			&& canTransferNode(node, config)
+			&& canTransferNode(node, closestRawNode, config)
 		) {
 			return replacer(node as ts.ThisExpression, closestRawNode, withinFunction)
 		}

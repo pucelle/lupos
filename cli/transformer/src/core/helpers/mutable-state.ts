@@ -65,16 +65,16 @@ export function testMutable(state: MutableState, config: MutableConfig = {}): bo
 
 
 /** Test whether can replace node when transferring. */
-export function canTransferNode(node: ts.Node, config: MutableConfig) {
+export function canTransferNode(node: ts.Node, closestRawNode: ts.Node, config: MutableConfig) {
 	if (!config.skipHashes) {
 		return true
 	}
 
-	if (!VisitTree.hasNode(node)) {
-		return true
-	}
+	let hash = VisitTree.hasNode(node)
+		? Hashing.hashNode(node).key
+		: Hashing.hashMayNewNode(node, closestRawNode).key
 
-	return !config.skipHashes.includes(Hashing.hashNode(node).key)
+	return !config.skipHashes.includes(hash)
 }
 
 
