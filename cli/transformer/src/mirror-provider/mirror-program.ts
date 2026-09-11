@@ -14,6 +14,7 @@ interface MirrorProgramSetup {
 	options: ts.CompilerOptions
 	host: ts.CompilerHost
 	projectReferences: readonly ts.ProjectReference[] | undefined
+	releaseOldProgram: () => void
 }
 
 /** Builder programs require a stable version on every source file. */
@@ -31,7 +32,18 @@ export function createMirrorProgram(
 ): ts.Program {
 	let setup = createMirrorProgramSetup(realProgram, realHost, documents, oldProgram, false)
 
-	return ts.createProgram({...setup, oldProgram})
+	try {
+		return ts.createProgram({
+			rootNames: setup.rootNames,
+			options: setup.options,
+			host: setup.host,
+			oldProgram,
+			projectReferences: setup.projectReferences,
+		})
+	}
+	finally {
+		setup.releaseOldProgram()
+	}
 }
 
 /** Create an incremental semantic builder with mirrored sources replacing their originals. */
@@ -44,14 +56,19 @@ export function createMirrorBuilderProgram(
 	let oldSourceProgram = oldProgram?.getProgram()
 	let setup = createMirrorProgramSetup(realProgram, realHost, documents, oldSourceProgram, true)
 
-	return ts.createSemanticDiagnosticsBuilderProgram(
-		setup.rootNames,
-		setup.options,
-		setup.host,
-		oldProgram,
-		undefined,
-		setup.projectReferences
-	)
+	try {
+		return ts.createSemanticDiagnosticsBuilderProgram(
+			setup.rootNames,
+			setup.options,
+			setup.host,
+			oldProgram,
+			undefined,
+			setup.projectReferences
+		)
+	}
+	finally {
+		setup.releaseOldProgram()
+	}
 }
 
 /** Whether a source belongs to the application and may require a mirror. */
@@ -171,6 +188,13 @@ function createMirrorProgramSetup(
 		options,
 		host,
 		projectReferences: realProgram.getProjectReferences(),
+
+		// Source loading is synchronous during Program construction. The retained
+		// compiler host no longer needs the old Program afterwards; clearing it
+		// prevents watch revisions from forming a chain of mirror Programs.
+		releaseOldProgram() {
+			oldProgram = undefined
+		},
 	}
 }
 
