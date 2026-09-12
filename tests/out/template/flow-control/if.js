@@ -487,6 +487,52 @@ const $html_26 = /*#__PURE__*/ new HTMLMaker("<span> </span><!--91440d91-->");
         position: new SlotPosition(1, $node_0)
     };
 });
+const $html_28 = /*#__PURE__*/ new HTMLMaker("<!----><!--d10e6b66-->");
+/*
+<root>
+    <lu:if ${item} />
+</root>
+*/ const $template_28 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $locator = $html_28.make($hydrates);
+    let $node_0 = $locator.childAt(0);
+    let $node_1 = $locator.getMarker("d10e6b66");
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), null, $locator.getNodes("d10e6b66"));
+    let $block_0 = new IfBlock($slot_0);
+    return {
+        el: $locator.el,
+        position: new SlotPosition(1, $node_0),
+        update($values) {
+            $block_0.update($values[0]);
+        },
+        parts: [
+            [$slot_0, 1]
+        ]
+    };
+});
+const $html_29 = /*#__PURE__*/ new HTMLMaker("<span> </span> ");
+/*
+<root>
+    <span>${getLabel()}</span>
+    ${this.renderItem(item!.value.length)}
+</root>
+*/ const $template_29 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $latest_0;
+    let $locator = $html_29.make($hydrates);
+    let $node_0 = $locator.childAt(0);
+    let $node_1 = $node_0.firstChild;
+    let $node_2 = $locator.childAt(1);
+    $node_1.data = getLabel();
+    return {
+        el: $locator.el,
+        position: new SlotPosition(1, $node_0),
+        update($values) {
+            if ($latest_0 !== $values[0]) {
+                $node_2.data = $values[0];
+                $latest_0 = $values[0];
+            }
+        }
+    };
+});
 export class TestIf extends Component {
     prop = 1;
     content = '';
@@ -566,6 +612,15 @@ export class TestIf extends Component {
         return new CompiledTemplateResult($template_25, [
             this.prop ? new CompiledTemplateResult($template_26, [
                 (trackGet(this, "item"), this.item && trackGet(this.item, "value"), this.item?.value) ? new CompiledTemplateResult($template_27, [], this) : null
+            ], this) : null
+        ], this);
+    }
+    testDynamicContentAfterTransferableValue() {
+        let item = this.item;
+        trackGet(this, "item");
+        return new CompiledTemplateResult($template_28, [
+            item ? new CompiledTemplateResult($template_29, [
+                (trackGet(item, "value"), trackGet(item.value, ""), this.renderItem(item.value.length))
             ], this) : null
         ], this);
     }

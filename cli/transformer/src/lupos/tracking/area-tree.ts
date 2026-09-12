@@ -1,5 +1,5 @@
 import ts from 'typescript'
-import {InterpolationPosition, Packer, transformContext} from '../../core'
+import {DeclarationScopeTree, InterpolationPosition, Packer, transformContext, VisitTree} from '../../core'
 import {TrackingArea} from './area'
 import {TrackingRange, TrackingRanges} from './ranges'
 import {ListMap} from '../../lupos-ts-module'
@@ -489,14 +489,23 @@ export namespace TrackingAreaTree {
 					break
 				}
 
-				area = area.parent!
+				let parentArea = area.parent!
 
 				// If new area is if or for range, stay at it's start.
-				if (area.range && preventsMovingCapturedOutward(area)) {
-					toNode = area.range.startNode
+				if (parentArea.range && preventsMovingCapturedOutward(parentArea)) {
+
+					// The target are not accept tracking codes, stay at current position.
+					if (!canMoveCapturedToRangeStart(toNode, parentArea.range.startNode)) {
+						break
+					}
+
+					area = parentArea
+					toNode = parentArea.range.startNode
 					position = InterpolationPosition.Before
 					break
 				}
+
+				area = parentArea
 			}
 
 			toNode = toNode.parent
@@ -534,10 +543,19 @@ export namespace TrackingAreaTree {
 			&& area.parent.range !== null
 			&& (area.parent.type & TrackingAreaTypeMask.ConditionalContent) > 0
 
-		// A template conditional range owns its generated condition and branch content.
-		// let beTemplateConditional = area.range !== null
-		// 	&& (area.type & TrackingAreaTypeMask.Conditional) > 0
 
 		return preventedByType > 0 || beConditionalRangeConditionWithinAnother
+	}
+
+	/** Whether captured expressions can move to the first node of a tracking range. */
+	function canMoveCapturedToRangeStart(fromNode: ts.Node, startNode: ts.Node): boolean {
+		if (!ts.isTemplateSpan(startNode)
+			|| VisitTree.isContains(startNode, fromNode)
+		) {
+			return true
+		}
+
+		// If the template slot contains static content and later transferred.
+		return !DeclarationScopeTree.testTransferable(startNode.expression)
 	}
 }

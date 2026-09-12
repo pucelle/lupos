@@ -112,6 +112,17 @@ export class TestIf extends Component {
 			</lu:if>
 		`
 	}
+
+	testDynamicContentAfterTransferableValue() {
+		let item = this.item
+
+		return html`
+			<lu:if ${item}>
+				<span>${getLabel()}</span>
+				${this.renderItem(item!.value.length)}
+			</lu:if>
+		`
+	}
 }
 
 /** Return static content placed before a nested conditional. */
