@@ -536,15 +536,7 @@ export namespace TrackingAreaTree {
 			| TrackingAreaTypeMask.TemplateFor
 		)
 
-		// `<lu:if>${...}<lu:if ${...}>...`, if allow tracking codes cross the second `lu:if`,
-		// It moves into the first conditional content.
-		let beConditionalRangeConditionWithinAnother = (area.type & TrackingAreaTypeMask.Conditional) > 0
-			&& area.parent !== null
-			&& area.parent.range !== null
-			&& (area.parent.type & TrackingAreaTypeMask.ConditionalContent) > 0
-
-
-		return preventedByType > 0 || beConditionalRangeConditionWithinAnother
+		return preventedByType > 0
 	}
 
 	/** Whether captured expressions can move to the first node of a tracking range. */
