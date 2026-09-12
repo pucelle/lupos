@@ -19,7 +19,8 @@ const FlowControlByTagName: Record<string, FlowControlConstructor> = {
 
 export class FlowControlSlotParser extends SlotParserBase {
 
-	private control!: FlowControlBase
+	/** Flow control implementation, or null for a diagnosed unsupported tag. */
+	private control: FlowControlBase | null = null
 
 	/** 
 	 * Flow control should always be updated dynamically,
@@ -33,7 +34,7 @@ export class FlowControlSlotParser extends SlotParserBase {
 		let tagName = this.node.tagName!
 		let Control = FlowControlByTagName[tagName]
 		if (!Control) {
-			throw new Error(`Unsupported flow-control tag '<${tagName}>'.`)
+			return
 		}
 
 		let control = new Control(this)
@@ -43,14 +44,14 @@ export class FlowControlSlotParser extends SlotParserBase {
 	}
 
 	override postInit() {
-		this.control.postInit()
+		this.control?.postInit()
 	}
 
 	override outputInit(): ts.Statement | ts.Expression | (ts.Statement| ts.Expression)[] {
-		return this.control.outputInit()
+		return this.control?.outputInit() ?? []
 	}
 
 	override outputUpdate(): ts.Statement | ts.Expression | (ts.Statement| ts.Expression)[] {
-		return this.control.outputUpdate()
+		return this.control?.outputUpdate() ?? []
 	}
 }

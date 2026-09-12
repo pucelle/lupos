@@ -52,6 +52,17 @@ test('adds transformer diagnostics and deletes superseded TypeScript diagnostics
 
 		fs.writeFileSync(
 			path.join(projectDirectory, 'src.ts'),
+			[...sourcePrefix, '\t\t\t<lu:elseif ${true}></lu:elseif>', ...sourceSuffix].join(os.EOL)
+		)
+
+		let unsupported = compile(projectDirectory)
+		assert.notEqual(unsupported.status, 0)
+		assert.match(unsupported.output, /error TS30001: '<lu:elseif>' must follow '<lu:if>' or '<lu:elseif>'\./)
+		assert.doesNotMatch(unsupported.output, /Unsupported flow-control tag/)
+		assert.doesNotMatch(unsupported.output, /Debug Failure|\bat .*FlowControlSlotParser/)
+
+		fs.writeFileSync(
+			path.join(projectDirectory, 'src.ts'),
 			[...sourcePrefix, ...sourceSuffix].join(os.EOL)
 		)
 
