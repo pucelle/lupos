@@ -21,11 +21,39 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<div html></div>");
         }
     };
 });
+const $html_1 = /*#__PURE__*/ new HTMLMaker("");
+/*
+<root>
+    <template :html=${this.html} html />
+</root>
+*/ const $template_1 = /*#__PURE__*/ new TemplateMaker(function ($context, $hydrates) {
+    let $latest_0;
+    let $locator = $html_1.make($hydrates);
+    let $node_0 = $context.el;
+    $node_0.setAttribute("html", "");
+    let $binding_0 = new HTMLBinding($node_0);
+    return {
+        el: $locator.el,
+        position: new SlotPosition(0, $node_0),
+        update($values) {
+            if ($latest_0 !== $values[0]) {
+                $binding_0.update($values[0]);
+                $latest_0 = $values[0];
+            }
+        }
+    };
+});
 export class TestHTMLBinding extends Component {
     html = 'HTML';
     testHTML() {
         trackGet(this, "html");
         return new CompiledTemplateResult($template_0, [
+            this.html
+        ], this);
+    }
+    testHTMLOnTemplate() {
+        trackGet(this, "html");
+        return new CompiledTemplateResult($template_1, [
             this.html
         ], this);
     }

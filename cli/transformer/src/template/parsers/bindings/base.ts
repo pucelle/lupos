@@ -107,7 +107,7 @@ export class BindingBase {
 		this.initParameters()
 		this.initLatestVariableNames()
 
-		// Mark as will applying `:html`.
+		// Mark as will apply `:html`.
 		if (this.name === 'html') {
 			this.node.setAttr('html', null)
 		}
@@ -260,6 +260,22 @@ export class BindingBase {
 
 		// Output contents.
 		let init: (ts.Statement | ts.Expression)[] = []
+
+		// A root `<template>` represents the context element and is not serialized.
+		// Apply the HTML binding marker directly before initializing the binding.
+		if (this.name === 'html' && this.node.tagName === 'template') {
+			init.push(transformContext.factory.createCallExpression(
+				transformContext.factory.createPropertyAccessExpression(
+					transformContext.factory.createIdentifier(nodeName),
+					transformContext.factory.createIdentifier('setAttribute')
+				),
+				undefined,
+				[
+					transformContext.factory.createStringLiteral('html'),
+					transformContext.factory.createStringLiteral(''),
+				]
+			))
+		}
 
 		// let $binding_0
 		// () => new ClassBinding($node_0, ?context, ?modifiers)

@@ -8,4 +8,8 @@ export class TestHTMLBinding extends Component {
 	testHTML() {
 		return html`<div :html=${this.html} />`
 	}
+
+	testHTMLOnTemplate() {
+		return html`<template :html=${this.html} />`
+	}
 }
