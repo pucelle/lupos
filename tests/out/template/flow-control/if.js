@@ -533,10 +533,76 @@ const $html_29 = /*#__PURE__*/ new HTMLMaker("<span> </span> ");
         }
     };
 });
+const $html_30 = /*#__PURE__*/ new HTMLMaker("<!----><!--a39b2e1b-->");
+/*
+<root>
+    <lu:if ${this.prop === 1} />
+</root>
+*/ const $template_30 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $locator = $html_30.make($hydrates);
+    let $node_0 = $locator.childAt(0);
+    let $node_1 = $locator.getMarker("a39b2e1b");
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 0, $locator.getNodes("a39b2e1b"));
+    let $block_0 = new IfBlock($slot_0);
+    return {
+        el: $locator.el,
+        position: new SlotPosition(1, $node_0),
+        update($values) {
+            $block_0.update($values[0]);
+        },
+        parts: [
+            [$slot_0, 1]
+        ]
+    };
+});
+const $html_31 = /*#__PURE__*/ new HTMLMaker("Installed");
+/*
+<root>Installed</root>
+*/ const $template_31 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $locator = $html_31.make($hydrates);
+    let $node_0 = $locator.childAt(0);
+    return {
+        el: $locator.el,
+        position: new SlotPosition(1, $node_0)
+    };
+});
+const $html_32 = /*#__PURE__*/ new HTMLMaker("Ready");
+/*
+<root>Ready</root>
+*/ const $template_32 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $locator = $html_32.make($hydrates);
+    let $node_0 = $locator.childAt(0);
+    return {
+        el: $locator.el,
+        position: new SlotPosition(1, $node_0)
+    };
+});
+const $html_33 = /*#__PURE__*/ new HTMLMaker("<progress></progress>");
+/*
+<root>
+    <progress .value=${(progress.loadedBytes / progress.totalBytes) || 0} />
+</root>
+*/ const $template_33 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $latest_0;
+    let $locator = $html_33.make($hydrates);
+    let $node_0 = $locator.childAt(0);
+    return {
+        el: $locator.el,
+        position: new SlotPosition(1, $node_0),
+        update($values) {
+            if ($latest_0 !== $values[0]) {
+                $node_0.value = $values[0];
+                $latest_0 = $values[0];
+            }
+        }
+    };
+});
 export class TestIf extends Component {
     prop = 1;
     content = '';
     item = { value: [1] };
+    /** Progress value used to verify tracking order in a conditional template branch. */
+    progress = { loadedBytes: 1, totalBytes: 2 };
     testIf() {
         trackGet(this, "prop");
         return new CompiledTemplateResult($template_0, [
@@ -622,6 +688,16 @@ export class TestIf extends Component {
             item ? new CompiledTemplateResult($template_29, [
                 (trackGet(item, "value"), trackGet(item.value, ""), this.renderItem(item.value.length))
             ], this) : null
+        ], this);
+    }
+    /** Test a tracked property expression with a fallback value in an else branch. */
+    testElsePropertyValueWithFallback() {
+        let progress = this.progress;
+        trackGet(this, "progress", "prop");
+        return new CompiledTemplateResult($template_30, [
+            this.prop === 1 ? new CompiledTemplateResult($template_31, [], this) : this.prop === 2 ? new CompiledTemplateResult($template_32, [], this) : new CompiledTemplateResult($template_33, [
+                (trackGet(progress, "loadedBytes", "totalBytes"), (progress.loadedBytes / progress.totalBytes) || 0)
+            ], this)
         ], this);
     }
 }

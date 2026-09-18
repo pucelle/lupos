@@ -7,6 +7,9 @@ export class TestIf extends Component {
 	content: string = ''
 	item: {value: number[]} | undefined = {value: [1]}
 
+	/** Progress value used to verify tracking order in a conditional template branch. */
+	progress = {loadedBytes: 1, totalBytes: 2}
+
 	testIf() {
 		return html`
 			<lu:if ${this.prop}>
@@ -121,6 +124,23 @@ export class TestIf extends Component {
 				<span>${getLabel()}</span>
 				${this.renderItem(item!.value.length)}
 			</lu:if>
+		`
+	}
+
+	/** Test a tracked property expression with a fallback value in an else branch. */
+	testElsePropertyValueWithFallback() {
+		let progress = this.progress
+
+		return html`
+			<lu:if ${this.prop === 1}>
+				Installed
+			</lu:if>
+			<lu:elseif ${this.prop === 2}>
+				Ready
+			</lu:elseif>
+			<lu:else>
+				<progress .value=${(progress.loadedBytes / progress.totalBytes) || 0} />
+			</lu:else>
 		`
 	}
 }
