@@ -151,7 +151,7 @@ class UpdateQueueClass {
 
 				// Will wait for several micro task ticks.
 				if (beCom && this.decoPromises.length > 0) {
-					await this.waitDecoPromises()
+					await this.waitSeveralTicks()
 				}
 				else {
 					this.heap.popHead()
@@ -205,8 +205,8 @@ class UpdateQueueClass {
 		this.phase = QueueUpdatePhase.NotStarted
 	}
 
-	/** Wait for a while to see if deco promises resolved. */
-	private waitDecoPromises() {
+	/** Wait for serval ticks to see if deco promises resolved. */
+	waitSeveralTicks() {
 		let promises = this.decoPromises
 		this.decoPromises = []
 
