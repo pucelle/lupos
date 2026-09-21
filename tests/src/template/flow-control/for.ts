@@ -8,6 +8,13 @@ export class TestFor extends Component {
 	items: {value: number}[] = [{value: 1}]
 	readonly readonlyItems: {value: number}[] = [{value: 1}]
 	readonly deepReadonlyItems: ReadonlyArray<{value: number}> = [{value: 1}]
+
+	/** Tuple values used by array-destructuring loop tests. */
+	entries: [string, {value: number}][] = [['key', {value: 1}]]
+
+	/** Object values used by object-destructuring loop tests. */
+	records: {prop1: string, prop2: number}[] = [{prop1: 'text', prop2: 1}]
+	
 	renderer = this.renderItemWithIndex
 
 	getItems(): Observed<{value: number}[]> {
@@ -66,6 +73,33 @@ export class TestFor extends Component {
 		return html`
 			<lu:for ${item, index} of ${this.items}>
 				<div .title=${index + ''}>${item.value}: ${index}</div>
+			</lu:for>
+		`
+	}
+
+	/** Render tuple entries with an index. */
+	testForOfArrayDestructuring() {
+		return html`
+			<lu:for ${[key, value], index} of ${this.entries}>
+				<div>${key}: ${value.value}: ${index}</div>
+			</lu:for>
+		`
+	}
+
+	/** Render shorthand object properties. */
+	testForOfObjectDestructuring() {
+		return html`
+			<lu:for ${{prop1, prop2}} of ${this.records}>
+				<div>${prop1}: ${prop2}</div>
+			</lu:for>
+		`
+	}
+
+	/** Render aliased and rest object properties. */
+	testForOfAliasedRestDestructuring() {
+		return html`
+			<lu:for ${{prop1: label, ...rest}} of ${this.records}>
+				<div>${label}: ${rest.prop2}</div>
 			</lu:for>
 		`
 	}

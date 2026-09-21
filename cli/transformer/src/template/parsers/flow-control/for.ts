@@ -81,10 +81,10 @@ export class ForFlowControl extends FlowControlBase {
 				TrackingPatch.forceTrackType(iterable, ObservedStateMask.Elements)
 				TrackingPatch.addCustomTracking(iterable, 'get', iterable, '')
 
-				let itemName = this.header?.names[0].text
+				let itemNames = this.header?.valueNames.map(name => name.text) ?? []
 
 				let visit = (node: ts.Node) => {
-					if (transformContext.helper.isVariableIdentifier(node) && node.text === itemName) {
+					if (transformContext.helper.isVariableIdentifier(node) && itemNames.includes(node.text)) {
 						TrackingPatch.forceTrackType(node, ObservedStateMask.Elements)
 					}
 					ts.forEachChild(node, visit)
@@ -196,13 +196,18 @@ export class ForFlowControl extends FlowControlBase {
 			undefined,
 			undefined,
 			undefined,
-			this.header?.names.map(name =>
-				factory.createParameterDeclaration(
-					undefined,
-					undefined,
-					name,
+			this.header
+				? [
+					this.header.bindingName,
+					...this.header.indexName ? [this.header.indexName] : []
+				].map(name =>
+					factory.createParameterDeclaration(
+						undefined,
+						undefined,
+						name,
+					)
 				)
-			),
+				: undefined,
 			undefined,
 			factory.createBlock([
 				factory.createReturnStatement(value.joint)

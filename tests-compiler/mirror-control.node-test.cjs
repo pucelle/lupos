@@ -24,6 +24,23 @@ test('checks loop and conditional bodies with TypeScript branch narrowing', () =
 	})
 })
 
+test('checks destructured loop parameters and their nested content types', () => {
+	checkMirror([
+		"import {html} from 'lupos.html'",
+		'declare const entries: readonly [string, {value: number}][]',
+		'declare const records: readonly {prop1: string, prop2: number}[]',
+		'export const result = html`<lu:for ${[key, value], index} of ${entries}>',
+		'${key.toUpperCase()} ${value.value.toFixed()} ${index.toFixed()} ${value.missing}',
+		'</lu:for><lu:for ${{prop1, prop2}} of ${records}>',
+		'${prop1.toUpperCase()} ${prop2.toFixed()} ${prop1.missing}',
+		'</lu:for><lu:for ${{prop1: label, ...rest}} of ${records}>',
+		'${label.toUpperCase()} ${rest.prop2.toFixed()} ${rest.missing}',
+		'</lu:for>`',
+	], errors => {
+		assert.deepEqual(errors.map(error => error.text), ['missing', 'missing', 'missing'])
+	})
+})
+
 test('checks switch branches and preserves errors on invalid iterable expressions', () => {
 	checkMirror([
 		"import {html} from 'lupos.html'",
