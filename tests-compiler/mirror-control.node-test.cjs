@@ -41,6 +41,19 @@ test('checks destructured loop parameters and their nested content types', () =>
 	})
 })
 
+test('names the original possibly undefined iterable in loop diagnostics', () => {
+	checkMirror([
+		"import {html} from 'lupos.html'",
+		'declare const uniques: {value: number}[] | undefined',
+		'export const result = html`<lu:for ${item} of ${uniques}></lu:for>`',
+	], errors => {
+		assert.equal(errors.length, 1, JSON.stringify(errors))
+		assert.equal(errors[0].code, 18048)
+		assert.equal(errors[0].text, 'uniques')
+		assert.equal(errors[0].message, "'uniques' is possibly 'undefined'.")
+	})
+})
+
 test('checks switch branches and preserves errors on invalid iterable expressions', () => {
 	checkMirror([
 		"import {html} from 'lupos.html'",

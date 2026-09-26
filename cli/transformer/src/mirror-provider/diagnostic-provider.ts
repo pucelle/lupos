@@ -95,9 +95,47 @@ function mapDiagnostic(
 		file: realSourceFile,
 		start: span.start,
 		length: span.length,
+		messageText: mapGeneratedNameInMessage(diagnostic, span, realSourceFile, mirrorSourceFile),
 		relatedInformation: diagnostic.relatedInformation
 			?.map(related => mapRelatedInformation(related, document, realSourceFile, mirrorSourceFile))
 			.filter((related): related is ts.DiagnosticRelatedInformation => related !== null),
+	}
+}
+
+/** Replace a generated diagnostic subject with its mapped source expression. */
+function mapGeneratedNameInMessage(
+	diagnostic: ts.Diagnostic,
+	span: {start: number, length: number},
+	realSourceFile: ts.SourceFile,
+	mirrorSourceFile: ts.SourceFile
+): string | ts.DiagnosticMessageChain {
+	let generatedName = mirrorSourceFile.text.slice(diagnostic.start!, diagnostic.start! + (diagnostic.length ?? 0))
+	if (!/^\$LUPOS_MIRROR_\d+$/.test(generatedName)) {
+		return diagnostic.messageText
+	}
+
+	let sourceExpression = realSourceFile.text.slice(span.start, span.start + span.length)
+
+	return replaceDiagnosticSubject(diagnostic.messageText, generatedName, sourceExpression)
+}
+
+/** Preserve diagnostic chains while replacing only the quoted generated subject. */
+function replaceDiagnosticSubject(
+	message: string | ts.DiagnosticMessageChain,
+	generatedName: string,
+	sourceExpression: string
+): string | ts.DiagnosticMessageChain {
+	let replace = (text: string) => text.split(`'${generatedName}'`).join(`'${sourceExpression}'`)
+
+	if (typeof message === 'string') {
+		return replace(message)
+	}
+	else {
+		return {
+			...message,
+			messageText: replace(message.messageText),
+			next: message.next?.map(child => replaceDiagnosticSubject(child, generatedName, sourceExpression) as ts.DiagnosticMessageChain),
+		}
 	}
 }
 
