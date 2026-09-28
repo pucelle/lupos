@@ -1,4 +1,4 @@
-import { Component, TemplateSlot, SlotPosition, CompiledTemplateResult, TemplateMaker, HTMLMaker, SwitchBlock } from 'lupos.html';
+import { Component, TemplateSlot, SlotPosition, CompiledTemplateResult, TemplateMaker, HTMLMaker, CacheableSwitchBlock } from 'lupos.html';
 import { trackGet } from "lupos";
 const $html_0 = /*#__PURE__*/ new HTMLMaker("<!----><!--b9615f98-->");
 /*
@@ -10,12 +10,11 @@ const $html_0 = /*#__PURE__*/ new HTMLMaker("<!----><!--b9615f98-->");
     let $node_0 = $locator.childAt(0);
     let $node_1 = $locator.getMarker("b9615f98");
     let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), null, $locator.getNodes("b9615f98"));
-    let $block_0 = new SwitchBlock($slot_0);
     return {
         el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
-            $block_0.update($values[0]);
+            $slot_0.update($values[0]);
         },
         parts: [
             [$slot_0, 1]
@@ -54,12 +53,11 @@ const $html_3 = /*#__PURE__*/ new HTMLMaker("<!----><!--e707ad08-->");
     let $node_0 = $locator.childAt(0);
     let $node_1 = $locator.getMarker("e707ad08");
     let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 0, $locator.getNodes("e707ad08"));
-    let $block_0 = new SwitchBlock($slot_0);
     return {
         el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
-            $block_0.update($values[0]);
+            $slot_0.update($values[0]);
         },
         parts: [
             [$slot_0, 1]
@@ -97,6 +95,49 @@ const $html_6 = /*#__PURE__*/ new HTMLMaker("Case Content 3");
         position: new SlotPosition(1, $node_0)
     };
 });
+const $html_7 = /*#__PURE__*/ new HTMLMaker("<!----><!--8dae8909-->");
+/*
+<root>
+    <lu:switch ${this.value} cache />
+</root>
+*/ const $template_7 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $locator = $html_7.make($hydrates);
+    let $node_0 = $locator.childAt(0);
+    let $node_1 = $locator.getMarker("8dae8909");
+    let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), 0, $locator.getNodes("8dae8909"));
+    let $block_0 = new CacheableSwitchBlock($slot_0);
+    return {
+        el: $locator.el,
+        position: new SlotPosition(1, $node_0),
+        update($values) {
+            $block_0.update($values[0]);
+        },
+        parts: [
+            [$slot_0, 1]
+        ]
+    };
+});
+/*
+<root>Case Content 1</root>
+*/ const $template_8 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $locator = $html_1.make($hydrates);
+    let $node_0 = $locator.childAt(0);
+    return {
+        el: $locator.el,
+        position: new SlotPosition(1, $node_0)
+    };
+});
+const $html_9 = /*#__PURE__*/ new HTMLMaker("Default Content");
+/*
+<root>Default Content</root>
+*/ const $template_9 = /*#__PURE__*/ new TemplateMaker(function (_$context, $hydrates) {
+    let $locator = $html_9.make($hydrates);
+    let $node_0 = $locator.childAt(0);
+    return {
+        el: $locator.el,
+        position: new SlotPosition(1, $node_0)
+    };
+});
 export class TestSwitch extends Component {
     value = 1;
     testCaseOnly() {
@@ -109,6 +150,13 @@ export class TestSwitch extends Component {
         trackGet(this, "value");
         return new CompiledTemplateResult($template_3, [
             this.value === 1 ? new CompiledTemplateResult($template_4, [], this) : this.value === 2 ? new CompiledTemplateResult($template_5, [], this) : new CompiledTemplateResult($template_6, [], this)
+        ], this);
+    }
+    /** Keep a previously rendered case when switching branches. */
+    testCacheableCase() {
+        trackGet(this, "value");
+        return new CompiledTemplateResult($template_7, [
+            this.value === 1 ? new CompiledTemplateResult($template_8, [], this) : new CompiledTemplateResult($template_9, [], this)
         ], this);
     }
 }

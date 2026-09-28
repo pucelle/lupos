@@ -1,4 +1,4 @@
-import { Component, TemplateSlot, SlotPosition, CompiledTemplateResult, TemplateMaker, HTMLMaker, IfBlock } from 'lupos.html';
+import { Component, TemplateSlot, SlotPosition, CompiledTemplateResult, TemplateMaker, HTMLMaker } from 'lupos.html';
 import { trackGet } from "lupos";
 const $html_0 = /*#__PURE__*/ new HTMLMaker("<div><!--8e82c18d--></div>");
 /*
@@ -209,14 +209,13 @@ const $html_11 = /*#__PURE__*/ new HTMLMaker("<!----><!--0ceedb6a--><!--53fef99f
     let $node_1 = $locator.getMarker("0ceedb6a");
     let $node_2 = $locator.getMarker("53fef99f");
     let $slot_0 = new TemplateSlot(new SlotPosition(1, $node_1), null, $locator.getNodes("0ceedb6a"));
-    let $block_0 = new IfBlock($slot_0);
     let $slot_1 = new TemplateSlot(new SlotPosition(1, $node_2), 0, $locator.getNodes("53fef99f"));
     $slot_1.update(new CompiledTemplateResult($template_13, [], $context));
     return {
         el: $locator.el,
         position: new SlotPosition(1, $node_0),
         update($values) {
-            $block_0.update($values[0]);
+            $slot_0.update($values[0]);
         },
         parts: [
             [$slot_0, 1],

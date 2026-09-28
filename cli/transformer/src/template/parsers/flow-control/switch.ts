@@ -21,7 +21,8 @@ export class SwitchFlowControl extends IfFlowControl {
 			return []
 		}
 
-		let blockClassName = this.cacheable ? 'CacheableSwitchBlock' : 'SwitchBlock'
+		let blockClassName = this.cacheable ? 'CacheableSwitchBlock' : null
+
 		return this.outputInitByBlockClassName(blockClassName)
 	}
 
@@ -30,7 +31,6 @@ export class SwitchFlowControl extends IfFlowControl {
 			return []
 		}
 
-		// $block_0.update($values[0])
 		return super.outputUpdate()
 	}
 

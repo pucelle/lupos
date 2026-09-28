@@ -33,4 +33,14 @@ export class TestSwitch extends Component {
 			</lu:switch>
 		`
 	}
+
+	/** Keep a previously rendered case when switching branches. */
+	testCacheableCase() {
+		return html`
+			<lu:switch ${this.value} cache>
+				<lu:case ${1}>Case Content 1</lu:case>
+				<lu:default>Default Content</lu:default>
+			</lu:switch>
+		`
+	}
 }

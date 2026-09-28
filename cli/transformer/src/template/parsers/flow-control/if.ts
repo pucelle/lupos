@@ -31,9 +31,12 @@ export class IfFlowControl extends FlowControlBase {
 	}
 
 	protected initByNodesAndTags(allNodes: HTMLNode[]) {
-		this.blockVariableName = this.tree.makeUniqueBlockName()
 		this.slotVariableName = this.slot.makeSlotName()
 		this.cacheable = this.hasAttrValue(this.node, 'cache')
+
+		if (this.cacheable) {
+			this.blockVariableName = this.tree.makeUniqueBlockName()
+		}
 
 		let conditionIndices: (number | null)[] = []
 		let lastConditionIndex: number | null = null
@@ -136,12 +139,17 @@ export class IfFlowControl extends FlowControlBase {
 	}
 
 	override outputInit() {
-		let blockClassName = this.cacheable ? 'CacheableIfBlock' : 'IfBlock'
+		let blockClassName = this.cacheable ? 'CacheableIfBlock' : null
+
 		return this.outputInitByBlockClassName(blockClassName)
 	}
 
-	protected outputInitByBlockClassName(blockClassName: string) {
-		Modifier.addImport(blockClassName, 'lupos.html')
+
+	/** Initialize the slot and an optional cacheable block. */
+	protected outputInitByBlockClassName(blockClassName: string | null) {
+		if (blockClassName) {
+			Modifier.addImport(blockClassName, 'lupos.html')
+		}
 
 		// let $block_0 = new IfBlock / CacheableIfBlock(
 		//   new TemplateSlot(new SlotPosition(SlotPositionType.Before, nextChild)),
@@ -153,9 +161,8 @@ export class IfFlowControl extends FlowControlBase {
 			templateSlot
 		)
 
-		return [
-			slotInit,
-			this.slot.createVariableAssignment(
+		if (blockClassName) {
+			let blockInit = this.slot.createVariableAssignment(
 				this.blockVariableName,
 				transformContext.factory.createNewExpression(
 					transformContext.factory.createIdentifier(blockClassName),
@@ -165,16 +172,22 @@ export class IfFlowControl extends FlowControlBase {
 					]
 				)
 			)
-		]
+
+			return [slotInit, blockInit]
+		}
+		else {
+			return slotInit
+		}
 	}
 
 	override outputUpdate(): ts.Statement | ts.Expression | (ts.Statement| ts.Expression)[] {
 		let toValue = this.outputConditionalExp()
+		let receiverName = this.cacheable ? this.blockVariableName : this.slotVariableName
 
-		// $block_0.update($values[0])
+		// $slot_0.update($values[0]), or $block_0.update($values[0]) when cached.
 		return transformContext.factory.createCallExpression(
 			transformContext.factory.createPropertyAccessExpression(
-				transformContext.factory.createIdentifier(this.blockVariableName),
+				transformContext.factory.createIdentifier(receiverName),
 				transformContext.factory.createIdentifier('update')
 			),
 			undefined,
