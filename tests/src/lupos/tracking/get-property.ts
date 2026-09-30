@@ -131,6 +131,75 @@ export class TestObjectAPIs extends Component {
 		return Object.keys(this.prop)
 	}
 
+	/** Track the literal key checked by a native instance method. */
+	hasOwnValue() {
+		return this.prop.hasOwnProperty('value')
+	}
+
+	/** Track the literal key checked by the static Object API. */
+	hasOwnValueStatic() {
+		return Object.hasOwn(this.prop, 'value')
+	}
+
+	/** Keep literal-key tracking inside an optional call. */
+	hasOwnOptionalValue(prop: Observed<{value: number}> | undefined) {
+		return prop?.hasOwnProperty('value')
+	}
+
+	/** Track the checked property using the current dynamic key. */
+	hasOwnDynamicKey(key: string) {
+		return this.prop.hasOwnProperty(key)
+	}
+
+	/** Evaluate a computed instance-method key only once. */
+	hasOwnDynamicKeyCall(key: () => string) {
+		return this.prop.hasOwnProperty(key())
+	}
+
+	/** Evaluate a computed static-method key only once. */
+	hasOwnDynamicKeyStaticCall(key: () => string) {
+		return Object.hasOwn(this.prop, key())
+	}
+
+	/** Skip the computed key when the optional receiver is absent. */
+	hasOwnOptionalDynamicKeyCall(prop: Observed<{value: number}> | undefined, key: () => string) {
+		return prop?.hasOwnProperty(key())
+	}
+
+	/** Track the key used by the check, not its subsequently assigned value. */
+	hasOwnReassignedKey() {
+		let key = 'value'
+		let value = this.prop.hasOwnProperty(key)
+		key = 'other'
+		return value
+	}
+
+	/** Keep each loop-key dependency inside its declaration scope. */
+	hasOwnLoopKeys(keys: string[]) {
+		let values: boolean[] = []
+
+		for (let key of keys) {
+			values.push(this.prop.hasOwnProperty(key))
+		}
+
+		return values
+	}
+
+	/** Evaluate a computed observed receiver only once. */
+	hasOwnReceiverCall(get: () => {value: number}) {
+		return (get() as Observed<{value: number}>).hasOwnProperty('value')
+	}
+
+	/** Avoid tracking user-defined methods which happen to use the native name. */
+	hasOwnCustomMethod(object: Observed<{hasOwnProperty(key: string): boolean}>) {
+		return object.hasOwnProperty('value')
+	}
+
+	/** Leave native checks on unobserved objects untracked. */
+	hasOwnPlainValue(prop: {value: number}) {
+		return prop.hasOwnProperty('value')
+	}
+
 	getValues() {
 		return Object.values(this.prop)
 	}

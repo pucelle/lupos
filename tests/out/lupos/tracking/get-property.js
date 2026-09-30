@@ -112,6 +112,83 @@ export class TestObjectAPIs extends Component {
         trackGet(this.prop, "");
         return Object.keys(this.prop);
     }
+    /** Track the literal key checked by a native instance method. */
+    hasOwnValue() {
+        trackGet(this, "prop");
+        trackGet(this.prop, "value");
+        return this.prop.hasOwnProperty('value');
+    }
+    /** Track the literal key checked by the static Object API. */
+    hasOwnValueStatic() {
+        trackGet(this, "prop");
+        trackGet(this.prop, "value");
+        return Object.hasOwn(this.prop, 'value');
+    }
+    /** Keep literal-key tracking inside an optional call. */
+    hasOwnOptionalValue(prop) {
+        return prop?.hasOwnProperty("value", prop && trackGet(prop, "value"));
+    }
+    /** Track the checked property using the current dynamic key. */
+    hasOwnDynamicKey(key) {
+        trackGet(this, "prop");
+        trackGet(this.prop, key);
+        return this.prop.hasOwnProperty(key);
+    }
+    /** Evaluate a computed instance-method key only once. */
+    hasOwnDynamicKeyCall(key) {
+        let $ref_0;
+        $ref_0 = key();
+        trackGet(this, "prop");
+        trackGet(this.prop, $ref_0);
+        return this.prop.hasOwnProperty($ref_0);
+    }
+    /** Evaluate a computed static-method key only once. */
+    hasOwnDynamicKeyStaticCall(key) {
+        let $ref_0;
+        $ref_0 = key();
+        trackGet(this, "prop");
+        trackGet(this.prop, $ref_0);
+        return Object.hasOwn(this.prop, $ref_0);
+    }
+    /** Skip the computed key when the optional receiver is absent. */
+    hasOwnOptionalDynamicKeyCall(prop, key) {
+        let $ref_0;
+        return prop?.hasOwnProperty($ref_0 = key(), $ref_0, prop && trackGet(prop, $ref_0));
+    }
+    /** Track the key used by the check, not its subsequently assigned value. */
+    hasOwnReassignedKey() {
+        let key = 'value';
+        let $ref_0 = key, value = this.prop.hasOwnProperty($ref_0);
+        key = 'other';
+        trackGet(this, "prop");
+        trackGet(this.prop, $ref_0);
+        return value;
+    }
+    /** Keep each loop-key dependency inside its declaration scope. */
+    hasOwnLoopKeys(keys) {
+        let values = [];
+        for (let key of keys) {
+            values.push(this.prop.hasOwnProperty(key));
+            trackGet(this.prop, key);
+        }
+        trackGet(this, "prop");
+        return values;
+    }
+    /** Evaluate a computed observed receiver only once. */
+    hasOwnReceiverCall(get) {
+        let $ref_0;
+        $ref_0 = get();
+        trackGet($ref_0, "value");
+        return $ref_0.hasOwnProperty('value');
+    }
+    /** Avoid tracking user-defined methods which happen to use the native name. */
+    hasOwnCustomMethod(object) {
+        return object.hasOwnProperty('value');
+    }
+    /** Leave native checks on unobserved objects untracked. */
+    hasOwnPlainValue(prop) {
+        return prop.hasOwnProperty('value');
+    }
     getValues() {
         trackGet(this, "prop");
         trackGet(this.prop, "");
