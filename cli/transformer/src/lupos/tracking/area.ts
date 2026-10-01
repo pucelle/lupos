@@ -141,7 +141,11 @@ export class TrackingArea {
 
 			// `a.b`, but not `a.b` of `a.b = c`.
 			else if (!transformContext.helper.assign.isWithinAssignmentTo(rawNode)) {
-				this.mayAddAccessTracking(rawNode, 'get')
+
+				// `a?.b[c]`, the index will create a new scope and handle tracking there.
+				if (!ts.isElementAccessChain(rawNode)) {
+					this.mayAddAccessTracking(rawNode, 'get')
+				}
 			}
 		}
 
@@ -173,8 +177,11 @@ export class TrackingArea {
 		// `fn(...)` or `new C(...)`.
 		// Would be better if adding the test to `isAllElementsReadAccess` and `isAllElementsWriteAccess`,
 		// But it required to look above to find closest call expression.
+
+		// Note here exclude `isCallChain` because `a?.hasOwnProperty(b)`,
+		// it creates new scopes each parameter, and should handle inside that scope.
 		else if (ts.isCallExpression(rawNode) || ts.isNewExpression(rawNode)) {
-			if (ts.isCallExpression(rawNode)) {
+			if (ts.isCallExpression(rawNode) && !ts.isCallChain(rawNode)) {
 				let ownProperty = transformContext.helper.access.getOwnPropertyReadAccess(rawNode)
 				if (ownProperty) {
 					let optional = transformContext.helper.access.isAccess(rawNode.expression)
@@ -204,6 +211,25 @@ export class TrackingArea {
 					}
 				}
 			}
+		}
+
+		// `a?.hasOwnProperty(b)` creates new scopes each parameter and handle tracking here.
+		let parent = rawNode.parent
+		if (parent && ts.isCallChain(parent)) {
+			let ownProperty = transformContext.helper.access.getOwnPropertyReadAccess(parent)
+
+			// `b` of `a?.hasOwnProperty(b)`.
+			if (ownProperty?.keyNode === rawNode) {
+				let optional = transformContext.helper.access.isAccess(parent.expression)
+					&& !!parent.expression.questionDotToken
+
+				this.mayAddTracking(parent, 'get', ownProperty.exp, [ownProperty.key], optional)
+			}
+		}
+
+		// `a?.b[c]` create a new scope and handle tracking here.
+		else if (parent && ts.isElementAccessChain(parent) && parent.argumentExpression === rawNode) {
+			this.mayAddAccessTracking(parent, 'get')
 		}
 
 		// `[...a]`, `{...o}`, `Object.keys(a)`

@@ -216,3 +216,39 @@ export class TestSet extends Component {
         trackSet(this.set, "");
     }
 }
+/** Optional collection reads must preserve their receiver and argument guards. */
+export class TestOptionalCollectionRead {
+    /** Track Map contents only when the receiver exists. */
+    has(map) {
+        map && trackGet(map, "");
+        return map?.has(0);
+    }
+    /** Support null receivers as well as undefined receivers. */
+    get(map) {
+        map && trackGet(map, "");
+        return map?.get(0);
+    }
+    /** Do not read or track an argument when the optional call is skipped. */
+    hasArgument(map, data) {
+        map && trackGet(map, "");
+        return map?.has((trackGet(data, "key"), data.key));
+    }
+    /** Evaluate a computed receiver once, even when tracking its contents. */
+    hasReceiver(read) {
+        let $ref_0;
+        $ref_0 = read();
+        $ref_0 && trackGet($ref_0, "");
+        return $ref_0?.has(0);
+    }
+    /** Preserve a guard inherited from an earlier access in the chain. */
+    hasNested(holder) {
+        holder && trackGet(holder, "map");
+        holder && trackGet(holder.map, "");
+        return holder?.map.has(0);
+    }
+    /** Track Set membership behind the optional receiver guard. */
+    hasSet(set) {
+        set && trackGet(set, "");
+        return set?.has(0);
+    }
+}

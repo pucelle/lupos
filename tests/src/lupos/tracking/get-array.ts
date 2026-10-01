@@ -98,3 +98,67 @@ export class TestArrayElementsSpread {
 		return [...this.getProp()]
 	}
 }
+
+
+/** Optional Array reads retain guarded arguments and indexed access. */
+export class TestOptionalArrayRead {
+
+	/** Track collection reads through an optional native method. */
+	includes(list: Observed<number[]> | undefined) {
+		return list?.includes(1)
+	}
+
+	/** Skip an observed argument read when the list is absent. */
+	includesArgument(list: Observed<number[]> | undefined, data: Observed<{value: number}>) {
+		return list?.includes(data.value)
+	}
+
+	/** Nested reference assignments must not escape an optional initializer argument. */
+	includesIndexedArgument(
+		list: Observed<number[]> | undefined,
+		data: Observed<{values: number[]}>,
+		index: () => number
+	) {
+		let found = list?.includes(data.values[index()])
+		return found
+	}
+
+	/** Evaluate a computed index once and only for a present list. */
+	element(list: Observed<number[]> | undefined, index: () => number) {
+		return list?.[index()]
+	}
+
+	/** Initializer references must remain inside the optional index guard. */
+	elementVariable(list: Observed<number[]> | undefined, index: () => number) {
+		let value = list?.[index()]
+		return value
+	}
+
+	/** An inherited optional guard also skips the computed index. */
+	elementNested(holder: Observed<{list: number[]}> | undefined, index: () => number) {
+		return holder?.list[index()]
+	}
+
+	/** The list guard must not remove an independent optional receiver's guard. */
+	elementOtherOptionalReceiver(
+		list: Observed<number[]> | undefined,
+		other: Observed<{index: number}> | undefined
+	) {
+		return list?.[other?.index ?? 0]
+	}
+
+	/** Guard optional length tracking on nullable receivers. */
+	length(list: Observed<number[]> | null) {
+		return list?.length
+	}
+
+	/** Tracking must not shift the positions of later call arguments. */
+	callArguments(fn: ((key: number, value: number) => number) | undefined, data: Observed<{key: number, value: number}>) {
+		return fn?.(data.key, data.value)
+	}
+
+	/** Keep spread dependencies guarded without altering the argument list. */
+	callSpread(fn: ((key: number, value: number) => number) | undefined, values: Observed<[number, number]>) {
+		return fn?.(...values)
+	}
+}

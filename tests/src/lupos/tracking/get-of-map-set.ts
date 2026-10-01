@@ -1,4 +1,5 @@
 import {Component} from 'lupos.html'
+import {Observed} from '../../../../web/out'
 
 
 export class TestMap extends Component {
@@ -151,5 +152,40 @@ export class TestSet extends Component {
 
 	clear() {
 		this.set.clear()
+	}
+}
+
+
+/** Optional collection reads must preserve their receiver and argument guards. */
+export class TestOptionalCollectionRead {
+
+	/** Track Map contents only when the receiver exists. */
+	has(map: Observed<Map<number, number>> | undefined) {
+		return map?.has(0)
+	}
+
+	/** Support null receivers as well as undefined receivers. */
+	get(map: Observed<Map<number, number>> | null) {
+		return map?.get(0)
+	}
+
+	/** Do not read or track an argument when the optional call is skipped. */
+	hasArgument(map: Observed<Map<number, number>> | undefined, data: Observed<{key: number}>) {
+		return map?.has(data.key)
+	}
+
+	/** Evaluate a computed receiver once, even when tracking its contents. */
+	hasReceiver(read: () => Observed<Map<number, number>> | undefined) {
+		return read()?.has(0)
+	}
+
+	/** Preserve a guard inherited from an earlier access in the chain. */
+	hasNested(holder: Observed<{map: Map<number, number>}> | undefined) {
+		return holder?.map.has(0)
+	}
+
+	/** Track Set membership behind the optional receiver guard. */
+	hasSet(set: Observed<Set<number>> | undefined) {
+		return set?.has(0)
 	}
 }

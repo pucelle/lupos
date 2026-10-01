@@ -1,5 +1,5 @@
 import ts from 'typescript'
-import {Interpolator, Modifier, Packer, transformContext} from '../../core'
+import {Interpolator, Modifier, Packer, transformContext, VisitTree} from '../../core'
 import {groupBy} from '../../utils'
 import type {CapturedItem} from './capturer'
 
@@ -15,6 +15,9 @@ interface TrackingExpression {
 
 	/** Whether the receiver guards this dependency directly. */
 	optional: boolean
+
+	/** Whether the output position already guarantees a present receiver. */
+	guarded: boolean
 }
 
 
@@ -26,14 +29,14 @@ export namespace AccessGrouper {
 	}
 
 	/** Group captured receivers and keys into tracking calls. */
-	export function makeExpressions(items: CapturedItem[], type: 'get' | 'set'): ts.Expression[] {
-		let expressions = items.map(item => makeTrackingExpression(item))
+	export function makeExpressions(items: CapturedItem[], type: 'get' | 'set', atNode?: ts.Node): ts.Expression[] {
+		let expressions = items.map(item => makeTrackingExpression(item, atNode))
 		let grouped = groupExpressions(expressions)
 		return grouped.map(group => createGroupedExpression(group, type))
 	}
 
 	/** Output references and normalize the receiver and key independently. */
-	function makeTrackingExpression(item: CapturedItem): TrackingExpression {
+	function makeTrackingExpression(item: CapturedItem, atNode?: ts.Node): TrackingExpression {
 		let exp = Interpolator.outputReplaceableChildren(item.exp) as ts.Expression
 		let key: ts.Expression
 
@@ -51,7 +54,30 @@ export namespace AccessGrouper {
 			exp: Packer.normalize(simplify(exp), true) as ts.Expression,
 			key: Packer.normalize(simplify(key), true) as ts.Expression,
 			optional: item.optional,
+			guarded: isReceiverGuardedAt(item.node, atNode),
 		}
+	}
+
+	/** 
+	 * Check whether can be guarded at `atNode`,
+	 * a?.b(...), `...` range is guarded by `a`.
+	 */
+	function isReceiverGuardedAt(node: ts.Expression, atNode?: ts.Node): boolean {
+		if (!atNode) {
+			return false
+		}
+
+		// `a?.b[...]`.
+		if (ts.isElementAccessChain(node)) {
+			return VisitTree.isContains(node.argumentExpression, atNode)
+		}
+
+		// `a?.b(...)`.
+		else if (ts.isCallChain(node)) {
+			return node.arguments.some(arg => VisitTree.isContains(arg, atNode))
+		}
+
+		return false
 	}
 
 	/**
@@ -87,6 +113,10 @@ export namespace AccessGrouper {
 				key += '?.'
 			}
 
+			if (item.guarded) {
+				key += ':guarded'
+			}
+
 			return [key, item]
 		})
 
@@ -96,13 +126,13 @@ export namespace AccessGrouper {
 	/** Create a tracking call and preserve its optional-chain guard. */
 	function createGroupedExpression(items: TrackingExpression[], type: 'get' | 'set'): ts.Expression {
 		let item = items[0]
-		let optionalExp: ts.Expression | null = item.optional ? item.exp : null
+		let optionalExp: ts.Expression | null = !item.guarded && item.optional ? item.exp : null
 
-		if (!optionalExp && transformContext.helper.access.isAccess(item.exp)) {
+		if (!item.guarded && !optionalExp && transformContext.helper.access.isAccess(item.exp)) {
 			optionalExp = transformContext.helper.access.getOptionalChainingExp(item.exp)
 		}
 
-		let parameters = createParameters(items, !!optionalExp)
+		let parameters = createParameters(items, item.guarded || !!optionalExp)
 
 		let tracking = transformContext.factory.createCallExpression(
 			transformContext.factory.createIdentifier(type === 'get' ? 'trackGet' : 'trackSet'),

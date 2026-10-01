@@ -348,12 +348,11 @@ export class TestTemplateValues extends Component {
         $ref_0 = this.getValues();
         $ref_1 = this.getValues();
         trackGet(this, "prop");
-        $ref_0 && trackGet($ref_0, 0);
         trackGet($ref_1, "");
         return new CompiledTemplateResult($template_13, [
             this.prop + 1,
             this.prop > 0 ? this.prop : 0,
-            $ref_0?.[0] ?? this.prop,
+            $ref_0?.[(trackGet($ref_0, 0), 0)] ?? this.prop,
             [this.prop, ...$ref_1],
             { value: this.prop },
             `value-${this.prop}`,

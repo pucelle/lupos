@@ -164,6 +164,14 @@ export namespace Packer {
 	export function shouldBeUnique(node: ts.Node): node is ts.Expression {
 		let parent = node.parent
 
+		// Tracking inside an argument must not create extra arguments or shift following ones.
+		if (((ts.isCallExpression(parent) || ts.isNewExpression(parent))
+				&& parent.arguments?.includes(node as ts.Expression) && !ts.isSpreadElement(node))
+			|| ts.isSpreadElement(parent) && parent.expression === node
+		) {
+			return true
+		}
+
 		// Content of flow interrupt
 		if (ts.isReturnStatement(parent)
 			|| ts.isAwaitExpression(parent)

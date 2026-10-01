@@ -60,3 +60,48 @@ export class TestArrayElementsSet extends Component {
         }
     }
 }
+/** Optional Array mutations must retain their results and evaluation order. */
+export class TestOptionalArrayWrite {
+    /** Track a push only when the receiver is present. */
+    push(list) {
+        list && trackSet(list, "");
+        return list?.push(1);
+    }
+    /** Skip a computed argument when the list is absent. */
+    pushArgument(list, value) {
+        list && trackSet(list, "");
+        return list?.push(value());
+    }
+    /** Evaluate a computed receiver once and keep its argument guarded. */
+    pushReceiver(read, value) {
+        let $ref_0;
+        $ref_0 = read();
+        $ref_0 && trackSet($ref_0, "");
+        return $ref_0?.push(value());
+    }
+    /** Guard a zero-argument mutation for nullable receivers. */
+    pop(list) {
+        list && trackSet(list, "");
+        return list?.pop();
+    }
+    /** Removing the first element is also a collection mutation. */
+    shift(list) {
+        list && trackSet(list, "");
+        return list?.shift();
+    }
+    /** Reordering mutates the original collection while returning it. */
+    reverse(list) {
+        list && trackSet(list, "");
+        return list?.reverse();
+    }
+    /** Replacing element values is a mutation, not a collection read. */
+    fill(list) {
+        list && trackSet(list, "");
+        return list?.fill(3);
+    }
+    /** Copying within the same collection must emit set tracking. */
+    copyWithin(list) {
+        list && trackSet(list, "");
+        return list?.copyWithin(0, 1);
+    }
+}

@@ -308,12 +308,21 @@ export namespace TrackingAreaTree {
 			}
 		}
 
-		// Own-property arguments are evaluated only when the optional call runs.
-		// if (ts.isCallChain(parent)
-		// 	&& transformContext.helper.access.getOwnPropertyReadAccess(parent)?.keyNode === node
-		// ) {
-		// 	type |= TrackingAreaTypeMask.ConditionalContent
-		// }
+		// Optional chains arguments or parameters like:
+		// `a?.b[c]`
+		// `a?.b(c)`
+		// `a?.b(...c)`
+		if (ts.isCallChain(parent)
+				&& parent.arguments.includes(node as ts.Expression)
+				&& !ts.isSpreadElement(node)
+			|| ts.isSpreadElement(parent)
+				&& ts.isCallChain(parent.parent)
+				&& parent.expression === node
+			|| ts.isElementAccessChain(parent)
+				&& parent.argumentExpression === node
+		) {
+			type |= TrackingAreaTypeMask.ConditionalContent
+		}
 
 		// Add specified type.
 		type |= (SpecifiedAdditionalAreaType.get(node) || 0)

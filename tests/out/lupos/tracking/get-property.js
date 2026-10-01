@@ -135,8 +135,7 @@ export class TestObjectAPIs extends Component {
     }
     /** Keep literal-key tracking inside an optional call. */
     hasOwnOptionalValue(prop) {
-        prop && trackGet(prop, "value");
-        return prop?.hasOwnProperty('value');
+        return prop?.hasOwnProperty((trackGet(prop, "value"), "value"));
     }
     /** Track the checked property using the current dynamic key. */
     hasOwnDynamicKey(key) {
@@ -163,9 +162,7 @@ export class TestObjectAPIs extends Component {
     /** Skip the computed key when the optional receiver is absent. */
     hasOwnOptionalDynamicKeyCall(prop, key) {
         let $ref_0;
-        $ref_0 = key();
-        prop && trackGet(prop, $ref_0);
-        return prop?.hasOwnProperty($ref_0);
+        return prop?.hasOwnProperty(($ref_0 = key(), trackGet(prop, $ref_0), $ref_0));
     }
     /** Track the key used by the check, not its subsequently assigned value. */
     hasOwnReassignedKey() {

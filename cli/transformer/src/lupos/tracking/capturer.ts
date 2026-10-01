@@ -542,7 +542,7 @@ export class TrackingCapturer {
 		Interpolator.add(toNode, {
 			position,
 			contentType: InterpolationContentType.Tracking,
-			exps: () => this.makeCapturedExps(pendingItems!),
+			exps: () => this.makeCapturedExps(pendingItems!, toNode),
 		})
 	}
 
@@ -592,13 +592,13 @@ export class TrackingCapturer {
 	}
 
 	/** Transfer specified captured items to specified position. */
-	private makeCapturedExps(items: CapturedItem[]): ts.Expression[] {
+	private makeCapturedExps(items: CapturedItem[], atNode: ts.Node): ts.Expression[] {
 		let getItems = items.filter(index => index.type === 'get')
 		let setItems = items.filter(index => index.type === 'set')
 
 		return [
-			...AccessGrouper.makeExpressions(getItems, 'get'),
-			...AccessGrouper.makeExpressions(setItems, 'set'),
+			...AccessGrouper.makeExpressions(getItems, 'get', atNode),
+			...AccessGrouper.makeExpressions(setItems, 'set', atNode),
 		]
 	}
 }

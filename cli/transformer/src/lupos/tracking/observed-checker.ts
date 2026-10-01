@@ -928,7 +928,11 @@ export namespace ObservedChecker {
 		let result: boolean | null
 
 		let callExp = rawNode.expression
-		let decl = transformContext.helper.symbol.resolveDeclaration(callExp, transformContext.helper.isFunctionLike)
+		let signature = transformContext.helper.types.typeChecker.getResolvedSignature(rawNode)
+		let declaration = signature?.declaration
+		let decl = declaration && !ts.isJSDocSignature(declaration)
+			? declaration
+			: transformContext.helper.symbol.resolveDeclaration(callExp, transformContext.helper.isFunctionLike)
 		if (!decl) {
 			return null
 		}

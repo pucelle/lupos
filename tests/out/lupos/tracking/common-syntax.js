@@ -68,8 +68,7 @@ export class TestCommonSyntax extends Component {
     }
     testOptionalAndComputedAccess(key) {
         trackGet(this, "item");
-        this.item && trackGet(this.item, key);
-        return this.item?.[key] ?? (trackGet(this.item, "nested"), this.item.nested && trackGet(this.item.nested, "value"), this.item.nested?.value) ?? 0;
+        return this.item?.[(trackGet(this.item, key), key)] ?? (trackGet(this.item, "nested"), this.item.nested && trackGet(this.item.nested, "value"), this.item.nested?.value) ?? 0;
     }
     testFunctionForms() {
         let arrow = (value = this.item.value) => {

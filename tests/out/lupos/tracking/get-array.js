@@ -99,3 +99,58 @@ export class TestArrayElementsSpread {
         return [...$ref_0];
     }
 }
+/** Optional Array reads retain guarded arguments and indexed access. */
+export class TestOptionalArrayRead {
+    /** Track collection reads through an optional native method. */
+    includes(list) {
+        list && trackGet(list, "");
+        return list?.includes(1);
+    }
+    /** Skip an observed argument read when the list is absent. */
+    includesArgument(list, data) {
+        list && trackGet(list, "");
+        return list?.includes((trackGet(data, "value"), data.value));
+    }
+    /** Nested reference assignments must not escape an optional initializer argument. */
+    includesIndexedArgument(list, data, index) {
+        let $ref_0;
+        let found = list?.includes(($ref_0 = index(), trackGet(data, "values"), trackGet(data.values, $ref_0), data.values[$ref_0]));
+        list && trackGet(list, "");
+        return found;
+    }
+    /** Evaluate a computed index once and only for a present list. */
+    element(list, index) {
+        let $ref_0;
+        return list?.[($ref_0 = index(), trackGet(list, $ref_0), $ref_0)];
+    }
+    /** Initializer references must remain inside the optional index guard. */
+    elementVariable(list, index) {
+        let $ref_0;
+        let value = list?.[($ref_0 = index(), trackGet(list, $ref_0), $ref_0)];
+        return value;
+    }
+    /** An inherited optional guard also skips the computed index. */
+    elementNested(holder, index) {
+        let $ref_0;
+        holder && trackGet(holder, "list");
+        return holder?.list[($ref_0 = index(), trackGet(holder.list, $ref_0), $ref_0)];
+    }
+    /** The list guard must not remove an independent optional receiver's guard. */
+    elementOtherOptionalReceiver(list, other) {
+        let $ref_0;
+        return list?.[($ref_0 = other?.index ?? 0, trackGet(list, $ref_0), other && trackGet(other, "index"), $ref_0)];
+    }
+    /** Guard optional length tracking on nullable receivers. */
+    length(list) {
+        list && trackGet(list, "");
+        return list?.length;
+    }
+    /** Tracking must not shift the positions of later call arguments. */
+    callArguments(fn, data) {
+        return fn?.((trackGet(data, "key"), data.key), (trackGet(data, "value"), data.value));
+    }
+    /** Keep spread dependencies guarded without altering the argument list. */
+    callSpread(fn, values) {
+        return fn?.(...(trackGet(values, ""), values));
+    }
+}
