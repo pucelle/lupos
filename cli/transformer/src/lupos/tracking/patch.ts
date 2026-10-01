@@ -117,7 +117,7 @@ export namespace TrackingPatch {
 		}
 
 		AccessGrouper.addImport(type)
-		
+
 		let item: CapturedItem = {
 			node: rawNode,
 			type,

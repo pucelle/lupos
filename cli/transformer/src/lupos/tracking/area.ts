@@ -184,6 +184,7 @@ export class TrackingArea {
 				}
 			}
 
+			// Handle class method signatures.
 			let args = rawNode.arguments
 			if (args && args.length > 0) {
 				let parameters = transformContext.helper.parameter.getCallParameters(rawNode)
