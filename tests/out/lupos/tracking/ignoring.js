@@ -95,6 +95,10 @@ export class TestIgnoringReadonlyPrivate extends Component {
     readMethod() {
         return this.prop;
     }
+    /** Eliminate get-only private tracking for literal bracket access as well. */
+    readElementMethod() {
+        return this['prop'];
+    }
     destructedReadMethod() {
         let { prop } = this;
         trackGet(this, "prop");

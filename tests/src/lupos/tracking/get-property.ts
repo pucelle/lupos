@@ -88,6 +88,9 @@ export class TestQuestionDotPropMerge extends Component {
 	propDeeper: {value: {value: number}} | undefined = undefined
 	propDeeperList: {value: {list: number[]}} | undefined = undefined
 
+	/** Both receiver levels may be absent. */
+	propOptionalDeeper: {value?: {value: number}} | undefined = undefined
+
 	getProp() {
 		return '' + this.prop?.value
 			+ this.prop?.['value']
@@ -99,6 +102,11 @@ export class TestQuestionDotPropMerge extends Component {
 
 	getPropDeeperList() {
 		return this.propDeeperList?.value.list.length ?? 0
+	}
+
+	/** Keep nested guards, but remove satisfied optional checks from tracking arguments. */
+	getPropOptionalDeeper() {
+		return this.propOptionalDeeper?.value?.value ?? 0
 	}
 }
 

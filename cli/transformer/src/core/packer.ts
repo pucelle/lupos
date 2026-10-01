@@ -42,8 +42,12 @@ export namespace Packer {
 		}
 	}
 
-	/** Create an access node by expression and property name. */
-	export function createAccessNode(exp: ts.Expression, name: string | number, queryDot: boolean = false): AccessNode {
+	/** Create an access node by expression and a static or computed property name. */
+	export function createAccessNode(
+		exp: ts.Expression,
+		name: string | number | ts.Expression,
+		queryDot: boolean = false,
+	): AccessNode {
 		if (typeof name === 'string' && (/^[\w$]+$/.test(name) || /^#[\w$]+$/.test(name))) {
 			if (queryDot) {
 				return transformContext.factory.createPropertyAccessChain(
@@ -60,13 +64,16 @@ export namespace Packer {
 			}
 		}
 		else {
-			let prop: ts.StringLiteral | ts.NumericLiteral
+			let prop: ts.Expression
 
 			if (typeof name === 'string') {
 				prop = transformContext.factory.createStringLiteral(name)
 			}
+			else if (typeof name === 'number') {
+				prop = createNumeric(name)
+			}
 			else {
-				prop = createNumeric(name) as ts.NumericLiteral
+				prop = name
 			}
 
 			if (queryDot) {

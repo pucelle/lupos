@@ -58,6 +58,18 @@ export class TestCommonSyntax extends Component {
 		return [value, clone, ...rest]
 	}
 
+	/** Object rest reads every remaining property of the source object. */
+	testObjectRest() {
+		let {value, ...rest} = this.item
+		return [value, rest]
+	}
+
+	/** Nested array rest tracks all elements at the nested receiver, not an index. */
+	testNestedArrayRest() {
+		let {items: [, ...rest]} = this
+		return rest
+	}
+
 	testOptionalAndComputedAccess(key: 'value') {
 		return this.item?.[key] ?? this.item.nested?.value ?? 0
 	}

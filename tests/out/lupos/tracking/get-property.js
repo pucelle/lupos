@@ -71,6 +71,8 @@ export class TestQuestionDotPropMerge extends Component {
     prop = undefined;
     propDeeper = undefined;
     propDeeperList = undefined;
+    /** Both receiver levels may be absent. */
+    propOptionalDeeper = undefined;
     getProp() {
         trackGet(this, "prop");
         this.prop && trackGet(this.prop, "value");
@@ -80,15 +82,22 @@ export class TestQuestionDotPropMerge extends Component {
     getPropDeeper() {
         trackGet(this, "propDeeper");
         this.propDeeper && trackGet(this.propDeeper, "value");
-        this.propDeeper && trackGet(this.propDeeper?.value, "value");
+        this.propDeeper && trackGet(this.propDeeper.value, "value");
         return this.propDeeper?.value.value ?? 0;
     }
     getPropDeeperList() {
         trackGet(this, "propDeeperList");
         this.propDeeperList && trackGet(this.propDeeperList, "value");
-        this.propDeeperList && trackGet(this.propDeeperList?.value, "list");
-        this.propDeeperList && trackGet((this.propDeeperList?.value.list), "");
+        this.propDeeperList && trackGet(this.propDeeperList.value, "list");
+        this.propDeeperList && trackGet(this.propDeeperList.value.list, "");
         return this.propDeeperList?.value.list.length ?? 0;
+    }
+    /** Keep nested guards, but remove satisfied optional checks from tracking arguments. */
+    getPropOptionalDeeper() {
+        trackGet(this, "propOptionalDeeper");
+        this.propOptionalDeeper && trackGet(this.propOptionalDeeper, "value");
+        this.propOptionalDeeper?.value && trackGet(this.propOptionalDeeper.value, "value");
+        return this.propOptionalDeeper?.value?.value ?? 0;
     }
 }
 export class TestNonObservedClass {

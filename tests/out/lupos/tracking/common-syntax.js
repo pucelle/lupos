@@ -46,11 +46,25 @@ export class TestCommonSyntax extends Component {
         let clone = { ...first, value: first.value + nested.value };
         trackGet(this, "item", "items");
         trackGet(this.item, "value", "nested");
-        trackGet(this.items, 0);
+        trackGet(this.items, "");
         trackGet(first, "");
         trackGet(nested, "value");
         trackGet(rest, "");
         return [value, clone, ...rest];
+    }
+    /** Object rest reads every remaining property of the source object. */
+    testObjectRest() {
+        let { value, ...rest } = this.item;
+        trackGet(this, "item");
+        trackGet(this.item, "");
+        return [value, rest];
+    }
+    /** Nested array rest tracks all elements at the nested receiver, not an index. */
+    testNestedArrayRest() {
+        let { items: [, ...rest] } = this;
+        trackGet(this, "items");
+        trackGet(this.items, "");
+        return rest;
     }
     testOptionalAndComputedAccess(key) {
         trackGet(this, "item");
