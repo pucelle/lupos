@@ -1,39 +1,67 @@
 import ts from 'typescript'
-import {Modifier, Packer, transformContext} from '../../core'
+import {Interpolator, Modifier, Packer, transformContext} from '../../core'
 import {groupBy} from '../../utils'
-import {AccessNode} from '../../lupos-ts-module'
+import type {CapturedItem} from './capturer'
+
+
+/** Output-ready receiver and key, without constructing an access expression. */
+interface TrackingExpression {
+
+	/** Output receiver after reference replacement and normalization. */
+	exp: ts.Expression
+
+	/** Output dependency key. */
+	key: ts.Expression
+
+	/** Whether the receiver guards this dependency directly. */
+	optional: boolean
+}
 
 
 export namespace AccessGrouper {
 
-	/** 
-	 * Add get or set tracking imports.
-	 * Not add when making expressions automatically because it's outputting already.
-	 */
+	/** Add a tracking import before deferred expressions are output. */
 	export function addImport(type: 'get' | 'set') {
 		Modifier.addImport(type === 'get' ? 'trackGet' : 'trackSet', 'lupos')
 	}
-	
 
-	/** Group expressions to lately insert a position. */
-	export function makeExpressions(nodes: AccessNode[], type: 'get' | 'set'): ts.Expression[] {
-		nodes = nodes.map(node => Packer.normalize(simplify(node), true) as AccessNode)
-
-		let grouped = groupExpressions(nodes)
-		let made = grouped.map(item => createGroupedExpression(item, type))
-
-		return made
+	/** Group captured receivers and keys into tracking calls. */
+	export function makeExpressions(items: CapturedItem[], type: 'get' | 'set'): ts.Expression[] {
+		let expressions = items.map(item => makeTrackingExpression(item))
+		let grouped = groupExpressions(expressions)
+		return grouped.map(group => createGroupedExpression(group, type))
 	}
 
+	/** Output references and normalize the receiver and key independently. */
+	function makeTrackingExpression(item: CapturedItem): TrackingExpression {
+		let exp = Interpolator.outputReplaceableChildren(item.exp) as ts.Expression
+		let key: ts.Expression
 
-	/** 
-	 * Simplify to remove useless of access codes.
-	 * `(a, b, c)` -> `c`
-	 * `($ref = b)` -> `$ref`
+		if (typeof item.key === 'string') {
+			key = transformContext.factory.createStringLiteral(item.key)
+		}
+		else if (typeof item.key === 'number') {
+			key = Packer.createNumeric(item.key)
+		}
+		else {
+			key = Interpolator.outputReplaceableChildren(item.key) as ts.Expression
+		}
+
+		return {
+			exp: Packer.normalize(simplify(exp), true) as ts.Expression,
+			key: Packer.normalize(simplify(key), true) as ts.Expression,
+			optional: item.optional,
+		}
+	}
+
+	/**
+	 * Remove parts already evaluated at the original reference position.
+	 * `(a, b, c)` -> `c`, `($ref = b)` -> `$ref`.
 	 */
-	export function simplify(node: ts.Node): ts.Node {
+	function simplify(node: ts.Node): ts.Node {
 		if (ts.isParenthesizedExpression(node)) {
 			let exp = node.expression
+
 			if (ts.isBinaryExpression(exp)
 				&& exp.operatorToken.kind === ts.SyntaxKind.CommaToken
 			) {
@@ -47,110 +75,101 @@ export namespace AccessGrouper {
 			return simplify(node.left)
 		}
 
-		return ts.visitEachChild(node, simplify as any, transformContext.transformationContext)
+		return ts.visitEachChild(node, simplify as ts.Visitor, transformContext.transformationContext)
 	}
 
-	
-	/** Group get expressions by property belonged to object. */
-	function groupExpressions(nodes: AccessNode[]): AccessNode[][] {
-		let group = groupBy(nodes, (node: AccessNode) => {
-			return [getExpressionKey(node), node]
+	/** Group receivers with the same expression and optional state. */
+	function groupExpressions(items: TrackingExpression[]): TrackingExpression[][] {
+		let grouped = groupBy(items, item => {
+			let key = transformContext.helper.getFullText(item.exp).trim()
+
+			if (item.optional) {
+				key += '?.'
+			}
+
+			return [key, item]
 		})
 
-		return [...group.values()]
+		return [...grouped.values()]
 	}
 
+	/** Create a tracking call and preserve its optional-chain guard. */
+	function createGroupedExpression(items: TrackingExpression[], type: 'get' | 'set'): ts.Expression {
+		let item = items[0]
+		let optionalExp: ts.Expression | null = item.optional ? item.exp : null
 
-	/** Make a key by a property accessing node. */
-	function getExpressionKey(node: AccessNode) {
-		let exp = node.expression
-		let key = transformContext.helper.getFullText(exp).trim()
-
-		if (node.questionDotToken) {
-			key += '?.'
+		if (!optionalExp && transformContext.helper.access.isAccess(item.exp)) {
+			optionalExp = transformContext.helper.access.getOptionalChainingExp(item.exp)
 		}
 
-		return key
-	}
+		let parameters = createParameters(items, !!optionalExp)
 
-
-	/** Create a `trackGet` or `trackSet` call. */
-	function createGroupedExpression(nodes: AccessNode[], type: 'get' | 'set'): ts.Expression {
-		let node = nodes[0]
-		let parameters = createNameParameter(nodes)
-		
-		let trackGet = transformContext.factory.createCallExpression(
+		let tracking = transformContext.factory.createCallExpression(
 			transformContext.factory.createIdentifier(type === 'get' ? 'trackGet' : 'trackSet'),
 			undefined,
 			parameters
 		)
 
-		let optionalChainingExp = transformContext.helper.access.getOptionalChainingExp(node)
-
-		// `a?.b` -> `a && trackGet(a, 'b')`
-		// `a?.b.c` -> `a && trackGet(a?.b, 'c')`
-		if (optionalChainingExp) {
+		if (optionalExp) {
 			return transformContext.factory.createBinaryExpression(
-				Packer.removeAccessComments(optionalChainingExp),
+				Packer.removeAccessComments(optionalExp),
 				transformContext.factory.createToken(ts.SyntaxKind.AmpersandAmpersandToken),
-				trackGet
+				tracking
 			)
 		}
 		else {
-			return trackGet
+			return tracking
 		}
 	}
 
+	/** Deduplicate keys and let a whole-object dependency cover all other keys. */
+	function createParameters(items: TrackingExpression[], guarded: boolean): ts.Expression[] {
+		let grouped = groupBy(items, item => [getKeyText(item.key), item])
+		let keys = [...grouped.values()].map(group => group[0].key)
+		let emptyKey = keys.find(key => ts.isStringLiteral(key) && key.text === '')
 
-	/** Create a parameter for `trackGet` or `trackSet` by a group of nodes. */
-	function createNameParameter(nodes: AccessNode[]): ts.Expression[] {
-		let node = nodes[0]
-		let group = groupNameExpressionKeys(nodes)
-		let nameExps = [...group.values()].map(nodes => getAccessNodeNameProperty(nodes[0]))
+		if (emptyKey) {
+			keys = [emptyKey]
+		}
 
-		// Empty string as key exists, remove others.
-		let emptyName = nameExps.find(exp => ts.isStringLiteral(exp) && exp.text === '')
-		if (emptyName) {
-			nameExps = [emptyName]
+		let exp = items[0].exp
+		if (guarded) {
+			exp = removeGuardedOptionalChain(exp)
 		}
 
 		return [
-			Packer.removeAccessComments(node.expression),
-			...nameExps,
+			Packer.removeAccessComments(exp),
+			...keys.map(key => Packer.removeAccessComments(key)),
 		]
 	}
 
+	/** Remove receiver-chain guards already satisfied outside the call, leaving computed keys untouched. */
+	function removeGuardedOptionalChain(exp: ts.Expression): ts.Expression {
+		exp = Packer.normalize(exp, false) as ts.Expression
 
-	/** Get all expression keys, repetitive keys are excluded. */
-	function groupNameExpressionKeys(items: AccessNode[]): Map<string, AccessNode[]> {
-		return groupBy(items, item => [getNameKey(item), item])
-	}
-
-
-	/** Get a name expression key. */
-	function getNameKey(item: AccessNode): string {
-		let name = getAccessNodeNameProperty(item)
-		
-		// 'name' -> "name"
-		if (ts.isStringLiteral(name)) {
-			return `"${name.text}"`
+		if (ts.isPropertyAccessExpression(exp)) {
+			return transformContext.factory.createPropertyAccessExpression(
+				removeGuardedOptionalChain(exp.expression),
+				exp.name
+			)
 		}
-
-		return transformContext.helper.getFullText(name)
-	}
-
-
-	/** Get name of property expression. */
-	function getAccessNodeNameProperty(node: AccessNode): ts.Expression {
-		let name: ts.Expression
-
-		if (ts.isPropertyAccessExpression(node)) {
-			name = transformContext.factory.createStringLiteral(transformContext.helper.getFullText(node.name))
+		else if (ts.isElementAccessExpression(exp)) {
+			return transformContext.factory.createElementAccessExpression(
+				removeGuardedOptionalChain(exp.expression),
+				exp.argumentExpression
+			)
 		}
 		else {
-			name = Packer.removeAccessComments(node.argumentExpression)
+			return exp
+		}
+	}
+
+	/** Compare literal keys independently of their source quote style. */
+	function getKeyText(key: ts.Expression): string {
+		if (ts.isStringLiteral(key)) {
+			return JSON.stringify(key.text)
 		}
 
-		return name
+		return transformContext.helper.getFullText(key)
 	}
 }

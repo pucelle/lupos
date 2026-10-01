@@ -1,5 +1,5 @@
-import {DeclarationScope, Hashing, HashKey, transformContext} from '../../core'
-import {AccessNode, ListMap} from '../../lupos-ts-module'
+import {DeclarationScope, Hashing, HashKey, Packer} from '../../core'
+import {ListMap} from '../../lupos-ts-module'
 import {CapturedItem, TrackingCapturer} from './capturer'
 
 
@@ -8,7 +8,7 @@ export interface CapturedHash {
 	/** Captured item. */
 	item: CapturedItem
 
-	/** Exp or raw node structural key. */
+	/** Receiver structural key. */
 	expHashKey: HashKey
 
 	/** Property structural key, or `null` when all properties are captured. */
@@ -191,38 +191,27 @@ export class CapturedHashMap {
 /** It helps to hash all captured item. */
 export namespace CapturedHashing {
 	
-	/** 
-	 * Hash a captured item.
-	 * Capture type will be encoded as part of hash value,
-	 * This is required when work with `@effect`.
-	 */
+	/** Hash the receiver, dependency key, and declaration scopes used by a capture. */
 	export function hash(item: CapturedItem): CapturedHash {
-		if (item.exp !== undefined) {
-			let expHash = Hashing.hashMayNewNode(item.exp, item.node)
-			
-			let keyHashKey = typeof item.key === 'string' && item.key !== ''
-				? Hashing.hashString(item.key)
-				: null
+		let expHash = Hashing.hashMayNewNode(item.exp, item.node)
+		let keyHashKey: HashKey | null = null
+		let usedScopes = expHash.usedScopes
 
-			return {
-				item,
-				expHashKey: expHash.key,
-				keyHashKey,
-				usedScopes: expHash.usedScopes,
-			}
+		if (typeof item.key === 'string') {
+			keyHashKey = item.key === '' ? null : Hashing.hashString(item.key)
 		}
 		else {
-			let exp = (item.node as AccessNode).expression
-			let key = transformContext.helper.access.getPropertyNode(item.node as AccessNode)
-			let expHash = Hashing.hashMayNewNode(exp, item.node)
+			let key = typeof item.key === 'number' ? Packer.createNumeric(item.key) : item.key
 			let keyHash = Hashing.hashMayNewNode(key, item.node)
+			keyHashKey = keyHash.key
+			usedScopes = [...usedScopes, ...keyHash.usedScopes]
+		}
 
-			return {
-				item,
-				expHashKey: expHash.key,
-				keyHashKey: keyHash.key,
-				usedScopes: [...expHash.usedScopes, ...keyHash.usedScopes],
-			}
+		return {
+			item,
+			expHashKey: expHash.key,
+			keyHashKey,
+			usedScopes,
 		}
 	}
 }

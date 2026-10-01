@@ -51,29 +51,6 @@ export namespace TrackingReferences {
 		ReferencedNodes.add(node)
 	}
 
-	/** Reference exp and name part of an access node if needed. */
-	export function mayReferenceAccess(accessNode: ts.Expression, toNode: ts.Node, area: TrackingArea) {
-		if (!transformContext.helper.access.isAccess(accessNode)) {
-			return
-		}
-
-		let expNode = accessNode.expression
-		let nameNode = transformContext.helper.access.getPropertyNode(accessNode)
-
-		// Use a reference variable to replace expression.
-		if (shouldReference(expNode, toNode)) {
-			reference(expNode, area)
-			markReferenced(expNode)
-		}
-
-		// Use a reference variable to replace name.
-		if (shouldReference(nameNode, toNode)) {
-			reference(nameNode, area)
-			markReferenced(nameNode)
-		}
-	}
-
-
 	/** 
 	 * Reference an expression if needed.
 	 * Note `expNode` may not be raw node.

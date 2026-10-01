@@ -49,7 +49,10 @@ const SameArrayMethodNames = new Set([
  */
 export namespace ObservedChecker {
 
-	/** Test whether value of current access node is mutable, like `a.b`. */
+	/** 
+	 * Test whether value of an access node is mutable, like `a.b`.
+	 * Normally to detect more details about the key.
+	 */
 	export function getSelfObserved(rawNode: ts.Node): boolean | null {
 		let cache = getState().self
 		let cached = cache.get(rawNode)

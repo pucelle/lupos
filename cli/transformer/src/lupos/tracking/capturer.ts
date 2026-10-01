@@ -1,6 +1,5 @@
 import ts from 'typescript'
 import {InterpolationContentType, Interpolator, InterpolationPosition, VisitTree, Packer, transformSession, Hashing, transformContext} from '../../core'
-import {AccessNode} from '../../lupos-ts-module'
 import {TrackingArea} from './area'
 import {TrackingAreaTargetPosition, TrackingAreaTree, TrackingAreaTypeMask} from './area-tree'
 import {AccessGrouper} from './access-grouper'
@@ -31,23 +30,34 @@ export interface CapturedItem {
 	/** Always raw node. */
 	node: ts.Expression
 
+	/** Tracking type. */
 	type: 'get' | 'set'
 
-	/** 
-	 * If `exp` and `keys` provided,
-	 * they overwrites `node`.
-	 * Note `exp` may not be raw node.
-	 */
-	exp?: ts.Expression
+	/** Tracked receiver, which may be a synthetic expression. */
+	exp: ts.Expression
 
 	/** Work with `exp` to specify which key to track. */
-	key?: string | number
+	key: string | number | ts.Expression
+
+	/** Whether `a?.b`. */
+	optional: boolean
 
 	/** 
 	 * Whether have reference internal.
 	 * If `true`, will prevent it from optimization.
 	 */
 	referencedAtInternal: boolean
+}
+
+
+/** Whether the capture tracks the original access itself rather than an explicit receiver dependency. */
+export function isDirectAccessCaptured(item: CapturedItem): boolean {
+	if (!transformContext.helper.access.isAccess(item.node)) {
+		return false
+	}
+
+	let {exp, key} = transformContext.helper.access.getAccessParts(item.node)
+	return item.exp === exp && item.key === key
 }
 
 
@@ -191,35 +201,30 @@ export class TrackingCapturer {
 	capture(
 		rawNode: ts.Expression,
 		type: 'get' | 'set',
-		exp: ts.Expression | undefined,
-		keys: (string | number)[] | undefined,
+		exp: ts.Expression,
+		keys: (string | number | ts.Expression)[],
+		optional: boolean
 	) {
 		this.addCaptureType(type)
 
-		if (exp && keys) {
-			for (let key of keys) {
-				let item: CapturedItem = {
-					node: rawNode,
-					type,
-					exp,
-					key,
-					referencedAtInternal: false,
-				}
-	
-				this.latestCaptured.items.push(item)
-				exp = Packer.createAccessNode(exp, key)
-			}
-		}
-		else {
+		for (let i = 0; i < keys.length; i++) {
+			let key = keys[i]
+
 			let item: CapturedItem = {
 				node: rawNode,
 				type,
 				exp,
-				key: undefined,
+				key,
+				optional,
 				referencedAtInternal: false,
 			}
 
 			this.latestCaptured.items.push(item)
+
+			if (i < keys.length - 1) {
+				exp = Packer.createAccessNode(exp, key, optional)
+				optional = false
+			}
 		}
 	}
 
@@ -421,14 +426,17 @@ export class TrackingCapturer {
 	private checkReferences() {
 		for (let group of this.captured) {
 			for (let item of group.items) {
-				if (item.exp) {
-					TrackingReferences.mayReferenceExp(item.exp, group.toNode, this.area)
-				}
-				else {
-					TrackingReferences.mayReferenceAccess(item.node, group.toNode, this.area)
+				TrackingReferences.mayReferenceExp(item.exp, group.toNode, this.area)
+
+				if (typeof item.key === 'object') {
+					TrackingReferences.mayReferenceExp(item.key, group.toNode, this.area)
 				}
 
-				item.referencedAtInternal = TrackingReferences.hasInternalReferenced(item.exp ?? item.node)
+				item.referencedAtInternal = TrackingReferences.hasInternalReferenced(item.exp)
+
+				if (typeof item.key === 'object') {
+					item.referencedAtInternal ||= TrackingReferences.hasInternalReferenced(item.key)
+				}
 			}
 		}
 	}
@@ -452,7 +460,8 @@ export class TrackingCapturer {
 		let itemsInsertToNewPosition: CapturedItem[] = []
 
 		let items = group.items.filter(item => {
-			return !TrackingPatch.hasIgnored(item.exp ?? item.node)
+			return !TrackingPatch.hasIgnored(item.node)
+				&& !TrackingPatch.hasIgnored(item.exp)
 		})
 
 		// Save set type will covers get type.
@@ -462,10 +471,16 @@ export class TrackingCapturer {
 
 		if (newPosition !== null) {
 			for (let item of items) {
-				let hashed = Hashing.hashNode(item.node)
+				let hashed = Hashing.hashMayNewNode(item.exp, item.node)
+				let usedDeclarations = hashed.usedDeclarations
+
+				if (typeof item.key === 'object') {
+					let keyHash = Hashing.hashMayNewNode(item.key, item.node)
+					usedDeclarations = [...usedDeclarations, ...keyHash.usedDeclarations]
+				}
 
 				// Only when all used nodes in the preceding of new index.
-				let canMove = hashed.usedDeclarations.every(usedIndex => VisitTree.isPrecedingOf(usedIndex, newPosition.toNode))
+				let canMove = usedDeclarations.every(usedIndex => VisitTree.isPrecedingOf(usedIndex, newPosition.toNode))
 
 				if (canMove) {
 					itemsInsertToNewPosition.push(item)
@@ -581,31 +596,9 @@ export class TrackingCapturer {
 		let getItems = items.filter(index => index.type === 'get')
 		let setItems = items.filter(index => index.type === 'set')
 
-		let getNodes = getItems.map(item => this.makeAccessNodes(item)).flat()
-		let setNodes = setItems.map(item => this.makeAccessNodes(item)).flat()
-
 		return [
-			...AccessGrouper.makeExpressions(getNodes, 'get'),
-			...AccessGrouper.makeExpressions(setNodes, 'set'),
+			...AccessGrouper.makeExpressions(getItems, 'get'),
+			...AccessGrouper.makeExpressions(setItems, 'set'),
 		]
-	}
-
-	/** Make an access node by a captured item. */
-	private makeAccessNodes(item: CapturedItem): AccessNode[] {
-		if (item.exp) {
-			let nodes: AccessNode[] = []
-			let node = Interpolator.outputReplaceableChildren(item.exp) as ts.Expression
-			let key = item.key!
-			let queryDot = transformContext.helper.access.isAccess(item.node) && !!item.node.questionDotToken
-
-			node = Packer.createAccessNode(node, key, queryDot)
-			nodes.push(node as AccessNode)
-
-			return nodes
-		}
-		else {
-			let node = Interpolator.outputChildren(item.node) as AccessNode
-			return [node]
-		}
 	}
 }

@@ -3,7 +3,8 @@ import {ObservedChecker} from './observed-checker'
 import {AccessGrouper} from './access-grouper'
 import {ObservedStateMask} from '../decorators/types'
 import {CapturedItem} from './capturer'
-import {AccessNode, ListMap} from '../../lupos-ts-module'
+import {ListMap} from '../../lupos-ts-module'
+import {transformContext} from '../../core'
 
 
 /** 
@@ -69,13 +70,27 @@ export namespace TrackingPatch {
 		rawNode: ts.Expression,
 		type: 'get' | 'set',
 		exp?: ts.Expression,
-		key?: (string | number)
+		key?: string | number | ts.Expression
 	) {
+		let optional = false
+
+		if (exp === undefined || key === undefined) {
+			if (!transformContext.helper.access.isAccess(rawNode)) {
+				return
+			}
+
+			let parts = transformContext.helper.access.getAccessParts(rawNode)
+			exp = parts.exp
+			key = parts.key
+			optional = parts.optional
+		}
+
 		let item: CapturedItem = {
 			node: rawNode,
 			type,
 			exp,
 			key,
+			optional,
 			referencedAtInternal: false,
 		}
 
@@ -93,14 +108,24 @@ export namespace TrackingPatch {
 	}
 
 
-	/** Output isolated tracking expressions. */
+	/** Output isolated tracking expressions from an access node. */
 	export function outputIsolatedTracking(rawNode: ts.Expression, type: 'get' | 'set'): ts.Expression[] {
-		if (!ObservedChecker.getSelfObserved(rawNode)) {
+		if (!transformContext.helper.access.isAccess(rawNode)
+			|| !ObservedChecker.getSelfObserved(rawNode)
+		) {
 			return []
 		}
 
 		AccessGrouper.addImport(type)
-		return AccessGrouper.makeExpressions([rawNode as AccessNode], type)
+		
+		let item: CapturedItem = {
+			node: rawNode,
+			type,
+			...transformContext.helper.access.getAccessParts(rawNode),
+			referencedAtInternal: false,
+		}
+
+		return AccessGrouper.makeExpressions([item], type)
 	}
 
 

@@ -1,7 +1,7 @@
 import ts from 'typescript'
 import {VisitTree, DeclarationScopeTree, transformContext} from '../../core'
 import {removeFromList} from '../../utils'
-import {CapturedItem, TrackingCapturer} from './capturer'
+import {CapturedItem, isDirectAccessCaptured, TrackingCapturer} from './capturer'
 import {TrackingArea} from './area'
 import {TrackingAreaTree, TrackingAreaTypeMask} from './area-tree'
 import {CapturedHash, CapturedHashing, CapturedHashMap} from './captured-hashing'
@@ -124,8 +124,8 @@ export class TrackingCapturerOperator {
 
 		for (let item of items) {
 
-			// It uses static key.
-			if (item.exp) {
+			// Skip static key, only handle dynamic.
+			if (typeof item.key !== 'object') {
 				continue
 			}
 
@@ -142,8 +142,9 @@ export class TrackingCapturerOperator {
 			dynamicIndexed.push({
 				node: item.node,
 				type: item.type,
-				exp: item.node.expression,
+				exp: item.exp,
 				key: '',
+				optional: item.optional,
 				referencedAtInternal: false
 			})
 		}
@@ -237,14 +238,13 @@ export class TrackingCapturerOperator {
 	{
 		let {node, type, key} = item
 
-		// Totally ignores key specifying tracking,
-		// like `a[b]`, a['b'], or `a.get('...')`
-		// Only `a.b` can be tested.
-		if (key !== undefined) {
+		// Only static property captures can be eliminated.
+		if (typeof key !== 'string' || !isDirectAccessCaptured(item)) {
 			return undefined
 		}
 
-		let propDecls = transformContext.helper.symbol.resolveDeclarations(node, transformContext.helper.isPropertyOrGetSetAccessor)
+		let propertyNode = transformContext.helper.access.getPropertyNode(node as ts.PropertyAccessExpression | ts.ElementAccessExpression)
+		let propDecls = transformContext.helper.symbol.resolveDeclarations(propertyNode, transformContext.helper.isPropertyOrGetSetAccessor)
 		if (!propDecls || propDecls.length === 0) {
 			return undefined
 		}
@@ -263,14 +263,6 @@ export class TrackingCapturerOperator {
 			return undefined
 		}
 
-		if (key === undefined && transformContext.helper.access.isAccess(node)) {
-			key = transformContext.helper.access.getPropertyText(node)
-		}
-
-		if (!key || typeof key === 'number') {
-			return undefined
-		}
-
 		return {
 			key,
 			node,
@@ -278,14 +270,11 @@ export class TrackingCapturerOperator {
 		}
 	}
 
-	/** 
-	 * Remove captured recursively.
-	 * capture item key can be removed only when key is `undefined`.
-	 */
-	removeNonKeyedCapturedRecursively(toRemove: Set<ts.Node>) {
+	/** Remove original property captures without removing explicit dependencies on them. */
+	removeAccessCapturedRecursively(toRemove: Set<ts.Node>) {
 		for (let item of this.capturer.captured) {
 			item.items = item.items.filter(item => {
-				if (item.key !== undefined) {
+				if (!isDirectAccessCaptured(item)) {
 					return true
 				}
 
@@ -298,7 +287,7 @@ export class TrackingCapturerOperator {
 		}
 
 		for (let child of this.area.children) {
-			child.capturer.operator.removeNonKeyedCapturedRecursively(toRemove)
+			child.capturer.operator.removeAccessCapturedRecursively(toRemove)
 		}
 	}
 }

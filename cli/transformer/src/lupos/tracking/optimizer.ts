@@ -469,6 +469,6 @@ export namespace Optimizer {
 			}
 		}
 
-		area.capturer.operator.removeNonKeyedCapturedRecursively(removeNodes)
+		area.capturer.operator.removeAccessCapturedRecursively(removeNodes)
 	}
 }
