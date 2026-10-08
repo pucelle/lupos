@@ -158,12 +158,20 @@ function compileComputedEffectWatchDecorator(
 }
 
 
+/** Prepare processor parameters while deferring emission of tracked getter bodies. */
 function makeMakerParameters(
 	deco: ts.Decorator,
 	decoName: string,
 	decl: ts.MethodDeclaration | ts.GetAccessorDeclaration | ts.PropertyDeclaration
 ): () => ts.Expression[] {
 	let methodName = transformContext.helper.getFullText(decl.name)
+
+	// Register string-getter imports before the import interpolation pass.
+	let watchGetters = decoName === 'watch' || decoName === 'watchMulti'
+		? compileWatchGetters(deco, decoName)
+		: () => []
+
+	let watchOptions = getWatchOptions(deco)
 
 	return () => {
 		if (decoName === 'computed' || decoName === 'asyncComputed') {
@@ -198,9 +206,6 @@ function makeMakerParameters(
 			]
 		}
 		else {
-			let watchGetters = compileWatchGetters(deco, decoName)
-			let watchOptions = getWatchOptions(deco)
-
 			if (decoName === 'watch') {
 				return [
 					watchGetters()[0],
