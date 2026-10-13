@@ -899,14 +899,21 @@ export namespace ObservedChecker {
 
 	/** Test whether this is observed. */
 	function getThisObserved(rawNode: ts.ThisExpression): boolean | null {
+		let result: boolean | null
 
 		// May resolve to this parameter, class declaration name.
 		let decl = transformContext.helper.symbol.resolveDeclaration(rawNode)
-		if (!decl) {
-			return null
+		if (decl) {
+			result = getDeclarationObserved(decl)
+			
+			if (result !== null) {
+				return result
+			}
 		}
 
-		return getDeclarationObserved(decl)
+		// A contextual `this: T` declaration may resolve only through its instantiated type.
+		let type = transformContext.helper.types.typeChecker.getTypeAtLocation(rawNode)
+		return getTypeObserved(type)
 	}
 
 
