@@ -167,6 +167,49 @@ export class TestMethodReturnedType extends Component {
         return this;
     }
 }
+/** Base observation marker inherited by a generic getter's result. */
+class GenericLoaderBase {
+    /** First asynchronously populated property. */
+    profiles = undefined;
+    /** Second asynchronously populated property. */
+    itemGrader = undefined;
+}
+/** Inherit observation as StatWeightsLoader does from APILoader. */
+class GenericObservedLoader extends GenericLoaderBase {
+}
+/** Cover observation of instantiated generic getter results. */
+export class TestGenericGetterReturnedType {
+    /** Track a direct property read through an unobserved wrapper. */
+    direct(holder) {
+        trackGet(holder.value, "profiles");
+        return holder.value.profiles;
+    }
+    /** Capture both destructured keys before an early return can skip dependencies. */
+    destructured(holder) {
+        let { profiles, itemGrader } = holder.value;
+        trackGet(holder.value, "profiles", "itemGrader");
+        if (profiles === undefined || itemGrader === undefined) {
+            return null;
+        }
+        return profiles + itemGrader;
+    }
+    /** Preserve inference through nullable generic results and non-null assertions. */
+    nullable(holder) {
+        let { profiles, itemGrader } = holder.value;
+        trackGet(holder.value, "profiles", "itemGrader");
+        return [profiles, itemGrader];
+    }
+    /** An explicit getter opt-out must take precedence over the inferred result type. */
+    unObserved(holder) {
+        let { profiles, itemGrader } = holder.value;
+        return [profiles, itemGrader];
+    }
+    /** A plain generic result must not become observed just because it is instantiated. */
+    plain(holder) {
+        let { profiles, itemGrader } = holder.value;
+        return profiles + itemGrader;
+    }
+}
 export class TestClassTypeParameter {
     getItems(item) {
         trackGet(item, "value");

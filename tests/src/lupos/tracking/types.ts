@@ -179,6 +179,72 @@ export class TestMethodReturnedType extends Component {
 }
 
 
+/** Generic getter whose contents are observed independently of its wrapper. */
+declare class GenericObservedGetter<T> {
+
+	/** Return the instantiated value type, not the declaration's generic parameter. */
+	get value(): T
+}
+
+/** Generic getter that explicitly disables observation of its contents. */
+declare class GenericUnObservedGetter<T> {
+
+	/** Keep the explicit opt-out even when T is an observed class. */
+	get value(): UnObserved<T>
+}
+
+/** Base observation marker inherited by a generic getter's result. */
+class GenericLoaderBase implements Observed {
+
+	/** First asynchronously populated property. */
+	profiles: number | undefined = undefined
+
+	/** Second asynchronously populated property. */
+	itemGrader: number | undefined = undefined
+}
+
+/** Inherit observation as StatWeightsLoader does from APILoader. */
+class GenericObservedLoader extends GenericLoaderBase {}
+
+
+/** Cover observation of instantiated generic getter results. */
+export class TestGenericGetterReturnedType {
+
+	/** Track a direct property read through an unobserved wrapper. */
+	direct(holder: GenericObservedGetter<GenericObservedLoader>) {
+		return holder.value.profiles
+	}
+
+	/** Capture both destructured keys before an early return can skip dependencies. */
+	destructured(holder: GenericObservedGetter<GenericObservedLoader>) {
+		let {profiles, itemGrader} = holder.value
+		if (profiles === undefined || itemGrader === undefined) {
+			return null
+		}
+
+		return profiles + itemGrader
+	}
+
+	/** Preserve inference through nullable generic results and non-null assertions. */
+	nullable(holder: GenericObservedGetter<GenericObservedLoader | null>) {
+		let {profiles, itemGrader} = holder.value!
+		return [profiles, itemGrader]
+	}
+
+	/** An explicit getter opt-out must take precedence over the inferred result type. */
+	unObserved(holder: GenericUnObservedGetter<GenericObservedLoader>) {
+		let {profiles, itemGrader} = holder.value
+		return [profiles, itemGrader]
+	}
+
+	/** A plain generic result must not become observed just because it is instantiated. */
+	plain(holder: GenericObservedGetter<{profiles: number, itemGrader: number}>) {
+		let {profiles, itemGrader} = holder.value
+		return profiles + itemGrader
+	}
+}
+
+
 export class TestClassTypeParameter<T extends Observed<{value: number}>> {
 
 	getItems(item: T) {

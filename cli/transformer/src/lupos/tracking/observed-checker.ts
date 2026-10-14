@@ -875,6 +875,14 @@ export namespace ObservedChecker {
 			}
 		}
 
+		// Generic property declarations retain T,
+		// the access type has its actual substitution.
+		let type = transformContext.helper.types.typeChecker.getTypeAtLocation(rawNode)
+		result = getTypeObserved(type)
+		if (result !== null) {
+			return result
+		}
+
 		// Take type, e.g., for `node = a.b.c`, exp is `a.b`.
 		let exp = rawNode.expression
 		let expType = transformContext.helper.types.typeChecker.getTypeAtLocation(exp)
