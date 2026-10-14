@@ -152,6 +152,21 @@ export class TestOptionalArrayRead {
 		return list?.length
 	}
 
+	/** Keep a continued property access inside the optional tracking guard. */
+	lengthNested(holder: Observed<{store: {currentData: number[] | undefined}}> | undefined) {
+		return holder?.store.currentData?.length ?? 0
+	}
+
+	/** Keep continued numeric element accesses inside the optional tracking guard. */
+	lengthNestedElement(holder: Observed<{stores: {currentData: number[] | undefined}[]}> | undefined) {
+		return holder?.stores[0].currentData?.length ?? 0
+	}
+
+	/** Literal-key normalization must preserve inherited optional-chain state. */
+	lengthNestedLiteral(holder: Observed<{store: {currentData: number[] | undefined}}> | undefined) {
+		return holder?.['store']['currentData']?.length ?? 0
+	}
+
 	/** Tracking must not shift the positions of later call arguments. */
 	callArguments(fn: ((key: number, value: number) => number) | undefined, data: Observed<{key: number, value: number}>) {
 		return fn?.(data.key, data.value)

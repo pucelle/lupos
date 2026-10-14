@@ -295,8 +295,8 @@ export namespace Packer {
 	export function removeAccessComments<T extends ts.Node>(node: T): T {
 		if (ts.isPropertyAccessExpression(node)) {
 
-			// `a?.b`
-			if (node.questionDotToken) {
+			// `a?.b` and continued accesses like `a?.b.c`.
+			if (ts.isPropertyAccessChain(node)) {
 				return transformContext.factory.createPropertyAccessChain(
 					removeAccessComments(node.expression),
 					node.questionDotToken,
@@ -314,8 +314,8 @@ export namespace Packer {
 		}
 		else if (ts.isElementAccessExpression(node)) {
 			
-			// `a?.[b]`
-			if (node.questionDotToken) {
+			// `a?.[b]` and continued accesses like `a?.b[c]`.
+			if (ts.isElementAccessChain(node)) {
 				return transformContext.factory.createElementAccessChain(
 					removeAccessComments(node.expression),
 					node.questionDotToken,
@@ -383,8 +383,8 @@ export namespace Packer {
 			&& /^[a-z_$][\w$_]*$/i.test(node.argumentExpression.text)
 		) {
 
-			// `a?.b`
-			if (node.questionDotToken) {
+			// Preserve the chain even when this access has no question-dot token.
+			if (ts.isElementAccessChain(node)) {
 				return transformContext.factory.createPropertyAccessChain(
 					normalize(node.expression, deeply) as ts.Expression,
 					node.questionDotToken,

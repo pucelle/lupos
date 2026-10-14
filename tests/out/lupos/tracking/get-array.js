@@ -145,6 +145,25 @@ export class TestOptionalArrayRead {
         list && trackGet(list, "");
         return list?.length;
     }
+    /** Keep a continued property access inside the optional tracking guard. */
+    lengthNested(holder) {
+        holder && trackGet(holder, "store");
+        holder && trackGet(holder.store, "currentData");
+        holder?.store.currentData && trackGet(holder.store.currentData, "");
+        return holder?.store.currentData?.length ?? 0;
+    }
+    /** Keep continued numeric element accesses inside the optional tracking guard. */
+    lengthNestedElement(holder) {
+        holder && trackGet(holder, "stores");
+        holder && trackGet(holder.stores[0], "currentData");
+        holder?.stores[0].currentData && trackGet(holder.stores[0].currentData, "");
+        return holder?.stores[(trackGet(holder.stores, 0), 0)].currentData?.length ?? 0;
+    }
+    /** Literal-key normalization must preserve inherited optional-chain state. */
+    lengthNestedLiteral(holder) {
+        holder?.store.currentData && trackGet(holder.store.currentData, "");
+        return holder?.[(trackGet(holder, "store"), "store")][(trackGet(holder.store, "currentData"), "currentData")]?.length ?? 0;
+    }
     /** Tracking must not shift the positions of later call arguments. */
     callArguments(fn, data) {
         return fn?.((trackGet(data, "key"), data.key), (trackGet(data, "value"), data.value));
