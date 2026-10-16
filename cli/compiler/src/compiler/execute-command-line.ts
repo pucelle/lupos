@@ -5,6 +5,7 @@ import ts from 'typescript'
 import * as fs from 'node:fs'
 import {createDiagnosticReporter, createWatchStatusReporter} from './watch'
 import {hasProperty} from './core'
+import {cleanCachedOutputs} from './clean-cache'
 import {CompilerDiagnosticModifier, CompilerDiagnosticProviderFactory, ExtendedTransformerFactory, patchHost} from '../patch'
 
 
@@ -14,6 +15,11 @@ export function executeCommandLine(
 	transformer: ExtendedTransformerFactory,
 	diagnosticProviderFactory?: CompilerDiagnosticProviderFactory
 ) {
+	let cleanCache = commandLineArgs.includes('--cache') || commandLineArgs.includes('-c')
+	if (cleanCache) {
+		commandLineArgs = commandLineArgs.filter(arg => arg !== '--cache' && arg !== '-c')
+	}
+
 	let toESM = commandLineArgs.includes('--esm') || commandLineArgs.includes('-e')
 	if (toESM) {
 		commandLineArgs = commandLineArgs.filter(arg => arg !== '--esm' && arg !== '-e')
@@ -47,6 +53,10 @@ export function executeCommandLine(
 
 	if (!configFileName) {
 		system.write(`Can't find "tsconfig.json" file at directory "${system.getCurrentDirectory()}"` + system.newLine)
+		return system.exit(ts.ExitStatus.DiagnosticsPresent_OutputsSkipped)
+	}
+
+	if (cleanCache && !cleanCachedOutputs(system, configFileName, reportDiagnostic)) {
 		return system.exit(ts.ExitStatus.DiagnosticsPresent_OutputsSkipped)
 	}
 

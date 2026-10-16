@@ -4,8 +4,8 @@ const {spawnSync} = require('node:child_process')
 const repositoryRoot = path.resolve(__dirname, '..')
 const compilerPath = path.join(repositoryRoot, 'cli', 'bin', 'luc')
 
-function compile(projectDirectory) {
-	let result = spawnSync(process.execPath, [compilerPath], {
+function compile(projectDirectory, args = []) {
+	let result = spawnSync(process.execPath, [compilerPath, ...args], {
 		cwd: projectDirectory,
 		encoding: 'utf8',
 	})

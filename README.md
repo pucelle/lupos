@@ -130,6 +130,7 @@ Loop variables are scoped to the body. Loops can nest and contain other control 
 - `-e`: equals `--esm`, compile to esm codes, import paths will be resolved to file path, so outputted codes can do tree shaking easier.
 - `-s`: equals `--svg-embedded`, embed svg imports to string, compress and replace color `#000000` to `currentColor`.
 - `-w`: equals `--watch`, compile in watch mode.
+- `-c`: equals `--cache`, remove stale `.js` and `.d.ts` files from configured `outDir` and `declarationDir` before compiling (or starting watch mode). Each removed path is logged. Current output mappings, including referenced projects, are preserved; source directories, symlinks, and other file types are not cleaned.
 
 
 ### 2. web APIs
