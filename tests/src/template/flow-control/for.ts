@@ -2,12 +2,23 @@ import {Observed} from '../../../../web/out'
 import {Component, html} from 'lupos.html'
 
 
-export class TestFor extends Component {
+/** A callback type must not make its parameter name a captured template variable. */
+interface ForEvents {
+
+	/** Reuse the property name that appears in transferred tracking expressions. */
+	select: (selection: {value: number}) => void
+}
+
+
+export class TestFor extends Component<ForEvents> {
 
 	prop: number = 1
 	items: {value: number}[] = [{value: 1}]
 	readonly readonlyItems: {value: number}[] = [{value: 1}]
 	readonly deepReadonlyItems: ReadonlyArray<{value: number}> = [{value: 1}]
+
+	/** Object receiver whose generated tracking property name must not become a capture. */
+	selection: {value: number} = {value: 1}
 
 	/** Tuple values used by array-destructuring loop tests. */
 	entries: [string, {value: number}][] = [['key', {value: 1}]]
@@ -130,6 +141,26 @@ export class TestFor extends Component {
 		return html`
 			<lu:for ${item} of ${this.items}>
 				${item.value}
+			</lu:for>
+		`
+	}
+
+	/** Transferred tracking must preserve member names on a context receiver. */
+	testForOfTrackedPropertyReceiver() {
+		return html`
+			<lu:for ${item} of ${this.items}>
+				${item.value === this.selection.value}
+			</lu:for>
+		`
+	}
+
+	/** A real local receiver with the same name as a member must still be captured. */
+	testForOfTrackedLocalReceiver() {
+		let selection = this.selection
+
+		return html`
+			<lu:for ${item} of ${this.items}>
+				${item.value === selection.value}
 			</lu:for>
 		`
 	}

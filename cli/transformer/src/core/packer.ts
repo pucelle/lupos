@@ -291,7 +291,11 @@ export namespace Packer {
 	}
 
 
-	/** Remove comments from a property or element access node. */
+	/** 
+	 * Remove comments from a property or element access node.
+	 * It rebuild the exp and name parts of access node.
+	 * Note after rebuild, the child->parent relationship broken.
+	 */
 	export function removeAccessComments<T extends ts.Node>(node: T): T {
 		if (ts.isPropertyAccessExpression(node)) {
 
