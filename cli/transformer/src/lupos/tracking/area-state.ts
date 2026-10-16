@@ -144,7 +144,6 @@ export class TrackingAreaState {
 
 			let fnName = transformContext.helper.getFullText(descendant.expression)
 			return fnName === 'trackGet'
-				|| fnName === 'trackGetDeeply'
 				|| fnName === 'trackSet'
 		})
 	}

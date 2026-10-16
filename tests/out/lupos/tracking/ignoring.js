@@ -189,10 +189,22 @@ export class TestIgnoringCustomTracked extends Component {
         trackSet(this, '');
         this.prop = 1;
     }
-    /** Manual deep tracking in an IIFE must not disable the enclosing method. */
+    /** Deep tracking must not suppress automatic property reads in the same method. */
+    deepRead() {
+        trackGetDeeply(this);
+        trackGet(this, "prop");
+        return this.prop;
+    }
+    /** Deep tracking must not suppress automatic property writes in the same method. */
+    deepWrite() {
+        trackGetDeeply(this);
+        this.prop = 2;
+        trackSet(this, "prop");
+    }
+    /** Manual tracking in an IIFE must not disable the enclosing method. */
     nestedArrow() {
         void (() => {
-            trackGetDeeply(this);
+            trackGet(this, '');
         })();
         trackGet(this, "prop");
         return this.prop;
@@ -208,9 +220,9 @@ export class TestIgnoringCustomTracked extends Component {
     }
     /** Named function declarations also form independent manual-tracking scopes. */
     nestedFunctionDeclaration() {
-        /** Read a value with explicitly supplied deep dependencies. */
+        /** Read a value with explicitly supplied dependencies. */
         function read(value) {
-            trackGetDeeply(value);
+            trackGet(value, '');
             return value.value;
         }
         trackGet(this, "prop");
