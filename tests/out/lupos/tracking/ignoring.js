@@ -1,5 +1,5 @@
 import { Component, RefBinding, CompiledTemplateResult, TemplateMaker, SlotPosition, HTMLMaker } from 'lupos.html';
-import { Observed, trackGet, trackSet } from '../../../../web/out';
+import { Observed, trackGet, trackGetDeeply, trackSet } from '../../../../web/out';
 import { Computed, trackGet, trackSet, Watcher } from "lupos";
 const $html_0 = /*#__PURE__*/ new HTMLMaker("<div></div>");
 /*
@@ -188,6 +188,50 @@ export class TestIgnoringCustomTracked extends Component {
     write() {
         trackSet(this, '');
         this.prop = 1;
+    }
+    /** Manual deep tracking in an IIFE must not disable the enclosing method. */
+    nestedArrow() {
+        void (() => {
+            trackGetDeeply(this);
+        })();
+        trackGet(this, "prop");
+        return this.prop;
+    }
+    /** A callback's manual reads only suppress automatic tracking in that callback. */
+    nestedFunctionExpression() {
+        let read = function () {
+            trackGet(this, '');
+            return this.prop;
+        };
+        trackGet(this, "prop");
+        return read.call(this) + this.prop;
+    }
+    /** Named function declarations also form independent manual-tracking scopes. */
+    nestedFunctionDeclaration() {
+        /** Read a value with explicitly supplied deep dependencies. */
+        function read(value) {
+            trackGetDeeply(value);
+            return value.value;
+        }
+        trackGet(this, "prop");
+        return read({ value: this.prop });
+    }
+    /** A callback's manual writes must not suppress the enclosing assignment. */
+    nestedWrite() {
+        let write = () => {
+            trackSet(this, '');
+            this.prop = 2;
+        };
+        write();
+        this.prop = 1;
+        trackSet(this, "prop");
+    }
+    /** Blocks in the same function must still participate in manual-tracking detection. */
+    manualInBlock(enabled) {
+        if (enabled) {
+            trackGet(this, '');
+        }
+        return this.prop;
     }
 }
 export class TestPreventIgnoringWatcherGetter extends Component {

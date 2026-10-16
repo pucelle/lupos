@@ -27,7 +27,7 @@ export class TrackingAreaState {
 	readonly stopGetTracking: boolean
 
 	/** 
-	 * If a function like area has any tracking code,
+	 * If a function like area has its own tracking code,
 	 * stop any tracking.
 	 */
 	readonly stopAnyTracking: boolean
@@ -131,22 +131,22 @@ export class TrackingAreaState {
 			return parent.state.stopAnyTracking ?? false
 		}
 
-		for (let descendant of transformContext.helper.walkInward(node)) {
-			if (!ts.isCallExpression(descendant)) {
-				continue
-			}
-
-			// Should have no need to test whether import from `@pucelle/ff`.
-			let fnName = transformContext.helper.getFullText(descendant.expression)
-			if (fnName === 'trackGet'
-				|| fnName === 'trackGetDeeply'
-				|| fnName === 'trackSet'
-			) {
-				return true
-			}
+		let body = (node as ts.FunctionLikeDeclaration).body
+		if (!body) {
+			return false
 		}
 
-		return false
+		// Manual tracking only suppresses automatic tracking in its own function.
+		return !!transformContext.helper.findInstantlyRunInward(body, (descendant): descendant is ts.CallExpression => {
+			if (!ts.isCallExpression(descendant)) {
+				return false
+			}
+
+			let fnName = transformContext.helper.getFullText(descendant.expression)
+			return fnName === 'trackGet'
+				|| fnName === 'trackGetDeeply'
+				|| fnName === 'trackSet'
+		})
 	}
 
 	private checkEffectDecorated(): boolean {

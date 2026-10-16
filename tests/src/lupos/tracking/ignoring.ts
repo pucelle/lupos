@@ -1,5 +1,5 @@
 import {Component, html} from 'lupos.html'
-import {computed, Observed, trackGet, trackSet, watch} from '../../../../web/out'
+import {computed, Observed, trackGet, trackGetDeeply, trackSet, watch} from '../../../../web/out'
 
 
 export class TestIgnoringStringIndex extends Component {
@@ -200,6 +200,57 @@ export class TestIgnoringCustomTracked extends Component {
 	write() {
 		trackSet(this, '')
 		this.prop = 1
+	}
+
+	/** Manual deep tracking in an IIFE must not disable the enclosing method. */
+	nestedArrow() {
+		void (() => {
+			trackGetDeeply(this)
+		})()
+
+		return this.prop
+	}
+
+	/** A callback's manual reads only suppress automatic tracking in that callback. */
+	nestedFunctionExpression() {
+		let read = function(this: TestIgnoringCustomTracked) {
+			trackGet(this, '')
+			return this.prop
+		}
+
+		return read.call(this) + this.prop
+	}
+
+	/** Named function declarations also form independent manual-tracking scopes. */
+	nestedFunctionDeclaration() {
+
+		/** Read a value with explicitly supplied deep dependencies. */
+		function read(value: Observed<{value: number}>) {
+			trackGetDeeply(value)
+			return value.value
+		}
+
+		return read({value: this.prop})
+	}
+
+	/** A callback's manual writes must not suppress the enclosing assignment. */
+	nestedWrite() {
+		let write = () => {
+			trackSet(this, '')
+			this.prop = 2
+		}
+
+		write()
+		this.prop = 1
+	}
+
+	/** Blocks in the same function must still participate in manual-tracking detection. */
+	manualInBlock(enabled: boolean) {
+		if (enabled) {
+			trackGet(this, '')
+		}
+
+		return this.prop
 	}
 }
 
