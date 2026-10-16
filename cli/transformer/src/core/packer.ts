@@ -1,5 +1,5 @@
 import ts from 'typescript'
-import {transformContext} from './global'
+import {transformContext, transformSession} from './global'
 import {AccessNode} from '../lupos-ts-module'
 
 
@@ -293,17 +293,21 @@ export namespace Packer {
 
 	/** 
 	 * Remove comments from a property or element access node.
-	 * It rebuild the exp and name parts of access node.
-	 * Note after rebuild, the child->parent relationship broken.
+	 * Preserve comment-free branches and rebuild only paths containing comments.
+	 * Rebuilt nodes do not retain their original child-to-parent relationships.
 	 */
 	export function removeAccessComments<T extends ts.Node>(node: T): T {
+		if (!hasAccessComments(node)) {
+			return node
+		}
+
 		if (ts.isPropertyAccessExpression(node)) {
 
 			// `a?.b` and continued accesses like `a?.b.c`.
 			if (ts.isPropertyAccessChain(node)) {
 				return transformContext.factory.createPropertyAccessChain(
 					removeAccessComments(node.expression),
-					node.questionDotToken,
+					node.questionDotToken ? removeAccessComments(node.questionDotToken) : undefined,
 					removeAccessComments(node.name),
 				) as ts.Node as T
 			}
@@ -322,7 +326,7 @@ export namespace Packer {
 			if (ts.isElementAccessChain(node)) {
 				return transformContext.factory.createElementAccessChain(
 					removeAccessComments(node.expression),
-					node.questionDotToken,
+					node.questionDotToken ? removeAccessComments(node.questionDotToken) : undefined,
 					removeAccessComments(node.argumentExpression),
 				) as ts.Node as T
 			}
@@ -341,8 +345,36 @@ export namespace Packer {
 		else if (transformContext.helper.isThis(node)) {
 			return transformContext.factory.createThis() as ts.Node as T
 		}
+		else if (ts.isStringLiteral(node)) {
+			return transformContext.factory.createStringLiteral(node.text) as ts.Node as T
+		}
+		else if (ts.isNumericLiteral(node)) {
+			return transformContext.factory.createNumericLiteral(node.text) as ts.Node as T
+		}
+		else if (node.kind === ts.SyntaxKind.QuestionDotToken) {
+			return transformContext.factory.createToken(ts.SyntaxKind.QuestionDotToken) as ts.Node as T
+		}
 
-		return node
+		return ts.visitEachChild(node, removeAccessComments, transformContext.transformationContext) as T
+	}
+
+	/** Check source and synthetic comments throughout an expression before rebuilding it. */
+	function hasAccessComments(node: ts.Node): boolean {
+		if (ts.getSyntheticLeadingComments(node)?.length || ts.getSyntheticTrailingComments(node)?.length) {
+			return true
+		}
+
+		let original = ts.getOriginalNode(node)
+		let text = transformSession.sourceFile.text
+		if (original.pos >= 0
+			&& (ts.getLeadingCommentRanges(text, original.pos)?.length
+				|| ts.getTrailingCommentRanges(text, original.pos)?.length
+				|| ts.getTrailingCommentRanges(text, original.end)?.length)
+		) {
+			return true
+		}
+
+		return !!ts.forEachChild(node, hasAccessComments)
 	}
 
 
