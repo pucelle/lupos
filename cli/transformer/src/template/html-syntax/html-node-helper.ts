@@ -22,6 +22,21 @@ export namespace HTMLNodeHelper {
 	const PrecedingPositionWillInsert: WeakSet<HTMLNode> = new WeakSet()
 
 
+	/** Resolve the child namespace before extracting nodes from their original ancestors. */
+	export function isChildrenInSVG(node: HTMLNode, fallback: boolean): boolean {
+		for (let ancestor: HTMLNode | null = node; ancestor; ancestor = ancestor.parent) {
+			if (ancestor.tagName === 'svg') {
+				return true
+			}
+			else if (ancestor.tagName === 'foreignObject') {
+				return false
+			}
+		}
+
+		return fallback
+	}
+
+
 	/** 
 	 * Whether preceding position of current node is stable.
 	 * Means will not be removed, or insert other nodes before it.

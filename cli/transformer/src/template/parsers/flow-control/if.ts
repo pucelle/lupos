@@ -61,7 +61,7 @@ export class IfFlowControl extends FlowControlBase {
 
 		for (let child of allNodes) {
 			if (child.children.length > 0) {
-				let template = this.template.separateChildrenAsTemplate(child)
+				let template = this.template.separateChildrenAsTemplate(child, this.node)
 				this.contentTemplates.push(template)
 			}
 			else {

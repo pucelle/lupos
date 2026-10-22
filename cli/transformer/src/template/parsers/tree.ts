@@ -97,19 +97,10 @@ export class TreeParser {
 	}
 
 	private initWrapping() {
-		let inSVG = false
+		let fallback = this.parent ? this.parent.inSVG : this.template.tagName === 'svg'
+		let inSVG = this.fromNode ? HTMLNodeHelper.isChildrenInSVG(this.fromNode, fallback) : fallback
 
-		if (this.template.tagName === 'svg') {
-			inSVG = true
-		}
-		else if (this.parent && this.parent.inSVG) {
-			inSVG = true
-		}
-		else if (this.fromNode && this.fromNode.closest('svg')) {
-			inSVG = true
-		}
-
-		if (inSVG && this.root.firstChild?.tagName !== 'svg') {
+		if (inSVG && (this.root.children.length !== 1 || this.root.firstChild?.tagName !== 'svg')) {
 			this.root.wrapChildrenWith('svg')
 			this.wrappedBySVG = true
 		}

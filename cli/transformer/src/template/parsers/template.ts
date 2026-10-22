@@ -3,6 +3,7 @@ import {Analyzer, HTMLNode, HTMLRoot, PositionMapper, TemplateBasis, TemplateDia
 import {TreeParser} from './tree'
 import {TemplateValues} from './template-values'
 import {Modifier, getSourceFileDiagnosticModifier, DeclarationScope, DeclarationScopeTree, VisitTree, transformContext} from '../../core'
+import {HTMLNodeHelper} from '../html-syntax'
 
 
 /**
@@ -69,10 +70,12 @@ export class TemplateParser extends TemplateBasis {
 	 * Separate children of a node to an independent sub template,
 	 * and parse it immediately.
 	 * it uses it's own value list.
+	 * Detached sibling branches use their still-attached control node for namespace context.
 	 */
-	separateChildrenAsTemplate(node: HTMLNode): TemplateParser {
+	separateChildrenAsTemplate(node: HTMLNode, contextNode: HTMLNode = node): TemplateParser {
+		let tagName: 'html' | 'svg' = HTMLNodeHelper.isChildrenInSVG(contextNode, this.tagName === 'svg') ? 'svg' : 'html'
 		let root = HTMLRoot.fromSeparatingChildren(node)
-		let template = new TemplateParser(this.tagName as 'html' | 'svg', this.node, '', root, this.values.valueNodes, this.positionMapper, this.analyzer)
+		let template = new TemplateParser(tagName, this.node, '', root, this.values.valueNodes, this.positionMapper, this.analyzer)
 		this.subTemplates.push(template)
 		template.parse()
 		
