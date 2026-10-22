@@ -109,6 +109,8 @@ html`<lu:for ${item, index} of ${this.items}>
 
 The index is optional: `<lu:for ${item} of ${this.items}>...</lu:for>`.
 
+Use `key="id"` or `key=${item => item.id}` to preserve each row's DOM and component state when replacing or reordering objects. Keys must be unique within the loop. The selector receives the full item even when the loop header destructures it. The same option works with the callback-renderer form below. Without `key`, matching continues to use item identity.
+
 Alternatively, supply a render callback that receives the item and its index:
 
 ```ts

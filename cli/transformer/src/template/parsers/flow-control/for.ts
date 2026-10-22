@@ -3,7 +3,7 @@ import {DeclarationScopeTree, Hashing, Modifier, transformContext} from '../../.
 import {FlowControlBase} from './base'
 import {SlotContentType} from '../../../enums'
 import {ObservedStateMask, ObservedChecker, TrackingPatch, TrackingRanges, TrackingAreaTypeMask} from '../../../lupos'
-import {ForHeader, parseForHeader, parseForRenderer, TemplatePartType, TemplateSlotPlaceholder} from '../../../lupos-ts-module'
+import {ForHeader, ForKey, parseForHeader, parseForKey, parseForRenderer, TemplatePartType, TemplateSlotPlaceholder} from '../../../lupos-ts-module'
 import {PartType} from '../tree'
 import {TemplateParser} from '../template'
 import {MutableConfig} from '../../../core/helpers/mutable-state'
@@ -34,6 +34,12 @@ export class ForFlowControl extends FlowControlBase {
 	/** Whether the body supplies a render callback directly. */
 	private hasRenderer: boolean = false
 
+	/** Optional property name or key extractor used for item identity. */
+	private key: ForKey | null = null
+
+	/** Whether the key option must be refreshed during template updates. */
+	private keyMutable: boolean = false
+
 	private ofMutableConfig!: MutableConfig 
 	private fnMutableConfig!: MutableConfig 
 
@@ -45,6 +51,10 @@ export class ForFlowControl extends FlowControlBase {
 		this.slotVariableName = this.slot.makeSlotName()
 		this.templateSlotGetter = this.slot.prepareAsTemplateSlot(SlotContentType.TemplateResultList)
 		this.header = parseForHeader(this.node, this.template.valueNodes, transformContext.helper)
+		this.key = parseForKey(this.node)
+		
+		let keyValueIndex = this.key?.valueIndex ?? null
+		this.keyMutable = keyValueIndex !== null && !this.template.values.isTransferableAt(keyValueIndex)
 		
 		let renderer = parseForRenderer(this.node)
 		this.hasRenderer = renderer !== null
@@ -77,6 +87,13 @@ export class ForFlowControl extends FlowControlBase {
 			// Force tracking members of array.
 			// When parsing template, all descendant nodes have not been visited by tracking module.
 			let iterable = this.template.values.valueNodeAt(ofValueIndex)
+			if (keyValueIndex !== null && ObservedChecker.getIteratedElementsObserved(iterable)) {
+				let selector = this.template.values.valueNodeAt(keyValueIndex)
+				if ((ts.isArrowFunction(selector) || ts.isFunctionExpression(selector)) && selector.parameters[0]) {
+					TrackingPatch.forceTrackType(selector.parameters[0], ObservedStateMask.Elements)
+				}
+			}
+
 			if (ObservedChecker.getElementsObserved(iterable)) {
 				TrackingPatch.forceTrackType(iterable, ObservedStateMask.Elements)
 				TrackingPatch.addCustomTracking(iterable, 'get', iterable, '')
@@ -165,6 +182,23 @@ export class ForFlowControl extends FlowControlBase {
 			[
 				value.joint,
 			]
+		)
+	}
+
+	/** Set the identity selector before rendering or updating the iterable. */
+	private outputKeyUpdate(): ts.Expression {
+		let key = this.key!
+		let value = key.valueIndex === null
+			? transformContext.factory.createStringLiteral(key.property!)
+			: this.template.values.outputValue(null, [key.valueIndex], this.tree, TemplatePartType.FlowControl).joint
+
+		return transformContext.factory.createCallExpression(
+			transformContext.factory.createPropertyAccessExpression(
+				transformContext.factory.createIdentifier(this.blockVariableName),
+				'updateKey'
+			),
+			undefined,
+			[value]
 		)
 	}
 
@@ -286,6 +320,7 @@ export class ForFlowControl extends FlowControlBase {
 		return [
 			slotInit,
 			forBlockInit,
+			...this.key && !this.keyMutable ? [this.outputKeyUpdate()] : [],
 			...this.fnValueIndexMutable ? [] : [this.outputFnUpdate()],
 			...this.ofValueIndexElementsMutable ? [] : [this.outputOfUpdate()],
 		]
@@ -293,6 +328,7 @@ export class ForFlowControl extends FlowControlBase {
 
 	override outputUpdate() {
 		return [
+			...this.keyMutable ? [this.outputKeyUpdate()] : [],
 			...this.fnValueIndexMutable ? [this.outputFnUpdate()] : [],
 			...this.ofValueIndexElementsMutable ? [this.outputOfUpdate()] : [],
 		]

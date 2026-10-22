@@ -232,4 +232,34 @@ export class TestFor extends Component<ForEvents> {
 			<lu:for ${item, index} of ${new Set<string>()}></lu:for>
 		`
 	}
+
+	/** Preserve loop identity by a literal property name. */
+	testForKeyProperty() {
+		return html`<lu:for ${item} of ${this.items} key="value">${item.value}</lu:for>`
+	}
+
+	/** Key callbacks infer their item and track its observed properties. */
+	testForKeyCallback() {
+		return html`<lu:for key=${item => item.value} ${item, index} of ${this.items}>${index}: ${item.value}</lu:for>`
+	}
+
+	/** A key extractor can capture a local used by a dynamic selector. */
+	testForKeyLocal(suffix: string) {
+		return html`<lu:for ${item} of ${this.items} key=${item => suffix + item.value}>${item.value}</lu:for>`
+	}
+
+	/** Renderer shorthand accepts the same key option as inline bodies. */
+	testForKeyRenderer() {
+		return html`<lu:for ${this.items} key=${'value'}>${item => html`${item.value}`}</lu:for>`
+	}
+
+	/** Destructured loops derive keys from the full item, not its binding pattern. */
+	testForKeyDestructured() {
+		return html`<lu:for ${[key, value]} of ${this.entries} key=${entry => entry[0]}>${key}: ${value.value}</lu:for>`
+	}
+
+	/** Mutable key options are refreshed before the corresponding data update. */
+	testForKeyDynamic(key: 'value' | ((item: {value: number}) => unknown) | undefined) {
+		return html`<lu:for ${item} of ${this.items} key=${key}>${item.value}</lu:for>`
+	}
 }
