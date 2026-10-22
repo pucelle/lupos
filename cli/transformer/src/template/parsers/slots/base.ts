@@ -341,7 +341,7 @@ export abstract class SlotParserBase {
 				? [
 					transformContext.factory.createCallExpression(
 						transformContext.factory.createPropertyAccessExpression(
-							transformContext.factory.createIdentifier(VariableNames.locator),
+							transformContext.factory.createIdentifier(VariableNames.LOCATOR),
 							transformContext.factory.createIdentifier('getNodes')
 						),
 						undefined,

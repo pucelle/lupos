@@ -1,4 +1,4 @@
-const resetEscapeSequence = "\u001b[0m";
+const RESET_ESCAPE_SEQUENCE = "\u001b[0m";
 
 
 export enum ForegroundColorEscapeSequences {
@@ -6,5 +6,5 @@ export enum ForegroundColorEscapeSequences {
 }
 
 export function formatColorAndReset(text: string, formatStyle: string) {
-    return formatStyle + text + resetEscapeSequence
+    return formatStyle + text + RESET_ESCAPE_SEQUENCE
 }

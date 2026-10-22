@@ -10,19 +10,19 @@ interface VariableNameState {
 
 export namespace VariableNames {
 
-	export const context = '$context'
-	export const values = '$values'
-	export const html = '$html'
-	export const template = '$template'
-	export const node = '$node'
-	export const hydrates = '$hydrates'
-	export const locator = '$locator'
-	export const latest = '$latest'
-	export const slot = '$slot'
-	export const com = '$com'
-	export const binding = '$binding'
-	export const delegator = '$delegator'
-	export const block = '$block'
+	export const CONTEXT = '$context'
+	export const VALUES = '$values'
+	export const HTML = '$html'
+	export const TEMPLATE = '$template'
+	export const NODE = '$node'
+	export const HYDRATES = '$hydrates'
+	export const LOCATOR = '$locator'
+	export const LATEST = '$latest'
+	export const SLOT = '$slot'
+	export const COM = '$com'
+	export const BINDING = '$binding'
+	export const DELEGATOR = '$delegator'
+	export const BLOCK = '$block'
 
 	const StateKey = createTransformSessionStateKey<VariableNameState>('VariableNames')
 

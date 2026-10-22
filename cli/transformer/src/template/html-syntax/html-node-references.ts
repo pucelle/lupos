@@ -110,7 +110,7 @@ export class HTMLNodeReferences {
 		}
 
 		let nodeIndex = this.indexMap.get(node)!
-		return VariableNames.node + '_' + nodeIndex
+		return VariableNames.NODE + '_' + nodeIndex
 	}
 
 	/** 

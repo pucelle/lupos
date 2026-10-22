@@ -3,7 +3,7 @@ import {Modifier, Interpolator, InterpolationContentType, transformContext} from
 import {
 	DecoratedMemberAnalysis,
 	ObservableDecoratorName,
-	ProcessorPropNameMap,
+	PROCESSOR_PROP_NAME_MAP,
 } from './decorators'
 
 
@@ -56,7 +56,7 @@ function compileComputedDecorator(
 	isOverwritten: boolean
 ): () => ts.Node[] {
 	let propName = transformContext.helper.getFullText(decl.name)
-	let processorPropName = '$' + propName + '_' + ProcessorPropNameMap[decoName]
+	let processorPropName = '$' + propName + '_' + PROCESSOR_PROP_NAME_MAP[decoName]
 	let overwrittenMethodName = '$compute_' + propName
 	let resetMethodName = '$reset_' + propName
 
@@ -177,7 +177,7 @@ function compileAsyncComputedDecorator(
 	isOverwritten: boolean
 ): () => ts.Node[] {
 	let propName = transformContext.helper.getFullText(decl.name)
-	let processorPropName = '$' + propName + '_' + ProcessorPropNameMap[decoName]
+	let processorPropName = '$' + propName + '_' + PROCESSOR_PROP_NAME_MAP[decoName]
 	let overwrittenMethodName = '$compute_' + propName
 	let resetMethodName = '$reset_' + propName
 

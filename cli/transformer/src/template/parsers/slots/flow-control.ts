@@ -7,7 +7,7 @@ import {CacheFlowControl} from '../flow-control/cache'
 type FlowControlConstructor = new (slot: FlowControlSlotParser) => FlowControlBase
 
 /** Flow-control parser selected by its template tag. */
-const FlowControlByTagName: Record<string, FlowControlConstructor> = {
+const FLOW_CONTROL_BY_TAG_NAME: Record<string, FlowControlConstructor> = {
 	'lu:await': AwaitFlowControl,
 	'lu:for': ForFlowControl,
 	'lu:if': IfFlowControl,
@@ -32,7 +32,7 @@ export class FlowControlSlotParser extends SlotParserBase {
 
 	override preInit() {
 		let tagName = this.node.tagName!
-		let Control = FlowControlByTagName[tagName]
+		let Control = FLOW_CONTROL_BY_TAG_NAME[tagName]
 		if (!Control) {
 			return
 		}

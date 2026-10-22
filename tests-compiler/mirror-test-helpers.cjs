@@ -5,16 +5,26 @@ const path = require('node:path')
 const ts = require('typescript')
 const {buildTypeScriptMirror, createLuposMirrorDiagnosticProvider, createMirrorProgram} = require('lupos/mirror-provider')
 
+
+/** Shared fixed compiler settings for mirror checks. */
+const COMPILER_OPTIONS = {
+	module: ts.ModuleKind.ESNext,
+	moduleResolution: ts.ModuleResolutionKind.Bundler,
+	target: ts.ScriptTarget.ES2024,
+	strict: true,
+	skipLibCheck: true,
+	noUnusedLocals: true,
+}
+
+
 function checkMirror(lines, verify) {
 	const directory = fs.mkdtempSync(path.join(path.resolve(__dirname, '..'), '.mirror-check-'))
 	const fileName = path.join(directory, 'src.ts')
 	const source = lines.join('\n')
 	fs.writeFileSync(fileName, source)
 	try {
-		const options = {module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler,
-			target: ts.ScriptTarget.ES2024, strict: true, skipLibCheck: true, noUnusedLocals: true}
-		const host = ts.createCompilerHost(options)
-		const program = ts.createProgram([fileName], options, host)
+		const host = ts.createCompilerHost(COMPILER_OPTIONS)
+		const program = ts.createProgram([fileName], COMPILER_OPTIONS, host)
 		const sourceFile = program.getSourceFile(fileName)
 		const document = buildTypeScriptMirror(ts, program, sourceFile)
 		assert.ok(document)

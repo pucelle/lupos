@@ -11,7 +11,7 @@ import {VariableNames} from './variable-names'
 type SlotParserConstructor = new (part: TemplatePart, tree: TreeParser) => SlotParserBase
 
 /** Slot parser selected for each compilable template part type. */
-const SlotParserByPartType: Partial<Record<TemplatePartType, SlotParserConstructor>> = {
+const SLOT_PARSER_BY_PART_TYPE: Partial<Record<TemplatePartType, SlotParserConstructor>> = {
 	[TemplatePartType.SlotTag]: SlotTagSlotParser,
 	[TemplatePartType.Component]: ComponentSlotParser,
 	[TemplatePartType.DynamicComponent]: DynamicComponentSlotParser,
@@ -129,7 +129,7 @@ export class TreeParser {
 	private onTemplatePart(part: TemplatePart) {
 		this.template.diagnosePart(part)
 
-		let Parser = SlotParserByPartType[part.type]
+		let Parser = SLOT_PARSER_BY_PART_TYPE[part.type]
 		if (!Parser) {
 			return undefined
 		}
@@ -189,12 +189,12 @@ export class TreeParser {
 
 	/** Return variable name to reference current template maker, like `$template_0`. */
 	makeTemplateRefName(): string {
-		return VariableNames.buildName(VariableNames.template, this.index)
+		return VariableNames.buildName(VariableNames.TEMPLATE, this.index)
 	}
 
 	/** `$slot_0` */
 	makeUniqueSlotName(): string {
-		let name = VariableNames.getDoublyUniqueName(VariableNames.slot, this)
+		let name = VariableNames.getDoublyUniqueName(VariableNames.SLOT, this)
 		return name
 	}
 
@@ -202,25 +202,25 @@ export class TreeParser {
 	makeUniqueBindingName(): string {
 
 		// Only partial binding classes are parts.
-		let name = VariableNames.getDoublyUniqueName(VariableNames.binding, this)
+		let name = VariableNames.getDoublyUniqueName(VariableNames.BINDING, this)
 		return name
 	}
 
 	/** `$delegator_0` */
 	makeUniqueDelegatorName(): string {
-		let name = VariableNames.getDoublyUniqueName(VariableNames.delegator, this)
+		let name = VariableNames.getDoublyUniqueName(VariableNames.DELEGATOR, this)
 		return name
 	}
 
 	/** `$block_0` */
 	makeUniqueBlockName(): string {
-		let name = VariableNames.getDoublyUniqueName(VariableNames.block, this)
+		let name = VariableNames.getDoublyUniqueName(VariableNames.BLOCK, this)
 		return name
 	}
 
 	/** `$latest_0` */
 	makeUniqueLatestName(): string {
-		let name = VariableNames.getDoublyUniqueName(VariableNames.latest, this)
+		let name = VariableNames.getDoublyUniqueName(VariableNames.LATEST, this)
 		this.addPreDeclaredVariableName(name)
 		return name
 	}
@@ -228,13 +228,13 @@ export class TreeParser {
 	/** Reference `$values` and remember that the update parameter is required. */
 	createValuesIdentifier() {
 		this.valuesReferenced = true
-		return transformContext.factory.createIdentifier(VariableNames.values)
+		return transformContext.factory.createIdentifier(VariableNames.VALUES)
 	}
 
 	/** Reference `$context` and remember that the template parameter is required. */
 	createContextIdentifier() {
 		this.contextReferenced = true
-		return transformContext.factory.createIdentifier(VariableNames.context)
+		return transformContext.factory.createIdentifier(VariableNames.CONTEXT)
 	}
 
 	/** Whether generated output references `$values`. */
@@ -302,7 +302,7 @@ export class TreeParser {
 			return this.refedComponentMap.get(node)!
 		}
 
-		let comName = VariableNames.getDoublyUniqueName(VariableNames.com, this)
+		let comName = VariableNames.getDoublyUniqueName(VariableNames.COM, this)
 		this.refedComponentMap.set(node, comName)
 
 		// For dynamic component, uses a slot to reference component as part.

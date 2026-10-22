@@ -34,7 +34,7 @@ interface DependencyCollector {
 	declarations: ts.Node[]
 }
 
-const ValidPropertyNamePattern = /^[a-z_$][\w$_]*$/i
+const VALID_PROPERTY_NAME_PATTERN = /^[a-z_$][\w$_]*$/i
 
 
 export namespace Hashing {
@@ -128,7 +128,7 @@ export namespace Hashing {
 		// `a['prop']` and `a.prop` have the same normalized identity.
 		if (ts.isElementAccessExpression(node)
 			&& ts.isStringLiteral(node.argumentExpression)
-			&& ValidPropertyNamePattern.test(node.argumentExpression.text)
+			&& VALID_PROPERTY_NAME_PATTERN.test(node.argumentExpression.text)
 		) {
 			let expressionKey = hashNodeStructurally(node.expression, rawContext, collector)
 			let nameKey = intern('node', `${ts.SyntaxKind.Identifier}:0:${node.argumentExpression.text}`, [])

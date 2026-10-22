@@ -26,7 +26,7 @@ function getState(): ObservedCheckerState {
 	}))
 }
 
-const ShallowArrayCopyMethodNames = new Set([
+const SHALLOW_ARRAY_COPY_METHOD_NAMES = new Set([
 	'filter',
 	'slice',
 	'toReversed',
@@ -34,7 +34,7 @@ const ShallowArrayCopyMethodNames = new Set([
 	'toSpliced',
 ])
 
-const SameArrayMethodNames = new Set([
+const SAME_ARRAY_METHOD_NAMES = new Set([
 	'reverse',
 	'sort',
 ])
@@ -233,7 +233,7 @@ export namespace ObservedChecker {
 			if (arrayMethod) {
 				let {name, receiver} = arrayMethod
 
-				if (ShallowArrayCopyMethodNames.has(name) || SameArrayMethodNames.has(name)) {
+				if (SHALLOW_ARRAY_COPY_METHOD_NAMES.has(name) || SAME_ARRAY_METHOD_NAMES.has(name)) {
 					return getIteratedElementsObserved(receiver)
 				}
 
@@ -982,7 +982,7 @@ export namespace ObservedChecker {
 		}
 
 		let arrayMethod = getArrayMethod(rawNode)
-		if (arrayMethod && SameArrayMethodNames.has(arrayMethod.name)) {
+		if (arrayMethod && SAME_ARRAY_METHOD_NAMES.has(arrayMethod.name)) {
 			return getElementsObserved(arrayMethod.receiver)
 		}
 

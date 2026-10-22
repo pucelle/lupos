@@ -31,7 +31,7 @@ export class TreeOutputHandler {
 
 		this.wrappedBySVG = wrappedBySVG
 		this.wrappedByTemplate = wrappedByTemplate
-		this.htmlName = VariableNames.buildName(VariableNames.html, treeIndex)
+		this.htmlName = VariableNames.buildName(VariableNames.HTML, treeIndex)
 	}
 
 	/** 
@@ -285,7 +285,7 @@ export class TreeOutputHandler {
 		let {name: htmlName, output} = HTMLOutputHandler.prepareOutput(this.tree, this.wrappedBySVG, this.htmlName)
 
 		// $locator
-		let locatorName = VariableNames.locator
+		let locatorName = VariableNames.LOCATOR
 
 		// $locator = $html_0.make()
 		let node = transformContext.factory.createVariableStatement(
@@ -302,7 +302,7 @@ export class TreeOutputHandler {
 						),
 						undefined,
 						[
-							transformContext.factory.createIdentifier(VariableNames.hydrates)
+							transformContext.factory.createIdentifier(VariableNames.HYDRATES)
 						]
 					)
 				)],
@@ -340,7 +340,7 @@ export class TreeOutputHandler {
 
 			// From root, use `$locator`.
 			else if (visitFromNode === this.root) {
-				fromExp = transformContext.factory.createIdentifier(VariableNames.locator)
+				fromExp = transformContext.factory.createIdentifier(VariableNames.LOCATOR)
 			}
 
 			// $node_0
@@ -394,7 +394,7 @@ export class TreeOutputHandler {
 				else if (type === VisitStepType.Marker) {
 					fromExp = transformContext.factory.createCallExpression(
 						transformContext.factory.createPropertyAccessExpression(
-							transformContext.factory.createIdentifier(VariableNames.locator),
+							transformContext.factory.createIdentifier(VariableNames.LOCATOR),
 							transformContext.factory.createIdentifier('getMarker')
 						),
 						undefined,
@@ -517,7 +517,7 @@ export class TreeOutputHandler {
 				transformContext.factory.createPropertyAssignment(
 					transformContext.factory.createIdentifier('el'),
 					transformContext.factory.createPropertyAccessExpression(
-						transformContext.factory.createIdentifier(VariableNames.locator),
+						transformContext.factory.createIdentifier(VariableNames.LOCATOR),
 						'el'
 					)
 				),
@@ -537,7 +537,7 @@ export class TreeOutputHandler {
 			params.push(transformContext.factory.createParameterDeclaration(
 				undefined,
 				undefined,
-				transformContext.factory.createIdentifier(VariableNames.values),
+				transformContext.factory.createIdentifier(VariableNames.VALUES),
 				undefined,
 				undefined,
 				undefined
@@ -553,7 +553,7 @@ export class TreeOutputHandler {
 			transformContext.factory.createParameterDeclaration(
 				undefined,
 				undefined,
-				transformContext.factory.createIdentifier(this.tree.usesContext() ? VariableNames.context : '_' + VariableNames.context),
+				transformContext.factory.createIdentifier(this.tree.usesContext() ? VariableNames.CONTEXT : '_' + VariableNames.CONTEXT),
 				undefined,
 				undefined,
 				undefined
@@ -561,7 +561,7 @@ export class TreeOutputHandler {
 			transformContext.factory.createParameterDeclaration(
 				undefined,
 				undefined,
-				transformContext.factory.createIdentifier(VariableNames.hydrates),
+				transformContext.factory.createIdentifier(VariableNames.HYDRATES),
 				undefined,
 				undefined,
 				undefined

@@ -5,8 +5,8 @@ import {
 	DecoratorClassAnalysis,
 	DecoratedMemberAnalysis,
 	isObservableDecoratorName,
-	ProcessorClassNameMap,
-	ProcessorPropNameMap,
+	PROCESSOR_CLASS_NAME_MAP,
+	PROCESSOR_PROP_NAME_MAP,
 } from './decorators'
 import {Packer} from '../../core/packer'
 
@@ -108,8 +108,8 @@ function compileComputedEffectWatchDecorator(
 		return
 	}
 
-	let processorClassName = ProcessorClassNameMap[decoName]
-	let processorPropName = '$' + methodName + '_' + ProcessorPropNameMap[decoName]
+	let processorClassName = PROCESSOR_CLASS_NAME_MAP[decoName]
+	let processorPropName = '$' + methodName + '_' + PROCESSOR_PROP_NAME_MAP[decoName]
 	let makerParameters = makeMakerParameters(deco, decoName, decl)
 
 	Modifier.addImport(processorClassName, 'lupos')

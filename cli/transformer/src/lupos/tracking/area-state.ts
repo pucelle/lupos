@@ -5,7 +5,7 @@ import {transformContext} from '../../core'
 import {FlowInterruptionTypeMask, TrackingHelper} from './helper'
 
 
-const LifeMethodNames: ReadonlySet<string> = new Set(['onCreated', 'onConnected', 'onWillDisconnect'])
+const LIFE_METHOD_NAMES: ReadonlySet<string> = new Set(['onCreated', 'onConnected', 'onWillDisconnect'])
 
 
 export class TrackingAreaState {
@@ -80,7 +80,7 @@ export class TrackingAreaState {
 		}
 
 		let methodName = transformContext.helper.getText(node.name)
-		return LifeMethodNames.has(methodName)
+		return LIFE_METHOD_NAMES.has(methodName)
 	}
 
 	private checkStopGetTracking(): boolean {

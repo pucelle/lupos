@@ -53,7 +53,7 @@ function clearScreenIfNotWatchingForFileChanges(system: ts.System, diagnostic: t
         !options.preserveWatchOutput &&
         !options.extendedDiagnostics &&
         !options.diagnostics &&
-        contains(screenStartingMessageCodes, diagnostic.code)
+        contains(SCREEN_STARTING_MESSAGE_CODES, diagnostic.code)
     ) {
         system.clearScreen()
         return true
@@ -76,11 +76,11 @@ function toLowerCase(x: string) {
     return x.toLowerCase()
 }
 
-const fileNameLowerCaseRegExp = /[^\u0130\u0131\u00DFa-z0-9\\/:\-_. ]+/g
+const FILE_NAME_LOWER_CASE_REG_EXP = /[^\u0130\u0131\u00DFa-z0-9\\/:\-_. ]+/g
 
 function toFileNameLowerCase(x: string) {
-    return fileNameLowerCaseRegExp.test(x) ?
-        x.replace(fileNameLowerCaseRegExp, toLowerCase) :
+    return FILE_NAME_LOWER_CASE_REG_EXP.test(x) ?
+        x.replace(FILE_NAME_LOWER_CASE_REG_EXP, toLowerCase) :
         x
 }
 
@@ -89,12 +89,12 @@ export function getLocaleTimeString() {
 }
 
 export function getPlainDiagnosticFollowingNewLines(diagnostic: ts.Diagnostic, newLine: string): string {
-    return contains(screenStartingMessageCodes, diagnostic.code)
+    return contains(SCREEN_STARTING_MESSAGE_CODES, diagnostic.code)
         ? newLine + newLine
         : newLine
 }
 
-const screenStartingMessageCodes: number[] = [
+const SCREEN_STARTING_MESSAGE_CODES: number[] = [
     6031,
     6032,
 ]

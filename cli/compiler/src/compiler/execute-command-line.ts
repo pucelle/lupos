@@ -9,6 +9,13 @@ import {cleanCachedOutputs} from './clean-cache'
 import {CompilerDiagnosticModifier, CompilerDiagnosticProviderFactory, ExtendedTransformerFactory, patchHost} from '../patch'
 
 
+/** Compile the project configured in the current directory. */
+const DEFAULT_PROJECTS = ['.']
+
+/** Keep TypeScript's default build settings, including composite project handling. */
+const DEFAULT_BUILD_OPTIONS: ts.BuildOptions = {}
+
+
 export function executeCommandLine(
 	system: ts.System,
 	commandLineArgs: readonly string[],
@@ -60,14 +67,8 @@ export function executeCommandLine(
 		return system.exit(ts.ExitStatus.DiagnosticsPresent_OutputsSkipped)
 	}
 
-	const projects = ['.']
 	const compilerOptions = commandLine.options
 	const watchOptions = commandLine.watchOptions
-
-	const buildOptions: ts.BuildOptions = {
-		// Will cause error if `"composite": true` set in tsconfig.json.
-		//incremental: false
-	}
 
 	if (isWatchSet(compilerOptions)) {
 		return performWatchCompilation(
@@ -88,9 +89,9 @@ export function executeCommandLine(
 			system,
 			reportDiagnostic,
 			diagModifier,
-			projects,
+			DEFAULT_PROJECTS,
 			compilerOptions,
-			buildOptions,
+			DEFAULT_BUILD_OPTIONS,
 			transformer,
 			toESM,
 			embedSVG,

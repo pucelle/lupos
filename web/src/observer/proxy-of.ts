@@ -69,30 +69,30 @@ function proxyObject<T extends object>(o: T | ProxyOf<T>): ProxyOf<T> {
 
 /** Proxy an plain object. */
 function proxyPlainObject<T extends object>(o: T): ProxyOf<T> {
-	return new Proxy(o, PlainObjectProxyHandler)
+	return new Proxy(o, PLAIN_OBJECT_PROXY_HANDLER)
 }
 
 
 /** Proxy an array. */
 function proxyArray<T extends any[]>(a: T): ProxyOf<T> {
-	return new Proxy(a, ArrayProxyHandler)
+	return new Proxy(a, ARRAY_PROXY_HANDLER)
 }
 
 
 /** Proxy a map. */
 function proxyMap<T extends Map<any, any>>(a: T): ProxyOf<T> {
-	return new Proxy(a, MapProxyHandler)
+	return new Proxy(a, MAP_PROXY_HANDLER)
 }
 
 
 /** Proxy a set. */
 function proxySet<T extends Set<any>>(a: T): ProxyOf<T> {
-	return new Proxy(a, SetProxyHandler)
+	return new Proxy(a, SET_PROXY_HANDLER)
 }
 
 
 /** For observing plain object. */
-const PlainObjectProxyHandler = {
+const PLAIN_OBJECT_PROXY_HANDLER = {
 
 	get(o: any, key: PropertyKey): ProxyOf<any> {
 		trackGet(o, key)
@@ -123,7 +123,7 @@ const PlainObjectProxyHandler = {
 
 
 /** For array proxy. */
-const ArrayProxyHandler = {
+const ARRAY_PROXY_HANDLER = {
 
 	get(a: any, key: PropertyKey): ProxyOf<any> {
 		let value = a[key]
@@ -137,7 +137,7 @@ const ArrayProxyHandler = {
 
 		// Proxy array methods.
 		else if (type === 'function') {
-			let proxyMethod = ArrayProxyMethods[key]
+			let proxyMethod = ARRAY_PROXY_METHODS[key]
 			return proxyMethod ? proxyMethod.bind(a) : value
 		}
 
@@ -172,7 +172,7 @@ const ArrayProxyHandler = {
 
 
 /** Overwrite array methods. */
-const ArrayProxyMethods: any = {
+const ARRAY_PROXY_METHODS: any = {
 
 	push(this: any[], ...values: any[]) {
 		let result = Array.prototype.push.call(this, ...values)
@@ -237,7 +237,7 @@ const ArrayProxyMethods: any = {
 
 
 /** For map proxy. */
-const MapProxyHandler = {
+const MAP_PROXY_HANDLER = {
 
 	get(a: any, key: PropertyKey): ProxyOf<any> {
 		if (key === 'size') {
@@ -301,7 +301,7 @@ const MapProxyHandler = {
 
 
 /** For set proxy. */
-const SetProxyHandler = {
+const SET_PROXY_HANDLER = {
 
 	get(a: any, key: PropertyKey): ProxyOf<any> {
 		if (key === 'size') {

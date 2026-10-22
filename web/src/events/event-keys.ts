@@ -265,7 +265,7 @@ Run the codes in both Mac and Windows, join them together.
 */
 
 
-const NumToKeyCodeMap: Record<number, {key: Key, code: Code}> = {
+const NUM_TO_KEY_CODE_MAP: Record<number, {key: Key, code: Code}> = {
 	8: {
 		"key": "Backspace",
 		"code": "Backspace",
@@ -612,7 +612,7 @@ const NumToKeyCodeMap: Record<number, {key: Key, code: Code}> = {
 	}
 }
 
-const ShiftedNumToKeyCodeMap: Record<string, {key: string, code: string}> = {
+const SHIFTED_NUM_TO_KEY_CODE_MAP: Record<string, {key: string, code: string}> = {
 	48: {
 		"key": ")",
 		"code": "Digit0",
@@ -806,7 +806,7 @@ const ShiftedNumToKeyCodeMap: Record<string, {key: string, code: string}> = {
 
 /** Whether pressed character key. */
 export function pressedCharacterKey(event: KeyEventLike): boolean {
-	let key = NumToKeyCodeMap[event.which]?.key
+	let key = NUM_TO_KEY_CODE_MAP[event.which]?.key
 	return key && key.length === 1 && !pressedControlKey(event)
 }
 
@@ -836,7 +836,7 @@ export function isControlKey(event: KeyEventLike): boolean {
  */
 export function getShortcutKey(event: KeyEventLike, shiftDistinguish: boolean = false): ShortcutKey {
 	let useShift = event.shiftKey && shiftDistinguish
-	let key = useShift ? ShiftedNumToKeyCodeMap[event.which]?.key : NumToKeyCodeMap[event.which]?.key
+	let key = useShift ? SHIFTED_NUM_TO_KEY_CODE_MAP[event.which]?.key : NUM_TO_KEY_CODE_MAP[event.which]?.key
 
 	if (isControlKey(event)) {
 		key = ''
@@ -853,7 +853,7 @@ export function getShortcutKey(event: KeyEventLike, shiftDistinguish: boolean = 
  * Doesn't distinguish whether shift key is pressed.
  */
 export function getShortcutCode(event: KeyEventLike): ShortcutCode {
-	let code = NumToKeyCodeMap[event.which]?.code as string
+	let code = NUM_TO_KEY_CODE_MAP[event.which]?.code as string
 
 	if (isControlKey(event)) {
 		code = ''

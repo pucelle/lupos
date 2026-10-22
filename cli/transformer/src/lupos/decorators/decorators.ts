@@ -2,13 +2,13 @@ import ts from 'typescript'
 import {transformContext} from '../../core'
 
 
-export const ObservableDecoratorNames = ['computed', 'asyncComputed', 'effect', 'watch', 'watchMulti'] as const
-export const ContextDecoratorNames = ['setContext', 'useContext'] as const
-export const DecoratorNames = [...ObservableDecoratorNames, ...ContextDecoratorNames] as const
+export const OBSERVABLE_DECORATOR_NAMES = ['computed', 'asyncComputed', 'effect', 'watch', 'watchMulti'] as const
+export const CONTEXT_DECORATOR_NAMES = ['setContext', 'useContext'] as const
+export const DECORATOR_NAMES = [...OBSERVABLE_DECORATOR_NAMES, ...CONTEXT_DECORATOR_NAMES] as const
 
-export type ObservableDecoratorName = typeof ObservableDecoratorNames[number]
-export type ContextDecoratorName = typeof ContextDecoratorNames[number]
-export type DecoratorName = typeof DecoratorNames[number]
+export type ObservableDecoratorName = typeof OBSERVABLE_DECORATOR_NAMES[number]
+export type ContextDecoratorName = typeof CONTEXT_DECORATOR_NAMES[number]
+export type DecoratorName = typeof DECORATOR_NAMES[number]
 
 export interface DecoratedMemberAnalysis {
 	kind: 'decorator'
@@ -31,7 +31,7 @@ export interface DecoratorClassAnalysis {
 }
 
 
-export const ProcessorClassNameMap: Record<ObservableDecoratorName, string> = {
+export const PROCESSOR_CLASS_NAME_MAP: Record<ObservableDecoratorName, string> = {
 	computed: 'Computed',
 	asyncComputed: 'AsyncComputed',
 	effect: 'Effector',
@@ -39,7 +39,7 @@ export const ProcessorClassNameMap: Record<ObservableDecoratorName, string> = {
 	watchMulti: 'MultiWatcher',
 }
 
-export const ProcessorPropNameMap: Record<ObservableDecoratorName, string> = {
+export const PROCESSOR_PROP_NAME_MAP: Record<ObservableDecoratorName, string> = {
 	computed: 'computer',
 	asyncComputed: 'asyncComputer',
 	effect: 'effector',
@@ -107,12 +107,12 @@ export function analyzeDecoratorClass(node: ts.ClassDeclaration): DecoratorClass
 
 
 export function isObservableDecoratorName(name: DecoratorName): name is ObservableDecoratorName {
-	return (ObservableDecoratorNames as readonly string[]).includes(name)
+	return (OBSERVABLE_DECORATOR_NAMES as readonly string[]).includes(name)
 }
 
 
 function isDecoratorName(name: string | undefined): name is DecoratorName {
-	return !!name && (DecoratorNames as readonly string[]).includes(name)
+	return !!name && (DECORATOR_NAMES as readonly string[]).includes(name)
 }
 
 

@@ -20,7 +20,7 @@ export interface WatchOptions {
 }
 
 
-const DefaultWatchOptions: WatchOptions = {
+const DEFAULT_WATCH_OPTIONS: WatchOptions = {
 	once: false,
 	immediate: false,
 	untilTrue: false,
@@ -49,7 +49,7 @@ export class Watcher<V = any> implements Updatable {
 	constructor(getter: () => V, callback: (value: V, oldValue: V | undefined) => void, scope?: any, options?: Partial<WatchOptions>) {
 		this.getter = scope ? getter.bind(scope) : getter
 		this.callback = scope ? callback.bind(scope) : callback
-		this.options = options ? {...DefaultWatchOptions, ...options} : DefaultWatchOptions
+		this.options = options ? {...DEFAULT_WATCH_OPTIONS, ...options} : DEFAULT_WATCH_OPTIONS
 		this.iid = makeObserverIID(scope?.iid)
 	}
 
@@ -139,7 +139,7 @@ export class MultiWatcher<V extends any[] = any> implements Updatable {
 	constructor(getters: InferValueGetters<V>, callback: (values: V, oldValues: V | undefined) => void, scope?: any, options?: Partial<WatchOptions>) {
 		this.getters = scope ? getters.map(getter => getter.bind(scope)) as InferValueGetters<V> : getters
 		this.callback = scope ? callback.bind(scope) : callback
-		this.options = options ? {...DefaultWatchOptions, ...options} : DefaultWatchOptions
+		this.options = options ? {...DEFAULT_WATCH_OPTIONS, ...options} : DEFAULT_WATCH_OPTIONS
 		this.iid = makeObserverIID(scope?.iid)
 	}
 

@@ -19,7 +19,7 @@ interface LoaderOptions {
 	mainColor: string | null
 }
 
-const DefaultLoaderOptions: Required<LoaderOptions> = {
+const DEFAULT_LOADER_OPTIONS: Required<LoaderOptions> = {
 	compress: true,
 	mainColor: null,
 }
@@ -38,7 +38,7 @@ export class SVGInliner {
 		options: Partial<LoaderOptions> = {}
 	) {
 		this.filePath = filePath
-		this.options = {...DefaultLoaderOptions, ...options}
+		this.options = {...DEFAULT_LOADER_OPTIONS, ...options}
 		this.source = fs.readFileSync(filePath, 'utf8')
 
 		this.viewBox = this.checkViewBox()

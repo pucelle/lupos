@@ -1,5 +1,5 @@
 import ts from 'typescript'
-import {HTMLNode, LuposKnownInternalBindings} from '../../../lupos-ts-module'
+import {HTMLNode, LUPOS_KNOWN_INTERNAL_BINDINGS} from '../../../lupos-ts-module'
 import {PartType, TreeParser} from '../tree'
 import {BindingSlotParser} from '../slots'
 import {Modifier, DeclarationScopeTree, transformContext} from '../../../core'
@@ -141,8 +141,8 @@ export class BindingBase {
 
 	/** Check binding class declaration. */
 	private initBindingClass() {
-		if (LuposKnownInternalBindings[this.name]) {
-			let item = LuposKnownInternalBindings[this.name]
+		if (LUPOS_KNOWN_INTERNAL_BINDINGS[this.name]) {
+			let item = LUPOS_KNOWN_INTERNAL_BINDINGS[this.name]
 			
 			// Add as a part.
 			if (item.implementsPart) {
@@ -231,8 +231,8 @@ export class BindingBase {
 		let nodeName = this.slot.getRefedNodeName()
 		let bindingParamCount = this.bindingClassParameterCount
 
-		let bindingClassName = LuposKnownInternalBindings[this.name]
-			? LuposKnownInternalBindings[this.name].name
+		let bindingClassName = LUPOS_KNOWN_INTERNAL_BINDINGS[this.name]
+			? LUPOS_KNOWN_INTERNAL_BINDINGS[this.name].name
 			: this.name
 
 		let bindingParams: ts.Expression[] = [transformContext.factory.createIdentifier(nodeName)]

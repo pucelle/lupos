@@ -8,9 +8,9 @@ type EventHandler = (e: Event) => void
 
 /** All event modifiers organized by event type. */
 type EventModifiers = {
-	keydown: (typeof GlobalEventModifiers)[number] | ShortcutKey
-	keyup: (typeof GlobalEventModifiers)[number] | ShortcutKey
-	keypress: (typeof GlobalEventModifiers)[number] | ShortcutKey
+	keydown: (typeof GLOBAL_EVENT_MODIFIERS)[number] | ShortcutKey
+	keyup: (typeof GLOBAL_EVENT_MODIFIERS)[number] | ShortcutKey
+	keypress: (typeof GLOBAL_EVENT_MODIFIERS)[number] | ShortcutKey
 
 	mousedown: MouseEventModifiers
 	mousemove: MouseEventModifiers
@@ -31,31 +31,31 @@ type EventModifiers = {
 	gotpointercapture: MouseEventModifiers
 	lostpointercapture: MouseEventModifiers
 
-	click: (typeof GlobalEventModifiers)[number] | keyof typeof ButtonNameModifiers | ControlKeyCode
-	dblclick: (typeof GlobalEventModifiers)[number] | keyof typeof ButtonNameModifiers | ControlKeyCode
-	change: (typeof ChangeEventModifiers | typeof GlobalEventModifiers)[number] | ControlKeyCode
-	wheel: (typeof WheelEventModifiers | typeof GlobalEventModifiers)[number] | ControlKeyCode
+	click: (typeof GLOBAL_EVENT_MODIFIERS)[number] | keyof typeof BUTTON_NAME_MODIFIERS | ControlKeyCode
+	dblclick: (typeof GLOBAL_EVENT_MODIFIERS)[number] | keyof typeof BUTTON_NAME_MODIFIERS | ControlKeyCode
+	change: (typeof CHANGE_EVENT_MODIFIERS | typeof GLOBAL_EVENT_MODIFIERS)[number] | ControlKeyCode
+	wheel: (typeof WHEEL_EVENT_MODIFIERS | typeof GLOBAL_EVENT_MODIFIERS)[number] | ControlKeyCode
 }
 
-type MouseEventModifiers = (typeof GlobalEventModifiers)[number] | keyof typeof ButtonNameModifiers | ControlKeyCode
+type MouseEventModifiers = (typeof GLOBAL_EVENT_MODIFIERS)[number] | keyof typeof BUTTON_NAME_MODIFIERS | ControlKeyCode
 
 /** Get event modifiers by event type. */
 export type EventModifierByType<T extends string> = T extends keyof EventModifiers
 	? EventModifiers[T]
-	: (typeof GlobalEventModifiers)[number]
+	: (typeof GLOBAL_EVENT_MODIFIERS)[number]
 
 
 /** Modifiers to filter events by event actions. */
-const GlobalEventModifiers = ['capture', 'self', 'once', 'prevent', 'stop', 'passive'] as const
+const GLOBAL_EVENT_MODIFIERS = ['capture', 'self', 'once', 'prevent', 'stop', 'passive'] as const
 
 /** Modifiers to filter change events. */
-const ChangeEventModifiers = ['check', 'uncheck'] as const
+const CHANGE_EVENT_MODIFIERS = ['check', 'uncheck'] as const
 
 /** Modifiers to filter wheel events. */
-const WheelEventModifiers = ['up', 'down'] as const
+const WHEEL_EVENT_MODIFIERS = ['up', 'down'] as const
 
 /** Modifiers to filter click events. */
-const ButtonNameModifiers = {
+const BUTTON_NAME_MODIFIERS = {
 	left: 0,
 	middle: 1,
 	right: 2,
@@ -80,12 +80,12 @@ function mouseEventFilter(e: MouseEvent, modifiers: string[]): boolean {
 		return false
 	}
 
-	let buttonModifiers = modifiers.filter(m => m in ButtonNameModifiers) as (keyof typeof ButtonNameModifiers)[]
+	let buttonModifiers = modifiers.filter(m => m in BUTTON_NAME_MODIFIERS) as (keyof typeof BUTTON_NAME_MODIFIERS)[]
 	if (buttonModifiers.length === 0) {
 		return true
 	}
 
-	if (buttonModifiers.find(m => ButtonNameModifiers[m] === e.button)) {
+	if (buttonModifiers.find(m => BUTTON_NAME_MODIFIERS[m] === e.button)) {
 		return true
 	}
 
@@ -107,7 +107,7 @@ function wheelEventFilter(e: WheelEvent, [modifier]: string[]) {
 }
 
 /** Event filters to limit by event type. */
-const EventFilters = {
+const EVENT_FILTERS = {
 	keydown: keyEventFilter,
 	keyup: keyEventFilter,
 	keypress: keyEventFilter,
@@ -151,11 +151,11 @@ export function on<T extends EventType>(
 
 /** Wrap handler to filter by modifiers. */
 function wrapHandler(el: EventTarget, type: string, modifiers: string[] | null, handler: EventHandler, scope: any): EventHandler {
-	let filterModifiers = modifiers?.filter(m => !GlobalEventModifiers.includes(m as any))
+	let filterModifiers = modifiers?.filter(m => !GLOBAL_EVENT_MODIFIERS.includes(m as any))
 
 	return function wrappedHandler(e: Event) {
 		if (filterModifiers && filterModifiers.length > 0) {
-			let filterFn = EventFilters[type as keyof typeof EventFilters]
+			let filterFn = EVENT_FILTERS[type as keyof typeof EVENT_FILTERS]
 			if (!filterFn(e as any, filterModifiers)) {
 				return
 			}
