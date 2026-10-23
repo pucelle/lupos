@@ -11,6 +11,22 @@ const enum AsyncComputedValueState {
 }
 
 
+export interface AsyncComputedOptions<S = any> {
+
+	/** 
+	 * If specified `continuous` as `true`, will not reset and keep the value continuous.
+	 * `false` by default.
+	 */
+	continuous?: boolean
+
+	/** 
+	 * When continuous, only same keyed content will reuse.
+	 * Set this implies continuous.
+	 */
+	key?: (this: S) => string | number
+}
+
+
 /** 
  * Make a similar computed getter from a async getter function.
  * and automatically re-computing the value after any dependency changed.
@@ -20,8 +36,8 @@ const enum AsyncComputedValueState {
 export class AsyncComputed<V = any> implements Updatable {
 
 	/** Make a quick getter by a getter function. */
-	static getter<V>(getter: () => Promise<V>, scope?: any, continuous?: boolean): () => V | undefined {
-		let computer = new AsyncComputed(getter, undefined, scope, continuous)
+	static getter<V>(getter: () => Promise<V>, scope?: any, options?: AsyncComputedOptions): () => V | undefined {
+		let computer = new AsyncComputed(getter, undefined, scope, options)
 
 		return () => {
 			return computer.get()
@@ -33,22 +49,22 @@ export class AsyncComputed<V = any> implements Updatable {
 
 	private getter: () => Promise<V>
 	private onReset: (() => void) | undefined
-	private continuous: boolean
+	private scope?: any
+	private options: AsyncComputedOptions
 	private promise: Promise<V> | undefined
 	private value: V | undefined = undefined
 	private valueState: AsyncComputedValueState = AsyncComputedValueState.Initial
+	private valueAtKey: string | number | undefined = undefined
 	private tracker: DependencyTracker | null = null
 	private trackerSnapshot: any[] | null = null
 	private connected: boolean = false
 
-	/** 
-	 * By default when next async request send, will reset current value to `undefined`.
-	 * If specified `continuous` as `true`, will not reset and keep the value continuous.
-	 */
-	constructor(getter: () => Promise<V>, onReset?: () => void, scope?: any, continuous?: boolean) {
+	/** By default when next async request send, will reset current value to `undefined`. */
+	constructor(getter: () => Promise<V>, onReset?: () => void, scope?: any, options?: AsyncComputedOptions) {
 		this.getter = scope ? getter.bind(scope) : getter
 		this.onReset = onReset && scope ? onReset.bind(scope) : onReset
-		this.continuous = continuous ?? false
+		this.scope = scope
+		this.options = options ?? {}
 		this.iid = makeObserverIID(scope?.iid)
 	}
 
@@ -120,7 +136,13 @@ export class AsyncComputed<V = any> implements Updatable {
 			if (result instanceof Promise) {
 
 				// Reset to undefined if not continuous.
-				if (!this.continuous) {
+				if (this.options.continuous || this.options.key) {
+					let newKey = this.options.key?.call(this.scope)
+					if (newKey !== this.valueAtKey) {
+						this.value = undefined
+					}
+				}
+				else {
 					this.value = undefined
 				}
 
@@ -132,6 +154,7 @@ export class AsyncComputed<V = any> implements Updatable {
 						if (result === this.promise) {
 							this.valueState = AsyncComputedValueState.Fresh
 							this.value = value
+							this.valueAtKey = this.options.key?.call(this.scope)
 							this.promise = undefined
 
 							// Use `trackSet` to notify those which depend on it to update.

@@ -1,3 +1,4 @@
+import {AsyncComputedOptions} from './async-computed'
 import {WatchOptions} from './watch'
 
 
@@ -33,7 +34,7 @@ export declare function computed(originalGetter: any, context: ClassGetterDecora
  * 
  * Use it like:
  * ```
- * @asyncComputed(async function(){... return ...}, ?true)
+ * @asyncComputed(async function(){... return ...}, ?options)
  * property: Type | undefined = DefaultValue
  * ```
  * 
@@ -45,7 +46,7 @@ export declare function computed(originalGetter: any, context: ClassGetterDecora
  * 
  * This is only a declaration, it will be replaced after been compiled.
  */
-export declare function asyncComputed<T, V>(getter: (this: T) => Promise<V> | V, continuous?: boolean):
+export declare function asyncComputed<T, V>(getter: (this: T) => Promise<V> | V, options?: AsyncComputedOptions<T>):
 	(property: V | undefined, context: ClassFieldDecoratorContext<T>) => any
 
 
