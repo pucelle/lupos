@@ -152,6 +152,9 @@ type InferMultiMethodParameters<T, PS extends ((() => any) | keyof T)[]>
  */
 export interface Connectable {
 
+	/** Incremental id, assign it to `getIncrementalId().`. */
+	readonly iid: number
+
 	/** 
 	 * After class initialized, and before connected.
 	 * 
