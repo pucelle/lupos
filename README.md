@@ -3,6 +3,9 @@
     Lupos
 </h1>
 
+**ALL WHAT YOU NEED IS A CLASS TREE**
+
+
 
 **lupos** is a framework to support component-based programming in TypeScript.
 
