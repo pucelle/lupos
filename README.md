@@ -40,6 +40,7 @@ Compare with some modern tracking ways like **Proxy**, **Signal**, **State**...,
 - Can easily debug data tracking by compiled statements.
 
 
+
 #### Become Observed
 
 Here are the rules to decide whether an object should be observed:
